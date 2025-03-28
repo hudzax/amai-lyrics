@@ -289,7 +289,7 @@ async function generateFurigana(lyricsJson) {
         const response = await ai.models.generateContent({
           config: generationConfig,
           model: 'gemini-2.0-flash',
-          contents: `You are an expert in Japanese language, specializing in kanji readings and song lyrics. Follow these instructions carefully: For each line in the following lyrics, identify all kanji characters and add their furigana in hiragana within curly braces, following standard Japanese orthography. For example: 願い would be written as 願{ねが}い, 可愛い would be written as 可愛{かわい}い, 5人 would be written as 5人{にん}. Use context-appropriate readings for each kanji based on standard Japanese usage. Here are the lyrics:\n${lyricsOnly.join(
+          contents: `You are an expert in Japanese language, specializing in kanji readings and song lyrics. Follow these instructions carefully: For each line in the following lyrics, identify all kanji characters and add their furigana in hiragana within curly braces, following standard Japanese orthography. For example: 願い would be written as 願{ねが}い, 可愛い would be written as 可愛{かわい}い, 5人 would be written as 5人{にん}, 明後日 would be written as 明後日{あさって}, etc. Use context-appropriate readings for each kanji based on standard Japanese usage. Here are the lyrics:\n${lyricsOnly.join(
             '\n',
           )}`,
         });
