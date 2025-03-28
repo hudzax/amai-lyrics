@@ -179,15 +179,12 @@ function generalSettings() {
 }
 
 function infos() {
-  const settings = new SettingsSection(
-    'Amai - Info',
-    'spicy-lyrics-settings-info',
-  );
+  const settings = new SettingsSection('Amai - Info', 'amai-info');
 
   settings.addButton(
     'more-info',
     'This fork adds Furigana support to the original Spicy Lyrics utilizing free Gemini API. For personal use only.',
-    '',
+    'OK',
     () => {},
   );
 
