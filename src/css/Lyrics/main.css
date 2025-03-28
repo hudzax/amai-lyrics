@@ -89,7 +89,7 @@ header.main-topBar-container .FuriganaInfo {
 
 .line-furigana {
   font-size:var(--DefaultLyricsSize-Small);
-  margin-top: -0.2rem;
+  margin-top: -0.25rem;
 }
 
 #spicy-lyrics-settings button, #spicy-lyrics-dev-settings button, #amai-info button {
