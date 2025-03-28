@@ -184,7 +184,7 @@ function infos() {
   settings.addButton(
     'more-info',
     'This fork adds Furigana support to the original Spicy Lyrics utilizing free Gemini API. For personal use only.',
-    'v1.0.1',
+    'v1.0.3',
     () => {},
   );
 
