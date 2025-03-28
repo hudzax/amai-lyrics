@@ -168,8 +168,8 @@
     SkipSpicyFont: false,
     OldStyleFont: false,
     SpicyLyricsVersion: "0.0.0",
-    ForceCoverImage_InLowQualityMode: false,
-    show_topbar_notifications: true,
+    ForceCoverImage_InLowQualityMode: true,
+    show_topbar_notifications: false,
     lyrics_spacing: 2
   };
   var Defaults_default = Defaults;
@@ -11073,6 +11073,7 @@
       return urOfflineMessage();
     ShowLoaderContainer();
     try {
+      Spicetify.showNotification("Fetching lyrics, please wait..", false, 2e3);
       const SpotifyAccessToken = await Platform_default.GetSpotifyAccessToken();
       let lyricsText = "";
       let status = 0;
@@ -11132,6 +11133,7 @@
         }
       }
       Defaults_default.CurrentLyricsType = lyricsJson.Type;
+      Spicetify.showNotification("Completed", false, 2e3);
       return { ...lyricsJson, fromCache: false };
     } catch (error) {
       console.error("Error fetching lyrics:", error);
@@ -11150,7 +11152,7 @@
         console.log("Furigana: Gemini API Key present");
         const ai2 = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
         const generationConfig = {
-          temperature: 0.5,
+          temperature: 0.2,
           topP: 0.95,
           topK: 40,
           maxOutputTokens: 8192,
@@ -11188,7 +11190,7 @@
           const response = await ai2.models.generateContent({
             config: generationConfig,
             model: "gemini-2.0-flash",
-            contents: `You are an expert in japanese language, culture and lyrics. Follow and think through this instructions carefully. For each line of Japanese text in the following lyrics, identify all kanji characters then add their furigana in this format: {furigana}. For example: \u9858\u3044 would be written as \u9858{\u306D\u304C}\u3044, \u53EF\u611B\u3044 would be written as \u53EF\u611B{\u304B\u308F\u3044}\u3044. Do not add any other text. Use context-appropriate readings for each kanji based on standard Japanese usage. Leave non-Japanese lines unchanged. Here are the lyrics:
+            contents: `You are an expert in Japanese language, specializing in kanji readings and song lyrics. Follow these instructions carefully: For each line in the following lyrics, identify all kanji characters and add their furigana in hiragana within curly braces, following standard Japanese orthography. For example: \u9858\u3044 would be written as \u9858{\u306D\u304C}\u3044, \u53EF\u611B\u3044 would be written as \u53EF\u611B{\u304B\u308F\u3044}\u3044, 5\u4EBA would be written as 5\u4EBA{\u306B\u3093}, \u660E\u5F8C\u65E5 would be written as \u660E\u5F8C\u65E5{\u3042\u3055\u3063\u3066}, etc. Use context-appropriate readings for each kanji based on standard Japanese usage. Here are the lyrics:
 ${lyricsOnly.join(
               "\n"
             )}`
@@ -11632,32 +11634,17 @@ ${lyricsOnly.join(
       "Amai - General",
       "spicy-lyrics-settings"
     );
-    settings.addDropDown(
-      "lyrics_spacing",
-      "Lyrics Spacing",
-      ["None", "Small", "Medium", "Large", "Extra Large"],
-      Defaults_default.lyrics_spacing,
-      () => {
-        storage_default.set(
-          "lyrics_spacing",
-          settings.getFieldValue("lyrics_spacing")
-        );
-      }
-    );
     settings.addInput("gemini-api-key", "Gemini API Key", "", () => {
       storage_default.set(
         "GEMINI_API_KEY",
         settings.getFieldValue("gemini-api-key")
       );
-      Spicetify.showNotification("Fetching, please wait..", false, 2e3);
       lyricsCache.destroy();
       storage_default.set("currentLyricsData", null);
       if (!Spicetify.Player.data?.item?.uri)
         return;
       const currentUri = Spicetify.Player.data.item.uri;
-      fetchLyrics(currentUri).then(ApplyLyrics).then(() => {
-        Spicetify.showNotification("Completed", false, 2e3);
-      });
+      fetchLyrics(currentUri).then(ApplyLyrics);
     });
     settings.addButton(
       "get-gemini-api",
@@ -16744,7 +16731,7 @@ ${lyricsOnly.join(
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-18772-qktHwPt2RfC1/195db530f607/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-18588-gOiFD7zNimgW/195df1e9eb37/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -16770,7 +16757,7 @@ ${lyricsOnly.join(
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18772-qktHwPt2RfC1/195db530eff0/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18588-gOiFD7zNimgW/195df1e9ddd0/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -16909,7 +16896,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18772-qktHwPt2RfC1/195db530f381/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18588-gOiFD7zNimgW/195df1e9e0e1/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -17117,7 +17104,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18772-qktHwPt2RfC1/195db530f3f2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18588-gOiFD7zNimgW/195df1e9e152/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -17591,7 +17578,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18772-qktHwPt2RfC1/195db530f493/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18588-gOiFD7zNimgW/195df1e9e213/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -17699,7 +17686,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18772-qktHwPt2RfC1/195db530f4e4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18588-gOiFD7zNimgW/195df1e9e264/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -17774,7 +17761,7 @@ header.main-topBar-container .FuriganaInfo {
 }
 .line-furigana {
   font-size: var(--DefaultLyricsSize-Small);
-  margin-top: -0.2rem;
+  margin-top: -0.25rem;
 }
 #spicy-lyrics-settings button,
 #spicy-lyrics-dev-settings button,
@@ -17830,7 +17817,7 @@ header.main-topBar-container .FuriganaInfo {
   border: 1px solid var(--essential-subdued,#818181);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18772-qktHwPt2RfC1/195db530f535/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18588-gOiFD7zNimgW/195df1e9e2b5/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -18121,7 +18108,7 @@ header.main-topBar-container .FuriganaInfo {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18772-qktHwPt2RfC1/195db530f596/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18588-gOiFD7zNimgW/195df1e9e316/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
