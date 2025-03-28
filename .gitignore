@@ -144,7 +144,7 @@ out
 # End of https://www.toptal.com/developers/gitignore/api/node
 
 
-dist/
+# dist/
 
 script_removefromcache.cmd
 testScript.js
