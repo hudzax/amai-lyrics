@@ -1,8 +1,8 @@
 [
   {
     "name": "Amai Lyrics",
-    "description": "This is a fork of Spicy Lyrics with added furigana support.",
-    "preview": "./previews/square-s.gif",
+    "description": "This is a fork of Spicy Lyrics with added furigana support and removed telemetry. For personal use only.",
+    "preview": "./previews/preview-square.jpg",
     "main": "./builds/amai-lyrics-main.js",
     "readme": "README.md",
     "branch": "main",
