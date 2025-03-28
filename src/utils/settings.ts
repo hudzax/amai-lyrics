@@ -109,17 +109,17 @@ function generalSettings() {
   //     },
   //   );
 
-  //   settings.addToggle(
-  //     'force-cover-bg_in-lowqmode',
-  //     'Force Image Cover (as the background) in Low Quality Mode',
-  //     Defaults.ForceCoverImage_InLowQualityMode,
-  //     () => {
-  //       storage.set(
-  //         'force-cover-bg_in-lowqmode',
-  //         settings.getFieldValue('force-cover-bg_in-lowqmode') as string,
-  //       );
-  //     },
-  //   );
+  // settings.addToggle(
+  //   'force-cover-bg_in-lowqmode',
+  //   'Force Image Cover (as the background) in Low Quality Mode',
+  //   Defaults.ForceCoverImage_InLowQualityMode,
+  //   () => {
+  //     storage.set(
+  //       'force-cover-bg_in-lowqmode',
+  //       settings.getFieldValue('force-cover-bg_in-lowqmode') as string,
+  //     );
+  //   },
+  // );
 
   //   settings.addToggle(
   //     'show_topbar_notifications',
@@ -133,18 +133,18 @@ function generalSettings() {
   //     },
   //   );
 
-  settings.addDropDown(
-    'lyrics_spacing',
-    'Lyrics Spacing',
-    ['None', 'Small', 'Medium', 'Large', 'Extra Large'],
-    Defaults.lyrics_spacing,
-    () => {
-      storage.set(
-        'lyrics_spacing',
-        settings.getFieldValue('lyrics_spacing') as string,
-      );
-    },
-  );
+  // settings.addDropDown(
+  //   'lyrics_spacing',
+  //   'Lyrics Spacing',
+  //   ['None', 'Small', 'Medium', 'Large', 'Extra Large'],
+  //   Defaults.lyrics_spacing,
+  //   () => {
+  //     storage.set(
+  //       'lyrics_spacing',
+  //       settings.getFieldValue('lyrics_spacing') as string,
+  //     );
+  //   },
+  // );
 
   settings.addInput('gemini-api-key', 'Gemini API Key', '', () => {
     storage.set(
