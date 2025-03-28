@@ -78,12 +78,13 @@ async function main() {
   // Lets import the required Scripts from our CDN
   {
     const scripts: HTMLScriptElement[] = [];
-    const GetFullUrl = (target: string) => `https://public.storage.spicylyrics.org/tools/${target}`;
-
+    const GetFullUrl = (target: string) => `https://cdn.jsdelivr.net/gh/hudzax/amai-lyrics/dist/${target}`;
+    
     const AddScript = (scriptFileName: string) => {
       const script = document.createElement("script");
-      script.async = true;
+      script.async = false;
       script.src = GetFullUrl(scriptFileName);
+      console.log("Adding Script:", script.src);
       script.onerror = () => {
         sleep(2).then(() => {
           window._spicy_lyrics?.func_main?._deappend_scripts();
