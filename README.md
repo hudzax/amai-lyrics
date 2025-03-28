@@ -1,9 +1,5 @@
-# Spicy Lyrics
+# Spicy Lyrics with Furigana
 
-Hi, I'm Spikerko (the person who made this repo). I've been really passionate about this project, and I'm really happy for this project.
+This fork adds Furigana support to the original Spicy Lyrics utilizing free Gemini API. Get your free API key from [here](https://aistudio.google.com/app/apikey).
 
-I've seen a problem with the Spotify Lyrics. They're plain, just static colors. So I wanted to build my own version. And here it is: **Spicy Lyrics**. Hope you like it!
-
-![Extension Example](./previews/page.gif)
-
-*By using our extension, you agree to our [Terms of Service](https://spicylyrics.org/terms-of-service) and [Privacy Policy](https://spicylyrics.org/privacy-policy) that's stated on https://spicylyrics.org .*
+Credit to the original creator of Spicy Lyrics, Spikerko. [Spicy Lyrics](https://spicylyrics.org/)

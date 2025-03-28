@@ -406,11 +406,11 @@
     animation-fill-mode: forwards;
 }
 
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .ViewControls {
+#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .ViewControls {
     opacity: 1 !important;
     position: relative;
     width: 100%;
-    margin-top: 4cqh;
+    margin-bottom: 2cqh;
 }
 
 #SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl.Pressed {

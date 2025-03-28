@@ -1,13 +1,17 @@
 [
 	{
-		"name": "Spicy Lyrics",
-		"description": "Spicy Lyrics is a better lyrics experience (compared to Spotify Lyrics) for Spotify. It brings word-to-word lyrics (karaoke style), beatiful animations, and more. Come and give it a try!",
+		"name": "Spicy Lyrics with Furigana",
+		"description": "This is a fork of Spicy Lyrics with added furigana support. Spicy Lyrics is a better lyrics experience (compared to Spotify Lyrics) for Spotify. It brings word-to-word lyrics (karaoke style), beatiful animations, and more. Come and give it a try!",
 		"preview": "./previews/square-s.gif",
-		"main": "./builds/spicy-lyrics.mjs",
+		"main": "./builds/spicy-lyrics-furigana.mjs",
 		"readme": "README.md",
 		"branch": "main",
 		"authors": [
-			{ "name": "Spikerko", "url": "https://github.com/SpikeNew7774" }
+			{ "name": "Spikerko", "url": "https://github.com/SpikeNew7774" },
+			{
+				"name": "hudzax",
+				"url": "https://github.com/hudzax/spicy-lyrics-furigana"
+			}
 		],
 		"tags": ["lyrics", "spicy-lyrics", "word-to-word-lyrics"]
 	}

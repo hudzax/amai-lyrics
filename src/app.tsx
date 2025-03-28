@@ -25,6 +25,7 @@ import "./css/DynamicBG/spicy-dynamic-bg.css"
 import "./css/Lyrics/main.css"
 import "./css/Lyrics/Mixed.css"
 import "./css/Loaders/LoaderContainer.css"
+
 import Global from "./components/Global/Global";
 import Platform from "./components/Global/Platform";
 import PostHog from "./utils/PostHog";
@@ -33,7 +34,7 @@ import Session from "./components/Global/Session";
 import Defaults from "./components/Global/Defaults";
 import { CheckForUpdates } from "./utils/version/CheckForUpdates";
 import sleep from "./utils/sleep";
-import Sockets from "./utils/Sockets/main";
+// import Sockets from "./utils/Sockets/main";
 
 async function main() {
   await Platform.OnSpotifyReady;
@@ -163,7 +164,8 @@ async function main() {
 
   const Hometinue = async () => {
     Defaults.SpicyLyricsVersion = window._spicy_lyrics_metadata?.LoadedVersion ?? "2.4.0";
-    await Sockets.all.ConnectSockets();
+    // disable unused features
+    // await Sockets.all.ConnectSockets();
 
     // Because somethimes the "syncedPositon" was unavailable, I'm putting this check here that checks if the Spicetify?.Platform?.PlaybackAPI is available (which is then used in SpotifyPlayer.GetTrackPosition())
     Whentil.When(() => Spicetify.Platform.PlaybackAPI, () => {
@@ -460,7 +462,7 @@ async function main() {
         await CheckForUpdates();
         setTimeout(CheckForUpdates_Intervaled, 60000);
       }
-      setTimeout(async () => await CheckForUpdates_Intervaled(), 10000);
+      // setTimeout(async () => await CheckForUpdates_Intervaled(), 10000);
     }
   }
 

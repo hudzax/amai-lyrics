@@ -1,23 +1,27 @@
 {
-  "name": "spicy-lyrics",
-  "version": "2.4.3",
-  "private": false,
-  "author": "Spikerko",
-  "scripts": {
-    "build": "spicetify-creator",
-    "build-local": "spicetify-creator --out=dist",
-    "watch": "spicetify-creator --watch"
-  },
-  "license": "MIT",
-  "devDependencies": {
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "spicetify-creator": "^1.0.17"
-  },
-  "dependencies": {
-    "@spikerko/web-modules": "npm:@jsr/spikerko__web-modules@^1.0.5",
-    "posthog-js": "^1.203.1",
-    "simplebar": "^6.2.7",
-    "socket.io-client": "^4.8.1"
-  }
+	"name": "spicy-lyrics-furigana",
+	"version": "1.0.0",
+	"description": "This is a fork of Spicy Lyrics with added furigana support. Spicy Lyrics is a better lyrics experience (compared to Spotify Lyrics) for Spotify. It brings word-to-word lyrics (karaoke style), beatiful animations, and more. Come and give it a try!",
+	"private": false,
+	"author": "hudzax",
+	"scripts": {
+		"build": "spicetify-creator",
+		"build-local": "spicetify-creator --out=dist",
+		"watch": "spicetify-creator --watch"
+	},
+	"license": "MIT",
+	"devDependencies": {
+		"@types/node": "^22.13.13",
+		"@types/react": "^18.3.12",
+		"@types/react-dom": "^18.3.1",
+		"spicetify-creator": "^1.0.17"
+	},
+	"dependencies": {
+		"@google/genai": "^0.6.1",
+		"@spikerko/web-modules": "npm:@jsr/spikerko__web-modules@^1.0.5",
+		"dotenv": "^16.4.7",
+		"posthog-js": "^1.203.1",
+		"simplebar": "^6.2.7",
+		"socket.io-client": "^4.8.1"
+	}
 }

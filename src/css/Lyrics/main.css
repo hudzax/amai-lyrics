@@ -13,13 +13,13 @@
   display: none;
 }
 
-
 #SpicyLyricsPage .LyricsContainer .LyricsContent {
   --TextGlowDef: rgba(255,255,255,0.15) 0px 0px 6px;
   --ActiveTextGlowDef: rgba(255,255,255,0.4) 0px 0px 14px;
   --StrongTextGlowDef: rgba(255,255,255,0.68) 0px 0px 16.4px;
   --StrongerTextGlowDef: rgba(255,255,255,0.74) 0px 0px 16px;
-  --DefaultLyricsSize: clamp(1.85rem,calc(1cqw* 7), 3.5rem);
+  --DefaultLyricsSize: clamp(1.5rem,calc(1cqw* 7), 2rem);
+  --DefaultLyricsSize-Small: clamp(1.1rem,calc(1cqw* 6), 1.5rem);
   --Simplebar-Scrollbar-Color: rgba(255, 255, 255, 0.6);
 
   overflow-x: hidden !important;
@@ -56,7 +56,6 @@
   height: 25cqh;
 }
 
-
 #SpicyLyricsPage .ContentBox .NowBar:not(.Active) + .LyricsContainer .LyricsContent .simplebar-content-wrapper {
   padding: 0 18cqw;
 }
@@ -67,4 +66,28 @@
 
 #SpicyLyricsPage .ContentBox .NowBar.Active:is(.RightSide) + .LyricsContainer .LyricsContent .simplebar-content-wrapper .simplebar-content {
   padding: 0 2cqw 0 8cqw !important;
+}
+
+header.main-topBar-container .FuriganaInfo {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: rgba(247, 247, 247, 0.5); /* Semi-transparent background */
+  padding: 8px;
+  text-align: center; /* Centered text */
+  font-size: 13px;
+  color: #333;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Slightly stronger shadow */
+  text-decoration: none;
+}
+
+.simplebar-content .line {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+.line-furigana {
+  font-size:var(--DefaultLyricsSize-Small);
+  margin-top: -0.2rem;
 }
