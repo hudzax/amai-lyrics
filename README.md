@@ -16,17 +16,36 @@ An extension of Spicetify. A fork of [Spicy Lyrics](https://spicylyrics.org/) th
 
 ### 🛒 Via Marketplace
 
-1. Refer to the [Spicetify Marketplace guide](https://github.com/spicetify/spicetify-marketplace).
-2. Open Spotify → Marketplace → Extensions.
-3. Find "Amai Lyrics" and click **Install**.
+Follow these simple steps:
 
-### 🛠️ Manual Install
+1. Install [Spicetify Marketplace](https://github.com/spicetify/spicetify-marketplace) if you haven't already
+2. Open Spotify and navigate to Marketplace → Extensions
+3. Search for "Amai Lyrics"
+4. Click **Install** to add it to Spicetify
 
-1. Copy [amai-lyrics-main.js](./builds/amai-lyrics-main.js) to your Spicetify extensions directory (use `spicetify config-dir` to locate it).
-2. Run the following commands:
-   ```
+### 🔧 Manual Installation
+
+For manual setup:
+
+1. Download [amai-lyrics-main.js](./builds/amai-lyrics-main.js)
+2. Copy it to your Spicetify extensions folder
+   - Use `spicetify config-dir` to find the correct location
+3. Run these commands in terminal:
+   ```bash
    spicetify config extensions amai-lyrics-main.js
    spicetify apply
    ```
 
-Credit to Spikerko, the creator of the original Spicy Lyrics.
+### ⚙️ Configuration
+
+1. Open Spotify Settings
+2. Scroll to the bottom
+3. Look for the API key field
+4. Paste your Gemini API key
+5. Wait for lyrics to load - you'll see Furigana appear automatically
+
+![Settings Screenshot](./previews/settings.jpg)
+
+## 🙏 Credits
+
+Special thanks to Spikerko, creator of the original Spicy Lyrics extension.
