@@ -3,7 +3,7 @@
     "name": "Amai Lyrics",
     "description": "This is a fork of Spicy Lyrics with added furigana support.",
     "preview": "./previews/square-s.gif",
-    "main": "./builds/amai-lyrics.js",
+    "main": "./builds/amai-lyrics-main.js",
     "readme": "README.md",
     "branch": "main",
     "authors": [
