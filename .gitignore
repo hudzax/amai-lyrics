@@ -150,3 +150,4 @@ script_removefromcache.cmd
 testScript.js
 
 src/utils/SpicyHasher.ts
+release_flow.sh
