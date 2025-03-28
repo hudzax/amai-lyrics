@@ -2,7 +2,7 @@
         while (!Spicetify.React || !Spicetify.ReactDOM) {
           await new Promise(resolve => setTimeout(resolve, 10));
         }
-        var spicyDlyricsDfurigana = (() => {
+        var amaiDlyrics = (() => {
   var __create = Object.create;
   var __defProp = Object.defineProperty;
   var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -11,10 +11,6 @@
   var __hasOwnProp = Object.prototype.hasOwnProperty;
   var __commonJS = (cb, mod) => function __require() {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
-  };
-  var __export = (target, all) => {
-    for (var name in all)
-      __defProp(target, name, { get: all[name], enumerable: true });
   };
   var __copyProps = (to2, from, except, desc) => {
     if (from && typeof from === "object" || typeof from === "function") {
@@ -52,25 +48,25 @@
     normalizeKey(key) {
       return key.replace(/[^a-zA-Z0-9-]/g, "").replace(/\s+/g, "-");
     }
-    async set(key, value2, expirationTTL) {
+    async set(key, value, expirationTTL) {
       const normalizedKey = this.normalizeKey(key);
       let body = null;
       let contentType = void 0;
-      if (typeof value2 === "string") {
-        body = value2;
+      if (typeof value === "string") {
+        body = value;
         contentType = "text/plain";
-      } else if (typeof value2 === "number") {
-        body = value2.toString();
+      } else if (typeof value === "number") {
+        body = value.toString();
         contentType = "text/plain";
-      } else if (typeof value2 === "object") {
-        body = JSON.stringify(value2);
+      } else if (typeof value === "object") {
+        body = JSON.stringify(value);
         contentType = "application/json";
-      } else if (typeof value2 === "boolean") {
-        body = value2.toString();
+      } else if (typeof value === "boolean") {
+        body = value.toString();
         contentType = "text/plain";
       }
       try {
-        const cache2 = await caches.open(this.cacheName);
+        const cache = await caches.open(this.cacheName);
         let headers = {};
         if (contentType) {
           headers["Content-Type"] = contentType;
@@ -81,7 +77,7 @@
         if (expirationTTL) {
           response.headers.append("Cache-Control", `max-age=${expirationTTL}`);
         }
-        await cache2.put(normalizedKey, response);
+        await cache.put(normalizedKey, response);
       } catch (error) {
         console.error("Error setting cache:", error);
         throw error;
@@ -90,8 +86,8 @@
     async get(key) {
       const normalizedKey = this.normalizeKey(key);
       try {
-        const cache2 = await caches.open(this.cacheName);
-        const response = await cache2.match(normalizedKey);
+        const cache = await caches.open(this.cacheName);
+        const response = await cache.match(normalizedKey);
         if (response) {
           const contentType = response.headers.get("Content-Type");
           if (contentType === "application/json") {
@@ -120,8 +116,8 @@
     async remove(key) {
       const normalizedKey = this.normalizeKey(key);
       try {
-        const cache2 = await caches.open(this.cacheName);
-        await cache2.delete(normalizedKey);
+        const cache = await caches.open(this.cacheName);
+        await cache.delete(normalizedKey);
       } catch (error) {
         console.error("Error removing cache:", error);
         throw error;
@@ -140,12 +136,12 @@
   // src/utils/storage.ts
   var prefix = "SpicyLyrics-";
   var currentlyFetching = false;
-  function set(key, value2) {
+  function set(key, value) {
     if (key === "currentlyFetching") {
-      currentlyFetching = value2;
+      currentlyFetching = value;
       return;
     }
-    Spicetify.LocalStorage.set(`${prefix}${key}`, value2);
+    Spicetify.LocalStorage.set(`${prefix}${key}`, value);
   }
   function get(key) {
     if (key === "currentlyFetching") {
@@ -349,13 +345,13 @@
     Scope: SCOPE_ROOT,
     Event: EventManager_default,
     NonLocalTimeOffset: 340,
-    SetScope: (key, value2) => {
+    SetScope: (key, value) => {
       const keys = key.split(".");
       let current = SCOPE_ROOT;
       for (let i2 = 0; i2 < keys.length; i2++) {
         const part = keys[i2];
         if (i2 === keys.length - 1) {
-          current[part] = current[part] ?? value2;
+          current[part] = current[part] ?? value;
         } else {
           if (!current[part]) {
             current[part] = {};
@@ -418,8 +414,8 @@
     });
     return scheduled;
   };
-  var IsScheduled = (value2) => {
-    return Array.isArray(value2) && (value2.length === 2 || value2.length === 3) && typeof value2[0] === "number" && typeof value2[1] === "number" && (value2[2] === void 0 || value2[2] === true);
+  var IsScheduled = (value) => {
+    return Array.isArray(value) && (value.length === 2 || value.length === 3) && typeof value[0] === "number" && typeof value[1] === "number" && (value[2] === void 0 || value[2] === true);
   };
 
   // src/components/Global/Platform.ts
@@ -530,7 +526,9 @@
       Global_default.Event.evoke("session:navigation", data);
     },
     FilterOutTheSameLocation: (data) => {
-      const filtered = sessionHistory.filter((location2) => location2.pathname !== data.pathname && location2.search !== data?.search && location2.hash !== data?.hash);
+      const filtered = sessionHistory.filter(
+        (location2) => location2.pathname !== data.pathname && location2.search !== data?.search && location2.hash !== data?.hash
+      );
       sessionHistory = filtered;
     },
     PushToHistory: (data) => {
@@ -553,9 +551,11 @@
         return Session.SpicyLyrics.ParseVersion(Defaults_default.SpicyLyricsVersion);
       },
       GetLatestVersion: async () => {
-        const res = await SendJob([{
-          handler: "VERSION"
-        }]);
+        const res = await SendJob([
+          {
+            handler: "VERSION"
+          }
+        ]);
         const versionJob = res.get("VERSION");
         if (versionJob.status !== 200 || versionJob.type !== "text")
           return void 0;
@@ -605,12 +605,12 @@
   var SpicyFetchCache = new SpikyCache({
     name: "SpicyFetch__Cache"
   });
-  async function SpicyFetch(path, IsExternal = false, cache2 = false, cosmos = false) {
+  async function SpicyFetch(path, IsExternal = false, cache = false, cosmos = false) {
     return new Promise(async (resolve, reject) => {
       const lyricsApi = Defaults_default.lyrics.api.url;
       const CurrentVersion = Session_default.SpicyLyrics.GetCurrentVersion();
-      const url2 = IsExternal ? path : `${lyricsApi}/${path}${path.includes("?") ? "&" : "?"}origin_version=${CurrentVersion.Text}`;
-      const CachedContent = await GetCachedContent(url2);
+      const url = IsExternal ? path : `${lyricsApi}/${path}${path.includes("?") ? "&" : "?"}origin_version=${CurrentVersion.Text}`;
+      const CachedContent = await GetCachedContent(url);
       if (CachedContent) {
         if (Array.isArray(CachedContent)) {
           resolve(CachedContent);
@@ -621,12 +621,12 @@
       }
       const SpotifyAccessToken = await Platform_default.GetSpotifyAccessToken();
       if (cosmos) {
-        Spicetify.CosmosAsync.get(url2).then(async (res) => {
+        Spicetify.CosmosAsync.get(url).then(async (res) => {
           const data = typeof res === "object" ? JSON.stringify(res) : res;
           const sentData = [data, res.status];
           resolve(sentData);
-          if (cache2) {
-            await CacheContent(url2, sentData, 6048e5);
+          if (cache) {
+            await CacheContent(url, sentData, 6048e5);
           }
         }).catch((err) => {
           console.log("CosmosAsync Error:", err);
@@ -645,7 +645,7 @@
           ...SpotifyAPI_Headers,
           ...SpicyLyricsAPI_Headers
         };
-        fetch(url2, {
+        fetch(url, {
           method: "GET",
           headers
         }).then(CheckForErrors).then(async (res) => {
@@ -657,8 +657,8 @@
           const data = await res.text();
           const sentData = [data, res.status];
           resolve(sentData);
-          if (cache2) {
-            await CacheContent(url2, sentData, 6048e5);
+          if (cache) {
+            await CacheContent(url, sentData, 6048e5);
           }
         }).catch((err) => {
           console.log("Fetch Error:", err);
@@ -1049,8 +1049,8 @@
       this.DestroyedState = true;
     }
   };
-  var IsConnection = (value2) => {
-    return value2 instanceof Connection;
+  var IsConnection = (value) => {
+    return value instanceof Connection;
   };
 
   // node_modules/@spikerko/web-modules/Maid.js
@@ -2234,9 +2234,9 @@
   };
 
   // src/utils/BlobURLMaker.ts
-  async function BlobURLMaker(url2) {
+  async function BlobURLMaker(url) {
     try {
-      const response = await fetch(url2);
+      const response = await fetch(url);
       if (!response.ok) {
         return null;
       }
@@ -2529,19 +2529,19 @@
   var hasOwnProperty = objectProto.hasOwnProperty;
   var nativeObjectToString = objectProto.toString;
   var symToStringTag = Symbol_default ? Symbol_default.toStringTag : void 0;
-  function getRawTag(value2) {
-    var isOwn = hasOwnProperty.call(value2, symToStringTag), tag = value2[symToStringTag];
+  function getRawTag(value) {
+    var isOwn = hasOwnProperty.call(value, symToStringTag), tag = value[symToStringTag];
     try {
-      value2[symToStringTag] = void 0;
+      value[symToStringTag] = void 0;
       var unmasked = true;
     } catch (e2) {
     }
-    var result = nativeObjectToString.call(value2);
+    var result = nativeObjectToString.call(value);
     if (unmasked) {
       if (isOwn) {
-        value2[symToStringTag] = tag;
+        value[symToStringTag] = tag;
       } else {
-        delete value2[symToStringTag];
+        delete value[symToStringTag];
       }
     }
     return result;
@@ -2551,8 +2551,8 @@
   // node_modules/lodash-es/_objectToString.js
   var objectProto2 = Object.prototype;
   var nativeObjectToString2 = objectProto2.toString;
-  function objectToString(value2) {
-    return nativeObjectToString2.call(value2);
+  function objectToString(value) {
+    return nativeObjectToString2.call(value);
   }
   var objectToString_default = objectToString;
 
@@ -2560,24 +2560,24 @@
   var nullTag = "[object Null]";
   var undefinedTag = "[object Undefined]";
   var symToStringTag2 = Symbol_default ? Symbol_default.toStringTag : void 0;
-  function baseGetTag(value2) {
-    if (value2 == null) {
-      return value2 === void 0 ? undefinedTag : nullTag;
+  function baseGetTag(value) {
+    if (value == null) {
+      return value === void 0 ? undefinedTag : nullTag;
     }
-    return symToStringTag2 && symToStringTag2 in Object(value2) ? getRawTag_default(value2) : objectToString_default(value2);
+    return symToStringTag2 && symToStringTag2 in Object(value) ? getRawTag_default(value) : objectToString_default(value);
   }
   var baseGetTag_default = baseGetTag;
 
   // node_modules/lodash-es/isObjectLike.js
-  function isObjectLike(value2) {
-    return value2 != null && typeof value2 == "object";
+  function isObjectLike(value) {
+    return value != null && typeof value == "object";
   }
   var isObjectLike_default = isObjectLike;
 
   // node_modules/lodash-es/isSymbol.js
   var symbolTag = "[object Symbol]";
-  function isSymbol(value2) {
-    return typeof value2 == "symbol" || isObjectLike_default(value2) && baseGetTag_default(value2) == symbolTag;
+  function isSymbol(value) {
+    return typeof value == "symbol" || isObjectLike_default(value) && baseGetTag_default(value) == symbolTag;
   }
   var isSymbol_default = isSymbol;
 
@@ -2599,9 +2599,9 @@
   var baseTrim_default = baseTrim;
 
   // node_modules/lodash-es/isObject.js
-  function isObject(value2) {
-    var type = typeof value2;
-    return value2 != null && (type == "object" || type == "function");
+  function isObject(value) {
+    var type = typeof value;
+    return value != null && (type == "object" || type == "function");
   }
   var isObject_default = isObject;
 
@@ -2611,23 +2611,23 @@
   var reIsBinary = /^0b[01]+$/i;
   var reIsOctal = /^0o[0-7]+$/i;
   var freeParseInt = parseInt;
-  function toNumber(value2) {
-    if (typeof value2 == "number") {
-      return value2;
+  function toNumber(value) {
+    if (typeof value == "number") {
+      return value;
     }
-    if (isSymbol_default(value2)) {
+    if (isSymbol_default(value)) {
       return NAN;
     }
-    if (isObject_default(value2)) {
-      var other = typeof value2.valueOf == "function" ? value2.valueOf() : value2;
-      value2 = isObject_default(other) ? other + "" : other;
+    if (isObject_default(value)) {
+      var other = typeof value.valueOf == "function" ? value.valueOf() : value;
+      value = isObject_default(other) ? other + "" : other;
     }
-    if (typeof value2 != "string") {
-      return value2 === 0 ? value2 : +value2;
+    if (typeof value != "string") {
+      return value === 0 ? value : +value;
     }
-    value2 = baseTrim_default(value2);
-    var isBinary2 = reIsBinary.test(value2);
-    return isBinary2 || reIsOctal.test(value2) ? freeParseInt(value2.slice(2), isBinary2 ? 2 : 8) : reIsBadHex.test(value2) ? NAN : +value2;
+    value = baseTrim_default(value);
+    var isBinary = reIsBinary.test(value);
+    return isBinary || reIsOctal.test(value) ? freeParseInt(value.slice(2), isBinary ? 2 : 8) : reIsBadHex.test(value) ? NAN : +value;
   }
   var toNumber_default = toNumber;
 
@@ -3672,8 +3672,8 @@
   function LyricsPageMouseLeave() {
     IsMouseInLyricsPage = false;
   }
-  function SetIsMouseInLyricsPage(value2) {
-    IsMouseInLyricsPage = value2;
+  function SetIsMouseInLyricsPage(value) {
+    IsMouseInLyricsPage = value;
   }
 
   // src/utils/Scrolling/Simplebar/ScrollSimplebar.ts
@@ -3718,8 +3718,8 @@
     }
     const clone = Array.isArray(obj) ? [] : {};
     Object.keys(obj).forEach((key) => {
-      const value2 = obj[key];
-      clone[key] = DeepFreeze(value2);
+      const value = obj[key];
+      clone[key] = DeepFreeze(value);
     });
     return Object.freeze(clone);
   }
@@ -3742,8 +3742,8 @@
   // src/utils/CSS/Styles.ts
   function applyStyles(element, styles) {
     if (element) {
-      Object.entries(styles).forEach(([key, value2]) => {
-        element.style[key] = value2;
+      Object.entries(styles).forEach(([key, value]) => {
+        element.style[key] = value;
       });
     } else {
       console.warn("Element not found");
@@ -3791,6 +3791,9 @@
       });
     });
     TopBarContainer.appendChild(infoElement);
+    setTimeout(() => {
+      TopBarContainer.removeChild(infoElement);
+    }, 5e3);
   }
 
   // src/utils/Lyrics/isRtl.ts
@@ -3822,11 +3825,15 @@
     TOP_ApplyLyricsSpacer(LyricsContainer);
     data.Lines.forEach((line) => {
       const lineElem = document.createElement("div");
+      line.Text = line.Text.replace(/{/g, "<span class='line-furigana'>").replace(
+        /}/g,
+        "</span>"
+      );
       if (line.Text.includes("[DEF=font_size:small]")) {
         lineElem.style.fontSize = "35px";
-        lineElem.textContent = line.Text.replace("[DEF=font_size:small]", "");
+        lineElem.innerHTML = line.Text.replace("[DEF=font_size:small]", "");
       } else {
-        lineElem.textContent = line.Text;
+        lineElem.innerHTML = line.Text;
       }
       if (isRtl_default(line.Text) && !lineElem.classList.contains("rtl")) {
         lineElem.classList.add("rtl");
@@ -4535,7 +4542,9 @@
     }
   };
   function Open() {
-    const SpicyPage = document.querySelector(".Root__main-view #SpicyLyricsPage");
+    const SpicyPage = document.querySelector(
+      ".Root__main-view #SpicyLyricsPage"
+    );
     const Root = document.body;
     if (SpicyPage) {
       TransferElement(SpicyPage, Root);
@@ -4543,7 +4552,9 @@
       Fullscreen.IsOpen = true;
       PageView_default.AppendViewControls(true);
       Tooltips.NowBarToggle?.destroy();
-      const NowBarToggle = document.querySelector("#SpicyLyricsPage .ViewControls #NowBarToggle");
+      const NowBarToggle = document.querySelector(
+        "#SpicyLyricsPage .ViewControls #NowBarToggle"
+      );
       if (NowBarToggle) {
         NowBarToggle.remove();
       }
@@ -4558,8 +4569,12 @@
         document.exitFullscreen();
       }
       ResetLastLine();
-      const MediaBox = document.querySelector("#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox");
-      const MediaImage = document.querySelector("#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage");
+      const MediaBox = document.querySelector(
+        "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox"
+      );
+      const MediaImage = document.querySelector(
+        "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage"
+      );
       MediaBox_Data.Functions.Eventify(MediaImage);
       MediaBox.addEventListener("mouseenter", MediaBox_Data.Functions.MouseIn);
       MediaBox.addEventListener("mouseleave", MediaBox_Data.Functions.MouseOut);
@@ -4583,10 +4598,17 @@
         DeregisterNowBarBtn();
       }
       ResetLastLine();
-      const MediaBox = document.querySelector("#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox");
-      const MediaImage = document.querySelector("#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage");
+      const MediaBox = document.querySelector(
+        "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox"
+      );
+      const MediaImage = document.querySelector(
+        "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage"
+      );
       MediaBox.removeEventListener("mouseenter", MediaBox_Data.Functions.MouseIn);
-      MediaBox.removeEventListener("mouseleave", MediaBox_Data.Functions.MouseOut);
+      MediaBox.removeEventListener(
+        "mouseleave",
+        MediaBox_Data.Functions.MouseOut
+      );
       MediaBox_Data.Functions.Reset(MediaImage);
       Global_default.Event.evoke("fullscreen:exit", null);
     }
@@ -4617,12 +4639,9 @@
     AppendViewControls,
     IsOpened: false
   };
-  var PageRoot = document.querySelector(".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]");
-  var isWsConnected = false;
-  Global_default.Event.listen("sockets:ws:connection-status-change", (e2) => {
-    isWsConnected = e2.connected;
-    SocketStatusChange(e2.connected);
-  });
+  var PageRoot = document.querySelector(
+    ".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]"
+  );
   function OpenPage() {
     if (PageView.IsOpened)
       return;
@@ -4643,7 +4662,9 @@
                     <div class="Header">
                         <div class="MediaBox">
                             <div class="MediaContent" draggable="true"></div>
-                            <img class="MediaImage" src="${SpotifyPlayer.Artwork.Get("xl")}" draggable="true" />
+                            <img class="MediaImage" src="${SpotifyPlayer.Artwork.Get(
+      "xl"
+    )}" draggable="true" />
                         </div>
                         <div class="Metadata">
                             <div class="SongName">
@@ -4684,7 +4705,9 @@
       elem.querySelector(".LyricsContainer .LyricsContent").classList.add("lowqmode");
     }
     Defaults_default.LyricsContainerExists = true;
-    ApplyDynamicBackground(document.querySelector("#SpicyLyricsPage .ContentBox"));
+    ApplyDynamicBackground(
+      document.querySelector("#SpicyLyricsPage .ContentBox")
+    );
     addLinesEvListener();
     {
       if (!Spicetify.Player.data?.item?.uri)
@@ -4696,7 +4719,6 @@
     Session_NowBar_SetSide();
     AppendViewControls();
     PageView.IsOpened = true;
-    SocketStatusChange(isWsConnected);
   }
   function DestroyPage() {
     if (!PageView.IsOpened)
@@ -4714,7 +4736,9 @@
     PageView.IsOpened = false;
   }
   function AppendViewControls(ReAppend = false) {
-    const elem = document.querySelector("#SpicyLyricsPage .ContentBox .ViewControls");
+    const elem = document.querySelector(
+      "#SpicyLyricsPage .ContentBox .ViewControls"
+    );
     if (!elem)
       return;
     if (ReAppend)
@@ -4725,12 +4749,27 @@
         <button id="FullscreenToggle" class="ViewControl">${Fullscreen_default.IsOpen ? Icons.CloseFullscreen : Icons.Fullscreen}</button>
     `;
     if (Fullscreen_default.IsOpen) {
-      TransferElement(elem, document.querySelector("#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent"));
+      TransferElement(
+        elem,
+        document.querySelector(
+          "#SpicyLyricsPage .ContentBox .NowBar .Header"
+        ),
+        0
+      );
       Object.values(Tooltips).forEach((a2) => a2?.destroy());
-      SetupTippy(document.querySelector("#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent .ViewControls"));
+      SetupTippy(
+        document.querySelector(
+          "#SpicyLyricsPage .ContentBox .NowBar .Header .ViewControls"
+        )
+      );
     } else {
-      if (document.querySelector("#SpicyLyricsPage .ContentBox .NowBar .Header .ViewControls")) {
-        TransferElement(elem, document.querySelector("#SpicyLyricsPage .ContentBox"));
+      if (document.querySelector(
+        "#SpicyLyricsPage .ContentBox .NowBar .Header .ViewControls"
+      )) {
+        TransferElement(
+          elem,
+          document.querySelector("#SpicyLyricsPage .ContentBox")
+        );
       }
       Object.values(Tooltips).forEach((a2) => a2?.destroy());
       SetupTippy(elem);
@@ -4738,156 +4777,27 @@
     function SetupTippy(elem2) {
       {
         const closeButton = elem2.querySelector("#Close");
-        Tooltips.Close = Spicetify.Tippy(
-          closeButton,
-          {
-            ...Spicetify.TippyProps,
-            content: `Close Page`
-          }
-        );
-        closeButton.addEventListener(
-          "click",
-          () => Session_default.GoBack()
-        );
+        Tooltips.Close = Spicetify.Tippy(closeButton, {
+          ...Spicetify.TippyProps,
+          content: `Close Page`
+        });
+        closeButton.addEventListener("click", () => Session_default.GoBack());
         const nowBarButton = elem2.querySelector("#NowBarToggle");
-        Tooltips.NowBarToggle = Spicetify.Tippy(
-          nowBarButton,
-          {
-            ...Spicetify.TippyProps,
-            content: `NowBar`
-          }
-        );
-        nowBarButton.addEventListener(
-          "click",
-          () => ToggleNowBar()
-        );
+        Tooltips.NowBarToggle = Spicetify.Tippy(nowBarButton, {
+          ...Spicetify.TippyProps,
+          content: `NowBar`
+        });
+        nowBarButton.addEventListener("click", () => ToggleNowBar());
         const fullscreenBtn = elem2.querySelector("#FullscreenToggle");
-        Tooltips.FullscreenToggle = Spicetify.Tippy(
-          fullscreenBtn,
-          {
-            ...Spicetify.TippyProps,
-            content: `Fullscreen Mode`
-          }
-        );
-        fullscreenBtn.addEventListener(
-          "click",
-          () => Fullscreen_default.Toggle()
-        );
+        Tooltips.FullscreenToggle = Spicetify.Tippy(fullscreenBtn, {
+          ...Spicetify.TippyProps,
+          content: `Toggle Fullscreen`
+        });
+        fullscreenBtn.addEventListener("click", () => Fullscreen_default.Toggle());
       }
     }
   }
   var showTopbarNotifications = storage_default.get("show_topbar_notifications") === "true";
-  function SpicyLyrics_Notification({
-    icon,
-    metadata: {
-      title,
-      description
-    },
-    type,
-    closeBtn
-  }) {
-    const nonFunctionalReturnObject = {
-      cleanup: () => {
-      },
-      close: () => {
-      },
-      open: () => {
-      }
-    };
-    if (!showTopbarNotifications)
-      return nonFunctionalReturnObject;
-    if (!PageView.IsOpened)
-      return nonFunctionalReturnObject;
-    const NotificationContainer = document.querySelector("#SpicyLyricsPage .NotificationContainer");
-    if (!NotificationContainer)
-      return nonFunctionalReturnObject;
-    const Title = NotificationContainer.querySelector(".NotificationText .NotificationTitle");
-    const Description = NotificationContainer.querySelector(".NotificationText .NotificationDescription");
-    const Icon = NotificationContainer.querySelector(".NotificationIcon");
-    const CloseButton = NotificationContainer.querySelector(".NotificationCloseButton");
-    if (Title && title) {
-      Title.textContent = title;
-    }
-    if (Description && description) {
-      Description.textContent = description;
-    }
-    if (Icon && icon) {
-      Icon.innerHTML = icon;
-    }
-    const closeBtnHandler = () => {
-      NotificationContainer.classList.remove("Visible");
-      if (Title) {
-        Title.textContent = "";
-      }
-      if (Description) {
-        Description.textContent = "";
-      }
-      if (Icon) {
-        Icon.innerHTML = "";
-      }
-      if (CloseButton) {
-        CloseButton.classList.remove("Disabled");
-      }
-    };
-    NotificationContainer.classList.add(type ?? "Information");
-    const closeBtnA = closeBtn ?? true;
-    if (CloseButton) {
-      if (!closeBtnA) {
-        CloseButton.classList.add("Disabled");
-      } else {
-        CloseButton.addEventListener("click", closeBtnHandler);
-      }
-    }
-    return {
-      cleanup: () => {
-        if (closeBtnA && CloseButton) {
-          CloseButton.removeEventListener("click", closeBtnHandler);
-        }
-        NotificationContainer.classList.remove("Visible");
-        NotificationContainer.classList.remove(type ?? "Information");
-        if (Title) {
-          Title.textContent = "";
-        }
-        if (Description) {
-          Description.textContent = "";
-        }
-        if (Icon) {
-          Icon.innerHTML = "";
-        }
-        if (CloseButton) {
-          CloseButton.classList.remove("Disabled");
-        }
-      },
-      close: () => {
-        NotificationContainer.classList.remove("Visible");
-      },
-      open: () => {
-        NotificationContainer.classList.add("Visible");
-      }
-    };
-  }
-  function SocketStatusChange(status) {
-    if (!PageView.IsOpened)
-      return;
-    if (!document.querySelector("#SpicyLyricsPage"))
-      return;
-    const notif = SpicyLyrics_Notification({
-      icon: Icons.LyricsPage,
-      metadata: {
-        title: "Connection Error",
-        description: "We're recconecting you back to Spicy Lyrics. Be patient."
-      },
-      type: "Warning",
-      closeBtn: false
-    });
-    if (status) {
-      notif.close();
-      notif.cleanup();
-    } else {
-      notif.open();
-    }
-  }
-  SocketStatusChange(isWsConnected);
   var PageView_default = PageView;
 
   // src/components/Utils/NowBar.ts
@@ -4896,7 +4806,6 @@
   var ActiveSetupSongProgressBarInstance = null;
   function OpenNowBar() {
     const NowBar = document.querySelector("#SpicyLyricsPage .ContentBox .NowBar");
-    return;
     if (!NowBar)
       return;
     UpdateNowBar(true);
@@ -5164,7 +5073,7 @@
         ActiveSetupSongProgressBarInstance.Apply();
         Whentil_default.When(
           () => document.querySelector(
-            "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent .ViewControls"
+            "#SpicyLyricsPage .ContentBox .NowBar .Header .ViewControls"
           ),
           () => {
             const viewControls = MediaBox.querySelector(".ViewControls");
@@ -5434,35 +5343,35 @@
     const regex = /\{([^}]+)\}/g;
     return templateString.replace(regex, (match, key) => {
       if (Object.prototype.hasOwnProperty.call(valueMap, key)) {
-        const value2 = valueMap[key];
-        return value2 !== void 0 && value2 !== null ? String(value2) : "";
+        const value = valueMap[key];
+        return value !== void 0 && value !== null ? String(value) : "";
       } else {
         throw new Error(`Key '${key}' not found in valueMap.`);
       }
     });
   }
-  function setValueByPath(data, keys, value2) {
+  function setValueByPath(data, keys, value) {
     for (let i2 = 0; i2 < keys.length - 1; i2++) {
       const key = keys[i2];
       if (key.endsWith("[]")) {
         const keyName = key.slice(0, -2);
         if (!(keyName in data)) {
-          if (Array.isArray(value2)) {
-            data[keyName] = Array.from({ length: value2.length }, () => ({}));
+          if (Array.isArray(value)) {
+            data[keyName] = Array.from({ length: value.length }, () => ({}));
           } else {
             throw new Error(`Value must be a list given an array path ${key}`);
           }
         }
         if (Array.isArray(data[keyName])) {
           const arrayData = data[keyName];
-          if (Array.isArray(value2)) {
+          if (Array.isArray(value)) {
             for (let j2 = 0; j2 < arrayData.length; j2++) {
               const entry = arrayData[j2];
-              setValueByPath(entry, keys.slice(i2 + 1), value2[j2]);
+              setValueByPath(entry, keys.slice(i2 + 1), value[j2]);
             }
           } else {
             for (const d2 of arrayData) {
-              setValueByPath(d2, keys.slice(i2 + 1), value2);
+              setValueByPath(d2, keys.slice(i2 + 1), value);
             }
           }
         }
@@ -5473,7 +5382,7 @@
           data[keyName] = [{}];
         }
         const arrayData = data[keyName];
-        setValueByPath(arrayData[0], keys.slice(i2 + 1), value2);
+        setValueByPath(arrayData[0], keys.slice(i2 + 1), value);
         return;
       }
       if (!data[key] || typeof data[key] !== "object") {
@@ -5484,19 +5393,19 @@
     const keyToSet = keys[keys.length - 1];
     const existingData = data[keyToSet];
     if (existingData !== void 0) {
-      if (!value2 || typeof value2 === "object" && Object.keys(value2).length === 0) {
+      if (!value || typeof value === "object" && Object.keys(value).length === 0) {
         return;
       }
-      if (value2 === existingData) {
+      if (value === existingData) {
         return;
       }
-      if (typeof existingData === "object" && typeof value2 === "object" && existingData !== null && value2 !== null) {
-        Object.assign(existingData, value2);
+      if (typeof existingData === "object" && typeof value === "object" && existingData !== null && value !== null) {
+        Object.assign(existingData, value);
       } else {
         throw new Error(`Cannot set value for an existing key. Key: ${keyToSet}`);
       }
     } else {
-      data[keyToSet] = value2;
+      data[keyToSet] = value;
     }
   }
   function getValueByPath(data, keys) {
@@ -5540,8 +5449,8 @@
       if (model.startsWith("publishers/") || model.startsWith("projects/") || model.startsWith("models/")) {
         return model;
       } else if (model.indexOf("/") >= 0) {
-        const parts2 = model.split("/", 2);
-        return `publishers/${parts2[0]}/models/${parts2[1]}`;
+        const parts = model.split("/", 2);
+        return `publishers/${parts[0]}/models/${parts[1]}`;
       } else {
         return `publishers/google/models/${model}`;
       }
@@ -7287,11 +7196,11 @@
     function step(r2) {
       r2.value instanceof __await ? Promise.resolve(r2.value.v).then(fulfill, reject) : settle(q2[0][2], r2);
     }
-    function fulfill(value2) {
-      resume("next", value2);
+    function fulfill(value) {
+      resume("next", value);
     }
-    function reject(value2) {
-      resume("throw", value2);
+    function reject(value) {
+      resume("throw", value);
     }
     function settle(f, v2) {
       if (f(v2), q2.shift(), q2.length)
@@ -9685,14 +9594,14 @@
       var _a2, _b;
       const websocketBaseUrl = this.apiClient.getWebsocketBaseUrl();
       const apiVersion = this.apiClient.getApiVersion();
-      let url2;
+      let url;
       const headers = mapToHeaders(this.apiClient.getDefaultHeaders());
       if (this.apiClient.isVertexAI()) {
-        url2 = `${websocketBaseUrl}/ws/google.cloud.aiplatform.${apiVersion}.LlmBidiService/BidiGenerateContent`;
+        url = `${websocketBaseUrl}/ws/google.cloud.aiplatform.${apiVersion}.LlmBidiService/BidiGenerateContent`;
         await this.auth.addAuthHeaders(headers);
       } else {
         const apiKey = this.apiClient.getApiKey();
-        url2 = `${websocketBaseUrl}/ws/google.ai.generativelanguage.${apiVersion}.GenerativeService.BidiGenerateContent?key=${apiKey}`;
+        url = `${websocketBaseUrl}/ws/google.ai.generativelanguage.${apiVersion}.GenerativeService.BidiGenerateContent?key=${apiKey}`;
       }
       let onopenResolve = () => {
       };
@@ -9716,7 +9625,7 @@
         onclose: (_b = callbacks === null || callbacks === void 0 ? void 0 : callbacks.onclose) !== null && _b !== void 0 ? _b : function(e2) {
         }
       };
-      const conn = this.webSocketFactory.create(url2, headersToMap(headers), websocketCallbacks);
+      const conn = this.webSocketFactory.create(url, headersToMap(headers), websocketCallbacks);
       conn.connect();
       await onopenPromise;
       let transformedModel = tModel(this.apiClient, params.model);
@@ -9826,15 +9735,15 @@
   };
   function headersToMap(headers) {
     const headerMap = {};
-    headers.forEach((value2, key) => {
-      headerMap[key] = value2;
+    headers.forEach((value, key) => {
+      headerMap[key] = value;
     });
     return headerMap;
   }
   function mapToHeaders(map) {
     const headers = new Headers();
-    for (const [key, value2] of Object.entries(map)) {
-      headers.append(key, value2);
+    for (const [key, value] of Object.entries(map)) {
+      headers.append(key, value);
     }
     return headers;
   }
@@ -10312,9 +10221,9 @@
       urlParts.protocol = "wss";
       return urlParts.toString();
     }
-    setBaseUrl(url2) {
+    setBaseUrl(url) {
       if (this.clientOptions.httpOptions) {
-        this.clientOptions.httpOptions.baseUrl = url2;
+        this.clientOptions.httpOptions.baseUrl = url;
       } else {
         throw new Error("HTTP options are not correctly set.");
       }
@@ -10327,18 +10236,18 @@
       if (path !== "") {
         urlElement.push(path);
       }
-      const url2 = new URL(`${urlElement.join("/")}`);
-      return url2;
+      const url = new URL(`${urlElement.join("/")}`);
+      return url;
     }
     async request(request) {
       let patchedHttpOptions = this.clientOptions.httpOptions;
       if (request.httpOptions) {
         patchedHttpOptions = this.patchHttpOptions(this.clientOptions.httpOptions, request.httpOptions);
       }
-      const url2 = this.constructUrl(request.path, patchedHttpOptions);
+      const url = this.constructUrl(request.path, patchedHttpOptions);
       if (request.queryParams) {
-        for (const [key, value2] of Object.entries(request.queryParams)) {
-          url2.searchParams.append(key, String(value2));
+        for (const [key, value] of Object.entries(request.queryParams)) {
+          url.searchParams.append(key, String(value));
         }
       }
       let requestInit = {};
@@ -10350,15 +10259,15 @@
         requestInit.body = request.body;
       }
       requestInit = await this.includeExtraHttpOptionsToRequestInit(requestInit, patchedHttpOptions);
-      return this.unaryApiCall(url2, requestInit, request.httpMethod);
+      return this.unaryApiCall(url, requestInit, request.httpMethod);
     }
     patchHttpOptions(baseHttpOptions, requestHttpOptions) {
       const patchedHttpOptions = JSON.parse(JSON.stringify(baseHttpOptions));
-      for (const [key, value2] of Object.entries(requestHttpOptions)) {
-        if (typeof value2 === "object") {
-          patchedHttpOptions[key] = Object.assign(Object.assign({}, patchedHttpOptions[key]), value2);
-        } else if (value2 !== void 0) {
-          patchedHttpOptions[key] = value2;
+      for (const [key, value] of Object.entries(requestHttpOptions)) {
+        if (typeof value === "object") {
+          patchedHttpOptions[key] = Object.assign(Object.assign({}, patchedHttpOptions[key]), value);
+        } else if (value !== void 0) {
+          patchedHttpOptions[key] = value;
         }
       }
       return patchedHttpOptions;
@@ -10368,14 +10277,14 @@
       if (request.httpOptions) {
         patchedHttpOptions = this.patchHttpOptions(this.clientOptions.httpOptions, request.httpOptions);
       }
-      const url2 = this.constructUrl(request.path, patchedHttpOptions);
-      if (!url2.searchParams.has("alt") || url2.searchParams.get("alt") !== "sse") {
-        url2.searchParams.set("alt", "sse");
+      const url = this.constructUrl(request.path, patchedHttpOptions);
+      if (!url.searchParams.has("alt") || url.searchParams.get("alt") !== "sse") {
+        url.searchParams.set("alt", "sse");
       }
       let requestInit = {};
       requestInit.body = request.body;
       requestInit = await this.includeExtraHttpOptionsToRequestInit(requestInit, patchedHttpOptions);
-      return this.streamApiCall(url2, requestInit, request.httpMethod);
+      return this.streamApiCall(url, requestInit, request.httpMethod);
     }
     async includeExtraHttpOptionsToRequestInit(requestInit, httpOptions) {
       if (httpOptions && httpOptions.timeout && httpOptions.timeout > 0) {
@@ -10387,8 +10296,8 @@
       requestInit.headers = await this.getHeadersInternal(httpOptions);
       return requestInit;
     }
-    async unaryApiCall(url2, requestInit, httpMethod) {
-      return this.apiCall(url2.toString(), Object.assign(Object.assign({}, requestInit), { method: httpMethod })).then(async (response) => {
+    async unaryApiCall(url, requestInit, httpMethod) {
+      return this.apiCall(url.toString(), Object.assign(Object.assign({}, requestInit), { method: httpMethod })).then(async (response) => {
         await throwErrorIfNotOK(response);
         return new HttpResponse(response);
       }).catch((e2) => {
@@ -10399,8 +10308,8 @@
         }
       });
     }
-    async streamApiCall(url2, requestInit, httpMethod) {
-      return this.apiCall(url2.toString(), Object.assign(Object.assign({}, requestInit), { method: httpMethod })).then(async (response) => {
+    async streamApiCall(url, requestInit, httpMethod) {
+      return this.apiCall(url.toString(), Object.assign(Object.assign({}, requestInit), { method: httpMethod })).then(async (response) => {
         await throwErrorIfNotOK(response);
         return this.processStreamResponse(response);
       }).catch((e2) => {
@@ -10422,14 +10331,14 @@
         try {
           let buffer = "";
           while (true) {
-            const { done, value: value2 } = yield __await(reader.read());
+            const { done, value } = yield __await(reader.read());
             if (done) {
               if (buffer.trim().length > 0) {
                 throw new Error("Incomplete JSON segment at the end");
               }
               break;
             }
-            const chunkString = decoder.decode(value2);
+            const chunkString = decoder.decode(value);
             buffer += chunkString;
             let match = buffer.match(responseLineRE);
             while (match) {
@@ -10449,8 +10358,8 @@
         }
       });
     }
-    async apiCall(url2, requestInit) {
-      return fetch(url2, requestInit).catch((e2) => {
+    async apiCall(url, requestInit) {
+      return fetch(url, requestInit).catch((e2) => {
         throw new Error(`exception ${e2} sending request`);
       });
     }
@@ -10465,8 +10374,8 @@
     async getHeadersInternal(httpOptions) {
       const headers = new Headers();
       if (httpOptions && httpOptions.headers) {
-        for (const [key, value2] of Object.entries(httpOptions.headers)) {
-          headers.append(key, value2);
+        for (const [key, value] of Object.entries(httpOptions.headers)) {
+          headers.append(key, value);
         }
       }
       await this.clientOptions.auth.addAuthHeaders(headers);
@@ -11011,13 +10920,13 @@
     }
   };
   var BrowserWebSocketFactory = class {
-    create(url2, headers, callbacks) {
-      return new BrowserWebSocket(url2, headers, callbacks);
+    create(url, headers, callbacks) {
+      return new BrowserWebSocket(url, headers, callbacks);
     }
   };
   var BrowserWebSocket = class {
-    constructor(url2, headers, callbacks) {
-      this.url = url2;
+    constructor(url, headers, callbacks) {
+      this.url = url;
       this.headers = headers;
       this.callbacks = callbacks;
     }
@@ -11136,7 +11045,6 @@
         ClearLyricsPageContainer();
       }
     }
-    lyricsCache.destroy();
     if (lyricsCache) {
       try {
         const lyricsFromCache = await lyricsCache.get(trackId);
@@ -11236,7 +11144,7 @@
     const GEMINI_API_KEY = storage_default.get("GEMINI_API_KEY")?.toString();
     if (!GEMINI_API_KEY || GEMINI_API_KEY === "") {
       console.error("Furigana: Gemini API Key missing");
-      lyricsJson.Info = "Furigana: Gemini API Key missing. Click here to open settings.";
+      lyricsJson.Info = "Furigana: Gemini API Key missing. Click here to add your API key.";
     } else {
       try {
         console.log("Furigana: Gemini API Key present");
@@ -11266,15 +11174,21 @@
           lyricsJson.Content = convertLyrics(lyricsJson.Content);
         }
         let lyricsOnly = [];
-        if (lyricsJson.Type === "Line")
+        if (lyricsJson.Type === "Line") {
+          const offset = 0.55;
+          lyricsJson.Content = lyricsJson.Content.map((item) => ({
+            ...item,
+            StartTime: Math.max(0, item.StartTime - offset)
+          }));
           lyricsOnly = lyricsJson.Content.map((item) => item.Text);
+        }
         if (lyricsJson.Type === "Static")
           lyricsOnly = lyricsJson.Lines.map((item) => item.Text);
         if (lyricsOnly.length > 0) {
           const response = await ai2.models.generateContent({
             config: generationConfig,
             model: "gemini-2.0-flash",
-            contents: `Follow this instructions carefully. For each line of Japanese text in the following lyrics, identify all kanji characters then add their furigana in this format: {furigana}. For example: "\u9858\u3044" would be written as "\u9858{\u306D\u304C}\u3044". Use context-appropriate readings for each kanji based on standard Japanese usage. Leave non-Japanese lines unchanged. Here are the lyrics:
+            contents: `Follow and think through this instructions carefully. For each line of Japanese text in the following lyrics, identify all kanji characters then add their furigana in this format: {furigana}. For example: \u9858\u3044 would be written as \u9858{\u306D\u304C}\u3044, \u53EF\u611B\u3044 would be written as \u53EF\u611B{\u304B\u308F\u3044}\u3044. Do not add any other text. Use context-appropriate readings for each kanji based on standard Japanese usage. Leave non-Japanese lines unchanged. Here are the lyrics:
 ${lyricsOnly.join(
               "\n"
             )}`
@@ -11295,12 +11209,13 @@ ${lyricsOnly.join(
         }
       } catch (error) {
         console.error("Furigana:", error);
-        lyricsJson.Info = "Furigana not generated: Client Error. Click here to open settings.";
+        lyricsJson.Info = "Furigana not generated: Client Error. Click here to open settings page.";
       }
     }
     return lyricsJson;
   }
   function convertLyrics(data) {
+    console.log("DEBUG", "Converting Syllable to Line type");
     return data.map((item) => {
       const leadText = item.Lead.Syllables.map((syl) => syl.Text).join("");
       let startTime = item.Lead.StartTime;
@@ -11505,11 +11420,11 @@ ${lyricsOnly.join(
         }
         import_react_dom.default.render(/* @__PURE__ */ import_react.default.createElement(this.FieldsContainer, null), pluginSettingsContainer);
       };
-      this.addButton = (nameId, description, value2, onClick, events) => {
+      this.addButton = (nameId, description, value, onClick, events) => {
         this.settingsFields[nameId] = {
           type: "button",
           description,
-          value: value2,
+          value,
           events: {
             onClick,
             ...events
@@ -11594,7 +11509,7 @@ ${lyricsOnly.join(
         if (props.field.type === "hidden") {
           return /* @__PURE__ */ import_react.default.createElement(import_react.default.Fragment, null);
         }
-        const [value2, setValueState] = (0, import_react.useState)(defaultStateValue);
+        const [value, setValueState] = (0, import_react.useState)(defaultStateValue);
         const setValue = (newValue) => {
           if (newValue !== void 0) {
             setValueState(newValue);
@@ -11614,7 +11529,7 @@ ${lyricsOnly.join(
           className: "x-settings-input",
           id,
           dir: "ltr",
-          value: value2,
+          value,
           type: props.field.inputType || "text",
           ...props.field.events,
           onChange: (e2) => {
@@ -11634,13 +11549,13 @@ ${lyricsOnly.join(
               onClick(e2);
           },
           type: "button"
-        }, value2)) : props.field.type === "toggle" ? /* @__PURE__ */ import_react.default.createElement("label", {
+        }, value)) : props.field.type === "toggle" ? /* @__PURE__ */ import_react.default.createElement("label", {
           className: "x-settings-secondColumn x-toggle-wrapper"
         }, /* @__PURE__ */ import_react.default.createElement("input", {
           id,
           className: "x-toggle-input",
           type: "checkbox",
-          checked: value2,
+          checked: value,
           ...props.field.events,
           onClick: (e2) => {
             setValue(e2.currentTarget.checked);
@@ -11666,7 +11581,7 @@ ${lyricsOnly.join(
           }
         }, props.field.options.map((option, i2) => {
           return /* @__PURE__ */ import_react.default.createElement("option", {
-            selected: option === value2,
+            selected: option === value,
             value: i2 + 1
           }, option);
         })) : /* @__PURE__ */ import_react.default.createElement(import_react.default.Fragment, null)));
@@ -11707,6 +11622,9 @@ ${lyricsOnly.join(
         );
       }
     );
+    settings.addButton("reload", "Reload UI", "Reload", () => {
+      window.location.reload();
+    });
     settings.pushSettings();
   }
   function generalSettings() {
@@ -11780,15 +11698,16 @@ ${lyricsOnly.join(
         "GEMINI_API_KEY",
         settings.getFieldValue("gemini-api-key")
       );
+      Spicetify.showNotification("Fetching, please wait..", false, 2e3);
+      lyricsCache.destroy();
+      storage_default.set("currentLyricsData", null);
+      if (!Spicetify.Player.data?.item?.uri)
+        return;
+      const currentUri = Spicetify.Player.data.item.uri;
+      fetchLyrics(currentUri).then(ApplyLyrics).then(() => {
+        Spicetify.showNotification("Completed", false, 2e3);
+      });
     });
-    settings.addButton(
-      "save-n-reload",
-      "Save your current settings and reload.",
-      "Save & Reload",
-      () => {
-        window.location.reload();
-      }
-    );
     settings.pushSettings();
   }
   function infos() {
@@ -11816,9 +11735,9 @@ ${lyricsOnly.join(
   function LoadFonts() {
     Object.values(Fonts).forEach((loadFontFunction) => loadFontFunction());
   }
-  function LoadFont(url2) {
+  function LoadFont(url) {
     const fontElement = document.createElement("link");
-    fontElement.href = url2;
+    fontElement.href = url;
     fontElement.rel = "stylesheet";
     fontElement.type = "text/css";
     document.head.appendChild(fontElement);
@@ -16531,2693 +16450,6 @@ ${lyricsOnly.join(
   }
   var sleep_default = sleep;
 
-  // node_modules/engine.io-parser/build/esm/commons.js
-  var PACKET_TYPES = /* @__PURE__ */ Object.create(null);
-  PACKET_TYPES["open"] = "0";
-  PACKET_TYPES["close"] = "1";
-  PACKET_TYPES["ping"] = "2";
-  PACKET_TYPES["pong"] = "3";
-  PACKET_TYPES["message"] = "4";
-  PACKET_TYPES["upgrade"] = "5";
-  PACKET_TYPES["noop"] = "6";
-  var PACKET_TYPES_REVERSE = /* @__PURE__ */ Object.create(null);
-  Object.keys(PACKET_TYPES).forEach((key) => {
-    PACKET_TYPES_REVERSE[PACKET_TYPES[key]] = key;
-  });
-  var ERROR_PACKET = { type: "error", data: "parser error" };
-
-  // node_modules/engine.io-parser/build/esm/encodePacket.browser.js
-  var withNativeBlob = typeof Blob === "function" || typeof Blob !== "undefined" && Object.prototype.toString.call(Blob) === "[object BlobConstructor]";
-  var withNativeArrayBuffer = typeof ArrayBuffer === "function";
-  var isView = (obj) => {
-    return typeof ArrayBuffer.isView === "function" ? ArrayBuffer.isView(obj) : obj && obj.buffer instanceof ArrayBuffer;
-  };
-  var encodePacket = ({ type, data }, supportsBinary, callback) => {
-    if (withNativeBlob && data instanceof Blob) {
-      if (supportsBinary) {
-        return callback(data);
-      } else {
-        return encodeBlobAsBase64(data, callback);
-      }
-    } else if (withNativeArrayBuffer && (data instanceof ArrayBuffer || isView(data))) {
-      if (supportsBinary) {
-        return callback(data);
-      } else {
-        return encodeBlobAsBase64(new Blob([data]), callback);
-      }
-    }
-    return callback(PACKET_TYPES[type] + (data || ""));
-  };
-  var encodeBlobAsBase64 = (data, callback) => {
-    const fileReader = new FileReader();
-    fileReader.onload = function() {
-      const content = fileReader.result.split(",")[1];
-      callback("b" + (content || ""));
-    };
-    return fileReader.readAsDataURL(data);
-  };
-  function toArray(data) {
-    if (data instanceof Uint8Array) {
-      return data;
-    } else if (data instanceof ArrayBuffer) {
-      return new Uint8Array(data);
-    } else {
-      return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
-    }
-  }
-  var TEXT_ENCODER;
-  function encodePacketToBinary(packet, callback) {
-    if (withNativeBlob && packet.data instanceof Blob) {
-      return packet.data.arrayBuffer().then(toArray).then(callback);
-    } else if (withNativeArrayBuffer && (packet.data instanceof ArrayBuffer || isView(packet.data))) {
-      return callback(toArray(packet.data));
-    }
-    encodePacket(packet, false, (encoded) => {
-      if (!TEXT_ENCODER) {
-        TEXT_ENCODER = new TextEncoder();
-      }
-      callback(TEXT_ENCODER.encode(encoded));
-    });
-  }
-
-  // node_modules/engine.io-parser/build/esm/contrib/base64-arraybuffer.js
-  var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-  var lookup = typeof Uint8Array === "undefined" ? [] : new Uint8Array(256);
-  for (let i2 = 0; i2 < chars.length; i2++) {
-    lookup[chars.charCodeAt(i2)] = i2;
-  }
-  var decode = (base64) => {
-    let bufferLength = base64.length * 0.75, len = base64.length, i2, p2 = 0, encoded1, encoded2, encoded3, encoded4;
-    if (base64[base64.length - 1] === "=") {
-      bufferLength--;
-      if (base64[base64.length - 2] === "=") {
-        bufferLength--;
-      }
-    }
-    const arraybuffer = new ArrayBuffer(bufferLength), bytes = new Uint8Array(arraybuffer);
-    for (i2 = 0; i2 < len; i2 += 4) {
-      encoded1 = lookup[base64.charCodeAt(i2)];
-      encoded2 = lookup[base64.charCodeAt(i2 + 1)];
-      encoded3 = lookup[base64.charCodeAt(i2 + 2)];
-      encoded4 = lookup[base64.charCodeAt(i2 + 3)];
-      bytes[p2++] = encoded1 << 2 | encoded2 >> 4;
-      bytes[p2++] = (encoded2 & 15) << 4 | encoded3 >> 2;
-      bytes[p2++] = (encoded3 & 3) << 6 | encoded4 & 63;
-    }
-    return arraybuffer;
-  };
-
-  // node_modules/engine.io-parser/build/esm/decodePacket.browser.js
-  var withNativeArrayBuffer2 = typeof ArrayBuffer === "function";
-  var decodePacket = (encodedPacket, binaryType) => {
-    if (typeof encodedPacket !== "string") {
-      return {
-        type: "message",
-        data: mapBinary(encodedPacket, binaryType)
-      };
-    }
-    const type = encodedPacket.charAt(0);
-    if (type === "b") {
-      return {
-        type: "message",
-        data: decodeBase64Packet(encodedPacket.substring(1), binaryType)
-      };
-    }
-    const packetType = PACKET_TYPES_REVERSE[type];
-    if (!packetType) {
-      return ERROR_PACKET;
-    }
-    return encodedPacket.length > 1 ? {
-      type: PACKET_TYPES_REVERSE[type],
-      data: encodedPacket.substring(1)
-    } : {
-      type: PACKET_TYPES_REVERSE[type]
-    };
-  };
-  var decodeBase64Packet = (data, binaryType) => {
-    if (withNativeArrayBuffer2) {
-      const decoded = decode(data);
-      return mapBinary(decoded, binaryType);
-    } else {
-      return { base64: true, data };
-    }
-  };
-  var mapBinary = (data, binaryType) => {
-    switch (binaryType) {
-      case "blob":
-        if (data instanceof Blob) {
-          return data;
-        } else {
-          return new Blob([data]);
-        }
-      case "arraybuffer":
-      default:
-        if (data instanceof ArrayBuffer) {
-          return data;
-        } else {
-          return data.buffer;
-        }
-    }
-  };
-
-  // node_modules/engine.io-parser/build/esm/index.js
-  var SEPARATOR = String.fromCharCode(30);
-  var encodePayload = (packets, callback) => {
-    const length = packets.length;
-    const encodedPackets = new Array(length);
-    let count = 0;
-    packets.forEach((packet, i2) => {
-      encodePacket(packet, false, (encodedPacket) => {
-        encodedPackets[i2] = encodedPacket;
-        if (++count === length) {
-          callback(encodedPackets.join(SEPARATOR));
-        }
-      });
-    });
-  };
-  var decodePayload = (encodedPayload, binaryType) => {
-    const encodedPackets = encodedPayload.split(SEPARATOR);
-    const packets = [];
-    for (let i2 = 0; i2 < encodedPackets.length; i2++) {
-      const decodedPacket = decodePacket(encodedPackets[i2], binaryType);
-      packets.push(decodedPacket);
-      if (decodedPacket.type === "error") {
-        break;
-      }
-    }
-    return packets;
-  };
-  function createPacketEncoderStream() {
-    return new TransformStream({
-      transform(packet, controller) {
-        encodePacketToBinary(packet, (encodedPacket) => {
-          const payloadLength = encodedPacket.length;
-          let header;
-          if (payloadLength < 126) {
-            header = new Uint8Array(1);
-            new DataView(header.buffer).setUint8(0, payloadLength);
-          } else if (payloadLength < 65536) {
-            header = new Uint8Array(3);
-            const view = new DataView(header.buffer);
-            view.setUint8(0, 126);
-            view.setUint16(1, payloadLength);
-          } else {
-            header = new Uint8Array(9);
-            const view = new DataView(header.buffer);
-            view.setUint8(0, 127);
-            view.setBigUint64(1, BigInt(payloadLength));
-          }
-          if (packet.data && typeof packet.data !== "string") {
-            header[0] |= 128;
-          }
-          controller.enqueue(header);
-          controller.enqueue(encodedPacket);
-        });
-      }
-    });
-  }
-  var TEXT_DECODER;
-  function totalLength(chunks) {
-    return chunks.reduce((acc, chunk) => acc + chunk.length, 0);
-  }
-  function concatChunks(chunks, size) {
-    if (chunks[0].length === size) {
-      return chunks.shift();
-    }
-    const buffer = new Uint8Array(size);
-    let j2 = 0;
-    for (let i2 = 0; i2 < size; i2++) {
-      buffer[i2] = chunks[0][j2++];
-      if (j2 === chunks[0].length) {
-        chunks.shift();
-        j2 = 0;
-      }
-    }
-    if (chunks.length && j2 < chunks[0].length) {
-      chunks[0] = chunks[0].slice(j2);
-    }
-    return buffer;
-  }
-  function createPacketDecoderStream(maxPayload, binaryType) {
-    if (!TEXT_DECODER) {
-      TEXT_DECODER = new TextDecoder();
-    }
-    const chunks = [];
-    let state = 0;
-    let expectedLength = -1;
-    let isBinary2 = false;
-    return new TransformStream({
-      transform(chunk, controller) {
-        chunks.push(chunk);
-        while (true) {
-          if (state === 0) {
-            if (totalLength(chunks) < 1) {
-              break;
-            }
-            const header = concatChunks(chunks, 1);
-            isBinary2 = (header[0] & 128) === 128;
-            expectedLength = header[0] & 127;
-            if (expectedLength < 126) {
-              state = 3;
-            } else if (expectedLength === 126) {
-              state = 1;
-            } else {
-              state = 2;
-            }
-          } else if (state === 1) {
-            if (totalLength(chunks) < 2) {
-              break;
-            }
-            const headerArray = concatChunks(chunks, 2);
-            expectedLength = new DataView(headerArray.buffer, headerArray.byteOffset, headerArray.length).getUint16(0);
-            state = 3;
-          } else if (state === 2) {
-            if (totalLength(chunks) < 8) {
-              break;
-            }
-            const headerArray = concatChunks(chunks, 8);
-            const view = new DataView(headerArray.buffer, headerArray.byteOffset, headerArray.length);
-            const n2 = view.getUint32(0);
-            if (n2 > Math.pow(2, 53 - 32) - 1) {
-              controller.enqueue(ERROR_PACKET);
-              break;
-            }
-            expectedLength = n2 * Math.pow(2, 32) + view.getUint32(4);
-            state = 3;
-          } else {
-            if (totalLength(chunks) < expectedLength) {
-              break;
-            }
-            const data = concatChunks(chunks, expectedLength);
-            controller.enqueue(decodePacket(isBinary2 ? data : TEXT_DECODER.decode(data), binaryType));
-            state = 0;
-          }
-          if (expectedLength === 0 || expectedLength > maxPayload) {
-            controller.enqueue(ERROR_PACKET);
-            break;
-          }
-        }
-      }
-    });
-  }
-  var protocol = 4;
-
-  // node_modules/@socket.io/component-emitter/lib/esm/index.js
-  function Emitter(obj) {
-    if (obj)
-      return mixin(obj);
-  }
-  function mixin(obj) {
-    for (var key in Emitter.prototype) {
-      obj[key] = Emitter.prototype[key];
-    }
-    return obj;
-  }
-  Emitter.prototype.on = Emitter.prototype.addEventListener = function(event, fn2) {
-    this._callbacks = this._callbacks || {};
-    (this._callbacks["$" + event] = this._callbacks["$" + event] || []).push(fn2);
-    return this;
-  };
-  Emitter.prototype.once = function(event, fn2) {
-    function on3() {
-      this.off(event, on3);
-      fn2.apply(this, arguments);
-    }
-    on3.fn = fn2;
-    this.on(event, on3);
-    return this;
-  };
-  Emitter.prototype.off = Emitter.prototype.removeListener = Emitter.prototype.removeAllListeners = Emitter.prototype.removeEventListener = function(event, fn2) {
-    this._callbacks = this._callbacks || {};
-    if (0 == arguments.length) {
-      this._callbacks = {};
-      return this;
-    }
-    var callbacks = this._callbacks["$" + event];
-    if (!callbacks)
-      return this;
-    if (1 == arguments.length) {
-      delete this._callbacks["$" + event];
-      return this;
-    }
-    var cb;
-    for (var i2 = 0; i2 < callbacks.length; i2++) {
-      cb = callbacks[i2];
-      if (cb === fn2 || cb.fn === fn2) {
-        callbacks.splice(i2, 1);
-        break;
-      }
-    }
-    if (callbacks.length === 0) {
-      delete this._callbacks["$" + event];
-    }
-    return this;
-  };
-  Emitter.prototype.emit = function(event) {
-    this._callbacks = this._callbacks || {};
-    var args = new Array(arguments.length - 1), callbacks = this._callbacks["$" + event];
-    for (var i2 = 1; i2 < arguments.length; i2++) {
-      args[i2 - 1] = arguments[i2];
-    }
-    if (callbacks) {
-      callbacks = callbacks.slice(0);
-      for (var i2 = 0, len = callbacks.length; i2 < len; ++i2) {
-        callbacks[i2].apply(this, args);
-      }
-    }
-    return this;
-  };
-  Emitter.prototype.emitReserved = Emitter.prototype.emit;
-  Emitter.prototype.listeners = function(event) {
-    this._callbacks = this._callbacks || {};
-    return this._callbacks["$" + event] || [];
-  };
-  Emitter.prototype.hasListeners = function(event) {
-    return !!this.listeners(event).length;
-  };
-
-  // node_modules/engine.io-client/build/esm/globals.js
-  var nextTick = (() => {
-    const isPromiseAvailable = typeof Promise === "function" && typeof Promise.resolve === "function";
-    if (isPromiseAvailable) {
-      return (cb) => Promise.resolve().then(cb);
-    } else {
-      return (cb, setTimeoutFn) => setTimeoutFn(cb, 0);
-    }
-  })();
-  var globalThisShim = (() => {
-    if (typeof self !== "undefined") {
-      return self;
-    } else if (typeof window !== "undefined") {
-      return window;
-    } else {
-      return Function("return this")();
-    }
-  })();
-  var defaultBinaryType = "arraybuffer";
-  function createCookieJar() {
-  }
-
-  // node_modules/engine.io-client/build/esm/util.js
-  function pick(obj, ...attr) {
-    return attr.reduce((acc, k2) => {
-      if (obj.hasOwnProperty(k2)) {
-        acc[k2] = obj[k2];
-      }
-      return acc;
-    }, {});
-  }
-  var NATIVE_SET_TIMEOUT = globalThisShim.setTimeout;
-  var NATIVE_CLEAR_TIMEOUT = globalThisShim.clearTimeout;
-  function installTimerFunctions(obj, opts) {
-    if (opts.useNativeTimers) {
-      obj.setTimeoutFn = NATIVE_SET_TIMEOUT.bind(globalThisShim);
-      obj.clearTimeoutFn = NATIVE_CLEAR_TIMEOUT.bind(globalThisShim);
-    } else {
-      obj.setTimeoutFn = globalThisShim.setTimeout.bind(globalThisShim);
-      obj.clearTimeoutFn = globalThisShim.clearTimeout.bind(globalThisShim);
-    }
-  }
-  var BASE64_OVERHEAD = 1.33;
-  function byteLength(obj) {
-    if (typeof obj === "string") {
-      return utf8Length(obj);
-    }
-    return Math.ceil((obj.byteLength || obj.size) * BASE64_OVERHEAD);
-  }
-  function utf8Length(str) {
-    let c2 = 0, length = 0;
-    for (let i2 = 0, l2 = str.length; i2 < l2; i2++) {
-      c2 = str.charCodeAt(i2);
-      if (c2 < 128) {
-        length += 1;
-      } else if (c2 < 2048) {
-        length += 2;
-      } else if (c2 < 55296 || c2 >= 57344) {
-        length += 3;
-      } else {
-        i2++;
-        length += 4;
-      }
-    }
-    return length;
-  }
-  function randomString() {
-    return Date.now().toString(36).substring(3) + Math.random().toString(36).substring(2, 5);
-  }
-
-  // node_modules/engine.io-client/build/esm/contrib/parseqs.js
-  function encode(obj) {
-    let str = "";
-    for (let i2 in obj) {
-      if (obj.hasOwnProperty(i2)) {
-        if (str.length)
-          str += "&";
-        str += encodeURIComponent(i2) + "=" + encodeURIComponent(obj[i2]);
-      }
-    }
-    return str;
-  }
-  function decode2(qs2) {
-    let qry = {};
-    let pairs = qs2.split("&");
-    for (let i2 = 0, l2 = pairs.length; i2 < l2; i2++) {
-      let pair = pairs[i2].split("=");
-      qry[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1]);
-    }
-    return qry;
-  }
-
-  // node_modules/engine.io-client/build/esm/transport.js
-  var TransportError = class extends Error {
-    constructor(reason, description, context) {
-      super(reason);
-      this.description = description;
-      this.context = context;
-      this.type = "TransportError";
-    }
-  };
-  var Transport = class extends Emitter {
-    constructor(opts) {
-      super();
-      this.writable = false;
-      installTimerFunctions(this, opts);
-      this.opts = opts;
-      this.query = opts.query;
-      this.socket = opts.socket;
-      this.supportsBinary = !opts.forceBase64;
-    }
-    onError(reason, description, context) {
-      super.emitReserved("error", new TransportError(reason, description, context));
-      return this;
-    }
-    open() {
-      this.readyState = "opening";
-      this.doOpen();
-      return this;
-    }
-    close() {
-      if (this.readyState === "opening" || this.readyState === "open") {
-        this.doClose();
-        this.onClose();
-      }
-      return this;
-    }
-    send(packets) {
-      if (this.readyState === "open") {
-        this.write(packets);
-      } else {
-      }
-    }
-    onOpen() {
-      this.readyState = "open";
-      this.writable = true;
-      super.emitReserved("open");
-    }
-    onData(data) {
-      const packet = decodePacket(data, this.socket.binaryType);
-      this.onPacket(packet);
-    }
-    onPacket(packet) {
-      super.emitReserved("packet", packet);
-    }
-    onClose(details) {
-      this.readyState = "closed";
-      super.emitReserved("close", details);
-    }
-    pause(onPause) {
-    }
-    createUri(schema, query = {}) {
-      return schema + "://" + this._hostname() + this._port() + this.opts.path + this._query(query);
-    }
-    _hostname() {
-      const hostname = this.opts.hostname;
-      return hostname.indexOf(":") === -1 ? hostname : "[" + hostname + "]";
-    }
-    _port() {
-      if (this.opts.port && (this.opts.secure && Number(this.opts.port !== 443) || !this.opts.secure && Number(this.opts.port) !== 80)) {
-        return ":" + this.opts.port;
-      } else {
-        return "";
-      }
-    }
-    _query(query) {
-      const encodedQuery = encode(query);
-      return encodedQuery.length ? "?" + encodedQuery : "";
-    }
-  };
-
-  // node_modules/engine.io-client/build/esm/transports/polling.js
-  var Polling = class extends Transport {
-    constructor() {
-      super(...arguments);
-      this._polling = false;
-    }
-    get name() {
-      return "polling";
-    }
-    doOpen() {
-      this._poll();
-    }
-    pause(onPause) {
-      this.readyState = "pausing";
-      const pause = () => {
-        this.readyState = "paused";
-        onPause();
-      };
-      if (this._polling || !this.writable) {
-        let total = 0;
-        if (this._polling) {
-          total++;
-          this.once("pollComplete", function() {
-            --total || pause();
-          });
-        }
-        if (!this.writable) {
-          total++;
-          this.once("drain", function() {
-            --total || pause();
-          });
-        }
-      } else {
-        pause();
-      }
-    }
-    _poll() {
-      this._polling = true;
-      this.doPoll();
-      this.emitReserved("poll");
-    }
-    onData(data) {
-      const callback = (packet) => {
-        if ("opening" === this.readyState && packet.type === "open") {
-          this.onOpen();
-        }
-        if ("close" === packet.type) {
-          this.onClose({ description: "transport closed by the server" });
-          return false;
-        }
-        this.onPacket(packet);
-      };
-      decodePayload(data, this.socket.binaryType).forEach(callback);
-      if ("closed" !== this.readyState) {
-        this._polling = false;
-        this.emitReserved("pollComplete");
-        if ("open" === this.readyState) {
-          this._poll();
-        } else {
-        }
-      }
-    }
-    doClose() {
-      const close = () => {
-        this.write([{ type: "close" }]);
-      };
-      if ("open" === this.readyState) {
-        close();
-      } else {
-        this.once("open", close);
-      }
-    }
-    write(packets) {
-      this.writable = false;
-      encodePayload(packets, (data) => {
-        this.doWrite(data, () => {
-          this.writable = true;
-          this.emitReserved("drain");
-        });
-      });
-    }
-    uri() {
-      const schema = this.opts.secure ? "https" : "http";
-      const query = this.query || {};
-      if (false !== this.opts.timestampRequests) {
-        query[this.opts.timestampParam] = randomString();
-      }
-      if (!this.supportsBinary && !query.sid) {
-        query.b64 = 1;
-      }
-      return this.createUri(schema, query);
-    }
-  };
-
-  // node_modules/engine.io-client/build/esm/contrib/has-cors.js
-  var value = false;
-  try {
-    value = typeof XMLHttpRequest !== "undefined" && "withCredentials" in new XMLHttpRequest();
-  } catch (err) {
-  }
-  var hasCORS = value;
-
-  // node_modules/engine.io-client/build/esm/transports/polling-xhr.js
-  function empty() {
-  }
-  var BaseXHR = class extends Polling {
-    constructor(opts) {
-      super(opts);
-      if (typeof location !== "undefined") {
-        const isSSL = "https:" === location.protocol;
-        let port = location.port;
-        if (!port) {
-          port = isSSL ? "443" : "80";
-        }
-        this.xd = typeof location !== "undefined" && opts.hostname !== location.hostname || port !== opts.port;
-      }
-    }
-    doWrite(data, fn2) {
-      const req = this.request({
-        method: "POST",
-        data
-      });
-      req.on("success", fn2);
-      req.on("error", (xhrStatus, context) => {
-        this.onError("xhr post error", xhrStatus, context);
-      });
-    }
-    doPoll() {
-      const req = this.request();
-      req.on("data", this.onData.bind(this));
-      req.on("error", (xhrStatus, context) => {
-        this.onError("xhr poll error", xhrStatus, context);
-      });
-      this.pollXhr = req;
-    }
-  };
-  var Request = class extends Emitter {
-    constructor(createRequest, uri, opts) {
-      super();
-      this.createRequest = createRequest;
-      installTimerFunctions(this, opts);
-      this._opts = opts;
-      this._method = opts.method || "GET";
-      this._uri = uri;
-      this._data = void 0 !== opts.data ? opts.data : null;
-      this._create();
-    }
-    _create() {
-      var _a2;
-      const opts = pick(this._opts, "agent", "pfx", "key", "passphrase", "cert", "ca", "ciphers", "rejectUnauthorized", "autoUnref");
-      opts.xdomain = !!this._opts.xd;
-      const xhr = this._xhr = this.createRequest(opts);
-      try {
-        xhr.open(this._method, this._uri, true);
-        try {
-          if (this._opts.extraHeaders) {
-            xhr.setDisableHeaderCheck && xhr.setDisableHeaderCheck(true);
-            for (let i2 in this._opts.extraHeaders) {
-              if (this._opts.extraHeaders.hasOwnProperty(i2)) {
-                xhr.setRequestHeader(i2, this._opts.extraHeaders[i2]);
-              }
-            }
-          }
-        } catch (e2) {
-        }
-        if ("POST" === this._method) {
-          try {
-            xhr.setRequestHeader("Content-type", "text/plain;charset=UTF-8");
-          } catch (e2) {
-          }
-        }
-        try {
-          xhr.setRequestHeader("Accept", "*/*");
-        } catch (e2) {
-        }
-        (_a2 = this._opts.cookieJar) === null || _a2 === void 0 ? void 0 : _a2.addCookies(xhr);
-        if ("withCredentials" in xhr) {
-          xhr.withCredentials = this._opts.withCredentials;
-        }
-        if (this._opts.requestTimeout) {
-          xhr.timeout = this._opts.requestTimeout;
-        }
-        xhr.onreadystatechange = () => {
-          var _a3;
-          if (xhr.readyState === 3) {
-            (_a3 = this._opts.cookieJar) === null || _a3 === void 0 ? void 0 : _a3.parseCookies(
-              xhr.getResponseHeader("set-cookie")
-            );
-          }
-          if (4 !== xhr.readyState)
-            return;
-          if (200 === xhr.status || 1223 === xhr.status) {
-            this._onLoad();
-          } else {
-            this.setTimeoutFn(() => {
-              this._onError(typeof xhr.status === "number" ? xhr.status : 0);
-            }, 0);
-          }
-        };
-        xhr.send(this._data);
-      } catch (e2) {
-        this.setTimeoutFn(() => {
-          this._onError(e2);
-        }, 0);
-        return;
-      }
-      if (typeof document !== "undefined") {
-        this._index = Request.requestsCount++;
-        Request.requests[this._index] = this;
-      }
-    }
-    _onError(err) {
-      this.emitReserved("error", err, this._xhr);
-      this._cleanup(true);
-    }
-    _cleanup(fromError) {
-      if ("undefined" === typeof this._xhr || null === this._xhr) {
-        return;
-      }
-      this._xhr.onreadystatechange = empty;
-      if (fromError) {
-        try {
-          this._xhr.abort();
-        } catch (e2) {
-        }
-      }
-      if (typeof document !== "undefined") {
-        delete Request.requests[this._index];
-      }
-      this._xhr = null;
-    }
-    _onLoad() {
-      const data = this._xhr.responseText;
-      if (data !== null) {
-        this.emitReserved("data", data);
-        this.emitReserved("success");
-        this._cleanup();
-      }
-    }
-    abort() {
-      this._cleanup();
-    }
-  };
-  Request.requestsCount = 0;
-  Request.requests = {};
-  if (typeof document !== "undefined") {
-    if (typeof attachEvent === "function") {
-      attachEvent("onunload", unloadHandler);
-    } else if (typeof addEventListener === "function") {
-      const terminationEvent = "onpagehide" in globalThisShim ? "pagehide" : "unload";
-      addEventListener(terminationEvent, unloadHandler, false);
-    }
-  }
-  function unloadHandler() {
-    for (let i2 in Request.requests) {
-      if (Request.requests.hasOwnProperty(i2)) {
-        Request.requests[i2].abort();
-      }
-    }
-  }
-  var hasXHR2 = function() {
-    const xhr = newRequest({
-      xdomain: false
-    });
-    return xhr && xhr.responseType !== null;
-  }();
-  var XHR = class extends BaseXHR {
-    constructor(opts) {
-      super(opts);
-      const forceBase64 = opts && opts.forceBase64;
-      this.supportsBinary = hasXHR2 && !forceBase64;
-    }
-    request(opts = {}) {
-      Object.assign(opts, { xd: this.xd }, this.opts);
-      return new Request(newRequest, this.uri(), opts);
-    }
-  };
-  function newRequest(opts) {
-    const xdomain = opts.xdomain;
-    try {
-      if ("undefined" !== typeof XMLHttpRequest && (!xdomain || hasCORS)) {
-        return new XMLHttpRequest();
-      }
-    } catch (e2) {
-    }
-    if (!xdomain) {
-      try {
-        return new globalThisShim[["Active"].concat("Object").join("X")]("Microsoft.XMLHTTP");
-      } catch (e2) {
-      }
-    }
-  }
-
-  // node_modules/engine.io-client/build/esm/transports/websocket.js
-  var isReactNative = typeof navigator !== "undefined" && typeof navigator.product === "string" && navigator.product.toLowerCase() === "reactnative";
-  var BaseWS = class extends Transport {
-    get name() {
-      return "websocket";
-    }
-    doOpen() {
-      const uri = this.uri();
-      const protocols = this.opts.protocols;
-      const opts = isReactNative ? {} : pick(this.opts, "agent", "perMessageDeflate", "pfx", "key", "passphrase", "cert", "ca", "ciphers", "rejectUnauthorized", "localAddress", "protocolVersion", "origin", "maxPayload", "family", "checkServerIdentity");
-      if (this.opts.extraHeaders) {
-        opts.headers = this.opts.extraHeaders;
-      }
-      try {
-        this.ws = this.createSocket(uri, protocols, opts);
-      } catch (err) {
-        return this.emitReserved("error", err);
-      }
-      this.ws.binaryType = this.socket.binaryType;
-      this.addEventListeners();
-    }
-    addEventListeners() {
-      this.ws.onopen = () => {
-        if (this.opts.autoUnref) {
-          this.ws._socket.unref();
-        }
-        this.onOpen();
-      };
-      this.ws.onclose = (closeEvent) => this.onClose({
-        description: "websocket connection closed",
-        context: closeEvent
-      });
-      this.ws.onmessage = (ev) => this.onData(ev.data);
-      this.ws.onerror = (e2) => this.onError("websocket error", e2);
-    }
-    write(packets) {
-      this.writable = false;
-      for (let i2 = 0; i2 < packets.length; i2++) {
-        const packet = packets[i2];
-        const lastPacket = i2 === packets.length - 1;
-        encodePacket(packet, this.supportsBinary, (data) => {
-          try {
-            this.doWrite(packet, data);
-          } catch (e2) {
-          }
-          if (lastPacket) {
-            nextTick(() => {
-              this.writable = true;
-              this.emitReserved("drain");
-            }, this.setTimeoutFn);
-          }
-        });
-      }
-    }
-    doClose() {
-      if (typeof this.ws !== "undefined") {
-        this.ws.onerror = () => {
-        };
-        this.ws.close();
-        this.ws = null;
-      }
-    }
-    uri() {
-      const schema = this.opts.secure ? "wss" : "ws";
-      const query = this.query || {};
-      if (this.opts.timestampRequests) {
-        query[this.opts.timestampParam] = randomString();
-      }
-      if (!this.supportsBinary) {
-        query.b64 = 1;
-      }
-      return this.createUri(schema, query);
-    }
-  };
-  var WebSocketCtor = globalThisShim.WebSocket || globalThisShim.MozWebSocket;
-  var WS = class extends BaseWS {
-    createSocket(uri, protocols, opts) {
-      return !isReactNative ? protocols ? new WebSocketCtor(uri, protocols) : new WebSocketCtor(uri) : new WebSocketCtor(uri, protocols, opts);
-    }
-    doWrite(_packet, data) {
-      this.ws.send(data);
-    }
-  };
-
-  // node_modules/engine.io-client/build/esm/transports/webtransport.js
-  var WT = class extends Transport {
-    get name() {
-      return "webtransport";
-    }
-    doOpen() {
-      try {
-        this._transport = new WebTransport(this.createUri("https"), this.opts.transportOptions[this.name]);
-      } catch (err) {
-        return this.emitReserved("error", err);
-      }
-      this._transport.closed.then(() => {
-        this.onClose();
-      }).catch((err) => {
-        this.onError("webtransport error", err);
-      });
-      this._transport.ready.then(() => {
-        this._transport.createBidirectionalStream().then((stream) => {
-          const decoderStream = createPacketDecoderStream(Number.MAX_SAFE_INTEGER, this.socket.binaryType);
-          const reader = stream.readable.pipeThrough(decoderStream).getReader();
-          const encoderStream = createPacketEncoderStream();
-          encoderStream.readable.pipeTo(stream.writable);
-          this._writer = encoderStream.writable.getWriter();
-          const read = () => {
-            reader.read().then(({ done, value: value2 }) => {
-              if (done) {
-                return;
-              }
-              this.onPacket(value2);
-              read();
-            }).catch((err) => {
-            });
-          };
-          read();
-          const packet = { type: "open" };
-          if (this.query.sid) {
-            packet.data = `{"sid":"${this.query.sid}"}`;
-          }
-          this._writer.write(packet).then(() => this.onOpen());
-        });
-      });
-    }
-    write(packets) {
-      this.writable = false;
-      for (let i2 = 0; i2 < packets.length; i2++) {
-        const packet = packets[i2];
-        const lastPacket = i2 === packets.length - 1;
-        this._writer.write(packet).then(() => {
-          if (lastPacket) {
-            nextTick(() => {
-              this.writable = true;
-              this.emitReserved("drain");
-            }, this.setTimeoutFn);
-          }
-        });
-      }
-    }
-    doClose() {
-      var _a2;
-      (_a2 = this._transport) === null || _a2 === void 0 ? void 0 : _a2.close();
-    }
-  };
-
-  // node_modules/engine.io-client/build/esm/transports/index.js
-  var transports = {
-    websocket: WS,
-    webtransport: WT,
-    polling: XHR
-  };
-
-  // node_modules/engine.io-client/build/esm/contrib/parseuri.js
-  var re2 = /^(?:(?![^:@\/?#]+:[^:@\/]*@)(http|https|ws|wss):\/\/)?((?:(([^:@\/?#]*)(?::([^:@\/?#]*))?)?@)?((?:[a-f0-9]{0,4}:){2,7}[a-f0-9]{0,4}|[^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/;
-  var parts = [
-    "source",
-    "protocol",
-    "authority",
-    "userInfo",
-    "user",
-    "password",
-    "host",
-    "port",
-    "relative",
-    "path",
-    "directory",
-    "file",
-    "query",
-    "anchor"
-  ];
-  function parse(str) {
-    if (str.length > 8e3) {
-      throw "URI too long";
-    }
-    const src = str, b2 = str.indexOf("["), e2 = str.indexOf("]");
-    if (b2 != -1 && e2 != -1) {
-      str = str.substring(0, b2) + str.substring(b2, e2).replace(/:/g, ";") + str.substring(e2, str.length);
-    }
-    let m2 = re2.exec(str || ""), uri = {}, i2 = 14;
-    while (i2--) {
-      uri[parts[i2]] = m2[i2] || "";
-    }
-    if (b2 != -1 && e2 != -1) {
-      uri.source = src;
-      uri.host = uri.host.substring(1, uri.host.length - 1).replace(/;/g, ":");
-      uri.authority = uri.authority.replace("[", "").replace("]", "").replace(/;/g, ":");
-      uri.ipv6uri = true;
-    }
-    uri.pathNames = pathNames(uri, uri["path"]);
-    uri.queryKey = queryKey(uri, uri["query"]);
-    return uri;
-  }
-  function pathNames(obj, path) {
-    const regx = /\/{2,9}/g, names = path.replace(regx, "/").split("/");
-    if (path.slice(0, 1) == "/" || path.length === 0) {
-      names.splice(0, 1);
-    }
-    if (path.slice(-1) == "/") {
-      names.splice(names.length - 1, 1);
-    }
-    return names;
-  }
-  function queryKey(uri, query) {
-    const data = {};
-    query.replace(/(?:^|&)([^&=]*)=?([^&]*)/g, function($0, $1, $2) {
-      if ($1) {
-        data[$1] = $2;
-      }
-    });
-    return data;
-  }
-
-  // node_modules/engine.io-client/build/esm/socket.js
-  var withEventListeners = typeof addEventListener === "function" && typeof removeEventListener === "function";
-  var OFFLINE_EVENT_LISTENERS = [];
-  if (withEventListeners) {
-    addEventListener("offline", () => {
-      OFFLINE_EVENT_LISTENERS.forEach((listener) => listener());
-    }, false);
-  }
-  var SocketWithoutUpgrade = class extends Emitter {
-    constructor(uri, opts) {
-      super();
-      this.binaryType = defaultBinaryType;
-      this.writeBuffer = [];
-      this._prevBufferLen = 0;
-      this._pingInterval = -1;
-      this._pingTimeout = -1;
-      this._maxPayload = -1;
-      this._pingTimeoutTime = Infinity;
-      if (uri && "object" === typeof uri) {
-        opts = uri;
-        uri = null;
-      }
-      if (uri) {
-        const parsedUri = parse(uri);
-        opts.hostname = parsedUri.host;
-        opts.secure = parsedUri.protocol === "https" || parsedUri.protocol === "wss";
-        opts.port = parsedUri.port;
-        if (parsedUri.query)
-          opts.query = parsedUri.query;
-      } else if (opts.host) {
-        opts.hostname = parse(opts.host).host;
-      }
-      installTimerFunctions(this, opts);
-      this.secure = null != opts.secure ? opts.secure : typeof location !== "undefined" && "https:" === location.protocol;
-      if (opts.hostname && !opts.port) {
-        opts.port = this.secure ? "443" : "80";
-      }
-      this.hostname = opts.hostname || (typeof location !== "undefined" ? location.hostname : "localhost");
-      this.port = opts.port || (typeof location !== "undefined" && location.port ? location.port : this.secure ? "443" : "80");
-      this.transports = [];
-      this._transportsByName = {};
-      opts.transports.forEach((t2) => {
-        const transportName = t2.prototype.name;
-        this.transports.push(transportName);
-        this._transportsByName[transportName] = t2;
-      });
-      this.opts = Object.assign({
-        path: "/engine.io",
-        agent: false,
-        withCredentials: false,
-        upgrade: true,
-        timestampParam: "t",
-        rememberUpgrade: false,
-        addTrailingSlash: true,
-        rejectUnauthorized: true,
-        perMessageDeflate: {
-          threshold: 1024
-        },
-        transportOptions: {},
-        closeOnBeforeunload: false
-      }, opts);
-      this.opts.path = this.opts.path.replace(/\/$/, "") + (this.opts.addTrailingSlash ? "/" : "");
-      if (typeof this.opts.query === "string") {
-        this.opts.query = decode2(this.opts.query);
-      }
-      if (withEventListeners) {
-        if (this.opts.closeOnBeforeunload) {
-          this._beforeunloadEventListener = () => {
-            if (this.transport) {
-              this.transport.removeAllListeners();
-              this.transport.close();
-            }
-          };
-          addEventListener("beforeunload", this._beforeunloadEventListener, false);
-        }
-        if (this.hostname !== "localhost") {
-          this._offlineEventListener = () => {
-            this._onClose("transport close", {
-              description: "network connection lost"
-            });
-          };
-          OFFLINE_EVENT_LISTENERS.push(this._offlineEventListener);
-        }
-      }
-      if (this.opts.withCredentials) {
-        this._cookieJar = createCookieJar();
-      }
-      this._open();
-    }
-    createTransport(name) {
-      const query = Object.assign({}, this.opts.query);
-      query.EIO = protocol;
-      query.transport = name;
-      if (this.id)
-        query.sid = this.id;
-      const opts = Object.assign({}, this.opts, {
-        query,
-        socket: this,
-        hostname: this.hostname,
-        secure: this.secure,
-        port: this.port
-      }, this.opts.transportOptions[name]);
-      return new this._transportsByName[name](opts);
-    }
-    _open() {
-      if (this.transports.length === 0) {
-        this.setTimeoutFn(() => {
-          this.emitReserved("error", "No transports available");
-        }, 0);
-        return;
-      }
-      const transportName = this.opts.rememberUpgrade && SocketWithoutUpgrade.priorWebsocketSuccess && this.transports.indexOf("websocket") !== -1 ? "websocket" : this.transports[0];
-      this.readyState = "opening";
-      const transport = this.createTransport(transportName);
-      transport.open();
-      this.setTransport(transport);
-    }
-    setTransport(transport) {
-      if (this.transport) {
-        this.transport.removeAllListeners();
-      }
-      this.transport = transport;
-      transport.on("drain", this._onDrain.bind(this)).on("packet", this._onPacket.bind(this)).on("error", this._onError.bind(this)).on("close", (reason) => this._onClose("transport close", reason));
-    }
-    onOpen() {
-      this.readyState = "open";
-      SocketWithoutUpgrade.priorWebsocketSuccess = "websocket" === this.transport.name;
-      this.emitReserved("open");
-      this.flush();
-    }
-    _onPacket(packet) {
-      if ("opening" === this.readyState || "open" === this.readyState || "closing" === this.readyState) {
-        this.emitReserved("packet", packet);
-        this.emitReserved("heartbeat");
-        switch (packet.type) {
-          case "open":
-            this.onHandshake(JSON.parse(packet.data));
-            break;
-          case "ping":
-            this._sendPacket("pong");
-            this.emitReserved("ping");
-            this.emitReserved("pong");
-            this._resetPingTimeout();
-            break;
-          case "error":
-            const err = new Error("server error");
-            err.code = packet.data;
-            this._onError(err);
-            break;
-          case "message":
-            this.emitReserved("data", packet.data);
-            this.emitReserved("message", packet.data);
-            break;
-        }
-      } else {
-      }
-    }
-    onHandshake(data) {
-      this.emitReserved("handshake", data);
-      this.id = data.sid;
-      this.transport.query.sid = data.sid;
-      this._pingInterval = data.pingInterval;
-      this._pingTimeout = data.pingTimeout;
-      this._maxPayload = data.maxPayload;
-      this.onOpen();
-      if ("closed" === this.readyState)
-        return;
-      this._resetPingTimeout();
-    }
-    _resetPingTimeout() {
-      this.clearTimeoutFn(this._pingTimeoutTimer);
-      const delay = this._pingInterval + this._pingTimeout;
-      this._pingTimeoutTime = Date.now() + delay;
-      this._pingTimeoutTimer = this.setTimeoutFn(() => {
-        this._onClose("ping timeout");
-      }, delay);
-      if (this.opts.autoUnref) {
-        this._pingTimeoutTimer.unref();
-      }
-    }
-    _onDrain() {
-      this.writeBuffer.splice(0, this._prevBufferLen);
-      this._prevBufferLen = 0;
-      if (0 === this.writeBuffer.length) {
-        this.emitReserved("drain");
-      } else {
-        this.flush();
-      }
-    }
-    flush() {
-      if ("closed" !== this.readyState && this.transport.writable && !this.upgrading && this.writeBuffer.length) {
-        const packets = this._getWritablePackets();
-        this.transport.send(packets);
-        this._prevBufferLen = packets.length;
-        this.emitReserved("flush");
-      }
-    }
-    _getWritablePackets() {
-      const shouldCheckPayloadSize = this._maxPayload && this.transport.name === "polling" && this.writeBuffer.length > 1;
-      if (!shouldCheckPayloadSize) {
-        return this.writeBuffer;
-      }
-      let payloadSize = 1;
-      for (let i2 = 0; i2 < this.writeBuffer.length; i2++) {
-        const data = this.writeBuffer[i2].data;
-        if (data) {
-          payloadSize += byteLength(data);
-        }
-        if (i2 > 0 && payloadSize > this._maxPayload) {
-          return this.writeBuffer.slice(0, i2);
-        }
-        payloadSize += 2;
-      }
-      return this.writeBuffer;
-    }
-    _hasPingExpired() {
-      if (!this._pingTimeoutTime)
-        return true;
-      const hasExpired = Date.now() > this._pingTimeoutTime;
-      if (hasExpired) {
-        this._pingTimeoutTime = 0;
-        nextTick(() => {
-          this._onClose("ping timeout");
-        }, this.setTimeoutFn);
-      }
-      return hasExpired;
-    }
-    write(msg, options, fn2) {
-      this._sendPacket("message", msg, options, fn2);
-      return this;
-    }
-    send(msg, options, fn2) {
-      this._sendPacket("message", msg, options, fn2);
-      return this;
-    }
-    _sendPacket(type, data, options, fn2) {
-      if ("function" === typeof data) {
-        fn2 = data;
-        data = void 0;
-      }
-      if ("function" === typeof options) {
-        fn2 = options;
-        options = null;
-      }
-      if ("closing" === this.readyState || "closed" === this.readyState) {
-        return;
-      }
-      options = options || {};
-      options.compress = false !== options.compress;
-      const packet = {
-        type,
-        data,
-        options
-      };
-      this.emitReserved("packetCreate", packet);
-      this.writeBuffer.push(packet);
-      if (fn2)
-        this.once("flush", fn2);
-      this.flush();
-    }
-    close() {
-      const close = () => {
-        this._onClose("forced close");
-        this.transport.close();
-      };
-      const cleanupAndClose = () => {
-        this.off("upgrade", cleanupAndClose);
-        this.off("upgradeError", cleanupAndClose);
-        close();
-      };
-      const waitForUpgrade = () => {
-        this.once("upgrade", cleanupAndClose);
-        this.once("upgradeError", cleanupAndClose);
-      };
-      if ("opening" === this.readyState || "open" === this.readyState) {
-        this.readyState = "closing";
-        if (this.writeBuffer.length) {
-          this.once("drain", () => {
-            if (this.upgrading) {
-              waitForUpgrade();
-            } else {
-              close();
-            }
-          });
-        } else if (this.upgrading) {
-          waitForUpgrade();
-        } else {
-          close();
-        }
-      }
-      return this;
-    }
-    _onError(err) {
-      SocketWithoutUpgrade.priorWebsocketSuccess = false;
-      if (this.opts.tryAllTransports && this.transports.length > 1 && this.readyState === "opening") {
-        this.transports.shift();
-        return this._open();
-      }
-      this.emitReserved("error", err);
-      this._onClose("transport error", err);
-    }
-    _onClose(reason, description) {
-      if ("opening" === this.readyState || "open" === this.readyState || "closing" === this.readyState) {
-        this.clearTimeoutFn(this._pingTimeoutTimer);
-        this.transport.removeAllListeners("close");
-        this.transport.close();
-        this.transport.removeAllListeners();
-        if (withEventListeners) {
-          if (this._beforeunloadEventListener) {
-            removeEventListener("beforeunload", this._beforeunloadEventListener, false);
-          }
-          if (this._offlineEventListener) {
-            const i2 = OFFLINE_EVENT_LISTENERS.indexOf(this._offlineEventListener);
-            if (i2 !== -1) {
-              OFFLINE_EVENT_LISTENERS.splice(i2, 1);
-            }
-          }
-        }
-        this.readyState = "closed";
-        this.id = null;
-        this.emitReserved("close", reason, description);
-        this.writeBuffer = [];
-        this._prevBufferLen = 0;
-      }
-    }
-  };
-  SocketWithoutUpgrade.protocol = protocol;
-  var SocketWithUpgrade = class extends SocketWithoutUpgrade {
-    constructor() {
-      super(...arguments);
-      this._upgrades = [];
-    }
-    onOpen() {
-      super.onOpen();
-      if ("open" === this.readyState && this.opts.upgrade) {
-        for (let i2 = 0; i2 < this._upgrades.length; i2++) {
-          this._probe(this._upgrades[i2]);
-        }
-      }
-    }
-    _probe(name) {
-      let transport = this.createTransport(name);
-      let failed = false;
-      SocketWithoutUpgrade.priorWebsocketSuccess = false;
-      const onTransportOpen = () => {
-        if (failed)
-          return;
-        transport.send([{ type: "ping", data: "probe" }]);
-        transport.once("packet", (msg) => {
-          if (failed)
-            return;
-          if ("pong" === msg.type && "probe" === msg.data) {
-            this.upgrading = true;
-            this.emitReserved("upgrading", transport);
-            if (!transport)
-              return;
-            SocketWithoutUpgrade.priorWebsocketSuccess = "websocket" === transport.name;
-            this.transport.pause(() => {
-              if (failed)
-                return;
-              if ("closed" === this.readyState)
-                return;
-              cleanup();
-              this.setTransport(transport);
-              transport.send([{ type: "upgrade" }]);
-              this.emitReserved("upgrade", transport);
-              transport = null;
-              this.upgrading = false;
-              this.flush();
-            });
-          } else {
-            const err = new Error("probe error");
-            err.transport = transport.name;
-            this.emitReserved("upgradeError", err);
-          }
-        });
-      };
-      function freezeTransport() {
-        if (failed)
-          return;
-        failed = true;
-        cleanup();
-        transport.close();
-        transport = null;
-      }
-      const onerror = (err) => {
-        const error = new Error("probe error: " + err);
-        error.transport = transport.name;
-        freezeTransport();
-        this.emitReserved("upgradeError", error);
-      };
-      function onTransportClose() {
-        onerror("transport closed");
-      }
-      function onclose() {
-        onerror("socket closed");
-      }
-      function onupgrade(to2) {
-        if (transport && to2.name !== transport.name) {
-          freezeTransport();
-        }
-      }
-      const cleanup = () => {
-        transport.removeListener("open", onTransportOpen);
-        transport.removeListener("error", onerror);
-        transport.removeListener("close", onTransportClose);
-        this.off("close", onclose);
-        this.off("upgrading", onupgrade);
-      };
-      transport.once("open", onTransportOpen);
-      transport.once("error", onerror);
-      transport.once("close", onTransportClose);
-      this.once("close", onclose);
-      this.once("upgrading", onupgrade);
-      if (this._upgrades.indexOf("webtransport") !== -1 && name !== "webtransport") {
-        this.setTimeoutFn(() => {
-          if (!failed) {
-            transport.open();
-          }
-        }, 200);
-      } else {
-        transport.open();
-      }
-    }
-    onHandshake(data) {
-      this._upgrades = this._filterUpgrades(data.upgrades);
-      super.onHandshake(data);
-    }
-    _filterUpgrades(upgrades) {
-      const filteredUpgrades = [];
-      for (let i2 = 0; i2 < upgrades.length; i2++) {
-        if (~this.transports.indexOf(upgrades[i2]))
-          filteredUpgrades.push(upgrades[i2]);
-      }
-      return filteredUpgrades;
-    }
-  };
-  var Socket = class extends SocketWithUpgrade {
-    constructor(uri, opts = {}) {
-      const o2 = typeof uri === "object" ? uri : opts;
-      if (!o2.transports || o2.transports && typeof o2.transports[0] === "string") {
-        o2.transports = (o2.transports || ["polling", "websocket", "webtransport"]).map((transportName) => transports[transportName]).filter((t2) => !!t2);
-      }
-      super(uri, o2);
-    }
-  };
-
-  // node_modules/engine.io-client/build/esm/index.js
-  var protocol2 = Socket.protocol;
-
-  // node_modules/socket.io-client/build/esm/url.js
-  function url(uri, path = "", loc) {
-    let obj = uri;
-    loc = loc || typeof location !== "undefined" && location;
-    if (null == uri)
-      uri = loc.protocol + "//" + loc.host;
-    if (typeof uri === "string") {
-      if ("/" === uri.charAt(0)) {
-        if ("/" === uri.charAt(1)) {
-          uri = loc.protocol + uri;
-        } else {
-          uri = loc.host + uri;
-        }
-      }
-      if (!/^(https?|wss?):\/\//.test(uri)) {
-        if ("undefined" !== typeof loc) {
-          uri = loc.protocol + "//" + uri;
-        } else {
-          uri = "https://" + uri;
-        }
-      }
-      obj = parse(uri);
-    }
-    if (!obj.port) {
-      if (/^(http|ws)$/.test(obj.protocol)) {
-        obj.port = "80";
-      } else if (/^(http|ws)s$/.test(obj.protocol)) {
-        obj.port = "443";
-      }
-    }
-    obj.path = obj.path || "/";
-    const ipv6 = obj.host.indexOf(":") !== -1;
-    const host = ipv6 ? "[" + obj.host + "]" : obj.host;
-    obj.id = obj.protocol + "://" + host + ":" + obj.port + path;
-    obj.href = obj.protocol + "://" + host + (loc && loc.port === obj.port ? "" : ":" + obj.port);
-    return obj;
-  }
-
-  // node_modules/socket.io-parser/build/esm/index.js
-  var esm_exports = {};
-  __export(esm_exports, {
-    Decoder: () => Decoder,
-    Encoder: () => Encoder,
-    PacketType: () => PacketType,
-    protocol: () => protocol3
-  });
-
-  // node_modules/socket.io-parser/build/esm/is-binary.js
-  var withNativeArrayBuffer3 = typeof ArrayBuffer === "function";
-  var isView2 = (obj) => {
-    return typeof ArrayBuffer.isView === "function" ? ArrayBuffer.isView(obj) : obj.buffer instanceof ArrayBuffer;
-  };
-  var toString = Object.prototype.toString;
-  var withNativeBlob2 = typeof Blob === "function" || typeof Blob !== "undefined" && toString.call(Blob) === "[object BlobConstructor]";
-  var withNativeFile = typeof File === "function" || typeof File !== "undefined" && toString.call(File) === "[object FileConstructor]";
-  function isBinary(obj) {
-    return withNativeArrayBuffer3 && (obj instanceof ArrayBuffer || isView2(obj)) || withNativeBlob2 && obj instanceof Blob || withNativeFile && obj instanceof File;
-  }
-  function hasBinary(obj, toJSON) {
-    if (!obj || typeof obj !== "object") {
-      return false;
-    }
-    if (Array.isArray(obj)) {
-      for (let i2 = 0, l2 = obj.length; i2 < l2; i2++) {
-        if (hasBinary(obj[i2])) {
-          return true;
-        }
-      }
-      return false;
-    }
-    if (isBinary(obj)) {
-      return true;
-    }
-    if (obj.toJSON && typeof obj.toJSON === "function" && arguments.length === 1) {
-      return hasBinary(obj.toJSON(), true);
-    }
-    for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key) && hasBinary(obj[key])) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  // node_modules/socket.io-parser/build/esm/binary.js
-  function deconstructPacket(packet) {
-    const buffers = [];
-    const packetData = packet.data;
-    const pack = packet;
-    pack.data = _deconstructPacket(packetData, buffers);
-    pack.attachments = buffers.length;
-    return { packet: pack, buffers };
-  }
-  function _deconstructPacket(data, buffers) {
-    if (!data)
-      return data;
-    if (isBinary(data)) {
-      const placeholder = { _placeholder: true, num: buffers.length };
-      buffers.push(data);
-      return placeholder;
-    } else if (Array.isArray(data)) {
-      const newData = new Array(data.length);
-      for (let i2 = 0; i2 < data.length; i2++) {
-        newData[i2] = _deconstructPacket(data[i2], buffers);
-      }
-      return newData;
-    } else if (typeof data === "object" && !(data instanceof Date)) {
-      const newData = {};
-      for (const key in data) {
-        if (Object.prototype.hasOwnProperty.call(data, key)) {
-          newData[key] = _deconstructPacket(data[key], buffers);
-        }
-      }
-      return newData;
-    }
-    return data;
-  }
-  function reconstructPacket(packet, buffers) {
-    packet.data = _reconstructPacket(packet.data, buffers);
-    delete packet.attachments;
-    return packet;
-  }
-  function _reconstructPacket(data, buffers) {
-    if (!data)
-      return data;
-    if (data && data._placeholder === true) {
-      const isIndexValid = typeof data.num === "number" && data.num >= 0 && data.num < buffers.length;
-      if (isIndexValid) {
-        return buffers[data.num];
-      } else {
-        throw new Error("illegal attachments");
-      }
-    } else if (Array.isArray(data)) {
-      for (let i2 = 0; i2 < data.length; i2++) {
-        data[i2] = _reconstructPacket(data[i2], buffers);
-      }
-    } else if (typeof data === "object") {
-      for (const key in data) {
-        if (Object.prototype.hasOwnProperty.call(data, key)) {
-          data[key] = _reconstructPacket(data[key], buffers);
-        }
-      }
-    }
-    return data;
-  }
-
-  // node_modules/socket.io-parser/build/esm/index.js
-  var RESERVED_EVENTS = [
-    "connect",
-    "connect_error",
-    "disconnect",
-    "disconnecting",
-    "newListener",
-    "removeListener"
-  ];
-  var protocol3 = 5;
-  var PacketType;
-  (function(PacketType2) {
-    PacketType2[PacketType2["CONNECT"] = 0] = "CONNECT";
-    PacketType2[PacketType2["DISCONNECT"] = 1] = "DISCONNECT";
-    PacketType2[PacketType2["EVENT"] = 2] = "EVENT";
-    PacketType2[PacketType2["ACK"] = 3] = "ACK";
-    PacketType2[PacketType2["CONNECT_ERROR"] = 4] = "CONNECT_ERROR";
-    PacketType2[PacketType2["BINARY_EVENT"] = 5] = "BINARY_EVENT";
-    PacketType2[PacketType2["BINARY_ACK"] = 6] = "BINARY_ACK";
-  })(PacketType || (PacketType = {}));
-  var Encoder = class {
-    constructor(replacer) {
-      this.replacer = replacer;
-    }
-    encode(obj) {
-      if (obj.type === PacketType.EVENT || obj.type === PacketType.ACK) {
-        if (hasBinary(obj)) {
-          return this.encodeAsBinary({
-            type: obj.type === PacketType.EVENT ? PacketType.BINARY_EVENT : PacketType.BINARY_ACK,
-            nsp: obj.nsp,
-            data: obj.data,
-            id: obj.id
-          });
-        }
-      }
-      return [this.encodeAsString(obj)];
-    }
-    encodeAsString(obj) {
-      let str = "" + obj.type;
-      if (obj.type === PacketType.BINARY_EVENT || obj.type === PacketType.BINARY_ACK) {
-        str += obj.attachments + "-";
-      }
-      if (obj.nsp && "/" !== obj.nsp) {
-        str += obj.nsp + ",";
-      }
-      if (null != obj.id) {
-        str += obj.id;
-      }
-      if (null != obj.data) {
-        str += JSON.stringify(obj.data, this.replacer);
-      }
-      return str;
-    }
-    encodeAsBinary(obj) {
-      const deconstruction = deconstructPacket(obj);
-      const pack = this.encodeAsString(deconstruction.packet);
-      const buffers = deconstruction.buffers;
-      buffers.unshift(pack);
-      return buffers;
-    }
-  };
-  function isObject2(value2) {
-    return Object.prototype.toString.call(value2) === "[object Object]";
-  }
-  var Decoder = class extends Emitter {
-    constructor(reviver) {
-      super();
-      this.reviver = reviver;
-    }
-    add(obj) {
-      let packet;
-      if (typeof obj === "string") {
-        if (this.reconstructor) {
-          throw new Error("got plaintext data when reconstructing a packet");
-        }
-        packet = this.decodeString(obj);
-        const isBinaryEvent = packet.type === PacketType.BINARY_EVENT;
-        if (isBinaryEvent || packet.type === PacketType.BINARY_ACK) {
-          packet.type = isBinaryEvent ? PacketType.EVENT : PacketType.ACK;
-          this.reconstructor = new BinaryReconstructor(packet);
-          if (packet.attachments === 0) {
-            super.emitReserved("decoded", packet);
-          }
-        } else {
-          super.emitReserved("decoded", packet);
-        }
-      } else if (isBinary(obj) || obj.base64) {
-        if (!this.reconstructor) {
-          throw new Error("got binary data when not reconstructing a packet");
-        } else {
-          packet = this.reconstructor.takeBinaryData(obj);
-          if (packet) {
-            this.reconstructor = null;
-            super.emitReserved("decoded", packet);
-          }
-        }
-      } else {
-        throw new Error("Unknown type: " + obj);
-      }
-    }
-    decodeString(str) {
-      let i2 = 0;
-      const p2 = {
-        type: Number(str.charAt(0))
-      };
-      if (PacketType[p2.type] === void 0) {
-        throw new Error("unknown packet type " + p2.type);
-      }
-      if (p2.type === PacketType.BINARY_EVENT || p2.type === PacketType.BINARY_ACK) {
-        const start = i2 + 1;
-        while (str.charAt(++i2) !== "-" && i2 != str.length) {
-        }
-        const buf = str.substring(start, i2);
-        if (buf != Number(buf) || str.charAt(i2) !== "-") {
-          throw new Error("Illegal attachments");
-        }
-        p2.attachments = Number(buf);
-      }
-      if ("/" === str.charAt(i2 + 1)) {
-        const start = i2 + 1;
-        while (++i2) {
-          const c2 = str.charAt(i2);
-          if ("," === c2)
-            break;
-          if (i2 === str.length)
-            break;
-        }
-        p2.nsp = str.substring(start, i2);
-      } else {
-        p2.nsp = "/";
-      }
-      const next = str.charAt(i2 + 1);
-      if ("" !== next && Number(next) == next) {
-        const start = i2 + 1;
-        while (++i2) {
-          const c2 = str.charAt(i2);
-          if (null == c2 || Number(c2) != c2) {
-            --i2;
-            break;
-          }
-          if (i2 === str.length)
-            break;
-        }
-        p2.id = Number(str.substring(start, i2 + 1));
-      }
-      if (str.charAt(++i2)) {
-        const payload = this.tryParse(str.substr(i2));
-        if (Decoder.isPayloadValid(p2.type, payload)) {
-          p2.data = payload;
-        } else {
-          throw new Error("invalid payload");
-        }
-      }
-      return p2;
-    }
-    tryParse(str) {
-      try {
-        return JSON.parse(str, this.reviver);
-      } catch (e2) {
-        return false;
-      }
-    }
-    static isPayloadValid(type, payload) {
-      switch (type) {
-        case PacketType.CONNECT:
-          return isObject2(payload);
-        case PacketType.DISCONNECT:
-          return payload === void 0;
-        case PacketType.CONNECT_ERROR:
-          return typeof payload === "string" || isObject2(payload);
-        case PacketType.EVENT:
-        case PacketType.BINARY_EVENT:
-          return Array.isArray(payload) && (typeof payload[0] === "number" || typeof payload[0] === "string" && RESERVED_EVENTS.indexOf(payload[0]) === -1);
-        case PacketType.ACK:
-        case PacketType.BINARY_ACK:
-          return Array.isArray(payload);
-      }
-    }
-    destroy() {
-      if (this.reconstructor) {
-        this.reconstructor.finishedReconstruction();
-        this.reconstructor = null;
-      }
-    }
-  };
-  var BinaryReconstructor = class {
-    constructor(packet) {
-      this.packet = packet;
-      this.buffers = [];
-      this.reconPack = packet;
-    }
-    takeBinaryData(binData) {
-      this.buffers.push(binData);
-      if (this.buffers.length === this.reconPack.attachments) {
-        const packet = reconstructPacket(this.reconPack, this.buffers);
-        this.finishedReconstruction();
-        return packet;
-      }
-      return null;
-    }
-    finishedReconstruction() {
-      this.reconPack = null;
-      this.buffers = [];
-    }
-  };
-
-  // node_modules/socket.io-client/build/esm/on.js
-  function on2(obj, ev, fn2) {
-    obj.on(ev, fn2);
-    return function subDestroy() {
-      obj.off(ev, fn2);
-    };
-  }
-
-  // node_modules/socket.io-client/build/esm/socket.js
-  var RESERVED_EVENTS2 = Object.freeze({
-    connect: 1,
-    connect_error: 1,
-    disconnect: 1,
-    disconnecting: 1,
-    newListener: 1,
-    removeListener: 1
-  });
-  var Socket2 = class extends Emitter {
-    constructor(io2, nsp, opts) {
-      super();
-      this.connected = false;
-      this.recovered = false;
-      this.receiveBuffer = [];
-      this.sendBuffer = [];
-      this._queue = [];
-      this._queueSeq = 0;
-      this.ids = 0;
-      this.acks = {};
-      this.flags = {};
-      this.io = io2;
-      this.nsp = nsp;
-      if (opts && opts.auth) {
-        this.auth = opts.auth;
-      }
-      this._opts = Object.assign({}, opts);
-      if (this.io._autoConnect)
-        this.open();
-    }
-    get disconnected() {
-      return !this.connected;
-    }
-    subEvents() {
-      if (this.subs)
-        return;
-      const io2 = this.io;
-      this.subs = [
-        on2(io2, "open", this.onopen.bind(this)),
-        on2(io2, "packet", this.onpacket.bind(this)),
-        on2(io2, "error", this.onerror.bind(this)),
-        on2(io2, "close", this.onclose.bind(this))
-      ];
-    }
-    get active() {
-      return !!this.subs;
-    }
-    connect() {
-      if (this.connected)
-        return this;
-      this.subEvents();
-      if (!this.io["_reconnecting"])
-        this.io.open();
-      if ("open" === this.io._readyState)
-        this.onopen();
-      return this;
-    }
-    open() {
-      return this.connect();
-    }
-    send(...args) {
-      args.unshift("message");
-      this.emit.apply(this, args);
-      return this;
-    }
-    emit(ev, ...args) {
-      var _a2, _b, _c;
-      if (RESERVED_EVENTS2.hasOwnProperty(ev)) {
-        throw new Error('"' + ev.toString() + '" is a reserved event name');
-      }
-      args.unshift(ev);
-      if (this._opts.retries && !this.flags.fromQueue && !this.flags.volatile) {
-        this._addToQueue(args);
-        return this;
-      }
-      const packet = {
-        type: PacketType.EVENT,
-        data: args
-      };
-      packet.options = {};
-      packet.options.compress = this.flags.compress !== false;
-      if ("function" === typeof args[args.length - 1]) {
-        const id = this.ids++;
-        const ack = args.pop();
-        this._registerAckCallback(id, ack);
-        packet.id = id;
-      }
-      const isTransportWritable = (_b = (_a2 = this.io.engine) === null || _a2 === void 0 ? void 0 : _a2.transport) === null || _b === void 0 ? void 0 : _b.writable;
-      const isConnected = this.connected && !((_c = this.io.engine) === null || _c === void 0 ? void 0 : _c._hasPingExpired());
-      const discardPacket = this.flags.volatile && !isTransportWritable;
-      if (discardPacket) {
-      } else if (isConnected) {
-        this.notifyOutgoingListeners(packet);
-        this.packet(packet);
-      } else {
-        this.sendBuffer.push(packet);
-      }
-      this.flags = {};
-      return this;
-    }
-    _registerAckCallback(id, ack) {
-      var _a2;
-      const timeout = (_a2 = this.flags.timeout) !== null && _a2 !== void 0 ? _a2 : this._opts.ackTimeout;
-      if (timeout === void 0) {
-        this.acks[id] = ack;
-        return;
-      }
-      const timer = this.io.setTimeoutFn(() => {
-        delete this.acks[id];
-        for (let i2 = 0; i2 < this.sendBuffer.length; i2++) {
-          if (this.sendBuffer[i2].id === id) {
-            this.sendBuffer.splice(i2, 1);
-          }
-        }
-        ack.call(this, new Error("operation has timed out"));
-      }, timeout);
-      const fn2 = (...args) => {
-        this.io.clearTimeoutFn(timer);
-        ack.apply(this, args);
-      };
-      fn2.withError = true;
-      this.acks[id] = fn2;
-    }
-    emitWithAck(ev, ...args) {
-      return new Promise((resolve, reject) => {
-        const fn2 = (arg1, arg2) => {
-          return arg1 ? reject(arg1) : resolve(arg2);
-        };
-        fn2.withError = true;
-        args.push(fn2);
-        this.emit(ev, ...args);
-      });
-    }
-    _addToQueue(args) {
-      let ack;
-      if (typeof args[args.length - 1] === "function") {
-        ack = args.pop();
-      }
-      const packet = {
-        id: this._queueSeq++,
-        tryCount: 0,
-        pending: false,
-        args,
-        flags: Object.assign({ fromQueue: true }, this.flags)
-      };
-      args.push((err, ...responseArgs) => {
-        if (packet !== this._queue[0]) {
-          return;
-        }
-        const hasError = err !== null;
-        if (hasError) {
-          if (packet.tryCount > this._opts.retries) {
-            this._queue.shift();
-            if (ack) {
-              ack(err);
-            }
-          }
-        } else {
-          this._queue.shift();
-          if (ack) {
-            ack(null, ...responseArgs);
-          }
-        }
-        packet.pending = false;
-        return this._drainQueue();
-      });
-      this._queue.push(packet);
-      this._drainQueue();
-    }
-    _drainQueue(force = false) {
-      if (!this.connected || this._queue.length === 0) {
-        return;
-      }
-      const packet = this._queue[0];
-      if (packet.pending && !force) {
-        return;
-      }
-      packet.pending = true;
-      packet.tryCount++;
-      this.flags = packet.flags;
-      this.emit.apply(this, packet.args);
-    }
-    packet(packet) {
-      packet.nsp = this.nsp;
-      this.io._packet(packet);
-    }
-    onopen() {
-      if (typeof this.auth == "function") {
-        this.auth((data) => {
-          this._sendConnectPacket(data);
-        });
-      } else {
-        this._sendConnectPacket(this.auth);
-      }
-    }
-    _sendConnectPacket(data) {
-      this.packet({
-        type: PacketType.CONNECT,
-        data: this._pid ? Object.assign({ pid: this._pid, offset: this._lastOffset }, data) : data
-      });
-    }
-    onerror(err) {
-      if (!this.connected) {
-        this.emitReserved("connect_error", err);
-      }
-    }
-    onclose(reason, description) {
-      this.connected = false;
-      delete this.id;
-      this.emitReserved("disconnect", reason, description);
-      this._clearAcks();
-    }
-    _clearAcks() {
-      Object.keys(this.acks).forEach((id) => {
-        const isBuffered = this.sendBuffer.some((packet) => String(packet.id) === id);
-        if (!isBuffered) {
-          const ack = this.acks[id];
-          delete this.acks[id];
-          if (ack.withError) {
-            ack.call(this, new Error("socket has been disconnected"));
-          }
-        }
-      });
-    }
-    onpacket(packet) {
-      const sameNamespace = packet.nsp === this.nsp;
-      if (!sameNamespace)
-        return;
-      switch (packet.type) {
-        case PacketType.CONNECT:
-          if (packet.data && packet.data.sid) {
-            this.onconnect(packet.data.sid, packet.data.pid);
-          } else {
-            this.emitReserved("connect_error", new Error("It seems you are trying to reach a Socket.IO server in v2.x with a v3.x client, but they are not compatible (more information here: https://socket.io/docs/v3/migrating-from-2-x-to-3-0/)"));
-          }
-          break;
-        case PacketType.EVENT:
-        case PacketType.BINARY_EVENT:
-          this.onevent(packet);
-          break;
-        case PacketType.ACK:
-        case PacketType.BINARY_ACK:
-          this.onack(packet);
-          break;
-        case PacketType.DISCONNECT:
-          this.ondisconnect();
-          break;
-        case PacketType.CONNECT_ERROR:
-          this.destroy();
-          const err = new Error(packet.data.message);
-          err.data = packet.data.data;
-          this.emitReserved("connect_error", err);
-          break;
-      }
-    }
-    onevent(packet) {
-      const args = packet.data || [];
-      if (null != packet.id) {
-        args.push(this.ack(packet.id));
-      }
-      if (this.connected) {
-        this.emitEvent(args);
-      } else {
-        this.receiveBuffer.push(Object.freeze(args));
-      }
-    }
-    emitEvent(args) {
-      if (this._anyListeners && this._anyListeners.length) {
-        const listeners = this._anyListeners.slice();
-        for (const listener of listeners) {
-          listener.apply(this, args);
-        }
-      }
-      super.emit.apply(this, args);
-      if (this._pid && args.length && typeof args[args.length - 1] === "string") {
-        this._lastOffset = args[args.length - 1];
-      }
-    }
-    ack(id) {
-      const self2 = this;
-      let sent = false;
-      return function(...args) {
-        if (sent)
-          return;
-        sent = true;
-        self2.packet({
-          type: PacketType.ACK,
-          id,
-          data: args
-        });
-      };
-    }
-    onack(packet) {
-      const ack = this.acks[packet.id];
-      if (typeof ack !== "function") {
-        return;
-      }
-      delete this.acks[packet.id];
-      if (ack.withError) {
-        packet.data.unshift(null);
-      }
-      ack.apply(this, packet.data);
-    }
-    onconnect(id, pid) {
-      this.id = id;
-      this.recovered = pid && this._pid === pid;
-      this._pid = pid;
-      this.connected = true;
-      this.emitBuffered();
-      this.emitReserved("connect");
-      this._drainQueue(true);
-    }
-    emitBuffered() {
-      this.receiveBuffer.forEach((args) => this.emitEvent(args));
-      this.receiveBuffer = [];
-      this.sendBuffer.forEach((packet) => {
-        this.notifyOutgoingListeners(packet);
-        this.packet(packet);
-      });
-      this.sendBuffer = [];
-    }
-    ondisconnect() {
-      this.destroy();
-      this.onclose("io server disconnect");
-    }
-    destroy() {
-      if (this.subs) {
-        this.subs.forEach((subDestroy) => subDestroy());
-        this.subs = void 0;
-      }
-      this.io["_destroy"](this);
-    }
-    disconnect() {
-      if (this.connected) {
-        this.packet({ type: PacketType.DISCONNECT });
-      }
-      this.destroy();
-      if (this.connected) {
-        this.onclose("io client disconnect");
-      }
-      return this;
-    }
-    close() {
-      return this.disconnect();
-    }
-    compress(compress) {
-      this.flags.compress = compress;
-      return this;
-    }
-    get volatile() {
-      this.flags.volatile = true;
-      return this;
-    }
-    timeout(timeout) {
-      this.flags.timeout = timeout;
-      return this;
-    }
-    onAny(listener) {
-      this._anyListeners = this._anyListeners || [];
-      this._anyListeners.push(listener);
-      return this;
-    }
-    prependAny(listener) {
-      this._anyListeners = this._anyListeners || [];
-      this._anyListeners.unshift(listener);
-      return this;
-    }
-    offAny(listener) {
-      if (!this._anyListeners) {
-        return this;
-      }
-      if (listener) {
-        const listeners = this._anyListeners;
-        for (let i2 = 0; i2 < listeners.length; i2++) {
-          if (listener === listeners[i2]) {
-            listeners.splice(i2, 1);
-            return this;
-          }
-        }
-      } else {
-        this._anyListeners = [];
-      }
-      return this;
-    }
-    listenersAny() {
-      return this._anyListeners || [];
-    }
-    onAnyOutgoing(listener) {
-      this._anyOutgoingListeners = this._anyOutgoingListeners || [];
-      this._anyOutgoingListeners.push(listener);
-      return this;
-    }
-    prependAnyOutgoing(listener) {
-      this._anyOutgoingListeners = this._anyOutgoingListeners || [];
-      this._anyOutgoingListeners.unshift(listener);
-      return this;
-    }
-    offAnyOutgoing(listener) {
-      if (!this._anyOutgoingListeners) {
-        return this;
-      }
-      if (listener) {
-        const listeners = this._anyOutgoingListeners;
-        for (let i2 = 0; i2 < listeners.length; i2++) {
-          if (listener === listeners[i2]) {
-            listeners.splice(i2, 1);
-            return this;
-          }
-        }
-      } else {
-        this._anyOutgoingListeners = [];
-      }
-      return this;
-    }
-    listenersAnyOutgoing() {
-      return this._anyOutgoingListeners || [];
-    }
-    notifyOutgoingListeners(packet) {
-      if (this._anyOutgoingListeners && this._anyOutgoingListeners.length) {
-        const listeners = this._anyOutgoingListeners.slice();
-        for (const listener of listeners) {
-          listener.apply(this, packet.data);
-        }
-      }
-    }
-  };
-
-  // node_modules/socket.io-client/build/esm/contrib/backo2.js
-  function Backoff(opts) {
-    opts = opts || {};
-    this.ms = opts.min || 100;
-    this.max = opts.max || 1e4;
-    this.factor = opts.factor || 2;
-    this.jitter = opts.jitter > 0 && opts.jitter <= 1 ? opts.jitter : 0;
-    this.attempts = 0;
-  }
-  Backoff.prototype.duration = function() {
-    var ms2 = this.ms * Math.pow(this.factor, this.attempts++);
-    if (this.jitter) {
-      var rand = Math.random();
-      var deviation = Math.floor(rand * this.jitter * ms2);
-      ms2 = (Math.floor(rand * 10) & 1) == 0 ? ms2 - deviation : ms2 + deviation;
-    }
-    return Math.min(ms2, this.max) | 0;
-  };
-  Backoff.prototype.reset = function() {
-    this.attempts = 0;
-  };
-  Backoff.prototype.setMin = function(min) {
-    this.ms = min;
-  };
-  Backoff.prototype.setMax = function(max) {
-    this.max = max;
-  };
-  Backoff.prototype.setJitter = function(jitter) {
-    this.jitter = jitter;
-  };
-
-  // node_modules/socket.io-client/build/esm/manager.js
-  var Manager = class extends Emitter {
-    constructor(uri, opts) {
-      var _a2;
-      super();
-      this.nsps = {};
-      this.subs = [];
-      if (uri && "object" === typeof uri) {
-        opts = uri;
-        uri = void 0;
-      }
-      opts = opts || {};
-      opts.path = opts.path || "/socket.io";
-      this.opts = opts;
-      installTimerFunctions(this, opts);
-      this.reconnection(opts.reconnection !== false);
-      this.reconnectionAttempts(opts.reconnectionAttempts || Infinity);
-      this.reconnectionDelay(opts.reconnectionDelay || 1e3);
-      this.reconnectionDelayMax(opts.reconnectionDelayMax || 5e3);
-      this.randomizationFactor((_a2 = opts.randomizationFactor) !== null && _a2 !== void 0 ? _a2 : 0.5);
-      this.backoff = new Backoff({
-        min: this.reconnectionDelay(),
-        max: this.reconnectionDelayMax(),
-        jitter: this.randomizationFactor()
-      });
-      this.timeout(null == opts.timeout ? 2e4 : opts.timeout);
-      this._readyState = "closed";
-      this.uri = uri;
-      const _parser = opts.parser || esm_exports;
-      this.encoder = new _parser.Encoder();
-      this.decoder = new _parser.Decoder();
-      this._autoConnect = opts.autoConnect !== false;
-      if (this._autoConnect)
-        this.open();
-    }
-    reconnection(v2) {
-      if (!arguments.length)
-        return this._reconnection;
-      this._reconnection = !!v2;
-      if (!v2) {
-        this.skipReconnect = true;
-      }
-      return this;
-    }
-    reconnectionAttempts(v2) {
-      if (v2 === void 0)
-        return this._reconnectionAttempts;
-      this._reconnectionAttempts = v2;
-      return this;
-    }
-    reconnectionDelay(v2) {
-      var _a2;
-      if (v2 === void 0)
-        return this._reconnectionDelay;
-      this._reconnectionDelay = v2;
-      (_a2 = this.backoff) === null || _a2 === void 0 ? void 0 : _a2.setMin(v2);
-      return this;
-    }
-    randomizationFactor(v2) {
-      var _a2;
-      if (v2 === void 0)
-        return this._randomizationFactor;
-      this._randomizationFactor = v2;
-      (_a2 = this.backoff) === null || _a2 === void 0 ? void 0 : _a2.setJitter(v2);
-      return this;
-    }
-    reconnectionDelayMax(v2) {
-      var _a2;
-      if (v2 === void 0)
-        return this._reconnectionDelayMax;
-      this._reconnectionDelayMax = v2;
-      (_a2 = this.backoff) === null || _a2 === void 0 ? void 0 : _a2.setMax(v2);
-      return this;
-    }
-    timeout(v2) {
-      if (!arguments.length)
-        return this._timeout;
-      this._timeout = v2;
-      return this;
-    }
-    maybeReconnectOnOpen() {
-      if (!this._reconnecting && this._reconnection && this.backoff.attempts === 0) {
-        this.reconnect();
-      }
-    }
-    open(fn2) {
-      if (~this._readyState.indexOf("open"))
-        return this;
-      this.engine = new Socket(this.uri, this.opts);
-      const socket2 = this.engine;
-      const self2 = this;
-      this._readyState = "opening";
-      this.skipReconnect = false;
-      const openSubDestroy = on2(socket2, "open", function() {
-        self2.onopen();
-        fn2 && fn2();
-      });
-      const onError = (err) => {
-        this.cleanup();
-        this._readyState = "closed";
-        this.emitReserved("error", err);
-        if (fn2) {
-          fn2(err);
-        } else {
-          this.maybeReconnectOnOpen();
-        }
-      };
-      const errorSub = on2(socket2, "error", onError);
-      if (false !== this._timeout) {
-        const timeout = this._timeout;
-        const timer = this.setTimeoutFn(() => {
-          openSubDestroy();
-          onError(new Error("timeout"));
-          socket2.close();
-        }, timeout);
-        if (this.opts.autoUnref) {
-          timer.unref();
-        }
-        this.subs.push(() => {
-          this.clearTimeoutFn(timer);
-        });
-      }
-      this.subs.push(openSubDestroy);
-      this.subs.push(errorSub);
-      return this;
-    }
-    connect(fn2) {
-      return this.open(fn2);
-    }
-    onopen() {
-      this.cleanup();
-      this._readyState = "open";
-      this.emitReserved("open");
-      const socket2 = this.engine;
-      this.subs.push(
-        on2(socket2, "ping", this.onping.bind(this)),
-        on2(socket2, "data", this.ondata.bind(this)),
-        on2(socket2, "error", this.onerror.bind(this)),
-        on2(socket2, "close", this.onclose.bind(this)),
-        on2(this.decoder, "decoded", this.ondecoded.bind(this))
-      );
-    }
-    onping() {
-      this.emitReserved("ping");
-    }
-    ondata(data) {
-      try {
-        this.decoder.add(data);
-      } catch (e2) {
-        this.onclose("parse error", e2);
-      }
-    }
-    ondecoded(packet) {
-      nextTick(() => {
-        this.emitReserved("packet", packet);
-      }, this.setTimeoutFn);
-    }
-    onerror(err) {
-      this.emitReserved("error", err);
-    }
-    socket(nsp, opts) {
-      let socket2 = this.nsps[nsp];
-      if (!socket2) {
-        socket2 = new Socket2(this, nsp, opts);
-        this.nsps[nsp] = socket2;
-      } else if (this._autoConnect && !socket2.active) {
-        socket2.connect();
-      }
-      return socket2;
-    }
-    _destroy(socket2) {
-      const nsps = Object.keys(this.nsps);
-      for (const nsp of nsps) {
-        const socket3 = this.nsps[nsp];
-        if (socket3.active) {
-          return;
-        }
-      }
-      this._close();
-    }
-    _packet(packet) {
-      const encodedPackets = this.encoder.encode(packet);
-      for (let i2 = 0; i2 < encodedPackets.length; i2++) {
-        this.engine.write(encodedPackets[i2], packet.options);
-      }
-    }
-    cleanup() {
-      this.subs.forEach((subDestroy) => subDestroy());
-      this.subs.length = 0;
-      this.decoder.destroy();
-    }
-    _close() {
-      this.skipReconnect = true;
-      this._reconnecting = false;
-      this.onclose("forced close");
-    }
-    disconnect() {
-      return this._close();
-    }
-    onclose(reason, description) {
-      var _a2;
-      this.cleanup();
-      (_a2 = this.engine) === null || _a2 === void 0 ? void 0 : _a2.close();
-      this.backoff.reset();
-      this._readyState = "closed";
-      this.emitReserved("close", reason, description);
-      if (this._reconnection && !this.skipReconnect) {
-        this.reconnect();
-      }
-    }
-    reconnect() {
-      if (this._reconnecting || this.skipReconnect)
-        return this;
-      const self2 = this;
-      if (this.backoff.attempts >= this._reconnectionAttempts) {
-        this.backoff.reset();
-        this.emitReserved("reconnect_failed");
-        this._reconnecting = false;
-      } else {
-        const delay = this.backoff.duration();
-        this._reconnecting = true;
-        const timer = this.setTimeoutFn(() => {
-          if (self2.skipReconnect)
-            return;
-          this.emitReserved("reconnect_attempt", self2.backoff.attempts);
-          if (self2.skipReconnect)
-            return;
-          self2.open((err) => {
-            if (err) {
-              self2._reconnecting = false;
-              self2.reconnect();
-              this.emitReserved("reconnect_error", err);
-            } else {
-              self2.onreconnect();
-            }
-          });
-        }, delay);
-        if (this.opts.autoUnref) {
-          timer.unref();
-        }
-        this.subs.push(() => {
-          this.clearTimeoutFn(timer);
-        });
-      }
-    }
-    onreconnect() {
-      const attempt = this.backoff.attempts;
-      this._reconnecting = false;
-      this.backoff.reset();
-      this.emitReserved("reconnect", attempt);
-    }
-  };
-
-  // node_modules/socket.io-client/build/esm/index.js
-  var cache = {};
-  function lookup2(uri, opts) {
-    if (typeof uri === "object") {
-      opts = uri;
-      uri = void 0;
-    }
-    opts = opts || {};
-    const parsed = url(uri, opts.path || "/socket.io");
-    const source = parsed.source;
-    const id = parsed.id;
-    const path = parsed.path;
-    const sameNamespace = cache[id] && path in cache[id]["nsps"];
-    const newConnection = opts.forceNew || opts["force new connection"] || false === opts.multiplex || sameNamespace;
-    let io2;
-    if (newConnection) {
-      io2 = new Manager(source, opts);
-    } else {
-      if (!cache[id]) {
-        cache[id] = new Manager(source, opts);
-      }
-      io2 = cache[id];
-    }
-    if (parsed.query && !opts.query) {
-      opts.query = parsed.queryKey;
-    }
-    return io2.socket(parsed.path, opts);
-  }
-  Object.assign(lookup2, {
-    Manager,
-    Socket: Socket2,
-    io: lookup2,
-    connect: lookup2
-  });
-
-  // src/utils/Sockets/ws/main.ts
-  var socket = lookup2("https://ws.spicylyrics.org", {
-    transports: ["websocket", "polling"],
-    autoConnect: false,
-    timeout: 6e4,
-    reconnection: false,
-    reconnectionAttempts: 1
-  });
-  var connectionStatusEventName = "sockets:ws:connection-status-change";
-  var disconnectionInt;
-  socket.on("connect", () => {
-    if (disconnectionInt) {
-      clearInterval(disconnectionInt);
-      disconnectionInt = null;
-    }
-    Global_default.Event.evoke(connectionStatusEventName, { connected: socket.connected, socket });
-  });
-  socket.on("request--state-revalidation", async () => {
-    const userData = await getUserData();
-    socket.emit("state-revalidation__user-data", userData, (resp) => {
-      if (resp.success) {
-      } else {
-        console.error("Failed to update user data", resp);
-      }
-    });
-  });
-  socket.on("disconnect", () => {
-    Global_default.Event.evoke(connectionStatusEventName, { connected: socket.connected, socket });
-    if (!disconnectionInt) {
-      disconnectionInt = setInterval(() => {
-        socket.connect();
-      }, 61e3);
-      socket.connect();
-    }
-  });
-  socket.on("connect_error", () => {
-    Global_default.Event.evoke(connectionStatusEventName, { connected: socket.connected, socket });
-    if (!disconnectionInt) {
-      disconnectionInt = setInterval(() => {
-        socket.connect();
-      }, 61e3);
-      socket.connect();
-    }
-  });
-
-  // src/utils/Sockets/main.ts
-  var UserData = Spicetify.Platform.initialUser;
-  window._spicy_lyrics.UserData = UserData;
-  async function getUserData() {
-    const [req, status] = await SpicyFetch("https://api.spotify.com/v1/me", true, false, false);
-    if (status !== 200) {
-      return;
-    }
-    const fullData = typeof req === "string" && (req.startsWith("{") || req.startsWith(`{"`) || req.startsWith("[") || req.startsWith(`["`)) ? JSON.parse(req) : req;
-    const filteredData = {
-      display_name: fullData.display_name,
-      followers: fullData.followers,
-      href: fullData.href,
-      id: fullData.id,
-      images: fullData.images,
-      product: fullData.product,
-      type: fullData.type,
-      uri: fullData.uri
-    };
-    return filteredData;
-  }
-  var Sockets = {
-    sockets: {
-      ws: socket
-    },
-    all: {
-      ConnectSockets
-    }
-  };
-  async function ConnectSockets() {
-    const APIUserData = await getUserData();
-    for (const key of Object.keys(Sockets?.sockets)) {
-      Sockets.sockets[key].auth = {
-        userData: {
-          ID: UserData.username,
-          me: APIUserData
-        }
-      };
-      await Sockets?.sockets[key]?.connect();
-    }
-  }
-  var main_default = Sockets;
-
   // src/app.tsx
   async function main() {
     await Platform_default.OnSpotifyReady;
@@ -19299,7 +16531,7 @@ ${lyricsOnly.join(
     document.head.appendChild(skeletonStyle);
     let buttonRegistered = false;
     const button = new Spicetify.Playbar.Button(
-      "Spicy Lyrics",
+      "Amai Lyrics",
       Icons.LyricsPage,
       (self2) => {
         if (!self2.active) {
@@ -19319,23 +16551,9 @@ ${lyricsOnly.join(
     });
     const Hometinue = async () => {
       Defaults_default.SpicyLyricsVersion = window._spicy_lyrics_metadata?.LoadedVersion ?? "2.4.0";
-      await main_default.all.ConnectSockets();
       Whentil_default.When(() => Spicetify.Platform.PlaybackAPI, () => {
         requestPositionSync();
       });
-      const previousVersion = storage_default.get("previous-version");
-      if (previousVersion && previousVersion !== Defaults_default.SpicyLyricsVersion) {
-        Spicetify.PopupModal.display({
-          title: "Updated - Spicy Lyrics",
-          content: `
-        <div style="font-size: 1.5rem;">
-          Your Spicy Lyrics version has been successfully updated!
-          <br>
-          Version: From: ${previousVersion} -> To: ${Defaults_default.SpicyLyricsVersion}
-        </div>`
-        });
-        storage_default.set("previous-version", Defaults_default.SpicyLyricsVersion);
-      }
       let lastImgUrl;
       const lowQMode = storage_default.get("lowQMode");
       const lowQModeEnabled = lowQMode && lowQMode === "true";
@@ -19567,11 +16785,11 @@ ${lyricsOnly.join(
  * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
  */
 (async () => {
-    if (!document.getElementById(`spicyDlyricsDfurigana`)) {
+    if (!document.getElementById(`amaiDlyrics`)) {
       var el = document.createElement('style');
-      el.id = `spicyDlyricsDfurigana`;
+      el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-11384-p8kHG0faYgwy/195d8d296f47/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-9096-emA8wiTBsw6f/195da6682977/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -19597,7 +16815,7 @@ ${lyricsOnly.join(
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-11384-p8kHG0faYgwy/195d8d296960/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9096-emA8wiTBsw6f/195da6682380/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -19736,7 +16954,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-11384-p8kHG0faYgwy/195d8d296c41/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9096-emA8wiTBsw6f/195da6682651/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -19944,7 +17162,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-11384-p8kHG0faYgwy/195d8d296cb2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9096-emA8wiTBsw6f/195da66826c2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -20250,11 +17468,11 @@ button:has(#SpicyLyricsPageSvg):after {
   animation: pressAnimation .6s;
   animation-fill-mode: forwards;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .ViewControls {
+#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .ViewControls {
   opacity: 1 !important;
   position: relative;
   width: 100%;
-  margin-top: 4cqh;
+  margin-bottom: 2cqh;
 }
 #SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl.Pressed {
   transform: scale(var(--ShrinkScale));
@@ -20418,7 +17636,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-11384-p8kHG0faYgwy/195d8d296d63/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9096-emA8wiTBsw6f/195da6682773/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -20526,7 +17744,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-11384-p8kHG0faYgwy/195d8d296da4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9096-emA8wiTBsw6f/195da66827c4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -20595,11 +17813,16 @@ header.main-topBar-container .FuriganaInfo {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   text-decoration: none;
 }
-#SpicyLyricsPage .line-furigana {
+.simplebar-content .line {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+.line-furigana {
   font-size: var(--DefaultLyricsSize-Small);
+  margin-top: -0.2rem;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-11384-p8kHG0faYgwy/195d8d296de5/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9096-emA8wiTBsw6f/195da6682815/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -20857,7 +18080,7 @@ header.main-topBar-container .FuriganaInfo {
 #SpicyLyricsPage .LyricsContainer .LyricsContent[data-lyrics-type=Line] .line {
   transform-origin: left center;
   transition: scale .2s cubic-bezier(.37, 0, .63, 1), opacity .2s cubic-bezier(.37, 0, .63, 1);
-  margin: 2cqw 0;
+  margin: 1.5cqw 0;
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent[data-lyrics-type=Line] .line.OppositeAligned {
   transform-origin: right center;
@@ -20890,7 +18113,7 @@ header.main-topBar-container .FuriganaInfo {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-11384-p8kHG0faYgwy/195d8d296e46/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9096-emA8wiTBsw6f/195da6682886/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;

@@ -23,5 +23,5 @@ export function ApplyInfo(data: { Info?: string }) {
   // Auto-hide the element after 5 seconds
   setTimeout(() => {
     TopBarContainer.removeChild(infoElement);
-  }, 5000);
+  }, 8000);
 }

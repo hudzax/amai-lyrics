@@ -231,10 +231,10 @@ async function generateFurigana(lyricsJson) {
   // Initialize Gemini API
   const GEMINI_API_KEY = storage.get('GEMINI_API_KEY')?.toString();
   if (!GEMINI_API_KEY || GEMINI_API_KEY === '') {
-    console.error('Furigana: Gemini API Key missing');
+    console.error('Amai Lyrics: Gemini API Key missing');
     // Add info message to lyrics
     lyricsJson.Info =
-      'Furigana: Gemini API Key missing. Click here to add your API key.';
+      'Amai Lyrics: Gemini API Key missing. Click here to add your own API key.';
   } else {
     try {
       console.log('Furigana: Gemini API Key present');
@@ -259,7 +259,7 @@ async function generateFurigana(lyricsJson) {
         },
       };
 
-      console.log('DEBUG furigana', 'Fetch Begin');
+      console.log('Amai Lyrics:', 'Fetch Begin');
 
       // Convert Syllable to Line
       if (lyricsJson.Type === 'Syllable') {
@@ -287,13 +287,13 @@ async function generateFurigana(lyricsJson) {
         const response = await ai.models.generateContent({
           config: generationConfig,
           model: 'gemini-2.0-flash',
-          contents: `Follow and think through this instructions carefully. For each line of Japanese text in the following lyrics, identify all kanji characters then add their furigana in this format: {furigana}. For example: 願い would be written as 願{ねが}い, 可愛い would be written as 可愛{かわい}い. Do not add any other text. Use context-appropriate readings for each kanji based on standard Japanese usage. Leave non-Japanese lines unchanged. Here are the lyrics:\n${lyricsOnly.join(
+          contents: `You are an expert in japanese language, culture and lyrics. Follow and think through this instructions carefully. For each line of Japanese text in the following lyrics, identify all kanji characters then add their furigana in this format: {furigana}. For example: 願い would be written as 願{ねが}い, 可愛い would be written as 可愛{かわい}い. Do not add any other text. Use context-appropriate readings for each kanji based on standard Japanese usage. Leave non-Japanese lines unchanged. Here are the lyrics:\n${lyricsOnly.join(
             '\n',
           )}`,
         });
         // console.log(response.text);
         let lyrics = JSON.parse(response.text);
-        console.log('DEBUG furigana', 'Fetch Finished', lyrics);
+        console.log('Amai Lyrics:', 'Fetch Finished', lyrics);
 
         if (lyricsJson.Type === 'Line') {
           lyricsJson.Content = lyricsJson.Content.map((item, index) => ({
@@ -308,10 +308,10 @@ async function generateFurigana(lyricsJson) {
         }
       }
     } catch (error) {
-      console.error('Furigana:', error);
+      console.error('Amai Lyrics:', error);
       // Add info message to lyrics
       lyricsJson.Info =
-        'Furigana not generated: Client Error. Click here to open settings page.';
+        'Amai Lyrics: Fetch Error. Please double check your API key. Click here to open settings page.';
     }
   }
 

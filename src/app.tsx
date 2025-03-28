@@ -140,7 +140,7 @@ async function main() {
   let buttonRegistered = false;
 
   const button = new Spicetify.Playbar.Button(
-    "Spicy Lyrics",
+    "Amai Lyrics",
     Icons.LyricsPage,
     (self) => {
         if (!self.active) {
@@ -172,19 +172,19 @@ async function main() {
       requestPositionSync();
     })
 
-    const previousVersion = storage.get("previous-version");
-    if (previousVersion && previousVersion !== Defaults.SpicyLyricsVersion) {
-      Spicetify.PopupModal.display({
-        title: "Updated - Spicy Lyrics",
-        content: `
-        <div style="font-size: 1.5rem;">
-          Your Spicy Lyrics version has been successfully updated!
-          <br>
-          Version: From: ${previousVersion} -> To: ${Defaults.SpicyLyricsVersion}
-        </div>`,
-      })
-      storage.set("previous-version", Defaults.SpicyLyricsVersion);
-    }
+    // const previousVersion = storage.get("previous-version");
+    // if (previousVersion && previousVersion !== Defaults.SpicyLyricsVersion) {
+    //   Spicetify.PopupModal.display({
+    //     title: "Updated - Spicy Lyrics",
+    //     content: `
+    //     <div style="font-size: 1.5rem;">
+    //       Your Spicy Lyrics version has been successfully updated!
+    //       <br>
+    //       Version: From: ${previousVersion} -> To: ${Defaults.SpicyLyricsVersion}
+    //     </div>`,
+    //   })
+    //   storage.set("previous-version", Defaults.SpicyLyricsVersion);
+    // }
 
     // Lets set out Dynamic Background (spicy-dynamic-bg) to the now playing bar
     let lastImgUrl;
@@ -390,7 +390,7 @@ async function main() {
       })
     }
 
-    button.tippy.setContent("Spicy Lyrics");
+    button.tippy.setContent("Amai Lyrics");
 
 
     Spicetify.Player.addEventListener("onplaypause", (e) => {
