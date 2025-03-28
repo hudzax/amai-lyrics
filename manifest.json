@@ -6,13 +6,6 @@
     "main": "./builds/amai-lyrics-main.js",
     "readme": "README.md",
     "branch": "main",
-    "authors": [
-      { "name": "Spikerko", "url": "https://github.com/SpikeNew7774" },
-      {
-        "name": "hudzax",
-        "url": "https://github.com/hudzax/amai-lyrics"
-      }
-    ],
     "tags": ["lyrics", "amai-lyrics", "furigana"]
   }
 ]
