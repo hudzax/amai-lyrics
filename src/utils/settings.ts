@@ -152,18 +152,13 @@ function generalSettings() {
       settings.getFieldValue('gemini-api-key') as string,
     );
 
-    Spicetify.showNotification('Fetching, please wait..', false, 2000);
     // clear cache and current lyrics data
     lyricsCache.destroy();
     storage.set('currentLyricsData', null);
     // Refetch spicy for the current song
     if (!Spicetify.Player.data?.item?.uri) return; // Exit if `uri` is not available
     const currentUri = Spicetify.Player.data.item.uri;
-    fetchLyrics(currentUri)
-      .then(ApplyLyrics)
-      .then(() => {
-        Spicetify.showNotification('Completed', false, 2000);
-      });
+    fetchLyrics(currentUri).then(ApplyLyrics);
   });
 
   settings.addButton(
