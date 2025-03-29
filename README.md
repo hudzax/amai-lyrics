@@ -38,19 +38,23 @@ For manual setup:
 
 ### ⚙️ Configuration
 
-Follow these steps to set up your Gemini API key and enjoy Furigana support:
+Follow these steps to set up your Gemini API key:
 
 1. **Open Spotify Settings:**
    - Launch Spotify and go to your settings.
 2. **Locate the API Key Field:**
    - Scroll to the bottom of the settings page until you find the API key field.
 3. **Paste Your Gemini API Key:**
-   - Insert your free Gemini API key into the field.
+   - Insert the API key into the field.
      ![Settings Screenshot](./previews/settings.jpg)
 4. **Access the Lyrics Page:**
    - Click the lyrics icon at the bottom of the Spotify window.
    - Wait a few moments as the page loads—the Furigana annotations will appear automatically.
      ![Toggle lyrics](./previews/toggle-lyrics-page.jpg)
+
+### 🌟 Future Plans
+
+- **Line-by-Line Translation:** Add support for displaying translations for each line of lyrics.
 
 ## 🙏 Credits
 
