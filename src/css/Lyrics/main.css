@@ -135,3 +135,10 @@ header.main-topBar-container .FuriganaInfo {
   transform: scale(1);
   border: 1px solid var(--essential-subdued,#818181);
 }
+
+.BoxComponent-box-elevated {
+  opacity: 0.7;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  min-block-size: 38px;
+}
