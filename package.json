@@ -19,9 +19,6 @@
   "dependencies": {
     "@google/genai": "^0.6.1",
     "@spikerko/web-modules": "npm:@jsr/spikerko__web-modules@^1.0.5",
-    "dotenv": "^16.4.7",
-    "posthog-js": "^1.203.1",
-    "simplebar": "^6.2.7",
-    "socket.io-client": "^4.8.1"
+    "simplebar": "^6.2.7"
   }
 }
