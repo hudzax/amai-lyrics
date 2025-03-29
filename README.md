@@ -36,7 +36,7 @@ For manual setup:
    spicetify apply
    ```
 
-### ⚙️ Configuration
+## ⚙️ Configuration
 
 Follow these steps to set up your Gemini API key:
 
@@ -52,7 +52,7 @@ Follow these steps to set up your Gemini API key:
    - Wait a few moments as the page loads—the Furigana annotations will appear automatically.
      ![Toggle lyrics](./previews/toggle-lyrics-page.jpg)
 
-### 🌟 Future Plans
+## 🌟 Future Plans
 
 - **Line-by-Line Translation:** Add support for displaying translations for each line of lyrics.
 
