@@ -155,28 +155,10 @@ async function main() {
   })
 
   const Hometinue = async () => {
-    Defaults.SpicyLyricsVersion = window._spicy_lyrics_metadata?.LoadedVersion ?? "2.4.0";
-    // disable unused features
-    // await Sockets.all.ConnectSockets();
-
     // Because somethimes the "syncedPositon" was unavailable, I'm putting this check here that checks if the Spicetify?.Platform?.PlaybackAPI is available (which is then used in SpotifyPlayer.GetTrackPosition())
     Whentil.When(() => Spicetify.Platform.PlaybackAPI, () => {
       requestPositionSync();
     })
-
-    // const previousVersion = storage.get("previous-version");
-    // if (previousVersion && previousVersion !== Defaults.SpicyLyricsVersion) {
-    //   Spicetify.PopupModal.display({
-    //     title: "Updated - Spicy Lyrics",
-    //     content: `
-    //     <div style="font-size: 1.5rem;">
-    //       Your Spicy Lyrics version has been successfully updated!
-    //       <br>
-    //       Version: From: ${previousVersion} -> To: ${Defaults.SpicyLyricsVersion}
-    //     </div>`,
-    //   })
-    //   storage.set("previous-version", Defaults.SpicyLyricsVersion);
-    // }
 
     // Lets set out Dynamic Background (spicy-dynamic-bg) to the now playing bar
     let lastImgUrl;
@@ -306,10 +288,8 @@ async function main() {
         if (document.querySelector("#SpicyLyricsPage .ContentBox .NowBar")) UpdateNowBar();
       }
 
-
       applyDynamicBackgroundToNowPlayingBar(Spicetify.Player.data?.item.metadata.image_url)
       songChangeLoopRan = 0;
-
 
       if (!document.querySelector("#SpicyLyricsPage .LyricsContainer")) return;
       ApplyDynamicBackground(document.querySelector("#SpicyLyricsPage .ContentBox"))
@@ -369,7 +349,6 @@ async function main() {
     }
 
     Spicetify.Platform.History.listen(loadPage)
-
     
     if (Spicetify.Platform.History.location.pathname === "/SpicyLyrics") {
       Global.Event.listen("pagecontainer:available", () => {
@@ -379,7 +358,6 @@ async function main() {
     }
 
     button.tippy.setContent("Amai Lyrics");
-
 
     Spicetify.Player.addEventListener("onplaypause", (e) => {
       SpotifyPlayer.IsPlaying = !e?.data?.isPaused;
@@ -436,15 +414,6 @@ async function main() {
 
       Spicetify.Platform.History.listen(Session.RecordNavigation);
       Session.RecordNavigation(Spicetify.Platform.History.location);
-
-      Global.Event.listen("session:navigation", (data) => {
-        if (data.pathname === "/SpicyLyrics/Update") {
-          storage.set("previous-version", Defaults.SpicyLyricsVersion);
-          window._spicy_lyrics_metadata = {}
-          Session.GoBack();
-          window.location.reload();
-        }
-      })
     }
   }
 
