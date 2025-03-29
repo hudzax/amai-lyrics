@@ -11115,8 +11115,9 @@
         return await noLyricsMessage(false, false);
       if (lyricsText === "")
         return await noLyricsMessage(false, true);
+      console.log("DEBUG raw", JSON.parse(lyricsText));
       let lyricsJson = await generateFurigana(JSON.parse(lyricsText));
-      console.log("DEBUG", lyricsJson);
+      console.log("DEBUG result", lyricsJson);
       storage_default.set("currentLyricsData", JSON.stringify(lyricsJson));
       storage_default.set("currentlyFetching", "false");
       HideLoaderContainer();
@@ -11219,7 +11220,20 @@ ${lyricsOnly.join(
   function convertLyrics(data) {
     console.log("DEBUG", "Converting Syllable to Line type");
     return data.map((item) => {
-      const leadText = item.Lead.Syllables.map((syl) => syl.Text).join("");
+      let leadText = "";
+      let prevIsJapanese = null;
+      item.Lead.Syllables.forEach((syl) => {
+        const currentIsJapanese = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/.test(syl.Text);
+        if (currentIsJapanese) {
+          if (prevIsJapanese === false && leadText) {
+            leadText += " ";
+          }
+          leadText += syl.Text;
+        } else {
+          leadText += (leadText ? " " : "") + syl.Text;
+        }
+        prevIsJapanese = currentIsJapanese;
+      });
       let startTime = item.Lead.StartTime;
       let endTime = item.Lead.EndTime;
       let fullText = leadText;
@@ -11227,7 +11241,23 @@ ${lyricsOnly.join(
         const bgTexts = item.Background.map((bg) => {
           startTime = Math.min(startTime, bg.StartTime);
           endTime = Math.max(endTime, bg.EndTime);
-          return bg.Syllables.map((syl) => syl.Text).join("");
+          let bgText = "";
+          let prevIsJapanese2 = null;
+          bg.Syllables.forEach((syl) => {
+            const currentIsJapanese = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/.test(
+              syl.Text
+            );
+            if (currentIsJapanese) {
+              if (prevIsJapanese2 === false && bgText) {
+                bgText += " ";
+              }
+              bgText += syl.Text;
+            } else {
+              bgText += (bgText ? " " : "") + syl.Text;
+            }
+            prevIsJapanese2 = currentIsJapanese;
+          });
+          return bgText;
         });
         fullText += " (" + bgTexts.join(" ") + ")";
       }
@@ -11661,7 +11691,7 @@ ${lyricsOnly.join(
     settings.addButton(
       "more-info",
       "This fork adds Furigana support to the original Spicy Lyrics utilizing free Gemini API. For personal use only.",
-      "v1.0.6",
+      "v1.0.7",
       () => {
       }
     );
@@ -16731,7 +16761,7 @@ ${lyricsOnly.join(
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-19536-xCuc3cXh3n0p/195df3e3b187/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-15584-b6mVTGAAXolh/195e17ac1d37/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -16757,7 +16787,7 @@ ${lyricsOnly.join(
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19536-xCuc3cXh3n0p/195df3e3abb0/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15584-b6mVTGAAXolh/195e17ac0b60/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -16896,7 +16926,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19536-xCuc3cXh3n0p/195df3e3ae81/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15584-b6mVTGAAXolh/195e17ac0e61/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -17104,7 +17134,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19536-xCuc3cXh3n0p/195df3e3aef2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15584-b6mVTGAAXolh/195e17ac0ed2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -17578,7 +17608,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19536-xCuc3cXh3n0p/195df3e3af93/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15584-b6mVTGAAXolh/195e17ac1083/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -17686,7 +17716,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19536-xCuc3cXh3n0p/195df3e3aff4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15584-b6mVTGAAXolh/195e17ac10c4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -17817,7 +17847,7 @@ header.main-topBar-container .FuriganaInfo {
   border: 1px solid var(--essential-subdued,#818181);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19536-xCuc3cXh3n0p/195df3e3b045/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15584-b6mVTGAAXolh/195e17ac1125/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -18108,7 +18138,7 @@ header.main-topBar-container .FuriganaInfo {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19536-xCuc3cXh3n0p/195df3e3b0a6/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15584-b6mVTGAAXolh/195e17ac1196/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
