@@ -192,8 +192,9 @@ export default async function fetchLyrics(uri: string) {
     if (lyricsText === '') return await noLyricsMessage(false, true);
 
     // Try to generate furigana for the lyrics
+    console.log('DEBUG raw', JSON.parse(lyricsText));
     let lyricsJson = await generateFurigana(JSON.parse(lyricsText));
-    console.log('DEBUG', lyricsJson);
+    console.log('DEBUG result', lyricsJson);
 
     // Store the new lyrics in localStorage
     storage.set('currentLyricsData', JSON.stringify(lyricsJson));
@@ -323,8 +324,23 @@ async function generateFurigana(lyricsJson) {
 function convertLyrics(data) {
   console.log('DEBUG', 'Converting Syllable to Line type');
   return data.map((item) => {
-    // Process Lead syllables:
-    const leadText = item.Lead.Syllables.map((syl) => syl.Text).join('');
+    // Join words: add a space if switching from non-Japanese to Japanese syllables
+    let leadText = '';
+    let prevIsJapanese: boolean | null = null;
+    item.Lead.Syllables.forEach((syl: { Text: string }) => {
+      const currentIsJapanese =
+        /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/.test(syl.Text);
+      if (currentIsJapanese) {
+        if (prevIsJapanese === false && leadText) {
+          leadText += ' ';
+        }
+        leadText += syl.Text;
+      } else {
+        // For non-Japanese, add a space before appending if leadText isn't empty
+        leadText += (leadText ? ' ' : '') + syl.Text;
+      }
+      prevIsJapanese = currentIsJapanese;
+    });
     let startTime = item.Lead.StartTime;
     let endTime = item.Lead.EndTime;
     let fullText = leadText;
@@ -335,9 +351,27 @@ function convertLyrics(data) {
         // Update start and end times if needed:
         startTime = Math.min(startTime, bg.StartTime);
         endTime = Math.max(endTime, bg.EndTime);
-        return bg.Syllables.map((syl) => syl.Text).join('');
+
+        let bgText = '';
+        let prevIsJapanese: boolean | null = null;
+        bg.Syllables.forEach((syl: { Text: string }) => {
+          const currentIsJapanese =
+            /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/.test(
+              syl.Text,
+            );
+          if (currentIsJapanese) {
+            if (prevIsJapanese === false && bgText) {
+              bgText += ' ';
+            }
+            bgText += syl.Text;
+          } else {
+            bgText += (bgText ? ' ' : '') + syl.Text;
+          }
+          prevIsJapanese = currentIsJapanese;
+        });
+        return bgText;
       });
-      // Join lead and background texts with a space (adjust as needed)
+      // Append background texts joined like the lead text
       fullText += ' (' + bgTexts.join(' ') + ')';
     }
 
