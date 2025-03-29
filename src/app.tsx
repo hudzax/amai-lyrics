@@ -28,45 +28,36 @@ import "./css/Loaders/LoaderContainer.css"
 
 import Global from "./components/Global/Global";
 import Platform from "./components/Global/Platform";
-import PostHog from "./utils/PostHog";
 import Whentil from "./utils/Whentil";
 import Session from "./components/Global/Session";
 import Defaults from "./components/Global/Defaults";
-import { CheckForUpdates } from "./utils/version/CheckForUpdates";
 import sleep from "./utils/sleep";
-// import Sockets from "./utils/Sockets/main";
 
 async function main() {
   await Platform.OnSpotifyReady;
 
   if (!storage.get("show_topbar_notifications")) {
-    storage.set("show_topbar_notifications", "true")
+    storage.set("show_topbar_notifications", "false")
   }
 
   if (!storage.get("lyrics_spacing")) {
     storage.set("lyrics_spacing", "Medium");
   }
 
-  if (storage.get("lyrics_spacing")) {
-    if (storage.get("lyrics_spacing") === "None") {
-      document.querySelector("html").style.setProperty("--SpicyLyrics-LineSpacing", "0");
-    }
-    if (storage.get("lyrics_spacing") === "Small") {
-      document.querySelector("html").style.setProperty("--SpicyLyrics-LineSpacing", "0.5cqw 0");
-    }
-    if (storage.get("lyrics_spacing") === "Medium") {
-      document.querySelector("html").style.setProperty("--SpicyLyrics-LineSpacing", "1cqw 0");
-    }
-    if (storage.get("lyrics_spacing") === "Large") {
-      document.querySelector("html").style.setProperty("--SpicyLyrics-LineSpacing", "1.5cqw 0");
-    }
-    if (storage.get("lyrics_spacing") === "Extra Large") {
-      document.querySelector("html").style.setProperty("--SpicyLyrics-LineSpacing", "2cqw 0");
-    }
+  // Cache the HTML element and set line spacing using a lookup map
+  const htmlElement = document.documentElement;
+  const spacingMap = {
+    "None": "0",
+    "Small": "0.5cqw 0",
+    "Medium": "1cqw 0",
+    "Large": "1.5cqw 0",
+    "Extra Large": "2cqw 0"
+  };
+  const lyricsSpacing = storage.get("lyrics_spacing");
+  if (spacingMap[lyricsSpacing]) {
+    htmlElement.style.setProperty("--SpicyLyrics-LineSpacing", spacingMap[lyricsSpacing]);
   }
   
-  PostHog.Load();
-
   // Lets set out the Settings Menu
   setSettingsMenu();
 
@@ -195,8 +186,8 @@ async function main() {
         applyDynamicBackgroundToNowPlayingBar(cover)
     }); */
 
-    const lowQMode = storage.get("lowQMode");
-    const lowQModeEnabled = lowQMode && lowQMode === "true";
+    // Cache lowQMode flag once instead of multiple storage.get calls
+    const lowQModeEnabled = storage.get("lowQMode") === "true";
 
     function applyDynamicBackgroundToNowPlayingBar(coverUrl: string) {
       if (lowQModeEnabled) return;
@@ -261,17 +252,13 @@ async function main() {
     Spicetify.Player.addEventListener("songchange", async (event) => {
       fetchLyrics(event?.data?.item?.uri).then(ApplyLyrics);
       // Artist Header Image Prefetch (For a Faster Experience)
-      {
-        const lowQMode = storage.get("lowQMode");
-        const lowQModeEnabled = lowQMode && lowQMode === "true";
-        if (lowQModeEnabled) {
-          const CurrentSongArtist = event.data?.item.artists[0].uri;
-          const CurrentSongUri = event.data?.item.uri;
-            try {
-                await LowQMode_SetDynamicBackground(CurrentSongArtist, CurrentSongUri);
-            } catch (error) {
-                console.error("Error happened while trying to prefetch the Low Quality Mode Dynamic Background", error)
-            }
+      if (lowQModeEnabled) {
+        const CurrentSongArtist = event.data?.item.artists[0].uri;
+        const CurrentSongUri = event.data?.item.uri;
+        try {
+          await LowQMode_SetDynamicBackground(CurrentSongArtist, CurrentSongUri);
+        } catch (error) {
+          console.error("Error prefetching Low Quality Mode Dynamic Background", error)
         }
       }
     })
@@ -401,7 +388,7 @@ async function main() {
 
     {
       let lastLoopType = null;
-      const LoopInt = new IntervalManager(Infinity, () => {
+      const LoopInt = new IntervalManager(0.2, () => {
         const LoopState = Spicetify.Player.getRepeat();
         const LoopType = LoopState === 1 ? "context" : LoopState === 2 ? "track" : "none";
         SpotifyPlayer.LoopType = LoopType;
@@ -414,7 +401,7 @@ async function main() {
 
     {
       let lastShuffleType = null;
-      const ShuffleInt = new IntervalManager(Infinity, () => {
+      const ShuffleInt = new IntervalManager(0.2, () => {
         const ShuffleType = (Spicetify.Player.origin._state.smartShuffle ? "smart" : (Spicetify.Player.origin._state.shuffle ? "normal" : "none"));
         SpotifyPlayer.ShuffleType = ShuffleType;
         if (lastShuffleType !== ShuffleType) {
@@ -458,12 +445,6 @@ async function main() {
           window.location.reload();
         }
       })
-
-      async function CheckForUpdates_Intervaled() {
-        await CheckForUpdates();
-        setTimeout(CheckForUpdates_Intervaled, 60000);
-      }
-      // setTimeout(async () => await CheckForUpdates_Intervaled(), 10000);
     }
   }
 
