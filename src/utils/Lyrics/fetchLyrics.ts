@@ -141,7 +141,7 @@ export default async function fetchLyrics(uri: string) {
     const lyricsAccessToken = storage.get("lyricsApiAccessToken") ?? Defaults.LyricsContent.api.accessToken; */
 
   try {
-    Spicetify.showNotification('Fetching lyrics, please wait..', false, 2000);
+    Spicetify.showNotification('Fetching lyrics..', false, 2000);
     const SpotifyAccessToken = await Platform.GetSpotifyAccessToken();
 
     let lyricsText = '';
@@ -191,10 +191,18 @@ export default async function fetchLyrics(uri: string) {
     if (lyricsText === null) return await noLyricsMessage(false, false);
     if (lyricsText === '') return await noLyricsMessage(false, true);
 
-    // Try to generate furigana for the lyrics
-    console.log('DEBUG raw', JSON.parse(lyricsText));
-    let lyricsJson = await generateFurigana(JSON.parse(lyricsText));
-    console.log('DEBUG result', lyricsJson);
+    let lyricsJson = JSON.parse(lyricsText);
+
+    // Determine if any line in the lyrics contains Kanji characters (using RegExp.test for a boolean result)
+    const hasKanji =
+      lyricsJson.Content?.some((item) => /[\u4E00-\u9FFF]/.test(item.Text)) ||
+      false;
+
+    if (hasKanji) {
+      console.log('DEBUG raw', lyricsJson);
+      lyricsJson = await generateFurigana(lyricsJson);
+      console.log('DEBUG result', lyricsJson);
+    }
 
     // Store the new lyrics in localStorage
     storage.set('currentLyricsData', JSON.stringify(lyricsJson));
@@ -267,8 +275,10 @@ async function generateFurigana(lyricsJson) {
       // Convert Syllable to Line
       if (lyricsJson.Type === 'Syllable') {
         lyricsJson.Type = 'Line';
-        lyricsJson.Content = convertLyrics(lyricsJson.Content);
+        lyricsJson.Content = await convertLyrics(lyricsJson.Content);
       }
+
+      // console.log('DEBUG', lyricsJson.Content);
 
       // Extract lyrics from Line and Static types
       let lyricsOnly = [];
@@ -296,7 +306,6 @@ async function generateFurigana(lyricsJson) {
         });
         // console.log(response.text);
         let lyrics = JSON.parse(response.text);
-        console.log('Amai Lyrics:', 'Fetch Finished', lyrics);
 
         if (lyricsJson.Type === 'Line') {
           lyricsJson.Content = lyricsJson.Content.map((item, index) => ({
@@ -375,6 +384,7 @@ function convertLyrics(data) {
       fullText += ' (' + bgTexts.join(' ') + ')';
     }
 
+    // console.log('DEBUG', fullText);
     return {
       Type: item.Type,
       OppositeAligned: item.OppositeAligned,
