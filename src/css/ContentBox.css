@@ -45,13 +45,13 @@
     justify-content: center;
     height: 100cqh;
     z-index: -1;
-    margin: 0 3cqw 0 8cqw;
+    margin: 0 5cqw 0 5cqw;
     transition: opacity 0.2s ease-in-out;
     opacity: 0;
 }
 
 #SpicyLyricsPage .ContentBox .NowBar.RightSide {
-    margin: 0 11cqw 0 3cqw;
+    margin: 0 5cqw 0 5cqw;
 }
 
 #SpicyLyricsPage .ContentBox .NowBar.Active {
