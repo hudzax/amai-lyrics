@@ -45,7 +45,7 @@
     justify-content: center;
     height: 100cqh;
     z-index: -1;
-    margin: 0 3cqw 0 11cqw;
+    margin: 0 3cqw 0 8cqw;
     transition: opacity 0.2s ease-in-out;
     opacity: 0;
 }
