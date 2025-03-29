@@ -192,10 +192,11 @@ export default async function fetchLyrics(uri: string) {
     if (lyricsText === '') return await noLyricsMessage(false, true);
 
     let lyricsJson = JSON.parse(lyricsText);
-
+    console.log('DEBUG', lyricsJson);
     // Determine if any line in the lyrics contains Kanji characters (using RegExp.test for a boolean result)
     const hasKanji =
       lyricsJson.Content?.some((item) => /[\u4E00-\u9FFF]/.test(item.Text)) ||
+      lyricsJson.Lines?.some((item) => /[\u4E00-\u9FFF]/.test(item.Text)) ||
       false;
 
     if (hasKanji) {
@@ -396,6 +397,7 @@ function convertLyrics(data) {
 }
 
 async function noLyricsMessage(Cache = true, LocalStorage = true) {
+  Spicetify.showNotification('Lyrics unavailable', false, 2000);
   /* const totalTime = Spicetify.Player.getDuration() / 1000;
     const segmentDuration = totalTime / 3;
     
