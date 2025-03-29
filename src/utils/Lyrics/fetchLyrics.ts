@@ -195,6 +195,9 @@ export default async function fetchLyrics(uri: string) {
     console.log('DEBUG', lyricsJson);
     // Determine if any line in the lyrics contains Kanji characters (using RegExp.test for a boolean result)
     const hasKanji =
+      lyricsJson.Content?.some((item) =>
+        item.Lead?.Syllables?.some((syl) => /[\u4E00-\u9FFF]/.test(syl.Text)),
+      ) ||
       lyricsJson.Content?.some((item) => /[\u4E00-\u9FFF]/.test(item.Text)) ||
       lyricsJson.Lines?.some((item) => /[\u4E00-\u9FFF]/.test(item.Text)) ||
       false;
