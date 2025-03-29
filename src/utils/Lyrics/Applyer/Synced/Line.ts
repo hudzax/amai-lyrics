@@ -119,10 +119,10 @@ export function ApplyLineLyrics(data) {
   data.Content.forEach((line, index, arr) => {
     const lineElem = document.createElement('div');
     // replce {brackets} with <span> tags
-    line.Text = line.Text.replace(/{/g, "<span class='line-furigana'>").replace(
-      /}/g,
-      '</span>',
-    );
+    line.Text = line.Text?.replace(
+      /{/g,
+      "<span class='line-furigana'>",
+    ).replace(/}/g, '</span>');
     lineElem.innerHTML = line.Text;
     lineElem.classList.add('line');
 
