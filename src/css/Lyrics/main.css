@@ -159,3 +159,11 @@ header.main-topBar-container .FuriganaInfo {
 #SpicyLyricsPage .ContentBox .NowBar .Header .Metadata .Artists {
   line-height: calc(var(--title-height) * 0.8);
 }
+
+ruby {
+  margin-top:-0.1rem;
+}
+
+ruby > rt {
+  margin-bottom:0.1rem;
+}
