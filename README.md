@@ -37,7 +37,9 @@ For manual setup:
    spicetify config-dir
    ```
 3. Copy the downloaded file inside the Extensions directory:
-   ![Settings Screenshot](./previews/config-dir.jpg)
+
+   ![Config Screenshot](./previews/config-dir.jpg)
+
 4. finally, run these commands in terminal:
    ```bash
    spicetify config extensions amai-lyrics-main.js
