@@ -161,6 +161,10 @@ header.main-topBar-container .FuriganaInfo {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Optional shadow */
 }
 
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section > button > div > div {
+  background-color: transparent; /* Lowered opacity for stronger acrylic effect */
+}
+
 #SpicyLyricsPage .ContentBox .NowBar .Header .Metadata {
   margin:3cqh 0 0 0;
 }
