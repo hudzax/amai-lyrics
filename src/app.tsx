@@ -14,8 +14,6 @@ import { ScrollSimplebar } from "./utils/Scrolling/Simplebar/ScrollSimplebar";
 import ApplyLyrics from "./utils/Lyrics/Global/Applyer";
 import { UpdateNowBar } from "./components/Utils/NowBar";
 import { requestPositionSync } from "./utils/Gets/GetProgress";
-import "./components/PlaylistBGs/main";
-// Currently Unused: import hasLyrics from "./functions/hasLyrics";
 
 // CSS Imports
 import "./css/default.css";
@@ -30,7 +28,6 @@ import Global from "./components/Global/Global";
 import Platform from "./components/Global/Platform";
 import Whentil from "./utils/Whentil";
 import Session from "./components/Global/Session";
-import Defaults from "./components/Global/Defaults";
 import sleep from "./utils/sleep";
 
 async function main() {
@@ -73,7 +70,7 @@ async function main() {
     
     const AddScript = (scriptFileName: string) => {
       const script = document.createElement("script");
-      script.async = false;
+      script.async = true;
       script.src = GetFullUrl(scriptFileName);
       console.log("Adding Script:", script.src);
       script.onerror = () => {
@@ -88,16 +85,10 @@ async function main() {
 
     Global.SetScope("func_main._add_script", AddScript);
 
-    // spicy-hasher.js
     AddScript("spicy-hasher.js");
-
-    // pako.min.js
     AddScript("pako.min.js");
-
-    // vibrant.min.js
     AddScript("vibrant.min.js");
 
-    // Lets apply our Scripts
     const AppendScripts = () => {
       for (const script of scripts) {
         document.head.appendChild(script);
@@ -116,8 +107,6 @@ async function main() {
 
   const skeletonStyle = document.createElement("style");
   skeletonStyle.innerHTML = `
-        <!-- This style is here to prevent the @keyframes removal in the CSS. I still don't know why that's happening. -->
-        <!-- This is a part of Spicy Lyrics -->
         <style>
             @keyframes skeleton {
                 to {
@@ -127,7 +116,6 @@ async function main() {
         </style>
   `
   document.head.appendChild(skeletonStyle);
-  
 
   let buttonRegistered = false;
 
@@ -136,7 +124,7 @@ async function main() {
     Icons.LyricsPage,
     (self) => {
         if (!self.active) {
-          Session.Navigate({ pathname: "/SpicyLyrics" });
+          Session.Navigate({ pathname: "/AmaiLyrics" });
           //self.active = true;
         } else {
           Session.GoBack();
@@ -163,11 +151,6 @@ async function main() {
     // Lets set out Dynamic Background (spicy-dynamic-bg) to the now playing bar
     let lastImgUrl;
 
-    /* Spicetify.Player.addEventListener("songchange", (event) => {
-        const cover = event.data.item.metadata.image_url;
-        applyDynamicBackgroundToNowPlayingBar(cover)
-    }); */
-
     // Cache lowQMode flag once instead of multiple storage.get calls
     const lowQModeEnabled = storage.get("lowQMode") === "true";
 
@@ -184,22 +167,11 @@ async function main() {
 
         const dynamicBackground = document.createElement("div");
         dynamicBackground.classList.add("spicy-dynamic-bg");
-
-        if (lowQModeEnabled) {
-          /* CSSFilter({ blur: "20px" }, coverUrl).then(url => {
-            dynamicBackground.innerHTML = `
-                <img class="Front NoEffect" src="${url}" />
-                <img class="Back NoEffect" src="${url}" />
-                <img class="BackCenter NoEffect" src="${url}" />
-            `
-          }) */
-        } else {
-          dynamicBackground.innerHTML = `
-            <img class="Front" src="${coverUrl}" />
-            <img class="Back" src="${coverUrl}" />
-            <img class="BackCenter" src="${coverUrl}" />
-          `
-        }
+        dynamicBackground.innerHTML = `
+          <img class="Front" src="${coverUrl}" />
+          <img class="Back" src="${coverUrl}" />
+          <img class="BackCenter" src="${coverUrl}" />
+        `;
     
         nowPlayingBar.classList.add("spicy-dynamic-bg-in-this");
 
@@ -210,21 +182,10 @@ async function main() {
         nowPlayingBar.appendChild(dynamicBackground);
 
         lastImgUrl = coverUrl;
-        //NOWPLAYINGBAR_DYNAMIC_BG_UPDATE_TIME = Date.now();
       } catch (error) {
         console.error("Error Applying the Dynamic BG to the NowPlayingBar:", error) 
       }
     }
-
-    /* function NOWPLAYINGBAR_DYNAMIC_BG() {
-      if (Date.now() - NOWPLAYINGBAR_DYNAMIC_BG_UPDATE_TIME > NOWPLAYINGBAR_DYNAMIC_BG_THROTTLE_TIME) {
-        applyDynamicBackgroundToNowPlayingBar(Spicetify.Player.data?.item.metadata.image_url);
-      }
-    
-      requestAnimationFrame(NOWPLAYINGBAR_DYNAMIC_BG)
-    }
-
-    NOWPLAYINGBAR_DYNAMIC_BG(); */
 
     new IntervalManager(1, () => {
       applyDynamicBackgroundToNowPlayingBar(Spicetify.Player.data?.item.metadata.image_url);
@@ -260,15 +221,6 @@ async function main() {
           return;
         }
       };
-
-      /* SpotifyPlayer.IsPodcast = event.data.item.type === "episode";
-      if (document.querySelector("#SpicyLyricsPage")) {
-        if (SpotifyPlayer.IsPodcast) {
-          document.querySelector("#SpicyLyricsPage").classList.add("Podcast");
-        } else {
-          document.querySelector("#SpicyLyricsPage").classList.remove("Podcast");
-        }
-      }; */
 
       const IsSomethingElseThanTrack = Spicetify.Player.data.item.type !== "track";
 
@@ -314,33 +266,21 @@ async function main() {
       }
     }
 
-
-    /* Timeout(3, async () => {
-      await checkIfLyrics(Spicetify.Player.data?.item.uri);
-    }) */
-
     window.addEventListener("online", async () => {
-
       storage.set("lastFetchedUri", null);
-
-      //await checkIfLyrics(Spicetify.Player.data?.item.uri);
-
-      //button.disabled = false;
-
       fetchLyrics(Spicetify.Player.data?.item.uri).then(ApplyLyrics);
     });
 
     new IntervalManager(ScrollingIntervalTime, () => ScrollToActiveLine(ScrollSimplebar)).Start();
 
-
     let lastLocation = null;
 
     function loadPage(location) {
-      if (location.pathname === "/SpicyLyrics") {
+      if (location.pathname === "/AmaiLyrics") {
         PageView.Open();
         button.active = true;
       } else {
-        if (lastLocation?.pathname === "/SpicyLyrics") {
+        if (lastLocation?.pathname === "/AmaiLyrics") {
           PageView.Destroy();
           button.active = false;
         }
@@ -350,7 +290,7 @@ async function main() {
 
     Spicetify.Platform.History.listen(loadPage)
     
-    if (Spicetify.Platform.History.location.pathname === "/SpicyLyrics") {
+    if (Spicetify.Platform.History.location.pathname === "/AmaiLyrics") {
       Global.Event.listen("pagecontainer:available", () => {
         loadPage(Spicetify.Platform.History.location);
         button.active = true;
@@ -431,49 +371,12 @@ async function main() {
     }
   })
 
-
   Whentil.When(() => (
     SpicyHasher &&
     pako &&
     Vibrant
   ), Hometinue);
 
-
-  
-  /* setTimeout(() => {
-    // Simulate the loaded version in Development. 
-    // If you see this code be uncommented in the "main" Github branch, if you can IMMEDIATELY submit a new Issue on Github. This is supposed to only be here during development and not production.
-    window._spicy_lyrics_metadata = {
-      LoadedVersion: "0.0.0"
-    };
-    window._spicy_lyrics_metadata.LoadedVersion = "2.1.0"
-  }, 0) */
-
 }
-
-/* 
-
-// Add this into the code after build.
-
-let ImporterMaid;
-
-// ... code ...
-
-ImporterMaid = new Maid(); // Do this when you find atleast one maid in the compiled code after it.
-
-// ... code ...
-
-export const UpdateNotice = {
-	Type: "Notification",
-	Name: "Spicy Lyrics"
-}
-
-export { ImporterMaid }
-
-And then Minimize it.
-
-(Reccomened: https://codebeautify.org/minify-js)
-
-*/
 
 export default main;

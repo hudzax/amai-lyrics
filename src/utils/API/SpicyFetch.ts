@@ -2,7 +2,6 @@ import { SpikyCache } from '@hudzax/web-modules/SpikyCache';
 import Defaults from '../../components/Global/Defaults';
 import Platform from '../../components/Global/Platform';
 import Session from '../../components/Global/Session';
-import { CheckForUpdates } from '../version/CheckForUpdates';
 
 export let SpicyFetchCache = new SpikyCache({
   name: 'SpicyFetch__Cache',
@@ -74,7 +73,6 @@ export default async function SpicyFetch(
         method: 'GET',
         headers: headers,
       })
-        .then(CheckForErrors)
         .then(async (res) => {
           if (res === null) {
             resolve([null, 500]);
@@ -172,48 +170,3 @@ export const _FETCH_CACHE = {
   GetCachedContent,
   CacheContent,
 };
-
-let ENDPOINT_DISABLEMENT_Shown = false;
-
-async function CheckForErrors(res) {
-  if (res.status === 500) {
-    const TEXT = await res.text();
-    if (TEXT.includes(`{"`)) {
-      const data = JSON.parse(TEXT);
-      if (data.type === 'ENDPOINT_DISABLEMENT') {
-        if (ENDPOINT_DISABLEMENT_Shown) return;
-        Spicetify.PopupModal.display({
-          title: 'Endpoint Disabled',
-          content: `
-                        <div>
-                            <p>The endpoint you're trying to access is disabled.</p><br>
-                            <p>This could mean a few things:</p><br>
-                            <ul>
-                                <li>Maintenace on the API</li>
-                                <li>A Critical Issue</li>
-                                <li>A quick Disablement of the Endpoint</li>
-                            </ul><br><br>
-                            <p>Is this problem persists, contact us on Github: <a href="https://github.com/spikenew7774/spicy-lyrics/" target="_blank" style="text-decoration:underline;">https://github.com/spikenew7774/spicy-lyrics</a>
-                            ,<br> Or at <b>spikerko@spikerko.org</b></p>
-                            <h3>Thanks!</h3>
-                        </div>
-                    `,
-        });
-        ENDPOINT_DISABLEMENT_Shown = true;
-        return res;
-      }
-      return res;
-    }
-    return res;
-  } else if (res.status === 403) {
-    const TEXT = await res.text();
-    if (TEXT.includes(`{"`)) {
-      const data = JSON.parse(TEXT);
-      if (data?.message === 'Update Spicy Lyrics') {
-        await CheckForUpdates(true);
-        return null;
-      }
-    }
-  }
-  return res;
-}
