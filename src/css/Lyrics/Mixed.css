@@ -360,7 +360,7 @@
 #SpicyLyricsPage .LyricsContainer .LyricsContent .Credits {
   --font-size: calc(var(--DefaultLyricsSize)*0.47);
   font-size: var(--font-size);
-  opacity: 0.65;
+  opacity: 0.8;
   margin-top: 7cqh !important;
   scale: 1;
   transition: opacity 0.8s ease-in-out;
