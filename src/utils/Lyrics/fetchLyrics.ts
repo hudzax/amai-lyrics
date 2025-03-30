@@ -304,12 +304,14 @@ async function generateFurigana(lyricsJson) {
         const response = await ai.models.generateContent({
           config: generationConfig,
           model: 'gemini-2.0-flash',
-          contents: `You are the expert in Japanese language, specializing in kanji readings and song lyrics. Follow these instructions carefully: For each line in the following lyrics, identify all kanji characters then add their furigana within curly braces, following standard Japanese orthography. For example: 願い should be written as 願{ねが}い, 可愛い should be written as 可愛{かわい}い, 5人 should be written as 5人{にん}, 明後日 should be written as 明後日{あさって}, 神様 should be written as 神様{かみさま} etc. Use context-appropriate readings for each kanji based on standard Japanese usage. Here are the lyrics:\n${lyricsOnly.join(
-            '\n',
+          contents: `You are the expert in Japanese language, specializing in kanji readings and song lyrics. Follow these instructions carefully: For each words in the following lyrics, identify all kanji characters then add their furigana within curly braces, following standard Japanese orthography. Follow this examples: 願い should be written as 願{ねが}い, 可愛い should be written as 可愛{かわい}い, 5人 should be written as 5人{にん}, 明後日 should be written as 明後日{あさって}, 神様 should be written as 神様{かみさま}, 聞き should be written as 聞{き}き etc. Use context-appropriate readings for each kanji based on standard Japanese usage. Here are the lyrics: ${JSON.stringify(
+            lyricsOnly,
           )}`,
         });
         // console.log(response.text);
-        let lyrics = JSON.parse(response.text);
+
+        // Remove newline characters from the response
+        let lyrics = JSON.parse(response.text.replace(/\n/g, ''));
 
         if (lyricsJson.Type === 'Line') {
           lyricsJson.Content = lyricsJson.Content.map((item, index) => ({
