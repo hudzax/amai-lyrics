@@ -118,11 +118,11 @@ export function ApplyLineLyrics(data) {
 
   data.Content.forEach((line, index, arr) => {
     const lineElem = document.createElement('div');
-    // replce {brackets} with <span> tags
+    // Generate ruby text for furigana
     line.Text = line.Text?.replace(
-      /{/g,
-      "<span class='line-furigana'>",
-    ).replace(/}/g, '</span>');
+      /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^\}]+)}/g,
+      '<ruby>$1<rt>$2</rt></ruby>',
+    );
     lineElem.innerHTML = line.Text;
     lineElem.classList.add('line');
 

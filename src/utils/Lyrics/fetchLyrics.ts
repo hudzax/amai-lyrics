@@ -191,8 +191,9 @@ export default async function fetchLyrics(uri: string) {
     if (lyricsText === null) return await noLyricsMessage(false, false);
     if (lyricsText === '') return await noLyricsMessage(false, true);
 
+    console.log('DEBUG raw', JSON.parse(lyricsText));
     let lyricsJson = JSON.parse(lyricsText);
-    console.log('DEBUG', lyricsJson);
+
     // Determine if any line in the lyrics contains Kanji characters (using RegExp.test for a boolean result)
     const hasKanji =
       lyricsJson.Content?.some((item) =>
@@ -203,7 +204,6 @@ export default async function fetchLyrics(uri: string) {
       false;
 
     if (hasKanji) {
-      console.log('DEBUG raw', lyricsJson);
       lyricsJson = await generateFurigana(lyricsJson);
       console.log('DEBUG result', lyricsJson);
     }
@@ -304,7 +304,7 @@ async function generateFurigana(lyricsJson) {
         const response = await ai.models.generateContent({
           config: generationConfig,
           model: 'gemini-2.0-flash',
-          contents: `You are an expert in Japanese language, specializing in kanji readings and song lyrics. Follow these instructions carefully: For each line in the following lyrics, identify all kanji characters and add their furigana in hiragana within curly braces, following standard Japanese orthography. For example: 願い would be written as 願{ねが}い, 可愛い would be written as 可愛{かわい}い, 5人 would be written as 5人{にん}, 明後日 would be written as 明後日{あさって}, etc. Use context-appropriate readings for each kanji based on standard Japanese usage. Here are the lyrics:\n${lyricsOnly.join(
+          contents: `You are the expert in Japanese language, specializing in kanji readings and song lyrics. Follow these instructions carefully: For each line in the following lyrics, identify all kanji characters then add their furigana within curly braces, following standard Japanese orthography. For example: 願い should be written as 願{ねが}い, 可愛い should be written as 可愛{かわい}い, 5人 should be written as 5人{にん}, 明後日 should be written as 明後日{あさって}, 神様 should be written as 神様{かみさま} etc. Use context-appropriate readings for each kanji based on standard Japanese usage. Here are the lyrics:\n${lyricsOnly.join(
             '\n',
           )}`,
         });
