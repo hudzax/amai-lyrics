@@ -1,4 +1,4 @@
-import { Maid } from '@spikerko/web-modules/Maid';
+import { Maid } from '@hudzax/web-modules/Maid';
 import { IntervalManager } from '../IntervalManager';
 import Defaults from '../../components/Global/Defaults';
 import { SpotifyPlayer } from '../../components/Global/SpotifyPlayer';

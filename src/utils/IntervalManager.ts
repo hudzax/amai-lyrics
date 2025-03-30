@@ -1,4 +1,4 @@
-import { Maid, Giveable } from '@spikerko/web-modules/Maid';
+import { Maid, Giveable } from '@hudzax/web-modules/Maid';
 
 class IntervalManager implements Giveable {
   private maid: Maid;
@@ -11,7 +11,7 @@ class IntervalManager implements Giveable {
 
   constructor(duration: number, callback: () => void) {
     if (isNaN(duration)) {
-      throw new Error("Duration cannot be NaN.");
+      throw new Error('Duration cannot be NaN.');
     }
 
     this.maid = new Maid();
@@ -26,12 +26,12 @@ class IntervalManager implements Giveable {
   // Starts the requestAnimationFrame loop
   public Start() {
     if (this.Destroyed) {
-      console.warn("Cannot start; IntervalManager has been destroyed.");
+      console.warn('Cannot start; IntervalManager has been destroyed.');
       return;
     }
 
     if (this.Running) {
-      console.warn("Interval is already running.");
+      console.warn('Interval is already running.');
       return;
     }
 
@@ -74,7 +74,7 @@ class IntervalManager implements Giveable {
   // Restarts the animation frame loop
   public Restart() {
     if (this.Destroyed) {
-      console.warn("Cannot restart; IntervalManager has been destroyed.");
+      console.warn('Cannot restart; IntervalManager has been destroyed.');
       return;
     }
 
@@ -85,7 +85,7 @@ class IntervalManager implements Giveable {
   // Fully cleans up the manager and makes it unusable
   public Destroy() {
     if (this.Destroyed) {
-      console.warn("IntervalManager is already destroyed.");
+      console.warn('IntervalManager is already destroyed.');
       return;
     }
 

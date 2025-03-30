@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@google/genai": "^0.6.1",
-    "@spikerko/web-modules": "npm:@jsr/spikerko__web-modules@^1.0.5",
+    "@hudzax/web-modules": "npm:@jsr/hudzax__web-modules@^1.0.5",
     "simplebar": "^6.2.7"
   }
 }

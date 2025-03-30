@@ -1,4 +1,4 @@
-import { Maid } from "@spikerko/web-modules/Maid";
+import { Maid } from '@hudzax/web-modules/Maid';
 
 type EventCallback = (progress: number, start: number, end: number) => void;
 
@@ -60,13 +60,13 @@ export default class Animator {
     const startValue = this.reversed ? this.to : this.from;
     const endValue = this.reversed ? this.from : this.to;
     this.currentProgress = startValue + (endValue - startValue) * t;
-    this.emit("progress", this.currentProgress);
+    this.emit('progress', this.currentProgress);
 
     if (t < 1) {
       this.animationFrameId = requestAnimationFrame(() => this.animate());
       this.maid.Give(() => cancelAnimationFrame(this.animationFrameId!));
     } else {
-      this.emit("finish");
+      this.emit('finish');
       this.reset();
     }
   }
@@ -76,7 +76,7 @@ export default class Animator {
 
     cancelAnimationFrame(this.animationFrameId);
     this.pausedTime = performance.now();
-    this.emit("pause", this.currentProgress);
+    this.emit('pause', this.currentProgress);
   }
 
   public Resume(): void {
@@ -85,7 +85,7 @@ export default class Animator {
     const pausedDuration = performance.now() - this.pausedTime;
     if (this.startTime !== null) this.startTime += pausedDuration;
     this.pausedTime = null;
-    this.emit("resume", this.currentProgress);
+    this.emit('resume', this.currentProgress);
     this.animate();
   }
 
@@ -93,7 +93,7 @@ export default class Animator {
     if (this.isDestroyed) return;
 
     this.reset();
-    this.emit("restart", this.currentProgress);
+    this.emit('restart', this.currentProgress);
     this.Start();
   }
 
@@ -101,13 +101,13 @@ export default class Animator {
     if (this.isDestroyed) return;
 
     this.reversed = !this.reversed;
-    this.emit("reverse", this.currentProgress);
+    this.emit('reverse', this.currentProgress);
   }
 
   public Destroy(): void {
     if (this.isDestroyed) return;
 
-    this.emit("destroy");
+    this.emit('destroy');
     this.maid.Destroy();
     this.reset();
     this.isDestroyed = true;

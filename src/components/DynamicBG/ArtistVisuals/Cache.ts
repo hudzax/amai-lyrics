@@ -1,7 +1,7 @@
-import { SpikyCache } from "@spikerko/web-modules/SpikyCache";
+import { SpikyCache } from '@hudzax/web-modules/SpikyCache';
 
 const Cache = new SpikyCache({
-    name: "SpicyLyrics-ArtistVisualsCache"
-})
+  name: 'SpicyLyrics-ArtistVisualsCache',
+});
 
 export default Cache;
