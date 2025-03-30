@@ -45,6 +45,7 @@ For manual setup:
    spicetify config extensions amai-lyrics-main.js
    spicetify apply
    ```
+5. Restart Spotify
 
 ## ⚙️ Configuration
 
