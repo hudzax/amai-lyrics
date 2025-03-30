@@ -3951,9 +3951,9 @@
     data.Content.forEach((line, index, arr) => {
       const lineElem = document.createElement("div");
       line.Text = line.Text?.replace(
-        /{/g,
-        "<span class='line-furigana'>"
-      ).replace(/}/g, "</span>");
+        /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^\}]+)}/g,
+        "<ruby>$1<rt>$2</rt></ruby>"
+      );
       lineElem.innerHTML = line.Text;
       lineElem.classList.add("line");
       if (isRtl_default(line.Text) && !lineElem.classList.contains("rtl")) {
@@ -11119,13 +11119,12 @@
         return await noLyricsMessage(false, false);
       if (lyricsText === "")
         return await noLyricsMessage(false, true);
+      console.log("DEBUG raw", JSON.parse(lyricsText));
       let lyricsJson = JSON.parse(lyricsText);
-      console.log("DEBUG", lyricsJson);
       const hasKanji = lyricsJson.Content?.some(
         (item) => item.Lead?.Syllables?.some((syl) => /[\u4E00-\u9FFF]/.test(syl.Text))
       ) || lyricsJson.Content?.some((item) => /[\u4E00-\u9FFF]/.test(item.Text)) || lyricsJson.Lines?.some((item) => /[\u4E00-\u9FFF]/.test(item.Text)) || false;
       if (hasKanji) {
-        console.log("DEBUG raw", lyricsJson);
         lyricsJson = await generateFurigana(lyricsJson);
         console.log("DEBUG result", lyricsJson);
       }
@@ -11202,7 +11201,7 @@
           const response = await ai.models.generateContent({
             config: generationConfig,
             model: "gemini-2.0-flash",
-            contents: `You are an expert in Japanese language, specializing in kanji readings and song lyrics. Follow these instructions carefully: For each line in the following lyrics, identify all kanji characters and add their furigana in hiragana within curly braces, following standard Japanese orthography. For example: \u9858\u3044 would be written as \u9858{\u306D\u304C}\u3044, \u53EF\u611B\u3044 would be written as \u53EF\u611B{\u304B\u308F\u3044}\u3044, 5\u4EBA would be written as 5\u4EBA{\u306B\u3093}, \u660E\u5F8C\u65E5 would be written as \u660E\u5F8C\u65E5{\u3042\u3055\u3063\u3066}, etc. Use context-appropriate readings for each kanji based on standard Japanese usage. Here are the lyrics:
+            contents: `You are the expert in Japanese language, specializing in kanji readings and song lyrics. Follow these instructions carefully: For each line in the following lyrics, identify all kanji characters then add their furigana within curly braces, following standard Japanese orthography. For example: \u9858\u3044 should be written as \u9858{\u306D\u304C}\u3044, \u53EF\u611B\u3044 should be written as \u53EF\u611B{\u304B\u308F\u3044}\u3044, 5\u4EBA should be written as 5\u4EBA{\u306B\u3093}, \u660E\u5F8C\u65E5 should be written as \u660E\u5F8C\u65E5{\u3042\u3055\u3063\u3066}, \u795E\u69D8 should be written as \u795E\u69D8{\u304B\u307F\u3055\u307E} etc. Use context-appropriate readings for each kanji based on standard Japanese usage. Here are the lyrics:
 ${lyricsOnly.join(
               "\n"
             )}`
@@ -11702,7 +11701,7 @@ ${lyricsOnly.join(
     settings.addButton(
       "more-info",
       "This fork adds Furigana support to the original Spicy Lyrics utilizing free Gemini API. For personal use only.",
-      "v1.0.13",
+      "v1.0.14",
       () => {
       }
     );
@@ -12122,7 +12121,7 @@ ${lyricsOnly.join(
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-16452-7dD40iAOOtM8/195e41d42507/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-15512-NUlO9IB6Ajwt/195e4827f337/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -12148,7 +12147,7 @@ ${lyricsOnly.join(
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16452-7dD40iAOOtM8/195e41d415a0/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15512-NUlO9IB6Ajwt/195e4827e5f0/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -12287,7 +12286,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16452-7dD40iAOOtM8/195e41d41a11/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15512-NUlO9IB6Ajwt/195e4827e971/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -12495,7 +12494,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16452-7dD40iAOOtM8/195e41d41ab2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15512-NUlO9IB6Ajwt/195e4827e9e2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -12969,7 +12968,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16452-7dD40iAOOtM8/195e41d41b93/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15512-NUlO9IB6Ajwt/195e4827ea93/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -13077,7 +13076,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16452-7dD40iAOOtM8/195e41d41be4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15512-NUlO9IB6Ajwt/195e4827eae4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -13229,8 +13228,14 @@ header.main-topBar-container .FuriganaInfo {
 #SpicyLyricsPage .ContentBox .NowBar .Header .Metadata .Artists {
   line-height: calc(var(--title-height) * 0.8);
 }
+ruby {
+  margin-top: -0.1rem;
+}
+ruby > rt {
+  margin-bottom: 0.1rem;
+}
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16452-7dD40iAOOtM8/195e41d41c45/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15512-NUlO9IB6Ajwt/195e4827eb35/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -13522,7 +13527,7 @@ header.main-topBar-container .FuriganaInfo {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16452-7dD40iAOOtM8/195e41d41cb6/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15512-NUlO9IB6Ajwt/195e4827eb96/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
