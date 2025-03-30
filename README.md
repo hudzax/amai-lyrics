@@ -18,7 +18,7 @@ An extension of Spicetify. A fork of [Spicy Lyrics](https://spicylyrics.org/) th
 
 ## 🚀 Installation
 
-### 🛒 Via Marketplace
+### 🛒 Via Marketplace (Currently not available 😭)
 
 Follow these simple steps:
 
