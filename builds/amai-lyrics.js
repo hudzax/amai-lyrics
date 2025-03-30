@@ -39,7 +39,7 @@
     }
   });
 
-  // node_modules/@spikerko/web-modules/SpikyCache.js
+  // node_modules/@hudzax/web-modules/SpikyCache.js
   var SpikyCache = class {
     cacheName;
     constructor(options) {
@@ -379,7 +379,7 @@
   };
   var Global_default = Global;
 
-  // node_modules/@spikerko/web-modules/Scheduler.js
+  // node_modules/@hudzax/web-modules/Scheduler.js
   var Cancel = (scheduled) => {
     if (scheduled[2]) {
       return;
@@ -460,14 +460,18 @@
     }).catch((error) => {
       if (error.message.includes("Resolver not found")) {
         if (!SpotifyPlatform.Session) {
-          console.warn("Failed to find SpotifyPlatform.Session for fetching token");
+          console.warn(
+            "Failed to find SpotifyPlatform.Session for fetching token"
+          );
         } else {
           tokenProviderResponse = {
             accessToken: SpotifyPlatform.Session.accessToken,
             expiresAtTime: SpotifyPlatform.Session.accessTokenExpirationTimestampMs,
             tokenType: "Bearer"
           };
-          accessTokenPromise = Promise.resolve(tokenProviderResponse.accessToken);
+          accessTokenPromise = Promise.resolve(
+            tokenProviderResponse.accessToken
+          );
         }
       }
       return GetSpotifyAccessToken();
@@ -574,33 +578,6 @@
   window._spicy_lyrics_session = Session;
   var Session_default = Session;
 
-  // src/utils/version/CheckForUpdates.ts
-  var ShownUpdateNotice = false;
-  async function CheckForUpdates(force = false) {
-    const IsOutdated = await Session_default.SpicyLyrics.IsOutdated();
-    if (IsOutdated) {
-      if (!force && ShownUpdateNotice)
-        return;
-      const currentVersion = Session_default.SpicyLyrics.GetCurrentVersion();
-      const latestVersion = await Session_default.SpicyLyrics.GetLatestVersion();
-      Spicetify.PopupModal.display({
-        title: "New Update - Spicy Lyrics",
-        content: `
-          <div style="font-size: 1.5rem;">
-            Your Spicy Lyrics version is outdated.
-            To update, click on the "Update" button.
-            <br>
-            Version: From: ${currentVersion.Text} -> To: ${latestVersion.Text}
-            <br><br>
-            <button onclick="window._spicy_lyrics_session.Navigate({ pathname: '/SpicyLyrics/Update' })" class="Button-sc-y0gtbx-0 Button-buttonSecondary-small-useBrowserDefaultFocusStyle encore-text-body-small-bold" data-encore-id="buttonSecondary">
-              Update
-            </button>
-          </div>`
-      });
-      ShownUpdateNotice = true;
-    }
-  }
-
   // src/utils/API/SpicyFetch.ts
   var SpicyFetchCache = new SpikyCache({
     name: "SpicyFetch__Cache"
@@ -637,7 +614,7 @@
         const SpotifyAPI_Headers = IsExternal ? {
           "Spotify-App-Version": Spicetify.Platform.version,
           "App-Platform": Spicetify.Platform.PlatformData.app_platform,
-          "Accept": "application/json",
+          Accept: "application/json",
           "Content-Type": "application/json"
         } : null;
         const headers = {
@@ -648,12 +625,11 @@
         fetch(url, {
           method: "GET",
           headers
-        }).then(CheckForErrors).then(async (res) => {
+        }).then(async (res) => {
           if (res === null) {
             resolve([null, 500]);
             return;
           }
-          ;
           const data = await res.text();
           const sentData = [data, res.status];
           resolve(sentData);
@@ -672,8 +648,13 @@
       const expiresIn = Date.now() + expirationTtl;
       const processedKey = SpicyHasher.md5(key);
       const processedData = typeof data === "object" ? JSON.stringify(data) : data;
-      const compressedData = pako.deflate(processedData, { to: "string", level: 1 });
-      const compressedString = String.fromCharCode(...new Uint8Array(compressedData));
+      const compressedData = pako.deflate(processedData, {
+        to: "string",
+        level: 1
+      });
+      const compressedString = String.fromCharCode(
+        ...new Uint8Array(compressedData)
+      );
       await SpicyFetchCache.set(processedKey, {
         Content: compressedString,
         expiresIn
@@ -693,7 +674,10 @@
             await SpicyFetchCache.remove(key);
             return content.Content;
           }
-          const compressedData = Uint8Array.from(content.Content, (c) => c.charCodeAt(0));
+          const compressedData = Uint8Array.from(
+            content.Content,
+            (c) => c.charCodeAt(0)
+          );
           const decompressedData = pako.inflate(compressedData, { to: "string" });
           const data = typeof decompressedData === "string" && (decompressedData.startsWith("{") || decompressedData.startsWith(`{"`) || decompressedData.startsWith("[") || decompressedData.startsWith(`["`)) ? JSON.parse(decompressedData) : decompressedData;
           return data;
@@ -706,50 +690,6 @@
     } catch (error) {
       console.error("ERR CC", error);
     }
-  }
-  var ENDPOINT_DISABLEMENT_Shown = false;
-  async function CheckForErrors(res) {
-    if (res.status === 500) {
-      const TEXT = await res.text();
-      if (TEXT.includes(`{"`)) {
-        const data = JSON.parse(TEXT);
-        if (data.type === "ENDPOINT_DISABLEMENT") {
-          if (ENDPOINT_DISABLEMENT_Shown)
-            return;
-          Spicetify.PopupModal.display({
-            title: "Endpoint Disabled",
-            content: `
-                        <div>
-                            <p>The endpoint you're trying to access is disabled.</p><br>
-                            <p>This could mean a few things:</p><br>
-                            <ul>
-                                <li>Maintenace on the API</li>
-                                <li>A Critical Issue</li>
-                                <li>A quick Disablement of the Endpoint</li>
-                            </ul><br><br>
-                            <p>Is this problem persists, contact us on Github: <a href="https://github.com/spikenew7774/spicy-lyrics/" target="_blank" style="text-decoration:underline;">https://github.com/spikenew7774/spicy-lyrics</a>
-                            ,<br> Or at <b>spikerko@spikerko.org</b></p>
-                            <h3>Thanks!</h3>
-                        </div>
-                    `
-          });
-          ENDPOINT_DISABLEMENT_Shown = true;
-          return res;
-        }
-        return res;
-      }
-      return res;
-    } else if (res.status === 403) {
-      const TEXT = await res.text();
-      if (TEXT.includes(`{"`)) {
-        const data = JSON.parse(TEXT);
-        if (data?.message === "Update Spicy Lyrics") {
-          await CheckForUpdates(true);
-          return null;
-        }
-      }
-    }
-    return res;
   }
 
   // src/utils/Gets/GetProgress.ts
@@ -924,7 +864,7 @@
     ShuffleType: "none"
   };
 
-  // node_modules/@spikerko/web-modules/UniqueId.js
+  // node_modules/@hudzax/web-modules/UniqueId.js
   var GeneratedIds = /* @__PURE__ */ new Set();
   function GetUniqueId() {
     while (true) {
@@ -939,7 +879,7 @@
     }
   }
 
-  // node_modules/@spikerko/web-modules/FreeArray.js
+  // node_modules/@hudzax/web-modules/FreeArray.js
   var FreeArray = class {
     Items;
     DestroyedState;
@@ -976,7 +916,7 @@
     }
   };
 
-  // node_modules/@spikerko/web-modules/Signal.js
+  // node_modules/@hudzax/web-modules/Signal.js
   var Connection = class {
     ConnectionReferences;
     Location;
@@ -1053,7 +993,7 @@
     return value instanceof Connection;
   };
 
-  // node_modules/@spikerko/web-modules/Maid.js
+  // node_modules/@hudzax/web-modules/Maid.js
   var IsGiveable = (item) => {
     return "Destroy" in item;
   };
@@ -4449,7 +4389,7 @@
       return;
     if (!Defaults_default.LyricsContainerExists)
       return;
-    if (Spicetify.Platform.History.location.pathname === "/SpicyLyrics") {
+    if (Spicetify.Platform.History.location.pathname === "/AmaiLyrics") {
       let Continue = function(currentLine) {
         if (currentLine) {
           const LineElem = currentLine.HTMLElement;
@@ -4459,7 +4399,10 @@
           if (lastLine && lastLine === LineElem)
             return;
           lastLine = LineElem;
-          setTimeout(() => LineElem.classList.add("Active", "OverridenByScroller"), PositionOffset / 2);
+          setTimeout(
+            () => LineElem.classList.add("Active", "OverridenByScroller"),
+            PositionOffset / 2
+          );
           ScrollIntoCenterView(container, LineElem, 270, -50);
         }
       };
@@ -11700,7 +11643,7 @@
     settings.addButton(
       "more-info",
       "This fork adds Furigana support to the original Spicy Lyrics utilizing free Gemini API. For personal use only.",
-      "v1.0.15",
+      "v1.0.16",
       () => {
       }
     );
@@ -11721,81 +11664,6 @@
     fontElement.rel = "stylesheet";
     fontElement.type = "text/css";
     document.head.appendChild(fontElement);
-  }
-
-  // src/components/PlaylistBGs/main.ts
-  var ThisPageRoot = document.querySelector(".Root__main-view");
-  Global_default.Event.listen("session:navigation", (data) => {
-    if (Session_default.GetPreviousLocation()?.pathname.startsWith("/playlist") && ThisPageRoot.classList.contains("spicy-playlist-bg")) {
-      const underMainView = ThisPageRoot.querySelector(".under-main-view");
-      underMainView.innerHTML = ``;
-      ThisPageRoot.classList.remove("spicy-playlist-bg");
-    }
-    if (data.pathname.startsWith("/playlist")) {
-      Whentil_default.When(() => ThisPageRoot.querySelector(".under-main-view") && ThisPageRoot.querySelector(".main-entityHeader-container"), async () => {
-        const bgColorEntity = ThisPageRoot.querySelector(".main-entityHeader-backgroundColor");
-        const bgColorOverlayEntity = ThisPageRoot.querySelector(".main-entityHeader-backgroundColor.main-entityHeader-overlay");
-        const divEntityContainer = ThisPageRoot.querySelector(".main-entityHeader-container");
-        const underMainView = ThisPageRoot.querySelector(".under-main-view");
-        const playlistContentActionBar = ThisPageRoot.querySelector(".main-actionBarBackground-background");
-        if (underMainView.querySelector(".main-entityHeader-background")) {
-          return;
-        }
-        const currentPlaylistId = data.pathname.replace("/playlist/", "");
-        bgColorEntity.style.setProperty("--BorderRadius", "0");
-        bgColorEntity.classList.add("Skeletoned");
-        divEntityContainer?.classList.add("main-entityHeader-withBackgroundImage");
-        const PROD_HOSTNAME = "https://portal.spicylyrics.org";
-        const prefetchUrl = `${PROD_HOSTNAME}/api/playlist-bgs?playlistId=${currentPlaylistId}`;
-        let imagePrefetch;
-        try {
-          imagePrefetch = await fetch(prefetchUrl, {
-            method: "GET"
-          });
-        } catch (error) {
-          console.error("Error fetching playlist bg", error);
-          bgColorEntity.classList.remove("Skeletoned");
-          divEntityContainer?.classList.remove("main-entityHeader-withBackgroundImage");
-          return;
-        }
-        if (imagePrefetch.status !== 200) {
-          bgColorEntity.classList.remove("Skeletoned");
-          divEntityContainer?.classList.remove("main-entityHeader-withBackgroundImage");
-          return;
-        }
-        const imagePrefetchData = await imagePrefetch.json();
-        const ImageUrl = imagePrefetchData.body?.url;
-        const ImageBlob = await BlobURLMaker(ImageUrl);
-        if (ImageBlob === null) {
-          return;
-        }
-        let VibrantColor;
-        Whentil_default.When(() => playlistContentActionBar.style.backgroundColor, async () => {
-          const vibrantColor = (await ExtractColorsFromImage(ImageBlob))?.LightVibrant?.getHex();
-          playlistContentActionBar.style.backgroundColor = vibrantColor;
-          VibrantColor = vibrantColor;
-        });
-        underMainView.innerHTML = `
-                <div>
-                    <div data-testid="background-image" class="main-entityHeader-background main-entityHeader-gradient" style="background-image: url('${ImageBlob}');background-position:center center;"></div>
-                    <div class="main-entityHeader-background main-entityHeader-overlay" style="--bgColor: ${VibrantColor};"></div>
-                </div>
-            `;
-        bgColorEntity?.remove();
-        bgColorOverlayEntity?.remove();
-        ThisPageRoot.classList.add("spicy-playlist-bg");
-      });
-    }
-  });
-  async function ExtractColorsFromImage(imageUrl) {
-    const img = document.createElement("img");
-    img.src = imageUrl;
-    img.crossOrigin = "anonymous";
-    img.style.display = "none";
-    document.body.appendChild(img);
-    const pallete = await Vibrant.from(img).getPalette();
-    img.remove();
-    return pallete;
   }
 
   // src/utils/sleep.ts
@@ -11835,7 +11703,7 @@
       const GetFullUrl = (target) => `https://cdn.jsdelivr.net/gh/hudzax/amai-lyrics/dist/${target}`;
       const AddScript = (scriptFileName) => {
         const script = document.createElement("script");
-        script.async = false;
+        script.async = true;
         script.src = GetFullUrl(scriptFileName);
         console.log("Adding Script:", script.src);
         script.onerror = () => {
@@ -11867,8 +11735,6 @@
     }
     const skeletonStyle = document.createElement("style");
     skeletonStyle.innerHTML = `
-        <!-- This style is here to prevent the @keyframes removal in the CSS. I still don't know why that's happening. -->
-        <!-- This is a part of Spicy Lyrics -->
         <style>
             @keyframes skeleton {
                 to {
@@ -11884,7 +11750,7 @@
       Icons.LyricsPage,
       (self2) => {
         if (!self2.active) {
-          Session_default.Navigate({ pathname: "/SpicyLyrics" });
+          Session_default.Navigate({ pathname: "/AmaiLyrics" });
         } else {
           Session_default.GoBack();
         }
@@ -11918,14 +11784,11 @@
             return;
           const dynamicBackground = document.createElement("div");
           dynamicBackground.classList.add("spicy-dynamic-bg");
-          if (lowQModeEnabled) {
-          } else {
-            dynamicBackground.innerHTML = `
-            <img class="Front" src="${coverUrl}" />
-            <img class="Back" src="${coverUrl}" />
-            <img class="BackCenter" src="${coverUrl}" />
-          `;
-          }
+          dynamicBackground.innerHTML = `
+          <img class="Front" src="${coverUrl}" />
+          <img class="Back" src="${coverUrl}" />
+          <img class="BackCenter" src="${coverUrl}" />
+        `;
           nowPlayingBar.classList.add("spicy-dynamic-bg-in-this");
           if (nowPlayingBar?.querySelector(".spicy-dynamic-bg")) {
             nowPlayingBar.querySelector(".spicy-dynamic-bg").remove();
@@ -12012,11 +11875,11 @@
       new IntervalManager(ScrollingIntervalTime, () => ScrollToActiveLine(ScrollSimplebar)).Start();
       let lastLocation = null;
       function loadPage(location) {
-        if (location.pathname === "/SpicyLyrics") {
+        if (location.pathname === "/AmaiLyrics") {
           PageView_default.Open();
           button.active = true;
         } else {
-          if (lastLocation?.pathname === "/SpicyLyrics") {
+          if (lastLocation?.pathname === "/AmaiLyrics") {
             PageView_default.Destroy();
             button.active = false;
           }
@@ -12024,7 +11887,7 @@
         lastLocation = location;
       }
       Spicetify.Platform.History.listen(loadPage);
-      if (Spicetify.Platform.History.location.pathname === "/SpicyLyrics") {
+      if (Spicetify.Platform.History.location.pathname === "/AmaiLyrics") {
         Global_default.Event.listen("pagecontainer:available", () => {
           loadPage(Spicetify.Platform.History.location);
           button.active = true;
@@ -12120,7 +11983,7 @@
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-3768-41Ck5OH4W5z5/195e4cdf84a7/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-14504-7oj8ht7Iu2iw/195e75abe8c7/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -12146,7 +12009,7 @@
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-3768-41Ck5OH4W5z5/195e4cdf7e90/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14504-7oj8ht7Iu2iw/195e75abe240/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -12285,7 +12148,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-3768-41Ck5OH4W5z5/195e4cdf8171/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14504-7oj8ht7Iu2iw/195e75abe521/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -12493,7 +12356,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-3768-41Ck5OH4W5z5/195e4cdf81e2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14504-7oj8ht7Iu2iw/195e75abe592/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -12967,7 +12830,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-3768-41Ck5OH4W5z5/195e4cdf8293/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14504-7oj8ht7Iu2iw/195e75abe693/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -13075,7 +12938,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-3768-41Ck5OH4W5z5/195e4cdf82e4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14504-7oj8ht7Iu2iw/195e75abe6d4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -13221,6 +13084,14 @@ header.main-topBar-container .FuriganaInfo {
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 1cqh;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
 #SpicyLyricsPage .ContentBox .NowBar .Header .Metadata {
   margin: 3cqh 0 0 0;
 }
@@ -13233,8 +13104,11 @@ ruby {
 ruby > rt {
   margin-bottom: 0.1rem;
 }
+.Button-buttonSecondary-small-useBrowserDefaultFocusStyle {
+  border: 1px solid rgba(255, 255, 255, 0.55);
+}
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-3768-41Ck5OH4W5z5/195e4cdf8345/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14504-7oj8ht7Iu2iw/195e75abe745/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -13526,7 +13400,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-3768-41Ck5OH4W5z5/195e4cdf83b6/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14504-7oj8ht7Iu2iw/195e75abe7d6/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
