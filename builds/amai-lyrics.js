@@ -11201,12 +11201,11 @@
           const response = await ai.models.generateContent({
             config: generationConfig,
             model: "gemini-2.0-flash",
-            contents: `You are the expert in Japanese language, specializing in kanji readings and song lyrics. Follow these instructions carefully: For each line in the following lyrics, identify all kanji characters then add their furigana within curly braces, following standard Japanese orthography. For example: \u9858\u3044 should be written as \u9858{\u306D\u304C}\u3044, \u53EF\u611B\u3044 should be written as \u53EF\u611B{\u304B\u308F\u3044}\u3044, 5\u4EBA should be written as 5\u4EBA{\u306B\u3093}, \u660E\u5F8C\u65E5 should be written as \u660E\u5F8C\u65E5{\u3042\u3055\u3063\u3066}, \u795E\u69D8 should be written as \u795E\u69D8{\u304B\u307F\u3055\u307E} etc. Use context-appropriate readings for each kanji based on standard Japanese usage. Here are the lyrics:
-${lyricsOnly.join(
-              "\n"
+            contents: `You are the expert in Japanese language, specializing in kanji readings and song lyrics. Follow these instructions carefully: For each words in the following lyrics, identify all kanji characters then add their furigana within curly braces, following standard Japanese orthography. Follow this examples: \u9858\u3044 should be written as \u9858{\u306D\u304C}\u3044, \u53EF\u611B\u3044 should be written as \u53EF\u611B{\u304B\u308F\u3044}\u3044, 5\u4EBA should be written as 5\u4EBA{\u306B\u3093}, \u660E\u5F8C\u65E5 should be written as \u660E\u5F8C\u65E5{\u3042\u3055\u3063\u3066}, \u795E\u69D8 should be written as \u795E\u69D8{\u304B\u307F\u3055\u307E}, \u805E\u304D should be written as \u805E{\u304D}\u304D etc. Use context-appropriate readings for each kanji based on standard Japanese usage. Here are the lyrics: ${JSON.stringify(
+              lyricsOnly
             )}`
           });
-          let lyrics = JSON.parse(response.text);
+          let lyrics = JSON.parse(response.text.replace(/\n/g, ""));
           if (lyricsJson.Type === "Line") {
             lyricsJson.Content = lyricsJson.Content.map((item, index) => ({
               ...item,
@@ -11701,7 +11700,7 @@ ${lyricsOnly.join(
     settings.addButton(
       "more-info",
       "This fork adds Furigana support to the original Spicy Lyrics utilizing free Gemini API. For personal use only.",
-      "v1.0.14",
+      "v1.0.15",
       () => {
       }
     );
@@ -12121,7 +12120,7 @@ ${lyricsOnly.join(
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-15512-NUlO9IB6Ajwt/195e4827f337/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-3768-41Ck5OH4W5z5/195e4cdf84a7/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -12147,7 +12146,7 @@ ${lyricsOnly.join(
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15512-NUlO9IB6Ajwt/195e4827e5f0/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-3768-41Ck5OH4W5z5/195e4cdf7e90/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -12286,7 +12285,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15512-NUlO9IB6Ajwt/195e4827e971/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-3768-41Ck5OH4W5z5/195e4cdf8171/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -12494,7 +12493,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15512-NUlO9IB6Ajwt/195e4827e9e2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-3768-41Ck5OH4W5z5/195e4cdf81e2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -12968,7 +12967,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15512-NUlO9IB6Ajwt/195e4827ea93/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-3768-41Ck5OH4W5z5/195e4cdf8293/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -13076,7 +13075,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15512-NUlO9IB6Ajwt/195e4827eae4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-3768-41Ck5OH4W5z5/195e4cdf82e4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -13223,7 +13222,7 @@ header.main-topBar-container .FuriganaInfo {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 #SpicyLyricsPage .ContentBox .NowBar .Header .Metadata {
-  margin: 2cqh 0 0 0;
+  margin: 3cqh 0 0 0;
 }
 #SpicyLyricsPage .ContentBox .NowBar .Header .Metadata .Artists {
   line-height: calc(var(--title-height) * 0.8);
@@ -13235,7 +13234,7 @@ ruby > rt {
   margin-bottom: 0.1rem;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15512-NUlO9IB6Ajwt/195e4827eb35/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-3768-41Ck5OH4W5z5/195e4cdf8345/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -13482,7 +13481,7 @@ ruby > rt {
 #SpicyLyricsPage .LyricsContainer .LyricsContent .Credits {
   --font-size: calc(var(--DefaultLyricsSize)*0.47);
   font-size: var(--font-size);
-  opacity: 0.65;
+  opacity: 0.8;
   margin-top: 7cqh !important;
   scale: 1;
   transition: opacity 0.8s ease-in-out;
@@ -13527,7 +13526,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15512-NUlO9IB6Ajwt/195e4827eb96/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-3768-41Ck5OH4W5z5/195e4cdf83b6/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
