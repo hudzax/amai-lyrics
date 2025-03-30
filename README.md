@@ -14,6 +14,8 @@ An extension of Spicetify. A fork of [Spicy Lyrics](https://spicylyrics.org/) th
 
 ![Extension Preview](./previews/preview-large-2.jpg)
 
+![Extension Preview](./previews/preview-app.jpg)
+
 ## 🚀 Installation
 
 ### 🛒 Via Marketplace
