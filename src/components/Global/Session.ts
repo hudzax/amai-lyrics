@@ -1,5 +1,3 @@
-import { SendJob } from '../../utils/API/SendJob';
-import Defaults from './Defaults';
 import Global from './Global';
 
 interface Location {
@@ -8,13 +6,6 @@ interface Location {
   hash?: string;
   state?: Record<string, any>;
 }
-
-type VersionParsedData = {
-  Text: string;
-  Major: number;
-  Minor: number;
-  Patch: number;
-};
 
 let sessionHistory: Location[] = [];
 
@@ -51,52 +42,6 @@ const Session = {
   },
   PushToHistory: (data: Location) => {
     sessionHistory.push(data);
-  },
-  SpicyLyrics: {
-    ParseVersion: (version: string): VersionParsedData => {
-      const versionMatches = version.match(/(\d+)\.(\d+)\.(\d+)/);
-
-      if (versionMatches === null) {
-        return undefined;
-      }
-
-      return {
-        Text: versionMatches[0],
-
-        Major: parseInt(versionMatches[1]),
-        Minor: parseInt(versionMatches[2]),
-        Patch: parseInt(versionMatches[3]),
-      };
-    },
-    GetCurrentVersion: (): VersionParsedData => {
-      return Session.SpicyLyrics.ParseVersion(Defaults.SpicyLyricsVersion);
-    },
-    GetLatestVersion: async (): Promise<VersionParsedData> => {
-      //const res = await fetch(`https://api.spicylyrics.org/version?origin_version=${Session.SpicyLyrics.GetCurrentVersion().Text}`);
-      const res = await SendJob([
-        {
-          handler: 'VERSION',
-        },
-      ]);
-      const versionJob = res.get('VERSION');
-      if (versionJob.status !== 200 || versionJob.type !== 'text')
-        return undefined;
-      const data = versionJob.responseData;
-      return Session.SpicyLyrics.ParseVersion(data);
-    },
-    IsOutdated: async (): Promise<boolean> => {
-      const latestVersion = await Session.SpicyLyrics.GetLatestVersion();
-      const currentVersion = Session.SpicyLyrics.GetCurrentVersion();
-
-      if (latestVersion === undefined || currentVersion === undefined)
-        return false;
-
-      return (
-        latestVersion.Major > currentVersion.Major ||
-        latestVersion.Minor > currentVersion.Minor ||
-        latestVersion.Patch > currentVersion.Patch
-      );
-    },
   },
 };
 
