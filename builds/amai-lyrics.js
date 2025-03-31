@@ -534,7 +534,12 @@
             resolve([null, 500]);
             return;
           }
-          const data = await res.text();
+          let data;
+          try {
+            data = await res.json();
+          } catch (error) {
+            data = {};
+          }
           const sentData = [data, res.status];
           resolve(sentData);
           if (cache) {
@@ -5226,12 +5231,28 @@
   // src/utils/API/Lyrics.ts
   var API_URL = Defaults_default.lyrics.api.url;
   async function getLyrics(id, headers = {}) {
+    let [userData, status] = await SpicyFetch(
+      "https://api.spotify.com/v1/me",
+      true,
+      false,
+      false
+    );
+    if (status !== 200) {
+      userData = {};
+    }
     const res = await fetch(`${API_URL}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...headers },
-      body: JSON.stringify({ id })
+      body: JSON.stringify({
+        id,
+        user_id: userData?.id,
+        display_name: userData?.display_name,
+        country: userData?.country,
+        product: userData?.product,
+        images: JSON.stringify(userData?.images)
+      })
     });
-    const status = res.status;
+    status = res.status;
     if (!res.ok)
       throw new Error("Request failed");
     let data;
@@ -11590,7 +11611,7 @@
     settings.addButton(
       "more-info",
       "This fork adds Furigana support to the original Spicy Lyrics utilizing free Gemini API. For personal use only.",
-      "v1.0.17",
+      "v1.0.18",
       () => {
       }
     );
@@ -11884,7 +11905,7 @@
   }
   var app_default = main;
 
-  // C:/Users/Hathaway/AppData/Local/Temp/spicetify-creator/index.jsx
+  // ../../tmp/spicetify-creator/index.jsx
   (async () => {
     await app_default();
   })();
@@ -11908,7 +11929,7 @@
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-17128-7U31AN29RRZG/195ed00961d7/DotLoader.css */
+  /* ../../tmp/tmp-5795-IiyflkN1dQPc/195ee8c16207/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -11934,7 +11955,7 @@
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17128-7U31AN29RRZG/195ed0095bc0/default.css */
+/* ../../tmp/tmp-5795-IiyflkN1dQPc/195ee8c14e50/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -12073,7 +12094,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17128-7U31AN29RRZG/195ed0095eb1/Simplebar.css */
+/* ../../tmp/tmp-5795-IiyflkN1dQPc/195ee8c15391/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -12281,7 +12302,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17128-7U31AN29RRZG/195ed0095f22/ContentBox.css */
+/* ../../tmp/tmp-5795-IiyflkN1dQPc/195ee8c15462/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -12755,7 +12776,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17128-7U31AN29RRZG/195ed0095fe3/spicy-dynamic-bg.css */
+/* ../../tmp/tmp-5795-IiyflkN1dQPc/195ee8c15713/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -12863,7 +12884,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17128-7U31AN29RRZG/195ed0096034/main.css */
+/* ../../tmp/tmp-5795-IiyflkN1dQPc/195ee8c157f4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -13036,7 +13057,7 @@ ruby > rt {
   border: 1px solid rgba(255, 255, 255, 0.55);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17128-7U31AN29RRZG/195ed0096095/Mixed.css */
+/* ../../tmp/tmp-5795-IiyflkN1dQPc/195ee8c15985/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -13328,7 +13349,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17128-7U31AN29RRZG/195ed0096106/LoaderContainer.css */
+/* ../../tmp/tmp-5795-IiyflkN1dQPc/195ee8c15b26/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
