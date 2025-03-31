@@ -159,7 +159,7 @@
   var Defaults = {
     lyrics: {
       api: {
-        url: "https://api.spicylyrics.org"
+        url: "https://amai-worker-production.nandemo.workers.dev/lyrics/id"
       }
     },
     lowQualityMode: false,
@@ -484,109 +484,13 @@
   };
   var Platform_default = Platform;
 
-  // src/utils/API/SendJob.ts
-  var API_URL = Defaults_default.lyrics.api.url;
-  async function SendJob(jobs, headers = {}) {
-    const res = await fetch(`${API_URL}/batch`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...headers },
-      body: JSON.stringify({ jobs })
-    });
-    if (!res.ok)
-      throw new Error("Request failed");
-    const data = await res.json();
-    const results = /* @__PURE__ */ new Map();
-    for (const job of data.jobs) {
-      results.set(job.handler, job.result);
-    }
-    return {
-      get(handler) {
-        return results.get(handler);
-      }
-    };
-  }
-
-  // src/components/Global/Session.ts
-  var sessionHistory = [];
-  var Session = {
-    Navigate: (data) => {
-      Spicetify.Platform.History.push(data);
-    },
-    GoBack: () => {
-      if (sessionHistory.length > 1) {
-        Session.Navigate(sessionHistory[sessionHistory.length - 2]);
-      } else {
-        Session.Navigate({ pathname: "/" });
-      }
-    },
-    GetPreviousLocation: () => {
-      if (sessionHistory.length > 1) {
-        return sessionHistory[sessionHistory.length - 2];
-      }
-      return null;
-    },
-    RecordNavigation: (data) => {
-      Session.PushToHistory(data);
-      Global_default.Event.evoke("session:navigation", data);
-    },
-    FilterOutTheSameLocation: (data) => {
-      const filtered = sessionHistory.filter(
-        (location) => location.pathname !== data.pathname && location.search !== data?.search && location.hash !== data?.hash
-      );
-      sessionHistory = filtered;
-    },
-    PushToHistory: (data) => {
-      sessionHistory.push(data);
-    },
-    SpicyLyrics: {
-      ParseVersion: (version) => {
-        const versionMatches = version.match(/(\d+)\.(\d+)\.(\d+)/);
-        if (versionMatches === null) {
-          return void 0;
-        }
-        return {
-          Text: versionMatches[0],
-          Major: parseInt(versionMatches[1]),
-          Minor: parseInt(versionMatches[2]),
-          Patch: parseInt(versionMatches[3])
-        };
-      },
-      GetCurrentVersion: () => {
-        return Session.SpicyLyrics.ParseVersion(Defaults_default.SpicyLyricsVersion);
-      },
-      GetLatestVersion: async () => {
-        const res = await SendJob([
-          {
-            handler: "VERSION"
-          }
-        ]);
-        const versionJob = res.get("VERSION");
-        if (versionJob.status !== 200 || versionJob.type !== "text")
-          return void 0;
-        const data = versionJob.responseData;
-        return Session.SpicyLyrics.ParseVersion(data);
-      },
-      IsOutdated: async () => {
-        const latestVersion = await Session.SpicyLyrics.GetLatestVersion();
-        const currentVersion = Session.SpicyLyrics.GetCurrentVersion();
-        if (latestVersion === void 0 || currentVersion === void 0)
-          return false;
-        return latestVersion.Major > currentVersion.Major || latestVersion.Minor > currentVersion.Minor || latestVersion.Patch > currentVersion.Patch;
-      }
-    }
-  };
-  window._spicy_lyrics_session = Session;
-  var Session_default = Session;
-
   // src/utils/API/SpicyFetch.ts
   var SpicyFetchCache = new SpikyCache({
     name: "SpicyFetch__Cache"
   });
   async function SpicyFetch(path, IsExternal = false, cache = false, cosmos = false) {
     return new Promise(async (resolve, reject) => {
-      const lyricsApi = Defaults_default.lyrics.api.url;
-      const CurrentVersion = Session_default.SpicyLyrics.GetCurrentVersion();
-      const url = IsExternal ? path : `${lyricsApi}/${path}${path.includes("?") ? "&" : "?"}origin_version=${CurrentVersion.Text}`;
+      const url = path;
       const CachedContent = await GetCachedContent(url);
       if (CachedContent) {
         if (Array.isArray(CachedContent)) {
@@ -3769,9 +3673,9 @@
     TOP_ApplyLyricsSpacer(LyricsContainer);
     data.Lines.forEach((line) => {
       const lineElem = document.createElement("div");
-      line.Text = line.Text.replace(/{/g, "<span class='line-furigana'>").replace(
-        /}/g,
-        "</span>"
+      line.Text = line.Text?.replace(
+        /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^\}]+)}/g,
+        "<ruby>$1<rt>$2</rt></ruby>"
       );
       if (line.Text.includes("[DEF=font_size:small]")) {
         lineElem.style.fontSize = "35px";
@@ -4572,6 +4476,42 @@
   }
   var Fullscreen_default = Fullscreen;
 
+  // src/components/Global/Session.ts
+  var sessionHistory = [];
+  var Session = {
+    Navigate: (data) => {
+      Spicetify.Platform.History.push(data);
+    },
+    GoBack: () => {
+      if (sessionHistory.length > 1) {
+        Session.Navigate(sessionHistory[sessionHistory.length - 2]);
+      } else {
+        Session.Navigate({ pathname: "/" });
+      }
+    },
+    GetPreviousLocation: () => {
+      if (sessionHistory.length > 1) {
+        return sessionHistory[sessionHistory.length - 2];
+      }
+      return null;
+    },
+    RecordNavigation: (data) => {
+      Session.PushToHistory(data);
+      Global_default.Event.evoke("session:navigation", data);
+    },
+    FilterOutTheSameLocation: (data) => {
+      const filtered = sessionHistory.filter(
+        (location) => location.pathname !== data.pathname && location.search !== data?.search && location.hash !== data?.hash
+      );
+      sessionHistory = filtered;
+    },
+    PushToHistory: (data) => {
+      sessionHistory.push(data);
+    }
+  };
+  window._spicy_lyrics_session = Session;
+  var Session_default = Session;
+
   // src/components/Pages/PageView.ts
   var Tooltips = {
     Close: null,
@@ -5282,6 +5222,26 @@
   Global_default.Event.listen("fullscreen:exit", () => {
     CleanUpActiveComponents();
   });
+
+  // src/utils/API/Lyrics.ts
+  var API_URL = Defaults_default.lyrics.api.url;
+  async function getLyrics(id, headers = {}) {
+    const res = await fetch(`${API_URL}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ id })
+    });
+    const status = res.status;
+    if (!res.ok)
+      throw new Error("Request failed");
+    let data;
+    try {
+      data = await res.json();
+    } catch (error) {
+      data = {};
+    }
+    return { response: data, status };
+  }
 
   // node_modules/@google/genai/dist/web/index.mjs
   var BaseModule = class {
@@ -10942,7 +10902,7 @@
 
   // src/utils/Lyrics/fetchLyrics.ts
   var lyricsCache = new SpikyCache({
-    name: "SpikyCache_Spicy_Lyrics"
+    name: "Cache_Lyrics"
   });
   async function fetchLyrics(uri) {
     if (document.querySelector("#SpicyLyricsPage .LyricsContainer .LyricsContent")?.classList.contains("offline")) {
@@ -11022,28 +10982,15 @@
     try {
       Spicetify.showNotification("Fetching lyrics..", false, 2e3);
       const SpotifyAccessToken = await Platform_default.GetSpotifyAccessToken();
-      let lyricsText = "";
       let status = 0;
-      const jobs = await SendJob(
-        [
-          {
-            handler: "LYRICS_ID",
-            args: {
-              id: trackId,
-              auth: "SpicyLyrics-WebAuth"
-            }
-          }
-        ],
-        {
-          "SpicyLyrics-WebAuth": `Bearer ${SpotifyAccessToken}`
-        }
-      );
-      const lyricsJob = jobs.get("LYRICS_ID");
-      status = lyricsJob.status;
-      if (lyricsJob.type !== "json") {
-        lyricsText = "";
+      const getLyricsResult = await getLyrics(trackId, {
+        Authorization: `Bearer ${SpotifyAccessToken}`
+      });
+      let lyricsJson = getLyricsResult.response;
+      status = getLyricsResult.status;
+      if (!lyricsJson || typeof lyricsJson === "object" && !("id" in lyricsJson)) {
+        lyricsJson = "";
       }
-      lyricsText = JSON.stringify(lyricsJob.responseData);
       if (status !== 200) {
         if (status === 500)
           return await noLyricsMessage(false, true);
@@ -11058,12 +11005,11 @@
         return await noLyricsMessage(false, true);
       }
       ClearLyricsPageContainer();
-      if (lyricsText === null)
+      if (lyricsJson === null)
         return await noLyricsMessage(false, false);
-      if (lyricsText === "")
+      if (lyricsJson === "")
         return await noLyricsMessage(false, true);
-      console.log("DEBUG raw", JSON.parse(lyricsText));
-      let lyricsJson = JSON.parse(lyricsText);
+      console.log("DEBUG raw", lyricsJson);
       const hasKanji = lyricsJson.Content?.some(
         (item) => item.Lead?.Syllables?.some((syl) => /[\u4E00-\u9FFF]/.test(syl.Text))
       ) || lyricsJson.Content?.some((item) => /[\u4E00-\u9FFF]/.test(item.Text)) || lyricsJson.Lines?.some((item) => /[\u4E00-\u9FFF]/.test(item.Text)) || false;
@@ -11103,7 +11049,7 @@
       lyricsJson.Info = "Amai Lyrics: Gemini API Key missing. Click here to add your own API key.";
     } else {
       try {
-        console.log("Furigana: Gemini API Key present");
+        console.log("Amai Lyrics: Gemini API Key present");
         const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
         const generationConfig = {
           temperature: 0.2,
@@ -11141,6 +11087,7 @@
         if (lyricsJson.Type === "Static")
           lyricsOnly = lyricsJson.Lines.map((item) => item.Text);
         if (lyricsOnly.length > 0) {
+          lyricsJson.Raw = lyricsOnly;
           const response = await ai.models.generateContent({
             config: generationConfig,
             model: "gemini-2.0-flash",
@@ -11643,7 +11590,7 @@
     settings.addButton(
       "more-info",
       "This fork adds Furigana support to the original Spicy Lyrics utilizing free Gemini API. For personal use only.",
-      "v1.0.16",
+      "v1.0.17",
       () => {
       }
     );
@@ -11805,15 +11752,6 @@
       Spicetify.Player.addEventListener("songchange", onSongChange);
       Spicetify.Player.addEventListener("songchange", async (event) => {
         fetchLyrics(event?.data?.item?.uri).then(ApplyLyrics);
-        if (lowQModeEnabled) {
-          const CurrentSongArtist = event.data?.item.artists[0].uri;
-          const CurrentSongUri = event.data?.item.uri;
-          try {
-            await LowQMode_SetDynamicBackground(CurrentSongArtist, CurrentSongUri);
-          } catch (error) {
-            console.error("Error prefetching Low Quality Mode Dynamic Background", error);
-          }
-        }
       });
       let songChangeLoopRan = 0;
       const songChangeLoopMax = 5;
@@ -11854,19 +11792,6 @@
       }
       {
         fetchLyrics(Spicetify.Player.data.item.uri).then(ApplyLyrics);
-        {
-          const lowQMode = storage_default.get("lowQMode");
-          const lowQModeEnabled2 = lowQMode && lowQMode === "true";
-          if (lowQModeEnabled2) {
-            const CurrentSongArtist = Spicetify.Player.data?.item.artists[0].uri;
-            const CurrentSongUri = Spicetify.Player.data?.item.uri;
-            try {
-              await LowQMode_SetDynamicBackground(CurrentSongArtist, CurrentSongUri);
-            } catch (error) {
-              console.error("Error happened while trying to prefetch the Low Quality Mode Dynamic Background", error);
-            }
-          }
-        }
       }
       window.addEventListener("online", async () => {
         storage_default.set("lastFetchedUri", null);
@@ -11983,7 +11908,7 @@
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-14504-7oj8ht7Iu2iw/195e75abe8c7/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-17128-7U31AN29RRZG/195ed00961d7/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -12009,7 +11934,7 @@
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14504-7oj8ht7Iu2iw/195e75abe240/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17128-7U31AN29RRZG/195ed0095bc0/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -12148,7 +12073,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14504-7oj8ht7Iu2iw/195e75abe521/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17128-7U31AN29RRZG/195ed0095eb1/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -12356,7 +12281,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14504-7oj8ht7Iu2iw/195e75abe592/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17128-7U31AN29RRZG/195ed0095f22/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -12830,7 +12755,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14504-7oj8ht7Iu2iw/195e75abe693/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17128-7U31AN29RRZG/195ed0095fe3/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -12938,7 +12863,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14504-7oj8ht7Iu2iw/195e75abe6d4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17128-7U31AN29RRZG/195ed0096034/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -13092,6 +13017,9 @@ header.main-topBar-container .FuriganaInfo {
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section > button > div > div {
+  background-color: transparent;
+}
 #SpicyLyricsPage .ContentBox .NowBar .Header .Metadata {
   margin: 3cqh 0 0 0;
 }
@@ -13108,7 +13036,7 @@ ruby > rt {
   border: 1px solid rgba(255, 255, 255, 0.55);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14504-7oj8ht7Iu2iw/195e75abe745/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17128-7U31AN29RRZG/195ed0096095/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -13400,7 +13328,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14504-7oj8ht7Iu2iw/195e75abe7d6/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17128-7U31AN29RRZG/195ed0096106/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
