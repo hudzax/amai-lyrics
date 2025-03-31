@@ -1,7 +1,6 @@
 import { SpikyCache } from '@hudzax/web-modules/SpikyCache';
 import Defaults from '../../components/Global/Defaults';
 import Platform from '../../components/Global/Platform';
-import Session from '../../components/Global/Session';
 
 export let SpicyFetchCache = new SpikyCache({
   name: 'SpicyFetch__Cache',
@@ -14,15 +13,7 @@ export default async function SpicyFetch(
   cosmos: boolean = false,
 ): Promise<Response | any> {
   return new Promise(async (resolve, reject) => {
-    const lyricsApi = Defaults.lyrics.api.url;
-
-    const CurrentVersion = Session.SpicyLyrics.GetCurrentVersion();
-
-    const url = IsExternal
-      ? path
-      : `${lyricsApi}/${path}${path.includes('?') ? '&' : '?'}origin_version=${
-          CurrentVersion.Text
-        }`;
+    const url = path;
 
     const CachedContent = await GetCachedContent(url);
     if (CachedContent) {
