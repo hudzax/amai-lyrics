@@ -1,7 +1,6 @@
 import { SpikyCache } from '@hudzax/web-modules/SpikyCache';
 import storage from '../storage';
 import Defaults from '../../components/Global/Defaults';
-import SpicyFetch from '../API/SpicyFetch';
 import {
   CloseNowBar,
   DeregisterNowBarBtn,
@@ -9,17 +8,15 @@ import {
 } from '../../components/Utils/NowBar';
 import PageView from '../../components/Pages/PageView';
 import Fullscreen from '../../components/Utils/Fullscreen';
-import { SendJob } from '../API/SendJob';
+import { getLyrics } from '../API/Lyrics';
 import Platform from '../../components/Global/Platform';
 import { GoogleGenAI } from '@google/genai';
 
 export const lyricsCache = new SpikyCache({
-  name: 'SpikyCache_Spicy_Lyrics',
+  name: 'Cache_Lyrics',
 });
 
 export default async function fetchLyrics(uri: string) {
-  //if (!document.querySelector("#SpicyLyricsPage")) return;
-
   if (
     document
       .querySelector('#SpicyLyricsPage .LyricsContainer .LyricsContent')
@@ -144,32 +141,21 @@ export default async function fetchLyrics(uri: string) {
     Spicetify.showNotification('Fetching lyrics..', false, 2000);
     const SpotifyAccessToken = await Platform.GetSpotifyAccessToken();
 
-    let lyricsText = '';
     let status = 0;
 
-    const jobs = await SendJob(
-      [
-        {
-          handler: 'LYRICS_ID',
-          args: {
-            id: trackId,
-            auth: 'SpicyLyrics-WebAuth',
-          },
-        },
-      ],
-      {
-        'SpicyLyrics-WebAuth': `Bearer ${SpotifyAccessToken}`,
-      },
-    );
+    const getLyricsResult = await getLyrics(trackId, {
+      Authorization: `Bearer ${SpotifyAccessToken}`,
+    });
 
-    const lyricsJob = jobs.get('LYRICS_ID');
-    status = lyricsJob.status;
+    let lyricsJson = getLyricsResult.response;
+    status = getLyricsResult.status;
 
-    if (lyricsJob.type !== 'json') {
-      lyricsText = '';
+    if (
+      !lyricsJson ||
+      (typeof lyricsJson === 'object' && !('id' in lyricsJson))
+    ) {
+      lyricsJson = '';
     }
-
-    lyricsText = JSON.stringify(lyricsJob.responseData);
 
     if (status !== 200) {
       if (status === 500) return await noLyricsMessage(false, true);
@@ -188,11 +174,10 @@ export default async function fetchLyrics(uri: string) {
 
     ClearLyricsPageContainer();
 
-    if (lyricsText === null) return await noLyricsMessage(false, false);
-    if (lyricsText === '') return await noLyricsMessage(false, true);
+    if (lyricsJson === null) return await noLyricsMessage(false, false);
+    if (lyricsJson === '') return await noLyricsMessage(false, true);
 
-    console.log('DEBUG raw', JSON.parse(lyricsText));
-    let lyricsJson = JSON.parse(lyricsText);
+    console.log('DEBUG raw', lyricsJson);
 
     // Determine if any line in the lyrics contains Kanji characters (using RegExp.test for a boolean result)
     const hasKanji =
@@ -252,7 +237,7 @@ async function generateFurigana(lyricsJson) {
       'Amai Lyrics: Gemini API Key missing. Click here to add your own API key.';
   } else {
     try {
-      console.log('Furigana: Gemini API Key present');
+      console.log('Amai Lyrics: Gemini API Key present');
       const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
       const generationConfig = {
         temperature: 0.2,
@@ -300,6 +285,9 @@ async function generateFurigana(lyricsJson) {
 
       // if lyrics not empty
       if (lyricsOnly.length > 0) {
+        // Store raw lyrics for translation
+        lyricsJson.Raw = lyricsOnly;
+
         // Send lyrics to Gemini
         const response = await ai.models.generateContent({
           config: generationConfig,
@@ -403,77 +391,6 @@ function convertLyrics(data) {
 
 async function noLyricsMessage(Cache = true, LocalStorage = true) {
   Spicetify.showNotification('Lyrics unavailable', false, 2000);
-  /* const totalTime = Spicetify.Player.getDuration() / 1000;
-    const segmentDuration = totalTime / 3;
-    
-    const noLyricsMessage = {
-        "Type": "Syllable",
-        "alternative_api": false,
-        "Content": [
-            {
-                "Type": "Vocal",
-                "OppositeAligned": false,
-                "Lead": {
-                    "Syllables": [
-                        {
-                            "Text": "We're working on the Lyrics...",
-                            "StartTime": 0,
-                            "EndTime": 10,
-                            "IsPartOfWord": false
-                        }
-                    ],
-                    "StartTime": 0,
-                    "EndTime": 10
-                }
-            },
-            {
-                "Type": "Vocal",
-                "OppositeAligned": false,
-                "Lead": {
-                    "Syllables": [
-                        {
-                            "Text": "♪",
-                            "StartTime": 0,
-                            "EndTime": segmentDuration,
-                            "IsPartOfWord": true
-                        },
-                        {
-                            "Text": "♪",
-                            "StartTime": segmentDuration,
-                            "EndTime": 2 * segmentDuration,
-                            "IsPartOfWord": true
-                        },
-                        {
-                            "Text": "♪",
-                            "StartTime": 2 * segmentDuration,
-                            "EndTime": totalTime,
-                            "IsPartOfWord": false
-                        }
-                    ],
-                    "StartTime": 0,
-                    "EndTime": totalTime
-                }
-            }
-        ]
-    }; */
-
-  /* const noLyricsMessage = {
-        Type: "Static",
-        alternative_api: false,
-        offline: false,
-        id: Spicetify.Player.data.item.uri.split(":")[2],
-        styles: {
-            display: "flex",
-            "align-items": "center",
-            "justify-content": "center",
-            "flex-direction": "column"
-        },
-        Lines: [
-            {
-                Text: "No Lyrics Found"
-            }
-        ]
-    } */
 
   LocalStorage
     ? storage.set(
@@ -540,10 +457,6 @@ function urOfflineMessage() {
   ClearLyricsPageContainer();
 
   Defaults.CurrentLyricsType = Message.Type;
-
-  /* if (storage.get("IsNowBarOpen")) {
-        document.querySelector("#SpicyLyricsPage .ContentBox .LyricsContainer").classList.add("Hidden");
-    } */
 
   return Message;
 }
