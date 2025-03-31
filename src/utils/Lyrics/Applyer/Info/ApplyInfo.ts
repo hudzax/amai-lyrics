@@ -1,7 +1,4 @@
 export function ApplyInfo(data: { Info?: string }) {
-  // Spicetify Notif broke the lyrics page
-  // Spicetify.showNotification(data.Info, false, 2000);
-
   const TopBarContainer = document.querySelector(
     'header.main-topBar-container',
   );
