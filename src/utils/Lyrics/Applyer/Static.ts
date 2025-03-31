@@ -14,6 +14,7 @@ import {
 import { ClearLyricsContentArrays, LyricsObject } from '../lyrics';
 import { ApplyLyricsCredits } from './Credits/ApplyLyricsCredits';
 import { ApplyInfo } from './Info/ApplyInfo';
+// import { ApplyTranslation } from './Translation/ApplyTranslation';
 import isRtl from '../isRtl';
 
 export function ApplyStaticLyrics(data) {
@@ -31,10 +32,10 @@ export function ApplyStaticLyrics(data) {
 
   data.Lines.forEach((line) => {
     const lineElem = document.createElement('div');
-    // replce {brackets} with <span> tags
-    line.Text = line.Text.replace(/{/g, "<span class='line-furigana'>").replace(
-      /}/g,
-      '</span>',
+    // Generate ruby text for furigana
+    line.Text = line.Text?.replace(
+      /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^\}]+)}/g,
+      '<ruby>$1<rt>$2</rt></ruby>',
     );
     if (line.Text.includes('[DEF=font_size:small]')) {
       lineElem.style.fontSize = '35px';
@@ -87,4 +88,6 @@ export function ApplyStaticLyrics(data) {
   if (data.styles) {
     applyStyles(LyricsStylingContainer, data.styles);
   }
+
+  // ApplyTranslation(data.Raw);
 }
