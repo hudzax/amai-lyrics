@@ -4,7 +4,7 @@ import storage from "./utils/storage";
 import { setSettingsMenu } from "./utils/settings";
 import PageView from "./components/Pages/PageView";
 import { Icons } from "./components/Styling/Icons";
-import ApplyDynamicBackground, { LowQMode_SetDynamicBackground } from "./components/DynamicBG/dynamicBackground";
+import ApplyDynamicBackground from "./components/DynamicBG/dynamicBackground";
 import LoadFonts from "./components/Styling/Fonts";
 import { IntervalManager } from "./utils/IntervalManager";
 import { SpotifyPlayer } from "./components/Global/SpotifyPlayer";
@@ -194,16 +194,6 @@ async function main() {
     Spicetify.Player.addEventListener("songchange", onSongChange);
     Spicetify.Player.addEventListener("songchange", async (event) => {
       fetchLyrics(event?.data?.item?.uri).then(ApplyLyrics);
-      // Artist Header Image Prefetch (For a Faster Experience)
-      if (lowQModeEnabled) {
-        const CurrentSongArtist = event.data?.item.artists[0].uri;
-        const CurrentSongUri = event.data?.item.uri;
-        try {
-          await LowQMode_SetDynamicBackground(CurrentSongArtist, CurrentSongUri);
-        } catch (error) {
-          console.error("Error prefetching Low Quality Mode Dynamic Background", error)
-        }
-      }
     })
 
     let songChangeLoopRan = 0;
@@ -249,21 +239,6 @@ async function main() {
 
     {
       fetchLyrics(Spicetify.Player.data.item.uri).then(ApplyLyrics);
-    
-      // Artist Header Image Prefetch (For a Faster Experience)
-      {
-        const lowQMode = storage.get("lowQMode");
-        const lowQModeEnabled = lowQMode && lowQMode === "true";
-        if (lowQModeEnabled) {
-          const CurrentSongArtist = Spicetify.Player.data?.item.artists[0].uri;
-          const CurrentSongUri = Spicetify.Player.data?.item.uri;
-            try {
-                await LowQMode_SetDynamicBackground(CurrentSongArtist, CurrentSongUri);
-            } catch (error) {
-                console.error("Error happened while trying to prefetch the Low Quality Mode Dynamic Background", error)
-            }
-        }
-      }
     }
 
     window.addEventListener("online", async () => {
