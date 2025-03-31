@@ -70,11 +70,12 @@ export default async function SpicyFetch(
             return;
           }
 
-          const data = await res.text();
-          /*                 const isJson = ((data.startsWith(`{"`) || data.startsWith("{")) || (data.startsWith(`[`) || data.startsWith(`["`)));
-                if (isJson) {
-                    data = JSON.parse(data);
-                } */
+          let data;
+          try {
+            data = await res.json();
+          } catch (error) {
+            data = {};
+          }
           const sentData = [data, res.status];
           resolve(sentData);
           if (cache) {
