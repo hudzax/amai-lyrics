@@ -37,7 +37,7 @@ export function ApplyStaticLyrics(data) {
       /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^\}]+)}/g,
       '<ruby>$1<rt>$2</rt></ruby>',
     );
-    if (line.Text.includes('[DEF=font_size:small]')) {
+    if (line.Text?.includes('[DEF=font_size:small]')) {
       lineElem.style.fontSize = '35px';
       lineElem.innerHTML = line.Text.replace('[DEF=font_size:small]', '');
     } else {
