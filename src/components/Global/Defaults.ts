@@ -1,7 +1,7 @@
 const Defaults = {
   lyrics: {
     api: {
-      url: 'https://amai-worker-production.nandemo.workers.dev/lyrics/id',
+      url: 'https://amai-worker-production.nandemo.workers.dev/lyrics',
     },
   },
   lowQualityMode: false,

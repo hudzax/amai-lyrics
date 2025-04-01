@@ -16,7 +16,7 @@ export async function getLyrics(
   if (status !== 200) {
     userData = {};
   }
-  const res = await fetch(`${API_URL}`, {
+  const res = await fetch(`${API_URL}/${id}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify({
