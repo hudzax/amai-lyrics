@@ -494,7 +494,8 @@
       const CachedContent = await GetCachedContent(url);
       if (CachedContent) {
         if (Array.isArray(CachedContent)) {
-          resolve(CachedContent);
+          const content = typeof CachedContent[0] === "string" ? JSON.parse(CachedContent[0]) : CachedContent[0];
+          resolve([content, CachedContent[1]]);
           return;
         }
         resolve([CachedContent, 200]);
@@ -503,14 +504,19 @@
       const SpotifyAccessToken = await Platform_default.GetSpotifyAccessToken();
       if (cosmos) {
         Spicetify.CosmosAsync.get(url).then(async (res) => {
-          const data = typeof res === "object" ? JSON.stringify(res) : res;
+          let data;
+          try {
+            data = await res.json();
+          } catch (error) {
+            data = {};
+          }
           const sentData = [data, res.status];
           resolve(sentData);
           if (cache) {
             await CacheContent(url, sentData, 6048e5);
           }
         }).catch((err) => {
-          console.log("CosmosAsync Error:", err);
+          console.error("CosmosAsync Error:", err);
           reject(err);
         });
       } else {
@@ -546,7 +552,7 @@
             await CacheContent(url, sentData, 6048e5);
           }
         }).catch((err) => {
-          console.log("Fetch Error:", err);
+          console.error("Fetch Error:", err);
           reject(err);
         });
       }
@@ -588,7 +594,7 @@
             (c) => c.charCodeAt(0)
           );
           const decompressedData = pako.inflate(compressedData, { to: "string" });
-          const data = typeof decompressedData === "string" && (decompressedData.startsWith("{") || decompressedData.startsWith(`{"`) || decompressedData.startsWith("[") || decompressedData.startsWith(`["`)) ? JSON.parse(decompressedData) : decompressedData;
+          const data = JSON.parse(decompressedData);
           return data;
         } else {
           await SpicyFetchCache.remove(key);
@@ -3688,7 +3694,7 @@
         /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^\}]+)}/g,
         "<ruby>$1<rt>$2</rt></ruby>"
       );
-      if (line.Text.includes("[DEF=font_size:small]")) {
+      if (line.Text?.includes("[DEF=font_size:small]")) {
         lineElem.style.fontSize = "35px";
         lineElem.innerHTML = line.Text.replace("[DEF=font_size:small]", "");
       } else {
@@ -5240,7 +5246,7 @@
     let [userData, status] = await SpicyFetch(
       "https://api.spotify.com/v1/me",
       true,
-      false,
+      true,
       false
     );
     if (status !== 200) {
@@ -11036,7 +11042,6 @@
         return await noLyricsMessage(false, false);
       if (lyricsJson === "")
         return await noLyricsMessage(false, true);
-      console.log("DEBUG raw", lyricsJson);
       const hasKanji = lyricsJson.Content?.some(
         (item) => item.Lead?.Syllables?.some((syl) => /[\u4E00-\u9FFF]/.test(syl.Text))
       ) || lyricsJson.Content?.some((item) => /[\u4E00-\u9FFF]/.test(item.Text)) || lyricsJson.Lines?.some((item) => /[\u4E00-\u9FFF]/.test(item.Text)) || false;
@@ -11111,14 +11116,18 @@
           }));
           lyricsOnly = lyricsJson.Content.map((item) => item.Text);
         }
-        if (lyricsJson.Type === "Static")
+        if (lyricsJson.Type === "Static") {
+          lyricsJson.Lines = lyricsJson.Lines.filter(
+            (item) => item.Text.trim() !== ""
+          );
           lyricsOnly = lyricsJson.Lines.map((item) => item.Text);
+        }
         if (lyricsOnly.length > 0) {
           lyricsJson.Raw = lyricsOnly;
           const response = await ai.models.generateContent({
             config: generationConfig,
             model: "gemini-2.0-flash",
-            contents: `You are the expert in Japanese language, specializing in kanji readings and song lyrics. Follow these instructions carefully: For each words in the following lyrics, identify all kanji characters then add their furigana within curly braces, following standard Japanese orthography. Follow this examples: \u9858\u3044 should be written as \u9858{\u306D\u304C}\u3044, \u53EF\u611B\u3044 should be written as \u53EF\u611B{\u304B\u308F\u3044}\u3044, 5\u4EBA should be written as 5\u4EBA{\u306B\u3093}, \u660E\u5F8C\u65E5 should be written as \u660E\u5F8C\u65E5{\u3042\u3055\u3063\u3066}, \u795E\u69D8 should be written as \u795E\u69D8{\u304B\u307F\u3055\u307E}, \u805E\u304D should be written as \u805E{\u304D}\u304D etc. Use context-appropriate readings for each kanji based on standard Japanese usage. Here are the lyrics: ${JSON.stringify(
+            contents: `You are the expert in Japanese language, specializing in kanji readings and song lyrics. Follow these instructions carefully: For each words in the following lyrics, identify all kanji characters then add their furigana within curly braces, following standard Japanese orthography. Follow this examples: \u9858\u3044 should be written as \u9858{\u306D\u304C}\u3044, \u53EF\u611B\u3044 should be written as \u53EF\u611B{\u304B\u308F\u3044}\u3044, 5\u4EBA should be written as 5\u4EBA{\u306B\u3093}, \u660E\u5F8C\u65E5 should be written as \u660E\u5F8C\u65E5{\u3042\u3055\u3063\u3066}, \u795E\u69D8 should be written as \u795E\u69D8{\u304B\u307F\u3055\u307E}, \u805E\u304D should be written as \u805E{\u304D}\u304D etc. Use context-appropriate readings for each kanji based on standard Japanese usage. Keep any non-kanji characters as is. Here are the lyrics: ${JSON.stringify(
               lyricsOnly
             )}`
           });
@@ -11617,7 +11626,7 @@
     settings.addButton(
       "more-info",
       "This fork adds Furigana support to the original Spicy Lyrics utilizing free Gemini API. For personal use only.",
-      "v1.0.19",
+      "v1.0.20",
       () => {
       }
     );
@@ -11935,7 +11944,7 @@
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-18428-eYUaGbg3KwCf/195f12f91227/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-20668-x1yjszmBuS9k/195f1ad168a7/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -11961,7 +11970,7 @@
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18428-eYUaGbg3KwCf/195f12f90b00/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20668-x1yjszmBuS9k/195f1ad162a0/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -12100,7 +12109,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18428-eYUaGbg3KwCf/195f12f90e51/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20668-x1yjszmBuS9k/195f1ad16591/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -12308,7 +12317,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18428-eYUaGbg3KwCf/195f12f90f02/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20668-x1yjszmBuS9k/195f1ad16602/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -12782,7 +12791,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18428-eYUaGbg3KwCf/195f12f90ff3/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20668-x1yjszmBuS9k/195f1ad166b3/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -12890,7 +12899,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18428-eYUaGbg3KwCf/195f12f91074/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20668-x1yjszmBuS9k/195f1ad166f4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -13063,7 +13072,7 @@ ruby > rt {
   border: 1px solid rgba(255, 255, 255, 0.55);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18428-eYUaGbg3KwCf/195f12f910d5/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20668-x1yjszmBuS9k/195f1ad16755/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -13355,7 +13364,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18428-eYUaGbg3KwCf/195f12f91146/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20668-x1yjszmBuS9k/195f1ad167b6/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
