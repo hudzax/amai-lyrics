@@ -159,7 +159,7 @@
   var Defaults = {
     lyrics: {
       api: {
-        url: "https://amai-worker-production.nandemo.workers.dev/lyrics/id"
+        url: "https://amai-worker-production.nandemo.workers.dev/lyrics"
       }
     },
     lowQualityMode: false,
@@ -5252,7 +5252,7 @@
     if (status !== 200) {
       userData = {};
     }
-    const res = await fetch(`${API_URL}`, {
+    const res = await fetch(`${API_URL}/${id}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...headers },
       body: JSON.stringify({
@@ -11626,7 +11626,7 @@
     settings.addButton(
       "more-info",
       "This fork adds Furigana support to the original Spicy Lyrics utilizing free Gemini API. For personal use only.",
-      "v1.0.20",
+      "v1.0.21",
       () => {
       }
     );
@@ -11944,7 +11944,7 @@
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-20668-x1yjszmBuS9k/195f1ad168a7/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-9200-YkUbsYB4KpbO/195f211083a7/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -11970,7 +11970,7 @@
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20668-x1yjszmBuS9k/195f1ad162a0/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9200-YkUbsYB4KpbO/195f21107d70/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -12109,7 +12109,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20668-x1yjszmBuS9k/195f1ad16591/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9200-YkUbsYB4KpbO/195f21108071/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -12317,7 +12317,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20668-x1yjszmBuS9k/195f1ad16602/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9200-YkUbsYB4KpbO/195f211080e2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -12791,7 +12791,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20668-x1yjszmBuS9k/195f1ad166b3/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9200-YkUbsYB4KpbO/195f211081a3/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -12899,7 +12899,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20668-x1yjszmBuS9k/195f1ad166f4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9200-YkUbsYB4KpbO/195f211081f4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -13072,7 +13072,7 @@ ruby > rt {
   border: 1px solid rgba(255, 255, 255, 0.55);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20668-x1yjszmBuS9k/195f1ad16755/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9200-YkUbsYB4KpbO/195f21108255/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -13364,7 +13364,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20668-x1yjszmBuS9k/195f1ad167b6/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9200-YkUbsYB4KpbO/195f211082b6/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
