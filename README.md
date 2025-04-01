@@ -31,7 +31,7 @@ Follow these simple steps:
 
 For manual setup:
 
-1. Download [amai-lyrics-main.js](./builds/amai-lyrics-main.js)
+1. Download [amai-lyrics-main.js](https://github.com/hudzax/amai-lyrics/releases/download/v1.0.21/amai-lyrics-main.js)
 2. Open terminal and run this command to open/show Spicetify config directory:
    ```bash
    spicetify config-dir
