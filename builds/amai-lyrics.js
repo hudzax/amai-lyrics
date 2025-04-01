@@ -691,16 +691,17 @@
     },
     Track: {
       GetTrackInfo: async () => {
-        const spotifyHexString = SpicyHasher.spotifyHex(SpotifyPlayer.GetSongId());
+        const spotifyHexString = SpicyHasher.spotifyHex(
+          SpotifyPlayer.GetSongId()
+        );
         if (TrackData_Map.has(spotifyHexString))
           return TrackData_Map.get(spotifyHexString);
         const URL2 = `https://spclient.wg.spotify.com/metadata/4/track/${spotifyHexString}?market=from_token`;
         const [data, status] = await SpicyFetch(URL2, true, true, false);
         if (status !== 200)
           return null;
-        const parsedData = data.startsWith(`{"`) || data.startsWith("{") ? JSON.parse(data) : data;
-        TrackData_Map.set(spotifyHexString, parsedData);
-        return parsedData;
+        TrackData_Map.set(spotifyHexString, data);
+        return data;
       },
       SortImages: (images) => {
         const sizeMap = {
@@ -708,17 +709,20 @@
           l: "DEFAULT",
           xl: "LARGE"
         };
-        const sortedImages = images.reduce((acc, image) => {
-          const { size } = image;
-          if (size === sizeMap.s) {
-            acc.s.push(image);
-          } else if (size === sizeMap.l) {
-            acc.l.push(image);
-          } else if (size === sizeMap.xl) {
-            acc.xl.push(image);
-          }
-          return acc;
-        }, { s: [], l: [], xl: [] });
+        const sortedImages = images.reduce(
+          (acc, image) => {
+            const { size } = image;
+            if (size === sizeMap.s) {
+              acc.s.push(image);
+            } else if (size === sizeMap.l) {
+              acc.l.push(image);
+            } else if (size === sizeMap.xl) {
+              acc.xl.push(image);
+            }
+            return acc;
+          },
+          { s: [], l: [], xl: [] }
+        );
         return sortedImages;
       }
     },
@@ -729,7 +733,9 @@
       Get: async (size) => {
         const psize = size === "d" ? null : size?.toLowerCase() ?? null;
         const Data = await SpotifyPlayer.Track.GetTrackInfo();
-        const Images = SpotifyPlayer.Track.SortImages(Data.album.cover_group.image);
+        const Images = SpotifyPlayer.Track.SortImages(
+          Data.album.cover_group.image
+        );
         switch (psize) {
           case "s":
             return `spotify:image:${Images.s[0].file_id}`;
@@ -11611,7 +11617,7 @@
     settings.addButton(
       "more-info",
       "This fork adds Furigana support to the original Spicy Lyrics utilizing free Gemini API. For personal use only.",
-      "v1.0.18",
+      "v1.0.19",
       () => {
       }
     );
@@ -11905,7 +11911,7 @@
   }
   var app_default = main;
 
-  // ../../tmp/spicetify-creator/index.jsx
+  // C:/Users/Hathaway/AppData/Local/Temp/spicetify-creator/index.jsx
   (async () => {
     await app_default();
   })();
@@ -11929,7 +11935,7 @@
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* ../../tmp/tmp-5795-IiyflkN1dQPc/195ee8c16207/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-18428-eYUaGbg3KwCf/195f12f91227/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -11955,7 +11961,7 @@
   }
 }
 
-/* ../../tmp/tmp-5795-IiyflkN1dQPc/195ee8c14e50/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18428-eYUaGbg3KwCf/195f12f90b00/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -12094,7 +12100,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* ../../tmp/tmp-5795-IiyflkN1dQPc/195ee8c15391/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18428-eYUaGbg3KwCf/195f12f90e51/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -12302,7 +12308,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* ../../tmp/tmp-5795-IiyflkN1dQPc/195ee8c15462/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18428-eYUaGbg3KwCf/195f12f90f02/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -12776,7 +12782,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* ../../tmp/tmp-5795-IiyflkN1dQPc/195ee8c15713/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18428-eYUaGbg3KwCf/195f12f90ff3/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -12884,7 +12890,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* ../../tmp/tmp-5795-IiyflkN1dQPc/195ee8c157f4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18428-eYUaGbg3KwCf/195f12f91074/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -13057,7 +13063,7 @@ ruby > rt {
   border: 1px solid rgba(255, 255, 255, 0.55);
 }
 
-/* ../../tmp/tmp-5795-IiyflkN1dQPc/195ee8c15985/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18428-eYUaGbg3KwCf/195f12f910d5/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -13349,7 +13355,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* ../../tmp/tmp-5795-IiyflkN1dQPc/195ee8c15b26/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18428-eYUaGbg3KwCf/195f12f91146/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
