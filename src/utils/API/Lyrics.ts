@@ -10,7 +10,7 @@ export async function getLyrics(
   let [userData, status] = await SpicyFetch(
     'https://api.spotify.com/v1/me',
     true,
-    false,
+    true,
     false,
   );
   if (status !== 200) {
