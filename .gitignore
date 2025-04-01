@@ -152,3 +152,4 @@ testScript.js
 src/utils/SpicyHasher.ts
 release-flow.sh
 spicetify-watch.sh
+amai.sh
