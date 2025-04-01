@@ -177,8 +177,6 @@ export default async function fetchLyrics(uri: string) {
     if (lyricsJson === null) return await noLyricsMessage(false, false);
     if (lyricsJson === '') return await noLyricsMessage(false, true);
 
-    console.log('DEBUG raw', lyricsJson);
-
     // Determine if any line in the lyrics contains Kanji characters (using RegExp.test for a boolean result)
     const hasKanji =
       lyricsJson.Content?.some((item) =>
@@ -280,19 +278,23 @@ async function generateFurigana(lyricsJson) {
         }));
         lyricsOnly = lyricsJson.Content.map((item) => item.Text);
       }
-      if (lyricsJson.Type === 'Static')
+      if (lyricsJson.Type === 'Static') {
+        // remove empty lines
+        lyricsJson.Lines = lyricsJson.Lines.filter(
+          (item) => item.Text.trim() !== '',
+        );
         lyricsOnly = lyricsJson.Lines.map((item) => item.Text);
+      }
 
       // if lyrics not empty
       if (lyricsOnly.length > 0) {
-        // Store raw lyrics for translation
         lyricsJson.Raw = lyricsOnly;
 
         // Send lyrics to Gemini
         const response = await ai.models.generateContent({
           config: generationConfig,
           model: 'gemini-2.0-flash',
-          contents: `You are the expert in Japanese language, specializing in kanji readings and song lyrics. Follow these instructions carefully: For each words in the following lyrics, identify all kanji characters then add their furigana within curly braces, following standard Japanese orthography. Follow this examples: 願い should be written as 願{ねが}い, 可愛い should be written as 可愛{かわい}い, 5人 should be written as 5人{にん}, 明後日 should be written as 明後日{あさって}, 神様 should be written as 神様{かみさま}, 聞き should be written as 聞{き}き etc. Use context-appropriate readings for each kanji based on standard Japanese usage. Here are the lyrics: ${JSON.stringify(
+          contents: `You are the expert in Japanese language, specializing in kanji readings and song lyrics. Follow these instructions carefully: For each words in the following lyrics, identify all kanji characters then add their furigana within curly braces, following standard Japanese orthography. Follow this examples: 願い should be written as 願{ねが}い, 可愛い should be written as 可愛{かわい}い, 5人 should be written as 5人{にん}, 明後日 should be written as 明後日{あさって}, 神様 should be written as 神様{かみさま}, 聞き should be written as 聞{き}き etc. Use context-appropriate readings for each kanji based on standard Japanese usage. Keep any non-kanji characters as is. Here are the lyrics: ${JSON.stringify(
             lyricsOnly,
           )}`,
         });
