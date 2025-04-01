@@ -1,5 +1,4 @@
 import { SpikyCache } from '@hudzax/web-modules/SpikyCache';
-import Defaults from '../../components/Global/Defaults';
 import Platform from '../../components/Global/Platform';
 
 export let SpicyFetchCache = new SpikyCache({
@@ -19,9 +18,15 @@ export default async function SpicyFetch(
     if (CachedContent) {
       // Here for backwards compatibility
       if (Array.isArray(CachedContent)) {
-        resolve(CachedContent);
+        // console.log('CachedContent array:', CachedContent);
+        const content =
+          typeof CachedContent[0] === 'string'
+            ? JSON.parse(CachedContent[0])
+            : CachedContent[0];
+        resolve([content, CachedContent[1]]);
         return;
       }
+      // console.log('CachedContent:', CachedContent);
       resolve([CachedContent, 200]);
       return;
     }
@@ -31,15 +36,21 @@ export default async function SpicyFetch(
     if (cosmos) {
       Spicetify.CosmosAsync.get(url)
         .then(async (res) => {
-          const data = typeof res === 'object' ? JSON.stringify(res) : res;
+          let data;
+          try {
+            data = await res.json();
+          } catch (error) {
+            data = {};
+          }
           const sentData = [data, res.status];
+          // console.log('CosmosAsync:', sentData);
           resolve(sentData);
           if (cache) {
             await CacheContent(url, sentData, 604800000);
           }
         })
         .catch((err) => {
-          console.log('CosmosAsync Error:', err);
+          console.error('CosmosAsync Error:', err);
           reject(err);
         });
     } else {
@@ -77,13 +88,14 @@ export default async function SpicyFetch(
             data = {};
           }
           const sentData = [data, res.status];
+          // console.log('SpotifyAPI:', sentData);
           resolve(sentData);
           if (cache) {
             await CacheContent(url, sentData, 604800000);
           }
         })
         .catch((err) => {
-          console.log('Fetch Error:', err);
+          console.error('Fetch Error:', err);
           reject(err);
         });
     }
@@ -120,7 +132,7 @@ async function CacheContent(
   }
 }
 
-async function GetCachedContent(key): Promise<object | string | null> {
+async function GetCachedContent(key): Promise<object | null> {
   try {
     const processedKey = SpicyHasher.md5(key);
     const content = await SpicyFetchCache.get(processedKey);
@@ -137,14 +149,7 @@ async function GetCachedContent(key): Promise<object | string | null> {
         );
         const decompressedData = pako.inflate(compressedData, { to: 'string' });
 
-        const data: object | string =
-          typeof decompressedData === 'string' &&
-          (decompressedData.startsWith('{') ||
-            decompressedData.startsWith(`{"`) ||
-            decompressedData.startsWith('[') ||
-            decompressedData.startsWith(`["`))
-            ? JSON.parse(decompressedData)
-            : decompressedData;
+        const data = JSON.parse(decompressedData);
 
         return data;
       } else {
