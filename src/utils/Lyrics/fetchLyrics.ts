@@ -408,7 +408,7 @@ async function generateRomaja(lyricsJson) {
         const response = await ai.models.generateContent({
           config: generationConfig,
           model: 'gemini-2.0-flash',
-          contents: `You are the expert in Korean language, specializing in romaja readings and song lyrics. Think before replying, follow these instructions carefully: For each word in the following lyrics, identify all korean word and then add their romaja within curly braces. Follow this examples: 정말 should be written as 정말{Jeongmal}, 보고 should be written as 보고{bogo}, 싶어요 shouod be written as 싶어요{sipeoyo}, 미로 should be written as 미로{miro} etc. Keep any non-korean characters as is. Here are the lyrics:\n${lyricsOnly.join(
+          contents: `You are the expert in Korean language, specializing in romaja readings and song lyrics. Think before replying, follow these instructions carefully: For each word in the following lyrics, identify all korean word and then add their romaja within curly braces. Follow this examples: 정말 should be written as 정말{Jeongmal}, 보고 should be written as 보고{bogo}, 싶어요 shouod be written as 싶어요{sipeoyo}, 미로 should be written as 미로{miro}, "2살이에요" should be written as "2살이에요{sarieyo}" etc. Keep any non-korean characters as is. Here are the lyrics:\n${lyricsOnly.join(
             '\n',
           )}`,
         });
