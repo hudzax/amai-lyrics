@@ -177,6 +177,10 @@ ruby {
   margin-top:-0.5rem;
 }
 
+ruby.romaja {
+  margin-right: 0.5rem;
+}
+
 ruby > rt {
   margin-bottom:0.1rem;
 }
