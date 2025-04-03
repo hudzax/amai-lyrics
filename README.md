@@ -5,16 +5,19 @@ An extension of Spicetify. A fork of [Spicy Lyrics](https://spicylyrics.org/) th
 ## 🌟 Features
 
 - **Furigana Support:** Annotate Kanji with phonetic guides to aid reading.
+- **Romaja Support:** Display lyrics in Korean with Romaja.
 - **Gemini API Integration:** Leverages a free API to generate Furigana annotations.
 - **Easy Setup:** Simply obtain your free API key from [Google AI Studio](https://aistudio.google.com/app/apikey) and follow the configuration instructions.
 
 ## 👀 Preview
 
-![Extension Preview](./previews/preview-large-1.jpg)
+![Extension Preview](./previews/preview-large-jp.jpg)
 
-![Extension Preview](./previews/preview-large-2.jpg)
+![Extension Preview](./previews/preview-large-jp2.jpg)
 
-![Extension Preview](./previews/preview-app.jpg)
+![Extension Preview](./previews/preview-large-kr.jpg)
+
+![Extension Preview](./previews/preview-large-kr2.jpg)
 
 ## 🚀 Installation
 
