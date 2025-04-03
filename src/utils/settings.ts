@@ -45,7 +45,7 @@ function devSettings() {
     'Remove Cached Lyrics',
     () => {
       lyricsCache.destroy();
-      Spicetify.showNotification('Cache Destroyed Successfully!', false, 5000);
+      Spicetify.showNotification('Cache Destroyed Successfully!', false, 2000);
     },
   );
 
@@ -58,7 +58,7 @@ function devSettings() {
       Spicetify.showNotification(
         'Current Lyrics Removed Successfully!',
         false,
-        5000,
+        2000,
       );
     },
   );
