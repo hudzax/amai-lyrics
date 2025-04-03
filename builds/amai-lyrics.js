@@ -3817,7 +3817,7 @@
       );
       line.Text = line.Text?.replace(
         /((?:\([\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)[?.!]?){([^\}]+)}/g,
-        "<ruby>$1<rt>$2</rt></ruby>"
+        '<ruby class="romaja">$1<rt>$2</rt></ruby>'
       );
       lineElem.innerHTML = line.Text;
       lineElem.classList.add("line");
@@ -11875,7 +11875,7 @@ ${lyricsOnly.join(
     settings.addButton(
       "more-info",
       "This fork adds Furigana support to the original Spicy Lyrics utilizing free Gemini API. For personal use only.",
-      "v1.0.22",
+      "v1.0.23",
       () => {
       }
     );
@@ -12193,7 +12193,7 @@ ${lyricsOnly.join(
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-22788-rtHjFLHH1TuB/195fc88dfca7/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-14108-i1GdxGmYMTrY/195fcb04ccb7/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -12219,7 +12219,7 @@ ${lyricsOnly.join(
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22788-rtHjFLHH1TuB/195fc88df0d0/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14108-i1GdxGmYMTrY/195fcb04c6a0/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -12358,7 +12358,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22788-rtHjFLHH1TuB/195fc88df3d1/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14108-i1GdxGmYMTrY/195fcb04c981/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -12566,7 +12566,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22788-rtHjFLHH1TuB/195fc88df442/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14108-i1GdxGmYMTrY/195fcb04ca02/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -13040,7 +13040,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22788-rtHjFLHH1TuB/195fc88df553/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14108-i1GdxGmYMTrY/195fcb04cab3/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -13148,7 +13148,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22788-rtHjFLHH1TuB/195fc88df5b4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14108-i1GdxGmYMTrY/195fcb04cb04/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -13314,6 +13314,9 @@ header.main-topBar-container .FuriganaInfo {
 ruby {
   margin-top: -0.5rem;
 }
+ruby.romaja {
+  margin-right: 0.5rem;
+}
 ruby > rt {
   margin-bottom: 0.1rem;
 }
@@ -13321,7 +13324,7 @@ ruby > rt {
   border: 1px solid rgba(255, 255, 255, 0.55);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22788-rtHjFLHH1TuB/195fc88df615/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14108-i1GdxGmYMTrY/195fcb04cb65/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -13613,7 +13616,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22788-rtHjFLHH1TuB/195fc88df686/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14108-i1GdxGmYMTrY/195fcb04cbc6/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
