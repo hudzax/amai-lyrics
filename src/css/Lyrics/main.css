@@ -82,8 +82,8 @@ header.main-topBar-container .FuriganaInfo {
 }
 
 .simplebar-content .line {
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
 }
 
 .line-furigana {
@@ -174,7 +174,7 @@ header.main-topBar-container .FuriganaInfo {
 }
 
 ruby {
-  margin-top:-0.1rem;
+  margin-top:-0.5rem;
 }
 
 ruby > rt {
