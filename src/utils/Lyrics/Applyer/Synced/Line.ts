@@ -123,6 +123,11 @@ export function ApplyLineLyrics(data) {
       /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^\}]+)}/g,
       '<ruby>$1<rt>$2</rt></ruby>',
     );
+    // Generate ruby text for korean romaja
+    line.Text = line.Text?.replace(
+      /([\uAC00-\uD7AF\u1100-\u11FF]+){([^\}]+)}/g,
+      '<ruby>$1<rt>$2</rt></ruby>',
+    );
     lineElem.innerHTML = line.Text;
     lineElem.classList.add('line');
 
