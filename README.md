@@ -1,6 +1,6 @@
 # 🎶 Amai Lyrics
 
-An extension of Spicetify. A fork of [Spicy Lyrics](https://spicylyrics.org/) that extends the original project by adding Furigana support using the free Gemini API. This enhancement lets you display phonetic guides alongside Japanese lyrics.
+Amai Lyrics is a Spicetify extension, forked from [Spicy Lyrics](https://spicylyrics.org/), that enhances your Spotify experience by adding Furigana and Romaja support for Japanese and Korean lyrics.
 
 ## 🌟 Features
 
