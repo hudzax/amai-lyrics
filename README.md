@@ -1,11 +1,12 @@
 # 🎶 Amai Lyrics
 
-Amai Lyrics is a Spicetify extension, forked from [Spicy Lyrics](https://spicylyrics.org/), that enhances your Spotify experience by adding Furigana and Romaja support for Japanese and Korean lyrics.
+Amai Lyrics is a Spicetify extension, forked from [Spicy Lyrics](https://spicylyrics.org/), that enhances your Spotify experience by adding Furigana, Romaji for Japanese, and Romanization for Korean lyrics.
 
 ## 🌟 Features
 
 - **Furigana Support:** Annotate Kanji with phonetic guides to aid reading.
-- **Romaja Support:** Display lyrics in Korean with Romaja.
+- **Romaji Support:** Display lyrics in Japanese with Romaji.
+- **Korean Romanization:** Display lyrics in Korean with Romanization.
 - **Improved visuals:** Enhanced UI/UX for better readability and aesthetics.
 - **Gemini Integration:** Utilizes the Gemini Flash 2.0 to generate annotations.
 - **Easy Setup:** Obtain the API key from [Google AI Studio](https://aistudio.google.com/app/apikey) and configure it within the Spotify settings as described below.
