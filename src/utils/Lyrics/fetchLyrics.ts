@@ -278,26 +278,8 @@ async function generateFurigana(lyricsJson) {
         lyricsJson.Content = await convertLyrics(lyricsJson.Content);
       }
 
-      // console.log('DEBUG', lyricsJson.Content);
-
       // Extract lyrics from Line and Static types
-      let lyricsOnly = [];
-      if (lyricsJson.Type === 'Line') {
-        // Adjust start time to show line a little bit earlier
-        const offset = 0.55;
-        lyricsJson.Content = lyricsJson.Content.map((item) => ({
-          ...item,
-          StartTime: Math.max(0, item.StartTime - offset),
-        }));
-        lyricsOnly = lyricsJson.Content.map((item) => item.Text);
-      }
-      if (lyricsJson.Type === 'Static') {
-        // remove empty lines
-        lyricsJson.Lines = lyricsJson.Lines.filter(
-          (item) => item.Text.trim() !== '',
-        );
-        lyricsOnly = lyricsJson.Lines.map((item) => item.Text);
-      }
+      let lyricsOnly = await extractLyrics(lyricsJson);
 
       // if lyrics not empty
       if (lyricsOnly.length > 0) {
@@ -307,9 +289,9 @@ async function generateFurigana(lyricsJson) {
         const response = await ai.models.generateContent({
           config: generationConfig,
           model: 'gemini-2.0-flash',
-          contents: `You are the expert in Japanese language, specializing in kanji readings and song lyrics. Follow these instructions carefully: For each words in the following lyrics, identify all kanji characters then add their furigana within curly braces, following standard Japanese orthography. Follow this examples: 願い should be written as 願{ねが}い, 可愛い should be written as 可愛{かわい}い, 5人 should be written as 5人{にん}, 明後日 should be written as 明後日{あさって}, 神様 should be written as 神様{かみさま}, 聞き should be written as 聞{き}き etc. Use context-appropriate readings for each kanji based on standard Japanese usage. Keep any non-kanji characters as is. Here are the lyrics: ${JSON.stringify(
-            lyricsOnly,
-          )}`,
+          contents: `${
+            Defaults.FuriganaPrompt
+          } Here are the lyrics: ${JSON.stringify(lyricsOnly)}`,
         });
         // console.log(response.text);
 
@@ -381,26 +363,8 @@ async function generateRomaja(lyricsJson) {
         lyricsJson.Content = await convertLyrics(lyricsJson.Content);
       }
 
-      // console.log('DEBUG', lyricsJson.Content);
-
       // Extract lyrics from Line and Static types
-      let lyricsOnly = [];
-      if (lyricsJson.Type === 'Line') {
-        // Adjust start time to show line a little bit earlier
-        const offset = 0.55;
-        lyricsJson.Content = lyricsJson.Content.map((item) => ({
-          ...item,
-          StartTime: Math.max(0, item.StartTime - offset),
-        }));
-        lyricsOnly = lyricsJson.Content.map((item) => item.Text);
-      }
-      if (lyricsJson.Type === 'Static') {
-        // remove empty lines
-        lyricsJson.Lines = lyricsJson.Lines.filter(
-          (item) => item.Text.trim() !== '',
-        );
-        lyricsOnly = lyricsJson.Lines.map((item) => item.Text);
-      }
+      let lyricsOnly = await extractLyrics(lyricsJson);
 
       // if lyrics not empty
       if (lyricsOnly.length > 0) {
@@ -410,9 +374,9 @@ async function generateRomaja(lyricsJson) {
         const response = await ai.models.generateContent({
           config: generationConfig,
           model: 'gemini-2.0-flash',
-          contents: `You are the expert in Korean language, specializing in romaja readings and song lyrics. Follow these instructions carefully, think before you respond: For each word in the following lyrics, identify all korean word and then add their romaja within curly braces. Follow this examples: 정말 should be written as 정말{Jeongmal}, 보고 should be written as 보고{bogo}, 싶어요 shouod be written as 싶어요{sipeoyo}, 미로 should be written as 미로{miro}, "2살이에요" should be written as "2살이에요{sarieyo}" etc. Keep any non-korean characters as is. Here are the lyrics:\n${lyricsOnly.join(
-            '\n',
-          )}`,
+          contents: `${
+            Defaults.romajaPrompt
+          } Here are the lyrics:\n${lyricsOnly.join('\n')}`,
         });
         // console.log(response.text);
 
@@ -440,6 +404,29 @@ async function generateRomaja(lyricsJson) {
   }
 
   return lyricsJson;
+}
+
+async function extractLyrics(lyricsJson) {
+  if (lyricsJson.Type === 'Line') {
+    // Adjust start time to show line a little bit earlier
+    const offset = 0.55;
+    lyricsJson.Content = lyricsJson.Content.map((item) => ({
+      ...item,
+      StartTime: Math.max(0, item.StartTime - offset),
+    }));
+    // remove empty lines
+    lyricsJson.Content = lyricsJson.Content.filter(
+      (item) => item.Text.trim() !== '',
+    );
+    return lyricsJson.Content.map((item) => item.Text);
+  }
+  if (lyricsJson.Type === 'Static') {
+    // remove empty lines
+    lyricsJson.Lines = lyricsJson.Lines.filter(
+      (item) => item.Text.trim() !== '',
+    );
+    return lyricsJson.Lines.map((item) => item.Text);
+  }
 }
 
 function convertLyrics(data) {
