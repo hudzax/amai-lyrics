@@ -157,7 +157,7 @@
 
   // src/components/Global/Defaults.ts
   var Defaults = {
-    Version: "1.0.26",
+    Version: "1.0.27",
     lyrics: {
       api: {
         url: "https://amai-worker-production.nandemo.workers.dev/lyrics"
@@ -172,6 +172,7 @@
     show_topbar_notifications: false,
     lyrics_spacing: 2,
     systemInstruction: ``,
+    enableRomaji: false,
     romajaPrompt: `You are an expert Korean linguist specializing in accurate romaja transcription for song lyrics. Your primary goal is to add Revised Romanization in curly braces {} after EVERY sequence of Korean Hangul characters in the provided lyrics.
 
 **Core Task:** Convert Korean lyrics to include inline romaja.
@@ -221,6 +222,41 @@
 
 **Input:** You will receive lines of song lyrics.
 **Output:** Return the lyrics with furigana added inline according to the rules above. Ensure the output maintains the original line structure.
+`,
+    romajiPrompt: `You are an expert Japanese linguist specializing in accurate Romaji transcription using the Hepburn system for song lyrics. Your primary goal is to add Hepburn Romaji in curly braces {} after EVERY sequence of Japanese characters (Kanji, Hiragana, Katakana) in the provided lyrics.
+
+Core Task: Accurately convert Japanese song lyrics to Hepburn Romaji, focusing on whole words and linguistic units.
+
+Strict Rules:
+
+Word-Level Conversion: Identify and process each meaningful Japanese word or particle (including Kanji, Hiragana, and Katakana). Romanize each word/particle as a complete unit.
+Correct Segmentation: Ensure proper word segmentation, especially for verbs with okurigana (e.g., \u7B11\u3063\u3066) and compound words. Avoid splitting words incorrectly, and ensure that particles are accurately represented.
+Inline Format: Insert the Romaji pronunciation enclosed in curly braces {} immediately following the corresponding Japanese word/particle. Example: \u65E5\u672C\u8A9E \u2192 \u65E5\u672C\u8A9E{Nihongo}.
+Romanization System: Strictly use the Hepburn romanization system (e.g., \u3057 is 'shi', \u3061 is 'chi', \u3064 is 'tsu', long vowels marked with macrons like \u304A\u3046 \u2192 '\u014D', \u3046\u3046 \u2192 '\u016B', \u30A8\u30FC \u2192 '\u0113'). Handle particles correctly (e.g., \u306F as 'wa', \u3078 as 'e', \u3092 as 'o', \u306E as 'no', \u304C as 'ga') and ensure that they are not confused with other words.
+Preserve Everything Else: Keep all non-Japanese text (English, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are.
+Completeness & Accuracy: Ensure every Japanese word/particle has a Romaji pair, and that the Romaji is accurate Hepburn, with special attention to verbs, particles, and correct forms.
+Examples (Corrected Segmentations & Romaji):
+
+\u3042\u308A\u304C\u3068\u3046 \u2192 \u3042\u308A\u304C\u3068\u3046{arigat\u014D}
+\u53EF\u611B\u3044 \u2192 \u53EF\u611B\u3044{kawaii}
+5\u4EBA \u2192 5\u4EBA{gonin}
+\u6771\u4EAC\u30BF\u30EF\u30FC \u2192 \u6771\u4EAC\u30BF\u30EF\u30FC{T\u014Dky\u014D Taw\u0101}
+\u30A8\u30E2\u30FC\u30B7\u30E7\u30F3 \u2192 \u30A8\u30E2\u30FC\u30B7\u30E7\u30F3{em\u014Dshon}
+(\u5927\u4E08\u592B\u3060\u3088) \u2192 (\u5927\u4E08\u592B{daij\u014Dbu}\u3060\u3088{dayo})
+\u79C1\u306F \u2192 \u79C1{watashi}\u306F{wa}
+\u541B\u3092\u6CE3\u304B\u3059\u304B\u3089 \u2192 \u541B{kimi}\u3092{o}\u6CE3\u304B\u3059{nakasu}\u304B\u3089{kara}
+\u3060\u304B\u3089 \u2192 \u3060\u304B\u3089{dakara}
+\u4E00\u7DD2\u306B\u306F\u5C45\u308C\u306A\u3044\u306A \u2192 \u4E00\u7DD2{issho}\u306B\u306F{niwa}\u5C45\u308C\u306A\u3044{irenai}\u306A{na}
+\u884C\u304D\u307E\u3059 \u2192 \u884C\u304D\u307E\u3059{ikimasu}
+\u98DF\u3079\u307E\u3057\u3087\u3046 \u2192 \u98DF\u3079\u307E\u3057\u3087\u3046{tabemash\u014D}
+\u7B11\u3063\u3066\u304F\u308C\u308B\u306E\u306F\u541B\u3060\u3051\u3060 \u2192 \u7B11\u3063\u3066{waratte}\u304F\u308C\u308B{kureru}\u306E{no}\u306F{wa}\u541B{kimi}\u3060\u3051{dake}\u3060{da}
+\u3053\u3053\u304B\u3089\u8A9E\u308A\u304B\u3051\u3066\u308B\u8A00\u8449\u304C \u2192 \u3053\u3053{koko}\u304B\u3089{kara}\u8A9E\u308A\u304B\u3051{katarikake}\u3066\u308B{teru}\u8A00\u8449{kotoba}\u304C{ga}
+\u3061\u3087\u3063\u3068\u75C5\u3093\u3067\u304D\u305F \u2192 \u3061\u3087\u3063\u3068{chotto}\u75C5\u3093\u3067\u304D\u305F{yandekita}
+\u5C4A\u3044\u3066 \u2192 \u5C4A\u3044\u3066{todoite}
+\u611B\u3057\u304D \u2192 \u611B\u3057\u304D{itoshiki}
+
+Input: Song lyrics in Japanese.
+Output: Lyrics with accurate Hepburn Romaji for all Japanese words/particles, correctly segmented and formatted inline.
 `
   };
   var Defaults_default = Defaults;
@@ -3862,14 +3898,21 @@
     }
     data.Content.forEach((line, index, arr) => {
       const lineElem = document.createElement("div");
-      line.Text = line.Text?.replace(
-        /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^\}]+)}/g,
-        "<ruby>$1<rt>$2</rt></ruby>"
-      );
-      line.Text = line.Text?.replace(
-        /((?:\([\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)[?.!,]?){([^\}]+)}/g,
-        '<ruby class="romaja">$1<rt>$2</rt></ruby>'
-      );
+      if (storage_default.get("enable_romaji") === "true") {
+        line.Text = line.Text?.replace(
+          /([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF]+[?.!,"']?)(?:{|\uFF5B)([^}\uFF5D]+)(?:}|\uFF5D)/g,
+          "<ruby>$1<rt>$2</rt></ruby>"
+        );
+      } else {
+        line.Text = line.Text?.replace(
+          /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^\}]+)}/g,
+          "<ruby>$1<rt>$2</rt></ruby>"
+        );
+        line.Text = line.Text?.replace(
+          /((?:\([\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)[?.!,"']?){([^\}]+)}/g,
+          '<ruby class="romaja">$1<rt>$2</rt></ruby>'
+        );
+      }
       lineElem.innerHTML = line.Text;
       lineElem.classList.add("line");
       if (isRtl_default(line.Text) && !lineElem.classList.contains("rtl")) {
@@ -11094,8 +11137,13 @@
         (item) => item.Lead?.Syllables?.some((syl) => /[\uAC00-\uD7AF]/.test(syl.Text))
       ) || lyricsJson.Content?.some((item) => /[\uAC00-\uD7AF]/.test(item.Text)) || lyricsJson.Lines?.some((item) => /[\uAC00-\uD7AF]/.test(item.Text)) || false;
       if (hasKanji) {
-        lyricsJson = await generateFurigana(lyricsJson);
-        console.log("DEBUG result", lyricsJson);
+        if (storage_default.get("enable_romaji") === "true") {
+          lyricsJson = await generateRomaji(lyricsJson);
+          console.log("DEBUG result", lyricsJson);
+        } else {
+          lyricsJson = await generateFurigana(lyricsJson);
+          console.log("DEBUG result", lyricsJson);
+        }
       } else if (hasKorean) {
         lyricsJson = await generateRomaja(lyricsJson);
         console.log("DEBUG result", lyricsJson);
@@ -11144,6 +11192,17 @@
       lyricsJson,
       Defaults_default.systemInstruction,
       Defaults_default.romajaPrompt
+    );
+    return lyricsJson;
+  }
+  async function generateRomaji(lyricsJson) {
+    if (!await checkGeminiAPIKey(lyricsJson)) {
+      return lyricsJson;
+    }
+    lyricsJson = await processLyricsWithGemini(
+      lyricsJson,
+      Defaults_default.systemInstruction,
+      Defaults_default.romajiPrompt
     );
     return lyricsJson;
   }
@@ -11216,21 +11275,25 @@
     return lyricsJson;
   }
   async function extractLyrics(lyricsJson) {
+    const removeEmptyLinesAndCharacters = (items) => {
+      items = items.filter((item) => item.Text.trim() !== "");
+      items = items.map((item) => {
+        item.Text = item.Text.replace(/」/g, "");
+        return item;
+      });
+      return items;
+    };
     if (lyricsJson.Type === "Line") {
       const offset = 0.55;
       lyricsJson.Content = lyricsJson.Content.map((item) => ({
         ...item,
         StartTime: Math.max(0, item.StartTime - offset)
       }));
-      lyricsJson.Content = lyricsJson.Content.filter(
-        (item) => item.Text.trim() !== ""
-      );
+      lyricsJson.Content = removeEmptyLinesAndCharacters(lyricsJson.Content);
       return lyricsJson.Content.map((item) => item.Text);
     }
     if (lyricsJson.Type === "Static") {
-      lyricsJson.Lines = lyricsJson.Lines.filter(
-        (item) => item.Text.trim() !== ""
-      );
+      lyricsJson.Lines = removeEmptyLinesAndCharacters(lyricsJson.Lines);
       return lyricsJson.Lines.map((item) => item.Text);
     }
   }
@@ -11594,6 +11657,19 @@
       "Amai - General",
       "spicy-lyrics-settings"
     );
+    settings.addToggle(
+      "enableRomaji",
+      "Enable Romaji for Japanese Lyrics",
+      Defaults_default.enableRomaji,
+      () => {
+        lyricsCache.destroy();
+        storage_default.set("currentLyricsData", null);
+        storage_default.set(
+          "enable_romaji",
+          settings.getFieldValue("enableRomaji")
+        );
+      }
+    );
     settings.addInput("gemini-api-key", "Gemini API Key", "", () => {
       storage_default.set(
         "GEMINI_API_KEY",
@@ -11939,7 +12015,7 @@
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-16548-qlmdtBWyjA5x/196012ff15a7/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-17532-v0i1A6l3VfL4/19601a2117e7/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -11965,7 +12041,7 @@
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16548-qlmdtBWyjA5x/196012ff0960/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17532-v0i1A6l3VfL4/19601a210dc0/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -12104,7 +12180,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16548-qlmdtBWyjA5x/196012ff0c91/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17532-v0i1A6l3VfL4/19601a2110a1/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -12312,7 +12388,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16548-qlmdtBWyjA5x/196012ff0d02/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17532-v0i1A6l3VfL4/19601a211112/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -12786,7 +12862,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16548-qlmdtBWyjA5x/196012ff0dc3/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17532-v0i1A6l3VfL4/19601a2111c3/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -12894,7 +12970,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16548-qlmdtBWyjA5x/196012ff0e04/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17532-v0i1A6l3VfL4/19601a211214/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -13070,7 +13146,7 @@ ruby > rt {
   border: 1px solid rgba(255, 255, 255, 0.55);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16548-qlmdtBWyjA5x/196012ff0e55/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17532-v0i1A6l3VfL4/19601a211275/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -13355,7 +13431,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16548-qlmdtBWyjA5x/196012ff0eb6/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17532-v0i1A6l3VfL4/19601a2112d6/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;

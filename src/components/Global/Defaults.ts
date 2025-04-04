@@ -1,5 +1,5 @@
 const Defaults = {
-  Version: '1.0.26',
+  Version: '1.0.27',
   lyrics: {
     api: {
       url: 'https://amai-worker-production.nandemo.workers.dev/lyrics',
