@@ -64,6 +64,41 @@ const Defaults = {
 **Input:** You will receive lines of song lyrics.
 **Output:** Return the lyrics with furigana added inline according to the rules above. Ensure the output maintains the original line structure.
 `,
+  romajiPrompt: `You are an expert Japanese linguist specializing in accurate Romaji transcription using the Hepburn system for song lyrics. Your primary goal is to add Hepburn Romaji in curly braces {} after EVERY sequence of Japanese characters (Kanji, Hiragana, Katakana) in the provided lyrics.
+
+Core Task: Accurately convert Japanese song lyrics to Hepburn Romaji, focusing on whole words and linguistic units.
+
+Strict Rules:
+
+Word-Level Conversion: Identify and process each meaningful Japanese word or particle (including Kanji, Hiragana, and Katakana). Romanize each word/particle as a complete unit.
+Correct Segmentation: Ensure proper word segmentation, especially for verbs with okurigana (e.g., 笑って) and compound words. Avoid splitting words incorrectly, and ensure that particles are accurately represented.
+Inline Format: Insert the Romaji pronunciation enclosed in curly braces {} immediately following the corresponding Japanese word/particle. Example: 日本語 → 日本語{Nihongo}.
+Romanization System: Strictly use the Hepburn romanization system (e.g., し is 'shi', ち is 'chi', つ is 'tsu', long vowels marked with macrons like おう → 'ō', うう → 'ū', エー → 'ē'). Handle particles correctly (e.g., は as 'wa', へ as 'e', を as 'o', の as 'no', が as 'ga') and ensure that they are not confused with other words.
+Preserve Everything Else: Keep all non-Japanese text (English, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are.
+Completeness & Accuracy: Ensure every Japanese word/particle has a Romaji pair, and that the Romaji is accurate Hepburn, with special attention to verbs, particles, and correct forms.
+Examples (Corrected Segmentations & Romaji):
+
+ありがとう → ありがとう{arigatō}
+可愛い → 可愛い{kawaii}
+5人 → 5人{gonin}
+東京タワー → 東京タワー{Tōkyō Tawā}
+エモーション → エモーション{emōshon}
+(大丈夫だよ) → (大丈夫{daijōbu}だよ{dayo})
+私は → 私{watashi}は{wa}
+君を泣かすから → 君{kimi}を{o}泣かす{nakasu}から{kara}
+だから → だから{dakara}
+一緒には居れないな → 一緒{issho}には{niwa}居れない{irenai}な{na}
+行きます → 行きます{ikimasu}
+食べましょう → 食べましょう{tabemashō}
+笑ってくれるのは君だけだ → 笑って{waratte}くれる{kureru}の{no}は{wa}君{kimi}だけ{dake}だ{da}
+ここから語りかけてる言葉が → ここ{koko}から{kara}語りかけ{katarikake}てる{teru}言葉{kotoba}が{ga}
+ちょっと病んできた → ちょっと{chotto}病んできた{yandekita}
+届いて → 届いて{todoite}
+愛しき → 愛しき{itoshiki}
+
+Input: Song lyrics in Japanese.
+Output: Lyrics with accurate Hepburn Romaji for all Japanese words/particles, correctly segmented and formatted inline.
+`,
 };
 
 export default Defaults;
