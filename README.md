@@ -56,7 +56,7 @@ Follow these steps to set up your Gemini API key:
 3. **Paste Your Gemini API Key:**
    - Insert the API key into the field.
      ![Settings Screenshot](./previews/settings.jpg)
-   - (Don't worry, we won't steal your API key... probably 😉)
+   - (Don't worry, the key is stored locally and only used to make API requests from this extension. 😉)
 4. **Access the Lyrics Page:**
    - Click the lyrics icon at the bottom of the Spotify window.
    - Wait a few moments as the page loads—the Furigana annotations will appear automatically.
