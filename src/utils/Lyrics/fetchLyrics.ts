@@ -355,6 +355,17 @@ async function processLyricsWithGemini(
 }
 
 async function extractLyrics(lyricsJson) {
+  const removeEmptyLinesAndCharacters = (items) => {
+    // remove empty lines
+    items = items.filter((item) => item.Text.trim() !== '');
+    // remove 」 from lyrics lines
+    items = items.map((item) => {
+      item.Text = item.Text.replace(/」/g, '');
+      return item;
+    });
+    return items;
+  };
+
   if (lyricsJson.Type === 'Line') {
     // Adjust start time to show line a little bit earlier
     const offset = 0.55;
@@ -362,27 +373,14 @@ async function extractLyrics(lyricsJson) {
       ...item,
       StartTime: Math.max(0, item.StartTime - offset),
     }));
-    // remove empty lines
-    lyricsJson.Content = lyricsJson.Content.filter(
-      (item) => item.Text.trim() !== '',
-    );
-    // remove 」 from lyrics lines
-    lyricsJson.Content = lyricsJson.Content.map((item) => {
-      item.Text = item.Text.replace(/」/g, '');
-      return item;
-    });
+
+    lyricsJson.Content = removeEmptyLinesAndCharacters(lyricsJson.Content);
+
     return lyricsJson.Content.map((item) => item.Text);
   }
+
   if (lyricsJson.Type === 'Static') {
-    // remove empty lines
-    lyricsJson.Lines = lyricsJson.Lines.filter(
-      (item) => item.Text.trim() !== '',
-    );
-    // remove 」 from lyrics lines
-    lyricsJson.Lines = lyricsJson.Lines.map((item) => {
-      item.Text = item.Text.replace(/」/g, '');
-      return item;
-    });
+    lyricsJson.Lines = removeEmptyLinesAndCharacters(lyricsJson.Lines);
     return lyricsJson.Lines.map((item) => item.Text);
   }
 }
