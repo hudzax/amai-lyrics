@@ -146,6 +146,21 @@ function generalSettings() {
   //   },
   // );
 
+  settings.addToggle(
+    'enableRomaji',
+    'Enable Romaji for Japanese Lyrics',
+    Defaults.enableRomaji,
+    () => {
+      // clear cache and current lyrics data
+      lyricsCache.destroy();
+      storage.set('currentLyricsData', null);
+      storage.set(
+        'enable_romaji',
+        settings.getFieldValue('enableRomaji') as string,
+      );
+    },
+  );
+
   settings.addInput('gemini-api-key', 'Gemini API Key', '', () => {
     storage.set(
       'GEMINI_API_KEY',
