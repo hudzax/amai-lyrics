@@ -32,7 +32,7 @@ Examples:
 - (내가 아니잖아) → (내가{naega} 아니잖아{anijana})
 
 Before submitting your response, verify that EVERY Korean word has been paired with its romaja pronunciation.`,
-  FuriganaPrompt: `You are an expert in the Japanese language, specializing in kanji readings and song lyrics. Your task is to add accurate furigana to the following lyrics.
+  furiganaPrompt: `You are an expert in the Japanese language, specializing in kanji readings and song lyrics. Your task is to add accurate furigana to the following lyrics.
 
 Instructions:
 

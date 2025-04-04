@@ -290,7 +290,7 @@ async function generateFurigana(lyricsJson) {
           config: generationConfig,
           model: 'gemini-2.0-flash',
           contents: `${
-            Defaults.FuriganaPrompt
+            Defaults.furiganaPrompt
           } Here are the lyrics: ${JSON.stringify(lyricsOnly)}`,
         });
         // console.log(response.text);
