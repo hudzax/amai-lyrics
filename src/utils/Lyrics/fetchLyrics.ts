@@ -176,8 +176,14 @@ export default async function fetchLyrics(uri: string) {
       false;
 
     if (hasKanji) {
-      lyricsJson = await generateFurigana(lyricsJson);
-      console.log('DEBUG result', lyricsJson);
+      // romaji is enabled
+      if (storage.get('enable_romaji') === 'true') {
+        lyricsJson = await generateRomaji(lyricsJson);
+        console.log('DEBUG result', lyricsJson);
+      } else {
+        lyricsJson = await generateFurigana(lyricsJson);
+        console.log('DEBUG result', lyricsJson);
+      }
     } else if (hasKorean) {
       lyricsJson = await generateRomaja(lyricsJson);
       console.log('DEBUG result', lyricsJson);
@@ -239,6 +245,20 @@ async function generateRomaja(lyricsJson) {
     lyricsJson,
     Defaults.systemInstruction,
     Defaults.romajaPrompt,
+  );
+
+  return lyricsJson;
+}
+
+async function generateRomaji(lyricsJson) {
+  if (!(await checkGeminiAPIKey(lyricsJson))) {
+    return lyricsJson;
+  }
+
+  lyricsJson = await processLyricsWithGemini(
+    lyricsJson,
+    Defaults.systemInstruction,
+    Defaults.romajiPrompt,
   );
 
   return lyricsJson;

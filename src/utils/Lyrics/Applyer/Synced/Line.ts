@@ -22,6 +22,7 @@ import {
 import { ApplyLyricsCredits } from '../Credits/ApplyLyricsCredits';
 import { ApplyInfo } from '../Info/ApplyInfo';
 import isRtl from '../../isRtl';
+import storage from '../../../storage';
 
 export function ApplyLineLyrics(data) {
   if (!Defaults.LyricsContainerExists) return;
@@ -118,16 +119,24 @@ export function ApplyLineLyrics(data) {
 
   data.Content.forEach((line, index, arr) => {
     const lineElem = document.createElement('div');
-    // Generate ruby text for furigana
-    line.Text = line.Text?.replace(
-      /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^\}]+)}/g,
-      '<ruby>$1<rt>$2</rt></ruby>',
-    );
-    // Generate ruby text for korean romaja
-    line.Text = line.Text?.replace(
-      /((?:\([\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)[?.!,]?){([^\}]+)}/g,
-      '<ruby class="romaja">$1<rt>$2</rt></ruby>',
-    );
+    if (storage.get('enable_romaji') === 'true') {
+      // Generate ruby text for romaji
+      line.Text = line.Text?.replace(
+        /([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF]+[?.!,"']?)(?:{|\uFF5B)([^}\uFF5D]+)(?:}|\uFF5D)/g,
+        '<ruby>$1<rt>$2</rt></ruby>',
+      );
+    } else {
+      // Generate ruby text for furigana
+      line.Text = line.Text?.replace(
+        /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^\}]+)}/g,
+        '<ruby>$1<rt>$2</rt></ruby>',
+      );
+      // Generate ruby text for korean romaja
+      line.Text = line.Text?.replace(
+        /((?:\([\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)[?.!,"']?){([^\}]+)}/g,
+        '<ruby class="romaja">$1<rt>$2</rt></ruby>',
+      );
+    }
 
     lineElem.innerHTML = line.Text;
     lineElem.classList.add('line');
