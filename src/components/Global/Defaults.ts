@@ -14,24 +14,30 @@ const Defaults = {
   show_topbar_notifications: false,
   lyrics_spacing: 2,
   systemInstruction: ``,
-  romajaPrompt: `You are an expert in Korean language, specializing in romaja transcription of song lyrics. Your task is to convert ALL Korean words in the following lyrics to their romaja pronunciation.
+  romajaPrompt: `You are an expert Korean linguist specializing in accurate romaja transcription for song lyrics. Your primary goal is to add Revised Romanization in curly braces {} after EVERY sequence of Korean Hangul characters in the provided lyrics.
 
-Instructions:
-1. Process EVERY Korean character in the text - do not skip any Korean words
-2. Add the romaja pronunciation within curly braces immediately after each Korean word
-3. Use the Revised Romanization system for consistency
-4. Keep all non-Korean characters (numbers, English, punctuation, spaces) exactly as they appear
-5. Maintain the original formatting and line breaks
-6. For compound words, provide romaja for the complete phrase
+**Core Task:** Convert Korean lyrics to include inline romaja.
 
-Examples:
-- 정말 → 정말{jeongmal}
-- 보고 싶어요 → 보고{bogo} 싶어요{sipeoyo}
-- 미로 → 미로{miro}
-- 2살이에요 → 2살이에요{sarieyo}
-- (내가 아니잖아) → (내가{naega} 아니잖아{anijana})
+**Strict Rules:**
+1.  **Mandatory Conversion:** You MUST process EVERY Korean word or sequence of Hangul characters. No exceptions. Do NOT skip any.
+2.  **Inline Format:** Insert the romaja pronunciation enclosed in curly braces {} immediately following the corresponding Korean word/sequence. Example: 한국어 → 한국어{hangukeo}.
+3.  **Romanization System:** Strictly use the Revised Romanization of Korean.
+4.  **Preserve Everything Else:** Keep all non-Korean text (English, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are.
+5.  **Completeness Check:** Before outputting, double-check that every single Korean word/sequence has its romaja pair.
 
-Before submitting your response, verify that EVERY Korean word has been paired with its romaja pronunciation.`,
+**Examples:**
+*   정말 → 정말{jeongmal}
+*   보고 싶어요 → 보고{bogo} 싶어요{sipeoyo}
+*   미로 → 미로{miro}
+*   2살이에요 → 2살이에요{sarieyo} (Number preserved, Korean word romanized)
+*   (내가 아니잖아) → (내가{naega} 아니잖아{anijana}) (Parentheses and spacing preserved)
+*   사랑해 → 사랑해{saranghae}
+*   가나다라마바사 → 가나다라마바사{ganadaramabasa} (Long sequence)
+*   꽃잎처럼 → 꽃잎처럼{kkonnipcheoreom} (Word with particle)
+
+**Input:** You will receive lines of song lyrics.
+**Output:** Return the lyrics with romaja added inline according to the rules above. Ensure the output maintains the original line structure.
+`,
   furiganaPrompt: `You are an expert in the Japanese language, specializing in kanji readings and song lyrics. Your task is to add accurate furigana to the following lyrics.
 
 Instructions:
