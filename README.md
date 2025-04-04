@@ -1,8 +1,8 @@
 # 🎶 Amai Lyrics
 
-Amai Lyrics is a Spicetify extension, forked from [Spicy Lyrics](https://spicylyrics.org/), that enhances your Spotify experience by adding Furigana, Romaji for Japanese, and Romanization for Korean lyrics.
+Hey there! Amai Lyrics is a Spicetify extension, forked from [Spicy Lyrics](https://spicylyrics.org/), that enhances your Spotify experience by adding Furigana, Romaji for Japanese, and Romanization for Korean lyrics.
 
-## 🌟 Features
+## 🌟 Awesome things
 
 - **Furigana Support:** Annotate Kanji with phonetic guides to aid reading.
 - **Romaji Support:** Display lyrics in Japanese with Romaji.
@@ -23,12 +23,7 @@ Amai Lyrics is a Spicetify extension, forked from [Spicy Lyrics](https://spicyly
 
 ### 🛒 Via Marketplace (Currently not available 😭)
 
-Follow these simple steps:
-
-1. Install [Spicetify Marketplace](https://github.com/spicetify/spicetify-marketplace) if you haven't already
-2. Open Spotify and navigate to Marketplace → Extensions
-3. Search for "Amai Lyrics"
-4. Click **Install** to add it to Spicetify
+It is currently blacklisted from the marketplace, so you'll have to do it the old-fashioned way for now. But don't worry, it's super easy!
 
 ### 🔧 Manual Installation
 
@@ -61,6 +56,7 @@ Follow these steps to set up your Gemini API key:
 3. **Paste Your Gemini API Key:**
    - Insert the API key into the field.
      ![Settings Screenshot](./previews/settings.jpg)
+   - (Don't worry, we won't steal your API key... probably 😉)
 4. **Access the Lyrics Page:**
    - Click the lyrics icon at the bottom of the Spotify window.
    - Wait a few moments as the page loads—the Furigana annotations will appear automatically.
@@ -69,7 +65,10 @@ Follow these steps to set up your Gemini API key:
 ## 🌟 Future Plans
 
 - **Line-by-Line Translation:** Add support for displaying translations for each line of lyrics.
+- **World Domination:** Just kidding! ...unless? 😈
 
 ## 🙏 Credits
 
 Special thanks to Spikerko, creator of the original Spicy Lyrics extension.
+
+And a special thanks to you for using Amai Lyrics! We hope you enjoy it! 🎉
