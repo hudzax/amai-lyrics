@@ -379,7 +379,7 @@ async function extractLyrics(lyricsJson) {
       (item) => item.Text.trim() !== '',
     );
     // remove 」 from lyrics lines
-    lyricsJson.Lines = lyricsJson.Content.map((item) => {
+    lyricsJson.Lines = lyricsJson.Lines.map((item) => {
       item.Text = item.Text.replace(/」/g, '');
       return item;
     });
