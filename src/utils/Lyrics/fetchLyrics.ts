@@ -138,7 +138,7 @@ export default async function fetchLyrics(uri: string) {
     const lyricsAccessToken = storage.get("lyricsApiAccessToken") ?? Defaults.LyricsContent.api.accessToken; */
 
   try {
-    Spicetify.showNotification('Fetching lyrics..', false, 2000);
+    Spicetify.showNotification('Fetching lyrics..', false, 1000);
     const SpotifyAccessToken = await Platform.GetSpotifyAccessToken();
 
     let status = 0;
@@ -226,7 +226,7 @@ export default async function fetchLyrics(uri: string) {
     }
 
     Defaults.CurrentLyricsType = lyricsJson.Type;
-    Spicetify.showNotification('Completed', false, 2000);
+    Spicetify.showNotification('Completed', false, 1000);
     return { ...lyricsJson, fromCache: false };
   } catch (error) {
     console.error('Error fetching lyrics:', error);
@@ -667,7 +667,7 @@ function convertLyrics(data) {
 }
 
 async function noLyricsMessage(Cache = true, LocalStorage = true) {
-  Spicetify.showNotification('Lyrics unavailable', false, 2000);
+  Spicetify.showNotification('Lyrics unavailable', false, 1000);
 
   LocalStorage
     ? storage.set(
