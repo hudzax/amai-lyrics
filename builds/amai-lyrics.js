@@ -157,6 +157,7 @@
 
   // src/components/Global/Defaults.ts
   var Defaults = {
+    Version: "1.0.26",
     lyrics: {
       api: {
         url: "https://amai-worker-production.nandemo.workers.dev/lyrics"
@@ -167,54 +168,60 @@
     LyricsContainerExists: false,
     SkipSpicyFont: false,
     OldStyleFont: false,
-    SpicyLyricsVersion: "0.0.0",
     ForceCoverImage_InLowQualityMode: false,
     show_topbar_notifications: false,
     lyrics_spacing: 2,
     systemInstruction: ``,
-    romajaPrompt: `You are an expert in Korean language, specializing in romaja transcription of song lyrics. Your task is to convert ALL Korean words in the following lyrics to their romaja pronunciation.
+    romajaPrompt: `You are an expert Korean linguist specializing in accurate romaja transcription for song lyrics. Your primary goal is to add Revised Romanization in curly braces {} after EVERY sequence of Korean Hangul characters in the provided lyrics.
 
-Instructions:
-1. Process EVERY Korean character in the text - do not skip any Korean words
-2. Add the romaja pronunciation within curly braces immediately after each Korean word
-3. Use the Revised Romanization system for consistency
-4. Keep all non-Korean characters (numbers, English, punctuation, spaces) exactly as they appear
-5. Maintain the original formatting and line breaks
-6. For compound words, provide romaja for the complete phrase
+**Core Task:** Convert Korean lyrics to include inline romaja.
 
-Examples:
-- \uC815\uB9D0 \u2192 \uC815\uB9D0{jeongmal}
-- \uBCF4\uACE0 \uC2F6\uC5B4\uC694 \u2192 \uBCF4\uACE0{bogo} \uC2F6\uC5B4\uC694{sipeoyo}
-- \uBBF8\uB85C \u2192 \uBBF8\uB85C{miro}
-- 2\uC0B4\uC774\uC5D0\uC694 \u2192 2\uC0B4\uC774\uC5D0\uC694{sarieyo}
-- (\uB0B4\uAC00 \uC544\uB2C8\uC796\uC544) \u2192 (\uB0B4\uAC00{naega} \uC544\uB2C8\uC796\uC544{anijana})
+**Strict Rules:**
+1.  **Mandatory Conversion:** You MUST process EVERY Korean word or sequence of Hangul characters. No exceptions. Do NOT skip any.
+2.  **Inline Format:** Insert the romaja pronunciation enclosed in curly braces {} immediately following the corresponding Korean word/sequence. Example: \uD55C\uAD6D\uC5B4 \u2192 \uD55C\uAD6D\uC5B4{hangukeo}.
+3.  **Romanization System:** Strictly use the Revised Romanization of Korean.
+4.  **Preserve Everything Else:** Keep all non-Korean text (English, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are.
+5.  **Completeness Check:** Before outputting, double-check that every single Korean word/sequence has its romaja pair.
 
-Before submitting your response, verify that EVERY Korean word has been paired with its romaja pronunciation.`,
-    FuriganaPrompt: `You are an expert in the Japanese language, specializing in kanji readings and song lyrics. Your task is to add accurate furigana to the following lyrics.
+**Examples:**
+*   \uC815\uB9D0 \u2192 \uC815\uB9D0{jeongmal}
+*   \uBCF4\uACE0 \uC2F6\uC5B4\uC694 \u2192 \uBCF4\uACE0{bogo} \uC2F6\uC5B4\uC694{sipeoyo}
+*   \uBBF8\uB85C \u2192 \uBBF8\uB85C{miro}
+*   2\uC0B4\uC774\uC5D0\uC694 \u2192 2\uC0B4\uC774\uC5D0\uC694{sarieyo} (Number preserved, Korean word romanized)
+*   (\uB0B4\uAC00 \uC544\uB2C8\uC796\uC544) \u2192 (\uB0B4\uAC00{naega} \uC544\uB2C8\uC796\uC544{anijana}) (Parentheses and spacing preserved)
+*   \uC0AC\uB791\uD574 \u2192 \uC0AC\uB791\uD574{saranghae}
+*   \uAC00\uB098\uB2E4\uB77C\uB9C8\uBC14\uC0AC \u2192 \uAC00\uB098\uB2E4\uB77C\uB9C8\uBC14\uC0AC{ganadaramabasa} (Long sequence)
+*   \uAF43\uC78E\uCC98\uB7FC \u2192 \uAF43\uC78E\uCC98\uB7FC{kkonnipcheoreom} (Word with particle)
 
-Instructions:
+**Input:** You will receive lines of song lyrics.
+**Output:** Return the lyrics with romaja added inline according to the rules above. Ensure the output maintains the original line structure.
+`,
+    furiganaPrompt: `You are an expert Japanese linguist specializing in accurate furigana transcription for song lyrics. Your primary goal is to add Hiragana readings in curly braces {} after EVERY Kanji character or compound Kanji sequence in the provided lyrics.
 
-1. Identify all kanji characters in the lyrics, including those with multiple readings (e.g.,,).
-2. Add the correct furigana reading within curly braces immediately after each kanji character.
-3. Follow standard Japanese orthography and use context-appropriate readings for each kanji.
-4. Maintain the original formatting, including punctuation and line breaks.
-5. Non-kanji characters (hiragana, katakana, numbers, English letters, punctuation) should remain unchanged.
-6. Double-check that all kanji characters have been assigned the correct furigana readings.
+**Core Task:** Convert Japanese lyrics to include inline furigana for all Kanji.
 
-Examples:
-- \u9858\u3044 should be written as \u9858{\u306D\u304C}\u3044
-- \u53EF\u611B\u3044 should be written as \u53EF\u611B{\u304B\u308F\u3044}\u3044
-- 5\u4EBA should be written as 5\u4EBA{\u306B\u3093}
-- \u660E\u5F8C\u65E5 should be written as \u660E\u5F8C\u65E5{\u3042\u3055\u3063\u3066}
-- \u795E\u69D8 should be written as \u795E\u69D8{\u304B\u307F\u3055\u307E}
-- \u805E\u304D should be written as \u805E{\u304D}\u304D
+**Strict Rules:**
+1.  **Mandatory Conversion:** You MUST process EVERY Kanji character and compound Kanji sequence. No exceptions. Do NOT skip any.
+2.  **Inline Format:** Insert the correct Hiragana reading enclosed in curly braces {} immediately following the corresponding Kanji character or sequence. Example: \u6F22\u5B57 \u2192 \u6F22\u5B57{\u304B\u3093\u3058}.
+3.  **Contextual Readings:** Use the contextually appropriate reading (kun'yomi or on'yomi). For compound words (jukugo), provide the reading for the entire compound. Example: \u65E5\u672C\u8A9E \u2192 \u65E5\u672C\u8A9E{\u306B\u307B\u3093\u3054}. For single Kanji followed by okurigana, provide the reading for the Kanji part only. Example: \u98DF{\u305F}\u3079\u308B.
+4.  **Preserve Everything Else:** Keep all non-Kanji text (Hiragana, Katakana, English, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are.
+5.  **Completeness Check:** Before outputting, double-check that every single Kanji character/sequence has its furigana pair.
 
-Important notes:
-- Use on-yomi (Chinese-derived readings) for kanji characters when used in compound words.
-- Use kun-yomi (native Japanese readings) for kanji characters when used as independent words or in specific contexts.
-- Be aware of kanji characters with multiple readings and choose the correct one based on the context.
+**Examples:**
+*   \u9858\u3044 \u2192 \u9858{\u306D\u304C}\u3044
+*   \u53EF\u611B\u3044 \u2192 \u53EF\u611B{\u304B\u308F\u3044}\u3044
+*   5\u4EBA \u2192 5\u4EBA{\u306B\u3093} (Number preserved, Kanji romanized)
+*   \u660E\u5F8C\u65E5 \u2192 \u660E\u5F8C\u65E5{\u3042\u3055\u3063\u3066} (Compound word)
+*   \u795E\u69D8 \u2192 \u795E\u69D8{\u304B\u307F\u3055\u307E} (Compound word)
+*   \u805E\u304D \u2192 \u805E{\u304D}\u304D (Kanji with okurigana)
+*   \u98DF\u3079\u308B \u2192 \u98DF{\u305F}\u3079\u308B
+*   \u7F8E\u3057\u3044 \u2192 \u7F8E{\u3046\u3064\u304F}\u3057\u3044
+*   \u6771\u4EAC\u30BF\u30EF\u30FC \u2192 \u6771\u4EAC{\u3068\u3046\u304D\u3087\u3046}\u30BF\u30EF\u30FC (Mixed script, Katakana preserved)
+*   (\u5927\u4E08\u592B\u3060\u3088) \u2192 (\u5927\u4E08\u592B{\u3060\u3044\u3058\u3087\u3046\u3076}\u3060\u3088) (Parentheses and Hiragana preserved)
 
-Before finalizing your response, verify that all kanji characters have been assigned accurate furigana readings.`
+**Input:** You will receive lines of song lyrics.
+**Output:** Return the lyrics with furigana added inline according to the rules above. Ensure the output maintains the original line structure.
+`
   };
   var Defaults_default = Defaults;
 
@@ -10992,20 +10999,12 @@ Before finalizing your response, verify that all kanji characters have been assi
     document.querySelector("#SpicyLyricsPage .ContentBox .LyricsContainer")?.classList.remove("Hidden");
     if (!Fullscreen_default.IsOpen)
       PageView_default.AppendViewControls(true);
-    const IsSomethingElseThanTrack = Spicetify.Player.data.item.type !== "track";
-    if (IsSomethingElseThanTrack) {
-      return NotTrackMessage();
-    }
     const currFetching = storage_default.get("currentlyFetching");
     if (currFetching == "true")
       return;
     storage_default.set("currentlyFetching", "true");
     document.querySelector("#SpicyLyricsPage .ContentBox")?.classList.remove("LyricsHidden");
     ClearLyricsPageContainer();
-    if (Spicetify.Player.data?.item?.type && Spicetify.Player.data?.item?.type === "unknown" && Spicetify.Player.data?.item?.provider && Spicetify.Player.data?.item?.provider?.startsWith("narration"))
-      return DJMessage();
-    if (Spicetify.Player.data?.item?.mediaType && Spicetify.Player.data?.item?.mediaType !== "audio")
-      return NotTrackMessage();
     const trackId = uri.split(":")[2];
     const savedLyricsData = storage_default.get("currentLyricsData")?.toString();
     if (savedLyricsData) {
@@ -11037,7 +11036,7 @@ Before finalizing your response, verify that all kanji characters have been assi
       try {
         const lyricsFromCache = await lyricsCache.get(trackId);
         if (lyricsFromCache) {
-          if (navigator.onLine && lyricsFromCache?.expiresAt < new Date().getTime()) {
+          if (lyricsFromCache?.expiresAt < new Date().getTime()) {
             await lyricsCache.remove(trackId);
           } else {
             if (lyricsFromCache?.status === "NO_LYRICS") {
@@ -11057,8 +11056,6 @@ Before finalizing your response, verify that all kanji characters have been assi
         return await noLyricsMessage(false, true);
       }
     }
-    if (!navigator.onLine)
-      return urOfflineMessage();
     ShowLoaderContainer();
     try {
       Spicetify.showNotification("Fetching lyrics..", false, 1e3);
@@ -11129,127 +11126,92 @@ Before finalizing your response, verify that all kanji characters have been assi
     }
   }
   async function generateFurigana(lyricsJson) {
-    const GEMINI_API_KEY = storage_default.get("GEMINI_API_KEY")?.toString();
-    if (!GEMINI_API_KEY || GEMINI_API_KEY === "") {
-      console.error("Amai Lyrics: Gemini API Key missing");
-      lyricsJson.Info = "Amai Lyrics: Gemini API Key missing. Click here to add your own API key.";
-    } else {
-      try {
-        console.log("Amai Lyrics: Gemini API Key present");
-        const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-        const generationConfig = {
-          temperature: 0.2,
-          topP: 0.95,
-          topK: 40,
-          maxOutputTokens: 8192,
-          responseModalities: [],
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "object",
-            properties: {
-              lines: {
-                type: "array",
-                items: {
-                  type: "string"
-                }
-              }
-            }
-          },
-          systemInstruction: `${Defaults_default.systemInstruction}`
-        };
-        console.log("Amai Lyrics:", "Fetch Begin");
-        if (lyricsJson.Type === "Syllable") {
-          lyricsJson.Type = "Line";
-          lyricsJson.Content = await convertLyrics(lyricsJson.Content);
-        }
-        let lyricsOnly = await extractLyrics(lyricsJson);
-        if (lyricsOnly.length > 0) {
-          lyricsJson.Raw = lyricsOnly;
-          const response = await ai.models.generateContent({
-            config: generationConfig,
-            model: "gemini-2.0-flash",
-            contents: `${Defaults_default.FuriganaPrompt} Here are the lyrics: ${JSON.stringify(lyricsOnly)}`
-          });
-          let lyrics = JSON.parse(response.text.replace(/\n/g, ""));
-          if (lyricsJson.Type === "Line") {
-            lyricsJson.Content = lyricsJson.Content.map((item, index) => ({
-              ...item,
-              Text: lyrics.lines[index]
-            }));
-          } else if (lyricsJson.Type === "Static") {
-            lyricsJson.Lines = lyricsJson.Lines.map((item, index) => ({
-              ...item,
-              Text: lyrics.lines[index]
-            }));
-          }
-        }
-      } catch (error) {
-        console.error("Amai Lyrics:", error);
-        lyricsJson.Info = "Amai Lyrics: Fetch Error. Please double check your API key. Click here to open settings page.";
-      }
+    if (!await checkGeminiAPIKey(lyricsJson)) {
+      return lyricsJson;
     }
+    lyricsJson = await processLyricsWithGemini(
+      lyricsJson,
+      Defaults_default.systemInstruction,
+      Defaults_default.furiganaPrompt
+    );
     return lyricsJson;
   }
   async function generateRomaja(lyricsJson) {
+    if (!await checkGeminiAPIKey(lyricsJson)) {
+      return lyricsJson;
+    }
+    lyricsJson = await processLyricsWithGemini(
+      lyricsJson,
+      Defaults_default.systemInstruction,
+      Defaults_default.romajaPrompt
+    );
+    return lyricsJson;
+  }
+  async function checkGeminiAPIKey(lyricsJson) {
     const GEMINI_API_KEY = storage_default.get("GEMINI_API_KEY")?.toString();
     if (!GEMINI_API_KEY || GEMINI_API_KEY === "") {
       console.error("Amai Lyrics: Gemini API Key missing");
       lyricsJson.Info = "Amai Lyrics: Gemini API Key missing. Click here to add your own API key.";
-    } else {
-      try {
-        console.log("Amai Lyrics: Gemini API Key present");
-        const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-        const generationConfig = {
-          temperature: 0.55,
-          topP: 0.95,
-          topK: 40,
-          maxOutputTokens: 8192,
-          responseModalities: [],
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "object",
-            properties: {
-              lines: {
-                type: "array",
-                items: {
-                  type: "string"
-                }
+      return false;
+    }
+    return true;
+  }
+  async function processLyricsWithGemini(lyricsJson, systemInstruction, prompt) {
+    try {
+      console.log("Amai Lyrics: Gemini API Key present");
+      const GEMINI_API_KEY = storage_default.get("GEMINI_API_KEY")?.toString();
+      const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+      const generationConfig = {
+        temperature: 0.55,
+        topP: 0.95,
+        topK: 40,
+        maxOutputTokens: 8192,
+        responseModalities: [],
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "object",
+          properties: {
+            lines: {
+              type: "array",
+              items: {
+                type: "string"
               }
             }
-          },
-          systemInstruction: `${Defaults_default.systemInstruction}`
-        };
-        console.log("Amai Lyrics:", "Fetch Begin");
-        if (lyricsJson.Type === "Syllable") {
-          lyricsJson.Type = "Line";
-          lyricsJson.Content = await convertLyrics(lyricsJson.Content);
-        }
-        let lyricsOnly = await extractLyrics(lyricsJson);
-        if (lyricsOnly.length > 0) {
-          lyricsJson.Raw = lyricsOnly;
-          const response = await ai.models.generateContent({
-            config: generationConfig,
-            model: "gemini-2.0-flash",
-            contents: `${Defaults_default.romajaPrompt} Here are the lyrics:
-${lyricsOnly.join("\n")}`
-          });
-          let lyrics = JSON.parse(response.text.replace(/\n/g, ""));
-          if (lyricsJson.Type === "Line") {
-            lyricsJson.Content = lyricsJson.Content.map((item, index) => ({
-              ...item,
-              Text: lyrics.lines[index]
-            }));
-          } else if (lyricsJson.Type === "Static") {
-            lyricsJson.Lines = lyricsJson.Lines.map((item, index) => ({
-              ...item,
-              Text: lyrics.lines[index]
-            }));
           }
-        }
-      } catch (error) {
-        console.error("Amai Lyrics:", error);
-        lyricsJson.Info = "Amai Lyrics: Fetch Error. Please double check your API key. Click here to open settings page.";
+        },
+        systemInstruction: `${systemInstruction}`
+      };
+      console.log("Amai Lyrics:", "Fetch Begin");
+      if (lyricsJson.Type === "Syllable") {
+        lyricsJson.Type = "Line";
+        lyricsJson.Content = await convertLyrics(lyricsJson.Content);
       }
+      let lyricsOnly = await extractLyrics(lyricsJson);
+      if (lyricsOnly.length > 0) {
+        lyricsJson.Raw = lyricsOnly;
+        const response = await ai.models.generateContent({
+          config: generationConfig,
+          model: "gemini-2.0-flash",
+          contents: `${prompt} Here are the lyrics:\\n${lyricsOnly.join("\\n")}`
+        });
+        let lyrics = JSON.parse(response.text.replace(/\\n/g, ""));
+        if (lyricsJson.Type === "Line") {
+          lyricsJson.Content = lyricsJson.Content.map(
+            (item, index) => ({
+              ...item,
+              Text: lyrics.lines[index]
+            })
+          );
+        } else if (lyricsJson.Type === "Static") {
+          lyricsJson.Lines = lyricsJson.Lines.map((item, index) => ({
+            ...item,
+            Text: lyrics.lines[index]
+          }));
+        }
+      }
+    } catch (error) {
+      console.error("Amai Lyrics:", error);
+      lyricsJson.Info = "Amai Lyrics: Fetch Error. Please double check your API key. Click here to open settings page.";
     }
     return lyricsJson;
   }
@@ -11327,21 +11289,6 @@ ${lyricsOnly.join("\n")}`
   }
   async function noLyricsMessage(Cache2 = true, LocalStorage = true) {
     Spicetify.showNotification("Lyrics unavailable", false, 1e3);
-    LocalStorage ? storage_default.set(
-      "currentLyricsData",
-      `NO_LYRICS:${Spicetify.Player.data.item.uri.split(":")[2]}`
-    ) : null;
-    if (lyricsCache && Cache2) {
-      const expiresAt = new Date().getTime() + 1e3 * 60 * 60 * 24 * 7;
-      try {
-        await lyricsCache.set(Spicetify.Player.data.item.uri.split(":")[2], {
-          status: `NO_LYRICS`,
-          expiresAt
-        });
-      } catch (error) {
-        console.error("Error saving lyrics to cache:", error);
-      }
-    }
     storage_default.set("currentlyFetching", "false");
     HideLoaderContainer();
     Defaults_default.CurrentLyricsType = "None";
@@ -11350,79 +11297,6 @@ ${lyricsOnly.join("\n")}`
     OpenNowBar();
     DeregisterNowBarBtn();
     return "1";
-  }
-  function urOfflineMessage() {
-    const Message = {
-      Type: "Static",
-      alternative_api: false,
-      offline: true,
-      Lines: [
-        {
-          Text: "You're offline"
-        },
-        {
-          Text: ""
-        },
-        {
-          Text: "[DEF=font_size:small]This extension works only if you're online."
-        }
-      ]
-    };
-    storage_default.set("currentlyFetching", "false");
-    HideLoaderContainer();
-    ClearLyricsPageContainer();
-    Defaults_default.CurrentLyricsType = Message.Type;
-    return Message;
-  }
-  function DJMessage() {
-    const Message = {
-      Type: "Static",
-      alternative_api: false,
-      styles: {
-        display: "flex",
-        "align-items": "center",
-        "justify-content": "center",
-        "flex-direction": "column"
-      },
-      Lines: [
-        {
-          Text: "DJ Mode is On"
-        },
-        {
-          Text: ""
-        },
-        {
-          Text: "[DEF=font_size:small]If you want to load lyrics, please select a Song."
-        }
-      ]
-    };
-    storage_default.set("currentlyFetching", "false");
-    HideLoaderContainer();
-    ClearLyricsPageContainer();
-    Defaults_default.CurrentLyricsType = Message.Type;
-    return Message;
-  }
-  function NotTrackMessage() {
-    const Message = {
-      Type: "Static",
-      styles: {
-        display: "flex",
-        "align-items": "center",
-        "justify-content": "center",
-        "flex-direction": "column"
-      },
-      Lines: [
-        {
-          Text: "[DEF=font_size:small]You're playing an unsupported Content Type"
-        }
-      ]
-    };
-    storage_default.set("currentlyFetching", "false");
-    HideLoaderContainer();
-    ClearLyricsPageContainer();
-    CloseNowBar();
-    Defaults_default.CurrentLyricsType = Message.Type;
-    return Message;
   }
   var ContainerShowLoaderTimeout;
   function ShowLoaderContainer() {
@@ -11747,7 +11621,7 @@ ${lyricsOnly.join("\n")}`
     settings.addButton(
       "more-info",
       "This fork adds Furigana support to the original Spicy Lyrics utilizing free Gemini API. For personal use only.",
-      "v1.0.25",
+      `${Defaults_default.Version}`,
       () => {
       }
     );
@@ -12065,7 +11939,7 @@ ${lyricsOnly.join("\n")}`
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-4024-JaU7g4oxLqCQ/1960073967b7/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-16548-qlmdtBWyjA5x/196012ff15a7/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -12091,7 +11965,7 @@ ${lyricsOnly.join("\n")}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-4024-JaU7g4oxLqCQ/1960073959b0/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16548-qlmdtBWyjA5x/196012ff0960/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -12230,7 +12104,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-4024-JaU7g4oxLqCQ/196007395c81/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16548-qlmdtBWyjA5x/196012ff0c91/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -12438,7 +12312,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-4024-JaU7g4oxLqCQ/196007395cf2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16548-qlmdtBWyjA5x/196012ff0d02/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -12912,7 +12786,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-4024-JaU7g4oxLqCQ/196007395da3/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16548-qlmdtBWyjA5x/196012ff0dc3/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -13020,7 +12894,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-4024-JaU7g4oxLqCQ/196007395df4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16548-qlmdtBWyjA5x/196012ff0e04/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -13196,7 +13070,7 @@ ruby > rt {
   border: 1px solid rgba(255, 255, 255, 0.55);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-4024-JaU7g4oxLqCQ/196007395e45/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16548-qlmdtBWyjA5x/196012ff0e55/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -13481,7 +13355,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-4024-JaU7g4oxLqCQ/196007395ea6/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16548-qlmdtBWyjA5x/196012ff0eb6/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
