@@ -33,10 +33,10 @@ export default async function fetchLyrics(uri: string) {
 
   if (!Fullscreen.IsOpen) PageView.AppendViewControls(true);
 
-  const IsSomethingElseThanTrack = Spicetify.Player.data.item.type !== 'track';
-  if (IsSomethingElseThanTrack) {
-    return NotTrackMessage();
-  }
+  // const IsSomethingElseThanTrack = Spicetify.Player.data.item.type !== 'track';
+  // if (IsSomethingElseThanTrack) {
+  //   return NotTrackMessage();
+  // }
 
   //ShowLoaderContainer();
 
@@ -50,21 +50,6 @@ export default async function fetchLyrics(uri: string) {
     ?.classList.remove('LyricsHidden');
 
   ClearLyricsPageContainer();
-
-  // I'm not sure if this will entirely work, because in my country the Spotify DJ isn't available. So if anybody finds out that this doesn't work, please let me know.
-  if (
-    Spicetify.Player.data?.item?.type &&
-    Spicetify.Player.data?.item?.type === 'unknown' &&
-    Spicetify.Player.data?.item?.provider &&
-    Spicetify.Player.data?.item?.provider?.startsWith('narration')
-  )
-    return DJMessage();
-
-  if (
-    Spicetify.Player.data?.item?.mediaType &&
-    Spicetify.Player.data?.item?.mediaType !== 'audio'
-  )
-    return NotTrackMessage();
 
   const trackId = uri.split(':')[2];
 
@@ -105,10 +90,7 @@ export default async function fetchLyrics(uri: string) {
     try {
       const lyricsFromCache = await lyricsCache.get(trackId);
       if (lyricsFromCache) {
-        if (
-          navigator.onLine &&
-          lyricsFromCache?.expiresAt < new Date().getTime()
-        ) {
+        if (lyricsFromCache?.expiresAt < new Date().getTime()) {
           await lyricsCache.remove(trackId);
         } else {
           if (lyricsFromCache?.status === 'NO_LYRICS') {
@@ -128,8 +110,6 @@ export default async function fetchLyrics(uri: string) {
       return await noLyricsMessage(false, true);
     }
   }
-
-  if (!navigator.onLine) return urOfflineMessage();
 
   ShowLoaderContainer();
 
@@ -332,12 +312,14 @@ async function processLyricsWithGemini(
       let lyrics = JSON.parse(response.text.replace(/\\n/g, ''));
 
       if (lyricsJson.Type === 'Line') {
-        lyricsJson.Content = lyricsJson.Content.map((item, index) => ({
-          ...item,
-          Text: lyrics.lines[index],
-        }));
+        lyricsJson.Content = lyricsJson.Content.map(
+          (item: any, index: number) => ({
+            ...item,
+            Text: lyrics.lines[index],
+          }),
+        );
       } else if (lyricsJson.Type === 'Static') {
-        lyricsJson.Lines = lyricsJson.Lines.map((item, index) => ({
+        lyricsJson.Lines = lyricsJson.Lines.map((item: any, index: number) => ({
           ...item,
           Text: lyrics.lines[index],
         }));
@@ -443,26 +425,6 @@ function convertLyrics(data) {
 async function noLyricsMessage(Cache = true, LocalStorage = true) {
   Spicetify.showNotification('Lyrics unavailable', false, 1000);
 
-  LocalStorage
-    ? storage.set(
-        'currentLyricsData',
-        `NO_LYRICS:${Spicetify.Player.data.item.uri.split(':')[2]}`,
-      )
-    : null;
-
-  if (lyricsCache && Cache) {
-    const expiresAt = new Date().getTime() + 1000 * 60 * 60 * 24 * 7; // Expire after 7 days
-
-    try {
-      await lyricsCache.set(Spicetify.Player.data.item.uri.split(':')[2], {
-        status: `NO_LYRICS`,
-        expiresAt,
-      });
-    } catch (error) {
-      console.error('Error saving lyrics to cache:', error);
-    }
-  }
-
   storage.set('currentlyFetching', 'false');
 
   HideLoaderContainer();
@@ -481,97 +443,6 @@ async function noLyricsMessage(Cache = true, LocalStorage = true) {
   DeregisterNowBarBtn();
 
   return '1';
-}
-
-function urOfflineMessage() {
-  const Message = {
-    Type: 'Static',
-    alternative_api: false,
-    offline: true,
-    Lines: [
-      {
-        Text: "You're offline",
-      },
-      {
-        Text: '',
-      },
-      {
-        Text: "[DEF=font_size:small]This extension works only if you're online.",
-      },
-    ],
-  };
-
-  storage.set('currentlyFetching', 'false');
-
-  HideLoaderContainer();
-
-  ClearLyricsPageContainer();
-
-  Defaults.CurrentLyricsType = Message.Type;
-
-  return Message;
-}
-
-function DJMessage() {
-  const Message = {
-    Type: 'Static',
-    alternative_api: false,
-    styles: {
-      display: 'flex',
-      'align-items': 'center',
-      'justify-content': 'center',
-      'flex-direction': 'column',
-    },
-    Lines: [
-      {
-        Text: 'DJ Mode is On',
-      },
-      {
-        Text: '',
-      },
-      {
-        Text: '[DEF=font_size:small]If you want to load lyrics, please select a Song.',
-      },
-    ],
-  };
-
-  storage.set('currentlyFetching', 'false');
-
-  HideLoaderContainer();
-
-  ClearLyricsPageContainer();
-
-  Defaults.CurrentLyricsType = Message.Type;
-
-  return Message;
-}
-
-function NotTrackMessage() {
-  const Message = {
-    Type: 'Static',
-    styles: {
-      display: 'flex',
-      'align-items': 'center',
-      'justify-content': 'center',
-      'flex-direction': 'column',
-    },
-    Lines: [
-      {
-        Text: "[DEF=font_size:small]You're playing an unsupported Content Type",
-      },
-    ],
-  };
-
-  storage.set('currentlyFetching', 'false');
-
-  HideLoaderContainer();
-
-  ClearLyricsPageContainer();
-  CloseNowBar();
-
-  Defaults.CurrentLyricsType = Message.Type;
-
-  return Message;
 }
 
 let ContainerShowLoaderTimeout;
