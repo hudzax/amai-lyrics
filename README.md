@@ -7,8 +7,8 @@ An extension of Spicetify. A fork of [Spicy Lyrics](https://spicylyrics.org/) th
 - **Furigana Support:** Annotate Kanji with phonetic guides to aid reading.
 - **Romaja Support:** Display lyrics in Korean with Romaja.
 - **Improved visuals:** Enhanced UI/UX for better readability and aesthetics.
-- **Gemini API Integration:** Leverages a free API to generate Furigana annotations.
-- **Easy Setup:** Simply obtain your free API key from [Google AI Studio](https://aistudio.google.com/app/apikey) and follow the configuration instructions.
+- **Gemini Integration:** Utilizes the Gemini Flash 2.0 to generate annotations.
+- **Easy Setup:** Obtain the API key from [Google AI Studio](https://aistudio.google.com/app/apikey) and configure it within the Spotify settings as described below.
 
 ## 👀 Preview
 
