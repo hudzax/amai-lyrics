@@ -366,6 +366,11 @@ async function extractLyrics(lyricsJson) {
     lyricsJson.Content = lyricsJson.Content.filter(
       (item) => item.Text.trim() !== '',
     );
+    // remove 」 from lyrics lines
+    lyricsJson.Content = lyricsJson.Content.map((item) => {
+      item.Text = item.Text.replace(/」/g, '');
+      return item;
+    });
     return lyricsJson.Content.map((item) => item.Text);
   }
   if (lyricsJson.Type === 'Static') {
@@ -373,6 +378,11 @@ async function extractLyrics(lyricsJson) {
     lyricsJson.Lines = lyricsJson.Lines.filter(
       (item) => item.Text.trim() !== '',
     );
+    // remove 」 from lyrics lines
+    lyricsJson.Lines = lyricsJson.Content.map((item) => {
+      item.Text = item.Text.replace(/」/g, '');
+      return item;
+    });
     return lyricsJson.Lines.map((item) => item.Text);
   }
 }
