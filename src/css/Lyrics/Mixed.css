@@ -385,14 +385,14 @@
   text-shadow: var(--ActiveTextGlowDef) !important;
 }
 
-#SpicyLyricsPage .LyricsContainer .LyricsContent[data-lyrics-type="Static"] {
+/* #SpicyLyricsPage .LyricsContainer .LyricsContent[data-lyrics-type="Static"] {
   --DefaultLyricsSize: clamp(0.8rem,calc(1cqw* 5), 2.5rem);
-}
+} */
 
-#SpicyLyricsPage .LyricsContainer .LyricsContent[data-lyrics-type="Static"] .line {
+/* #SpicyLyricsPage .LyricsContainer .LyricsContent[data-lyrics-type="Static"] .line {
   font-weight: 600;
   margin: 1cqw 0;
-}
+} */
 
 #SpicyLyricsPage.Podcast .LyricsContainer .LyricsContent .line.NotSung .word,
 #SpicyLyricsPage.Podcast .LyricsContainer .LyricsContent .line.Sung .word {
