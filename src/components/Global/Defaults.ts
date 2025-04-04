@@ -14,6 +14,7 @@ const Defaults = {
   show_topbar_notifications: false,
   lyrics_spacing: 2,
   systemInstruction: ``,
+  enableRomaji: false,
   romajaPrompt: `You are an expert Korean linguist specializing in accurate romaja transcription for song lyrics. Your primary goal is to add Revised Romanization in curly braces {} after EVERY sequence of Korean Hangul characters in the provided lyrics.
 
 **Core Task:** Convert Korean lyrics to include inline romaja.
