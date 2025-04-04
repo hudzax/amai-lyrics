@@ -237,172 +237,118 @@ export default async function fetchLyrics(uri: string) {
 }
 
 async function generateFurigana(lyricsJson) {
-  // storage.set("GEMINI_API_KEY", "");
-  // Initialize Gemini API
-  const GEMINI_API_KEY = storage.get('GEMINI_API_KEY')?.toString();
-  if (!GEMINI_API_KEY || GEMINI_API_KEY === '') {
-    console.error('Amai Lyrics: Gemini API Key missing');
-    // Add info message to lyrics
-    lyricsJson.Info =
-      'Amai Lyrics: Gemini API Key missing. Click here to add your own API key.';
-  } else {
-    try {
-      console.log('Amai Lyrics: Gemini API Key present');
-      const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-      const generationConfig = {
-        temperature: 0.2,
-        topP: 0.95,
-        topK: 40,
-        maxOutputTokens: 8192,
-        responseModalities: [],
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: 'object',
-          properties: {
-            lines: {
-              type: 'array',
-              items: {
-                type: 'string',
-              },
-            },
-          },
-        },
-        systemInstruction: `${Defaults.systemInstruction}`,
-      };
-
-      console.log('Amai Lyrics:', 'Fetch Begin');
-
-      // Convert Syllable to Line
-      if (lyricsJson.Type === 'Syllable') {
-        lyricsJson.Type = 'Line';
-        lyricsJson.Content = await convertLyrics(lyricsJson.Content);
-      }
-
-      // Extract lyrics from Line and Static types
-      let lyricsOnly = await extractLyrics(lyricsJson);
-
-      // if lyrics not empty
-      if (lyricsOnly.length > 0) {
-        lyricsJson.Raw = lyricsOnly;
-
-        // Send lyrics to Gemini
-        const response = await ai.models.generateContent({
-          config: generationConfig,
-          model: 'gemini-2.0-flash',
-          contents: `${
-            Defaults.furiganaPrompt
-          } Here are the lyrics: ${JSON.stringify(lyricsOnly)}`,
-        });
-        // console.log(response.text);
-
-        // Remove newline characters from the response
-        let lyrics = JSON.parse(response.text.replace(/\n/g, ''));
-
-        if (lyricsJson.Type === 'Line') {
-          lyricsJson.Content = lyricsJson.Content.map((item, index) => ({
-            ...item,
-            Text: lyrics.lines[index],
-          }));
-        } else if (lyricsJson.Type === 'Static') {
-          lyricsJson.Lines = lyricsJson.Lines.map((item, index) => ({
-            ...item,
-            Text: lyrics.lines[index],
-          }));
-        }
-      }
-    } catch (error) {
-      console.error('Amai Lyrics:', error);
-      // Add info message to lyrics
-      lyricsJson.Info =
-        'Amai Lyrics: Fetch Error. Please double check your API key. Click here to open settings page.';
-    }
+  if (!(await checkGeminiAPIKey(lyricsJson))) {
+    return lyricsJson;
   }
+
+  lyricsJson = await processLyricsWithGemini(
+    lyricsJson,
+    Defaults.systemInstruction,
+    Defaults.furiganaPrompt,
+  );
 
   return lyricsJson;
 }
 
 async function generateRomaja(lyricsJson) {
-  // storage.set("GEMINI_API_KEY", "");
-  // Initialize Gemini API
+  if (!(await checkGeminiAPIKey(lyricsJson))) {
+    return lyricsJson;
+  }
+
+  lyricsJson = await processLyricsWithGemini(
+    lyricsJson,
+    Defaults.systemInstruction,
+    Defaults.romajaPrompt,
+  );
+
+  return lyricsJson;
+}
+
+async function checkGeminiAPIKey(lyricsJson: any): Promise<boolean> {
   const GEMINI_API_KEY = storage.get('GEMINI_API_KEY')?.toString();
   if (!GEMINI_API_KEY || GEMINI_API_KEY === '') {
     console.error('Amai Lyrics: Gemini API Key missing');
-    // Add info message to lyrics
     lyricsJson.Info =
       'Amai Lyrics: Gemini API Key missing. Click here to add your own API key.';
-  } else {
-    try {
-      console.log('Amai Lyrics: Gemini API Key present');
-      const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-      const generationConfig = {
-        temperature: 0.55,
-        topP: 0.95,
-        topK: 40,
-        maxOutputTokens: 8192,
-        responseModalities: [],
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: 'object',
-          properties: {
-            lines: {
-              type: 'array',
-              items: {
-                type: 'string',
-              },
+    return false;
+  }
+  return true;
+}
+
+async function processLyricsWithGemini(
+  lyricsJson: any,
+  systemInstruction: string,
+  prompt: string,
+) {
+  try {
+    console.log('Amai Lyrics: Gemini API Key present');
+    const GEMINI_API_KEY = storage.get('GEMINI_API_KEY')?.toString();
+    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+    const generationConfig = {
+      temperature: 0.55,
+      topP: 0.95,
+      topK: 40,
+      maxOutputTokens: 8192,
+      responseModalities: [],
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: 'object',
+        properties: {
+          lines: {
+            type: 'array',
+            items: {
+              type: 'string',
             },
           },
         },
-        systemInstruction: `${Defaults.systemInstruction}`,
-      };
+      } as any,
+      systemInstruction: `${systemInstruction}`,
+    };
 
-      console.log('Amai Lyrics:', 'Fetch Begin');
+    console.log('Amai Lyrics:', 'Fetch Begin');
 
-      // Convert Syllable to Line
-      if (lyricsJson.Type === 'Syllable') {
-        lyricsJson.Type = 'Line';
-        lyricsJson.Content = await convertLyrics(lyricsJson.Content);
-      }
-
-      // Extract lyrics from Line and Static types
-      let lyricsOnly = await extractLyrics(lyricsJson);
-
-      // if lyrics not empty
-      if (lyricsOnly.length > 0) {
-        lyricsJson.Raw = lyricsOnly;
-
-        // Send lyrics to Gemini
-        const response = await ai.models.generateContent({
-          config: generationConfig,
-          model: 'gemini-2.0-flash',
-          contents: `${
-            Defaults.romajaPrompt
-          } Here are the lyrics:\n${lyricsOnly.join('\n')}`,
-        });
-        // console.log(response.text);
-
-        // Remove newline characters from the response
-        let lyrics = JSON.parse(response.text.replace(/\n/g, ''));
-
-        if (lyricsJson.Type === 'Line') {
-          lyricsJson.Content = lyricsJson.Content.map((item, index) => ({
-            ...item,
-            Text: lyrics.lines[index],
-          }));
-        } else if (lyricsJson.Type === 'Static') {
-          lyricsJson.Lines = lyricsJson.Lines.map((item, index) => ({
-            ...item,
-            Text: lyrics.lines[index],
-          }));
-        }
-      }
-    } catch (error) {
-      console.error('Amai Lyrics:', error);
-      // Add info message to lyrics
-      lyricsJson.Info =
-        'Amai Lyrics: Fetch Error. Please double check your API key. Click here to open settings page.';
+    // Convert Syllable to Line
+    if (lyricsJson.Type === 'Syllable') {
+      lyricsJson.Type = 'Line';
+      lyricsJson.Content = await convertLyrics(lyricsJson.Content);
     }
-  }
 
+    // Extract lyrics from Line and Static types
+    let lyricsOnly = await extractLyrics(lyricsJson);
+
+    // if lyrics not empty
+    if (lyricsOnly.length > 0) {
+      lyricsJson.Raw = lyricsOnly;
+
+      // Send lyrics to Gemini
+      const response = await ai.models.generateContent({
+        config: generationConfig,
+        model: 'gemini-2.0-flash',
+        contents: `${prompt} Here are the lyrics:\\n${lyricsOnly.join('\\n')}`,
+      });
+      // console.log(response.text);
+
+      // Remove newline characters from the response
+      let lyrics = JSON.parse(response.text.replace(/\\n/g, ''));
+
+      if (lyricsJson.Type === 'Line') {
+        lyricsJson.Content = lyricsJson.Content.map((item, index) => ({
+          ...item,
+          Text: lyrics.lines[index],
+        }));
+      } else if (lyricsJson.Type === 'Static') {
+        lyricsJson.Lines = lyricsJson.Lines.map((item, index) => ({
+          ...item,
+          Text: lyrics.lines[index],
+        }));
+      }
+    }
+  } catch (error) {
+    console.error('Amai Lyrics:', error);
+    // Add info message to lyrics
+    lyricsJson.Info =
+      'Amai Lyrics: Fetch Error. Please double check your API key. Click here to open settings page.';
+  }
   return lyricsJson;
 }
 
