@@ -1,4 +1,5 @@
 const Defaults = {
+  Version: '1.0.25',
   lyrics: {
     api: {
       url: 'https://amai-worker-production.nandemo.workers.dev/lyrics',
@@ -9,7 +10,6 @@ const Defaults = {
   LyricsContainerExists: false,
   SkipSpicyFont: false,
   OldStyleFont: false,
-  Version: '1.0.25',
   ForceCoverImage_InLowQualityMode: false,
   show_topbar_notifications: false,
   lyrics_spacing: 2,
