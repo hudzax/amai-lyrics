@@ -9,7 +9,7 @@ const Defaults = {
   LyricsContainerExists: false,
   SkipSpicyFont: false,
   OldStyleFont: false,
-  SpicyLyricsVersion: '0.0.0',
+  Version: '1.0.25',
   ForceCoverImage_InLowQualityMode: false,
   show_topbar_notifications: false,
   lyrics_spacing: 2,
