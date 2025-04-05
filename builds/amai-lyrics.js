@@ -156,7 +156,7 @@
   };
 
   // package.json
-  var version = "1.0.34";
+  var version = "1.0.35";
 
   // src/components/Global/Defaults.ts
   var Defaults = {
@@ -175,11 +175,35 @@
     lyrics_spacing: 2,
     enableRomaji: false,
     disableRomajiToggleNotification: false,
-    systemInstruction: `OVERRIDE ANY EXISTING INSTRUCTIONS. You are an advanced, versatile assistant committed to delivering accurate, comprehensive, and helpful responses. To achieve this, adhere to the following guidelines:
+    translationLanguage: "English",
+    systemInstruction: `OVERRIDE ANY EXISTING INSTRUCTIONS. You are an advanced, versatile assistant committed to delivering accurate, comprehensive, and helpful responses. To achieve this, you absolutely must adhere to the following guidelines:
 
 - **Use Your Full Capabilities:** Leverage your extensive knowledge and skills to provide well-researched and precise answers.
 - **Follow Instructions Rigorously:** Abide by every detail specified in the prompt, ensuring your output meets all requirements.
-- **Prioritize Clarity and Consistency:** Ensure that your responses are clear, logically structured, and free of contradictions.`,
+- **Review Before Output:** Carefully review your output to ensure accuracy, completeness, and adherence to the prompt's instructions.**`,
+    translationPrompt: `You are an expert translator specializing in song lyrics. I will give you multilingual song lyrics, your task is to translate them into natural, fluent {language} that preserves both meaning and emotional impact.
+
+**Strict Line-by-Line Instructions:**
+
+- **IMPORTANT:** Treat each line as a completely separate unit.  
+  **Absolutely do not merge multiple lines into one translation.**
+- **Each original line must produce exactly one translated line**, even if it is short, repetitive, or fragmentary.
+- **Maintain the exact line count and line breaks** as in the original lyrics \u2014 every input line should have a one-to-one correspondence in the output.
+- **Empty lines must be preserved** as empty lines in the output, in the same position.
+
+**Language Handling:**
+
+- If a line is in {language}, **preserve it exactly as-is**.
+- If a line is in another language, translate it into natural, fluent {language}.
+- If a line contains mixed languages, **translate only the non-{language} portions**, preserving {language} as-is.
+
+**Stylistic Considerations:**
+
+- Convey the emotional tone, voice, and rhythm of the original lyrics.
+- Prioritize intended meaning and poetic nuance over literal word-for-word translation.
+- Preserve poetic and cultural elements (metaphor, imagery, slang, idioms, etc.).
+- Maintain consistent use of pronouns, tense, and tone.
+- Use culturally appropriate and natural {language} equivalents where direct translation would lose meaning.`,
     romajaPrompt: `You are an expert Korean linguist specializing in accurate romaja transcription for song lyrics. Your primary goal is to add Revised Romanization in curly braces {} after EVERY sequence of Korean Hangul characters in the provided lyrics.
 
 **Core Task:** Convert Korean lyrics to include inline romaja with perfect accuracy.
@@ -3880,11 +3904,23 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           '<ruby class="romaja">$1<rt>$2</rt></ruby>'
         );
       }
+      const mainTextContainer = document.createElement("span");
+      mainTextContainer.classList.add("main-lyrics-text");
       if (line.Text?.includes("[DEF=font_size:small]")) {
         lineElem.style.fontSize = "35px";
-        lineElem.innerHTML = line.Text.replace("[DEF=font_size:small]", "");
+        mainTextContainer.innerHTML = line.Text.replace(
+          "[DEF=font_size:small]",
+          ""
+        );
       } else {
-        lineElem.innerHTML = line.Text;
+        mainTextContainer.innerHTML = line.Text;
+      }
+      lineElem.appendChild(mainTextContainer);
+      if (line.Translation && line.Translation.trim() !== "" && line.Translation.trim() !== line.Text.trim()) {
+        const translationElem = document.createElement("div");
+        translationElem.classList.add("translation");
+        translationElem.textContent = line.Translation;
+        lineElem.appendChild(translationElem);
       }
       if (isRtl_default(line.Text) && !lineElem.classList.contains("rtl")) {
         lineElem.classList.add("rtl");
@@ -4022,8 +4058,17 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           '<ruby class="romaja">$1<rt>$2</rt></ruby>'
         );
       }
-      lineElem.innerHTML = line.Text;
+      const mainTextContainer = document.createElement("span");
+      mainTextContainer.classList.add("main-lyrics-text");
+      mainTextContainer.innerHTML = line.Text;
+      lineElem.appendChild(mainTextContainer);
       lineElem.classList.add("line");
+      if (line.Translation && line.Translation.trim() !== "" && line.Translation.trim() !== line.Text.trim()) {
+        const translationElem = document.createElement("div");
+        translationElem.classList.add("translation");
+        translationElem.textContent = line.Translation;
+        lineElem.appendChild(translationElem);
+      }
       if (isRtl_default(line.Text) && !lineElem.classList.contains("rtl")) {
         lineElem.classList.add("rtl");
       }
@@ -11192,23 +11237,47 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         return await noLyricsMessage(false, false);
       if (lyricsJson === "")
         return await noLyricsMessage(false, true);
-      const hasKanji = lyricsJson.Content?.some(
+      const { lyricsJson: preparedLyricsJson, lyricsOnly } = await prepareLyricsForGemini(lyricsJson);
+      const hasKanji = preparedLyricsJson.Content?.some(
         (item) => item.Lead?.Syllables?.some((syl) => /[\u4E00-\u9FFF]/.test(syl.Text))
-      ) || lyricsJson.Content?.some((item) => /[\u4E00-\u9FFF]/.test(item.Text)) || lyricsJson.Lines?.some((item) => /[\u4E00-\u9FFF]/.test(item.Text)) || false;
-      const hasKorean = lyricsJson.Content?.some(
+      ) || preparedLyricsJson.Content?.some(
+        (item) => /[\u4E00-\u9FFF]/.test(item.Text)
+      ) || preparedLyricsJson.Lines?.some(
+        (item) => /[\u4E00-\u9FFF]/.test(item.Text)
+      ) || false;
+      const hasKorean = preparedLyricsJson.Content?.some(
         (item) => item.Lead?.Syllables?.some((syl) => /[\uAC00-\uD7AF]/.test(syl.Text))
-      ) || lyricsJson.Content?.some((item) => /[\uAC00-\uD7AF]/.test(item.Text)) || lyricsJson.Lines?.some((item) => /[\uAC00-\uD7AF]/.test(item.Text)) || false;
-      if (hasKanji) {
-        if (storage_default.get("enable_romaji") === "true") {
-          lyricsJson = await generateRomaji(lyricsJson);
-        } else {
-          lyricsJson = await generateFurigana(lyricsJson);
-        }
-      } else if (hasKorean) {
-        lyricsJson = await generateRomaja(lyricsJson);
+      ) || preparedLyricsJson.Content?.some(
+        (item) => /[\uAC00-\uD7AF]/.test(item.Text)
+      ) || preparedLyricsJson.Lines?.some(
+        (item) => /[\uAC00-\uD7AF]/.test(item.Text)
+      ) || false;
+      const phoneticLyricsJson = JSON.parse(JSON.stringify(preparedLyricsJson));
+      const phoneticPromise = getPhoneticLyrics(
+        phoneticLyricsJson,
+        hasKanji,
+        hasKorean,
+        lyricsOnly
+      );
+      const translationPromise = fetchTranslationsWithGemini(
+        preparedLyricsJson,
+        lyricsOnly
+      );
+      const [processedLyricsJson, translations] = await Promise.all([
+        phoneticPromise,
+        translationPromise
+      ]);
+      if (processedLyricsJson.Type === "Line" && processedLyricsJson.Content) {
+        processedLyricsJson.Content.forEach((line, idx) => {
+          line.Translation = translations[idx] || "";
+        });
+      } else if (processedLyricsJson.Type === "Static" && processedLyricsJson.Lines) {
+        processedLyricsJson.Lines.forEach((line, idx) => {
+          line.Translation = translations[idx] || "";
+        });
       }
-      console.log("DEBUG result", lyricsJson);
-      storage_default.set("currentLyricsData", JSON.stringify(lyricsJson));
+      console.log("DEBUG result", processedLyricsJson);
+      storage_default.set("currentLyricsData", JSON.stringify(processedLyricsJson));
       storage_default.set("currentlyFetching", "false");
       HideLoaderContainer();
       ClearLyricsPageContainer();
@@ -11216,16 +11285,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         const expiresAt = new Date().getTime() + 1e3 * 60 * 60 * 24 * 7;
         try {
           await lyricsCache.set(trackId, {
-            ...lyricsJson,
+            ...processedLyricsJson,
             expiresAt
           });
         } catch (error) {
           console.error("Error saving lyrics to cache:", error);
         }
       }
-      Defaults_default.CurrentLyricsType = lyricsJson.Type;
+      Defaults_default.CurrentLyricsType = processedLyricsJson.Type;
       Spicetify.showNotification("Completed", false, 1e3);
-      return { ...lyricsJson, fromCache: false };
+      return { ...processedLyricsJson, fromCache: false };
     } catch (error) {
       console.error("Error fetching lyrics:", error);
       storage_default.set("currentlyFetching", "false");
@@ -11233,25 +11302,114 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return await noLyricsMessage(false, true);
     }
   }
-  async function generateFurigana(lyricsJson) {
-    return await generateLyricsWithPrompt(lyricsJson, Defaults_default.furiganaPrompt);
-  }
-  async function generateRomaja(lyricsJson) {
-    return await generateLyricsWithPrompt(lyricsJson, Defaults_default.romajaPrompt);
-  }
-  async function generateRomaji(lyricsJson) {
-    return await generateLyricsWithPrompt(lyricsJson, Defaults_default.romajiPrompt);
-  }
-  async function generateLyricsWithPrompt(lyricsJson, prompt) {
-    if (!await checkGeminiAPIKey(lyricsJson)) {
-      return lyricsJson;
+  async function getPhoneticLyrics(preparedLyricsJson, hasKanji, hasKorean, lyricsOnly) {
+    if (hasKanji) {
+      if (storage_default.get("enable_romaji") === "true") {
+        return await generateRomaji(preparedLyricsJson, lyricsOnly);
+      } else {
+        return await generateFurigana(preparedLyricsJson, lyricsOnly);
+      }
+    } else if (hasKorean) {
+      return await generateRomaja(preparedLyricsJson, lyricsOnly);
+    } else {
+      return preparedLyricsJson;
     }
-    lyricsJson = await processLyricsWithGemini(
-      lyricsJson,
+  }
+  async function prepareLyricsForGemini(lyricsJson) {
+    if (lyricsJson.Type === "Syllable") {
+      lyricsJson.Type = "Line";
+      lyricsJson.Content = await convertLyrics(lyricsJson.Content);
+    }
+    const lyricsOnly = await extractLyrics(lyricsJson);
+    if (lyricsOnly.length > 0) {
+      lyricsJson.Raw = lyricsOnly;
+    }
+    return { lyricsJson, lyricsOnly };
+  }
+  async function fetchTranslationsWithGemini(preparedLyricsJson, lyricsOnly) {
+    try {
+      console.log("[Amai Lyrics] Translation fetch started");
+      const GEMINI_API_KEY = storage_default.get("GEMINI_API_KEY")?.toString();
+      if (!GEMINI_API_KEY || GEMINI_API_KEY === "") {
+        console.error("Amai Lyrics: Gemini API Key missing for translation");
+        return [];
+      }
+      console.log("[Amai Lyrics] Prepared lyrics for translation:", lyricsOnly);
+      const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+      const generationConfig = {
+        temperature: 0.85,
+        topP: 0.95,
+        topK: 40,
+        maxOutputTokens: 8192,
+        responseModalities: [],
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "object",
+          properties: {
+            lines: {
+              type: "array",
+              items: {
+                type: "string"
+              }
+            }
+          }
+        },
+        systemInstruction: Defaults_default.systemInstruction
+      };
+      const targetLang = storage_default.get("translation_language")?.toString() || Defaults_default.translationLanguage;
+      const prompt = Defaults_default.translationPrompt.replace(/{language}/g, `${targetLang}`) + ` Translate the following lyrics into ${targetLang}:
+`;
+      console.log("[Amai Lyrics] Sending prompt to Gemini:", prompt);
+      console.log("[Amai Lyrics] Lyrics sent for translation:", lyricsOnly);
+      const response = await ai.models.generateContent({
+        config: generationConfig,
+        model: "gemini-2.0-flash",
+        contents: `${prompt}${JSON.stringify(lyricsOnly)}`
+      });
+      console.log(
+        "[Amai Lyrics] Raw Gemini translation response:",
+        response.text
+      );
+      const translations = JSON.parse(response.text.replace(/\\n/g, ""));
+      console.log("[Amai Lyrics] Final translations:", translations.lines);
+      return translations.lines || lyricsOnly.map(() => "");
+    } catch (error) {
+      console.error("Amai Lyrics: Translation fetch error", error);
+      return [];
+    }
+  }
+  async function generateFurigana(preparedLyricsJson, lyricsOnly) {
+    return await generateLyricsWithPrompt(
+      preparedLyricsJson,
+      lyricsOnly,
+      Defaults_default.furiganaPrompt
+    );
+  }
+  async function generateRomaja(preparedLyricsJson, lyricsOnly) {
+    return await generateLyricsWithPrompt(
+      preparedLyricsJson,
+      lyricsOnly,
+      Defaults_default.romajaPrompt
+    );
+  }
+  async function generateRomaji(preparedLyricsJson, lyricsOnly) {
+    return await generateLyricsWithPrompt(
+      preparedLyricsJson,
+      lyricsOnly,
+      Defaults_default.romajiPrompt
+    );
+  }
+  async function generateLyricsWithPrompt(preparedLyricsJson, lyricsOnly, prompt) {
+    if (!await checkGeminiAPIKey(preparedLyricsJson)) {
+      return preparedLyricsJson;
+    }
+    preparedLyricsJson = await processLyricsWithGemini(
+      preparedLyricsJson,
+      lyricsOnly,
       Defaults_default.systemInstruction,
       prompt
     );
-    return lyricsJson;
+    return preparedLyricsJson;
   }
   async function checkGeminiAPIKey(lyricsJson) {
     const GEMINI_API_KEY = storage_default.get("GEMINI_API_KEY")?.toString();
@@ -11262,7 +11420,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return true;
   }
-  async function processLyricsWithGemini(lyricsJson, systemInstruction, prompt) {
+  async function processLyricsWithGemini(preparedLyricsJson, lyricsOnly, systemInstruction, prompt) {
     try {
       console.log("SI:", systemInstruction);
       console.log("Prompt:", prompt);
@@ -11290,13 +11448,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         systemInstruction: `${systemInstruction}`
       };
       console.log("Amai Lyrics:", "Fetch Begin");
-      if (lyricsJson.Type === "Syllable") {
-        lyricsJson.Type = "Line";
-        lyricsJson.Content = await convertLyrics(lyricsJson.Content);
-      }
-      let lyricsOnly = await extractLyrics(lyricsJson);
       if (lyricsOnly.length > 0) {
-        lyricsJson.Raw = lyricsOnly;
         const response = await ai.models.generateContent({
           config: generationConfig,
           model: "gemini-2.0-flash",
@@ -11306,32 +11458,34 @@ ${JSON.stringify(
           )}`
         });
         let lyrics = JSON.parse(response.text.replace(/\\n/g, ""));
-        if (lyricsJson.Type === "Line") {
-          lyricsJson.Content = lyricsJson.Content.map(
+        if (preparedLyricsJson.Type === "Line") {
+          preparedLyricsJson.Content = preparedLyricsJson.Content.map(
             (item, index) => ({
               ...item,
               Text: lyrics.lines[index]
             })
           );
-        } else if (lyricsJson.Type === "Static") {
-          lyricsJson.Lines = lyricsJson.Lines.map((item, index) => ({
-            ...item,
-            Text: lyrics.lines[index]
-          }));
+        } else if (preparedLyricsJson.Type === "Static") {
+          preparedLyricsJson.Lines = preparedLyricsJson.Lines.map(
+            (item, index) => ({
+              ...item,
+              Text: lyrics.lines[index]
+            })
+          );
         }
       }
     } catch (error) {
       console.error("Amai Lyrics:", error);
-      lyricsJson.Info = "Amai Lyrics: Fetch Error. Please double check your API key. Click here to open settings page.";
+      preparedLyricsJson.Info = "Amai Lyrics: Fetch Error. Please double check your API key. Click here to open settings page.";
     }
-    return lyricsJson;
+    return preparedLyricsJson;
   }
   async function extractLyrics(lyricsJson) {
     const removeEmptyLinesAndCharacters = (items) => {
-      items = items.filter((item) => item.Text.trim() !== "");
+      items = items.filter((item) => item.Text?.trim() !== "");
       items = items.map((item) => {
-        item.Text = item.Text.replace(/[「」",.!]/g, "");
-        item.Text = item.Text.normalize("NFKC");
+        item.Text = item.Text?.replace(/[「」",.!]/g, "");
+        item.Text = item.Text?.normalize("NFKC");
         return item;
       });
       return items;
@@ -11750,20 +11904,8 @@ ${JSON.stringify(
       "Remove Cached Lyrics",
       () => {
         lyricsCache.destroy();
-        Spicetify.showNotification("Cache Destroyed Successfully!", false, 2e3);
-      }
-    );
-    settings.addButton(
-      "remove-current-song-lyrics-from-localStorage",
-      "Remove Current Song Lyrics from LocalStorage",
-      "Remove Current Lyrics",
-      () => {
         storage_default.set("currentLyricsData", null);
-        Spicetify.showNotification(
-          "Current Lyrics Removed Successfully!",
-          false,
-          2e3
-        );
+        Spicetify.showNotification("Cache Destroyed Successfully!", false, 2e3);
       }
     );
     settings.addButton("reload", "Reload UI", "Reload", () => {
@@ -11780,9 +11922,10 @@ ${JSON.stringify(
       );
       lyricsCache.destroy();
       storage_default.set("currentLyricsData", null);
-      if (!Spicetify.Player.data?.item?.uri)
+      const playerData = Spicetify.Player.data;
+      if (!playerData?.item?.uri)
         return;
-      const currentUri = Spicetify.Player.data.item.uri;
+      const currentUri = playerData.item.uri;
       fetchLyrics(currentUri).then(ApplyLyrics);
     });
     settings.addButton(
@@ -11815,6 +11958,18 @@ ${JSON.stringify(
           "disable_romaji_toggle_notification",
           settings.getFieldValue("disableRomajiToggleNotification")
         );
+      }
+    );
+    settings.addDropDown(
+      "translation-language",
+      "Translation Language",
+      ["English", "Indonesian", "Malay"],
+      0,
+      () => {
+        const selected = settings.getFieldValue("translation-language");
+        storage_default.set("translation_language", selected);
+        lyricsCache.destroy();
+        storage_default.set("currentLyricsData", null);
       }
     );
     settings.pushSettings();
@@ -12139,7 +12294,7 @@ ${JSON.stringify(
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-17232-nA92Zv476dZU/196070005967/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-22636-eGEAE58IKHqb/19607c2cc497/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -12165,7 +12320,7 @@ ${JSON.stringify(
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17232-nA92Zv476dZU/1960700053a0/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22636-eGEAE58IKHqb/19607c2cba60/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -12304,7 +12459,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17232-nA92Zv476dZU/196070005681/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22636-eGEAE58IKHqb/19607c2cbd41/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -12512,7 +12667,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17232-nA92Zv476dZU/1960700056f2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22636-eGEAE58IKHqb/19607c2cbdb2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -12986,7 +13141,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17232-nA92Zv476dZU/1960700057a3/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22636-eGEAE58IKHqb/19607c2cbe63/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -13094,7 +13249,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17232-nA92Zv476dZU/1960700057f4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22636-eGEAE58IKHqb/19607c2cbeb4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -13274,8 +13429,23 @@ ruby > rt {
   font-size: 1.25rem;
   font-weight: 700;
 }
+.translation {
+  display: block;
+  font-size: 1.25rem;
+  color: #ccc;
+  line-height: 1rem;
+  font-weight: 600;
+}
+.line {
+  display: flex;
+  flex-direction: column;
+}
+.main-lyrics-text {
+  display: block;
+  width: 100%;
+}
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17232-nA92Zv476dZU/196070005845/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22636-eGEAE58IKHqb/19607c2cbf15/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -13560,7 +13730,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17232-nA92Zv476dZU/1960700058a6/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22636-eGEAE58IKHqb/19607c2cbf76/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
