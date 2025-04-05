@@ -356,11 +356,12 @@ async function processLyricsWithGemini(
 
 async function extractLyrics(lyricsJson) {
   const removeEmptyLinesAndCharacters = (items) => {
-    // remove empty lines
+    // Remove empty lines
     items = items.filter((item) => item.Text.trim() !== '');
-    // remove 」 from lyrics lines
+    // Normalize and remove any issues from lyrics lines
     items = items.map((item) => {
       item.Text = item.Text.replace(/」/g, '');
+      item.Text = item.Text.normalize('NFKC');
       return item;
     });
     return items;
