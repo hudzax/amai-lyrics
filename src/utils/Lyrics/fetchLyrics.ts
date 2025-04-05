@@ -360,7 +360,8 @@ async function extractLyrics(lyricsJson) {
     items = items.filter((item) => item.Text.trim() !== '');
     // Normalize and remove any issues from lyrics lines
     items = items.map((item) => {
-      item.Text = item.Text.replace(/」/g, '');
+      // Remove unwanted characters and normalize
+      item.Text = item.Text.replace(/[「」]/g, '');
       item.Text = item.Text.normalize('NFKC');
       return item;
     });
