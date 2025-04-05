@@ -45,23 +45,24 @@ function devSettings() {
     'Remove Cached Lyrics',
     () => {
       lyricsCache.destroy();
+      storage.set('currentLyricsData', null);
       Spicetify.showNotification('Cache Destroyed Successfully!', false, 2000);
     },
   );
 
-  settings.addButton(
-    'remove-current-song-lyrics-from-localStorage',
-    'Remove Current Song Lyrics from LocalStorage',
-    'Remove Current Lyrics',
-    () => {
-      storage.set('currentLyricsData', null);
-      Spicetify.showNotification(
-        'Current Lyrics Removed Successfully!',
-        false,
-        2000,
-      );
-    },
-  );
+  // settings.addButton(
+  //   'remove-current-song-lyrics-from-localStorage',
+  //   'Remove Current Song Lyrics from LocalStorage',
+  //   'Remove Current Lyrics',
+  //   () => {
+  //     storage.set('currentLyricsData', null);
+  //     Spicetify.showNotification(
+  //       'Current Lyrics Removed Successfully!',
+  //       false,
+  //       2000,
+  //     );
+  //   },
+  // );
 
   settings.addButton('reload', 'Reload UI', 'Reload', () => {
     window.location.reload();
@@ -141,8 +142,9 @@ function generalSettings() {
     lyricsCache.destroy();
     storage.set('currentLyricsData', null);
     // Refetch lyrics for the current song
-    if (!Spicetify.Player.data?.item?.uri) return; // Exit if `uri` is not available
-    const currentUri = Spicetify.Player.data.item.uri;
+    const playerData = Spicetify.Player.data as any;
+    if (!playerData?.item?.uri) return; // Exit if `uri` is not available
+    const currentUri = playerData.item.uri;
     fetchLyrics(currentUri).then(ApplyLyrics);
   });
 
@@ -179,6 +181,21 @@ function generalSettings() {
         'disable_romaji_toggle_notification',
         settings.getFieldValue('disableRomajiToggleNotification') as string,
       );
+    },
+  );
+
+  settings.addDropDown(
+    'translation-language',
+    'Translation Language',
+    ['English', 'Indonesian', 'Malay'],
+    0,
+    () => {
+      const selected = settings.getFieldValue('translation-language') as string;
+      storage.set('translation_language', selected);
+
+      // clear cache and current lyrics data
+      lyricsCache.destroy();
+      storage.set('currentLyricsData', null);
     },
   );
 

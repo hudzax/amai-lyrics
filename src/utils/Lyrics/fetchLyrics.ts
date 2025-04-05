@@ -242,7 +242,11 @@ async function fetchTranslationsWithGemini(preparedLyricsJson, lyricsOnly) {
       systemInstruction: Defaults.systemInstruction,
     };
 
-    const prompt = Defaults.translationPrompt;
+    const targetLang =
+      storage.get('translation_language') || Defaults.translationLanguage;
+    const prompt =
+      `Translate the following lyrics into ${targetLang}:\n` +
+      Defaults.translationPrompt;
 
     console.log('[Amai Lyrics] Sending prompt to Gemini:', prompt);
     console.log('[Amai Lyrics] Lyrics sent for translation:', lyricsOnly);
