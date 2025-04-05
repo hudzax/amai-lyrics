@@ -12,8 +12,9 @@ const Defaults = {
   OldStyleFont: false,
   ForceCoverImage_InLowQualityMode: false,
   lyrics_spacing: 2,
-  systemInstruction: `Follow these instructions exactly as given. Use all available knowledge and capabilities to provide the most accurate, complete, and relevant response possible. Ensure your response directly addresses the task and avoids unnecessary digressions. After generating your initial response, review it for accuracy and completeness before finalizing.`,
   enableRomaji: false,
+  disableRomajiToggleNotification: false,
+  systemInstruction: `Follow these instructions exactly as given. Use all available knowledge and capabilities to provide the most accurate, complete, and relevant response possible. Ensure your response directly addresses the task and avoids unnecessary digressions. After generating your initial response, review it for accuracy and completeness before finalizing.`,
   romajaPrompt: `You are an expert Korean linguist specializing in accurate romaja transcription for song lyrics. Your primary goal is to add Revised Romanization in curly braces {} after EVERY sequence of Korean Hangul characters in the provided lyrics.
 
 **Core Task:** Convert Korean lyrics to include inline romaja.

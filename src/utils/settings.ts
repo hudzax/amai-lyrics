@@ -121,18 +121,6 @@ function generalSettings() {
   //   },
   // );
 
-  //   settings.addToggle(
-  //     'show_topbar_notifications',
-  //     'Show Topbar Notifications',
-  //     Defaults.show_topbar_notifications,
-  //     () => {
-  //       storage.set(
-  //         'show_topbar_notifications',
-  //         settings.getFieldValue('show_topbar_notifications') as string,
-  //       );
-  //     },
-  //   );
-
   // settings.addDropDown(
   //   'lyrics_spacing',
   //   'Lyrics Spacing',
@@ -145,21 +133,6 @@ function generalSettings() {
   //     );
   //   },
   // );
-
-  settings.addToggle(
-    'enableRomaji',
-    'Enable Romaji for Japanese Lyrics',
-    Defaults.enableRomaji,
-    () => {
-      // clear cache and current lyrics data
-      lyricsCache.destroy();
-      storage.set('currentLyricsData', null);
-      storage.set(
-        'enable_romaji',
-        settings.getFieldValue('enableRomaji') as string,
-      );
-    },
-  );
 
   settings.addInput('gemini-api-key', 'Gemini API Key', '', () => {
     storage.set(
@@ -182,6 +155,33 @@ function generalSettings() {
     'get API',
     () => {
       window.location.href = 'https://aistudio.google.com/app/apikey/';
+    },
+  );
+
+  settings.addToggle(
+    'enableRomaji',
+    'Enable Romaji for Japanese Lyrics',
+    Defaults.enableRomaji,
+    () => {
+      // clear cache and current lyrics data
+      lyricsCache.destroy();
+      storage.set('currentLyricsData', null);
+      storage.set(
+        'enable_romaji',
+        settings.getFieldValue('enableRomaji') as string,
+      );
+    },
+  );
+
+  settings.addToggle(
+    'disableRomajiToggleNotification',
+    'Disable Romaji/Furigana Toggle Notification',
+    Defaults.disableRomajiToggleNotification,
+    () => {
+      storage.set(
+        'disable_romaji_toggle_notification',
+        settings.getFieldValue('disableRomajiToggleNotification') as string,
+      );
     },
   );
 

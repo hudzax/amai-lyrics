@@ -122,6 +122,16 @@ export function ApplyLineLyrics(data) {
     // if test contains japanese characters
     const JapaneseRegex = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/g;
     if (JapaneseRegex.test(line.Text)) {
+      // Notify user for romaji or furigana option
+      if (
+        !data.Info &&
+        (!storage.get('disable_romaji_toggle_notification') ||
+          storage.get('disable_romaji_toggle_notification') === 'false')
+      ) {
+        data.Info =
+          'Toggle between Romaji or Furigana in settings. Disable this notification there as well.';
+        data.InfoDuration = 5000;
+      }
       if (storage.get('enable_romaji') === 'true') {
         // Generate ruby text for romaji
         line.Text = line.Text?.replace(
