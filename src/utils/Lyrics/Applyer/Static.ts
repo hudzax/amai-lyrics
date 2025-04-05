@@ -44,7 +44,6 @@ export function ApplyStaticLyrics(data) {
       ) {
         data.Info =
           'Toggle between Romaji or Furigana in settings. Disable this notification there as well.';
-        data.InfoDuration = 5000;
       }
       if (storage.get('enable_romaji') === 'true') {
         // Generate ruby text for romaji
