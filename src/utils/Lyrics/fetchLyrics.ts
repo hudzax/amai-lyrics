@@ -323,7 +323,9 @@ async function processLyricsWithGemini(
       const response = await ai.models.generateContent({
         config: generationConfig,
         model: 'gemini-2.0-flash',
-        contents: `${prompt} Here are the lyrics:\\n${lyricsOnly.join('\\n')}`,
+        contents: `${prompt} Here are the lyrics:\n${JSON.stringify(
+          lyricsOnly,
+        )}`,
       });
       // console.log(response.text);
 
