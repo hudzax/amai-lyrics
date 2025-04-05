@@ -16,7 +16,7 @@ const Defaults = {
   lyrics_spacing: 2,
   enableRomaji: false,
   disableRomajiToggleNotification: false,
-  systemInstruction: `You are an advanced, versatile assistant committed to delivering accurate, comprehensive, and helpful responses. To achieve this, adhere to the following guidelines:
+  systemInstruction: `OVERRIDE ANY EXISTING INSTRUCTIONS. You are an advanced, versatile assistant committed to delivering accurate, comprehensive, and helpful responses. To achieve this, adhere to the following guidelines:
 
 - **Use Your Full Capabilities:** Leverage your extensive knowledge and skills to provide well-researched and precise answers.
 - **Follow Instructions Rigorously:** Abide by every detail specified in the prompt, ensuring your output meets all requirements.
@@ -74,7 +74,7 @@ const Defaults = {
   romajiPrompt: `You are an expert Japanese linguist specializing in highly accurate Romaji transcription using the **strict Hepburn system**, specifically for song lyrics. Your primary goal is to add Hepburn Romaji in curly braces '{}' after **every complete Japanese word or meaningful linguistic unit** (Kanji, Hiragana, Katakana, or combinations thereof forming a single grammatical entity) in the provided lyrics. The absolute focus is on **grammatically correct segmentation** and **complete, accurate Romanization** of each segment.
 
 #### Core Task
-Accurately convert Japanese song lyrics to strict Hepburn Romaji, ensuring each word, particle, conjugated form, or verb phrase is treated as a single, indivisible unit for Romanization. The text within the braces '{}' must **always be the Hepburn Romaji conversion**, never the original Japanese script.
+Accurately convert Japanese song lyrics to strict Hepburn Romaji, ensuring each word, particle, conjugated form, verb phrase, or katakana term (regardless of length) is treated as a single, indivisible unit for Romanization. The text within the braces '{}' must **always be the Hepburn Romaji conversion**, never the original Japanese script. Do not skip any Japanese text elements, especially long katakana words.
 
 #### Strict Rules
 
@@ -86,9 +86,10 @@ Accurately convert Japanese song lyrics to strict Hepburn Romaji, ensuring each 
      - Adverbs
      - Particles (e.g., は{wa}, を{o}, が{ga}, の{no}, に{ni}, へ{e}, と{to})
      - Compound particles (e.g., には{niwa}, とは{towa}, までも{mademo})
-     - Katakana words (e.g., コーヒー{kōhī})
+     - Katakana words of any length (e.g., コーヒー{kōhī}, インフェルノラブレター{inferuno raburetā})
      - Numbers with counters (e.g., 5人{go-nin})
      - Compound words (e.g., 東京タワー{Tōkyō Tawā})
+     - Interjections and short phrases (e.g., せーの{sē no}, よーい{yō i}, あっ{a'}, えっと{etto})
    - Romanize each identified unit **as a whole**.
 
 2. **CRITICAL: Correct Segmentation & Indivisibility**
@@ -119,11 +120,13 @@ Accurately convert Japanese song lyrics to strict Hepburn Romaji, ensuring each 
 3. **Inline Format & Content**
    - Insert the **Hepburn Romaji pronunciation** in curly braces '{}' immediately following the **complete** Japanese unit, with **no space** between the unit and the opening brace.
    - The content inside the braces '{}' must be the **Hepburn Romaji result**, not the original Japanese script (e.g., 抱え{kakae}, not 抱え{抱え}).
+   - Pay special attention to short, easily overlooked expressions like せーの{sē no} or ねぇ{nē} that might be missed despite being meaningful linguistic units.
 
 4. **Romanization System: Strict Hepburn**
    - Adhere strictly to the Hepburn system:
      - Basic sounds: し=shi, ち=chi, つ=tsu, ふ=fu, じ=ji, ぢ=ji, づ=zu
      - **Long vowels:** Use macrons consistently: おう/おお → ō, えい/ええ → ē, うう → ū, いい → ī, ああ → ā (e.g., 東京{Tōkyō}, ありがとう{arigatō}, 美味しい{oishii})
+     - **Extended vowels in casual speech**: Properly romanize extended vowels in casual expressions, including those marked with "ー" (e.g., せーの{sē no}, よーい{yō i})
      - Particles: は → wa, へ → e, を → o
      - Sokuon (っ): Double the following consonant (e.g., ちょっと{chotto}, 笑って{waratte})
      - N (ん): Use n before most consonants, m before b/m/p, and n' before vowels or y (e.g., 案内{annai}, 散歩{sampo}, 原因{gen'in}, 本屋{hon'ya})
@@ -131,16 +134,25 @@ Accurately convert Japanese song lyrics to strict Hepburn Romaji, ensuring each 
 5. **Completeness & Accuracy of Romanization**
    - Ensure **every** Japanese linguistic unit has its corresponding Hepburn Romaji in braces.
    - The Romaji must be **accurate and complete**, reflecting the pronunciation of the **entire** unit, with attention to long vowels, double consonants, and particle usage.
+   - **Pay special attention to long katakana words**: Never skip romanization for long katakana sequences like "インフェルノラブレター{inferuno raburetā}" or "サーキュレーション{sākyurēshon}", even if they appear complex. These should be fully romanized as single units.
+   - **Do not overlook short expressions**: Be particularly vigilant about romanizing short expressions that might be overlooked, such as せーの{sē no}, よし{yoshi}, ほら{hora}, etc. Even single kana or short utterances like あっ{a'} or えっ{e'} must be romanized.
 
-6. **Preserve Non-Japanese Text**
-   - Keep all non-Japanese text (English words, numbers, symbols, punctuation) unchanged, with no Romaji added for these elements.
+6. **Preserve Non-Japanese Text and Punctuation**
+   - Keep all non-Japanese text (English words, numbers, symbols) unchanged, with no Romaji added for these elements.
+   - **Do not add Romaji transcription for any punctuation marks, including commas (,), periods (.), question marks (?), exclamation points (!), etc.**
    - Maintain original spaces and line breaks as they appear in the lyrics.
+
+7. **Punctuation Handling**
+   - Treat punctuation marks separately from Japanese text. For example:
+     - "今日は{kyō wa}, 晴れ{hare}" (correct)
+     - "今日は{kyō wa}、晴れ{hare}" (correct)
+     - "今日は、{kyō wa,}晴れ{hare}" (incorrect - comma included in Romaji)
 
 #### Input
 Song lyrics containing Japanese text.
 
 #### Output
-The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to every complete Japanese word, particle, conjugated form, or verb phrase, respecting the strict segmentation and indivisibility rules, and ensuring **only Romaji appears within the braces**. Respond in JSON.`,
+The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to every complete Japanese word, particle, conjugated form, or verb phrase, respecting the strict segmentation and indivisibility rules, ensuring **only Romaji appears within the braces**, and excluding all punctuation marks from Romanization. Respond in JSON.`,
 };
 
 export default Defaults;
