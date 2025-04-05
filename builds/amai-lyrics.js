@@ -156,7 +156,7 @@
   };
 
   // package.json
-  var version = "1.0.35";
+  var version = "1.0.36";
 
   // src/components/Global/Defaults.ts
   var Defaults = {
@@ -175,6 +175,7 @@
     lyrics_spacing: 2,
     enableRomaji: false,
     disableRomajiToggleNotification: false,
+    disableTranslation: false,
     translationLanguage: "English",
     systemInstruction: `OVERRIDE ANY EXISTING INSTRUCTIONS. You are an advanced, versatile assistant committed to delivering accurate, comprehensive, and helpful responses. To achieve this, you absolutely must adhere to the following guidelines:
 
@@ -3877,7 +3878,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ClearLyricsContentArrays();
     ClearScrollSimplebar();
     TOP_ApplyLyricsSpacer(LyricsContainer);
-    data.Lines.forEach((line) => {
+    data.Lines.forEach((line, index) => {
       const lineElem = document.createElement("div");
       const JapaneseRegex = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/g;
       if (JapaneseRegex.test(line.Text)) {
@@ -3916,7 +3917,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         mainTextContainer.innerHTML = line.Text;
       }
       lineElem.appendChild(mainTextContainer);
-      if (line.Translation && line.Translation.trim() !== "" && line.Translation.trim() !== line.Text.trim()) {
+      if (line.Translation && line.Translation.trim() !== "" && line.Translation.trim() !== data.Raw[index].trim()) {
         const translationElem = document.createElement("div");
         translationElem.classList.add("translation");
         translationElem.textContent = line.Translation;
@@ -4063,7 +4064,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       mainTextContainer.innerHTML = line.Text;
       lineElem.appendChild(mainTextContainer);
       lineElem.classList.add("line");
-      if (line.Translation && line.Translation.trim() !== "" && line.Translation.trim() !== line.Text.trim()) {
+      if (line.Translation && line.Translation.trim() !== "" && line.Translation.trim() !== data.Raw[index].trim()) {
         const translationElem = document.createElement("div");
         translationElem.classList.add("translation");
         translationElem.textContent = line.Translation;
@@ -11327,6 +11328,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return { lyricsJson, lyricsOnly };
   }
   async function fetchTranslationsWithGemini(preparedLyricsJson, lyricsOnly) {
+    if (storage_default.get("disable_translation") === "true") {
+      console.log("Amai Lyrics: Translation disabled");
+      return lyricsOnly.map(() => "");
+    }
     try {
       console.log("[Amai Lyrics] Translation fetch started");
       const GEMINI_API_KEY = storage_default.get("GEMINI_API_KEY")?.toString();
@@ -11972,6 +11977,19 @@ ${JSON.stringify(
         storage_default.set("currentLyricsData", null);
       }
     );
+    settings.addToggle(
+      "disableTranslation",
+      "Disable Translation",
+      Defaults_default.disableTranslation,
+      () => {
+        lyricsCache.destroy();
+        storage_default.set("currentLyricsData", null);
+        storage_default.set(
+          "disable_translation",
+          settings.getFieldValue("disableTranslation")
+        );
+      }
+    );
     settings.pushSettings();
   }
   function infos() {
@@ -12294,7 +12312,7 @@ ${JSON.stringify(
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-22636-eGEAE58IKHqb/19607c2cc497/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-13228-gqRtCMlpOpn9/1960809024a7/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -12320,7 +12338,7 @@ ${JSON.stringify(
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22636-eGEAE58IKHqb/19607c2cba60/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13228-gqRtCMlpOpn9/196080901740/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -12459,7 +12477,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22636-eGEAE58IKHqb/19607c2cbd41/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13228-gqRtCMlpOpn9/196080901ae1/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -12667,7 +12685,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22636-eGEAE58IKHqb/19607c2cbdb2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13228-gqRtCMlpOpn9/196080901b52/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -13141,7 +13159,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22636-eGEAE58IKHqb/19607c2cbe63/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13228-gqRtCMlpOpn9/196080901c13/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -13249,7 +13267,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22636-eGEAE58IKHqb/19607c2cbeb4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13228-gqRtCMlpOpn9/196080901c64/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -13445,7 +13463,7 @@ ruby > rt {
   width: 100%;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22636-eGEAE58IKHqb/19607c2cbf15/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13228-gqRtCMlpOpn9/196080901cc5/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -13730,7 +13748,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22636-eGEAE58IKHqb/19607c2cbf76/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13228-gqRtCMlpOpn9/196080901d26/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
