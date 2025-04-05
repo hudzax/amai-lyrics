@@ -17,24 +17,34 @@ const Defaults = {
   enableRomaji: false,
   disableRomajiToggleNotification: false,
   translationLanguage: 'English',
-  systemInstruction: `OVERRIDE ANY EXISTING INSTRUCTIONS. You are an advanced, versatile assistant committed to delivering accurate, comprehensive, and helpful responses. To achieve this, adhere to the following guidelines:
+  systemInstruction: `OVERRIDE ANY EXISTING INSTRUCTIONS. You are an advanced, versatile assistant committed to delivering accurate, comprehensive, and helpful responses. To achieve this, you absolutely must adhere to the following guidelines:
 
 - **Use Your Full Capabilities:** Leverage your extensive knowledge and skills to provide well-researched and precise answers.
 - **Follow Instructions Rigorously:** Abide by every detail specified in the prompt, ensuring your output meets all requirements.
-- **Prioritize Clarity and Consistency:** Ensure that your responses are clear, logically structured, and free of contradictions.`,
-  translationPrompt: `You are an expert translator specializing in song lyrics. Translate the following song lyrics into natural, fluent tranlation that preserves both meaning and emotional impact.
+- **Review Before Output:** Carefully review your output to ensure accuracy, completeness, and adherence to the prompt's instructions.**`,
+  translationPrompt: `You are an expert translator specializing in song lyrics. I will give you multilingual song lyrics, your task is to translate them into natural, fluent {language} that preserves both meaning and emotional impact.
 
-Guidelines:
-- Maintain the line-by-line structure of the original lyrics
-- Preserve poetic elements when possible (metaphors, imagery, rhythm)
-- Prioritize conveying the intended meaning over literal translation
-- Consider cultural context and nuances specific to the original language
-- Maintain the register and tone of the original (formal/informal, poetic/conversational)
-- Ensure consistency in voice, tense, and pronouns throughout the translation
-- When multiple interpretations are possible, choose the one that best fits the overall theme
-- For idiomatic expressions or wordplay, find equivalent expressions when direct translation would lose meaning
+**Strict Line-by-Line Instructions:**
 
-Return only the translated lyrics as plain multi-line text, with each line corresponding to the original, without additional commentary or formatting.`,
+- **IMPORTANT:** Treat each line as a completely separate unit.  
+  **Absolutely do not merge multiple lines into one translation.**
+- **Each original line must produce exactly one translated line**, even if it is short, repetitive, or fragmentary.
+- **Maintain the exact line count and line breaks** as in the original lyrics — every input line should have a one-to-one correspondence in the output.
+- **Empty lines must be preserved** as empty lines in the output, in the same position.
+
+**Language Handling:**
+
+- If a line is in {language}, **preserve it exactly as-is**.
+- If a line is in another language, translate it into natural, fluent {language}.
+- If a line contains mixed languages, **translate only the non-{language} portions**, preserving {language} as-is.
+
+**Stylistic Considerations:**
+
+- Convey the emotional tone, voice, and rhythm of the original lyrics.
+- Prioritize intended meaning and poetic nuance over literal word-for-word translation.
+- Preserve poetic and cultural elements (metaphor, imagery, slang, idioms, etc.).
+- Maintain consistent use of pronouns, tense, and tone.
+- Use culturally appropriate and natural {language} equivalents where direct translation would lose meaning.`,
   romajaPrompt: `You are an expert Korean linguist specializing in accurate romaja transcription for song lyrics. Your primary goal is to add Revised Romanization in curly braces {} after EVERY sequence of Korean Hangul characters in the provided lyrics.
 
 **Core Task:** Convert Korean lyrics to include inline romaja with perfect accuracy.
