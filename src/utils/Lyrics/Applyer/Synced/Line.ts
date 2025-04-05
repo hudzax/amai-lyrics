@@ -119,18 +119,26 @@ export function ApplyLineLyrics(data) {
 
   data.Content.forEach((line, index, arr) => {
     const lineElem = document.createElement('div');
-    if (storage.get('enable_romaji') === 'true') {
-      // Generate ruby text for romaji
-      line.Text = line.Text?.replace(
-        /([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF]+[?.!,"']?)(?:{|\uFF5B)([^}\uFF5D]+)(?:}|\uFF5D)/g,
-        '<ruby>$1<rt>$2</rt></ruby>',
-      );
+    // if test contains japanese characters
+    const JapaneseRegex = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/g;
+    if (JapaneseRegex.test(line.Text)) {
+      if (storage.get('enable_romaji') === 'true') {
+        // Generate ruby text for romaji
+        line.Text = line.Text?.replace(
+          /(([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)|[(\uFF08]([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)[)\uFF09])(?:{|\uFF5B)([^}\uFF5D]+)(?:}|\uFF5D)/g,
+          (match, p1, p2, p3, p4) => {
+            const text = p2 || p3;
+            return `<ruby>${text}<rt>${p4}</rt></ruby>`;
+          },
+        );
+      } else {
+        // Generate ruby text for furigana
+        line.Text = line.Text?.replace(
+          /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^\}]+)}/g,
+          '<ruby>$1<rt>$2</rt></ruby>',
+        );
+      }
     } else {
-      // Generate ruby text for furigana
-      line.Text = line.Text?.replace(
-        /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^\}]+)}/g,
-        '<ruby>$1<rt>$2</rt></ruby>',
-      );
       // Generate ruby text for korean romaja
       line.Text = line.Text?.replace(
         /((?:\([\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)[?.!,"']?){([^\}]+)}/g,
