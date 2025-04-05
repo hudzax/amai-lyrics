@@ -64,7 +64,7 @@ export function ApplyStaticLyrics(data) {
     } else {
       // Generate ruby text for korean romaja
       line.Text = line.Text?.replace(
-        /((?:\([\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)[?.!,"']?){([^\}]+)}/g,
+        /((?:\([0-9\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)[?.!,"']?){([^\}]+)}/g,
         '<ruby class="romaja">$1<rt>$2</rt></ruby>',
       );
     }
