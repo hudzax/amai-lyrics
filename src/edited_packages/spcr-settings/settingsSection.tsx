@@ -182,7 +182,7 @@ class SettingsSection {
 
     return (
       <div className="x-settings-section" key={rerender}>
-        <h2 className="TypeElement-cello-textBase-type">
+        <h2 className="amai-settings-header">
           {this.name}
         </h2>
         {Object.entries(this.settingsFields).map(([nameId, field]) => {

@@ -14,7 +14,7 @@ export function setSettingsMenu() {
 function devSettings() {
   const settings = new SettingsSection(
     'Amai - Dev Settings',
-    'spicy-lyrics-dev-settings',
+    'amai-dev-settings',
   );
 
   /*     settings.addInput("custom-lyrics-api", "Custom Lyrics API", Defaults.lyrics.api.url, () => {
@@ -71,10 +71,7 @@ function devSettings() {
 }
 
 function generalSettings() {
-  const settings = new SettingsSection(
-    'Amai - General',
-    'spicy-lyrics-settings',
-  );
+  const settings = new SettingsSection('Amai - Settings', 'amai-settings');
 
   //   settings.addToggle(
   //     'low-q-mode',

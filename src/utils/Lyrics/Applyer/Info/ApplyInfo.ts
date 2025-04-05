@@ -12,7 +12,7 @@ export function ApplyInfo(data: { Info?: string; InfoDuration?: number }) {
     event.preventDefault(); // Prevent default link behavior
     Spicetify.Platform.History.push({
       pathname: '/preferences',
-      hash: '#spicy-lyrics-settings',
+      hash: '#amai-settings',
     });
   });
   TopBarContainer.appendChild(infoElement);
