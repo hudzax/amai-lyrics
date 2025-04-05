@@ -255,9 +255,6 @@ function AppendViewControls(ReAppend: boolean = false) {
   }
 }
 
-const showTopbarNotifications =
-  storage.get('show_topbar_notifications') === 'true';
-
 export function SpicyLyrics_Notification({
   icon,
   metadata: { title, description },
@@ -277,7 +274,6 @@ export function SpicyLyrics_Notification({
     close: () => {},
     open: () => {},
   };
-  if (!showTopbarNotifications) return nonFunctionalReturnObject;
   if (!PageView.IsOpened) return nonFunctionalReturnObject;
   const NotificationContainer = document.querySelector(
     '#SpicyLyricsPage .NotificationContainer',

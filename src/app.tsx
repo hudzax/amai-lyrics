@@ -33,10 +33,6 @@ import sleep from "./utils/sleep";
 async function main() {
   await Platform.OnSpotifyReady;
 
-  if (!storage.get("show_topbar_notifications")) {
-    storage.set("show_topbar_notifications", "false")
-  }
-
   if (!storage.get("lyrics_spacing")) {
     storage.set("lyrics_spacing", "Medium");
   }

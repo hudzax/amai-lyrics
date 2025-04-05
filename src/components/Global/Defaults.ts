@@ -11,7 +11,6 @@ const Defaults = {
   SkipSpicyFont: false,
   OldStyleFont: false,
   ForceCoverImage_InLowQualityMode: false,
-  show_topbar_notifications: false,
   lyrics_spacing: 2,
   systemInstruction: `Follow these instructions exactly as given. Use all available knowledge and capabilities to provide the most accurate, complete, and relevant response possible. Ensure your response directly addresses the task and avoids unnecessary digressions. After generating your initial response, review it for accuracy and completeness before finalizing.`,
   enableRomaji: false,
