@@ -1,10 +1,10 @@
-export function ApplyInfo(data: { Info?: string }) {
+export function ApplyInfo(data: { Info?: string; InfoDuration?: number }) {
   const TopBarContainer = document.querySelector(
     'header.main-topBar-container',
   );
   if (!data?.Info || !TopBarContainer) return;
   const infoElement = document.createElement('a');
-  infoElement.className = 'FuriganaInfo';
+  infoElement.className = 'amai-info';
   infoElement.textContent = data.Info;
   infoElement.role = 'menuitem';
   infoElement.href = '/preferences'; // Set the href attribute to redirect
@@ -17,8 +17,13 @@ export function ApplyInfo(data: { Info?: string }) {
   });
   TopBarContainer.appendChild(infoElement);
 
+  // Calculate the duration based on average human reading ability (240 WPM)
+  const words = data.Info.split(/\s+/).length;
+  const wpm = 240;
+  const readingTimeSeconds = (words / wpm) * 60;
+  const duration = readingTimeSeconds * 1000;
   // Auto-hide the element after 5 seconds
   setTimeout(() => {
     TopBarContainer.removeChild(infoElement);
-  }, 8000);
+  }, duration); // Default to 8 seconds if InfoDuration is not provided
 }
