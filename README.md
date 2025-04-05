@@ -14,11 +14,11 @@ Hey there! Amai Lyrics is a Spicetify extension, forked from [Spicy Lyrics](http
 
 ## 👀 Preview
 
-![Extension Preview](./previews/preview-large-romaji.jpg)
+![Extension Preview](./previews/preview-romaji.jpg)
 
-![Extension Preview](./previews/preview-large-jp2.jpg)
+![Extension Preview](./previews/preview-furigana.jpg)
 
-![Extension Preview](./previews/preview-large-kr.jpg)
+![Extension Preview](./previews/preview-romaja.jpg)
 
 ## 🚀 Installation
 
