@@ -199,6 +199,21 @@ function generalSettings() {
     },
   );
 
+  settings.addToggle(
+    'disableTranslation',
+    'Disable Translation',
+    Defaults.disableTranslation,
+    () => {
+      // clear cache and current lyrics data
+      lyricsCache.destroy();
+      storage.set('currentLyricsData', null);
+      storage.set(
+        'disable_translation',
+        settings.getFieldValue('disableTranslation') as string,
+      );
+    },
+  );
+
   settings.pushSettings();
 }
 

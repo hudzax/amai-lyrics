@@ -209,6 +209,10 @@ async function prepareLyricsForGemini(lyricsJson) {
 }
 
 async function fetchTranslationsWithGemini(preparedLyricsJson, lyricsOnly) {
+  if (storage.get('disable_translation') === 'true') {
+    console.log('Amai Lyrics: Translation disabled');
+    return lyricsOnly.map(() => '');
+  }
   try {
     console.log('[Amai Lyrics] Translation fetch started');
 
