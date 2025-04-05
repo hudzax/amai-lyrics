@@ -1,5 +1,7 @@
+import * as packageJson from '../../../package.json';
+
 const Defaults = {
-  Version: '1.0.29',
+  Version: packageJson.version,
   lyrics: {
     api: {
       url: 'https://amai-worker-production.nandemo.workers.dev/lyrics',
