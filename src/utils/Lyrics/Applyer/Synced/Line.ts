@@ -165,7 +165,7 @@ export function ApplyLineLyrics(data) {
     if (
       line.Translation &&
       line.Translation.trim() !== '' &&
-      line.Translation.trim() !== line.Text.trim()
+      line.Translation.trim() !== data.Raw[index].trim()
     ) {
       const translationElem = document.createElement('div');
       translationElem.classList.add('translation');

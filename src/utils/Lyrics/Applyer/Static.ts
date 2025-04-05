@@ -31,7 +31,7 @@ export function ApplyStaticLyrics(data) {
 
   TOP_ApplyLyricsSpacer(LyricsContainer);
 
-  data.Lines.forEach((line) => {
+  data.Lines.forEach((line, index) => {
     const lineElem = document.createElement('div');
     // if test contains japanese characters
     const JapaneseRegex = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/g;
@@ -87,7 +87,7 @@ export function ApplyStaticLyrics(data) {
     if (
       line.Translation &&
       line.Translation.trim() !== '' &&
-      line.Translation.trim() !== line.Text.trim()
+      line.Translation.trim() !== data.Raw[index].trim()
     ) {
       const translationElem = document.createElement('div');
       translationElem.classList.add('translation');
