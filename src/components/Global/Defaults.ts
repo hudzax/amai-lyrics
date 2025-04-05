@@ -113,15 +113,8 @@ Accurately convert Japanese song lyrics to strict Hepburn Romaji, ensuring each 
      - 食べちゃった{tabechatta}
      - 抱え{kakae}
      - 見ても{mitemo}
-   - **Incorrect Examples (Avoid):**
-     - 見{mi}てた{teta}
-     - 読ん{yon}でる{deru}
-     - 乗っ{nokka}かって{katte}
-     - 笑っ{wara}て{tte}
-     - 美し{utsuku}さ{sa}
-     - 走り{hashiri}出し{dashi}た{ta}
-     - 食べ{tabe}て{te}しまう{shimau}
-     - 見{mite}ても{temo}
+     - メロディー{merodī}
+     - サーキュレーション{sākyurēshon}
 
 3. **Inline Format & Content**
    - Insert the **Hepburn Romaji pronunciation** in curly braces '{}' immediately following the **complete** Japanese unit, with **no space** between the unit and the opening brace.
