@@ -222,7 +222,7 @@ async function fetchTranslationsWithGemini(preparedLyricsJson, lyricsOnly) {
 
     const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
     const generationConfig = {
-      temperature: 0.2,
+      temperature: 0.85,
       topP: 0.95,
       topK: 40,
       maxOutputTokens: 8192,
@@ -243,18 +243,19 @@ async function fetchTranslationsWithGemini(preparedLyricsJson, lyricsOnly) {
     };
 
     const targetLang =
-      storage.get('translation_language') || Defaults.translationLanguage;
+      storage.get('translation_language')?.toString() ||
+      Defaults.translationLanguage;
     const prompt =
-      `Translate the following lyrics into ${targetLang}:\n` +
-      Defaults.translationPrompt;
+      Defaults.translationPrompt.replace(/{language}/g, `${targetLang}`) +
+      ` Translate the following lyrics into ${targetLang}:\n`;
 
     console.log('[Amai Lyrics] Sending prompt to Gemini:', prompt);
     console.log('[Amai Lyrics] Lyrics sent for translation:', lyricsOnly);
 
     const response = await ai.models.generateContent({
       config: generationConfig,
-      model: 'gemini-2.0-flash-lite',
-      contents: `${prompt}\n${JSON.stringify(lyricsOnly)}`,
+      model: 'gemini-2.0-flash',
+      contents: `${prompt}${JSON.stringify(lyricsOnly)}`,
     });
 
     console.log(
