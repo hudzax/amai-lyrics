@@ -156,7 +156,7 @@
   };
 
   // package.json
-  var version = "1.0.32";
+  var version = "1.0.33";
 
   // src/components/Global/Defaults.ts
   var Defaults = {
@@ -3839,7 +3839,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       if (JapaneseRegex.test(line.Text)) {
         if (!data.Info && (!storage_default.get("disable_romaji_toggle_notification") || storage_default.get("disable_romaji_toggle_notification") === "false")) {
           data.Info = "Toggle between Romaji or Furigana in settings. Disable this notification there as well.";
-          data.InfoDuration = 5e3;
         }
         if (storage_default.get("enable_romaji") === "true") {
           line.Text = line.Text?.replace(
@@ -3982,7 +3981,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       if (JapaneseRegex.test(line.Text)) {
         if (!data.Info && (!storage_default.get("disable_romaji_toggle_notification") || storage_default.get("disable_romaji_toggle_notification") === "false")) {
           data.Info = "Toggle between Romaji or Furigana in settings. Disable this notification there as well.";
-          data.InfoDuration = 5e3;
         }
         if (storage_default.get("enable_romaji") === "true") {
           line.Text = line.Text?.replace(
@@ -11341,7 +11339,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         const response = await ai.models.generateContent({
           config: generationConfig,
           model: "gemini-2.0-flash",
-          contents: `${prompt} Here are the lyrics:\\n${lyricsOnly.join("\\n")}`
+          contents: `${prompt} Here are the lyrics:
+${JSON.stringify(
+            lyricsOnly
+          )}`
         });
         let lyrics = JSON.parse(response.text.replace(/\\n/g, ""));
         if (lyricsJson.Type === "Line") {
@@ -12111,7 +12112,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-22080-sv1nprbuv53l/196055a0f857/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-21592-1K9vI4hZzpu2/19605d130227/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -12137,7 +12138,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22080-sv1nprbuv53l/196055a0f270/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21592-1K9vI4hZzpu2/19605d12f600/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -12276,7 +12277,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22080-sv1nprbuv53l/196055a0f551/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21592-1K9vI4hZzpu2/19605d12f911/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -12484,7 +12485,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22080-sv1nprbuv53l/196055a0f5c2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21592-1K9vI4hZzpu2/19605d12f992/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -12958,7 +12959,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22080-sv1nprbuv53l/196055a0f673/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21592-1K9vI4hZzpu2/19605d12fa43/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -13066,7 +13067,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22080-sv1nprbuv53l/196055a0f6b4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21592-1K9vI4hZzpu2/19605d12fa94/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -13247,7 +13248,7 @@ ruby > rt {
   font-weight: 700;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22080-sv1nprbuv53l/196055a0f715/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21592-1K9vI4hZzpu2/19605d12faf5/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -13532,7 +13533,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22080-sv1nprbuv53l/196055a0f776/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21592-1K9vI4hZzpu2/19605d12fb56/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
