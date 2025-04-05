@@ -45,6 +45,8 @@ For manual setup:
    ```
 5. Restart Spotify
 
+> **Note:** You only need to apply this once. The extension will automatically check for and install any new updates.
+
 ## ⚙️ Configuration
 
 Follow these steps to set up your Gemini API key:
