@@ -7,6 +7,7 @@ Hey there! Amai Lyrics is a Spicetify extension, forked from [Spicy Lyrics](http
 - **Furigana Support:** Annotate Kanji with phonetic guides to aid reading.
 - **Romaji Support:** Display lyrics in Japanese with Romaji.
 - **Korean Romanization:** Display lyrics in Korean with Romanization.
+- **Line-by-line Translation:** Display translations for each lyrics line.
 - **Improved visuals:** Enhanced UI/UX for better readability and aesthetics.
 - **Gemini Integration:** Utilizes the Gemini Flash 2.0 to generate annotations.
 - **Easy Setup:** Obtain the API key from [Google AI Studio](https://aistudio.google.com/app/apikey) and configure it within the Spotify settings as described below.
