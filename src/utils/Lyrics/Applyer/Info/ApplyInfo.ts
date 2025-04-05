@@ -19,7 +19,7 @@ export function ApplyInfo(data: { Info?: string; InfoDuration?: number }) {
 
   // Calculate the duration based on average human reading ability (240 WPM)
   const words = data.Info.split(/\s+/).length;
-  const wpm = 240;
+  const wpm = 200;
   const readingTimeSeconds = (words / wpm) * 60;
   const duration = readingTimeSeconds * 1000;
   // Auto-hide the element after 5 seconds

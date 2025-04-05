@@ -72,11 +72,11 @@ header.main-topBar-container .amai-info {
   top: 0;
   left: 0;
   width: 100%;
-  background-color: rgba(247, 247, 247, 0.5); /* Semi-transparent background */
+  background-color: rgba(0, 0, 0, 0.55); /* Dark background */
   padding: 8px;
   text-align: center; /* Centered text */
   font-size: 13px;
-  color: #333;
+  color: #fff; /* White text */
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Slightly stronger shadow */
   text-decoration: none;
 }
