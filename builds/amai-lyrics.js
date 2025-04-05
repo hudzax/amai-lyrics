@@ -157,7 +157,7 @@
 
   // src/components/Global/Defaults.ts
   var Defaults = {
-    Version: "1.0.28",
+    Version: "1.0.29",
     lyrics: {
       api: {
         url: "https://amai-worker-production.nandemo.workers.dev/lyrics"
@@ -3782,7 +3782,7 @@
     });
     TopBarContainer.appendChild(infoElement);
     const words = data.Info.split(/\s+/).length;
-    const wpm = 240;
+    const wpm = 200;
     const readingTimeSeconds = words / wpm * 60;
     const duration = readingTimeSeconds * 1e3;
     setTimeout(() => {
@@ -11760,7 +11760,7 @@
     const settings = new SettingsSection("Amai - Info", "amai-info");
     settings.addButton(
       "more-info",
-      "This fork adds Furigana support to the original Spicy Lyrics utilizing free Gemini API. For personal use only.",
+      "Enhances your Spotify experience by adding Furigana, Romaji for Japanese, and Romanization for Korean lyrics.",
       `${Defaults_default.Version}`,
       () => {
       }
@@ -12076,7 +12076,7 @@
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-24188-kJ8qfunFfpUA/19603c22ba37/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-21264-1w8ap37RXU8D/19603f0693f7/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -12102,7 +12102,7 @@
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24188-kJ8qfunFfpUA/19603c22b300/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21264-1w8ap37RXU8D/19603f068e10/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -12241,7 +12241,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24188-kJ8qfunFfpUA/19603c22b731/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21264-1w8ap37RXU8D/19603f0690e1/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -12449,7 +12449,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24188-kJ8qfunFfpUA/19603c22b7a2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21264-1w8ap37RXU8D/19603f069152/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -12923,7 +12923,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24188-kJ8qfunFfpUA/19603c22b853/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21264-1w8ap37RXU8D/19603f069203/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -13031,7 +13031,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24188-kJ8qfunFfpUA/19603c22b8b4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21264-1w8ap37RXU8D/19603f069254/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -13092,11 +13092,11 @@ header.main-topBar-container .amai-info {
   top: 0;
   left: 0;
   width: 100%;
-  background-color: rgba(247, 247, 247, 0.5);
+  background-color: rgba(0, 0, 0, 0.55);
   padding: 8px;
   text-align: center;
   font-size: 13px;
-  color: #333;
+  color: #fff;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   text-decoration: none;
 }
@@ -13207,7 +13207,7 @@ ruby > rt {
   border: 1px solid rgba(255, 255, 255, 0.55);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24188-kJ8qfunFfpUA/19603c22b915/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21264-1w8ap37RXU8D/19603f0692b5/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -13492,7 +13492,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24188-kJ8qfunFfpUA/19603c22b976/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21264-1w8ap37RXU8D/19603f069316/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
