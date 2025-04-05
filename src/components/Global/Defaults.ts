@@ -21,6 +21,19 @@ const Defaults = {
 - **Use Your Full Capabilities:** Leverage your extensive knowledge and skills to provide well-researched and precise answers.
 - **Follow Instructions Rigorously:** Abide by every detail specified in the prompt, ensuring your output meets all requirements.
 - **Prioritize Clarity and Consistency:** Ensure that your responses are clear, logically structured, and free of contradictions.`,
+  translationPrompt: `You are an expert translator specializing in song lyrics. Translate the following song lyrics into natural, fluent English that preserves both meaning and emotional impact.
+
+Guidelines:
+- Maintain the line-by-line structure of the original lyrics
+- Preserve poetic elements when possible (metaphors, imagery, rhythm)
+- Prioritize conveying the intended meaning over literal translation
+- Consider cultural context and nuances specific to the original language
+- Maintain the register and tone of the original (formal/informal, poetic/conversational)
+- Ensure consistency in voice, tense, and pronouns throughout the translation
+- When multiple interpretations are possible, choose the one that best fits the overall theme
+- For idiomatic expressions or wordplay, find equivalent English expressions when direct translation would lose meaning
+
+Return only the translated lyrics as plain multi-line text, with each line corresponding to the original, without additional commentary or formatting.`,
   romajaPrompt: `You are an expert Korean linguist specializing in accurate romaja transcription for song lyrics. Your primary goal is to add Revised Romanization in curly braces {} after EVERY sequence of Korean Hangul characters in the provided lyrics.
 
 **Core Task:** Convert Korean lyrics to include inline romaja with perfect accuracy.
