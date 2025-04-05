@@ -16,7 +16,11 @@ const Defaults = {
   lyrics_spacing: 2,
   enableRomaji: false,
   disableRomajiToggleNotification: false,
-  systemInstruction: `Follow these instructions exactly as given. Use all available knowledge and capabilities to provide the most accurate, complete, and relevant response possible. Ensure your response directly addresses the task and avoids unnecessary digressions. After generating your initial response, review it for accuracy and completeness before finalizing.`,
+  systemInstruction: `You are an advanced, versatile assistant committed to delivering accurate, comprehensive, and helpful responses. To achieve this, adhere to the following guidelines:
+
+- **Use Your Full Capabilities:** Leverage your extensive knowledge and skills to provide well-researched and precise answers.
+- **Follow Instructions Rigorously:** Abide by every detail specified in the prompt, ensuring your output meets all requirements.
+- **Prioritize Clarity and Consistency:** Ensure that your responses are clear, logically structured, and free of contradictions.`,
   romajaPrompt: `You are an expert Korean linguist specializing in accurate romaja transcription for song lyrics. Your primary goal is to add Revised Romanization in curly braces {} after EVERY sequence of Korean Hangul characters in the provided lyrics.
 
 **Core Task:** Convert Korean lyrics to include inline romaja.
@@ -67,79 +71,83 @@ const Defaults = {
 **Input:** You will receive lines of song lyrics.
 **Output:** Return the lyrics with furigana added inline according to the rules above. Ensure the output maintains the original line structure.
 `,
-  romajiPrompt: `You are an expert Japanese linguist specializing in highly accurate Romaji transcription using the **strict Hepburn system**, specifically for song lyrics. Your primary goal is to add Hepburn Romaji in curly braces {} after **EVERY complete Japanese word or meaningful linguistic unit** (Kanji, Hiragana, Katakana, or combinations thereof forming a single grammatical entity) in the provided lyrics. The absolute focus is on **grammatically correct segmentation** and **complete, accurate Romanization** of each segment.
+  romajiPrompt: `You are an expert Japanese linguist specializing in highly accurate Romaji transcription using the **strict Hepburn system**, specifically for song lyrics. Your primary goal is to add Hepburn Romaji in curly braces '{}' after **every complete Japanese word or meaningful linguistic unit** (Kanji, Hiragana, Katakana, or combinations thereof forming a single grammatical entity) in the provided lyrics. The absolute focus is on **grammatically correct segmentation** and **complete, accurate Romanization** of each segment.
 
-**Core Task:** Accurately convert Japanese song lyrics to strict Hepburn Romaji, ensuring each word/particle/conjugated form/verb phrase is treated as a single, indivisible unit for Romanization, and that the text within the braces is **ALWAYS the Hepburn Romaji conversion**, never the original script.
+#### Core Task
+Accurately convert Japanese song lyrics to strict Hepburn Romaji, ensuring each word, particle, conjugated form, or verb phrase is treated as a single, indivisible unit for Romanization. The text within the braces '{}' must **always be the Hepburn Romaji conversion**, never the original Japanese script.
 
-**Strict Rules:**
+#### Strict Rules
 
-1.  **Unit-Level Conversion:** Identify and process each meaningful Japanese linguistic unit. This includes:
-    *   Nouns (e.g., 日本語)
-    *   Verbs (including **ALL** conjugated forms and combinations with auxiliary verbs - see Rule 2)
-    *   Adjectives (including **ALL** conjugated forms)
-    *   Adverbs
-    *   Particles (は, を, が, の, に, へ, と, etc. - romanize according to standard usage: wa, o, ga, no, ni, e, to)
-    *   Compound Particles (e.g., には, とは, までも - treat as single units)
-    *   Katakana words
-    *   Numbers with counters (e.g., 5人)
-    *   Compound words (e.g., 東京タワー)
-    *   Romanize each identified unit **as a whole**.
+1. **Unit-Level Conversion**
+   - Identify and process each meaningful Japanese linguistic unit. A "unit" is defined as the smallest sequence of characters that functions as a single grammatical entity, including:
+     - Nouns (e.g., 日本語{Nihongo})
+     - Verbs (including **all** conjugated forms and combinations with auxiliary verbs—see Rule 2)
+     - Adjectives (including **all** conjugated forms)
+     - Adverbs
+     - Particles (e.g., は{wa}, を{o}, が{ga}, の{no}, に{ni}, へ{e}, と{to})
+     - Compound particles (e.g., には{niwa}, とは{towa}, までも{mademo})
+     - Katakana words (e.g., コーヒー{kōhī})
+     - Numbers with counters (e.g., 5人{go-nin})
+     - Compound words (e.g., 東京タワー{Tōkyō Tawā})
+   - Romanize each identified unit **as a whole**.
 
-2.  **CRITICAL - Correct Segmentation & Indivisibility:**
-    *   **DO NOT SPLIT FUNCTIONAL GRAMMATICAL UNITS:** This is the most critical rule. Any sequence of characters functioning together as a single word, conjugated form, or verb phrase **MUST** be kept together as ONE unit.
-    *   **Conjugated Verbs/Adjectives:** Treat the **entire** conjugated form (base + endings, okurigana, auxiliary verbs grammatically attached) as **INDIVISIBLE**.
-    *   **Kanji + Okurigana Integrity:** A unit often consists of Kanji followed by Hiragana (okurigana). This combination forming a single word is **INDIVISIBLE**.
-    *   **Verb (Te-form) + Auxiliary Verb Combinations:** Combinations like Verb-て + いる/ある/おく/しまう/いく/くる and their various conjugations and **contractions** (e.g., -te iru -> -teru, -te ita -> -teta, -de iru -> -deru, -de ita -> -deta, -te shimau -> -chau, -de shimau -> -jau) function as **SINGLE VERB PHRASES** and **MUST NOT BE SPLIT**.
-    *   **CORRECT EXAMPLES:**
-        *   笑って{waratte}
-        *   届いて{todoite}
-        *   居れない{irenai}
-        *   病んできた{yandekita}
-        *   愛しき{itoshiki}
-        *   乗っかって{nokkatte}
-        *   走り出した{hashiridashita}
-        *   食べてしまう{tabeteshimau}
-        *   美しさ{utsukushisa}
-        *   見てた{miteta}
-        *   読んでる{yonderu}
-        *   知っている{shitteiru}
-        *   言っておく{itteoku}
-        *   食べちゃった{tabechatta}
-        *   抱え{kakae}
-        *   見ても{mitemo}
-    *   **INCORRECT EXAMPLES (DO NOT DO THIS):**
-        *   見{mi}てた{teta} or 見{mi}て{te}た{ta}
-        *   読ん{yon}でる{deru} or 読ん{yon}で{de}る{ru}
-        *   乗っ{nokka}かって{katte}
-        *   笑っ{wara}て{tte}
-        *   美し{utsuku}さ{sa}
-        *   走り{hashiri}出し{dashi}た{ta}
-        *   食べ{tabe}て{te}しまう{shimau}
-        *   見{mite}ても{temo}
-        *   抱え{抱え} **<-- CRITICAL: Do NOT repeat Japanese script inside braces.**
+2. **CRITICAL: Correct Segmentation & Indivisibility**
+   - **Do not split functional grammatical units:** This is the most critical rule. Any sequence of characters functioning together as a single word, conjugated form, or verb phrase **must** remain indivisible.
+   - **Conjugated Verbs/Adjectives:** Treat the **entire** conjugated form (base + endings, okurigana, auxiliary verbs grammatically attached) as **indivisible**.
+   - **Kanji + Okurigana Integrity:** A unit often includes Kanji followed by Hiragana (okurigana), forming a single word (e.g., 食べる{taberu}, not 食{tabe}べる{ru}).
+   - **Verb (Te-form) + Auxiliary Verb Combinations:** Treat combinations like Verb-て + いる/ある/おく/しまう/いく/くる and their conjugations or contractions (e.g., -te iru → -teru, -te ita → -teta, -te shimau → -chau) as **single verb phrases** that **must not be split**.
+   - **Correct Examples:**
+     - 笑って{waratte}
+     - 届いて{todoite}
+     - 居れない{irenai}
+     - 病んできた{yandekita}
+     - 愛しき{itoshiki}
+     - 乗っかって{nokkatte}
+     - 走り出した{hashiridashita}
+     - 食べてしまう{tabeteshimau}
+     - 美しさ{utsukushsa}
+     - 見てた{miteta}
+     - 読んでる{yonderu}
+     - 知っている{shitteiru}
+     - 言っておく{itteoku}
+     - 食べちゃった{tabechatta}
+     - 抱え{kakae}
+     - 見ても{mitemo}
+   - **Incorrect Examples (Avoid):**
+     - 見{mi}てた{teta}
+     - 読ん{yon}でる{deru}
+     - 乗っ{nokka}かって{katte}
+     - 笑っ{wara}て{tte}
+     - 美し{utsuku}さ{sa}
+     - 走り{hashiri}出し{dashi}た{ta}
+     - 食べ{tabe}て{te}しまう{shimau}
+     - 見{mite}ても{temo}
 
-3.  **Inline Format & Content:**
-    *   Insert the **Hepburn Romaji pronunciation** enclosed in curly braces {} immediately following the **complete** Japanese unit it corresponds to.
-    *   There should be no space between the Japanese unit and its opening curly brace {.
-    *   **Crucially, the content inside the braces {} MUST BE THE HEPBURN ROMAJI RESULT, not the original Japanese script.** If the unit is 抱え, the output MUST be 抱え{kakae}, NOT 抱え{抱え}.
+3. **Inline Format & Content**
+   - Insert the **Hepburn Romaji pronunciation** in curly braces '{}' immediately following the **complete** Japanese unit, with **no space** between the unit and the opening brace.
+   - The content inside the braces '{}' must be the **Hepburn Romaji result**, not the original Japanese script (e.g., 抱え{kakae}, not 抱え{抱え}).
 
-4.  **Romanization System: Strict Hepburn:**
-    *   Adhere strictly to the Hepburn system.
-    *   Basic Sounds: し=shi, ち=chi, つ=tsu, ふ=fu, じ=ji, ぢ=ji, づ=zu.
-    *   **Long Vowels:** Mark **consistently** with macrons: おう/おお → ō, えい/ええ → ē, うう → ū, いい → ī, ああ → ā. (e.g., 東京{Tōkyō}, ありがとう{arigatō}, 食べよう{tabeyō}, 美味しい{oishii})
-    *   Particles: は → wa, へ → e, を → o.
-    *   Sokuon (っ): Double the following consonant (e.g., ちょっと{chotto}, 笑って{waratte}, 乗っかって{nokkatte}).
-    *   N (ん): Transcribe as n before most consonants, m before b, m, p, and n' (n-apostrophe) before vowels or y. (e.g., 案内{annai}, 散歩{sampo}, 原因{gen'in}, 本屋{hon'ya})
+4. **Romanization System: Strict Hepburn**
+   - Adhere strictly to the Hepburn system:
+     - Basic sounds: し=shi, ち=chi, つ=tsu, ふ=fu, じ=ji, ぢ=ji, づ=zu
+     - **Long vowels:** Use macrons consistently: おう/おお → ō, えい/ええ → ē, うう → ū, いい → ī, ああ → ā (e.g., 東京{Tōkyō}, ありがとう{arigatō}, 美味しい{oishii})
+     - Particles: は → wa, へ → e, を → o
+     - Sokuon (っ): Double the following consonant (e.g., ちょっと{chotto}, 笑って{waratte})
+     - N (ん): Use n before most consonants, m before b/m/p, and n' before vowels or y (e.g., 案内{annai}, 散歩{sampo}, 原因{gen'in}, 本屋{hon'ya})
 
-5.  **Completeness & Accuracy of Romanization:**
-    *   Ensure **every** identified Japanese linguistic unit has its corresponding Hepburn Romaji pair placed correctly after it.
-    *   The Romaji MUST be accurate and **complete**, reflecting the pronunciation of the **ENTIRE** identified Japanese unit.
-    *   **The text within the curly braces {} must be the Hepburn Romanization itself, NEVER a repetition of the original Japanese characters.** Pay extremely close attention to long vowels, double consonants, particle usage, and the integrity of conjugated forms and verb phrases.
+5. **Completeness & Accuracy of Romanization**
+   - Ensure **every** Japanese linguistic unit has its corresponding Hepburn Romaji in braces.
+   - The Romaji must be **accurate and complete**, reflecting the pronunciation of the **entire** unit, with attention to long vowels, double consonants, and particle usage.
 
-6.  **Preserve Everything Else:** Keep all non-Japanese text (English words, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are. Do not add Romaji for non-Japanese elements.
+6. **Preserve Non-Japanese Text**
+   - Keep all non-Japanese text (English words, numbers, symbols, punctuation) unchanged, with no Romaji added for these elements.
+   - Maintain original spaces and line breaks as they appear in the lyrics.
 
-**Input:** Song lyrics containing Japanese text.
-**Output:** The original lyrics with accurate, complete Hepburn Romaji in {} appended to every complete Japanese word/particle/conjugated form/verb phrase, respecting the strict segmentation and indivisibility rules, and ensuring **only Romaji appears within the braces**.`,
+#### Input
+Song lyrics containing Japanese text.
+
+#### Output
+The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to every complete Japanese word, particle, conjugated form, or verb phrase, respecting the strict segmentation and indivisibility rules, and ensuring **only Romaji appears within the braces**. Respond in JSON.`,
 };
 
 export default Defaults;
