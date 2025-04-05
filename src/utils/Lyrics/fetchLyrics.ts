@@ -17,34 +17,12 @@ export const lyricsCache = new SpikyCache({
 });
 
 export default async function fetchLyrics(uri: string) {
-  if (
-    document
-      .querySelector('#SpicyLyricsPage .LyricsContainer .LyricsContent')
-      ?.classList.contains('offline')
-  ) {
-    document
-      .querySelector('#SpicyLyricsPage .LyricsContainer .LyricsContent')
-      .classList.remove('offline');
-  }
-
-  document
-    .querySelector('#SpicyLyricsPage .ContentBox .LyricsContainer')
-    ?.classList.remove('Hidden');
-
-  if (!Fullscreen.IsOpen) PageView.AppendViewControls(true);
-
-  // const IsSomethingElseThanTrack = Spicetify.Player.data.item.type !== 'track';
-  // if (IsSomethingElseThanTrack) {
-  //   return NotTrackMessage();
-  // }
-
-  //ShowLoaderContainer();
+  resetLyricsUI();
 
   const currFetching = storage.get('currentlyFetching');
   if (currFetching == 'true') return;
 
   storage.set('currentlyFetching', 'true');
-
   document
     .querySelector<HTMLElement>('#SpicyLyricsPage .ContentBox')
     ?.classList.remove('LyricsHidden');
@@ -52,71 +30,17 @@ export default async function fetchLyrics(uri: string) {
   ClearLyricsPageContainer();
 
   const trackId = uri.split(':')[2];
-
-  // Check if there's already data in localStorage
-  const savedLyricsData = storage.get('currentLyricsData')?.toString();
-
-  if (savedLyricsData) {
-    try {
-      if (savedLyricsData.includes('NO_LYRICS')) {
-        const split = savedLyricsData.split(':');
-        const id = split[1];
-        if (id === trackId) {
-          return await noLyricsMessage(false, true);
-        }
-      } else {
-        const lyricsData = JSON.parse(savedLyricsData);
-        // Return the stored lyrics if the ID matches the track ID
-        if (lyricsData?.id === trackId) {
-          storage.set('currentlyFetching', 'false');
-          HideLoaderContainer();
-          ClearLyricsPageContainer();
-          Defaults.CurrentLyricsType = lyricsData.Type;
-          return lyricsData;
-        }
-      }
-    } catch (error) {
-      console.error('Error parsing saved lyrics data:', error);
-      storage.set('currentlyFetching', 'false');
-      HideLoaderContainer();
-      ClearLyricsPageContainer();
-    }
-  }
-
-  // FOR DEBUG PURPOSE ONLY
-  // lyricsCache.destroy();
-
-  if (lyricsCache) {
-    try {
-      const lyricsFromCache = await lyricsCache.get(trackId);
-      if (lyricsFromCache) {
-        if (lyricsFromCache?.expiresAt < new Date().getTime()) {
-          await lyricsCache.remove(trackId);
-        } else {
-          if (lyricsFromCache?.status === 'NO_LYRICS') {
-            return await noLyricsMessage(false, true);
-          }
-          storage.set('currentLyricsData', JSON.stringify(lyricsFromCache));
-          storage.set('currentlyFetching', 'false');
-          HideLoaderContainer();
-          ClearLyricsPageContainer();
-          Defaults.CurrentLyricsType = lyricsFromCache.Type;
-          return { ...lyricsFromCache, fromCache: true };
-        }
-      }
-    } catch (error) {
-      ClearLyricsPageContainer();
-      console.log('Error parsing saved lyrics data:', error);
-      return await noLyricsMessage(false, true);
-    }
-  }
+  const localLyrics = await getLyricsFromLocalStorage(trackId);
+  if (localLyrics) return localLyrics;
+  const cachedLyrics = await getLyricsFromCache(trackId);
+  if (cachedLyrics) return cachedLyrics;
 
   ShowLoaderContainer();
 
-  // Fetch new lyrics if no match in localStorage
-  /* const lyricsApi = storage.get("customLyricsApi") ?? Defaults.LyricsContent.api.url;
-    const lyricsAccessToken = storage.get("lyricsApiAccessToken") ?? Defaults.LyricsContent.api.accessToken; */
+  return await fetchLyricsFromAPI(trackId);
+}
 
+async function fetchLyricsFromAPI(trackId: string) {
   try {
     Spicetify.showNotification('Fetching lyrics..', false, 1000);
     const SpotifyAccessToken = await Platform.GetSpotifyAccessToken();
@@ -141,8 +65,6 @@ export default async function fetchLyrics(uri: string) {
       if (status === 500) return await noLyricsMessage(false, true);
       if (status === 401) {
         storage.set('currentlyFetching', 'false');
-        //fetchLyrics(uri);
-        //window.location.reload();
         return await noLyricsMessage(false, false);
       }
       ClearLyricsPageContainer();
@@ -157,7 +79,6 @@ export default async function fetchLyrics(uri: string) {
     if (lyricsJson === null) return await noLyricsMessage(false, false);
     if (lyricsJson === '') return await noLyricsMessage(false, true);
 
-    // Determine if any line in the lyrics contains Kanji characters (using RegExp.test for a boolean result)
     const hasKanji =
       lyricsJson.Content?.some((item) =>
         item.Lead?.Syllables?.some((syl) => /[\u4E00-\u9FFF]/.test(syl.Text)),
@@ -166,7 +87,6 @@ export default async function fetchLyrics(uri: string) {
       lyricsJson.Lines?.some((item) => /[\u4E00-\u9FFF]/.test(item.Text)) ||
       false;
 
-    // Check if theres korean characters
     const hasKorean =
       lyricsJson.Content?.some((item) =>
         item.Lead?.Syllables?.some((syl) => /[\uAC00-\uD7AF]/.test(syl.Text)),
@@ -176,7 +96,6 @@ export default async function fetchLyrics(uri: string) {
       false;
 
     if (hasKanji) {
-      // romaji is enabled
       if (storage.get('enable_romaji') === 'true') {
         lyricsJson = await generateRomaji(lyricsJson);
       } else {
@@ -185,19 +104,16 @@ export default async function fetchLyrics(uri: string) {
     } else if (hasKorean) {
       lyricsJson = await generateRomaja(lyricsJson);
     }
-    console.log('DEBUG result', lyricsJson);
-    // Store the new lyrics in localStorage
-    storage.set('currentLyricsData', JSON.stringify(lyricsJson));
 
+    console.log('DEBUG result', lyricsJson);
+    storage.set('currentLyricsData', JSON.stringify(lyricsJson));
     storage.set('currentlyFetching', 'false');
 
     HideLoaderContainer();
-
     ClearLyricsPageContainer();
 
     if (lyricsCache) {
-      const expiresAt = new Date().getTime() + 1000 * 60 * 60 * 24 * 7; // Expire after 7 days
-
+      const expiresAt = new Date().getTime() + 1000 * 60 * 60 * 24 * 7;
       try {
         await lyricsCache.set(trackId, {
           ...lyricsJson,
@@ -220,34 +136,18 @@ export default async function fetchLyrics(uri: string) {
 }
 
 async function generateFurigana(lyricsJson) {
-  if (!(await checkGeminiAPIKey(lyricsJson))) {
-    return lyricsJson;
-  }
-
-  lyricsJson = await processLyricsWithGemini(
-    lyricsJson,
-    Defaults.systemInstruction,
-    Defaults.furiganaPrompt,
-  );
-
-  return lyricsJson;
+  return await generateLyricsWithPrompt(lyricsJson, Defaults.furiganaPrompt);
 }
 
 async function generateRomaja(lyricsJson) {
-  if (!(await checkGeminiAPIKey(lyricsJson))) {
-    return lyricsJson;
-  }
-
-  lyricsJson = await processLyricsWithGemini(
-    lyricsJson,
-    Defaults.systemInstruction,
-    Defaults.romajaPrompt,
-  );
-
-  return lyricsJson;
+  return await generateLyricsWithPrompt(lyricsJson, Defaults.romajaPrompt);
 }
 
 async function generateRomaji(lyricsJson) {
+  return await generateLyricsWithPrompt(lyricsJson, Defaults.romajiPrompt);
+}
+
+async function generateLyricsWithPrompt(lyricsJson, prompt) {
   if (!(await checkGeminiAPIKey(lyricsJson))) {
     return lyricsJson;
   }
@@ -255,7 +155,7 @@ async function generateRomaji(lyricsJson) {
   lyricsJson = await processLyricsWithGemini(
     lyricsJson,
     Defaults.systemInstruction,
-    Defaults.romajiPrompt,
+    prompt,
   );
 
   return lyricsJson;
@@ -284,7 +184,7 @@ async function processLyricsWithGemini(
     const GEMINI_API_KEY = storage.get('GEMINI_API_KEY')?.toString();
     const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
     const generationConfig = {
-      temperature: 0.2,
+      temperature: 0.258,
       topP: 0.95,
       topK: 40,
       maxOutputTokens: 8192,
@@ -385,6 +285,89 @@ async function extractLyrics(lyricsJson) {
     lyricsJson.Lines = removeEmptyLinesAndCharacters(lyricsJson.Lines);
     return lyricsJson.Lines.map((item) => item.Text);
   }
+}
+
+async function getLyricsFromCache(trackId: string) {
+  if (!lyricsCache) return null;
+
+  try {
+    const lyricsFromCache = await lyricsCache.get(trackId);
+    if (!lyricsFromCache) return null;
+
+    if (lyricsFromCache.expiresAt < new Date().getTime()) {
+      await lyricsCache.remove(trackId);
+      return null;
+    }
+
+    if (lyricsFromCache.status === 'NO_LYRICS') {
+      return await noLyricsMessage(false, true);
+    }
+
+    storage.set('currentLyricsData', JSON.stringify(lyricsFromCache));
+    storage.set('currentlyFetching', 'false');
+    HideLoaderContainer();
+    ClearLyricsPageContainer();
+    Defaults.CurrentLyricsType = lyricsFromCache.Type;
+    return { ...lyricsFromCache, fromCache: true };
+  } catch (error) {
+    ClearLyricsPageContainer();
+    console.log('Error parsing saved lyrics data:', error);
+    return await noLyricsMessage(false, true);
+  }
+}
+
+async function getLyricsFromLocalStorage(trackId: string) {
+  const savedLyricsData = storage.get('currentLyricsData')?.toString();
+
+  if (!savedLyricsData) return null;
+
+  try {
+    if (savedLyricsData.includes('NO_LYRICS')) {
+      const split = savedLyricsData.split(':');
+      const id = split[1];
+      if (id === trackId) {
+        return await noLyricsMessage(false, true);
+      }
+    } else {
+      const lyricsData = JSON.parse(savedLyricsData);
+      if (lyricsData?.id === trackId) {
+        storage.set('currentlyFetching', 'false');
+        HideLoaderContainer();
+        ClearLyricsPageContainer();
+        Defaults.CurrentLyricsType = lyricsData.Type;
+        return lyricsData;
+      }
+    }
+  } catch (error) {
+    console.error('Error parsing saved lyrics data:', error);
+    storage.set('currentlyFetching', 'false');
+    HideLoaderContainer();
+    ClearLyricsPageContainer();
+  }
+
+  return null;
+}
+
+function resetLyricsUI() {
+  const lyricsContent = document.querySelector(
+    '#SpicyLyricsPage .LyricsContainer .LyricsContent',
+  );
+  if (lyricsContent?.classList.contains('offline')) {
+    lyricsContent.classList.remove('offline');
+  }
+
+  document
+    .querySelector('#SpicyLyricsPage .ContentBox .LyricsContainer')
+    ?.classList.remove('Hidden');
+
+  if (!Fullscreen.IsOpen) PageView.AppendViewControls(true);
+
+  // const IsSomethingElseThanTrack = Spicetify.Player.data.item.type !== 'track';
+  // if (IsSomethingElseThanTrack) {
+  //   return NotTrackMessage();
+  // }
+
+  //ShowLoaderContainer();
 }
 
 function convertLyrics(data) {
