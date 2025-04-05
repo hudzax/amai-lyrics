@@ -156,7 +156,7 @@
   };
 
   // package.json
-  var version = "1.0.30";
+  var version = "1.0.31";
 
   // src/components/Global/Defaults.ts
   var Defaults = {
@@ -272,15 +272,8 @@ Accurately convert Japanese song lyrics to strict Hepburn Romaji, ensuring each 
      - \u98DF\u3079\u3061\u3083\u3063\u305F{tabechatta}
      - \u62B1\u3048{kakae}
      - \u898B\u3066\u3082{mitemo}
-   - **Incorrect Examples (Avoid):**
-     - \u898B{mi}\u3066\u305F{teta}
-     - \u8AAD\u3093{yon}\u3067\u308B{deru}
-     - \u4E57\u3063{nokka}\u304B\u3063\u3066{katte}
-     - \u7B11\u3063{wara}\u3066{tte}
-     - \u7F8E\u3057{utsuku}\u3055{sa}
-     - \u8D70\u308A{hashiri}\u51FA\u3057{dashi}\u305F{ta}
-     - \u98DF\u3079{tabe}\u3066{te}\u3057\u307E\u3046{shimau}
-     - \u898B{mite}\u3066\u3082{temo}
+     - \u30E1\u30ED\u30C7\u30A3\u30FC{merod\u012B}
+     - \u30B5\u30FC\u30AD\u30E5\u30EC\u30FC\u30B7\u30E7\u30F3{s\u0101kyur\u0113shon}
 
 3. **Inline Format & Content**
    - Insert the **Hepburn Romaji pronunciation** in curly braces '{}' immediately following the **complete** Japanese unit, with **no space** between the unit and the opening brace.
@@ -12084,7 +12077,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-22736-Z83tiUtW5HcP/19604bfb1e37/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-4256-jUy2HjlgZvCK/19604df92e87/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -12110,7 +12103,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22736-Z83tiUtW5HcP/19604bfb0320/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-4256-jUy2HjlgZvCK/19604df921c0/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -12249,7 +12242,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22736-Z83tiUtW5HcP/19604bfb0621/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-4256-jUy2HjlgZvCK/19604df92491/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -12457,7 +12450,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22736-Z83tiUtW5HcP/19604bfb06a2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-4256-jUy2HjlgZvCK/19604df92502/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -12931,7 +12924,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22736-Z83tiUtW5HcP/19604bfb0763/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-4256-jUy2HjlgZvCK/19604df925b3/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -13039,7 +13032,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22736-Z83tiUtW5HcP/19604bfb0814/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-4256-jUy2HjlgZvCK/19604df92604/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -13220,7 +13213,7 @@ ruby > rt {
   font-weight: 700;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22736-Z83tiUtW5HcP/19604bfb0875/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-4256-jUy2HjlgZvCK/19604df92665/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -13505,7 +13498,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22736-Z83tiUtW5HcP/19604bfb08f6/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-4256-jUy2HjlgZvCK/19604df926c6/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
