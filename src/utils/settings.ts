@@ -193,7 +193,7 @@ function infos() {
 
   settings.addButton(
     'more-info',
-    'This fork adds Furigana support to the original Spicy Lyrics utilizing free Gemini API. For personal use only.',
+    'Enhances your Spotify experience by adding Furigana, Romaji for Japanese, and Romanization for Korean lyrics.',
     `${Defaults.Version}`,
     () => {},
   );
