@@ -156,7 +156,7 @@
   };
 
   // package.json
-  var version = "1.0.33";
+  var version = "1.0.34";
 
   // src/components/Global/Defaults.ts
   var Defaults = {
@@ -182,28 +182,48 @@
 - **Prioritize Clarity and Consistency:** Ensure that your responses are clear, logically structured, and free of contradictions.`,
     romajaPrompt: `You are an expert Korean linguist specializing in accurate romaja transcription for song lyrics. Your primary goal is to add Revised Romanization in curly braces {} after EVERY sequence of Korean Hangul characters in the provided lyrics.
 
-**Core Task:** Convert Korean lyrics to include inline romaja.
+**Core Task:** Convert Korean lyrics to include inline romaja with perfect accuracy.
 
 **Strict Rules:**
-1.  **Mandatory Conversion:** You MUST process EVERY Korean word or sequence of Hangul characters. No exceptions. Do NOT skip any.
-2.  **Inline Format:** Insert the romaja pronunciation enclosed in curly braces {} immediately following the corresponding Korean word/sequence. Example: \uD55C\uAD6D\uC5B4 \u2192 \uD55C\uAD6D\uC5B4{hangukeo}.
-3.  **Romanization System:** Strictly use the Revised Romanization of Korean.
-4.  **Preserve Everything Else:** Keep all non-Korean text (English, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are.
-5.  **Completeness Check:** Before outputting, double-check that every single Korean word/sequence has its romaja pair.
+1. **Mandatory Conversion:** You MUST process EVERY Korean word or sequence of Hangul characters. No exceptions. Do NOT skip any.
+2. **Inline Format:** Insert the romaja pronunciation enclosed in curly braces {} immediately following the corresponding Korean word/sequence. Example: \uD55C\uAD6D\uC5B4 \u2192 \uD55C\uAD6D\uC5B4{hangugeo}.
+3. **Romanization System:** Strictly use the official Revised Romanization of Korean (RR) rules with these specific guidelines:
+   - Use 'eo' not 'o' for \u3153 (\uC608: \uC5B4\u2192eo, \uB108\u2192neo)
+   - Use 'eu' not 'u' for \u3161 (\uC608: \uC74C\u2192eum, \uB298\u2192neul)
+   - Use 'ae' not 'ai' for \u3150 (\uC608: \uAC1C\u2192gae, \uBC30\u2192bae)
+   - Follow official RR consonant rules: \u3131\u2192g/k, \u3137\u2192d/t, \u3142\u2192b/p, etc.
+   - Distinguish between \u3145\u2192s and \u3146\u2192ss
+   - Proper handling of \u3139: initial \u3139\u2192r, medial \u3139\u2192l, final \u3139\u2192l
+   - Proper handling of assimilation: \uD569\uB2C8\uB2E4\u2192hamnida (not hapnida)
+4. **Linguistic Accuracy:**
+   - Process word by word, not character by character
+   - Correctly handle syllable-final consonants (\uBC1B\uCE68)
+   - Apply proper sound change rules for connected speech
+   - Account for consonant assimilation and liaison between words when needed
+5. **Preserve Everything Else:** Keep all non-Korean text (English, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are.
+6. **Completeness Check:** Before outputting, methodically verify that every single Korean word/sequence has its romaja pair.
 
-**Examples:**
-*   \uC815\uB9D0 \u2192 \uC815\uB9D0{jeongmal}
-*   \uBCF4\uACE0 \uC2F6\uC5B4\uC694 \u2192 \uBCF4\uACE0{bogo} \uC2F6\uC5B4\uC694{sipeoyo}
-*   \uBBF8\uB85C \u2192 \uBBF8\uB85C{miro}
-*   2\uC0B4\uC774\uC5D0\uC694 \u2192 2\uC0B4\uC774\uC5D0\uC694{sarieyo} (Number preserved, Korean word romanized)
-*   (\uB0B4\uAC00 \uC544\uB2C8\uC796\uC544) \u2192 (\uB0B4\uAC00{naega} \uC544\uB2C8\uC796\uC544{anijana}) (Parentheses and spacing preserved)
-*   \uC0AC\uB791\uD574 \u2192 \uC0AC\uB791\uD574{saranghae}
-*   \uAC00\uB098\uB2E4\uB77C\uB9C8\uBC14\uC0AC \u2192 \uAC00\uB098\uB2E4\uB77C\uB9C8\uBC14\uC0AC{ganadaramabasa} (Long sequence)
-*   \uAF43\uC78E\uCC98\uB7FC \u2192 \uAF43\uC78E\uCC98\uB7FC{kkonnipcheoreom} (Word with particle)
+**Examples with Sound Change Rules:**
+* \uC815\uB9D0 \u2192 \uC815\uB9D0{jeongmal}
+* \uC88B\uC544\uD574 \u2192 \uC88B\uC544\uD574{joahae}
+* \uAC19\uC774 \u2192 \uAC19\uC774{gachi} (Note assimilation)
+* \uC77D\uB2E4 \u2192 \uC77D\uB2E4{ikda} (Note syllable-final consonant rule)
+* \uBC25 \uBA39\uC5B4 \u2192 \uBC25{bap} \uBA39\uC5B4{meogeo} (Note final consonant pronunciation)
+* \uAF43\uC78E \u2192 \uAF43\uC78E{kkonip} (Note assimilation at morpheme boundary)
+* \uC5C6\uC5B4 \u2192 \uC5C6\uC5B4{eopseo} (Note complex consonant cluster)
+* \uC549\uC544 \u2192 \uC549\uC544{anja} (Note complex consonant rules)
+* \uAC14\uB2E4 \uC654\uB2E4 \u2192 \uAC14\uB2E4{gatda} \uC654\uB2E4{watda} (Note past tense pronunciation)
+* \uC0AC\uB791\uD574\uC694 \u2192 \uC0AC\uB791\uD574\uC694{saranghaeyo} (Note aspirated consonant)
+
+**Special Cases:**
+* Numbers mixed with Korean: 2\uC0B4\uC774\uC5D0\uC694 \u2192 2\uC0B4\uC774\uC5D0\uC694{salieyo}
+* Parentheses: (\uB0B4\uAC00 \uC544\uB2C8\uC796\uC544) \u2192 (\uB0B4\uAC00{naega} \uC544\uB2C8\uC796\uC544{anijana})
+* Particles: \uCC45\uC774 \u2192 \uCC45\uC774{chaegi}, \uC9D1\uC5D0 \u2192 \uC9D1\uC5D0{jibe} (Note sound changes)
+* Long words: \uAC00\uB098\uB2E4\uB77C\uB9C8\uBC14\uC0AC \u2192 \uAC00\uB098\uB2E4\uB77C\uB9C8\uBC14\uC0AC{ganadaramabasa}
+* Words with suffixes: \uAF43\uC78E\uCC98\uB7FC \u2192 \uAF43\uC78E\uCC98\uB7FC{konnipcheorom}
 
 **Input:** You will receive lines of song lyrics.
-**Output:** Return the lyrics with romaja added inline according to the rules above. Ensure the output maintains the original line structure.
-`,
+**Output:** Return the lyrics with romaja added inline according to the rules above. Ensure the output maintains the original line structure.`,
     furiganaPrompt: `You are an expert Japanese linguist specializing in accurate furigana transcription for song lyrics. Your primary goal is to add Hiragana readings in curly braces {} after EVERY Kanji character or compound Kanji sequence in the provided lyrics.
 
 **Core Task:** Convert Japanese lyrics to include inline furigana for all Kanji.
@@ -3856,7 +3876,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         }
       } else {
         line.Text = line.Text?.replace(
-          /((?:\([\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)[?.!,"']?){([^\}]+)}/g,
+          /((?:\([0-9\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)[?.!,"']?){([^\}]+)}/g,
           '<ruby class="romaja">$1<rt>$2</rt></ruby>'
         );
       }
@@ -3998,7 +4018,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         }
       } else {
         line.Text = line.Text?.replace(
-          /((?:\([\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)[?.!,"']?){([^\}]+)}/g,
+          /((?:\([0-9\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)[?.!,"']?){([^\}]+)}/g,
           '<ruby class="romaja">$1<rt>$2</rt></ruby>'
         );
       }
@@ -11124,12 +11144,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     name: "Cache_Lyrics"
   });
   async function fetchLyrics(uri) {
-    if (document.querySelector("#SpicyLyricsPage .LyricsContainer .LyricsContent")?.classList.contains("offline")) {
-      document.querySelector("#SpicyLyricsPage .LyricsContainer .LyricsContent").classList.remove("offline");
-    }
-    document.querySelector("#SpicyLyricsPage .ContentBox .LyricsContainer")?.classList.remove("Hidden");
-    if (!Fullscreen_default.IsOpen)
-      PageView_default.AppendViewControls(true);
+    resetLyricsUI();
     const currFetching = storage_default.get("currentlyFetching");
     if (currFetching == "true")
       return;
@@ -11137,57 +11152,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     document.querySelector("#SpicyLyricsPage .ContentBox")?.classList.remove("LyricsHidden");
     ClearLyricsPageContainer();
     const trackId = uri.split(":")[2];
-    const savedLyricsData = storage_default.get("currentLyricsData")?.toString();
-    if (savedLyricsData) {
-      try {
-        if (savedLyricsData.includes("NO_LYRICS")) {
-          const split = savedLyricsData.split(":");
-          const id = split[1];
-          if (id === trackId) {
-            return await noLyricsMessage(false, true);
-          }
-        } else {
-          const lyricsData = JSON.parse(savedLyricsData);
-          if (lyricsData?.id === trackId) {
-            storage_default.set("currentlyFetching", "false");
-            HideLoaderContainer();
-            ClearLyricsPageContainer();
-            Defaults_default.CurrentLyricsType = lyricsData.Type;
-            return lyricsData;
-          }
-        }
-      } catch (error) {
-        console.error("Error parsing saved lyrics data:", error);
-        storage_default.set("currentlyFetching", "false");
-        HideLoaderContainer();
-        ClearLyricsPageContainer();
-      }
-    }
-    if (lyricsCache) {
-      try {
-        const lyricsFromCache = await lyricsCache.get(trackId);
-        if (lyricsFromCache) {
-          if (lyricsFromCache?.expiresAt < new Date().getTime()) {
-            await lyricsCache.remove(trackId);
-          } else {
-            if (lyricsFromCache?.status === "NO_LYRICS") {
-              return await noLyricsMessage(false, true);
-            }
-            storage_default.set("currentLyricsData", JSON.stringify(lyricsFromCache));
-            storage_default.set("currentlyFetching", "false");
-            HideLoaderContainer();
-            ClearLyricsPageContainer();
-            Defaults_default.CurrentLyricsType = lyricsFromCache.Type;
-            return { ...lyricsFromCache, fromCache: true };
-          }
-        }
-      } catch (error) {
-        ClearLyricsPageContainer();
-        console.log("Error parsing saved lyrics data:", error);
-        return await noLyricsMessage(false, true);
-      }
-    }
+    const localLyrics = await getLyricsFromLocalStorage(trackId);
+    if (localLyrics)
+      return localLyrics;
+    const cachedLyrics = await getLyricsFromCache(trackId);
+    if (cachedLyrics)
+      return cachedLyrics;
     ShowLoaderContainer();
+    return await fetchLyricsFromAPI(trackId);
+  }
+  async function fetchLyricsFromAPI(trackId) {
     try {
       Spicetify.showNotification("Fetching lyrics..", false, 1e3);
       const SpotifyAccessToken = await Platform_default.GetSpotifyAccessToken();
@@ -11260,35 +11234,22 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   }
   async function generateFurigana(lyricsJson) {
-    if (!await checkGeminiAPIKey(lyricsJson)) {
-      return lyricsJson;
-    }
-    lyricsJson = await processLyricsWithGemini(
-      lyricsJson,
-      Defaults_default.systemInstruction,
-      Defaults_default.furiganaPrompt
-    );
-    return lyricsJson;
+    return await generateLyricsWithPrompt(lyricsJson, Defaults_default.furiganaPrompt);
   }
   async function generateRomaja(lyricsJson) {
-    if (!await checkGeminiAPIKey(lyricsJson)) {
-      return lyricsJson;
-    }
-    lyricsJson = await processLyricsWithGemini(
-      lyricsJson,
-      Defaults_default.systemInstruction,
-      Defaults_default.romajaPrompt
-    );
-    return lyricsJson;
+    return await generateLyricsWithPrompt(lyricsJson, Defaults_default.romajaPrompt);
   }
   async function generateRomaji(lyricsJson) {
+    return await generateLyricsWithPrompt(lyricsJson, Defaults_default.romajiPrompt);
+  }
+  async function generateLyricsWithPrompt(lyricsJson, prompt) {
     if (!await checkGeminiAPIKey(lyricsJson)) {
       return lyricsJson;
     }
     lyricsJson = await processLyricsWithGemini(
       lyricsJson,
       Defaults_default.systemInstruction,
-      Defaults_default.romajiPrompt
+      prompt
     );
     return lyricsJson;
   }
@@ -11309,7 +11270,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       const GEMINI_API_KEY = storage_default.get("GEMINI_API_KEY")?.toString();
       const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
       const generationConfig = {
-        temperature: 0.2,
+        temperature: 0.258,
         topP: 0.95,
         topK: 40,
         maxOutputTokens: 8192,
@@ -11369,7 +11330,7 @@ ${JSON.stringify(
     const removeEmptyLinesAndCharacters = (items) => {
       items = items.filter((item) => item.Text.trim() !== "");
       items = items.map((item) => {
-        item.Text = item.Text.replace(/[「」]/g, "");
+        item.Text = item.Text.replace(/[「」",.!]/g, "");
         item.Text = item.Text.normalize("NFKC");
         return item;
       });
@@ -11388,6 +11349,72 @@ ${JSON.stringify(
       lyricsJson.Lines = removeEmptyLinesAndCharacters(lyricsJson.Lines);
       return lyricsJson.Lines.map((item) => item.Text);
     }
+  }
+  async function getLyricsFromCache(trackId) {
+    if (!lyricsCache)
+      return null;
+    try {
+      const lyricsFromCache = await lyricsCache.get(trackId);
+      if (!lyricsFromCache)
+        return null;
+      if (lyricsFromCache.expiresAt < new Date().getTime()) {
+        await lyricsCache.remove(trackId);
+        return null;
+      }
+      if (lyricsFromCache.status === "NO_LYRICS") {
+        return await noLyricsMessage(false, true);
+      }
+      storage_default.set("currentLyricsData", JSON.stringify(lyricsFromCache));
+      storage_default.set("currentlyFetching", "false");
+      HideLoaderContainer();
+      ClearLyricsPageContainer();
+      Defaults_default.CurrentLyricsType = lyricsFromCache.Type;
+      return { ...lyricsFromCache, fromCache: true };
+    } catch (error) {
+      ClearLyricsPageContainer();
+      console.log("Error parsing saved lyrics data:", error);
+      return await noLyricsMessage(false, true);
+    }
+  }
+  async function getLyricsFromLocalStorage(trackId) {
+    const savedLyricsData = storage_default.get("currentLyricsData")?.toString();
+    if (!savedLyricsData)
+      return null;
+    try {
+      if (savedLyricsData.includes("NO_LYRICS")) {
+        const split = savedLyricsData.split(":");
+        const id = split[1];
+        if (id === trackId) {
+          return await noLyricsMessage(false, true);
+        }
+      } else {
+        const lyricsData = JSON.parse(savedLyricsData);
+        if (lyricsData?.id === trackId) {
+          storage_default.set("currentlyFetching", "false");
+          HideLoaderContainer();
+          ClearLyricsPageContainer();
+          Defaults_default.CurrentLyricsType = lyricsData.Type;
+          return lyricsData;
+        }
+      }
+    } catch (error) {
+      console.error("Error parsing saved lyrics data:", error);
+      storage_default.set("currentlyFetching", "false");
+      HideLoaderContainer();
+      ClearLyricsPageContainer();
+    }
+    return null;
+  }
+  function resetLyricsUI() {
+    const lyricsContent = document.querySelector(
+      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
+    );
+    if (lyricsContent?.classList.contains("offline")) {
+      lyricsContent.classList.remove("offline");
+    }
+    document.querySelector("#SpicyLyricsPage .ContentBox .LyricsContainer")?.classList.remove("Hidden");
+    if (!Fullscreen_default.IsOpen)
+      PageView_default.AppendViewControls(true);
   }
   function convertLyrics(data) {
     console.log("DEBUG", "Converting Syllable to Line type");
@@ -12112,7 +12139,7 @@ ${JSON.stringify(
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-21592-1K9vI4hZzpu2/19605d130227/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-17232-nA92Zv476dZU/196070005967/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -12138,7 +12165,7 @@ ${JSON.stringify(
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21592-1K9vI4hZzpu2/19605d12f600/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17232-nA92Zv476dZU/1960700053a0/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -12277,7 +12304,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21592-1K9vI4hZzpu2/19605d12f911/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17232-nA92Zv476dZU/196070005681/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -12485,7 +12512,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21592-1K9vI4hZzpu2/19605d12f992/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17232-nA92Zv476dZU/1960700056f2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -12959,7 +12986,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21592-1K9vI4hZzpu2/19605d12fa43/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17232-nA92Zv476dZU/1960700057a3/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -13067,7 +13094,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21592-1K9vI4hZzpu2/19605d12fa94/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17232-nA92Zv476dZU/1960700057f4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -13248,7 +13275,7 @@ ruby > rt {
   font-weight: 700;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21592-1K9vI4hZzpu2/19605d12faf5/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17232-nA92Zv476dZU/196070005845/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -13533,7 +13560,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21592-1K9vI4hZzpu2/19605d12fb56/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17232-nA92Zv476dZU/1960700058a6/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
