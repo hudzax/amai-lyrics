@@ -155,8 +155,19 @@ export function ApplyLineLyrics(data) {
       );
     }
 
-    lineElem.innerHTML = line.Text;
+    const mainTextContainer = document.createElement('span');
+    mainTextContainer.classList.add('main-lyrics-text');
+    mainTextContainer.innerHTML = line.Text;
+    lineElem.appendChild(mainTextContainer);
     lineElem.classList.add('line');
+
+    // Add translation if available
+    if (line.Translation && line.Translation.trim() !== '') {
+      const translationElem = document.createElement('div');
+      translationElem.classList.add('translation');
+      translationElem.textContent = line.Translation;
+      lineElem.appendChild(translationElem);
+    }
 
     if (isRtl(line.Text) && !lineElem.classList.contains('rtl')) {
       lineElem.classList.add('rtl');

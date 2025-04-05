@@ -79,34 +79,71 @@ async function fetchLyricsFromAPI(trackId: string) {
     if (lyricsJson === null) return await noLyricsMessage(false, false);
     if (lyricsJson === '') return await noLyricsMessage(false, true);
 
+    // Prepare lyrics for Gemini ONCE
+    const { lyricsJson: preparedLyricsJson, lyricsOnly } =
+      await prepareLyricsForGemini(lyricsJson);
+
     const hasKanji =
-      lyricsJson.Content?.some((item) =>
+      preparedLyricsJson.Content?.some((item) =>
         item.Lead?.Syllables?.some((syl) => /[\u4E00-\u9FFF]/.test(syl.Text)),
       ) ||
-      lyricsJson.Content?.some((item) => /[\u4E00-\u9FFF]/.test(item.Text)) ||
-      lyricsJson.Lines?.some((item) => /[\u4E00-\u9FFF]/.test(item.Text)) ||
+      preparedLyricsJson.Content?.some((item) =>
+        /[\u4E00-\u9FFF]/.test(item.Text),
+      ) ||
+      preparedLyricsJson.Lines?.some((item) =>
+        /[\u4E00-\u9FFF]/.test(item.Text),
+      ) ||
       false;
 
     const hasKorean =
-      lyricsJson.Content?.some((item) =>
+      preparedLyricsJson.Content?.some((item) =>
         item.Lead?.Syllables?.some((syl) => /[\uAC00-\uD7AF]/.test(syl.Text)),
       ) ||
-      lyricsJson.Content?.some((item) => /[\uAC00-\uD7AF]/.test(item.Text)) ||
-      lyricsJson.Lines?.some((item) => /[\uAC00-\uD7AF]/.test(item.Text)) ||
+      preparedLyricsJson.Content?.some((item) =>
+        /[\uAC00-\uD7AF]/.test(item.Text),
+      ) ||
+      preparedLyricsJson.Lines?.some((item) =>
+        /[\uAC00-\uD7AF]/.test(item.Text),
+      ) ||
       false;
 
-    if (hasKanji) {
-      if (storage.get('enable_romaji') === 'true') {
-        lyricsJson = await generateRomaji(lyricsJson);
-      } else {
-        lyricsJson = await generateFurigana(lyricsJson);
-      }
-    } else if (hasKorean) {
-      lyricsJson = await generateRomaja(lyricsJson);
+    // Clone prepared lyrics for phonetic processing to avoid mutation conflicts
+    const phoneticLyricsJson = JSON.parse(JSON.stringify(preparedLyricsJson));
+
+    // Prepare Gemini API calls with prepared lyrics
+    const phoneticPromise = getPhoneticLyrics(
+      phoneticLyricsJson,
+      hasKanji,
+      hasKorean,
+      lyricsOnly,
+    );
+    const translationPromise = fetchTranslationsWithGemini(
+      preparedLyricsJson,
+      lyricsOnly,
+    );
+
+    // Run both in parallel
+    const [processedLyricsJson, translations] = await Promise.all([
+      phoneticPromise,
+      translationPromise,
+    ]);
+
+    // Attach translations to phonetic-processed lyrics
+    if (processedLyricsJson.Type === 'Line' && processedLyricsJson.Content) {
+      processedLyricsJson.Content.forEach((line, idx) => {
+        line.Translation = translations[idx] || '';
+      });
+    } else if (
+      processedLyricsJson.Type === 'Static' &&
+      processedLyricsJson.Lines
+    ) {
+      processedLyricsJson.Lines.forEach((line, idx) => {
+        line.Translation = translations[idx] || '';
+      });
     }
 
-    console.log('DEBUG result', lyricsJson);
-    storage.set('currentLyricsData', JSON.stringify(lyricsJson));
+    console.log('DEBUG result', processedLyricsJson);
+    storage.set('currentLyricsData', JSON.stringify(processedLyricsJson));
     storage.set('currentlyFetching', 'false');
 
     HideLoaderContainer();
@@ -116,7 +153,7 @@ async function fetchLyricsFromAPI(trackId: string) {
       const expiresAt = new Date().getTime() + 1000 * 60 * 60 * 24 * 7;
       try {
         await lyricsCache.set(trackId, {
-          ...lyricsJson,
+          ...processedLyricsJson,
           expiresAt,
         });
       } catch (error) {
@@ -124,9 +161,9 @@ async function fetchLyricsFromAPI(trackId: string) {
       }
     }
 
-    Defaults.CurrentLyricsType = lyricsJson.Type;
+    Defaults.CurrentLyricsType = processedLyricsJson.Type;
     Spicetify.showNotification('Completed', false, 1000);
-    return { ...lyricsJson, fromCache: false };
+    return { ...processedLyricsJson, fromCache: false };
   } catch (error) {
     console.error('Error fetching lyrics:', error);
     storage.set('currentlyFetching', 'false');
@@ -135,30 +172,144 @@ async function fetchLyricsFromAPI(trackId: string) {
   }
 }
 
-async function generateFurigana(lyricsJson) {
-  return await generateLyricsWithPrompt(lyricsJson, Defaults.furiganaPrompt);
+async function getPhoneticLyrics(
+  preparedLyricsJson,
+  hasKanji,
+  hasKorean,
+  lyricsOnly,
+) {
+  if (hasKanji) {
+    if (storage.get('enable_romaji') === 'true') {
+      return await generateRomaji(preparedLyricsJson, lyricsOnly);
+    } else {
+      return await generateFurigana(preparedLyricsJson, lyricsOnly);
+    }
+  } else if (hasKorean) {
+    return await generateRomaja(preparedLyricsJson, lyricsOnly);
+  } else {
+    return preparedLyricsJson;
+  }
 }
 
-async function generateRomaja(lyricsJson) {
-  return await generateLyricsWithPrompt(lyricsJson, Defaults.romajaPrompt);
-}
-
-async function generateRomaji(lyricsJson) {
-  return await generateLyricsWithPrompt(lyricsJson, Defaults.romajiPrompt);
-}
-
-async function generateLyricsWithPrompt(lyricsJson, prompt) {
-  if (!(await checkGeminiAPIKey(lyricsJson))) {
-    return lyricsJson;
+async function prepareLyricsForGemini(lyricsJson) {
+  // Convert Syllable to Line if needed
+  if (lyricsJson.Type === 'Syllable') {
+    lyricsJson.Type = 'Line';
+    lyricsJson.Content = await convertLyrics(lyricsJson.Content);
   }
 
-  lyricsJson = await processLyricsWithGemini(
-    lyricsJson,
+  // Extract lyrics from Line and Static types
+  const lyricsOnly = await extractLyrics(lyricsJson);
+
+  if (lyricsOnly.length > 0) {
+    lyricsJson.Raw = lyricsOnly;
+  }
+
+  return { lyricsJson, lyricsOnly };
+}
+
+async function fetchTranslationsWithGemini(preparedLyricsJson, lyricsOnly) {
+  try {
+    console.log('[Amai Lyrics] Translation fetch started');
+
+    const GEMINI_API_KEY = storage.get('GEMINI_API_KEY')?.toString();
+    if (!GEMINI_API_KEY || GEMINI_API_KEY === '') {
+      console.error('Amai Lyrics: Gemini API Key missing for translation');
+      return [];
+    }
+
+    console.log('[Amai Lyrics] Prepared lyrics for translation:', lyricsOnly);
+
+    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+    const generationConfig = {
+      temperature: 0.2,
+      topP: 0.95,
+      topK: 40,
+      maxOutputTokens: 8192,
+      responseModalities: [],
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: 'object',
+        properties: {
+          lines: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+        },
+      } as any,
+      systemInstruction: Defaults.systemInstruction,
+    };
+
+    const prompt = Defaults.translationPrompt;
+
+    console.log('[Amai Lyrics] Sending prompt to Gemini:', prompt);
+    console.log('[Amai Lyrics] Lyrics sent for translation:', lyricsOnly);
+
+    const response = await ai.models.generateContent({
+      config: generationConfig,
+      model: 'gemini-2.0-flash-lite',
+      contents: `${prompt}\n${JSON.stringify(lyricsOnly)}`,
+    });
+
+    console.log(
+      '[Amai Lyrics] Raw Gemini translation response:',
+      response.text,
+    );
+
+    const translations = JSON.parse(response.text.replace(/\\n/g, ''));
+
+    console.log('[Amai Lyrics] Final translations:', translations.lines);
+
+    return translations.lines || lyricsOnly.map(() => '');
+  } catch (error) {
+    console.error('Amai Lyrics: Translation fetch error', error);
+    return [];
+  }
+}
+
+async function generateFurigana(preparedLyricsJson, lyricsOnly) {
+  return await generateLyricsWithPrompt(
+    preparedLyricsJson,
+    lyricsOnly,
+    Defaults.furiganaPrompt,
+  );
+}
+
+async function generateRomaja(preparedLyricsJson, lyricsOnly) {
+  return await generateLyricsWithPrompt(
+    preparedLyricsJson,
+    lyricsOnly,
+    Defaults.romajaPrompt,
+  );
+}
+
+async function generateRomaji(preparedLyricsJson, lyricsOnly) {
+  return await generateLyricsWithPrompt(
+    preparedLyricsJson,
+    lyricsOnly,
+    Defaults.romajiPrompt,
+  );
+}
+
+async function generateLyricsWithPrompt(
+  preparedLyricsJson,
+  lyricsOnly,
+  prompt,
+) {
+  if (!(await checkGeminiAPIKey(preparedLyricsJson))) {
+    return preparedLyricsJson;
+  }
+
+  preparedLyricsJson = await processLyricsWithGemini(
+    preparedLyricsJson,
+    lyricsOnly,
     Defaults.systemInstruction,
     prompt,
   );
 
-  return lyricsJson;
+  return preparedLyricsJson;
 }
 
 async function checkGeminiAPIKey(lyricsJson: any): Promise<boolean> {
@@ -173,7 +324,8 @@ async function checkGeminiAPIKey(lyricsJson: any): Promise<boolean> {
 }
 
 async function processLyricsWithGemini(
-  lyricsJson: any,
+  preparedLyricsJson: any,
+  lyricsOnly: string[],
   systemInstruction: string,
   prompt: string,
 ) {
@@ -206,19 +358,7 @@ async function processLyricsWithGemini(
 
     console.log('Amai Lyrics:', 'Fetch Begin');
 
-    // Convert Syllable to Line
-    if (lyricsJson.Type === 'Syllable') {
-      lyricsJson.Type = 'Line';
-      lyricsJson.Content = await convertLyrics(lyricsJson.Content);
-    }
-
-    // Extract lyrics from Line and Static types
-    let lyricsOnly = await extractLyrics(lyricsJson);
-
-    // if lyrics not empty
     if (lyricsOnly.length > 0) {
-      lyricsJson.Raw = lyricsOnly;
-
       // Send lyrics to Gemini
       const response = await ai.models.generateContent({
         config: generationConfig,
@@ -227,50 +367,45 @@ async function processLyricsWithGemini(
           lyricsOnly,
         )}`,
       });
-      // console.log(response.text);
 
-      // Remove newline characters from the response
       let lyrics = JSON.parse(response.text.replace(/\\n/g, ''));
 
-      if (lyricsJson.Type === 'Line') {
-        lyricsJson.Content = lyricsJson.Content.map(
+      if (preparedLyricsJson.Type === 'Line') {
+        preparedLyricsJson.Content = preparedLyricsJson.Content.map(
           (item: any, index: number) => ({
             ...item,
             Text: lyrics.lines[index],
           }),
         );
-      } else if (lyricsJson.Type === 'Static') {
-        lyricsJson.Lines = lyricsJson.Lines.map((item: any, index: number) => ({
-          ...item,
-          Text: lyrics.lines[index],
-        }));
+      } else if (preparedLyricsJson.Type === 'Static') {
+        preparedLyricsJson.Lines = preparedLyricsJson.Lines.map(
+          (item: any, index: number) => ({
+            ...item,
+            Text: lyrics.lines[index],
+          }),
+        );
       }
     }
   } catch (error) {
     console.error('Amai Lyrics:', error);
-    // Add info message to lyrics
-    lyricsJson.Info =
+    preparedLyricsJson.Info =
       'Amai Lyrics: Fetch Error. Please double check your API key. Click here to open settings page.';
   }
-  return lyricsJson;
+  return preparedLyricsJson;
 }
 
 async function extractLyrics(lyricsJson) {
   const removeEmptyLinesAndCharacters = (items) => {
-    // Remove empty lines
-    items = items.filter((item) => item.Text.trim() !== '');
-    // Normalize and remove any issues from lyrics lines
+    items = items.filter((item) => item.Text?.trim() !== '');
     items = items.map((item) => {
-      // Remove unwanted characters and normalize
-      item.Text = item.Text.replace(/[「」",.!]/g, '');
-      item.Text = item.Text.normalize('NFKC');
+      item.Text = item.Text?.replace(/[「」",.!]/g, '');
+      item.Text = item.Text?.normalize('NFKC');
       return item;
     });
     return items;
   };
 
   if (lyricsJson.Type === 'Line') {
-    // Adjust start time to show line a little bit earlier
     const offset = 0.55;
     lyricsJson.Content = lyricsJson.Content.map((item) => ({
       ...item,
@@ -361,22 +496,14 @@ function resetLyricsUI() {
     ?.classList.remove('Hidden');
 
   if (!Fullscreen.IsOpen) PageView.AppendViewControls(true);
-
-  // const IsSomethingElseThanTrack = Spicetify.Player.data.item.type !== 'track';
-  // if (IsSomethingElseThanTrack) {
-  //   return NotTrackMessage();
-  // }
-
-  //ShowLoaderContainer();
 }
 
 function convertLyrics(data) {
   console.log('DEBUG', 'Converting Syllable to Line type');
   return data.map((item) => {
-    // Join words: add a space if switching from non-Japanese to Japanese syllables
     let leadText = '';
-    let prevIsJapanese: boolean | null = null;
-    item.Lead.Syllables.forEach((syl: { Text: string }) => {
+    let prevIsJapanese = null;
+    item.Lead.Syllables.forEach((syl) => {
       const currentIsJapanese =
         /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/.test(syl.Text);
       if (currentIsJapanese) {
@@ -385,7 +512,6 @@ function convertLyrics(data) {
         }
         leadText += syl.Text;
       } else {
-        // For non-Japanese, add a space before appending if leadText isn't empty
         leadText += (leadText ? ' ' : '') + syl.Text;
       }
       prevIsJapanese = currentIsJapanese;
@@ -394,16 +520,14 @@ function convertLyrics(data) {
     let endTime = item.Lead.EndTime;
     let fullText = leadText;
 
-    // If there is a Background array, process each background part:
     if (item.Background && Array.isArray(item.Background)) {
       const bgTexts = item.Background.map((bg) => {
-        // Update start and end times if needed:
         startTime = Math.min(startTime, bg.StartTime);
         endTime = Math.max(endTime, bg.EndTime);
 
         let bgText = '';
-        let prevIsJapanese: boolean | null = null;
-        bg.Syllables.forEach((syl: { Text: string }) => {
+        let prevIsJapanese = null;
+        bg.Syllables.forEach((syl) => {
           const currentIsJapanese =
             /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/.test(
               syl.Text,
@@ -420,11 +544,9 @@ function convertLyrics(data) {
         });
         return bgText;
       });
-      // Append background texts joined like the lead text
       fullText += ' (' + bgTexts.join(' ') + ')';
     }
 
-    // console.log('DEBUG', fullText);
     return {
       Type: item.Type,
       OppositeAligned: item.OppositeAligned,

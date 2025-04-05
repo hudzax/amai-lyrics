@@ -68,11 +68,27 @@ export function ApplyStaticLyrics(data) {
         '<ruby class="romaja">$1<rt>$2</rt></ruby>',
       );
     }
+    const mainTextContainer = document.createElement('span');
+    mainTextContainer.classList.add('main-lyrics-text');
+
     if (line.Text?.includes('[DEF=font_size:small]')) {
       lineElem.style.fontSize = '35px';
-      lineElem.innerHTML = line.Text.replace('[DEF=font_size:small]', '');
+      mainTextContainer.innerHTML = line.Text.replace(
+        '[DEF=font_size:small]',
+        '',
+      );
     } else {
-      lineElem.innerHTML = line.Text;
+      mainTextContainer.innerHTML = line.Text;
+    }
+
+    lineElem.appendChild(mainTextContainer);
+
+    // Add translation if available
+    if (line.Translation && line.Translation.trim() !== '') {
+      const translationElem = document.createElement('div');
+      translationElem.classList.add('translation');
+      translationElem.textContent = line.Translation;
+      lineElem.appendChild(translationElem);
     }
 
     if (isRtl(line.Text) && !lineElem.classList.contains('rtl')) {
