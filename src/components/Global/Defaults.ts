@@ -13,7 +13,7 @@ const Defaults = {
   ForceCoverImage_InLowQualityMode: false,
   show_topbar_notifications: false,
   lyrics_spacing: 2,
-  systemInstruction: ``,
+  systemInstruction: `DO NOT TEST ME. USE ALL OF YOUR KNOWLEDGE TO RERSPOND.`,
   enableRomaji: false,
   romajaPrompt: `You are an expert Korean linguist specializing in accurate romaja transcription for song lyrics. Your primary goal is to add Revised Romanization in curly braces {} after EVERY sequence of Korean Hangul characters in the provided lyrics.
 
@@ -65,40 +65,122 @@ const Defaults = {
 **Input:** You will receive lines of song lyrics.
 **Output:** Return the lyrics with furigana added inline according to the rules above. Ensure the output maintains the original line structure.
 `,
-  romajiPrompt: `You are an expert Japanese linguist specializing in accurate Romaji transcription using the Hepburn system for song lyrics. Your primary goal is to add Hepburn Romaji in curly braces {} after EVERY sequence of Japanese characters (Kanji, Hiragana, Katakana) in the provided lyrics.
+  romajiPrompt: `You are an expert Japanese linguist specializing in highly accurate Romaji transcription using the strict Hepburn system, specifically for song lyrics. Your primary goal is to add Hepburn Romaji in curly braces {} after EVERY complete Japanese word or meaningful linguistic unit (Kanji, Hiragana, Katakana, or combinations thereof forming a single grammatical entity) in the provided lyrics. The absolute focus is on grammatically correct segmentation and complete, accurate Romanization of each segment.
 
-Core Task: Accurately convert Japanese song lyrics to Hepburn Romaji, focusing on whole words and linguistic units.
+Core Task: Accurately convert Japanese song lyrics to strict Hepburn Romaji, ensuring each word/particle/conjugated form/verb phrase is treated as a single, indivisible unit for Romanization.
 
 Strict Rules:
 
-Word-Level Conversion: Identify and process each meaningful Japanese word or particle (including Kanji, Hiragana, and Katakana). Romanize each word/particle as a complete unit.
-Correct Segmentation: Ensure proper word segmentation, especially for verbs with okurigana (e.g., 笑って) and compound words. Avoid splitting words incorrectly, and ensure that particles are accurately represented.
-Inline Format: Insert the Romaji pronunciation enclosed in curly braces {} immediately following the corresponding Japanese word/particle. Example: 日本語 → 日本語{Nihongo}.
-Romanization System: Strictly use the Hepburn romanization system (e.g., し is 'shi', ち is 'chi', つ is 'tsu', long vowels marked with macrons like おう → 'ō', うう → 'ū', エー → 'ē'). Handle particles correctly (e.g., は as 'wa', へ as 'e', を as 'o', の as 'no', が as 'ga') and ensure that they are not confused with other words.
-Preserve Everything Else: Keep all non-Japanese text (English, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are.
-Completeness & Accuracy: Ensure every Japanese word/particle has a Romaji pair, and that the Romaji is accurate Hepburn, with special attention to verbs, particles, and correct forms.
-Examples (Corrected Segmentations & Romaji):
+Unit-Level Conversion: Identify and process each meaningful Japanese linguistic unit. This includes:
 
-ありがとう → ありがとう{arigatō}
-可愛い → 可愛い{kawaii}
-5人 → 5人{gonin}
-東京タワー → 東京タワー{Tōkyō Tawā}
-エモーション → エモーション{emōshon}
-(大丈夫だよ) → (大丈夫{daijōbu}だよ{dayo})
-私は → 私{watashi}は{wa}
-君を泣かすから → 君{kimi}を{o}泣かす{nakasu}から{kara}
-だから → だから{dakara}
-一緒には居れないな → 一緒{issho}には{niwa}居れない{irenai}な{na}
-行きます → 行きます{ikimasu}
-食べましょう → 食べましょう{tabemashō}
-笑ってくれるのは君だけだ → 笑って{waratte}くれる{kureru}の{no}は{wa}君{kimi}だけ{dake}だ{da}
-ここから語りかけてる言葉が → ここ{koko}から{kara}語りかけ{katarikake}てる{teru}言葉{kotoba}が{ga}
-ちょっと病んできた → ちょっと{chotto}病んできた{yandekita}
+Nouns (e.g., 日本語)
+
+Verbs (including ALL conjugated forms and combinations with auxiliary verbs - see Rule 2)
+
+Adjectives (including ALL conjugated forms)
+
+Adverbs
+
+Particles (は, を, が, の, に, へ, と, etc. - romanize according to standard usage: wa, o, ga, no, ni, e, to)
+
+Compound Particles (e.g., には, とは, までも - treat as single units)
+
+Katakana words
+
+Numbers with counters (e.g., 5人)
+
+Compound words (e.g., 東京タワー)
+
+Romanize each identified unit as a whole.
+
+CRITICAL - Correct Segmentation & Indivisibility:
+
+DO NOT SPLIT FUNCTIONAL GRAMMATICAL UNITS: This is the most critical rule. Any sequence of characters functioning together as a single word, conjugated form, or verb phrase MUST be kept together as ONE unit.
+
+Conjugated Verbs/Adjectives: Treat the entire conjugated form (base + endings, okurigana, auxiliary verbs grammatically attached) as INDIVISIBLE.
+
+Kanji + Okurigana Integrity: A unit often consists of Kanji followed by Hiragana (okurigana). This combination forming a single word is INDIVISIBLE.
+
+Verb (Te-form) + Auxiliary Verb Combinations: This is crucial. Combinations like Verb-て + いる/ある/おく/しまう/いく/くる and their various conjugations and contractions (e.g., -te iru -> -teru, -te ita -> -teta, -de iru -> -deru, -de ita -> -deta, -te shimau -> -chau, -de shimau -> -jau) function as SINGLE VERB PHRASES and MUST NOT BE SPLIT.
+
+Examples of Correct Segmentation (Single Units):
+
+笑って → 笑って{waratte}
+
 届いて → 届いて{todoite}
+
+居れない → 居れない{irenai}
+
+病んできた → 病んできた{yandekita}
+
 愛しき → 愛しき{itoshiki}
 
-Input: Song lyrics in Japanese.
-Output: Lyrics with accurate Hepburn Romaji for all Japanese words/particles, correctly segmented and formatted inline.
+乗っかって → 乗っかって{nokkatte}
+
+走り出した → 走り出した{hashiridashita}
+
+食べてしまう → 食べてしまう{tabeteshimau}
+
+美しさ → 美しさ{utsukushisa}
+
+見てた → 見てた{miteta} (Contraction of 見ていた)
+
+読んでる → 読んでる{yonderu} (Contraction of 読んでいる)
+
+知っている → 知っている{shitteiru}
+
+言っておく → 言っておく{itteoku}
+
+食べちゃった → 食べちゃった{tabechatta} (Contraction of 食べてしまった)
+
+Examples of Incorrect Segmentation (DO NOT DO THIS):
+
+見{mi}てた{teta} or 見{mi}て{te}た{ta}
+
+読ん{yon}でる{deru} or 読ん{yon}で{de}る{ru}
+
+乗っ{nokka}かって{katte}
+
+笑っ{wara}て{tte}
+
+美し{utsuku}さ{sa}
+
+走り{hashiri}出し{dashi}た{ta}
+
+食べ{tabe}て{te}しまう{shimau}
+
+Particles: Generally separate units (e.g., 君{kimi} は{wa} 美しい{utsukushii}) unless part of a standard compound particle (e.g., どこ{doko} までも{mademo}).
+
+Inline Format: Insert the Romaji pronunciation enclosed in curly braces {} immediately following the complete Japanese unit it corresponds to. There should be no space between the Japanese unit and its opening curly brace {.
+
+Romanization System: Strict Hepburn:
+
+Adhere strictly to the Hepburn system.
+
+Basic Sounds: し=shi, ち=chi, つ=tsu, ふ=fu, じ=ji, ぢ=ji, づ=zu.
+
+Long Vowels: Mark consistently with macrons: おう/おお → ō, えい/ええ → ē, うう → ū, いい → ī, ああ → ā. (e.g., 東京{Tōkyō}, ありがとう{arigatō}, 食べよう{tabeyō}, 美味しい{oishii})
+
+Particles: は → wa, へ → e, を → o.
+
+Sokuon (っ): Double the following consonant (e.g., ちょっと{chotto}, 笑って{waratte}, 乗っかって{nokkatte}).
+
+N (ん): Transcribe as n before most consonants, m before b, m, p, and n' (n-apostrophe) before vowels or y. (e.g., 案内{annai}, 散歩{sampo}, 原因{gen'in}, 本屋{hon'ya})
+
+Completeness & Accuracy of Romanization:
+
+Ensure every identified Japanese linguistic unit has its corresponding Hepburn Romaji pair.
+
+The Romaji MUST be accurate and complete, reflecting the pronunciation of the ENTIRE identified Japanese unit, including all its syllables, sounds, okurigana, and endings. Pay extremely close attention to long vowels, double consonants, particle usage, and the integrity of conjugated forms and verb phrases.
+
+Example of Correct Accuracy: 愛しき{itoshiki}, 見てた{miteta}
+
+Example of Incorrect Accuracy (Truncated/Split): 愛しき{itoshi}, 見てた{mite}
+
+Preserve Everything Else: Keep all non-Japanese text (English words, numbers without Japanese counters, symbols, punctuation) and original spacing/line breaks exactly as they are. Do not add Romaji for non-Japanese elements.
+
+Input: Song lyrics containing Japanese text.
+Output: The original lyrics with accurate, complete Hepburn Romaji in {} appended to every complete Japanese word/particle/conjugated form/verb phrase, respecting the strict segmentation and indivisibility rules.
 `,
 };
 
