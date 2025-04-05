@@ -157,7 +157,7 @@
 
   // src/components/Global/Defaults.ts
   var Defaults = {
-    Version: "1.0.27",
+    Version: "1.0.28",
     lyrics: {
       api: {
         url: "https://amai-worker-production.nandemo.workers.dev/lyrics"
@@ -169,10 +169,10 @@
     SkipSpicyFont: false,
     OldStyleFont: false,
     ForceCoverImage_InLowQualityMode: false,
-    show_topbar_notifications: false,
     lyrics_spacing: 2,
-    systemInstruction: ``,
     enableRomaji: false,
+    disableRomajiToggleNotification: false,
+    systemInstruction: `Follow these instructions exactly as given. Use all available knowledge and capabilities to provide the most accurate, complete, and relevant response possible. Ensure your response directly addresses the task and avoids unnecessary digressions. After generating your initial response, review it for accuracy and completeness before finalizing.`,
     romajaPrompt: `You are an expert Korean linguist specializing in accurate romaja transcription for song lyrics. Your primary goal is to add Revised Romanization in curly braces {} after EVERY sequence of Korean Hangul characters in the provided lyrics.
 
 **Core Task:** Convert Korean lyrics to include inline romaja.
@@ -223,41 +223,79 @@
 **Input:** You will receive lines of song lyrics.
 **Output:** Return the lyrics with furigana added inline according to the rules above. Ensure the output maintains the original line structure.
 `,
-    romajiPrompt: `You are an expert Japanese linguist specializing in accurate Romaji transcription using the Hepburn system for song lyrics. Your primary goal is to add Hepburn Romaji in curly braces {} after EVERY sequence of Japanese characters (Kanji, Hiragana, Katakana) in the provided lyrics.
+    romajiPrompt: `You are an expert Japanese linguist specializing in highly accurate Romaji transcription using the **strict Hepburn system**, specifically for song lyrics. Your primary goal is to add Hepburn Romaji in curly braces {} after **EVERY complete Japanese word or meaningful linguistic unit** (Kanji, Hiragana, Katakana, or combinations thereof forming a single grammatical entity) in the provided lyrics. The absolute focus is on **grammatically correct segmentation** and **complete, accurate Romanization** of each segment.
 
-Core Task: Accurately convert Japanese song lyrics to Hepburn Romaji, focusing on whole words and linguistic units.
+**Core Task:** Accurately convert Japanese song lyrics to strict Hepburn Romaji, ensuring each word/particle/conjugated form/verb phrase is treated as a single, indivisible unit for Romanization, and that the text within the braces is **ALWAYS the Hepburn Romaji conversion**, never the original script.
 
-Strict Rules:
+**Strict Rules:**
 
-Word-Level Conversion: Identify and process each meaningful Japanese word or particle (including Kanji, Hiragana, and Katakana). Romanize each word/particle as a complete unit.
-Correct Segmentation: Ensure proper word segmentation, especially for verbs with okurigana (e.g., \u7B11\u3063\u3066) and compound words. Avoid splitting words incorrectly, and ensure that particles are accurately represented.
-Inline Format: Insert the Romaji pronunciation enclosed in curly braces {} immediately following the corresponding Japanese word/particle. Example: \u65E5\u672C\u8A9E \u2192 \u65E5\u672C\u8A9E{Nihongo}.
-Romanization System: Strictly use the Hepburn romanization system (e.g., \u3057 is 'shi', \u3061 is 'chi', \u3064 is 'tsu', long vowels marked with macrons like \u304A\u3046 \u2192 '\u014D', \u3046\u3046 \u2192 '\u016B', \u30A8\u30FC \u2192 '\u0113'). Handle particles correctly (e.g., \u306F as 'wa', \u3078 as 'e', \u3092 as 'o', \u306E as 'no', \u304C as 'ga') and ensure that they are not confused with other words.
-Preserve Everything Else: Keep all non-Japanese text (English, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are.
-Completeness & Accuracy: Ensure every Japanese word/particle has a Romaji pair, and that the Romaji is accurate Hepburn, with special attention to verbs, particles, and correct forms.
-Examples (Corrected Segmentations & Romaji):
+1.  **Unit-Level Conversion:** Identify and process each meaningful Japanese linguistic unit. This includes:
+    *   Nouns (e.g., \u65E5\u672C\u8A9E)
+    *   Verbs (including **ALL** conjugated forms and combinations with auxiliary verbs - see Rule 2)
+    *   Adjectives (including **ALL** conjugated forms)
+    *   Adverbs
+    *   Particles (\u306F, \u3092, \u304C, \u306E, \u306B, \u3078, \u3068, etc. - romanize according to standard usage: wa, o, ga, no, ni, e, to)
+    *   Compound Particles (e.g., \u306B\u306F, \u3068\u306F, \u307E\u3067\u3082 - treat as single units)
+    *   Katakana words
+    *   Numbers with counters (e.g., 5\u4EBA)
+    *   Compound words (e.g., \u6771\u4EAC\u30BF\u30EF\u30FC)
+    *   Romanize each identified unit **as a whole**.
 
-\u3042\u308A\u304C\u3068\u3046 \u2192 \u3042\u308A\u304C\u3068\u3046{arigat\u014D}
-\u53EF\u611B\u3044 \u2192 \u53EF\u611B\u3044{kawaii}
-5\u4EBA \u2192 5\u4EBA{gonin}
-\u6771\u4EAC\u30BF\u30EF\u30FC \u2192 \u6771\u4EAC\u30BF\u30EF\u30FC{T\u014Dky\u014D Taw\u0101}
-\u30A8\u30E2\u30FC\u30B7\u30E7\u30F3 \u2192 \u30A8\u30E2\u30FC\u30B7\u30E7\u30F3{em\u014Dshon}
-(\u5927\u4E08\u592B\u3060\u3088) \u2192 (\u5927\u4E08\u592B{daij\u014Dbu}\u3060\u3088{dayo})
-\u79C1\u306F \u2192 \u79C1{watashi}\u306F{wa}
-\u541B\u3092\u6CE3\u304B\u3059\u304B\u3089 \u2192 \u541B{kimi}\u3092{o}\u6CE3\u304B\u3059{nakasu}\u304B\u3089{kara}
-\u3060\u304B\u3089 \u2192 \u3060\u304B\u3089{dakara}
-\u4E00\u7DD2\u306B\u306F\u5C45\u308C\u306A\u3044\u306A \u2192 \u4E00\u7DD2{issho}\u306B\u306F{niwa}\u5C45\u308C\u306A\u3044{irenai}\u306A{na}
-\u884C\u304D\u307E\u3059 \u2192 \u884C\u304D\u307E\u3059{ikimasu}
-\u98DF\u3079\u307E\u3057\u3087\u3046 \u2192 \u98DF\u3079\u307E\u3057\u3087\u3046{tabemash\u014D}
-\u7B11\u3063\u3066\u304F\u308C\u308B\u306E\u306F\u541B\u3060\u3051\u3060 \u2192 \u7B11\u3063\u3066{waratte}\u304F\u308C\u308B{kureru}\u306E{no}\u306F{wa}\u541B{kimi}\u3060\u3051{dake}\u3060{da}
-\u3053\u3053\u304B\u3089\u8A9E\u308A\u304B\u3051\u3066\u308B\u8A00\u8449\u304C \u2192 \u3053\u3053{koko}\u304B\u3089{kara}\u8A9E\u308A\u304B\u3051{katarikake}\u3066\u308B{teru}\u8A00\u8449{kotoba}\u304C{ga}
-\u3061\u3087\u3063\u3068\u75C5\u3093\u3067\u304D\u305F \u2192 \u3061\u3087\u3063\u3068{chotto}\u75C5\u3093\u3067\u304D\u305F{yandekita}
-\u5C4A\u3044\u3066 \u2192 \u5C4A\u3044\u3066{todoite}
-\u611B\u3057\u304D \u2192 \u611B\u3057\u304D{itoshiki}
+2.  **CRITICAL - Correct Segmentation & Indivisibility:**
+    *   **DO NOT SPLIT FUNCTIONAL GRAMMATICAL UNITS:** This is the most critical rule. Any sequence of characters functioning together as a single word, conjugated form, or verb phrase **MUST** be kept together as ONE unit.
+    *   **Conjugated Verbs/Adjectives:** Treat the **entire** conjugated form (base + endings, okurigana, auxiliary verbs grammatically attached) as **INDIVISIBLE**.
+    *   **Kanji + Okurigana Integrity:** A unit often consists of Kanji followed by Hiragana (okurigana). This combination forming a single word is **INDIVISIBLE**.
+    *   **Verb (Te-form) + Auxiliary Verb Combinations:** Combinations like Verb-\u3066 + \u3044\u308B/\u3042\u308B/\u304A\u304F/\u3057\u307E\u3046/\u3044\u304F/\u304F\u308B and their various conjugations and **contractions** (e.g., -te iru -> -teru, -te ita -> -teta, -de iru -> -deru, -de ita -> -deta, -te shimau -> -chau, -de shimau -> -jau) function as **SINGLE VERB PHRASES** and **MUST NOT BE SPLIT**.
+    *   **CORRECT EXAMPLES:**
+        *   \u7B11\u3063\u3066{waratte}
+        *   \u5C4A\u3044\u3066{todoite}
+        *   \u5C45\u308C\u306A\u3044{irenai}
+        *   \u75C5\u3093\u3067\u304D\u305F{yandekita}
+        *   \u611B\u3057\u304D{itoshiki}
+        *   \u4E57\u3063\u304B\u3063\u3066{nokkatte}
+        *   \u8D70\u308A\u51FA\u3057\u305F{hashiridashita}
+        *   \u98DF\u3079\u3066\u3057\u307E\u3046{tabeteshimau}
+        *   \u7F8E\u3057\u3055{utsukushisa}
+        *   \u898B\u3066\u305F{miteta}
+        *   \u8AAD\u3093\u3067\u308B{yonderu}
+        *   \u77E5\u3063\u3066\u3044\u308B{shitteiru}
+        *   \u8A00\u3063\u3066\u304A\u304F{itteoku}
+        *   \u98DF\u3079\u3061\u3083\u3063\u305F{tabechatta}
+        *   \u62B1\u3048{kakae}
+        *   \u898B\u3066\u3082{mitemo}
+    *   **INCORRECT EXAMPLES (DO NOT DO THIS):**
+        *   \u898B{mi}\u3066\u305F{teta} or \u898B{mi}\u3066{te}\u305F{ta}
+        *   \u8AAD\u3093{yon}\u3067\u308B{deru} or \u8AAD\u3093{yon}\u3067{de}\u308B{ru}
+        *   \u4E57\u3063{nokka}\u304B\u3063\u3066{katte}
+        *   \u7B11\u3063{wara}\u3066{tte}
+        *   \u7F8E\u3057{utsuku}\u3055{sa}
+        *   \u8D70\u308A{hashiri}\u51FA\u3057{dashi}\u305F{ta}
+        *   \u98DF\u3079{tabe}\u3066{te}\u3057\u307E\u3046{shimau}
+        *   \u898B{mite}\u3066\u3082{temo}
+        *   \u62B1\u3048{\u62B1\u3048} **<-- CRITICAL: Do NOT repeat Japanese script inside braces.**
 
-Input: Song lyrics in Japanese.
-Output: Lyrics with accurate Hepburn Romaji for all Japanese words/particles, correctly segmented and formatted inline.
-`
+3.  **Inline Format & Content:**
+    *   Insert the **Hepburn Romaji pronunciation** enclosed in curly braces {} immediately following the **complete** Japanese unit it corresponds to.
+    *   There should be no space between the Japanese unit and its opening curly brace {.
+    *   **Crucially, the content inside the braces {} MUST BE THE HEPBURN ROMAJI RESULT, not the original Japanese script.** If the unit is \u62B1\u3048, the output MUST be \u62B1\u3048{kakae}, NOT \u62B1\u3048{\u62B1\u3048}.
+
+4.  **Romanization System: Strict Hepburn:**
+    *   Adhere strictly to the Hepburn system.
+    *   Basic Sounds: \u3057=shi, \u3061=chi, \u3064=tsu, \u3075=fu, \u3058=ji, \u3062=ji, \u3065=zu.
+    *   **Long Vowels:** Mark **consistently** with macrons: \u304A\u3046/\u304A\u304A \u2192 \u014D, \u3048\u3044/\u3048\u3048 \u2192 \u0113, \u3046\u3046 \u2192 \u016B, \u3044\u3044 \u2192 \u012B, \u3042\u3042 \u2192 \u0101. (e.g., \u6771\u4EAC{T\u014Dky\u014D}, \u3042\u308A\u304C\u3068\u3046{arigat\u014D}, \u98DF\u3079\u3088\u3046{tabey\u014D}, \u7F8E\u5473\u3057\u3044{oishii})
+    *   Particles: \u306F \u2192 wa, \u3078 \u2192 e, \u3092 \u2192 o.
+    *   Sokuon (\u3063): Double the following consonant (e.g., \u3061\u3087\u3063\u3068{chotto}, \u7B11\u3063\u3066{waratte}, \u4E57\u3063\u304B\u3063\u3066{nokkatte}).
+    *   N (\u3093): Transcribe as n before most consonants, m before b, m, p, and n' (n-apostrophe) before vowels or y. (e.g., \u6848\u5185{annai}, \u6563\u6B69{sampo}, \u539F\u56E0{gen'in}, \u672C\u5C4B{hon'ya})
+
+5.  **Completeness & Accuracy of Romanization:**
+    *   Ensure **every** identified Japanese linguistic unit has its corresponding Hepburn Romaji pair placed correctly after it.
+    *   The Romaji MUST be accurate and **complete**, reflecting the pronunciation of the **ENTIRE** identified Japanese unit.
+    *   **The text within the curly braces {} must be the Hepburn Romanization itself, NEVER a repetition of the original Japanese characters.** Pay extremely close attention to long vowels, double consonants, particle usage, and the integrity of conjugated forms and verb phrases.
+
+6.  **Preserve Everything Else:** Keep all non-Japanese text (English words, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are. Do not add Romaji for non-Japanese elements.
+
+**Input:** Song lyrics containing Japanese text.
+**Output:** The original lyrics with accurate, complete Hepburn Romaji in {} appended to every complete Japanese word/particle/conjugated form/verb phrase, respecting the strict segmentation and indivisibility rules, and ensuring **only Romaji appears within the braces**.`
   };
   var Defaults_default = Defaults;
 
@@ -3731,7 +3769,7 @@ Output: Lyrics with accurate Hepburn Romaji for all Japanese words/particles, co
     if (!data?.Info || !TopBarContainer)
       return;
     const infoElement = document.createElement("a");
-    infoElement.className = "FuriganaInfo";
+    infoElement.className = "amai-info";
     infoElement.textContent = data.Info;
     infoElement.role = "menuitem";
     infoElement.href = "/preferences";
@@ -3743,9 +3781,13 @@ Output: Lyrics with accurate Hepburn Romaji for all Japanese words/particles, co
       });
     });
     TopBarContainer.appendChild(infoElement);
+    const words = data.Info.split(/\s+/).length;
+    const wpm = 240;
+    const readingTimeSeconds = words / wpm * 60;
+    const duration = readingTimeSeconds * 1e3;
     setTimeout(() => {
       TopBarContainer.removeChild(infoElement);
-    }, 8e3);
+    }, duration);
   }
 
   // src/utils/Lyrics/isRtl.ts
@@ -3898,16 +3940,27 @@ Output: Lyrics with accurate Hepburn Romaji for all Japanese words/particles, co
     }
     data.Content.forEach((line, index, arr) => {
       const lineElem = document.createElement("div");
-      if (storage_default.get("enable_romaji") === "true") {
-        line.Text = line.Text?.replace(
-          /([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF]+[?.!,"']?)(?:{|\uFF5B)([^}\uFF5D]+)(?:}|\uFF5D)/g,
-          "<ruby>$1<rt>$2</rt></ruby>"
-        );
+      const JapaneseRegex = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/g;
+      if (JapaneseRegex.test(line.Text)) {
+        if (!data.Info && (!storage_default.get("disable_romaji_toggle_notification") || storage_default.get("disable_romaji_toggle_notification") === "false")) {
+          data.Info = "Toggle between Romaji or Furigana in settings. Disable this notification there as well.";
+          data.InfoDuration = 5e3;
+        }
+        if (storage_default.get("enable_romaji") === "true") {
+          line.Text = line.Text?.replace(
+            /(([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)|[(\uFF08]([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)[)\uFF09])(?:{|\uFF5B)([^}\uFF5D]+)(?:}|\uFF5D)/g,
+            (match, p1, p2, p3, p4) => {
+              const text = p2 || p3;
+              return `<ruby>${text}<rt>${p4}</rt></ruby>`;
+            }
+          );
+        } else {
+          line.Text = line.Text?.replace(
+            /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^\}]+)}/g,
+            "<ruby>$1<rt>$2</rt></ruby>"
+          );
+        }
       } else {
-        line.Text = line.Text?.replace(
-          /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^\}]+)}/g,
-          "<ruby>$1<rt>$2</rt></ruby>"
-        );
         line.Text = line.Text?.replace(
           /((?:\([\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)[?.!,"']?){([^\}]+)}/g,
           '<ruby class="romaja">$1<rt>$2</rt></ruby>'
@@ -4799,7 +4852,6 @@ Output: Lyrics with accurate Hepburn Romaji for all Japanese words/particles, co
       }
     }
   }
-  var showTopbarNotifications = storage_default.get("show_topbar_notifications") === "true";
   var PageView_default = PageView;
 
   // src/components/Utils/NowBar.ts
@@ -11278,7 +11330,8 @@ Output: Lyrics with accurate Hepburn Romaji for all Japanese words/particles, co
     const removeEmptyLinesAndCharacters = (items) => {
       items = items.filter((item) => item.Text.trim() !== "");
       items = items.map((item) => {
-        item.Text = item.Text.replace(/」/g, "");
+        item.Text = item.Text.replace(/[「」]/g, "");
+        item.Text = item.Text.normalize("NFKC");
         return item;
       });
       return items;
@@ -11657,19 +11710,6 @@ Output: Lyrics with accurate Hepburn Romaji for all Japanese words/particles, co
       "Amai - General",
       "spicy-lyrics-settings"
     );
-    settings.addToggle(
-      "enableRomaji",
-      "Enable Romaji for Japanese Lyrics",
-      Defaults_default.enableRomaji,
-      () => {
-        lyricsCache.destroy();
-        storage_default.set("currentLyricsData", null);
-        storage_default.set(
-          "enable_romaji",
-          settings.getFieldValue("enableRomaji")
-        );
-      }
-    );
     settings.addInput("gemini-api-key", "Gemini API Key", "", () => {
       storage_default.set(
         "GEMINI_API_KEY",
@@ -11688,6 +11728,30 @@ Output: Lyrics with accurate Hepburn Romaji for all Japanese words/particles, co
       "get API",
       () => {
         window.location.href = "https://aistudio.google.com/app/apikey/";
+      }
+    );
+    settings.addToggle(
+      "enableRomaji",
+      "Enable Romaji for Japanese Lyrics",
+      Defaults_default.enableRomaji,
+      () => {
+        lyricsCache.destroy();
+        storage_default.set("currentLyricsData", null);
+        storage_default.set(
+          "enable_romaji",
+          settings.getFieldValue("enableRomaji")
+        );
+      }
+    );
+    settings.addToggle(
+      "disableRomajiToggleNotification",
+      "Disable Romaji/Furigana Toggle Notification",
+      Defaults_default.disableRomajiToggleNotification,
+      () => {
+        storage_default.set(
+          "disable_romaji_toggle_notification",
+          settings.getFieldValue("disableRomajiToggleNotification")
+        );
       }
     );
     settings.pushSettings();
@@ -11729,9 +11793,6 @@ Output: Lyrics with accurate Hepburn Romaji for all Japanese words/particles, co
   // src/app.tsx
   async function main() {
     await Platform_default.OnSpotifyReady;
-    if (!storage_default.get("show_topbar_notifications")) {
-      storage_default.set("show_topbar_notifications", "false");
-    }
     if (!storage_default.get("lyrics_spacing")) {
       storage_default.set("lyrics_spacing", "Medium");
     }
@@ -12015,7 +12076,7 @@ Output: Lyrics with accurate Hepburn Romaji for all Japanese words/particles, co
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-17532-v0i1A6l3VfL4/19601a2117e7/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-24188-kJ8qfunFfpUA/19603c22ba37/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -12041,7 +12102,7 @@ Output: Lyrics with accurate Hepburn Romaji for all Japanese words/particles, co
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17532-v0i1A6l3VfL4/19601a210dc0/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24188-kJ8qfunFfpUA/19603c22b300/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -12180,7 +12241,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17532-v0i1A6l3VfL4/19601a2110a1/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24188-kJ8qfunFfpUA/19603c22b731/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -12388,7 +12449,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17532-v0i1A6l3VfL4/19601a211112/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24188-kJ8qfunFfpUA/19603c22b7a2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -12862,7 +12923,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17532-v0i1A6l3VfL4/19601a2111c3/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24188-kJ8qfunFfpUA/19603c22b853/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -12970,7 +13031,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17532-v0i1A6l3VfL4/19601a211214/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24188-kJ8qfunFfpUA/19603c22b8b4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -13026,7 +13087,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
 #SpicyLyricsPage .ContentBox .NowBar.Active:is(.RightSide) + .LyricsContainer .LyricsContent .simplebar-content-wrapper .simplebar-content {
   padding: 0 2cqw 0 5cqw !important;
 }
-header.main-topBar-container .FuriganaInfo {
+header.main-topBar-container .amai-info {
   position: fixed;
   top: 0;
   left: 0;
@@ -13146,7 +13207,7 @@ ruby > rt {
   border: 1px solid rgba(255, 255, 255, 0.55);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17532-v0i1A6l3VfL4/19601a211275/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24188-kJ8qfunFfpUA/19603c22b915/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -13431,7 +13492,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17532-v0i1A6l3VfL4/19601a2112d6/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24188-kJ8qfunFfpUA/19603c22b976/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
