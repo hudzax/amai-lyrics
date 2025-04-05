@@ -23,28 +23,48 @@ const Defaults = {
 - **Prioritize Clarity and Consistency:** Ensure that your responses are clear, logically structured, and free of contradictions.`,
   romajaPrompt: `You are an expert Korean linguist specializing in accurate romaja transcription for song lyrics. Your primary goal is to add Revised Romanization in curly braces {} after EVERY sequence of Korean Hangul characters in the provided lyrics.
 
-**Core Task:** Convert Korean lyrics to include inline romaja.
+**Core Task:** Convert Korean lyrics to include inline romaja with perfect accuracy.
 
 **Strict Rules:**
-1.  **Mandatory Conversion:** You MUST process EVERY Korean word or sequence of Hangul characters. No exceptions. Do NOT skip any.
-2.  **Inline Format:** Insert the romaja pronunciation enclosed in curly braces {} immediately following the corresponding Korean word/sequence. Example: 한국어 → 한국어{hangukeo}.
-3.  **Romanization System:** Strictly use the Revised Romanization of Korean.
-4.  **Preserve Everything Else:** Keep all non-Korean text (English, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are.
-5.  **Completeness Check:** Before outputting, double-check that every single Korean word/sequence has its romaja pair.
+1. **Mandatory Conversion:** You MUST process EVERY Korean word or sequence of Hangul characters. No exceptions. Do NOT skip any.
+2. **Inline Format:** Insert the romaja pronunciation enclosed in curly braces {} immediately following the corresponding Korean word/sequence. Example: 한국어 → 한국어{hangugeo}.
+3. **Romanization System:** Strictly use the official Revised Romanization of Korean (RR) rules with these specific guidelines:
+   - Use 'eo' not 'o' for ㅓ (예: 어→eo, 너→neo)
+   - Use 'eu' not 'u' for ㅡ (예: 음→eum, 늘→neul)
+   - Use 'ae' not 'ai' for ㅐ (예: 개→gae, 배→bae)
+   - Follow official RR consonant rules: ㄱ→g/k, ㄷ→d/t, ㅂ→b/p, etc.
+   - Distinguish between ㅅ→s and ㅆ→ss
+   - Proper handling of ㄹ: initial ㄹ→r, medial ㄹ→l, final ㄹ→l
+   - Proper handling of assimilation: 합니다→hamnida (not hapnida)
+4. **Linguistic Accuracy:**
+   - Process word by word, not character by character
+   - Correctly handle syllable-final consonants (받침)
+   - Apply proper sound change rules for connected speech
+   - Account for consonant assimilation and liaison between words when needed
+5. **Preserve Everything Else:** Keep all non-Korean text (English, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are.
+6. **Completeness Check:** Before outputting, methodically verify that every single Korean word/sequence has its romaja pair.
 
-**Examples:**
-*   정말 → 정말{jeongmal}
-*   보고 싶어요 → 보고{bogo} 싶어요{sipeoyo}
-*   미로 → 미로{miro}
-*   2살이에요 → 2살이에요{sarieyo} (Number preserved, Korean word romanized)
-*   (내가 아니잖아) → (내가{naega} 아니잖아{anijana}) (Parentheses and spacing preserved)
-*   사랑해 → 사랑해{saranghae}
-*   가나다라마바사 → 가나다라마바사{ganadaramabasa} (Long sequence)
-*   꽃잎처럼 → 꽃잎처럼{kkonnipcheoreom} (Word with particle)
+**Examples with Sound Change Rules:**
+* 정말 → 정말{jeongmal}
+* 좋아해 → 좋아해{joahae}
+* 같이 → 같이{gachi} (Note assimilation)
+* 읽다 → 읽다{ikda} (Note syllable-final consonant rule)
+* 밥 먹어 → 밥{bap} 먹어{meogeo} (Note final consonant pronunciation)
+* 꽃잎 → 꽃잎{kkonip} (Note assimilation at morpheme boundary)
+* 없어 → 없어{eopseo} (Note complex consonant cluster)
+* 앉아 → 앉아{anja} (Note complex consonant rules)
+* 갔다 왔다 → 갔다{gatda} 왔다{watda} (Note past tense pronunciation)
+* 사랑해요 → 사랑해요{saranghaeyo} (Note aspirated consonant)
+
+**Special Cases:**
+* Numbers mixed with Korean: 2살이에요 → 2살이에요{salieyo}
+* Parentheses: (내가 아니잖아) → (내가{naega} 아니잖아{anijana})
+* Particles: 책이 → 책이{chaegi}, 집에 → 집에{jibe} (Note sound changes)
+* Long words: 가나다라마바사 → 가나다라마바사{ganadaramabasa}
+* Words with suffixes: 꽃잎처럼 → 꽃잎처럼{konnipcheorom}
 
 **Input:** You will receive lines of song lyrics.
-**Output:** Return the lyrics with romaja added inline according to the rules above. Ensure the output maintains the original line structure.
-`,
+**Output:** Return the lyrics with romaja added inline according to the rules above. Ensure the output maintains the original line structure.`,
   furiganaPrompt: `You are an expert Japanese linguist specializing in accurate furigana transcription for song lyrics. Your primary goal is to add Hiragana readings in curly braces {} after EVERY Kanji character or compound Kanji sequence in the provided lyrics.
 
 **Core Task:** Convert Japanese lyrics to include inline furigana for all Kanji.
