@@ -179,16 +179,13 @@ export default async function fetchLyrics(uri: string) {
       // romaji is enabled
       if (storage.get('enable_romaji') === 'true') {
         lyricsJson = await generateRomaji(lyricsJson);
-        console.log('DEBUG result', lyricsJson);
       } else {
         lyricsJson = await generateFurigana(lyricsJson);
-        console.log('DEBUG result', lyricsJson);
       }
     } else if (hasKorean) {
       lyricsJson = await generateRomaja(lyricsJson);
-      console.log('DEBUG result', lyricsJson);
     }
-
+    console.log('DEBUG result', lyricsJson);
     // Store the new lyrics in localStorage
     storage.set('currentLyricsData', JSON.stringify(lyricsJson));
 
@@ -281,11 +278,13 @@ async function processLyricsWithGemini(
   prompt: string,
 ) {
   try {
+    console.log('SI:', systemInstruction);
+    console.log('Prompt:', prompt);
     console.log('Amai Lyrics: Gemini API Key present');
     const GEMINI_API_KEY = storage.get('GEMINI_API_KEY')?.toString();
     const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
     const generationConfig = {
-      temperature: 0.55,
+      temperature: 0.2,
       topP: 0.95,
       topK: 40,
       maxOutputTokens: 8192,
@@ -377,7 +376,6 @@ async function extractLyrics(lyricsJson) {
     }));
 
     lyricsJson.Content = removeEmptyLinesAndCharacters(lyricsJson.Content);
-
     return lyricsJson.Content.map((item) => item.Text);
   }
 
