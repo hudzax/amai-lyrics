@@ -161,8 +161,12 @@ export function ApplyLineLyrics(data) {
     lineElem.appendChild(mainTextContainer);
     lineElem.classList.add('line');
 
-    // Add translation if available
-    if (line.Translation && line.Translation.trim() !== '') {
+    // Add translation if available and different from original text
+    if (
+      line.Translation &&
+      line.Translation.trim() !== '' &&
+      line.Translation.trim() !== line.Text.trim()
+    ) {
       const translationElem = document.createElement('div');
       translationElem.classList.add('translation');
       translationElem.textContent = line.Translation;
