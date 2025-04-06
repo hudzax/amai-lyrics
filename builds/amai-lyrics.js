@@ -156,7 +156,7 @@
   };
 
   // package.json
-  var version = "1.0.36";
+  var version = "1.0.37";
 
   // src/components/Global/Defaults.ts
   var Defaults = {
@@ -12155,6 +12155,8 @@ ${JSON.stringify(
       }).Start();
       Spicetify.Player.addEventListener("songchange", onSongChange);
       Spicetify.Player.addEventListener("songchange", async (event) => {
+        if (!event?.data)
+          return;
         fetchLyrics(event?.data?.item?.uri).then(ApplyLyrics);
       });
       let songChangeLoopRan = 0;
@@ -12167,8 +12169,8 @@ ${JSON.stringify(
             if (songChangeLoopRan >= songChangeLoopMax) {
               return;
             }
-            onSongChange(event);
             songChangeLoopRan++;
+            onSongChange(event);
             return;
           }
         }
@@ -12312,7 +12314,7 @@ ${JSON.stringify(
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-13228-gqRtCMlpOpn9/1960809024a7/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-24776-rmY9FHI7Vm5y/19609a228b17/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -12338,7 +12340,7 @@ ${JSON.stringify(
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13228-gqRtCMlpOpn9/196080901740/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24776-rmY9FHI7Vm5y/19609a228220/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -12477,7 +12479,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13228-gqRtCMlpOpn9/196080901ae1/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24776-rmY9FHI7Vm5y/19609a228501/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -12685,7 +12687,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13228-gqRtCMlpOpn9/196080901b52/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24776-rmY9FHI7Vm5y/19609a228562/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -13159,7 +13161,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13228-gqRtCMlpOpn9/196080901c13/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24776-rmY9FHI7Vm5y/19609a228623/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -13267,7 +13269,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13228-gqRtCMlpOpn9/196080901c64/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24776-rmY9FHI7Vm5y/19609a228674/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -13463,7 +13465,7 @@ ruby > rt {
   width: 100%;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13228-gqRtCMlpOpn9/196080901cc5/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24776-rmY9FHI7Vm5y/19609a2286c5/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -13748,7 +13750,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13228-gqRtCMlpOpn9/196080901d26/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24776-rmY9FHI7Vm5y/19609a228726/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
