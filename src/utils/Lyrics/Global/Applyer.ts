@@ -7,7 +7,7 @@ import fetchLyrics from '../fetchLyrics';
 export default function ApplyLyrics(lyrics) {
   if (!document.querySelector('#SpicyLyricsPage')) return;
   setBlurringLastLine(null);
-  if (!lyrics) return;
+  if (!lyrics || !lyrics?.id) return;
   if (Spicetify.Player.data.item?.uri?.split(':')[2] !== lyrics?.id) {
     fetchLyrics(Spicetify.Player.data.item?.uri).then(ApplyLyrics);
     return;
