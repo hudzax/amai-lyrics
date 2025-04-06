@@ -28,6 +28,20 @@ It is currently blacklisted from the marketplace, so you'll have to do it the ol
 
 ### 🔧 Manual Installation
 
+> **Note:** If you haven't installed Spicetify, run the appropriate command for your OS:
+>
+> **Windows (PowerShell):**
+>
+> ```powershell
+> iwr -useb https://raw.githubusercontent.com/spicetify/cli/main/install.ps1 | iex
+> ```
+>
+> **Linux / macOS:**
+>
+> ```bash
+> curl -fsSL https://raw.githubusercontent.com/spicetify/cli/main/install.sh | sh
+> ```
+
 For manual setup:
 
 1. Download [amai-lyrics-main.js](https://github.com/hudzax/amai-lyrics/releases/latest/download/amai-lyrics-main.js)
