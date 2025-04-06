@@ -189,6 +189,7 @@ async function main() {
 
     Spicetify.Player.addEventListener("songchange", onSongChange);
     Spicetify.Player.addEventListener("songchange", async (event) => {
+      if (!event?.data) return;
       fetchLyrics(event?.data?.item?.uri).then(ApplyLyrics);
     })
 
@@ -202,8 +203,8 @@ async function main() {
           if (songChangeLoopRan >= songChangeLoopMax) {
             return;
           }
-          onSongChange(event);
           songChangeLoopRan++;
+          onSongChange(event);
           return;
         }
       };
