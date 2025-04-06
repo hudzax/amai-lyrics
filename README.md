@@ -1,86 +1,136 @@
 # 🎶 Amai Lyrics
 
-Hey there! Amai Lyrics is a Spicetify extension, forked from [Spicy Lyrics](https://spicylyrics.org/), that enhances your Spotify experience by adding Furigana, Romaji for Japanese, and Romanization for Korean lyrics.
+Welcome! **Amai Lyrics** is a extension for [Spicetify](https://spicetify.app/), which customizes your Spotify app. It adds helpful features like Furigana (small pronunciation guides for Japanese Kanji), Romaji (Japanese lyrics in Latin letters), and Romanization for Korean lyrics, making songs in these languages more accessible and enjoyable.
 
-## 🌟 Awesome things
+---
 
-- **Furigana Support:** Annotate Kanji with phonetic guides to aid reading.
-- **Romaji Support:** Display lyrics in Japanese with Romaji.
-- **Korean Romanization:** Display lyrics in Korean with Romanization.
-- **Line-by-line Translation:** Display translations for each lyrics line.
-- **Improved visuals:** Enhanced UI/UX for better readability and aesthetics.
-- **Gemini Integration:** Utilizes the Gemini Flash 2.0 to generate annotations.
-- **Easy Setup:** Obtain the API key from [Google AI Studio](https://aistudio.google.com/app/apikey) and configure it within the Spotify settings as described below.
+## 🌟 Features
+
+- **Furigana Support:** Shows pronunciation guides above Kanji characters.
+- **Romaji Support:** Displays Japanese lyrics in Latin letters.
+- **Korean Romanization:** Shows Korean lyrics in Latin letters.
+- **Line-by-line Translation:** See translations for each line of lyrics.
+- **Better Visuals:** Clean and easy-to-read design.
+- **Gemini Integration:** Uses Google's Gemini AI to generate annotations.
+- **Easy Setup:** Just get an API key from [Google AI Studio](https://aistudio.google.com/app/apikey) and add it in Spotify settings (explained below).
+
+---
 
 ## 👀 Preview
 
-![Extension Preview](./previews/preview-romaji.jpg)
+Here’s what it looks like:
 
-![Extension Preview](./previews/preview-furigana.jpg)
+![Romaji Preview](./previews/preview-romaji.jpg)
 
-![Extension Preview](./previews/preview-romaja.jpg)
+![Furigana Preview](./previews/preview-furigana.jpg)
 
-## 🚀 Installation
+![Korean Romanization Preview](./previews/preview-romaja.jpg)
 
-### 🛒 Via Marketplace (Currently not available 😭)
+---
 
-It is currently blacklisted from the marketplace, so you'll have to do it the old-fashioned way for now. But don't worry, it's super easy!
+## 🚀 How to Install
 
-### 🔧 Manual Installation
+### Step 1: Install Spicetify (if you haven’t already)
 
-> **Note:** If you haven't installed Spicetify, run the appropriate command for your OS:
->
-> **Windows (PowerShell):**
->
-> ```powershell
-> iwr -useb https://raw.githubusercontent.com/spicetify/cli/main/install.ps1 | iex
-> ```
->
-> **Linux / macOS:**
->
-> ```bash
-> curl -fsSL https://raw.githubusercontent.com/spicetify/cli/main/install.sh | sh
-> ```
+Spicetify is a tool that lets you customize Spotify. You only need to do this once.
 
-For manual setup:
+- **On Windows:**
 
-1. Download [amai-lyrics-main.js](https://github.com/hudzax/amai-lyrics/releases/latest/download/amai-lyrics-main.js)
-2. Open terminal and run this command to open/show Spicetify config directory:
-   ```bash
-   spicetify config-dir
-   ```
-3. Copy the downloaded file inside the Extensions directory:
+  1. Open **PowerShell** (search for it in the Start menu).
+  2. Copy and paste this command, then press **Enter**:
 
-   ![Config Screenshot](./previews/config-dir.jpg)
+     ```powershell
+     iwr -useb https://raw.githubusercontent.com/spicetify/cli/main/install.ps1 | iex
+     ```
 
-4. finally, run these commands in terminal:
-   ```bash
-   spicetify config extensions amai-lyrics-main.js
-   spicetify apply
-   ```
-5. Restart Spotify
+- **On Linux or macOS:**
 
-> **Note:** You only need to apply this once. The extension will automatically check for and install any new updates.
+  1. Open your **Terminal** app.
+  2. Copy and paste this command, then press **Enter**:
 
-## ⚙️ Configuration
+     ```bash
+     curl -fsSL https://raw.githubusercontent.com/spicetify/cli/main/install.sh | sh
+     ```
+
+This will install Spicetify on your computer.
+
+---
+
+### Step 2: Download The Extension
+
+- Download [amai-lyrics-main.js](https://github.com/hudzax/amai-lyrics/releases/latest/download/amai-lyrics-main.js)
+
+---
+
+### Step 3: Find Spicetify’s Config Folder
+
+- Open your terminal or PowerShell again.
+- Type this command and press **Enter**:
+
+  ```bash
+  spicetify config-dir
+  ```
+
+- This will open a folder on your computer. Inside, you’ll see an **Extensions** folder.
+
+---
+
+### Step 4: Add Amai Lyrics to Extensions
+
+- Move or copy the **`amai-lyrics-main.js`** file you downloaded into the **Extensions** folder.
+
+  ![Config Folder Screenshot](./previews/config-dir.jpg)
+
+---
+
+### Step 5: Enable it in Spicetify
+
+- In the terminal or PowerShell, run these two commands one by one:
+
+  ```bash
+  spicetify config extensions amai-lyrics-main.js
+  spicetify apply
+  ```
+
+- This tells Spicetify to use Amai Lyrics and refreshes Spotify.
+
+- **Restart Spotify** (close it completely and open it again).
+
+That’s it! You only need to do this once. Amai Lyrics will update itself automatically when new versions come out.
+
+---
+
+## ⚙️ Set Up Your Gemini API Key
 
 Follow these steps to set up your Gemini API key:
 
-1. **Open Spotify Settings:**
-   - Launch Spotify and go to your settings.
-2. **Locate the API Key Field:**
-   - Scroll to the bottom of the settings page until you find the API key field.
-3. **Paste Your Gemini API Key:**
-   - Insert the API key into the field.
-     ![Settings Screenshot](./previews/settings.jpg)
-   - (Don't worry, the key is stored locally and only used to make API requests from this extension. 😉)
-4. **Access the Lyrics Page:**
-   - Click the lyrics icon at the bottom of the Spotify window.
-   - Wait a few moments as the page loads—the Furigana annotations will appear automatically.
-     ![Toggle lyrics](./previews/toggle-lyrics-page.jpg)
+1. **Get your API key:**
+   - Visit [Google AI Studio](https://aistudio.google.com/app/apikey).
+   - Sign in and create an API key (it’s free).
+2. **Open Spotify settings:**
+   - Open Spotify.
+   - Go to **Settings** (click your profile picture > Settings).
+3. **Add your API key:**
+
+   - Scroll all the way down until you see the **API key** field.
+   - Paste your Gemini API key there.
+
+   ![Settings Screenshot](./previews/settings.jpg)
+
+   _Don’t worry, your key is stored only on your computer and used just for this extension._
+
+4. **See the lyrics:**
+
+   - Play a song.
+   - Click the lyrics icon at the bottom of Spotify.
+   - Wait a few seconds — the lyrics with Furigana, Romaji, or Romanization will appear!
+
+   ![Lyrics Toggle Screenshot](./previews/toggle-lyrics-page.jpg)
+
+---
 
 ## 🙏 Credits
 
-Special thanks to Spikerko, creator of the original Spicy Lyrics extension.
+Big thanks to **Spikerko** for creating the original Spicy Lyrics extension.
 
-And a special thanks to you for using Amai Lyrics! We hope you enjoy it! 🎉
+And thank you for trying **Amai Lyrics**! Have fun singing along! 🎉
