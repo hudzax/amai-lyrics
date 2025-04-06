@@ -5,7 +5,6 @@ import { setSettingsMenu } from "./utils/settings";
 import PageView from "./components/Pages/PageView";
 import { Icons } from "./components/Styling/Icons";
 import ApplyDynamicBackground from "./components/DynamicBG/dynamicBackground";
-import LoadFonts from "./components/Styling/Fonts";
 import { IntervalManager } from "./utils/IntervalManager";
 import { SpotifyPlayer } from "./components/Global/SpotifyPlayer";
 import { IsPlaying } from "./utils/Addons";
@@ -34,11 +33,6 @@ async function initializePlatformAndSettings() {
   await Platform.OnSpotifyReady;
 
   setSettingsMenu();
-
-  const OldStyleFont = storage.get("old-style-font");
-  if (OldStyleFont !== "true") {
-    LoadFonts();
-  }
 }
 
 async function loadExternalScripts() {
