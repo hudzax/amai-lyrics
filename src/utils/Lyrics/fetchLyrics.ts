@@ -124,16 +124,6 @@ export default async function fetchLyrics(
   // Reset UI and prepare for new lyrics
   resetLyricsUI();
 
-  // Prevent multiple simultaneous fetches
-  const currFetching = storage.get('currentlyFetching');
-  if (currFetching === 'true') return 'Already fetching lyrics';
-
-  // Mark as fetching and update UI
-  storage.set('currentlyFetching', 'true');
-  document
-    .querySelector<HTMLElement>('#SpicyLyricsPage .ContentBox')
-    ?.classList.remove('LyricsHidden');
-
   ClearLyricsPageContainer();
 
   // Extract track ID from URI
@@ -146,6 +136,19 @@ export default async function fetchLyrics(
   // Then try from cache
   const cachedLyrics = await getLyricsFromCache(trackId);
   if (cachedLyrics) return cachedLyrics;
+
+  // Prevent multiple simultaneous fetches
+  const currFetching = storage.get('currentlyFetching');
+  if (currFetching === 'true') {
+    Spicetify.showNotification('Currently fetching, please wait..');
+    return 'Currently fetching lyrics';
+  }
+
+  // Mark as fetching and update UI
+  storage.set('currentlyFetching', 'true');
+  document
+    .querySelector<HTMLElement>('#SpicyLyricsPage .ContentBox')
+    ?.classList.remove('LyricsHidden');
 
   // Show loading indicator and fetch from API
   ShowLoaderContainer();
@@ -254,18 +257,20 @@ async function processAndEnhanceLyrics(
   // Attach translations to phonetic-processed lyrics
   attachTranslations(processedLyricsJson, translations);
 
-  // Save processed lyrics and update UI
-  storage.set('currentLyricsData', JSON.stringify(processedLyricsJson));
-  storage.set('currentlyFetching', 'false');
-  HideLoaderContainer();
-  ClearLyricsPageContainer();
-
   // Cache the results
   await cacheLyrics(trackId, processedLyricsJson);
 
-  // Update global state and notify user
-  Defaults.CurrentLyricsType = processedLyricsJson.Type;
-  Spicetify.showNotification('Completed', false, 1000);
+  // Save processed lyrics and update UI
+  storage.set('currentlyFetching', 'false');
+  // Check if current song match with lyrics
+  if (Spicetify.Player.data.item.uri?.split(':')[2] === trackId) {
+    // Notify user
+    Spicetify.showNotification('Completed', false, 1000);
+    Defaults.CurrentLyricsType = processedLyricsJson.Type;
+    storage.set('currentLyricsData', JSON.stringify(processedLyricsJson));
+    HideLoaderContainer();
+    ClearLyricsPageContainer();
+  }
 
   return { ...processedLyricsJson, fromCache: false };
 }
@@ -775,7 +780,6 @@ async function getLyricsFromCache(
 
     // Update UI and state
     storage.set('currentLyricsData', JSON.stringify(lyricsFromCache));
-    storage.set('currentlyFetching', 'false');
     HideLoaderContainer();
     ClearLyricsPageContainer();
     Defaults.CurrentLyricsType = lyricsFromCache.Type;
@@ -814,7 +818,6 @@ async function getLyricsFromLocalStorage(
       const lyricsData = JSON.parse(savedLyricsData);
       if (lyricsData?.id === trackId) {
         // Update UI and state
-        storage.set('currentlyFetching', 'false');
         HideLoaderContainer();
         ClearLyricsPageContainer();
         Defaults.CurrentLyricsType = lyricsData.Type;
@@ -824,7 +827,6 @@ async function getLyricsFromLocalStorage(
   } catch (error) {
     // Handle errors
     console.error('Error parsing saved lyrics data:', error);
-    storage.set('currentlyFetching', 'false');
     HideLoaderContainer();
     ClearLyricsPageContainer();
   }
