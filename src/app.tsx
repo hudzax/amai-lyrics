@@ -19,10 +19,10 @@ import { requestPositionSync } from "./utils/Gets/GetProgress";
 import "./css/default.css";
 import "./css/Simplebar.css";
 import "./css/ContentBox.css";
-import "./css/DynamicBG/spicy-dynamic-bg.css"
-import "./css/Lyrics/main.css"
-import "./css/Lyrics/Mixed.css"
-import "./css/Loaders/LoaderContainer.css"
+import "./css/DynamicBG/spicy-dynamic-bg.css";
+import "./css/Lyrics/main.css";
+import "./css/Lyrics/Mixed.css";
+import "./css/Loaders/LoaderContainer.css";
 
 import Global from "./components/Global/Global";
 import Platform from "./components/Global/Platform";
@@ -36,14 +36,15 @@ async function initializePlatformAndSettings() {
   setSettingsMenu();
 
   const OldStyleFont = storage.get("old-style-font");
-  if (OldStyleFont != "true") {
+  if (OldStyleFont !== "true") {
     LoadFonts();
   }
 }
 
 async function loadExternalScripts() {
   const scripts: HTMLScriptElement[] = [];
-  const GetFullUrl = (target: string) => `https://cdn.jsdelivr.net/gh/hudzax/amai-lyrics/dist/${target}`;
+  const GetFullUrl = (target: string) =>
+    `https://cdn.jsdelivr.net/gh/hudzax/amai-lyrics/dist/${target}`;
 
   const AddScript = (scriptFileName: string) => {
     const script = document.createElement("script");
@@ -55,10 +56,10 @@ async function loadExternalScripts() {
         window._spicy_lyrics?.func_main?._deappend_scripts();
         window._spicy_lyrics?.func_main?._add_script(scriptFileName);
         window._spicy_lyrics?.func_main?._append_scripts();
-      })
+      });
     };
     scripts.push(script);
-  }
+  };
 
   Global.SetScope("func_main._add_script", AddScript);
 
@@ -70,15 +71,15 @@ async function loadExternalScripts() {
     for (const script of scripts) {
       document.head.appendChild(script);
     }
-  }
+  };
   const DeappendScripts = () => {
     for (const script of scripts) {
       document.head.removeChild(script);
     }
-  }
+  };
 
-  Global.SetScope("func_main._append_scripts", AppendScripts)
-  Global.SetScope("func_main._deappend_scripts", DeappendScripts)
+  Global.SetScope("func_main._append_scripts", AppendScripts);
+  Global.SetScope("func_main._deappend_scripts", DeappendScripts);
   AppendScripts();
 }
 
@@ -108,27 +109,30 @@ function setupUI() {
       }
     },
     false as any,
-    false as any,
+    false as any
   );
 
   return button;
 }
 
 function setupEventListeners(button) {
+  Whentil.When(
+    () => Spicetify.Player.data.item?.type,
+    () => {
+      const IsSomethingElseThanTrack =
+        Spicetify.Player.data.item?.type !== "track";
 
-  Whentil.When(() => Spicetify.Player.data.item?.type, () => {
-    const IsSomethingElseThanTrack = Spicetify.Player.data.item?.type !== "track";
-
-    if (IsSomethingElseThanTrack) {
-      button.deregister();
-      buttonRegistered = false;
-    } else {
-      if (!buttonRegistered) {
-        button.register();
-        buttonRegistered = true;
+      if (IsSomethingElseThanTrack) {
+        button.deregister();
+        buttonRegistered = false;
+      } else {
+        if (!buttonRegistered) {
+          button.register();
+          buttonRegistered = true;
+        }
       }
     }
-  });
+  );
 }
 
 function setupDynamicBackground(button) {
@@ -137,15 +141,17 @@ function setupDynamicBackground(button) {
       requestPositionSync();
     });
 
-    let lastImgUrl;
+    let lastImgUrl: string | null = null;
     const lowQModeEnabled = storage.get("lowQMode") === "true";
 
     function applyDynamicBackgroundToNowPlayingBar(coverUrl: string) {
       if (lowQModeEnabled) return;
-      const nowPlayingBar = document.querySelector<HTMLElement>(".Root__right-sidebar aside.NowPlayingView");
+      const nowPlayingBar = document.querySelector<HTMLElement>(
+        ".Root__right-sidebar aside.NowPlayingView"
+      );
 
       try {
-        if (nowPlayingBar == null) {
+        if (!nowPlayingBar) {
           lastImgUrl = null;
           return;
         }
@@ -168,12 +174,16 @@ function setupDynamicBackground(button) {
 
         lastImgUrl = coverUrl;
       } catch (error) {
-        console.error("Error Applying the Dynamic BG to the NowPlayingBar:", error);
+        console.error(
+          "Error Applying the Dynamic BG to the NowPlayingBar:",
+          error
+        );
       }
     }
 
     new IntervalManager(1, () => {
-      applyDynamicBackgroundToNowPlayingBar(Spicetify.Player.data?.item?.metadata?.image_url);
+      const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
+      applyDynamicBackgroundToNowPlayingBar(coverUrl);
     }).Start();
 
     Spicetify.Player.addEventListener("songchange", onSongChange);
@@ -182,23 +192,21 @@ function setupDynamicBackground(button) {
       fetchLyrics(event?.data?.item?.uri).then(ApplyLyrics);
     });
 
-    let songChangeLoopRan = 0;
-    const songChangeLoopMax = 5;
     async function onSongChange(event) {
+      let attempts = 0;
+      const maxAttempts = 5;
       let currentUri = event?.data?.item?.uri;
-      if (!currentUri) {
+
+      while (!currentUri && attempts < maxAttempts) {
+        await sleep(0.1);
         currentUri = Spicetify.Player.data?.item?.uri;
-        if (!currentUri) {
-          if (songChangeLoopRan >= songChangeLoopMax) {
-            return;
-          }
-          songChangeLoopRan++;
-          onSongChange(event);
-          return;
-        }
+        attempts++;
       }
 
-      const IsSomethingElseThanTrack = Spicetify.Player.data.item?.type !== "track";
+      if (!currentUri) return;
+
+      const IsSomethingElseThanTrack =
+        Spicetify.Player.data.item?.type !== "track";
 
       if (IsSomethingElseThanTrack) {
         button.deregister();
@@ -212,14 +220,18 @@ function setupDynamicBackground(button) {
 
       if (!IsSomethingElseThanTrack) {
         await SpotifyPlayer.Track.GetTrackInfo();
-        if (document.querySelector("#SpicyLyricsPage .ContentBox .NowBar")) UpdateNowBar();
+        if (document.querySelector("#SpicyLyricsPage .ContentBox .NowBar"))
+          UpdateNowBar();
       }
 
-      applyDynamicBackgroundToNowPlayingBar(Spicetify.Player.data?.item?.metadata?.image_url);
-      songChangeLoopRan = 0;
+      applyDynamicBackgroundToNowPlayingBar(
+        Spicetify.Player.data?.item?.metadata?.image_url
+      );
 
       if (!document.querySelector("#SpicyLyricsPage .LyricsContainer")) return;
-      ApplyDynamicBackground(document.querySelector("#SpicyLyricsPage .ContentBox"));
+      ApplyDynamicBackground(
+        document.querySelector("#SpicyLyricsPage .ContentBox")
+      );
     }
 
     fetchLyrics(Spicetify.Player.data.item?.uri).then(ApplyLyrics);
@@ -229,7 +241,9 @@ function setupDynamicBackground(button) {
       fetchLyrics(Spicetify.Player.data?.item?.uri).then(ApplyLyrics);
     });
 
-    new IntervalManager(ScrollingIntervalTime, () => ScrollToActiveLine(ScrollSimplebar)).Start();
+    new IntervalManager(ScrollingIntervalTime, () =>
+      ScrollToActiveLine(ScrollSimplebar)
+    ).Start();
 
     let lastLocation = null;
 
@@ -266,7 +280,12 @@ function setupDynamicBackground(button) {
       let lastLoopType = null;
       new IntervalManager(0.2, () => {
         const LoopState = Spicetify.Player.getRepeat();
-        const LoopType = LoopState === 1 ? "context" : LoopState === 2 ? "track" : "none";
+        const LoopType =
+          LoopState === 1
+            ? "context"
+            : LoopState === 2
+            ? "track"
+            : "none";
         SpotifyPlayer.LoopType = LoopType;
         if (lastLoopType !== LoopType) {
           Global.Event.evoke("playback:loop", LoopType);
@@ -278,7 +297,11 @@ function setupDynamicBackground(button) {
     {
       let lastShuffleType = null;
       new IntervalManager(0.2, () => {
-        const ShuffleType = (Spicetify.Player.origin._state.smartShuffle ? "smart" : (Spicetify.Player.origin._state.shuffle ? "normal" : "none"));
+        const ShuffleType = Spicetify.Player.origin._state.smartShuffle
+          ? "smart"
+          : Spicetify.Player.origin._state.shuffle
+          ? "normal"
+          : "none";
         SpotifyPlayer.ShuffleType = ShuffleType;
         if (lastShuffleType !== ShuffleType) {
           Global.Event.evoke("playback:shuffle", ShuffleType);
@@ -301,23 +324,40 @@ function setupDynamicBackground(button) {
     SpotifyPlayer.IsPlaying = IsPlaying();
 
     {
-      Spicetify.Player.addEventListener("onplaypause", (e) => Global.Event.evoke("playback:playpause", e));
-      Spicetify.Player.addEventListener("onprogress", (e) => Global.Event.evoke("playback:progress", e));
-      Spicetify.Player.addEventListener("songchange", (e) => Global.Event.evoke("playback:songchange", e));
+      Spicetify.Player.addEventListener("onplaypause", (e) =>
+        Global.Event.evoke("playback:playpause", e)
+      );
+      Spicetify.Player.addEventListener("onprogress", (e) =>
+        Global.Event.evoke("playback:progress", e)
+      );
+      Spicetify.Player.addEventListener("songchange", (e) =>
+        Global.Event.evoke("playback:songchange", e)
+      );
 
-      Whentil.When(() => document.querySelector<HTMLElement>(".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]"), () => {
-        Global.Event.evoke("pagecontainer:available", document.querySelector<HTMLElement>(".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]"));
-      });
+      Whentil.When(
+        () =>
+          document.querySelector<HTMLElement>(
+            ".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]"
+          ),
+        () => {
+          Global.Event.evoke(
+            "pagecontainer:available",
+            document.querySelector<HTMLElement>(
+              ".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]"
+            )
+          );
+        }
+      );
 
       Spicetify.Platform.History.listen(Session.RecordNavigation);
       Session.RecordNavigation(Spicetify.Platform.History.location);
     }
   };
 
-  Whentil.When(() => (
-    SpicyHasher &&
-    pako
-  ), Hometinue);
+  Whentil.When(
+    () => typeof SpicyHasher !== "undefined" && typeof pako !== "undefined",
+    Hometinue
+  );
 }
 
 async function main() {
