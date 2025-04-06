@@ -224,7 +224,9 @@ function infos() {
     'more-info',
     'Enhances your Spotify experience by adding Furigana, Romaji for Japanese, and Romanization for Korean lyrics.',
     `${Defaults.Version}`,
-    () => {},
+    () => {
+      window.location.href = 'https://github.com/hudzax/amai-lyrics';
+    },
   );
 
   settings.pushSettings();
