@@ -136,10 +136,20 @@ header.main-topBar-container .amai-info {
 }
 
 .BoxComponent-box-elevated {
-  opacity: 0.7;
+  opacity: 0.9; /* Increased opacity for better visibility */
   padding-top: 8px;
   padding-bottom: 8px;
   min-block-size: 38px;
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
+  backdrop-filter: blur(15px); /* Blur effect for acrylic look */
+  -webkit-backdrop-filter: blur(15px); /* Safari support */
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15); /* Subtle border */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); /* Slightly stronger shadow */
+}
+
+.encore-internal-color-text-base {
+  color: rgba(255, 255, 255, 0.8); /* White text */
 }
 
 #SpicyLyricsPage .ContentBox .NowBar .Header, #SpicyLyricsPage .ContentBox .NowBar.Active + .LyricsContainer .LyricsContent .simplebar-content-wrapper .simplebar-content {
