@@ -156,7 +156,7 @@
   };
 
   // package.json
-  var version = "1.0.37";
+  var version = "1.0.38";
 
   // src/components/Global/Defaults.ts
   var Defaults = {
@@ -11186,14 +11186,18 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   };
 
   // src/utils/Lyrics/fetchLyrics.ts
+  var JAPANESE_REGEX = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
+  var KOREAN_REGEX = /[\uAC00-\uD7AF]/;
+  var CACHE_EXPIRATION_TIME = 1e3 * 60 * 60 * 24 * 7;
+  var LYRICS_TIMING_OFFSET = 0.55;
   var lyricsCache = new SpikyCache({
     name: "Cache_Lyrics"
   });
   async function fetchLyrics(uri) {
     resetLyricsUI();
     const currFetching = storage_default.get("currentlyFetching");
-    if (currFetching == "true")
-      return;
+    if (currFetching === "true")
+      return "Already fetching lyrics";
     storage_default.set("currentlyFetching", "true");
     document.querySelector("#SpicyLyricsPage .ContentBox")?.classList.remove("LyricsHidden");
     ClearLyricsPageContainer();
@@ -11210,92 +11214,24 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   async function fetchLyricsFromAPI(trackId) {
     try {
       Spicetify.showNotification("Fetching lyrics..", false, 1e3);
-      const SpotifyAccessToken = await Platform_default.GetSpotifyAccessToken();
-      let status = 0;
+      const spotifyAccessToken = await Platform_default.GetSpotifyAccessToken();
       const getLyricsResult = await getLyrics(trackId, {
-        Authorization: `Bearer ${SpotifyAccessToken}`
+        Authorization: `Bearer ${spotifyAccessToken}`
       });
       let lyricsJson = getLyricsResult.response;
-      status = getLyricsResult.status;
+      const status = getLyricsResult.status;
       if (!lyricsJson || typeof lyricsJson === "object" && !("id" in lyricsJson)) {
         lyricsJson = "";
       }
       if (status !== 200) {
-        if (status === 500)
-          return await noLyricsMessage(false, true);
-        if (status === 401) {
-          storage_default.set("currentlyFetching", "false");
-          return await noLyricsMessage(false, false);
-        }
-        ClearLyricsPageContainer();
-        if (status === 404) {
-          return await noLyricsMessage(false, true);
-        }
-        return await noLyricsMessage(false, true);
+        return handleErrorStatus(status);
       }
       ClearLyricsPageContainer();
       if (lyricsJson === null)
         return await noLyricsMessage(false, false);
       if (lyricsJson === "")
         return await noLyricsMessage(false, true);
-      const { lyricsJson: preparedLyricsJson, lyricsOnly } = await prepareLyricsForGemini(lyricsJson);
-      const hasKanji = preparedLyricsJson.Content?.some(
-        (item) => item.Lead?.Syllables?.some((syl) => /[\u4E00-\u9FFF]/.test(syl.Text))
-      ) || preparedLyricsJson.Content?.some(
-        (item) => /[\u4E00-\u9FFF]/.test(item.Text)
-      ) || preparedLyricsJson.Lines?.some(
-        (item) => /[\u4E00-\u9FFF]/.test(item.Text)
-      ) || false;
-      const hasKorean = preparedLyricsJson.Content?.some(
-        (item) => item.Lead?.Syllables?.some((syl) => /[\uAC00-\uD7AF]/.test(syl.Text))
-      ) || preparedLyricsJson.Content?.some(
-        (item) => /[\uAC00-\uD7AF]/.test(item.Text)
-      ) || preparedLyricsJson.Lines?.some(
-        (item) => /[\uAC00-\uD7AF]/.test(item.Text)
-      ) || false;
-      const phoneticLyricsJson = JSON.parse(JSON.stringify(preparedLyricsJson));
-      const phoneticPromise = getPhoneticLyrics(
-        phoneticLyricsJson,
-        hasKanji,
-        hasKorean,
-        lyricsOnly
-      );
-      const translationPromise = fetchTranslationsWithGemini(
-        preparedLyricsJson,
-        lyricsOnly
-      );
-      const [processedLyricsJson, translations] = await Promise.all([
-        phoneticPromise,
-        translationPromise
-      ]);
-      if (processedLyricsJson.Type === "Line" && processedLyricsJson.Content) {
-        processedLyricsJson.Content.forEach((line, idx) => {
-          line.Translation = translations[idx] || "";
-        });
-      } else if (processedLyricsJson.Type === "Static" && processedLyricsJson.Lines) {
-        processedLyricsJson.Lines.forEach((line, idx) => {
-          line.Translation = translations[idx] || "";
-        });
-      }
-      console.log("DEBUG result", processedLyricsJson);
-      storage_default.set("currentLyricsData", JSON.stringify(processedLyricsJson));
-      storage_default.set("currentlyFetching", "false");
-      HideLoaderContainer();
-      ClearLyricsPageContainer();
-      if (lyricsCache) {
-        const expiresAt = new Date().getTime() + 1e3 * 60 * 60 * 24 * 7;
-        try {
-          await lyricsCache.set(trackId, {
-            ...processedLyricsJson,
-            expiresAt
-          });
-        } catch (error) {
-          console.error("Error saving lyrics to cache:", error);
-        }
-      }
-      Defaults_default.CurrentLyricsType = processedLyricsJson.Type;
-      Spicetify.showNotification("Completed", false, 1e3);
-      return { ...processedLyricsJson, fromCache: false };
+      return await processAndEnhanceLyrics(trackId, lyricsJson);
     } catch (error) {
       console.error("Error fetching lyrics:", error);
       storage_default.set("currentlyFetching", "false");
@@ -11303,17 +11239,76 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return await noLyricsMessage(false, true);
     }
   }
-  async function getPhoneticLyrics(preparedLyricsJson, hasKanji, hasKorean, lyricsOnly) {
+  async function handleErrorStatus(status) {
+    if (status === 401) {
+      storage_default.set("currentlyFetching", "false");
+      return await noLyricsMessage(false, false);
+    }
+    ClearLyricsPageContainer();
+    return await noLyricsMessage(false, true);
+  }
+  async function processAndEnhanceLyrics(trackId, lyricsJson) {
+    const { lyricsJson: preparedLyricsJson, lyricsOnly } = await prepareLyricsForGemini(lyricsJson);
+    const { hasKanji, hasKorean } = detectLanguages(preparedLyricsJson);
+    const phoneticLyricsJson = JSON.parse(JSON.stringify(preparedLyricsJson));
+    const [processedLyricsJson, translations] = await Promise.all([
+      getPhoneticLyrics(phoneticLyricsJson, hasKanji, hasKorean, lyricsOnly),
+      fetchTranslationsWithGemini(preparedLyricsJson, lyricsOnly)
+    ]);
+    attachTranslations(processedLyricsJson, translations);
+    storage_default.set("currentLyricsData", JSON.stringify(processedLyricsJson));
+    storage_default.set("currentlyFetching", "false");
+    HideLoaderContainer();
+    ClearLyricsPageContainer();
+    await cacheLyrics(trackId, processedLyricsJson);
+    Defaults_default.CurrentLyricsType = processedLyricsJson.Type;
+    Spicetify.showNotification("Completed", false, 1e3);
+    return { ...processedLyricsJson, fromCache: false };
+  }
+  function detectLanguages(lyricsJson) {
+    const hasKanji = lyricsJson.Content?.some(
+      (item) => item.Lead?.Syllables?.some((syl) => JAPANESE_REGEX.test(syl.Text))
+    ) || lyricsJson.Content?.some((item) => JAPANESE_REGEX.test(item.Text)) || lyricsJson.Lines?.some((item) => JAPANESE_REGEX.test(item.Text)) || false;
+    const hasKorean = lyricsJson.Content?.some(
+      (item) => item.Lead?.Syllables?.some((syl) => KOREAN_REGEX.test(syl.Text))
+    ) || lyricsJson.Content?.some((item) => KOREAN_REGEX.test(item.Text)) || lyricsJson.Lines?.some((item) => KOREAN_REGEX.test(item.Text)) || false;
+    return { hasKanji, hasKorean };
+  }
+  function attachTranslations(lyricsJson, translations) {
+    if (lyricsJson.Type === "Line" && lyricsJson.Content) {
+      lyricsJson.Content.forEach((line, idx) => {
+        line.Translation = translations[idx] || "";
+      });
+    } else if (lyricsJson.Type === "Static" && lyricsJson.Lines) {
+      lyricsJson.Lines.forEach((line, idx) => {
+        line.Translation = translations[idx] || "";
+      });
+    }
+  }
+  async function cacheLyrics(trackId, lyricsJson) {
+    if (!lyricsCache)
+      return;
+    const expiresAt = new Date().getTime() + CACHE_EXPIRATION_TIME;
+    try {
+      await lyricsCache.set(trackId, {
+        ...lyricsJson,
+        expiresAt
+      });
+    } catch (error) {
+      console.error("Error saving lyrics to cache:", error);
+    }
+  }
+  async function getPhoneticLyrics(lyricsJson, hasKanji, hasKorean, lyricsOnly) {
     if (hasKanji) {
       if (storage_default.get("enable_romaji") === "true") {
-        return await generateRomaji(preparedLyricsJson, lyricsOnly);
+        return await generateRomaji(lyricsJson, lyricsOnly);
       } else {
-        return await generateFurigana(preparedLyricsJson, lyricsOnly);
+        return await generateFurigana(lyricsJson, lyricsOnly);
       }
     } else if (hasKorean) {
-      return await generateRomaja(preparedLyricsJson, lyricsOnly);
+      return await generateRomaja(lyricsJson, lyricsOnly);
     } else {
-      return preparedLyricsJson;
+      return lyricsJson;
     }
   }
   async function prepareLyricsForGemini(lyricsJson) {
@@ -11327,132 +11322,117 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return { lyricsJson, lyricsOnly };
   }
-  async function fetchTranslationsWithGemini(preparedLyricsJson, lyricsOnly) {
+  async function fetchTranslationsWithGemini(lyricsJson, lyricsOnly) {
     if (storage_default.get("disable_translation") === "true") {
       console.log("Amai Lyrics: Translation disabled");
       return lyricsOnly.map(() => "");
     }
     try {
       console.log("[Amai Lyrics] Translation fetch started");
-      const GEMINI_API_KEY = storage_default.get("GEMINI_API_KEY")?.toString();
-      if (!GEMINI_API_KEY || GEMINI_API_KEY === "") {
+      const geminiApiKey = storage_default.get("GEMINI_API_KEY")?.toString();
+      if (!geminiApiKey || geminiApiKey === "") {
         console.error("Amai Lyrics: Gemini API Key missing for translation");
-        return [];
+        return lyricsOnly.map(() => "");
       }
-      console.log("[Amai Lyrics] Prepared lyrics for translation:", lyricsOnly);
-      const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-      const generationConfig = {
-        temperature: 0.85,
-        topP: 0.95,
-        topK: 40,
-        maxOutputTokens: 8192,
-        responseModalities: [],
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: "object",
-          properties: {
-            lines: {
-              type: "array",
-              items: {
-                type: "string"
-              }
-            }
-          }
-        },
-        systemInstruction: Defaults_default.systemInstruction
-      };
+      const ai = new GoogleGenAI({ apiKey: geminiApiKey });
+      const generationConfig = createGeminiConfig(
+        Defaults_default.systemInstruction,
+        0.85
+      );
       const targetLang = storage_default.get("translation_language")?.toString() || Defaults_default.translationLanguage;
-      const prompt = Defaults_default.translationPrompt.replace(/{language}/g, `${targetLang}`) + ` Translate the following lyrics into ${targetLang}:
-`;
-      console.log("[Amai Lyrics] Sending prompt to Gemini:", prompt);
-      console.log("[Amai Lyrics] Lyrics sent for translation:", lyricsOnly);
+      const prompt = createTranslationPrompt(targetLang);
       const response = await ai.models.generateContent({
         config: generationConfig,
         model: "gemini-2.0-flash",
         contents: `${prompt}${JSON.stringify(lyricsOnly)}`
       });
-      console.log(
-        "[Amai Lyrics] Raw Gemini translation response:",
-        response.text
-      );
-      const translations = JSON.parse(response.text.replace(/\\n/g, ""));
-      console.log("[Amai Lyrics] Final translations:", translations.lines);
-      return translations.lines || lyricsOnly.map(() => "");
+      try {
+        const translations = JSON.parse(response.text.replace(/\\n/g, ""));
+        return translations.lines || lyricsOnly.map(() => "");
+      } catch (parseError) {
+        console.error(
+          "Amai Lyrics: Error parsing translation response",
+          parseError
+        );
+        return lyricsOnly.map(() => "");
+      }
     } catch (error) {
       console.error("Amai Lyrics: Translation fetch error", error);
       return [];
     }
   }
-  async function generateFurigana(preparedLyricsJson, lyricsOnly) {
+  function createTranslationPrompt(targetLang) {
+    return Defaults_default.translationPrompt.replace(/{language}/g, targetLang) + ` Translate the following lyrics into ${targetLang}:
+`;
+  }
+  function createGeminiConfig(systemInstruction, temperature) {
+    return {
+      temperature,
+      topP: 0.95,
+      topK: 40,
+      maxOutputTokens: 8192,
+      responseModalities: [],
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: "object",
+        properties: {
+          lines: {
+            type: "array",
+            items: {
+              type: "string"
+            }
+          }
+        }
+      },
+      systemInstruction
+    };
+  }
+  async function generateFurigana(lyricsJson, lyricsOnly) {
     return await generateLyricsWithPrompt(
-      preparedLyricsJson,
+      lyricsJson,
       lyricsOnly,
       Defaults_default.furiganaPrompt
     );
   }
-  async function generateRomaja(preparedLyricsJson, lyricsOnly) {
+  async function generateRomaja(lyricsJson, lyricsOnly) {
     return await generateLyricsWithPrompt(
-      preparedLyricsJson,
+      lyricsJson,
       lyricsOnly,
       Defaults_default.romajaPrompt
     );
   }
-  async function generateRomaji(preparedLyricsJson, lyricsOnly) {
+  async function generateRomaji(lyricsJson, lyricsOnly) {
     return await generateLyricsWithPrompt(
-      preparedLyricsJson,
+      lyricsJson,
       lyricsOnly,
       Defaults_default.romajiPrompt
     );
   }
-  async function generateLyricsWithPrompt(preparedLyricsJson, lyricsOnly, prompt) {
-    if (!await checkGeminiAPIKey(preparedLyricsJson)) {
-      return preparedLyricsJson;
+  async function generateLyricsWithPrompt(lyricsJson, lyricsOnly, prompt) {
+    if (!await checkGeminiAPIKey(lyricsJson)) {
+      return lyricsJson;
     }
-    preparedLyricsJson = await processLyricsWithGemini(
-      preparedLyricsJson,
+    return await processLyricsWithGemini(
+      lyricsJson,
       lyricsOnly,
       Defaults_default.systemInstruction,
       prompt
     );
-    return preparedLyricsJson;
   }
   async function checkGeminiAPIKey(lyricsJson) {
-    const GEMINI_API_KEY = storage_default.get("GEMINI_API_KEY")?.toString();
-    if (!GEMINI_API_KEY || GEMINI_API_KEY === "") {
+    const geminiApiKey = storage_default.get("GEMINI_API_KEY")?.toString();
+    if (!geminiApiKey || geminiApiKey === "") {
       console.error("Amai Lyrics: Gemini API Key missing");
       lyricsJson.Info = "Amai Lyrics: Gemini API Key missing. Click here to add your own API key.";
       return false;
     }
     return true;
   }
-  async function processLyricsWithGemini(preparedLyricsJson, lyricsOnly, systemInstruction, prompt) {
+  async function processLyricsWithGemini(lyricsJson, lyricsOnly, systemInstruction, prompt) {
     try {
-      console.log("SI:", systemInstruction);
-      console.log("Prompt:", prompt);
-      console.log("Amai Lyrics: Gemini API Key present");
-      const GEMINI_API_KEY = storage_default.get("GEMINI_API_KEY")?.toString();
-      const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-      const generationConfig = {
-        temperature: 0.258,
-        topP: 0.95,
-        topK: 40,
-        maxOutputTokens: 8192,
-        responseModalities: [],
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: "object",
-          properties: {
-            lines: {
-              type: "array",
-              items: {
-                type: "string"
-              }
-            }
-          }
-        },
-        systemInstruction: `${systemInstruction}`
-      };
-      console.log("Amai Lyrics:", "Fetch Begin");
+      const geminiApiKey = storage_default.get("GEMINI_API_KEY")?.toString();
+      const ai = new GoogleGenAI({ apiKey: geminiApiKey });
+      const generationConfig = createGeminiConfig(systemInstruction, 0.258);
       if (lyricsOnly.length > 0) {
         const response = await ai.models.generateContent({
           config: generationConfig,
@@ -11462,52 +11442,61 @@ ${JSON.stringify(
             lyricsOnly
           )}`
         });
-        let lyrics = JSON.parse(response.text.replace(/\\n/g, ""));
-        if (preparedLyricsJson.Type === "Line") {
-          preparedLyricsJson.Content = preparedLyricsJson.Content.map(
-            (item, index) => ({
-              ...item,
-              Text: lyrics.lines[index]
-            })
-          );
-        } else if (preparedLyricsJson.Type === "Static") {
-          preparedLyricsJson.Lines = preparedLyricsJson.Lines.map(
-            (item, index) => ({
-              ...item,
-              Text: lyrics.lines[index]
-            })
-          );
+        try {
+          const lyrics = JSON.parse(response.text.replace(/\\n/g, ""));
+          if (lyrics && lyrics.lines && Array.isArray(lyrics.lines)) {
+            updateLyricsText(lyricsJson, lyrics.lines);
+          } else {
+            console.error("Amai Lyrics: Invalid response format", lyrics);
+          }
+        } catch (parseError) {
+          console.error("Amai Lyrics: Error parsing response", parseError);
         }
       }
     } catch (error) {
       console.error("Amai Lyrics:", error);
-      preparedLyricsJson.Info = "Amai Lyrics: Fetch Error. Please double check your API key. Click here to open settings page.";
+      lyricsJson.Info = "Amai Lyrics: Fetch Error. Please double check your API key. Click here to open settings page.";
     }
-    return preparedLyricsJson;
+    return lyricsJson;
+  }
+  function updateLyricsText(lyricsJson, lines) {
+    if (lyricsJson.Type === "Line" && lyricsJson.Content) {
+      lyricsJson.Content = lyricsJson.Content.map((item, index) => ({
+        ...item,
+        Text: lines[index] || item.Text
+      }));
+    } else if (lyricsJson.Type === "Static" && lyricsJson.Lines) {
+      lyricsJson.Lines = lyricsJson.Lines.map((item, index) => ({
+        ...item,
+        Text: lines[index] || item.Text
+      }));
+    }
   }
   async function extractLyrics(lyricsJson) {
     const removeEmptyLinesAndCharacters = (items) => {
       items = items.filter((item) => item.Text?.trim() !== "");
       items = items.map((item) => {
-        item.Text = item.Text?.replace(/[「」",.!]/g, "");
-        item.Text = item.Text?.normalize("NFKC");
+        if (item.Text) {
+          item.Text = item.Text.replace(/[「」",.!]/g, "");
+          item.Text = item.Text.normalize("NFKC");
+        }
         return item;
       });
       return items;
     };
-    if (lyricsJson.Type === "Line") {
-      const offset = 0.55;
+    if (lyricsJson.Type === "Line" && lyricsJson.Content) {
       lyricsJson.Content = lyricsJson.Content.map((item) => ({
         ...item,
-        StartTime: Math.max(0, item.StartTime - offset)
+        StartTime: Math.max(0, (item.StartTime || 0) - LYRICS_TIMING_OFFSET)
       }));
       lyricsJson.Content = removeEmptyLinesAndCharacters(lyricsJson.Content);
       return lyricsJson.Content.map((item) => item.Text);
     }
-    if (lyricsJson.Type === "Static") {
+    if (lyricsJson.Type === "Static" && lyricsJson.Lines) {
       lyricsJson.Lines = removeEmptyLinesAndCharacters(lyricsJson.Lines);
       return lyricsJson.Lines.map((item) => item.Text);
     }
+    return [];
   }
   async function getLyricsFromCache(trackId) {
     if (!lyricsCache)
@@ -11575,13 +11564,71 @@ ${JSON.stringify(
     if (!Fullscreen_default.IsOpen)
       PageView_default.AppendViewControls(true);
   }
+  async function noLyricsMessage(cache = true, localStorage = true) {
+    try {
+      Spicetify.showNotification("Lyrics unavailable", false, 1e3);
+      storage_default.set("currentlyFetching", "false");
+      HideLoaderContainer();
+      Defaults_default.CurrentLyricsType = "None";
+    } catch (error) {
+      console.error("Amai Lyrics: Error showing no lyrics message", error);
+      storage_default.set("currentlyFetching", "false");
+    }
+    document.querySelector("#SpicyLyricsPage .ContentBox .LyricsContainer")?.classList.add("Hidden");
+    document.querySelector("#SpicyLyricsPage .ContentBox")?.classList.add("LyricsHidden");
+    OpenNowBar();
+    DeregisterNowBarBtn();
+    return "1";
+  }
+  var ContainerShowLoaderTimeout = null;
+  function ShowLoaderContainer() {
+    const loaderContainer = document.querySelector(
+      "#SpicyLyricsPage .LyricsContainer .loaderContainer"
+    );
+    if (loaderContainer) {
+      ContainerShowLoaderTimeout = window.setTimeout(
+        () => loaderContainer.classList.add("active"),
+        1e3
+      );
+    }
+  }
+  function HideLoaderContainer() {
+    const loaderContainer = document.querySelector(
+      "#SpicyLyricsPage .LyricsContainer .loaderContainer"
+    );
+    if (loaderContainer) {
+      if (ContainerShowLoaderTimeout) {
+        clearTimeout(ContainerShowLoaderTimeout);
+        ContainerShowLoaderTimeout = null;
+      }
+      loaderContainer.classList.remove("active");
+    }
+  }
+  function ClearLyricsPageContainer() {
+    const lyricsContent = document.querySelector(
+      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
+    );
+    if (lyricsContent) {
+      lyricsContent.innerHTML = "";
+    }
+  }
   function convertLyrics(data) {
-    console.log("DEBUG", "Converting Syllable to Line type");
+    console.log("Converting Syllable to Line type");
     return data.map((item) => {
       let leadText = "";
       let prevIsJapanese = null;
+      if (!item.Lead || !item.Lead.Syllables || !Array.isArray(item.Lead.Syllables)) {
+        console.error("Amai Lyrics: Invalid lyrics structure", item);
+        return {
+          Type: item.Type,
+          OppositeAligned: item.OppositeAligned,
+          Text: "",
+          StartTime: 0,
+          EndTime: 0
+        };
+      }
       item.Lead.Syllables.forEach((syl) => {
-        const currentIsJapanese = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/.test(syl.Text);
+        const currentIsJapanese = JAPANESE_REGEX.test(syl.Text);
         if (currentIsJapanese) {
           if (prevIsJapanese === false && leadText) {
             leadText += " ";
@@ -11597,14 +11644,19 @@ ${JSON.stringify(
       let fullText = leadText;
       if (item.Background && Array.isArray(item.Background)) {
         const bgTexts = item.Background.map((bg) => {
-          startTime = Math.min(startTime, bg.StartTime);
-          endTime = Math.max(endTime, bg.EndTime);
+          if (typeof bg.StartTime === "number") {
+            startTime = Math.min(startTime, bg.StartTime);
+          }
+          if (typeof bg.EndTime === "number") {
+            endTime = Math.max(endTime, bg.EndTime);
+          }
           let bgText = "";
           let prevIsJapanese2 = null;
+          if (!bg.Syllables || !Array.isArray(bg.Syllables)) {
+            return "";
+          }
           bg.Syllables.forEach((syl) => {
-            const currentIsJapanese = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/.test(
-              syl.Text
-            );
+            const currentIsJapanese = JAPANESE_REGEX.test(syl.Text);
             if (currentIsJapanese) {
               if (prevIsJapanese2 === false && bgText) {
                 bgText += " ";
@@ -11627,42 +11679,6 @@ ${JSON.stringify(
         EndTime: endTime
       };
     });
-  }
-  async function noLyricsMessage(Cache2 = true, LocalStorage = true) {
-    Spicetify.showNotification("Lyrics unavailable", false, 1e3);
-    storage_default.set("currentlyFetching", "false");
-    HideLoaderContainer();
-    Defaults_default.CurrentLyricsType = "None";
-    document.querySelector("#SpicyLyricsPage .ContentBox .LyricsContainer")?.classList.add("Hidden");
-    document.querySelector("#SpicyLyricsPage .ContentBox")?.classList.add("LyricsHidden");
-    OpenNowBar();
-    DeregisterNowBarBtn();
-    return "1";
-  }
-  var ContainerShowLoaderTimeout;
-  function ShowLoaderContainer() {
-    if (document.querySelector("#SpicyLyricsPage .LyricsContainer .loaderContainer")) {
-      ContainerShowLoaderTimeout = setTimeout(
-        () => document.querySelector("#SpicyLyricsPage .LyricsContainer .loaderContainer").classList.add("active"),
-        1e3
-      );
-    }
-  }
-  function HideLoaderContainer() {
-    if (document.querySelector("#SpicyLyricsPage .LyricsContainer .loaderContainer")) {
-      if (ContainerShowLoaderTimeout) {
-        clearTimeout(ContainerShowLoaderTimeout);
-        ContainerShowLoaderTimeout = null;
-      }
-      document.querySelector("#SpicyLyricsPage .LyricsContainer .loaderContainer").classList.remove("active");
-    }
-  }
-  function ClearLyricsPageContainer() {
-    if (document.querySelector("#SpicyLyricsPage .LyricsContainer .LyricsContent")) {
-      document.querySelector(
-        "#SpicyLyricsPage .LyricsContainer .LyricsContent"
-      ).innerHTML = "";
-    }
   }
 
   // src/edited_packages/spcr-settings/settingsSection.tsx
@@ -12314,7 +12330,7 @@ ${JSON.stringify(
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-24776-rmY9FHI7Vm5y/19609a228b17/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-13160-jq5phiX0FhVZ/1960a90d7847/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -12340,7 +12356,7 @@ ${JSON.stringify(
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24776-rmY9FHI7Vm5y/19609a228220/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13160-jq5phiX0FhVZ/1960a90d7280/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -12479,7 +12495,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24776-rmY9FHI7Vm5y/19609a228501/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13160-jq5phiX0FhVZ/1960a90d7561/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -12687,7 +12703,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24776-rmY9FHI7Vm5y/19609a228562/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13160-jq5phiX0FhVZ/1960a90d75d2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -13161,7 +13177,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24776-rmY9FHI7Vm5y/19609a228623/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13160-jq5phiX0FhVZ/1960a90d7683/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -13269,7 +13285,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24776-rmY9FHI7Vm5y/19609a228674/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13160-jq5phiX0FhVZ/1960a90d76d4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -13465,7 +13481,7 @@ ruby > rt {
   width: 100%;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24776-rmY9FHI7Vm5y/19609a2286c5/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13160-jq5phiX0FhVZ/1960a90d7735/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -13750,7 +13766,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24776-rmY9FHI7Vm5y/19609a228726/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13160-jq5phiX0FhVZ/1960a90d7796/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
