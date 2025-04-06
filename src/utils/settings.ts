@@ -151,7 +151,7 @@ function generalSettings() {
   settings.addButton(
     'get-gemini-api',
     'Get your own Gemini API here',
-    'get API',
+    'get API Key',
     () => {
       window.location.href = 'https://aistudio.google.com/app/apikey/';
     },
