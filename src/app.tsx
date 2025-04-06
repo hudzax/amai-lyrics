@@ -30,77 +30,61 @@ import Whentil from "./utils/Whentil";
 import Session from "./components/Global/Session";
 import sleep from "./utils/sleep";
 
-async function main() {
+async function initializePlatformAndSettings() {
   await Platform.OnSpotifyReady;
 
-  if (!storage.get("lyrics_spacing")) {
-    storage.set("lyrics_spacing", "Medium");
-  }
-
-  // Cache the HTML element and set line spacing using a lookup map
-  const htmlElement = document.documentElement;
-  const spacingMap = {
-    "None": "0",
-    "Small": "0.5cqw 0",
-    "Medium": "1cqw 0",
-    "Large": "1.5cqw 0",
-    "Extra Large": "2cqw 0"
-  };
-  const lyricsSpacing = storage.get("lyrics_spacing");
-  if (spacingMap[lyricsSpacing]) {
-    htmlElement.style.setProperty("--SpicyLyrics-LineSpacing", spacingMap[lyricsSpacing]);
-  }
-  
-  // Lets set out the Settings Menu
   setSettingsMenu();
 
   const OldStyleFont = storage.get("old-style-font");
   if (OldStyleFont != "true") {
     LoadFonts();
   }
+}
 
-  // Lets import the required Scripts from our CDN
-  {
-    const scripts: HTMLScriptElement[] = [];
-    const GetFullUrl = (target: string) => `https://cdn.jsdelivr.net/gh/hudzax/amai-lyrics/dist/${target}`;
-    
-    const AddScript = (scriptFileName: string) => {
-      const script = document.createElement("script");
-      script.async = true;
-      script.src = GetFullUrl(scriptFileName);
-      console.log("Adding Script:", script.src);
-      script.onerror = () => {
-        sleep(2).then(() => {
-          window._spicy_lyrics?.func_main?._deappend_scripts();
-          window._spicy_lyrics?.func_main?._add_script(scriptFileName);
-          window._spicy_lyrics?.func_main?._append_scripts();
-        })
-      };
-      scripts.push(script);
-    }
+async function loadExternalScripts() {
+  const scripts: HTMLScriptElement[] = [];
+  const GetFullUrl = (target: string) => `https://cdn.jsdelivr.net/gh/hudzax/amai-lyrics/dist/${target}`;
 
-    Global.SetScope("func_main._add_script", AddScript);
-
-    AddScript("spicy-hasher.js");
-    AddScript("pako.min.js");
-    AddScript("vibrant.min.js");
-
-    const AppendScripts = () => {
-      for (const script of scripts) {
-        document.head.appendChild(script);
-      }
-    }
-    const DeappendScripts = () => {
-      for (const script of scripts) {
-        document.head.removeChild(script);
-      }
-    }
-
-    Global.SetScope("func_main._append_scripts", AppendScripts)
-    Global.SetScope("func_main._deappend_scripts", DeappendScripts)
-    AppendScripts();
+  const AddScript = (scriptFileName: string) => {
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = GetFullUrl(scriptFileName);
+    console.log("Adding Script:", script.src);
+    script.onerror = () => {
+      sleep(2).then(() => {
+        window._spicy_lyrics?.func_main?._deappend_scripts();
+        window._spicy_lyrics?.func_main?._add_script(scriptFileName);
+        window._spicy_lyrics?.func_main?._append_scripts();
+      })
+    };
+    scripts.push(script);
   }
 
+  Global.SetScope("func_main._add_script", AddScript);
+
+  AddScript("spicy-hasher.js");
+  AddScript("pako.min.js");
+  AddScript("vibrant.min.js");
+
+  const AppendScripts = () => {
+    for (const script of scripts) {
+      document.head.appendChild(script);
+    }
+  }
+  const DeappendScripts = () => {
+    for (const script of scripts) {
+      document.head.removeChild(script);
+    }
+  }
+
+  Global.SetScope("func_main._append_scripts", AppendScripts)
+  Global.SetScope("func_main._deappend_scripts", DeappendScripts)
+  AppendScripts();
+}
+
+let buttonRegistered = false;
+
+function setupUI() {
   const skeletonStyle = document.createElement("style");
   skeletonStyle.innerHTML = `
         <style>
@@ -110,44 +94,50 @@ async function main() {
                 }
             }
         </style>
-  `
+  `;
   document.head.appendChild(skeletonStyle);
-
-  let buttonRegistered = false;
 
   const button = new Spicetify.Playbar.Button(
     "Amai Lyrics",
     Icons.LyricsPage,
     (self) => {
-        if (!self.active) {
-          Session.Navigate({ pathname: "/AmaiLyrics" });
-          //self.active = true;
-        } else {
-          Session.GoBack();
-          //self.active = false;
-        }
+      if (!self.active) {
+        Session.Navigate({ pathname: "/AmaiLyrics" });
+      } else {
+        Session.GoBack();
+      }
     },
-    false, // Whether the button is disabled.
-    false, // Whether the button is active.
+    false as any,
+    false as any,
   );
 
-  Global.Event.listen("pagecontainer:available", () => {
-    if (!buttonRegistered) {
-      button.register();
-      buttonRegistered = true;
-    }
-  })
+  return button;
+}
 
+function setupEventListeners(button) {
+
+  Whentil.When(() => Spicetify.Player.data.item?.type, () => {
+    const IsSomethingElseThanTrack = Spicetify.Player.data.item?.type !== "track";
+
+    if (IsSomethingElseThanTrack) {
+      button.deregister();
+      buttonRegistered = false;
+    } else {
+      if (!buttonRegistered) {
+        button.register();
+        buttonRegistered = true;
+      }
+    }
+  });
+}
+
+function setupDynamicBackground(button) {
   const Hometinue = async () => {
-    // Because somethimes the "syncedPositon" was unavailable, I'm putting this check here that checks if the Spicetify?.Platform?.PlaybackAPI is available (which is then used in SpotifyPlayer.GetTrackPosition())
     Whentil.When(() => Spicetify.Platform.PlaybackAPI, () => {
       requestPositionSync();
-    })
+    });
 
-    // Lets set out Dynamic Background (spicy-dynamic-bg) to the now playing bar
     let lastImgUrl;
-
-    // Cache lowQMode flag once instead of multiple storage.get calls
     const lowQModeEnabled = storage.get("lowQMode") === "true";
 
     function applyDynamicBackgroundToNowPlayingBar(coverUrl: string) {
@@ -158,7 +148,7 @@ async function main() {
         if (nowPlayingBar == null) {
           lastImgUrl = null;
           return;
-        };
+        }
         if (coverUrl === lastImgUrl) return;
 
         const dynamicBackground = document.createElement("div");
@@ -168,30 +158,29 @@ async function main() {
           <img class="Back" src="${coverUrl}" />
           <img class="BackCenter" src="${coverUrl}" />
         `;
-    
+
         nowPlayingBar.classList.add("spicy-dynamic-bg-in-this");
 
-        if (nowPlayingBar?.querySelector(".spicy-dynamic-bg")) {
-          nowPlayingBar.querySelector(".spicy-dynamic-bg").remove();
-        }
-    
+        const existing = nowPlayingBar.querySelector(".spicy-dynamic-bg");
+        if (existing) existing.remove();
+
         nowPlayingBar.appendChild(dynamicBackground);
 
         lastImgUrl = coverUrl;
       } catch (error) {
-        console.error("Error Applying the Dynamic BG to the NowPlayingBar:", error) 
+        console.error("Error Applying the Dynamic BG to the NowPlayingBar:", error);
       }
     }
 
     new IntervalManager(1, () => {
-      applyDynamicBackgroundToNowPlayingBar(Spicetify.Player.data?.item.metadata.image_url);
+      applyDynamicBackgroundToNowPlayingBar(Spicetify.Player.data?.item?.metadata?.image_url);
     }).Start();
 
     Spicetify.Player.addEventListener("songchange", onSongChange);
     Spicetify.Player.addEventListener("songchange", async (event) => {
       if (!event?.data) return;
       fetchLyrics(event?.data?.item?.uri).then(ApplyLyrics);
-    })
+    });
 
     let songChangeLoopRan = 0;
     const songChangeLoopMax = 5;
@@ -207,9 +196,9 @@ async function main() {
           onSongChange(event);
           return;
         }
-      };
+      }
 
-      const IsSomethingElseThanTrack = Spicetify.Player.data.item.type !== "track";
+      const IsSomethingElseThanTrack = Spicetify.Player.data.item?.type !== "track";
 
       if (IsSomethingElseThanTrack) {
         button.deregister();
@@ -222,25 +211,22 @@ async function main() {
       }
 
       if (!IsSomethingElseThanTrack) {
-        // Prefetch Track Data
         await SpotifyPlayer.Track.GetTrackInfo();
         if (document.querySelector("#SpicyLyricsPage .ContentBox .NowBar")) UpdateNowBar();
       }
 
-      applyDynamicBackgroundToNowPlayingBar(Spicetify.Player.data?.item.metadata.image_url)
+      applyDynamicBackgroundToNowPlayingBar(Spicetify.Player.data?.item?.metadata?.image_url);
       songChangeLoopRan = 0;
 
       if (!document.querySelector("#SpicyLyricsPage .LyricsContainer")) return;
-      ApplyDynamicBackground(document.querySelector("#SpicyLyricsPage .ContentBox"))
+      ApplyDynamicBackground(document.querySelector("#SpicyLyricsPage .ContentBox"));
     }
 
-    {
-      fetchLyrics(Spicetify.Player.data.item.uri).then(ApplyLyrics);
-    }
+    fetchLyrics(Spicetify.Player.data.item?.uri).then(ApplyLyrics);
 
     window.addEventListener("online", async () => {
       storage.set("lastFetchedUri", null);
-      fetchLyrics(Spicetify.Player.data?.item.uri).then(ApplyLyrics);
+      fetchLyrics(Spicetify.Player.data?.item?.uri).then(ApplyLyrics);
     });
 
     new IntervalManager(ScrollingIntervalTime, () => ScrollToActiveLine(ScrollSimplebar)).Start();
@@ -260,13 +246,13 @@ async function main() {
       lastLocation = location;
     }
 
-    Spicetify.Platform.History.listen(loadPage)
-    
+    Spicetify.Platform.History.listen(loadPage);
+
     if (Spicetify.Platform.History.location.pathname === "/AmaiLyrics") {
       Global.Event.listen("pagecontainer:available", () => {
         loadPage(Spicetify.Platform.History.location);
         button.active = true;
-      })
+      });
     }
 
     button.tippy.setContent("Amai Lyrics");
@@ -274,11 +260,11 @@ async function main() {
     Spicetify.Player.addEventListener("onplaypause", (e) => {
       SpotifyPlayer.IsPlaying = !e?.data?.isPaused;
       Global.Event.evoke("playback:playpause", e);
-    })
+    });
 
     {
       let lastLoopType = null;
-      const LoopInt = new IntervalManager(0.2, () => {
+      new IntervalManager(0.2, () => {
         const LoopState = Spicetify.Player.getRepeat();
         const LoopType = LoopState === 1 ? "context" : LoopState === 2 ? "track" : "none";
         SpotifyPlayer.LoopType = LoopType;
@@ -291,7 +277,7 @@ async function main() {
 
     {
       let lastShuffleType = null;
-      const ShuffleInt = new IntervalManager(0.2, () => {
+      new IntervalManager(0.2, () => {
         const ShuffleType = (Spicetify.Player.origin._state.smartShuffle ? "smart" : (Spicetify.Player.origin._state.shuffle ? "normal" : "none"));
         SpotifyPlayer.ShuffleType = ShuffleType;
         if (lastShuffleType !== ShuffleType) {
@@ -300,10 +286,10 @@ async function main() {
         lastShuffleType = ShuffleType;
       }).Start();
     }
-    
+
     {
       let lastPosition = 0;
-      const PositionInt = new IntervalManager(0.5, () => {
+      new IntervalManager(0.5, () => {
         const pos = SpotifyPlayer.GetTrackPosition();
         if (pos !== lastPosition) {
           Global.Event.evoke("playback:position", pos);
@@ -314,41 +300,32 @@ async function main() {
 
     SpotifyPlayer.IsPlaying = IsPlaying();
 
-    // Events
     {
       Spicetify.Player.addEventListener("onplaypause", (e) => Global.Event.evoke("playback:playpause", e));
       Spicetify.Player.addEventListener("onprogress", (e) => Global.Event.evoke("playback:progress", e));
       Spicetify.Player.addEventListener("songchange", (e) => Global.Event.evoke("playback:songchange", e));
 
       Whentil.When(() => document.querySelector<HTMLElement>(".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]"), () => {
-        Global.Event.evoke("pagecontainer:available", document.querySelector<HTMLElement>(".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]"))
-      })
+        Global.Event.evoke("pagecontainer:available", document.querySelector<HTMLElement>(".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]"));
+      });
 
       Spicetify.Platform.History.listen(Session.RecordNavigation);
       Session.RecordNavigation(Spicetify.Platform.History.location);
     }
-  }
-
-  Whentil.When(() => Spicetify.Player.data.item.type, () => {
-    const IsSomethingElseThanTrack = Spicetify.Player.data.item.type !== "track";
-
-    if (IsSomethingElseThanTrack) {
-      button.deregister();
-      buttonRegistered = false;
-    } else {
-      if (!buttonRegistered) {
-        button.register();
-        buttonRegistered = true;
-      }
-    }
-  })
+  };
 
   Whentil.When(() => (
     SpicyHasher &&
-    pako &&
-    Vibrant
+    pako
   ), Hometinue);
+}
 
+async function main() {
+  await initializePlatformAndSettings();
+  await loadExternalScripts();
+  const button = setupUI();
+  setupEventListeners(button);
+  setupDynamicBackground(button);
 }
 
 export default main;
