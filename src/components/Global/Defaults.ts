@@ -52,7 +52,15 @@ const Defaults = {
 
 **Strict Rules:**
 1. **Mandatory Conversion:** You MUST process EVERY Korean word or sequence of Hangul characters. No exceptions. Do NOT skip any.
+   - **CRITICAL: Process ALL Korean text regardless of position** - whether it appears at the beginning, middle, or end of a mixed-language phrase
+   - **CRITICAL: Never skip any Korean text** - even in complex mixed-language scenarios like "여름여름해hey" or "good밤"
+   - **CRITICAL: Scan the entire text character by character** to ensure no Korean sequence is missed
+
 2. **Inline Format:** Insert the romaja pronunciation enclosed in curly braces {} immediately following the corresponding Korean word/sequence. Example: 한국어 → 한국어{hangugeo}.
+   - **CRITICAL: Correct Placement:** The romaja in curly braces MUST appear immediately after the complete Korean sequence and BEFORE any non-Korean text.
+   - **INCORRECT:** 유주be{yuju} (wrong placement - romaja should be after the full Korean sequence)
+   - **CORRECT:** 유주{yuju}be (correct placement - romaja immediately follows Korean characters)
+
 3. **Romanization System:** Strictly use the official Revised Romanization of Korean (RR) rules with these specific guidelines:
    - Use 'eo' not 'o' for ㅓ (예: 어→eo, 너→neo)
    - Use 'eu' not 'u' for ㅡ (예: 음→eum, 늘→neul)
@@ -61,13 +69,25 @@ const Defaults = {
    - Distinguish between ㅅ→s and ㅆ→ss
    - Proper handling of ㄹ: initial ㄹ→r, medial ㄹ→l, final ㄹ→l
    - Proper handling of assimilation: 합니다→hamnida (not hapnida)
+
 4. **Linguistic Accuracy:**
    - Process word by word, not character by character
    - Correctly handle syllable-final consonants (받침)
    - Apply proper sound change rules for connected speech
    - Account for consonant assimilation and liaison between words when needed
+
 5. **Preserve Everything Else:** Keep all non-Korean text (English, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are.
+
 6. **Completeness Check:** Before outputting, methodically verify that every single Korean word/sequence has its romaja pair.
+   - **CRITICAL: Double-check mixed-language phrases** to ensure no Korean text was missed
+   - **CRITICAL: Verify that Korean text at the beginning, middle, or end of phrases** all have romaja
+
+7. **Mixed Text Handling:** For text that mixes Korean with other scripts or characters:
+   - First identify ALL consecutive Korean Hangul characters, regardless of their position in the text
+   - Add romaja ONLY after the complete Korean sequence
+   - Leave all non-Korean characters in their original positions
+   - **CRITICAL: Process Korean text at the end of mixed phrases** (e.g., "good밤" → "good밤{bam}")
+   - **CRITICAL: Process Korean text in the middle of mixed phrases** (e.g., "hello안녕hi" → "hello안녕{annyeong}hi")
 
 **Examples with Sound Change Rules:**
 * 정말 → 정말{jeongmal}
@@ -87,6 +107,12 @@ const Defaults = {
 * Particles: 책이 → 책이{chaegi}, 집에 → 집에{jibe} (Note sound changes)
 * Long words: 가나다라마바사 → 가나다라마바사{ganadaramabasa}
 * Words with suffixes: 꽃잎처럼 → 꽃잎처럼{konnipcheorom}
+* Mixed script: 유주beat → 유주{yuju}beat (romaja only for Korean part)
+* Mixed script: 아이love노래 → 아이{ai}love노래{norae} (separate Korean sequences)
+* Korean at end: good밤 → good밤{bam} (Korean at end of phrase)
+* Korean in middle: hello안녕hi → hello안녕{annyeong}hi (Korean in middle)
+* Complex mix: 여름여름해hey → 여름여름해{yeoreumyeoreumhae}hey (Korean followed by English)
+* Multiple Korean segments: 안녕hello여보세요 → 안녕{annyeong}hello여보세요{yeoboseyo} (Korean-English-Korean)
 
 **Input:** You will receive lines of song lyrics.
 **Output:** Return the lyrics with romaja added inline according to the rules above. Ensure the output maintains the original line structure.`,
