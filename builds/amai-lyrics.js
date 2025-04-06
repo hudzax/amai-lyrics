@@ -156,7 +156,7 @@
   };
 
   // package.json
-  var version = "1.0.39";
+  var version = "1.0.40";
 
   // src/components/Global/Defaults.ts
   var Defaults = {
@@ -211,7 +211,15 @@
 
 **Strict Rules:**
 1. **Mandatory Conversion:** You MUST process EVERY Korean word or sequence of Hangul characters. No exceptions. Do NOT skip any.
+   - **CRITICAL: Process ALL Korean text regardless of position** - whether it appears at the beginning, middle, or end of a mixed-language phrase
+   - **CRITICAL: Never skip any Korean text** - even in complex mixed-language scenarios like "\uC5EC\uB984\uC5EC\uB984\uD574hey" or "good\uBC24"
+   - **CRITICAL: Scan the entire text character by character** to ensure no Korean sequence is missed
+
 2. **Inline Format:** Insert the romaja pronunciation enclosed in curly braces {} immediately following the corresponding Korean word/sequence. Example: \uD55C\uAD6D\uC5B4 \u2192 \uD55C\uAD6D\uC5B4{hangugeo}.
+   - **CRITICAL: Correct Placement:** The romaja in curly braces MUST appear immediately after the complete Korean sequence and BEFORE any non-Korean text.
+   - **INCORRECT:** \uC720\uC8FCbe{yuju} (wrong placement - romaja should be after the full Korean sequence)
+   - **CORRECT:** \uC720\uC8FC{yuju}be (correct placement - romaja immediately follows Korean characters)
+
 3. **Romanization System:** Strictly use the official Revised Romanization of Korean (RR) rules with these specific guidelines:
    - Use 'eo' not 'o' for \u3153 (\uC608: \uC5B4\u2192eo, \uB108\u2192neo)
    - Use 'eu' not 'u' for \u3161 (\uC608: \uC74C\u2192eum, \uB298\u2192neul)
@@ -220,13 +228,25 @@
    - Distinguish between \u3145\u2192s and \u3146\u2192ss
    - Proper handling of \u3139: initial \u3139\u2192r, medial \u3139\u2192l, final \u3139\u2192l
    - Proper handling of assimilation: \uD569\uB2C8\uB2E4\u2192hamnida (not hapnida)
+
 4. **Linguistic Accuracy:**
    - Process word by word, not character by character
    - Correctly handle syllable-final consonants (\uBC1B\uCE68)
    - Apply proper sound change rules for connected speech
    - Account for consonant assimilation and liaison between words when needed
+
 5. **Preserve Everything Else:** Keep all non-Korean text (English, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are.
+
 6. **Completeness Check:** Before outputting, methodically verify that every single Korean word/sequence has its romaja pair.
+   - **CRITICAL: Double-check mixed-language phrases** to ensure no Korean text was missed
+   - **CRITICAL: Verify that Korean text at the beginning, middle, or end of phrases** all have romaja
+
+7. **Mixed Text Handling:** For text that mixes Korean with other scripts or characters:
+   - First identify ALL consecutive Korean Hangul characters, regardless of their position in the text
+   - Add romaja ONLY after the complete Korean sequence
+   - Leave all non-Korean characters in their original positions
+   - **CRITICAL: Process Korean text at the end of mixed phrases** (e.g., "good\uBC24" \u2192 "good\uBC24{bam}")
+   - **CRITICAL: Process Korean text in the middle of mixed phrases** (e.g., "hello\uC548\uB155hi" \u2192 "hello\uC548\uB155{annyeong}hi")
 
 **Examples with Sound Change Rules:**
 * \uC815\uB9D0 \u2192 \uC815\uB9D0{jeongmal}
@@ -246,6 +266,12 @@
 * Particles: \uCC45\uC774 \u2192 \uCC45\uC774{chaegi}, \uC9D1\uC5D0 \u2192 \uC9D1\uC5D0{jibe} (Note sound changes)
 * Long words: \uAC00\uB098\uB2E4\uB77C\uB9C8\uBC14\uC0AC \u2192 \uAC00\uB098\uB2E4\uB77C\uB9C8\uBC14\uC0AC{ganadaramabasa}
 * Words with suffixes: \uAF43\uC78E\uCC98\uB7FC \u2192 \uAF43\uC78E\uCC98\uB7FC{konnipcheorom}
+* Mixed script: \uC720\uC8FCbeat \u2192 \uC720\uC8FC{yuju}beat (romaja only for Korean part)
+* Mixed script: \uC544\uC774love\uB178\uB798 \u2192 \uC544\uC774{ai}love\uB178\uB798{norae} (separate Korean sequences)
+* Korean at end: good\uBC24 \u2192 good\uBC24{bam} (Korean at end of phrase)
+* Korean in middle: hello\uC548\uB155hi \u2192 hello\uC548\uB155{annyeong}hi (Korean in middle)
+* Complex mix: \uC5EC\uB984\uC5EC\uB984\uD574hey \u2192 \uC5EC\uB984\uC5EC\uB984\uD574{yeoreumyeoreumhae}hey (Korean followed by English)
+* Multiple Korean segments: \uC548\uB155hello\uC5EC\uBCF4\uC138\uC694 \u2192 \uC548\uB155{annyeong}hello\uC5EC\uBCF4\uC138\uC694{yeoboseyo} (Korean-English-Korean)
 
 **Input:** You will receive lines of song lyrics.
 **Output:** Return the lyrics with romaja added inline according to the rules above. Ensure the output maintains the original line structure.`,
@@ -3901,7 +3927,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         }
       } else {
         line.Text = line.Text?.replace(
-          /((?:\([0-9\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)[?.!,"']?){([^\}]+)}/g,
+          /((?:\([0-9\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)(?:[a-zA-Z]*)[?.!,"']?){([^\}]+)}/g,
           '<ruby class="romaja">$1<rt>$2</rt></ruby>'
         );
       }
@@ -4055,7 +4081,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         }
       } else {
         line.Text = line.Text?.replace(
-          /((?:\([0-9\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)[?.!,"']?){([^\}]+)}/g,
+          /((?:\([0-9\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)(?:[a-zA-Z]*)[?.!,"']?){([^\}]+)}/g,
           '<ruby class="romaja">$1<rt>$2</rt></ruby>'
         );
       }
@@ -12339,7 +12365,7 @@ ${JSON.stringify(
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-15700-Hiq0Vh9rkTvr/1960c5410ef7/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-21692-EJbZvYD2CPyq/1960c6c58407/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -12365,7 +12391,7 @@ ${JSON.stringify(
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15700-Hiq0Vh9rkTvr/1960c5410890/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21692-EJbZvYD2CPyq/1960c6c57e40/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -12504,7 +12530,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15700-Hiq0Vh9rkTvr/1960c5410b81/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21692-EJbZvYD2CPyq/1960c6c58121/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -12712,7 +12738,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15700-Hiq0Vh9rkTvr/1960c5410c02/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21692-EJbZvYD2CPyq/1960c6c58192/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -13186,7 +13212,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15700-Hiq0Vh9rkTvr/1960c5410cc3/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21692-EJbZvYD2CPyq/1960c6c58243/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -13294,7 +13320,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15700-Hiq0Vh9rkTvr/1960c5410d24/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21692-EJbZvYD2CPyq/1960c6c58294/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -13499,7 +13525,7 @@ ruby > rt {
   width: 100%;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15700-Hiq0Vh9rkTvr/1960c5410d85/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21692-EJbZvYD2CPyq/1960c6c582f5/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -13536,7 +13562,7 @@ ruby > rt {
   --DefaultLyricsScale: 0.95;
   --DefaultEmphasisLyricsScale: 0.95;
   --DefaultLineScale: 1;
-  --Vocal-NotSung-opacity: 0.51;
+  --Vocal-NotSung-opacity: 0.85;
   --Vocal-Active-opacity: 1;
   --Vocal-Sung-opacity: 0.497;
   --Vocal-Hover-opacity: 1;
@@ -13784,7 +13810,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15700-Hiq0Vh9rkTvr/1960c5410e06/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21692-EJbZvYD2CPyq/1960c6c58356/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
