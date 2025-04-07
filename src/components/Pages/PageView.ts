@@ -100,11 +100,6 @@ function OpenPage() {
         </div>
     `;
 
-  const SkipSpicyFont = storage.get('skip-spicy-font');
-  if (SkipSpicyFont != 'true') {
-    elem.classList.add('UseSpicyFont');
-  }
-
   PageRoot.appendChild(elem);
 
   const lowQMode = storage.get('lowQMode');

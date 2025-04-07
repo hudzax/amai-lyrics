@@ -10,8 +10,6 @@ const Defaults = {
   lowQualityMode: false,
   CurrentLyricsType: 'None',
   LyricsContainerExists: false,
-  SkipSpicyFont: false,
-  OldStyleFont: false,
   ForceCoverImage_InLowQualityMode: false,
   lyrics_spacing: 2,
   enableRomaji: false,

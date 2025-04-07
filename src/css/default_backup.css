@@ -20,12 +20,12 @@
   font-weight: 700;
 }
 
-#SpicyLyricsPage.UseSpicyFont {
-  font-family: SpicyLyrics;/*  , var(--fallback-fonts,sans-serif); */
+#SpicyLyricsPage {
+  font-family: "Noto Sans";/*  , var(--fallback-fonts,sans-serif); */
 }
 
 [font="Vazirmatn"] {
-  font-family: "VazirmatnRegular", sans-serif;
+  font-family: "Vazirmatn", sans-serif;
 }
 
 .Root__main-view:has(#SpicyLyricsPage) .main-view-container__scroll-node-child,.Root__main-view:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer,div.os-host:has(#SpicyLyricsPage) .main-view-container__scroll-node-child,div.os-host:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {

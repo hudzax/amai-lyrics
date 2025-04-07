@@ -22,12 +22,12 @@
   user-select: none;
 }
 
-#SpicyLyricsPage.UseSpicyFont {
-  font-family: SpicyLyrics;
+#SpicyLyricsPage {
+  font-family: "Noto Sans";
 }
 
 [font="Vazirmatn"] {
-  font-family: "VazirmatnRegular", sans-serif;
+  font-family: "Vazirmatn", sans-serif;
 }
 
 body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child,
