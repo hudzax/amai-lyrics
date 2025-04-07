@@ -156,7 +156,7 @@
   };
 
   // package.json
-  var version = "1.0.40";
+  var version = "1.0.41";
 
   // src/components/Global/Defaults.ts
   var Defaults = {
@@ -169,8 +169,6 @@
     lowQualityMode: false,
     CurrentLyricsType: "None",
     LyricsContainerExists: false,
-    SkipSpicyFont: false,
-    OldStyleFont: false,
     ForceCoverImage_InLowQualityMode: false,
     lyrics_spacing: 2,
     enableRomaji: false,
@@ -820,45 +818,51 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
 
   // src/utils/Gets/GetProgress.ts
-  var syncedPosition;
   var syncTimings = [0.05, 0.1, 0.15, 0.75];
   var canSyncNonLocalTimestamp = Spicetify.Player.isPlaying() ? syncTimings.length : 0;
-  var requestPositionSync = () => {
+  var syncedPosition = {
+    StartedSyncAt: 0,
+    Position: 0
+  };
+  async function getLocalPosition(startedAt, SpotifyPlatform2) {
+    const { position } = await SpotifyPlatform2.PlayerAPI._contextPlayer.getPositionState({});
+    return {
+      StartedSyncAt: startedAt,
+      Position: Number(position)
+    };
+  }
+  async function getNonLocalPosition(startedAt, SpotifyPlatform2) {
+    if (canSyncNonLocalTimestamp > 0) {
+      await SpotifyPlatform2.PlayerAPI._contextPlayer.resume({});
+    }
+    canSyncNonLocalTimestamp = Math.max(0, canSyncNonLocalTimestamp - 1);
+    return {
+      StartedSyncAt: startedAt,
+      Position: SpotifyPlatform2.PlayerAPI._state.positionAsOfTimestamp + (Date.now() - SpotifyPlatform2.PlayerAPI._state.timestamp)
+    };
+  }
+  async function requestPositionSync() {
     try {
       const SpotifyPlatform2 = Spicetify.Platform;
       const startedAt = performance.now();
       const isLocallyPlaying = SpotifyPlatform2.PlaybackAPI._isLocal;
-      const getLocalPosition = () => {
-        return SpotifyPlatform2.PlayerAPI._contextPlayer.getPositionState({}).then(({ position }) => ({
-          StartedSyncAt: startedAt,
-          Position: Number(position)
-        }));
-      };
-      const getNonLocalPosition = () => {
-        return (canSyncNonLocalTimestamp > 0 ? SpotifyPlatform2.PlayerAPI._contextPlayer.resume({}) : Promise.resolve()).then(() => {
-          canSyncNonLocalTimestamp = Math.max(0, canSyncNonLocalTimestamp - 1);
-          return {
-            StartedSyncAt: startedAt,
-            Position: SpotifyPlatform2.PlayerAPI._state.positionAsOfTimestamp + (Date.now() - SpotifyPlatform2.PlayerAPI._state.timestamp)
-          };
-        });
-      };
-      const sync = isLocallyPlaying ? getLocalPosition() : getNonLocalPosition();
-      sync.then((position) => {
-        syncedPosition = position;
-      }).then(() => {
-        const delay = isLocallyPlaying ? 1 / 60 : canSyncNonLocalTimestamp === 0 ? 1 / 60 : syncTimings[syncTimings.length - canSyncNonLocalTimestamp];
-        setTimeout(requestPositionSync, delay * 1e3);
-      });
+      const delay = !Spicetify.Player.isPlaying() || canSyncNonLocalTimestamp === 0 ? 1 / 60 : isLocallyPlaying ? 1 / 60 : syncTimings[syncTimings.length - canSyncNonLocalTimestamp];
+      let pos;
+      if (isLocallyPlaying) {
+        pos = await getLocalPosition(startedAt, SpotifyPlatform2);
+      } else {
+        pos = await getNonLocalPosition(startedAt, SpotifyPlatform2);
+      }
+      syncedPosition.StartedSyncAt = pos.StartedSyncAt;
+      syncedPosition.Position = pos.Position;
+      setTimeout(requestPositionSync, delay * 1e3);
     } catch (error) {
       console.error("Sync Position: Fail, More Details:", error);
     }
-  };
+  }
   function GetProgress() {
-    if (!syncedPosition) {
-      console.error("Synced Position: Unavailable");
+    if (!syncedPosition.StartedSyncAt && !syncedPosition.Position) {
       if (SpotifyPlayer?._DEPRECATED_?.GetTrackPosition) {
-        console.warn("Synced Position: Skip, Using DEPRECATED Version");
         return SpotifyPlayer._DEPRECATED_.GetTrackPosition();
       }
       console.warn("Synced Position: Skip, Returning 0");
@@ -867,8 +871,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const SpotifyPlatform2 = Spicetify.Platform;
     const isLocallyPlaying = SpotifyPlatform2.PlaybackAPI._isLocal;
     const { StartedSyncAt, Position } = syncedPosition;
-    const now2 = performance.now();
-    const deltaTime = now2 - StartedSyncAt;
+    const deltaTime = performance.now() - StartedSyncAt;
     if (!Spicetify.Player.isPlaying()) {
       return SpotifyPlatform2.PlayerAPI._state.positionAsOfTimestamp;
     }
@@ -3789,17 +3792,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }).Start();
 
   // src/utils/Addons.ts
-  function DeepFreeze(obj) {
-    if (obj === null || typeof obj !== "object") {
-      return obj;
-    }
-    const clone = Array.isArray(obj) ? [] : {};
-    Object.keys(obj).forEach((key) => {
-      const value = obj[key];
-      clone[key] = DeepFreeze(value);
-    });
-    return Object.freeze(clone);
-  }
   function IsPlaying() {
     const state = Spicetify?.Player?.data?.isPaused;
     return !state;
@@ -4884,10 +4876,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             </div>
         </div>
     `;
-    const SkipSpicyFont = storage_default.get("skip-spicy-font");
-    if (SkipSpicyFont != "true") {
-      elem.classList.add("UseSpicyFont");
-    }
     PageRoot.appendChild(elem);
     const lowQMode = storage_default.get("lowQMode");
     const lowQModeEnabled = lowQMode && lowQMode === "true";
@@ -12055,22 +12043,6 @@ ${JSON.stringify(
     settings.pushSettings();
   }
 
-  // src/components/Styling/Fonts.ts
-  var Fonts = DeepFreeze({
-    Lyrics: () => LoadFont("https://fonts.spikerko.org/spicy-lyrics/source.css"),
-    Vazirmatn: () => LoadFont("https://fonts.spikerko.org/Vazirmatn/source.css")
-  });
-  function LoadFonts() {
-    Object.values(Fonts).forEach((loadFontFunction) => loadFontFunction());
-  }
-  function LoadFont(url) {
-    const fontElement = document.createElement("link");
-    fontElement.href = url;
-    fontElement.rel = "stylesheet";
-    fontElement.type = "text/css";
-    document.head.appendChild(fontElement);
-  }
-
   // src/utils/sleep.ts
   async function sleep(seconds) {
     return new Promise((resolve) => setTimeout(resolve, seconds * 1e3));
@@ -12078,63 +12050,47 @@ ${JSON.stringify(
   var sleep_default = sleep;
 
   // src/app.tsx
-  async function main() {
+  async function initializePlatformAndSettings() {
     await Platform_default.OnSpotifyReady;
-    if (!storage_default.get("lyrics_spacing")) {
-      storage_default.set("lyrics_spacing", "Medium");
-    }
-    const htmlElement = document.documentElement;
-    const spacingMap = {
-      "None": "0",
-      "Small": "0.5cqw 0",
-      "Medium": "1cqw 0",
-      "Large": "1.5cqw 0",
-      "Extra Large": "2cqw 0"
-    };
-    const lyricsSpacing = storage_default.get("lyrics_spacing");
-    if (spacingMap[lyricsSpacing]) {
-      htmlElement.style.setProperty("--SpicyLyrics-LineSpacing", spacingMap[lyricsSpacing]);
-    }
     setSettingsMenu();
-    const OldStyleFont = storage_default.get("old-style-font");
-    if (OldStyleFont != "true") {
-      LoadFonts();
-    }
-    {
-      const scripts = [];
-      const GetFullUrl = (target) => `https://cdn.jsdelivr.net/gh/hudzax/amai-lyrics/dist/${target}`;
-      const AddScript = (scriptFileName) => {
-        const script = document.createElement("script");
-        script.async = true;
-        script.src = GetFullUrl(scriptFileName);
-        console.log("Adding Script:", script.src);
-        script.onerror = () => {
-          sleep_default(2).then(() => {
-            window._spicy_lyrics?.func_main?._deappend_scripts();
-            window._spicy_lyrics?.func_main?._add_script(scriptFileName);
-            window._spicy_lyrics?.func_main?._append_scripts();
-          });
-        };
-        scripts.push(script);
+  }
+  async function loadExternalScripts() {
+    const scripts = [];
+    const GetFullUrl = (target) => `https://cdn.jsdelivr.net/gh/hudzax/amai-lyrics/dist/${target}`;
+    const AddScript = (scriptFileName) => {
+      const script = document.createElement("script");
+      script.async = true;
+      script.src = GetFullUrl(scriptFileName);
+      console.log("Adding Script:", script.src);
+      script.onerror = () => {
+        sleep_default(2).then(() => {
+          window._spicy_lyrics?.func_main?._deappend_scripts();
+          window._spicy_lyrics?.func_main?._add_script(scriptFileName);
+          window._spicy_lyrics?.func_main?._append_scripts();
+        });
       };
-      Global_default.SetScope("func_main._add_script", AddScript);
-      AddScript("spicy-hasher.js");
-      AddScript("pako.min.js");
-      AddScript("vibrant.min.js");
-      const AppendScripts = () => {
-        for (const script of scripts) {
-          document.head.appendChild(script);
-        }
-      };
-      const DeappendScripts = () => {
-        for (const script of scripts) {
-          document.head.removeChild(script);
-        }
-      };
-      Global_default.SetScope("func_main._append_scripts", AppendScripts);
-      Global_default.SetScope("func_main._deappend_scripts", DeappendScripts);
-      AppendScripts();
-    }
+      scripts.push(script);
+    };
+    Global_default.SetScope("func_main._add_script", AddScript);
+    AddScript("spicy-hasher.js");
+    AddScript("pako.min.js");
+    AddScript("vibrant.min.js");
+    const AppendScripts = () => {
+      for (const script of scripts) {
+        document.head.appendChild(script);
+      }
+    };
+    const DeappendScripts = () => {
+      for (const script of scripts) {
+        document.head.removeChild(script);
+      }
+    };
+    Global_default.SetScope("func_main._append_scripts", AppendScripts);
+    Global_default.SetScope("func_main._deappend_scripts", DeappendScripts);
+    AppendScripts();
+  }
+  var buttonRegistered = false;
+  function setupUI() {
     const skeletonStyle = document.createElement("style");
     skeletonStyle.innerHTML = `
         <style>
@@ -12146,7 +12102,6 @@ ${JSON.stringify(
         </style>
   `;
     document.head.appendChild(skeletonStyle);
-    let buttonRegistered = false;
     const button = new Spicetify.Playbar.Button(
       "Amai Lyrics",
       Icons.LyricsPage,
@@ -12160,28 +12115,43 @@ ${JSON.stringify(
       false,
       false
     );
-    Global_default.Event.listen("pagecontainer:available", () => {
-      if (!buttonRegistered) {
-        button.register();
-        buttonRegistered = true;
+    return button;
+  }
+  function setupEventListeners(button) {
+    Whentil_default.When(
+      () => Spicetify.Player.data.item?.type,
+      () => {
+        const IsSomethingElseThanTrack = Spicetify.Player.data.item?.type !== "track";
+        if (IsSomethingElseThanTrack) {
+          button.deregister();
+          buttonRegistered = false;
+        } else {
+          if (!buttonRegistered) {
+            button.register();
+            buttonRegistered = true;
+          }
+        }
       }
-    });
+    );
+  }
+  function setupDynamicBackground(button) {
     const Hometinue = async () => {
       Whentil_default.When(() => Spicetify.Platform.PlaybackAPI, () => {
         requestPositionSync();
       });
-      let lastImgUrl;
+      let lastImgUrl = null;
       const lowQModeEnabled = storage_default.get("lowQMode") === "true";
       function applyDynamicBackgroundToNowPlayingBar(coverUrl) {
         if (lowQModeEnabled)
           return;
-        const nowPlayingBar = document.querySelector(".Root__right-sidebar aside.NowPlayingView");
+        const nowPlayingBar = document.querySelector(
+          ".Root__right-sidebar aside.NowPlayingView"
+        );
         try {
-          if (nowPlayingBar == null) {
+          if (!nowPlayingBar) {
             lastImgUrl = null;
             return;
           }
-          ;
           if (coverUrl === lastImgUrl)
             return;
           const dynamicBackground = document.createElement("div");
@@ -12192,41 +12162,43 @@ ${JSON.stringify(
           <img class="BackCenter" src="${coverUrl}" />
         `;
           nowPlayingBar.classList.add("spicy-dynamic-bg-in-this");
-          if (nowPlayingBar?.querySelector(".spicy-dynamic-bg")) {
-            nowPlayingBar.querySelector(".spicy-dynamic-bg").remove();
-          }
+          const existing = nowPlayingBar.querySelector(".spicy-dynamic-bg");
+          if (existing)
+            existing.remove();
           nowPlayingBar.appendChild(dynamicBackground);
           lastImgUrl = coverUrl;
         } catch (error) {
-          console.error("Error Applying the Dynamic BG to the NowPlayingBar:", error);
+          console.error(
+            "Error Applying the Dynamic BG to the NowPlayingBar:",
+            error
+          );
         }
       }
       new IntervalManager(1, () => {
-        applyDynamicBackgroundToNowPlayingBar(Spicetify.Player.data?.item.metadata.image_url);
+        const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
+        applyDynamicBackgroundToNowPlayingBar(coverUrl);
       }).Start();
       Spicetify.Player.addEventListener("songchange", onSongChange);
       Spicetify.Player.addEventListener("songchange", async (event) => {
         if (!event?.data)
           return;
-        fetchLyrics(event?.data?.item?.uri).then(ApplyLyrics);
-      });
-      let songChangeLoopRan = 0;
-      const songChangeLoopMax = 5;
-      async function onSongChange(event) {
-        let currentUri = event?.data?.item?.uri;
-        if (!currentUri) {
-          currentUri = Spicetify.Player.data?.item?.uri;
-          if (!currentUri) {
-            if (songChangeLoopRan >= songChangeLoopMax) {
-              return;
-            }
-            songChangeLoopRan++;
-            onSongChange(event);
-            return;
-          }
+        const uri = event?.data?.item?.uri;
+        if (uri) {
+          fetchLyrics(uri).then(ApplyLyrics);
         }
-        ;
-        const IsSomethingElseThanTrack = Spicetify.Player.data.item.type !== "track";
+      });
+      async function onSongChange(event) {
+        let attempts = 0;
+        const maxAttempts = 5;
+        let currentUri2 = event?.data?.item?.uri;
+        while (!currentUri2 && attempts < maxAttempts) {
+          await sleep_default(0.1);
+          currentUri2 = Spicetify.Player.data?.item?.uri;
+          attempts++;
+        }
+        if (!currentUri2)
+          return;
+        const IsSomethingElseThanTrack = Spicetify.Player.data.item?.type !== "track";
         if (IsSomethingElseThanTrack) {
           button.deregister();
           buttonRegistered = false;
@@ -12241,20 +12213,30 @@ ${JSON.stringify(
           if (document.querySelector("#SpicyLyricsPage .ContentBox .NowBar"))
             UpdateNowBar();
         }
-        applyDynamicBackgroundToNowPlayingBar(Spicetify.Player.data?.item.metadata.image_url);
-        songChangeLoopRan = 0;
+        applyDynamicBackgroundToNowPlayingBar(
+          Spicetify.Player.data?.item?.metadata?.image_url
+        );
         if (!document.querySelector("#SpicyLyricsPage .LyricsContainer"))
           return;
-        ApplyDynamicBackground(document.querySelector("#SpicyLyricsPage .ContentBox"));
+        ApplyDynamicBackground(
+          document.querySelector("#SpicyLyricsPage .ContentBox")
+        );
       }
-      {
-        fetchLyrics(Spicetify.Player.data.item.uri).then(ApplyLyrics);
+      const currentUri = Spicetify.Player.data?.item?.uri;
+      if (currentUri) {
+        fetchLyrics(currentUri).then(ApplyLyrics);
       }
       window.addEventListener("online", async () => {
         storage_default.set("lastFetchedUri", null);
-        fetchLyrics(Spicetify.Player.data?.item.uri).then(ApplyLyrics);
+        const currentUri2 = Spicetify.Player.data?.item?.uri;
+        if (currentUri2) {
+          fetchLyrics(currentUri2).then(ApplyLyrics);
+        }
       });
-      new IntervalManager(ScrollingIntervalTime, () => ScrollToActiveLine(ScrollSimplebar)).Start();
+      new IntervalManager(
+        ScrollingIntervalTime,
+        () => ScrollToActiveLine(ScrollSimplebar)
+      ).Start();
       let lastLocation = null;
       function loadPage(location) {
         if (location.pathname === "/AmaiLyrics") {
@@ -12282,7 +12264,7 @@ ${JSON.stringify(
       });
       {
         let lastLoopType = null;
-        const LoopInt = new IntervalManager(0.2, () => {
+        new IntervalManager(0.2, () => {
           const LoopState = Spicetify.Player.getRepeat();
           const LoopType = LoopState === 1 ? "context" : LoopState === 2 ? "track" : "none";
           SpotifyPlayer.LoopType = LoopType;
@@ -12294,7 +12276,7 @@ ${JSON.stringify(
       }
       {
         let lastShuffleType = null;
-        const ShuffleInt = new IntervalManager(0.2, () => {
+        new IntervalManager(0.2, () => {
           const ShuffleType = Spicetify.Player.origin._state.smartShuffle ? "smart" : Spicetify.Player.origin._state.shuffle ? "normal" : "none";
           SpotifyPlayer.ShuffleType = ShuffleType;
           if (lastShuffleType !== ShuffleType) {
@@ -12305,7 +12287,7 @@ ${JSON.stringify(
       }
       {
         let lastPosition = 0;
-        const PositionInt = new IntervalManager(0.5, () => {
+        new IntervalManager(0.5, () => {
           const pos = SpotifyPlayer.GetTrackPosition();
           if (pos !== lastPosition) {
             Global_default.Event.evoke("playback:position", pos);
@@ -12315,29 +12297,50 @@ ${JSON.stringify(
       }
       SpotifyPlayer.IsPlaying = IsPlaying();
       {
-        Spicetify.Player.addEventListener("onplaypause", (e) => Global_default.Event.evoke("playback:playpause", e));
-        Spicetify.Player.addEventListener("onprogress", (e) => Global_default.Event.evoke("playback:progress", e));
-        Spicetify.Player.addEventListener("songchange", (e) => Global_default.Event.evoke("playback:songchange", e));
-        Whentil_default.When(() => document.querySelector(".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]"), () => {
-          Global_default.Event.evoke("pagecontainer:available", document.querySelector(".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]"));
-        });
+        Spicetify.Player.addEventListener(
+          "onplaypause",
+          (e) => Global_default.Event.evoke("playback:playpause", e)
+        );
+        Spicetify.Player.addEventListener(
+          "onprogress",
+          (e) => Global_default.Event.evoke("playback:progress", e)
+        );
+        Spicetify.Player.addEventListener(
+          "songchange",
+          (e) => Global_default.Event.evoke("playback:songchange", e)
+        );
+        Whentil_default.When(
+          () => document.querySelector(
+            ".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]"
+          ),
+          () => {
+            Global_default.Event.evoke(
+              "pagecontainer:available",
+              document.querySelector(
+                ".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]"
+              )
+            );
+          }
+        );
         Spicetify.Platform.History.listen(Session_default.RecordNavigation);
         Session_default.RecordNavigation(Spicetify.Platform.History.location);
       }
     };
-    Whentil_default.When(() => Spicetify.Player.data.item.type, () => {
-      const IsSomethingElseThanTrack = Spicetify.Player.data.item.type !== "track";
-      if (IsSomethingElseThanTrack) {
-        button.deregister();
-        buttonRegistered = false;
-      } else {
-        if (!buttonRegistered) {
-          button.register();
-          buttonRegistered = true;
-        }
-      }
-    });
-    Whentil_default.When(() => SpicyHasher && pako && Vibrant, Hometinue);
+    Whentil_default.When(
+      () => typeof SpicyHasher !== "undefined" && typeof pako !== "undefined",
+      Hometinue
+    );
+  }
+  async function main() {
+    const fontLink = document.createElement("link");
+    fontLink.rel = "stylesheet";
+    fontLink.href = "https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Vazirmatn&display=swap";
+    document.head.appendChild(fontLink);
+    await initializePlatformAndSettings();
+    await loadExternalScripts();
+    const button = setupUI();
+    setupEventListeners(button);
+    setupDynamicBackground(button);
   }
   var app_default = main;
 
@@ -12365,7 +12368,7 @@ ${JSON.stringify(
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-21692-EJbZvYD2CPyq/1960c6c58407/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-8112-8tknl4fGvjZT/1960dd352347/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -12391,7 +12394,7 @@ ${JSON.stringify(
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21692-EJbZvYD2CPyq/1960c6c57e40/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8112-8tknl4fGvjZT/1960dd351d20/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -12415,11 +12418,11 @@ ${JSON.stringify(
   -moz-user-select: none;
   user-select: none;
 }
-#SpicyLyricsPage.UseSpicyFont {
-  font-family: SpicyLyrics;
+#SpicyLyricsPage {
+  font-family: "Noto Sans";
 }
 [font=Vazirmatn] {
-  font-family: "VazirmatnRegular", sans-serif;
+  font-family: "Vazirmatn", sans-serif;
 }
 body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child,
 body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer,
@@ -12530,7 +12533,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21692-EJbZvYD2CPyq/1960c6c58121/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8112-8tknl4fGvjZT/1960dd352031/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -12738,7 +12741,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21692-EJbZvYD2CPyq/1960c6c58192/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8112-8tknl4fGvjZT/1960dd3520b2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -12770,7 +12773,7 @@ button:has(#SpicyLyricsPageSvg):after {
   justify-content: center;
   height: 100%;
   width: 100%;
-  --default-font-size: clamp(0.5rem, calc(1cqw* 3), 2.1rem);
+  --default-font-size: clamp(0.5rem, calc(0.8cqw * 3), 3rem);
 }
 #SpicyLyricsPage .ContentBox .NowBar {
   --title-height: 5cqh;
@@ -12798,8 +12801,8 @@ button:has(#SpicyLyricsPageSvg):after {
   justify-content: center;
   align-items: center;
   position: relative;
-  width: 22cqw;
-  height: 22cqw;
+  width: 20cqw;
+  height: 20cqw;
 }
 #SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox {
   width: 30cqw;
@@ -12851,7 +12854,7 @@ button:has(#SpicyLyricsPageSvg):after {
   margin: 2cqh;
 }
 #SpicyLyricsPage .ContentBox .NowBar .Header .Metadata .SongName {
-  font-weight: 900;
+  font-weight: 700;
   font-size: var(--default-font-size);
   color: white;
   text-align: center;
@@ -12861,7 +12864,7 @@ button:has(#SpicyLyricsPageSvg):after {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 24cqw;
+  max-width: 20cqw;
   display: inline-block;
   text-align: center;
   line-height: var(--title-height);
@@ -12878,7 +12881,7 @@ button:has(#SpicyLyricsPageSvg):after {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 23cqw;
+  max-width: 20cqw;
   display: inline-block;
   text-align: center;
 }
@@ -12892,8 +12895,8 @@ button:has(#SpicyLyricsPageSvg):after {
   margin: 0 !important;
 }
 #SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox.Skeletoned {
-  width: 27cqw;
-  height: 27cqw;
+  width: 20cqw;
+  height: 20cqw;
   --BorderRadius: 1cqh;
 }
 #SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox.Skeletoned {
@@ -13212,7 +13215,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21692-EJbZvYD2CPyq/1960c6c58243/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8112-8tknl4fGvjZT/1960dd352173/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -13320,7 +13323,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21692-EJbZvYD2CPyq/1960c6c58294/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8112-8tknl4fGvjZT/1960dd3521c4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -13338,7 +13341,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   --ActiveTextGlowDef: rgba(255,255,255,0.4) 0px 0px 14px;
   --StrongTextGlowDef: rgba(255,255,255,0.68) 0px 0px 16.4px;
   --StrongerTextGlowDef: rgba(255,255,255,0.74) 0px 0px 16px;
-  --DefaultLyricsSize: clamp(1.5rem,calc(1cqw* 7), 2rem);
+  --DefaultLyricsSize: clamp(1.5rem,calc(.425cqw * 7), 3rem);
   --DefaultLyricsSize-Small: clamp(1.1rem,calc(1cqw* 6), 1.5rem);
   --Simplebar-Scrollbar-Color: rgba(255, 255, 255, 0.6);
   overflow-x: hidden !important;
@@ -13346,7 +13349,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   height: 100cqh;
   width: 100%;
   font-size: var(--DefaultLyricsSize);
-  font-weight: 900;
+  font-weight: 700;
   transition:
     opacity,
     transform,
@@ -13392,10 +13395,6 @@ header.main-topBar-container .amai-info {
 .simplebar-content .line {
   padding-top: 0.4rem;
   padding-bottom: 0.4rem;
-}
-.line-furigana {
-  font-size: var(--DefaultLyricsSize-Small);
-  margin-top: -0.25rem;
 }
 #amai-settings button,
 #amai-dev-settings button,
@@ -13487,19 +13486,17 @@ header.main-topBar-container .amai-info {
   background-color: transparent;
 }
 #SpicyLyricsPage .ContentBox .NowBar .Header .Metadata {
-  margin: 3cqh 0 0 0;
-}
-#SpicyLyricsPage .ContentBox .NowBar .Header .Metadata .Artists {
-  line-height: calc(var(--title-height) * 0.8);
+  margin: 1.8cqh 0 0 0;
 }
 ruby {
   margin-top: -0.5rem;
 }
 ruby.romaja {
-  margin-right: 0.5rem;
+  margin-right: 0.25rem;
 }
 ruby > rt {
-  margin-bottom: 0.1rem;
+  margin-bottom: 0.15rem;
+  font-size: 55%;
 }
 .Button-buttonSecondary-small-useBrowserDefaultFocusStyle {
   border: 1px solid rgba(255, 255, 255, 0.55);
@@ -13513,7 +13510,7 @@ ruby > rt {
   display: block;
   font-size: 1.25rem;
   color: #ccc;
-  line-height: 1rem;
+  line-height: 1.35rem;
   font-weight: 600;
 }
 .line {
@@ -13525,7 +13522,7 @@ ruby > rt {
   width: 100%;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21692-EJbZvYD2CPyq/1960c6c582f5/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8112-8tknl4fGvjZT/1960dd352215/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -13541,7 +13538,7 @@ ruby > rt {
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line .letter,
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   cursor: pointer;
-  font-weight: 900;
+  font-weight: 700;
   -webkit-text-fill-color: transparent;
   -webkit-background-clip: text;
   background-clip: text;
@@ -13810,7 +13807,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21692-EJbZvYD2CPyq/1960c6c58356/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8112-8tknl4fGvjZT/1960dd352286/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
