@@ -183,7 +183,10 @@ function setupDynamicBackground(button) {
     Spicetify.Player.addEventListener("songchange", onSongChange);
     Spicetify.Player.addEventListener("songchange", async (event) => {
       if (!event?.data) return;
-      fetchLyrics(event?.data?.item?.uri).then(ApplyLyrics);
+      const uri = event?.data?.item?.uri;
+      if (uri) {
+        fetchLyrics(uri).then(ApplyLyrics);
+      }
     });
 
     async function onSongChange(event) {
@@ -228,11 +231,17 @@ function setupDynamicBackground(button) {
       );
     }
 
-    fetchLyrics(Spicetify.Player.data.item?.uri).then(ApplyLyrics);
+    const currentUri = Spicetify.Player.data?.item?.uri;
+    if (currentUri) {
+      fetchLyrics(currentUri).then(ApplyLyrics);
+    }
 
     window.addEventListener("online", async () => {
       storage.set("lastFetchedUri", null);
-      fetchLyrics(Spicetify.Player.data?.item?.uri).then(ApplyLyrics);
+      const currentUri = Spicetify.Player.data?.item?.uri;
+      if (currentUri) {
+        fetchLyrics(currentUri).then(ApplyLyrics);
+      }
     });
 
     new IntervalManager(ScrollingIntervalTime, () =>
