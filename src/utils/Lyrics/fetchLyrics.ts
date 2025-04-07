@@ -195,11 +195,9 @@ async function fetchLyricsFromAPI(
       return handleErrorStatus(status);
     }
 
-    ClearLyricsPageContainer();
-
     // Handle empty responses
-    if (lyricsJson === null) return await noLyricsMessage(false, false);
-    if (lyricsJson === '') return await noLyricsMessage(false, true);
+    if (lyricsJson === null) return await noLyricsMessage(trackId);
+    if (lyricsJson === '') return await noLyricsMessage(trackId);
 
     // Process the lyrics for display and AI enhancement
     return await processAndEnhanceLyrics(trackId, lyricsJson);
@@ -207,7 +205,7 @@ async function fetchLyricsFromAPI(
     console.error('Error fetching lyrics:', error);
     storage.set('currentlyFetching', 'false');
     ClearLyricsPageContainer();
-    return await noLyricsMessage(false, true);
+    return await noLyricsMessage();
   }
 }
 
@@ -220,11 +218,11 @@ async function fetchLyricsFromAPI(
 async function handleErrorStatus(status: number): Promise<string> {
   if (status === 401) {
     storage.set('currentlyFetching', 'false');
-    return await noLyricsMessage(false, false);
+    return await noLyricsMessage();
   }
 
   ClearLyricsPageContainer();
-  return await noLyricsMessage(false, true);
+  return await noLyricsMessage();
 }
 
 /**
@@ -775,7 +773,7 @@ async function getLyricsFromCache(
 
     // Handle no lyrics case
     if (lyricsFromCache.status === 'NO_LYRICS') {
-      return await noLyricsMessage(false, true);
+      return await noLyricsMessage();
     }
 
     // Update UI and state
@@ -789,7 +787,7 @@ async function getLyricsFromCache(
     // Handle errors
     ClearLyricsPageContainer();
     console.log('Error parsing saved lyrics data:', error);
-    return await noLyricsMessage(false, true);
+    return await noLyricsMessage();
   }
 }
 
@@ -811,7 +809,7 @@ async function getLyricsFromLocalStorage(
       const split = savedLyricsData.split(':');
       const id = split[1];
       if (id === trackId) {
-        return await noLyricsMessage(false, true);
+        return await noLyricsMessage();
       }
     } else {
       // Parse and check lyrics data
@@ -866,35 +864,33 @@ function resetLyricsUI(): void {
  * @param localStorage - Whether to store in local storage
  * @returns Status code
  */
-async function noLyricsMessage(
-  cache = true,
-  localStorage = true,
-): Promise<string> {
+async function noLyricsMessage(trackId?: string): Promise<string> {
   try {
-    // Show notification
-    Spicetify.showNotification('Lyrics unavailable', false, 1000);
-
     // Update state
     storage.set('currentlyFetching', 'false');
-    HideLoaderContainer();
-    Defaults.CurrentLyricsType = 'None';
+    if (Spicetify.Player.data.item.uri?.split(':')[2] === trackId) {
+      // Show notification
+      Spicetify.showNotification('Lyrics unavailable', false, 1000);
+      HideLoaderContainer();
+      Defaults.CurrentLyricsType = 'None';
+      // Update UI
+      document
+        .querySelector<HTMLElement>(
+          '#SpicyLyricsPage .ContentBox .LyricsContainer',
+        )
+        ?.classList.add('Hidden');
+      document
+        .querySelector<HTMLElement>('#SpicyLyricsPage .ContentBox')
+        ?.classList.add('LyricsHidden');
+      // Show now bar
+      OpenNowBar();
+      DeregisterNowBarBtn();
+    }
   } catch (error) {
     console.error('Amai Lyrics: Error showing no lyrics message', error);
     // Ensure we at least set the fetching state to false
     storage.set('currentlyFetching', 'false');
   }
-
-  // Update UI
-  document
-    .querySelector<HTMLElement>('#SpicyLyricsPage .ContentBox .LyricsContainer')
-    ?.classList.add('Hidden');
-  document
-    .querySelector<HTMLElement>('#SpicyLyricsPage .ContentBox')
-    ?.classList.add('LyricsHidden');
-
-  // Show now bar
-  OpenNowBar();
-  DeregisterNowBarBtn();
 
   return '1';
 }
