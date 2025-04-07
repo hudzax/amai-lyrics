@@ -6,6 +6,7 @@ import { Icons } from "./components/Styling/Icons";
 import { IntervalManager } from "./utils/IntervalManager";
 import { SpotifyPlayer } from "./components/Global/SpotifyPlayer";
 import { IsPlaying } from "./utils/Addons";
+import { ScrollSimplebar } from "./utils/Scrolling/Simplebar/ScrollSimplebar";
 
 // CSS Imports
 import "./css/default.css";
@@ -130,7 +131,6 @@ function setupDynamicBackground(button) {
     const { default: ApplyDynamicBackground } = await import("./components/DynamicBG/dynamicBackground");
     const { UpdateNowBar } = await import("./components/Utils/NowBar");
     const { ScrollToActiveLine } = await import("./utils/Scrolling/ScrollToActiveLine");
-    const { ScrollSimplebar } = await import("./utils/Scrolling/Simplebar/ScrollSimplebar");
     const { default: PageView } = await import("./components/Pages/PageView");
 
     Whentil.When(() => Spicetify.Platform.PlaybackAPI, () => {
