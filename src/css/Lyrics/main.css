@@ -17,7 +17,7 @@
   --ActiveTextGlowDef: rgba(255,255,255,0.4) 0px 0px 14px;
   --StrongTextGlowDef: rgba(255,255,255,0.68) 0px 0px 16.4px;
   --StrongerTextGlowDef: rgba(255,255,255,0.74) 0px 0px 16px;
-  --DefaultLyricsSize: clamp(1.5rem,calc(1cqw* 7), 2rem);
+  --DefaultLyricsSize: clamp(1.5rem,calc(.425cqw * 7), 3rem);
   --DefaultLyricsSize-Small: clamp(1.1rem,calc(1cqw* 6), 1.5rem);
   --Simplebar-Scrollbar-Color: rgba(255, 255, 255, 0.6);
 
@@ -26,7 +26,7 @@
   height: 100cqh;
   width: 100%;
   font-size: var(--DefaultLyricsSize);
-  font-weight: 900;
+  font-weight: 700;
   transition: opacity, transform, scale 0.2s linear;
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
@@ -84,11 +84,6 @@ header.main-topBar-container .amai-info {
 .simplebar-content .line {
   padding-top: 0.4rem;
   padding-bottom: 0.4rem;
-}
-
-.line-furigana {
-  font-size:var(--DefaultLyricsSize-Small);
-  margin-top: -0.25rem;
 }
 
 #amai-settings button, #amai-dev-settings button, #amai-info button {
@@ -188,11 +183,11 @@ ruby {
 }
 
 ruby.romaja {
-  margin-right: 0.5rem;
+  margin-right: 0.25rem;
 }
 
 ruby > rt {
-  margin-bottom:0.1rem;
+  margin-bottom:0.15rem;
 }
 
 .Button-buttonSecondary-small-useBrowserDefaultFocusStyle {

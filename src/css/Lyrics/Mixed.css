@@ -15,7 +15,7 @@
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line .letter,
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   cursor: pointer;
-  font-weight: 900;
+  font-weight: 700;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   position: relative;

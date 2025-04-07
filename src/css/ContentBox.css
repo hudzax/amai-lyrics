@@ -33,7 +33,7 @@
     justify-content: center;
     height: 100%;
     width: 100%;
-    --default-font-size: clamp(0.5rem, calc(1cqw* 3), 2.1rem);
+    --default-font-size: clamp(0.5rem, calc(0.8cqw * 3), 3rem);
 }
 
 #SpicyLyricsPage .ContentBox .NowBar {
@@ -65,8 +65,8 @@
     justify-content: center;
     align-items: center;
     position: relative;
-    width: 22cqw;
-    height: 22cqw;
+    width: 20cqw;
+    height: 20cqw;
 }
 
 #SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox {
@@ -131,7 +131,7 @@
 }
 
 #SpicyLyricsPage .ContentBox .NowBar .Header .Metadata .SongName {
-    font-weight: 900;
+    font-weight: 700;
     font-size: var(--default-font-size);
     color: white;
     text-align: center;           /* Fallback for child alignment */
@@ -142,7 +142,7 @@
     white-space: nowrap;          /* Prevents text from wrapping */
     overflow: hidden;             /* Hides overflowing text */
     text-overflow: ellipsis;      /* Adds the ellipsis (...) */
-    max-width: 24cqw;              /* Restricts span to the container width */
+    max-width: 20cqw;              /* Restricts span to the container width */
     display: inline-block;        /* Ensures width is respected */
     text-align: center;           /* Align text within the span */
     line-height: var(--title-height);
@@ -161,7 +161,7 @@
     white-space: nowrap;          /* Prevents text from wrapping */
     overflow: hidden;             /* Hides overflowing text */
     text-overflow: ellipsis;      /* Adds the ellipsis (...) */
-    max-width: 23cqw;             /* Restricts span to the container width */
+    max-width: 20cqw;             /* Restricts span to the container width */
     display: inline-block;        /* Ensures width is respected */
     text-align: center;           /* Align text within the span */
 }
@@ -179,8 +179,8 @@
 }
 
 #SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox.Skeletoned {
-    width: 27cqw;
-    height: 27cqw;
+    width: 20cqw;
+    height: 20cqw;
     --BorderRadius: 1cqh;
 }
 
