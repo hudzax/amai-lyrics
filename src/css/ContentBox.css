@@ -45,13 +45,13 @@
     justify-content: center;
     height: 100cqh;
     z-index: -1;
-    margin: 0 5cqw 0 5cqw;
+    margin: 0 3.5cqw 0 3.5cqw;
     transition: opacity 0.2s ease-in-out;
     opacity: 0;
 }
 
 #SpicyLyricsPage .ContentBox .NowBar.RightSide {
-    margin: 0 5cqw 0 5cqw;
+    margin: 0 3.5cqw 0 3.5cqw;
 }
 
 #SpicyLyricsPage .ContentBox .NowBar.Active {
@@ -150,7 +150,7 @@
 
 #SpicyLyricsPage .ContentBox .NowBar .Header .Metadata .Artists {
     font-size: calc(var(--default-font-size)* 0.65);
-    line-height: calc(var(--title-height) * 0.5);
+    line-height: calc(var(--title-height) * 0.65);
     font-weight: 400;
     color: white;
     opacity: .7;
