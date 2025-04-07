@@ -156,7 +156,7 @@
   };
 
   // package.json
-  var version = "1.0.41";
+  var version = "1.0.42";
 
   // src/components/Global/Defaults.ts
   var Defaults = {
@@ -11249,26 +11249,25 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       if (status !== 200) {
         return handleErrorStatus(status);
       }
-      ClearLyricsPageContainer();
       if (lyricsJson === null)
-        return await noLyricsMessage(false, false);
+        return await noLyricsMessage(trackId);
       if (lyricsJson === "")
-        return await noLyricsMessage(false, true);
+        return await noLyricsMessage(trackId);
       return await processAndEnhanceLyrics(trackId, lyricsJson);
     } catch (error) {
       console.error("Error fetching lyrics:", error);
       storage_default.set("currentlyFetching", "false");
       ClearLyricsPageContainer();
-      return await noLyricsMessage(false, true);
+      return await noLyricsMessage();
     }
   }
   async function handleErrorStatus(status) {
     if (status === 401) {
       storage_default.set("currentlyFetching", "false");
-      return await noLyricsMessage(false, false);
+      return await noLyricsMessage();
     }
     ClearLyricsPageContainer();
-    return await noLyricsMessage(false, true);
+    return await noLyricsMessage();
   }
   async function processAndEnhanceLyrics(trackId, lyricsJson) {
     const { lyricsJson: preparedLyricsJson, lyricsOnly } = await prepareLyricsForGemini(lyricsJson);
@@ -11535,7 +11534,7 @@ ${JSON.stringify(
         return null;
       }
       if (lyricsFromCache.status === "NO_LYRICS") {
-        return await noLyricsMessage(false, true);
+        return await noLyricsMessage();
       }
       storage_default.set("currentLyricsData", JSON.stringify(lyricsFromCache));
       HideLoaderContainer();
@@ -11545,7 +11544,7 @@ ${JSON.stringify(
     } catch (error) {
       ClearLyricsPageContainer();
       console.log("Error parsing saved lyrics data:", error);
-      return await noLyricsMessage(false, true);
+      return await noLyricsMessage();
     }
   }
   async function getLyricsFromLocalStorage(trackId) {
@@ -11557,7 +11556,7 @@ ${JSON.stringify(
         const split = savedLyricsData.split(":");
         const id = split[1];
         if (id === trackId) {
-          return await noLyricsMessage(false, true);
+          return await noLyricsMessage();
         }
       } else {
         const lyricsData = JSON.parse(savedLyricsData);
@@ -11586,20 +11585,24 @@ ${JSON.stringify(
     if (!Fullscreen_default.IsOpen)
       PageView_default.AppendViewControls(true);
   }
-  async function noLyricsMessage(cache = true, localStorage = true) {
+  async function noLyricsMessage(trackId) {
     try {
-      Spicetify.showNotification("Lyrics unavailable", false, 1e3);
       storage_default.set("currentlyFetching", "false");
-      HideLoaderContainer();
-      Defaults_default.CurrentLyricsType = "None";
+      if (Spicetify.Player.data.item.uri?.split(":")[2] === trackId) {
+        Spicetify.showNotification("Lyrics unavailable", false, 1e3);
+        HideLoaderContainer();
+        Defaults_default.CurrentLyricsType = "None";
+        document.querySelector(
+          "#SpicyLyricsPage .ContentBox .LyricsContainer"
+        )?.classList.add("Hidden");
+        document.querySelector("#SpicyLyricsPage .ContentBox")?.classList.add("LyricsHidden");
+        OpenNowBar();
+        DeregisterNowBarBtn();
+      }
     } catch (error) {
       console.error("Amai Lyrics: Error showing no lyrics message", error);
       storage_default.set("currentlyFetching", "false");
     }
-    document.querySelector("#SpicyLyricsPage .ContentBox .LyricsContainer")?.classList.add("Hidden");
-    document.querySelector("#SpicyLyricsPage .ContentBox")?.classList.add("LyricsHidden");
-    OpenNowBar();
-    DeregisterNowBarBtn();
     return "1";
   }
   var ContainerShowLoaderTimeout = null;
@@ -12368,7 +12371,7 @@ ${JSON.stringify(
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-8112-8tknl4fGvjZT/1960dd352347/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-17804-Fi2xno5sY2Sy/1960def2c717/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -12394,7 +12397,7 @@ ${JSON.stringify(
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8112-8tknl4fGvjZT/1960dd351d20/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17804-Fi2xno5sY2Sy/1960def2c150/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -12533,7 +12536,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8112-8tknl4fGvjZT/1960dd352031/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17804-Fi2xno5sY2Sy/1960def2c421/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -12741,7 +12744,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8112-8tknl4fGvjZT/1960dd3520b2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17804-Fi2xno5sY2Sy/1960def2c492/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -13215,7 +13218,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8112-8tknl4fGvjZT/1960dd352173/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17804-Fi2xno5sY2Sy/1960def2c533/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -13323,7 +13326,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8112-8tknl4fGvjZT/1960dd3521c4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17804-Fi2xno5sY2Sy/1960def2c584/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -13522,7 +13525,7 @@ ruby > rt {
   width: 100%;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8112-8tknl4fGvjZT/1960dd352215/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17804-Fi2xno5sY2Sy/1960def2c5d5/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -13807,7 +13810,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8112-8tknl4fGvjZT/1960dd352286/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17804-Fi2xno5sY2Sy/1960def2c646/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
