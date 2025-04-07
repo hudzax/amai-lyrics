@@ -1,18 +1,11 @@
-import fetchLyrics from "./utils/Lyrics/fetchLyrics";
+// Dynamic imports will be used for some modules for performance
 import { ScrollingIntervalTime } from "./utils/Lyrics/lyrics";
 import storage from "./utils/storage";
 import { setSettingsMenu } from "./utils/settings";
-import PageView from "./components/Pages/PageView";
 import { Icons } from "./components/Styling/Icons";
-import ApplyDynamicBackground from "./components/DynamicBG/dynamicBackground";
 import { IntervalManager } from "./utils/IntervalManager";
 import { SpotifyPlayer } from "./components/Global/SpotifyPlayer";
 import { IsPlaying } from "./utils/Addons";
-import { ScrollToActiveLine } from "./utils/Scrolling/ScrollToActiveLine";
-import { ScrollSimplebar } from "./utils/Scrolling/Simplebar/ScrollSimplebar";
-import ApplyLyrics from "./utils/Lyrics/Global/Applyer";
-import { UpdateNowBar } from "./components/Utils/NowBar";
-import { requestPositionSync } from "./utils/Gets/GetProgress";
 
 // CSS Imports
 import "./css/default.css";
@@ -131,6 +124,15 @@ function setupEventListeners(button) {
 
 function setupDynamicBackground(button) {
   const Hometinue = async () => {
+    const [{ requestPositionSync }] = await Promise.all([import("./utils/Gets/GetProgress")]);
+    const { default: fetchLyrics } = await import("./utils/Lyrics/fetchLyrics");
+    const { default: ApplyLyrics } = await import("./utils/Lyrics/Global/Applyer");
+    const { default: ApplyDynamicBackground } = await import("./components/DynamicBG/dynamicBackground");
+    const { UpdateNowBar } = await import("./components/Utils/NowBar");
+    const { ScrollToActiveLine } = await import("./utils/Scrolling/ScrollToActiveLine");
+    const { ScrollSimplebar } = await import("./utils/Scrolling/Simplebar/ScrollSimplebar");
+    const { default: PageView } = await import("./components/Pages/PageView");
+
     Whentil.When(() => Spicetify.Platform.PlaybackAPI, () => {
       requestPositionSync();
     });
@@ -370,8 +372,11 @@ async function main() {
   fontLink.href = "https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Vazirmatn&display=swap"; // Replace with your desired Google Fonts URL
   document.head.appendChild(fontLink);
 
-  await initializePlatformAndSettings();
-  await loadExternalScripts();
+  await Promise.all([
+    initializePlatformAndSettings(),
+    loadExternalScripts()
+  ]);
+
   const button = setupUI();
   setupEventListeners(button);
   setupDynamicBackground(button);
