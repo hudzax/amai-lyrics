@@ -171,11 +171,7 @@ header.main-topBar-container .amai-info {
 }
 
 #SpicyLyricsPage .ContentBox .NowBar .Header .Metadata {
-  margin:3cqh 0 0 0;
-}
-
-#SpicyLyricsPage .ContentBox .NowBar .Header .Metadata .Artists {
-  line-height: calc(var(--title-height) * 0.8);
+  margin:1.8cqh 0 0 0;
 }
 
 ruby {
@@ -188,6 +184,7 @@ ruby.romaja {
 
 ruby > rt {
   margin-bottom:0.15rem;
+  font-size:55%;
 }
 
 .Button-buttonSecondary-small-useBrowserDefaultFocusStyle {
