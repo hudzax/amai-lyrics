@@ -38,6 +38,15 @@
     ) ;
 }
 
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.static {
+  background-image:
+    linear-gradient(var(--gradient-degrees),
+      rgba(255,255,255,0.8)
+      var(--gradient-position),
+      rgba(255,255,255,var(--gradient-alpha-end)) calc(var(--gradient-position) + 20% + var(--gradient-offset))
+    ) ;
+}
+
 /* #SpicyLyricsPage.Podcast .LyricsContainer .LyricsContent .line,
 #SpicyLyricsPage.Podcast .LyricsContainer .LyricsContent .line .word {
   background-image: linear-gradient(var(--gradient-degrees), rgba(255, 255, 255, var(--gradient-alpha)) var(--gradient-position), rgba(0, 0, 0, var(--gradient-alpha-end)) calc(var(--gradient-position) + 20% + var(--gradient-offset))) !important;
@@ -50,7 +59,7 @@
   --DefaultEmphasisLyricsScale: 0.95;
   --DefaultLineScale: 1;
 
-  --Vocal-NotSung-opacity: 0.85;
+  --Vocal-NotSung-opacity: 1;
   --Vocal-Active-opacity: 1;
   --Vocal-Sung-opacity: 0.497;
 

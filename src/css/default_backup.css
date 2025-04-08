@@ -385,7 +385,7 @@
   --DefaultEmphasisLyricsScale: 0.95;
   --DefaultLineScale: 1;
 
-  --Vocal-NotSung-opacity: 0.51;
+  --Vocal-NotSung-opacity: 1;
   --Vocal-Active-opacity: 1;
   --Vocal-Sung-opacity: 0.497;
   --gradient-degrees: 180deg !important;
