@@ -9,8 +9,15 @@
   var __getOwnPropNames = Object.getOwnPropertyNames;
   var __getProtoOf = Object.getPrototypeOf;
   var __hasOwnProp = Object.prototype.hasOwnProperty;
+  var __esm = (fn, res) => function __init() {
+    return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+  };
   var __commonJS = (cb, mod) => function __require() {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  };
+  var __export = (target, all) => {
+    for (var name in all)
+      __defProp(target, name, { get: all[name], enumerable: true });
   };
   var __copyProps = (to, from, except, desc) => {
     if (from && typeof from === "object" || typeof from === "function") {
@@ -25,162 +32,417 @@
     mod
   ));
 
-  // external-global-plugin:react
-  var require_react = __commonJS({
-    "external-global-plugin:react"(exports, module) {
-      module.exports = Spicetify.React;
+  // node_modules/@hudzax/web-modules/UniqueId.js
+  function GetUniqueId() {
+    while (true) {
+      const id = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
+        let r = Math.random() * 16 | 0, v = c == "x" ? r : r & 3 | 8;
+        return v.toString(16);
+      });
+      if (GeneratedIds.has(id) === false) {
+        GeneratedIds.add(id);
+        return id;
+      }
+    }
+  }
+  var GeneratedIds;
+  var init_UniqueId = __esm({
+    "node_modules/@hudzax/web-modules/UniqueId.js"() {
+      GeneratedIds = /* @__PURE__ */ new Set();
     }
   });
 
-  // external-global-plugin:react-dom
-  var require_react_dom = __commonJS({
-    "external-global-plugin:react-dom"(exports, module) {
-      module.exports = Spicetify.ReactDOM;
-    }
-  });
-
-  // node_modules/@hudzax/web-modules/SpikyCache.js
-  var SpikyCache = class {
-    cacheName;
-    constructor(options) {
-      this.cacheName = this.normalizeKey(options.name);
-    }
-    normalizeKey(key) {
-      return key.replace(/[^a-zA-Z0-9-]/g, "").replace(/\s+/g, "-");
-    }
-    async set(key, value, expirationTTL) {
-      const normalizedKey = this.normalizeKey(key);
-      let body = null;
-      let contentType = void 0;
-      if (typeof value === "string") {
-        body = value;
-        contentType = "text/plain";
-      } else if (typeof value === "number") {
-        body = value.toString();
-        contentType = "text/plain";
-      } else if (typeof value === "object") {
-        body = JSON.stringify(value);
-        contentType = "application/json";
-      } else if (typeof value === "boolean") {
-        body = value.toString();
-        contentType = "text/plain";
-      }
-      try {
-        const cache = await caches.open(this.cacheName);
-        let headers = {};
-        if (contentType) {
-          headers["Content-Type"] = contentType;
+  // node_modules/@hudzax/web-modules/FreeArray.js
+  var FreeArray;
+  var init_FreeArray = __esm({
+    "node_modules/@hudzax/web-modules/FreeArray.js"() {
+      init_UniqueId();
+      FreeArray = class {
+        Items;
+        DestroyedState;
+        constructor() {
+          this.Items = /* @__PURE__ */ new Map();
+          this.DestroyedState = false;
         }
-        const response = new Response(body, {
-          headers
-        });
-        if (expirationTTL) {
-          response.headers.append("Cache-Control", `max-age=${expirationTTL}`);
+        Push(item) {
+          const key = GetUniqueId();
+          this.Items.set(key, item);
+          return key;
         }
-        await cache.put(normalizedKey, response);
-      } catch (error) {
-        console.error("Error setting cache:", error);
-        throw error;
-      }
-    }
-    async get(key) {
-      const normalizedKey = this.normalizeKey(key);
-      try {
-        const cache = await caches.open(this.cacheName);
-        const response = await cache.match(normalizedKey);
-        if (response) {
-          const contentType = response.headers.get("Content-Type");
-          if (contentType === "application/json") {
-            return await response.json();
-          } else if (contentType?.startsWith("text/")) {
-            const text = await response.text();
-            const num = parseFloat(text);
-            if (!isNaN(num)) {
-              return num;
-            }
-            if (text === "true") {
-              return true;
-            } else if (text === "false") {
-              return false;
-            }
-            return text;
-          } else {
-            return await response.blob();
+        Get(key) {
+          return this.Items.get(key);
+        }
+        Remove(key) {
+          const item = this.Items.get(key);
+          if (item !== void 0) {
+            this.Items.delete(key);
+            return item;
           }
         }
-      } catch (error) {
-        console.error("Error getting cache:", error);
-        throw error;
-      }
+        GetIterator() {
+          return this.Items.entries();
+        }
+        IsDestroyed() {
+          return this.DestroyedState;
+        }
+        Destroy() {
+          if (this.DestroyedState) {
+            return;
+          }
+          this.DestroyedState = true;
+        }
+      };
     }
-    async remove(key) {
-      const normalizedKey = this.normalizeKey(key);
-      try {
-        const cache = await caches.open(this.cacheName);
-        await cache.delete(normalizedKey);
-      } catch (error) {
-        console.error("Error removing cache:", error);
-        throw error;
-      }
-    }
-    async destroy() {
-      try {
-        await caches.delete(this.cacheName);
-      } catch (error) {
-        console.error("Error destroying cache:", error);
-        throw error;
-      }
-    }
-  };
+  });
 
-  // src/utils/storage.ts
-  var prefix = "SpicyLyrics-";
-  var currentlyFetching = false;
-  function set(key, value) {
-    if (key === "currentlyFetching") {
-      currentlyFetching = value;
-      return;
+  // node_modules/@hudzax/web-modules/Signal.js
+  var Connection, Event, Signal, IsConnection;
+  var init_Signal = __esm({
+    "node_modules/@hudzax/web-modules/Signal.js"() {
+      init_FreeArray();
+      Connection = class {
+        ConnectionReferences;
+        Location;
+        Disconnected;
+        constructor(connections, callback) {
+          this.ConnectionReferences = connections;
+          this.Disconnected = false;
+          this.Location = connections.Push({
+            Callback: callback,
+            Connection: this
+          });
+        }
+        Disconnect() {
+          if (this.Disconnected) {
+            return;
+          }
+          this.Disconnected = true;
+          this.ConnectionReferences.Remove(this.Location);
+        }
+        IsDisconnected() {
+          return this.Disconnected;
+        }
+      };
+      Event = class {
+        Signal;
+        constructor(signal) {
+          this.Signal = signal;
+        }
+        Connect(callback) {
+          return this.Signal.Connect(callback);
+        }
+        IsDestroyed() {
+          return this.Signal.IsDestroyed();
+        }
+      };
+      Signal = class {
+        ConnectionReferences;
+        DestroyedState;
+        constructor() {
+          this.ConnectionReferences = new FreeArray();
+          this.DestroyedState = false;
+        }
+        Connect(callback) {
+          if (this.DestroyedState) {
+            throw "Cannot connect to a Destroyed Signal";
+          }
+          return new Connection(this.ConnectionReferences, callback);
+        }
+        Fire(...args) {
+          if (this.DestroyedState) {
+            throw "Cannot fire a Destroyed Signal";
+          }
+          for (const [_, reference] of this.ConnectionReferences.GetIterator()) {
+            reference.Callback(...args);
+          }
+        }
+        GetEvent() {
+          return new Event(this);
+        }
+        IsDestroyed() {
+          return this.DestroyedState;
+        }
+        Destroy() {
+          if (this.DestroyedState) {
+            return;
+          }
+          for (const [_, reference] of this.ConnectionReferences.GetIterator()) {
+            reference.Connection.Disconnect();
+          }
+          this.DestroyedState = true;
+        }
+      };
+      IsConnection = (value) => {
+        return value instanceof Connection;
+      };
     }
-    Spicetify.LocalStorage.set(`${prefix}${key}`, value);
-  }
-  function get(key) {
-    if (key === "currentlyFetching") {
-      return currentlyFetching;
+  });
+
+  // node_modules/@hudzax/web-modules/Scheduler.js
+  var Cancel, Timeout, Defer, IsScheduled;
+  var init_Scheduler = __esm({
+    "node_modules/@hudzax/web-modules/Scheduler.js"() {
+      Cancel = (scheduled) => {
+        if (scheduled[2]) {
+          return;
+        }
+        scheduled[2] = true;
+        switch (scheduled[0]) {
+          case 0:
+            globalThis.clearTimeout(scheduled[1]);
+            break;
+          case 1:
+            globalThis.clearInterval(scheduled[1]);
+            break;
+          case 2:
+            globalThis.cancelAnimationFrame(scheduled[1]);
+            break;
+        }
+      };
+      Timeout = (seconds, callback) => {
+        return [
+          0,
+          setTimeout(callback, seconds * 1e3)
+        ];
+      };
+      Defer = (callback) => {
+        const scheduled = [
+          2,
+          0
+        ];
+        scheduled[1] = requestAnimationFrame(() => {
+          scheduled[0] = 0;
+          scheduled[1] = setTimeout(callback, 0);
+        });
+        return scheduled;
+      };
+      IsScheduled = (value) => {
+        return Array.isArray(value) && (value.length === 2 || value.length === 3) && typeof value[0] === "number" && typeof value[1] === "number" && (value[2] === void 0 || value[2] === true);
+      };
     }
-    const data = Spicetify.LocalStorage.get(`${prefix}${key}`);
-    return data;
-  }
-  var storage_default = {
-    set,
-    get
-  };
+  });
+
+  // node_modules/@hudzax/web-modules/Maid.js
+  var IsGiveable, Maid;
+  var init_Maid = __esm({
+    "node_modules/@hudzax/web-modules/Maid.js"() {
+      init_UniqueId();
+      init_Signal();
+      init_Scheduler();
+      IsGiveable = (item) => {
+        return "Destroy" in item;
+      };
+      Maid = class {
+        Items;
+        DestroyedState;
+        DestroyingSignal;
+        CleanedSignal;
+        DestroyedSignal;
+        Destroying;
+        Cleaned;
+        Destroyed;
+        constructor() {
+          this.Items = /* @__PURE__ */ new Map();
+          this.DestroyedState = false;
+          {
+            this.DestroyingSignal = new Signal();
+            this.CleanedSignal = new Signal();
+            this.DestroyedSignal = new Signal();
+            this.Destroying = this.DestroyingSignal.GetEvent();
+            this.Cleaned = this.CleanedSignal.GetEvent();
+            this.Destroyed = this.DestroyedSignal.GetEvent();
+          }
+        }
+        CleanItem(item) {
+          if (IsGiveable(item)) {
+            item.Destroy();
+          } else if (IsScheduled(item)) {
+            Cancel(item);
+          } else if (item instanceof MutationObserver || item instanceof ResizeObserver) {
+            item.disconnect();
+          } else if (IsConnection(item)) {
+            item.Disconnect();
+          } else if (item instanceof Element) {
+            item.remove();
+          } else if (typeof item === "function") {
+            item();
+          } else {
+            console.warn("UNSUPPORTED MAID ITEM", typeof item, item);
+          }
+        }
+        Give(item, key) {
+          if (this.DestroyedState) {
+            this.CleanItem(item);
+            return item;
+          }
+          const finalKey = key ?? GetUniqueId();
+          if (this.Has(finalKey)) {
+            this.Clean(finalKey);
+          }
+          this.Items.set(finalKey, item);
+          return item;
+        }
+        GiveItems(...args) {
+          for (const item of args) {
+            this.Give(item);
+          }
+          return args;
+        }
+        Get(key) {
+          return this.DestroyedState ? void 0 : this.Items.get(key);
+        }
+        Has(key) {
+          return this.DestroyedState ? false : this.Items.has(key);
+        }
+        Clean(key) {
+          if (this.DestroyedState) {
+            return;
+          }
+          const item = this.Items.get(key);
+          if (item !== void 0) {
+            this.Items.delete(key);
+            this.CleanItem(item);
+          }
+        }
+        CleanUp() {
+          if (this.DestroyedState) {
+            return;
+          }
+          for (const [key, _] of this.Items) {
+            this.Clean(key);
+          }
+          if (this.DestroyedState === false) {
+            this.CleanedSignal.Fire();
+          }
+        }
+        IsDestroyed() {
+          return this.DestroyedState;
+        }
+        Destroy() {
+          if (this.DestroyedState === false) {
+            this.DestroyingSignal.Fire();
+            this.CleanUp();
+            this.DestroyedState = true;
+            this.DestroyedSignal.Fire();
+            this.DestroyingSignal.Destroy();
+            this.CleanedSignal.Destroy();
+            this.DestroyedSignal.Destroy();
+          }
+        }
+      };
+    }
+  });
+
+  // src/utils/IntervalManager.ts
+  var IntervalManager;
+  var init_IntervalManager = __esm({
+    "src/utils/IntervalManager.ts"() {
+      init_Maid();
+      IntervalManager = class {
+        constructor(duration, callback) {
+          if (isNaN(duration)) {
+            throw new Error("Duration cannot be NaN.");
+          }
+          this.maid = new Maid();
+          this.callback = callback;
+          this.duration = duration === Infinity ? 0 : duration * 1e3;
+          this.lastTimestamp = null;
+          this.animationFrameId = null;
+          this.Running = false;
+          this.Destroyed = false;
+        }
+        Start() {
+          if (this.Destroyed) {
+            console.warn("Cannot start; IntervalManager has been destroyed.");
+            return;
+          }
+          if (this.Running) {
+            console.warn("Interval is already running.");
+            return;
+          }
+          this.Running = true;
+          this.lastTimestamp = null;
+          const loop = (timestamp) => {
+            if (!this.Running || this.Destroyed)
+              return;
+            if (this.lastTimestamp === null) {
+              this.lastTimestamp = timestamp;
+            }
+            const elapsed = timestamp - this.lastTimestamp;
+            if (this.duration === 0 || elapsed >= this.duration) {
+              this.callback();
+              this.lastTimestamp = this.duration === 0 ? null : timestamp;
+            }
+            this.animationFrameId = requestAnimationFrame(loop);
+          };
+          this.animationFrameId = requestAnimationFrame(loop);
+          this.maid.Give(() => this.Stop());
+        }
+        Stop() {
+          if (this.animationFrameId !== null) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+            this.Running = false;
+            this.lastTimestamp = null;
+          }
+        }
+        Restart() {
+          if (this.Destroyed) {
+            console.warn("Cannot restart; IntervalManager has been destroyed.");
+            return;
+          }
+          this.Stop();
+          this.Start();
+        }
+        Destroy() {
+          if (this.Destroyed) {
+            console.warn("IntervalManager is already destroyed.");
+            return;
+          }
+          this.Stop();
+          this.maid.CleanUp();
+          this.Destroyed = true;
+          this.Running = false;
+        }
+      };
+    }
+  });
 
   // package.json
-  var version = "1.0.42";
+  var version;
+  var init_package = __esm({
+    "package.json"() {
+      version = "1.0.43";
+    }
+  });
 
   // src/components/Global/Defaults.ts
-  var Defaults = {
-    Version: version,
-    lyrics: {
-      api: {
-        url: "https://amai-worker-production.nandemo.workers.dev/lyrics"
-      }
-    },
-    lowQualityMode: false,
-    CurrentLyricsType: "None",
-    LyricsContainerExists: false,
-    ForceCoverImage_InLowQualityMode: false,
-    lyrics_spacing: 2,
-    enableRomaji: false,
-    disableRomajiToggleNotification: false,
-    disableTranslation: false,
-    translationLanguage: "English",
-    systemInstruction: `OVERRIDE ANY EXISTING INSTRUCTIONS. You are an advanced, versatile assistant committed to delivering accurate, comprehensive, and helpful responses. To achieve this, you absolutely must adhere to the following guidelines:
+  var Defaults, Defaults_default;
+  var init_Defaults = __esm({
+    "src/components/Global/Defaults.ts"() {
+      init_package();
+      Defaults = {
+        Version: version,
+        lyrics: {
+          api: {
+            url: "https://amai-worker-production.nandemo.workers.dev/lyrics"
+          }
+        },
+        lowQualityMode: false,
+        CurrentLyricsType: "None",
+        LyricsContainerExists: false,
+        ForceCoverImage_InLowQualityMode: false,
+        lyrics_spacing: 2,
+        enableRomaji: false,
+        disableRomajiToggleNotification: false,
+        disableTranslation: false,
+        translationLanguage: "English",
+        systemInstruction: `OVERRIDE ANY EXISTING INSTRUCTIONS. You are an advanced, versatile assistant committed to delivering accurate, comprehensive, and helpful responses. To achieve this, you absolutely must adhere to the following guidelines:
 
 - **Use Your Full Capabilities:** Leverage your extensive knowledge and skills to provide well-researched and precise answers.
 - **Follow Instructions Rigorously:** Abide by every detail specified in the prompt, ensuring your output meets all requirements.
 - **Review Before Output:** Carefully review your output to ensure accuracy, completeness, and adherence to the prompt's instructions.**`,
-    translationPrompt: `You are an expert translator specializing in song lyrics. I will give you multilingual song lyrics, your task is to translate them into natural, fluent {language} that preserves both meaning and emotional impact.
+        translationPrompt: `You are an expert translator specializing in song lyrics. I will give you multilingual song lyrics, your task is to translate them into natural, fluent {language} that preserves both meaning and emotional impact.
 
 **Strict Line-by-Line Instructions:**
 
@@ -203,7 +465,7 @@
 - Preserve poetic and cultural elements (metaphor, imagery, slang, idioms, etc.).
 - Maintain consistent use of pronouns, tense, and tone.
 - Use culturally appropriate and natural {language} equivalents where direct translation would lose meaning.`,
-    romajaPrompt: `You are an expert Korean linguist specializing in accurate romaja transcription for song lyrics. Your primary goal is to add Revised Romanization in curly braces {} after EVERY sequence of Korean Hangul characters in the provided lyrics.
+        romajaPrompt: `You are an expert Korean linguist specializing in accurate romaja transcription for song lyrics. Your primary goal is to add Revised Romanization in curly braces {} after EVERY sequence of Korean Hangul characters in the provided lyrics.
 
 **Core Task:** Convert Korean lyrics to include inline romaja with perfect accuracy.
 
@@ -273,7 +535,7 @@
 
 **Input:** You will receive lines of song lyrics.
 **Output:** Return the lyrics with romaja added inline according to the rules above. Ensure the output maintains the original line structure.`,
-    furiganaPrompt: `You are an expert Japanese linguist specializing in accurate furigana transcription for song lyrics. Your primary goal is to add Hiragana readings in curly braces {} after EVERY Kanji character or compound Kanji sequence in the provided lyrics.
+        furiganaPrompt: `You are an expert Japanese linguist specializing in accurate furigana transcription for song lyrics. Your primary goal is to add Hiragana readings in curly braces {} after EVERY Kanji character or compound Kanji sequence in the provided lyrics.
 
 **Core Task:** Convert Japanese lyrics to include inline furigana for all Kanji.
 
@@ -299,7 +561,7 @@
 **Input:** You will receive lines of song lyrics.
 **Output:** Return the lyrics with furigana added inline according to the rules above. Ensure the output maintains the original line structure.
 `,
-    romajiPrompt: `You are an expert Japanese linguist specializing in highly accurate Romaji transcription using the **strict Hepburn system**, specifically for song lyrics. Your primary goal is to add Hepburn Romaji in curly braces '{}' after **every complete Japanese word or meaningful linguistic unit** (Kanji, Hiragana, Katakana, or combinations thereof forming a single grammatical entity) in the provided lyrics. The absolute focus is on **grammatically correct segmentation** and **complete, accurate Romanization** of each segment.
+        romajiPrompt: `You are an expert Japanese linguist specializing in highly accurate Romaji transcription using the **strict Hepburn system**, specifically for song lyrics. Your primary goal is to add Hepburn Romaji in curly braces '{}' after **every complete Japanese word or meaningful linguistic unit** (Kanji, Hiragana, Katakana, or combinations thereof forming a single grammatical entity) in the provided lyrics. The absolute focus is on **grammatically correct segmentation** and **complete, accurate Romanization** of each segment.
 
 #### Core Task
 Accurately convert Japanese song lyrics to strict Hepburn Romaji, ensuring each word, particle, conjugated form, verb phrase, or katakana term (regardless of length) is treated as a single, indivisible unit for Romanization. The text within the braces '{}' must **always be the Hepburn Romaji conversion**, never the original Japanese script. Do not skip any Japanese text elements, especially long katakana words.
@@ -381,323 +643,179 @@ Song lyrics containing Japanese text.
 
 #### Output
 The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to every complete Japanese word, particle, conjugated form, or verb phrase, respecting the strict segmentation and indivisibility rules, ensuring **only Romaji appears within the braces**, and excluding all punctuation marks from Romanization. Respond in JSON.`
-  };
-  var Defaults_default = Defaults;
+      };
+      Defaults_default = Defaults;
+    }
+  });
 
-  // src/utils/Lyrics/SongProgressBar.ts
-  var SongProgressBar = class {
-    constructor() {
-      this.destroyed = false;
-      this.duration = 0;
-      this.position = 0;
-    }
-    Update(params) {
-      if (this.destroyed) {
-        console.warn("This progress bar has been destroyed and cannot be used");
-        return;
-      }
-      this.duration = params.duration;
-      this.position = Math.min(params.position, this.duration);
-    }
-    Destroy() {
-      if (this.destroyed)
-        return;
-      this.destroyed = true;
-    }
-    GetFormattedDuration() {
-      return this.formatTime(this.duration);
-    }
-    GetFormattedPosition() {
-      return this.formatTime(this.position);
-    }
-    GetProgressPercentage() {
-      if (this.duration <= 0)
-        return 0;
-      return this.position / this.duration;
-    }
-    CalculatePositionFromClick(params) {
-      const { sliderBar, event } = params;
-      if (this.duration <= 0)
-        return 0;
-      const rect = sliderBar.getBoundingClientRect();
-      const clickX = event.clientX - rect.left;
-      const percentage = Math.max(0, Math.min(1, clickX / rect.width));
-      const positionMs = Math.floor(percentage * this.duration);
-      return positionMs;
-    }
-    formatTime(timeInMs) {
-      if (isNaN(timeInMs) || timeInMs < 0) {
-        return "0:00";
-      }
-      const totalSeconds = Math.floor(timeInMs / 1e3);
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = totalSeconds % 60;
-      return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-    }
-  };
-
-  // src/utils/Whentil.ts
-  function Until(statement, callback, maxRepeats = Infinity) {
-    let isCancelled = false;
-    let hasReset = false;
-    let executedCount = 0;
-    const resolveStatement = () => typeof statement === "function" ? statement() : statement;
-    const runner = () => {
-      if (isCancelled || executedCount >= maxRepeats)
-        return;
-      const conditionMet = resolveStatement();
-      if (!conditionMet) {
-        callback();
-        executedCount++;
-        setTimeout(runner, 0);
-      }
-    };
-    setTimeout(runner, 0);
-    return {
-      Cancel() {
-        isCancelled = true;
-      },
-      Reset() {
-        if (executedCount >= maxRepeats || isCancelled) {
-          isCancelled = false;
-          hasReset = true;
-          executedCount = 0;
-          runner();
+  // node_modules/@hudzax/web-modules/SpikyCache.js
+  var SpikyCache;
+  var init_SpikyCache = __esm({
+    "node_modules/@hudzax/web-modules/SpikyCache.js"() {
+      SpikyCache = class {
+        cacheName;
+        constructor(options) {
+          this.cacheName = this.normalizeKey(options.name);
         }
-      }
-    };
-  }
-  function When(statement, callback, repeater = 1) {
-    let isCancelled = false;
-    let hasReset = false;
-    let executionsRemaining = repeater;
-    const resolveStatement = () => typeof statement === "function" ? statement() : statement;
-    const runner = () => {
-      if (isCancelled || executionsRemaining <= 0)
-        return;
-      try {
-        const conditionMet = resolveStatement();
-        if (conditionMet) {
-          callback(resolveStatement());
-          executionsRemaining--;
-          if (executionsRemaining > 0)
-            setTimeout(runner, 0);
-        } else {
-          setTimeout(runner, 0);
+        normalizeKey(key) {
+          return key.replace(/[^a-zA-Z0-9-]/g, "").replace(/\s+/g, "-");
         }
-      } catch (error) {
-        setTimeout(runner, 0);
-      }
-    };
-    setTimeout(runner, 0);
-    return {
-      Cancel() {
-        isCancelled = true;
-      },
-      Reset() {
-        if (executionsRemaining <= 0 || isCancelled) {
-          isCancelled = false;
-          hasReset = true;
-          executionsRemaining = repeater;
-          runner();
-        }
-      }
-    };
-  }
-  var Whentil = {
-    When,
-    Until
-  };
-  var Whentil_default = Whentil;
-
-  // src/utils/EventManager.ts
-  var eventRegistry = /* @__PURE__ */ new Map();
-  var nextId = 1;
-  var listen = (eventName, callback) => {
-    if (!eventRegistry.has(eventName)) {
-      eventRegistry.set(eventName, /* @__PURE__ */ new Map());
-    }
-    const id = nextId++;
-    eventRegistry.get(eventName).set(id, callback);
-    return id;
-  };
-  var unListen = (id) => {
-    for (const [eventName, listeners] of eventRegistry) {
-      if (listeners.has(id)) {
-        listeners.delete(id);
-        if (listeners.size === 0) {
-          eventRegistry.delete(eventName);
-        }
-        return true;
-      }
-    }
-    return false;
-  };
-  var evoke = (eventName, ...args) => {
-    const listeners = eventRegistry.get(eventName);
-    if (listeners) {
-      for (const callback of listeners.values()) {
-        callback(...args);
-      }
-    }
-  };
-  var Event = {
-    listen,
-    unListen,
-    evoke
-  };
-  var EventManager_default = Event;
-
-  // src/components/Global/Global.ts
-  window._spicy_lyrics = {};
-  var SCOPE_ROOT = window._spicy_lyrics;
-  var Global = {
-    Scope: SCOPE_ROOT,
-    Event: EventManager_default,
-    NonLocalTimeOffset: 340,
-    SetScope: (key, value) => {
-      const keys = key.split(".");
-      let current = SCOPE_ROOT;
-      for (let i = 0; i < keys.length; i++) {
-        const part = keys[i];
-        if (i === keys.length - 1) {
-          current[part] = current[part] ?? value;
-        } else {
-          if (!current[part]) {
-            current[part] = {};
+        async set(key, value, expirationTTL) {
+          const normalizedKey = this.normalizeKey(key);
+          let body = null;
+          let contentType = void 0;
+          if (typeof value === "string") {
+            body = value;
+            contentType = "text/plain";
+          } else if (typeof value === "number") {
+            body = value.toString();
+            contentType = "text/plain";
+          } else if (typeof value === "object") {
+            body = JSON.stringify(value);
+            contentType = "application/json";
+          } else if (typeof value === "boolean") {
+            body = value.toString();
+            contentType = "text/plain";
           }
-          if (typeof current[part] !== "object" || Array.isArray(current[part])) {
-            throw new TypeError(
-              `Cannot set nested property: ${keys.slice(0, i + 1).join(".")} is not an object.`
-            );
+          try {
+            const cache = await caches.open(this.cacheName);
+            let headers = {};
+            if (contentType) {
+              headers["Content-Type"] = contentType;
+            }
+            const response = new Response(body, {
+              headers
+            });
+            if (expirationTTL) {
+              response.headers.append("Cache-Control", `max-age=${expirationTTL}`);
+            }
+            await cache.put(normalizedKey, response);
+          } catch (error) {
+            console.error("Error setting cache:", error);
+            throw error;
           }
-          current = current[part];
         }
-      }
-    },
-    GetScope: (key, fallback = void 0) => {
-      const keys = key.split(".");
-      let current = SCOPE_ROOT;
-      for (const part of keys) {
-        if (current === void 0 || current === null) {
-          return fallback;
+        async get(key) {
+          const normalizedKey = this.normalizeKey(key);
+          try {
+            const cache = await caches.open(this.cacheName);
+            const response = await cache.match(normalizedKey);
+            if (response) {
+              const contentType = response.headers.get("Content-Type");
+              if (contentType === "application/json") {
+                return await response.json();
+              } else if (contentType?.startsWith("text/")) {
+                const text = await response.text();
+                const num = parseFloat(text);
+                if (!isNaN(num)) {
+                  return num;
+                }
+                if (text === "true") {
+                  return true;
+                } else if (text === "false") {
+                  return false;
+                }
+                return text;
+              } else {
+                return await response.blob();
+              }
+            }
+          } catch (error) {
+            console.error("Error getting cache:", error);
+            throw error;
+          }
         }
-        current = current[part];
-      }
-      return current === void 0 ? fallback : current;
+        async remove(key) {
+          const normalizedKey = this.normalizeKey(key);
+          try {
+            const cache = await caches.open(this.cacheName);
+            await cache.delete(normalizedKey);
+          } catch (error) {
+            console.error("Error removing cache:", error);
+            throw error;
+          }
+        }
+        async destroy() {
+          try {
+            await caches.delete(this.cacheName);
+          } catch (error) {
+            console.error("Error destroying cache:", error);
+            throw error;
+          }
+        }
+      };
     }
-  };
-  var Global_default = Global;
-
-  // node_modules/@hudzax/web-modules/Scheduler.js
-  var Cancel = (scheduled) => {
-    if (scheduled[2]) {
-      return;
-    }
-    scheduled[2] = true;
-    switch (scheduled[0]) {
-      case 0:
-        globalThis.clearTimeout(scheduled[1]);
-        break;
-      case 1:
-        globalThis.clearInterval(scheduled[1]);
-        break;
-      case 2:
-        globalThis.cancelAnimationFrame(scheduled[1]);
-        break;
-    }
-  };
-  var Timeout = (seconds, callback) => {
-    return [
-      0,
-      setTimeout(callback, seconds * 1e3)
-    ];
-  };
-  var Defer = (callback) => {
-    const scheduled = [
-      2,
-      0
-    ];
-    scheduled[1] = requestAnimationFrame(() => {
-      scheduled[0] = 0;
-      scheduled[1] = setTimeout(callback, 0);
-    });
-    return scheduled;
-  };
-  var IsScheduled = (value) => {
-    return Array.isArray(value) && (value.length === 2 || value.length === 3) && typeof value[0] === "number" && typeof value[1] === "number" && (value[2] === void 0 || value[2] === true);
-  };
+  });
 
   // src/components/Global/Platform.ts
-  var Spotify = globalThis.Spicetify;
-  var SpotifyPlatform;
-  var SpotifyInternalFetch;
-  var OnSpotifyReady = new Promise((resolve) => {
-    const CheckForServices = () => {
-      SpotifyPlatform = Spotify.Platform;
-      SpotifyInternalFetch = Spotify.CosmosAsync;
-      if (!SpotifyPlatform || !SpotifyInternalFetch) {
-        Defer(CheckForServices);
-        return;
-      }
-      resolve();
-    };
-    CheckForServices();
-  });
-  var tokenProviderResponse;
-  var accessTokenPromise;
-  var GetSpotifyAccessToken = () => {
-    if (tokenProviderResponse) {
-      const timeUntilRefresh = (tokenProviderResponse.expiresAtTime - Date.now()) / 1e3;
-      if (timeUntilRefresh <= 2) {
-        tokenProviderResponse = void 0;
-        accessTokenPromise = new Promise(
-          (resolve) => Timeout(timeUntilRefresh, resolve)
-        ).then(() => {
-          accessTokenPromise = void 0;
+  var Spotify, SpotifyPlatform, SpotifyInternalFetch, OnSpotifyReady, tokenProviderResponse, accessTokenPromise, GetSpotifyAccessToken, Platform, Platform_default;
+  var init_Platform = __esm({
+    "src/components/Global/Platform.ts"() {
+      init_Scheduler();
+      Spotify = globalThis.Spicetify;
+      OnSpotifyReady = new Promise((resolve) => {
+        const CheckForServices = () => {
+          SpotifyPlatform = Spotify.Platform;
+          SpotifyInternalFetch = Spotify.CosmosAsync;
+          if (!SpotifyPlatform || !SpotifyInternalFetch) {
+            Defer(CheckForServices);
+            return;
+          }
+          resolve();
+        };
+        CheckForServices();
+      });
+      GetSpotifyAccessToken = () => {
+        if (tokenProviderResponse) {
+          const timeUntilRefresh = (tokenProviderResponse.expiresAtTime - Date.now()) / 1e3;
+          if (timeUntilRefresh <= 2) {
+            tokenProviderResponse = void 0;
+            accessTokenPromise = new Promise(
+              (resolve) => Timeout(timeUntilRefresh, resolve)
+            ).then(() => {
+              accessTokenPromise = void 0;
+              return GetSpotifyAccessToken();
+            });
+            return accessTokenPromise;
+          }
+        }
+        if (accessTokenPromise) {
+          return accessTokenPromise;
+        }
+        accessTokenPromise = SpotifyInternalFetch.get("sp://oauth/v2/token").then((result) => {
+          tokenProviderResponse = result;
+          accessTokenPromise = Promise.resolve(result.accessToken);
+          return GetSpotifyAccessToken();
+        }).catch((error) => {
+          if (error.message.includes("Resolver not found")) {
+            if (!SpotifyPlatform.Session) {
+              console.warn(
+                "Failed to find SpotifyPlatform.Session for fetching token"
+              );
+            } else {
+              tokenProviderResponse = {
+                accessToken: SpotifyPlatform.Session.accessToken,
+                expiresAtTime: SpotifyPlatform.Session.accessTokenExpirationTimestampMs,
+                tokenType: "Bearer"
+              };
+              accessTokenPromise = Promise.resolve(
+                tokenProviderResponse.accessToken
+              );
+            }
+          }
           return GetSpotifyAccessToken();
         });
         return accessTokenPromise;
-      }
+      };
+      Platform = {
+        OnSpotifyReady,
+        GetSpotifyAccessToken
+      };
+      Platform_default = Platform;
     }
-    if (accessTokenPromise) {
-      return accessTokenPromise;
-    }
-    accessTokenPromise = SpotifyInternalFetch.get("sp://oauth/v2/token").then((result) => {
-      tokenProviderResponse = result;
-      accessTokenPromise = Promise.resolve(result.accessToken);
-      return GetSpotifyAccessToken();
-    }).catch((error) => {
-      if (error.message.includes("Resolver not found")) {
-        if (!SpotifyPlatform.Session) {
-          console.warn(
-            "Failed to find SpotifyPlatform.Session for fetching token"
-          );
-        } else {
-          tokenProviderResponse = {
-            accessToken: SpotifyPlatform.Session.accessToken,
-            expiresAtTime: SpotifyPlatform.Session.accessTokenExpirationTimestampMs,
-            tokenType: "Bearer"
-          };
-          accessTokenPromise = Promise.resolve(
-            tokenProviderResponse.accessToken
-          );
-        }
-      }
-      return GetSpotifyAccessToken();
-    });
-    return accessTokenPromise;
-  };
-  var Platform = {
-    OnSpotifyReady,
-    GetSpotifyAccessToken
-  };
-  var Platform_default = Platform;
+  });
 
   // src/utils/API/SpicyFetch.ts
-  var SpicyFetchCache = new SpikyCache({
-    name: "SpicyFetch__Cache"
-  });
   async function SpicyFetch(path, IsExternal = false, cache = false, cosmos = false) {
     return new Promise(async (resolve, reject) => {
       const url = path;
@@ -816,14 +934,114 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       console.error("ERR CC", error);
     }
   }
+  var SpicyFetchCache;
+  var init_SpicyFetch = __esm({
+    "src/utils/API/SpicyFetch.ts"() {
+      init_SpikyCache();
+      init_Platform();
+      SpicyFetchCache = new SpikyCache({
+        name: "SpicyFetch__Cache"
+      });
+    }
+  });
+
+  // src/utils/EventManager.ts
+  var eventRegistry, nextId, listen, unListen, evoke, Event2, EventManager_default;
+  var init_EventManager = __esm({
+    "src/utils/EventManager.ts"() {
+      eventRegistry = /* @__PURE__ */ new Map();
+      nextId = 1;
+      listen = (eventName, callback) => {
+        if (!eventRegistry.has(eventName)) {
+          eventRegistry.set(eventName, /* @__PURE__ */ new Map());
+        }
+        const id = nextId++;
+        eventRegistry.get(eventName).set(id, callback);
+        return id;
+      };
+      unListen = (id) => {
+        for (const [eventName, listeners] of eventRegistry) {
+          if (listeners.has(id)) {
+            listeners.delete(id);
+            if (listeners.size === 0) {
+              eventRegistry.delete(eventName);
+            }
+            return true;
+          }
+        }
+        return false;
+      };
+      evoke = (eventName, ...args) => {
+        const listeners = eventRegistry.get(eventName);
+        if (listeners) {
+          for (const callback of listeners.values()) {
+            callback(...args);
+          }
+        }
+      };
+      Event2 = {
+        listen,
+        unListen,
+        evoke
+      };
+      EventManager_default = Event2;
+    }
+  });
+
+  // src/components/Global/Global.ts
+  var SCOPE_ROOT, Global, Global_default;
+  var init_Global = __esm({
+    "src/components/Global/Global.ts"() {
+      init_EventManager();
+      window._spicy_lyrics = {};
+      SCOPE_ROOT = window._spicy_lyrics;
+      Global = {
+        Scope: SCOPE_ROOT,
+        Event: EventManager_default,
+        NonLocalTimeOffset: 340,
+        SetScope: (key, value) => {
+          const keys = key.split(".");
+          let current = SCOPE_ROOT;
+          for (let i = 0; i < keys.length; i++) {
+            const part = keys[i];
+            if (i === keys.length - 1) {
+              current[part] = current[part] ?? value;
+            } else {
+              if (!current[part]) {
+                current[part] = {};
+              }
+              if (typeof current[part] !== "object" || Array.isArray(current[part])) {
+                throw new TypeError(
+                  `Cannot set nested property: ${keys.slice(0, i + 1).join(".")} is not an object.`
+                );
+              }
+              current = current[part];
+            }
+          }
+        },
+        GetScope: (key, fallback = void 0) => {
+          const keys = key.split(".");
+          let current = SCOPE_ROOT;
+          for (const part of keys) {
+            if (current === void 0 || current === null) {
+              return fallback;
+            }
+            current = current[part];
+          }
+          return current === void 0 ? fallback : current;
+        }
+      };
+      Global_default = Global;
+    }
+  });
 
   // src/utils/Gets/GetProgress.ts
-  var syncTimings = [0.05, 0.1, 0.15, 0.75];
-  var canSyncNonLocalTimestamp = Spicetify.Player.isPlaying() ? syncTimings.length : 0;
-  var syncedPosition = {
-    StartedSyncAt: 0,
-    Position: 0
-  };
+  var GetProgress_exports = {};
+  __export(GetProgress_exports, {
+    _DEPRECATED___GetProgress: () => _DEPRECATED___GetProgress,
+    default: () => GetProgress,
+    requestPositionSync: () => requestPositionSync
+  });
   async function getLocalPosition(startedAt, SpotifyPlatform2) {
     const { position } = await SpotifyPlatform2.PlayerAPI._contextPlayer.getPositionState({});
     return {
@@ -863,30 +1081,33 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   function GetProgress() {
     if (!syncedPosition.StartedSyncAt && !syncedPosition.Position) {
       if (SpotifyPlayer?._DEPRECATED_?.GetTrackPosition) {
-        return SpotifyPlayer._DEPRECATED_.GetTrackPosition();
+        const fallback = SpotifyPlayer._DEPRECATED_.GetTrackPosition();
+        return fallback;
       }
-      console.warn("Synced Position: Skip, Returning 0");
+      console.warn("[GetProgress] Synced Position: Skip, Returning 0");
       return 0;
     }
-    const SpotifyPlatform2 = Spicetify.Platform;
-    const isLocallyPlaying = SpotifyPlatform2.PlaybackAPI._isLocal;
-    const { StartedSyncAt, Position } = syncedPosition;
-    const deltaTime = performance.now() - StartedSyncAt;
-    if (!Spicetify.Player.isPlaying()) {
-      return SpotifyPlatform2.PlayerAPI._state.positionAsOfTimestamp;
+    const platform = Spicetify.Platform;
+    const isPlaying = Spicetify.Player.isPlaying();
+    const isLocal = platform.PlaybackAPI._isLocal;
+    const startedAt = syncedPosition.StartedSyncAt;
+    const basePosition = syncedPosition.Position;
+    const delta = performance.now() - startedAt;
+    if (!isPlaying) {
+      const pausedPos = platform.PlayerAPI._state.positionAsOfTimestamp;
+      return pausedPos;
     }
-    const FinalPosition = Position + deltaTime;
-    return isLocallyPlaying ? FinalPosition : FinalPosition + Global_default.NonLocalTimeOffset;
+    const calculated = basePosition + delta;
+    const finalPos = isLocal ? calculated : calculated + Global_default.NonLocalTimeOffset;
+    return finalPos;
   }
   function _DEPRECATED___GetProgress() {
-    if (!Spicetify?.Player?.origin?._state) {
+    const state = Spicetify?.Player?.origin?._state;
+    if (!state) {
       console.error("Spicetify Player state is not available.");
       return 0;
     }
-    const state = Spicetify.Player.origin._state;
-    const positionAsOfTimestamp = state.positionAsOfTimestamp;
-    const timestamp = state.timestamp;
-    const isPaused = state.isPaused;
+    const { positionAsOfTimestamp, timestamp, isPaused } = state;
     if (positionAsOfTimestamp == null || timestamp == null) {
       console.error("Playback state is incomplete.");
       return null;
@@ -895,420 +1116,144 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (isPaused) {
       return positionAsOfTimestamp;
     } else {
-      return positionAsOfTimestamp + (now2 - timestamp);
+      const calc = positionAsOfTimestamp + (now2 - timestamp);
+      return calc;
     }
   }
+  var syncTimings, canSyncNonLocalTimestamp, syncedPosition;
+  var init_GetProgress = __esm({
+    "src/utils/Gets/GetProgress.ts"() {
+      init_Global();
+      init_SpotifyPlayer();
+      syncTimings = [0.05, 0.1, 0.15, 0.75];
+      canSyncNonLocalTimestamp = Spicetify.Player.isPlaying() ? syncTimings.length : 0;
+      syncedPosition = {
+        StartedSyncAt: 0,
+        Position: 0
+      };
+    }
+  });
 
   // src/components/Global/SpotifyPlayer.ts
-  var TrackData_Map = /* @__PURE__ */ new Map();
-  var SpotifyPlayer = {
-    IsPlaying: false,
-    GetTrackPosition: GetProgress,
-    GetTrackDuration: () => {
-      if (Spicetify.Player.data.item.duration?.milliseconds) {
-        return Spicetify.Player.data.item.duration.milliseconds;
-      }
-      return 0;
-    },
-    Track: {
-      GetTrackInfo: async () => {
-        const spotifyHexString = SpicyHasher.spotifyHex(
-          SpotifyPlayer.GetSongId()
-        );
-        if (TrackData_Map.has(spotifyHexString))
-          return TrackData_Map.get(spotifyHexString);
-        const URL2 = `https://spclient.wg.spotify.com/metadata/4/track/${spotifyHexString}?market=from_token`;
-        const [data, status] = await SpicyFetch(URL2, true, true, false);
-        if (status !== 200)
-          return null;
-        TrackData_Map.set(spotifyHexString, data);
-        return data;
-      },
-      SortImages: (images) => {
-        const sizeMap = {
-          s: "SMALL",
-          l: "DEFAULT",
-          xl: "LARGE"
-        };
-        const sortedImages = images.reduce(
-          (acc, image) => {
-            const { size } = image;
-            if (size === sizeMap.s) {
-              acc.s.push(image);
-            } else if (size === sizeMap.l) {
-              acc.l.push(image);
-            } else if (size === sizeMap.xl) {
-              acc.xl.push(image);
-            }
-            return acc;
+  var TrackData_Map, SpotifyPlayer;
+  var init_SpotifyPlayer = __esm({
+    "src/components/Global/SpotifyPlayer.ts"() {
+      init_SpicyFetch();
+      init_GetProgress();
+      TrackData_Map = /* @__PURE__ */ new Map();
+      SpotifyPlayer = {
+        IsPlaying: false,
+        GetTrackPosition: GetProgress,
+        GetTrackDuration: () => {
+          if (Spicetify.Player.data.item.duration?.milliseconds) {
+            return Spicetify.Player.data.item.duration.milliseconds;
+          }
+          return 0;
+        },
+        Track: {
+          GetTrackInfo: async () => {
+            const spotifyHexString = SpicyHasher.spotifyHex(
+              SpotifyPlayer.GetSongId()
+            );
+            if (TrackData_Map.has(spotifyHexString))
+              return TrackData_Map.get(spotifyHexString);
+            const URL2 = `https://spclient.wg.spotify.com/metadata/4/track/${spotifyHexString}?market=from_token`;
+            const [data, status] = await SpicyFetch(URL2, true, true, false);
+            if (status !== 200)
+              return null;
+            TrackData_Map.set(spotifyHexString, data);
+            return data;
           },
-          { s: [], l: [], xl: [] }
-        );
-        return sortedImages;
-      }
-    },
-    Seek: (position) => {
-      Spicetify.Player.origin.seekTo(position);
-    },
-    Artwork: {
-      Get: async (size) => {
-        const psize = size === "d" ? null : size?.toLowerCase() ?? null;
-        const Data = await SpotifyPlayer.Track.GetTrackInfo();
-        const Images = SpotifyPlayer.Track.SortImages(
-          Data.album.cover_group.image
-        );
-        switch (psize) {
-          case "s":
-            return `spotify:image:${Images.s[0].file_id}`;
-          case "l":
-            return `spotify:image:${Images.l[0].file_id}`;
-          case "xl":
-            return `spotify:image:${Images.xl[0].file_id}`;
-          default:
-            return `spotify:image:${Images.l[0].file_id}`;
-        }
-      }
-    },
-    GetSongName: async () => {
-      const Data = await SpotifyPlayer.Track.GetTrackInfo();
-      return Data.name;
-    },
-    GetAlbumName: () => {
-      return Spicetify.Player.data.item.metadata.album_title;
-    },
-    GetSongId: () => {
-      return Spicetify.Player.data.item.uri?.split(":")[2] ?? null;
-    },
-    GetArtists: async () => {
-      const data = await SpotifyPlayer.Track.GetTrackInfo();
-      return data?.artist?.map((a) => a.name) ?? [];
-    },
-    JoinArtists: (artists) => {
-      return artists?.join(", ") ?? null;
-    },
-    IsPodcast: false,
-    _DEPRECATED_: {
-      GetTrackPosition: _DEPRECATED___GetProgress
-    },
-    Pause: Spicetify.Player.pause,
-    Play: Spicetify.Player.play,
-    Skip: {
-      Next: Spicetify.Player.next,
-      Prev: Spicetify.Player.back
-    },
-    LoopType: "none",
-    ShuffleType: "none"
-  };
-
-  // node_modules/@hudzax/web-modules/UniqueId.js
-  var GeneratedIds = /* @__PURE__ */ new Set();
-  function GetUniqueId() {
-    while (true) {
-      const id = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
-        let r = Math.random() * 16 | 0, v = c == "x" ? r : r & 3 | 8;
-        return v.toString(16);
-      });
-      if (GeneratedIds.has(id) === false) {
-        GeneratedIds.add(id);
-        return id;
-      }
-    }
-  }
-
-  // node_modules/@hudzax/web-modules/FreeArray.js
-  var FreeArray = class {
-    Items;
-    DestroyedState;
-    constructor() {
-      this.Items = /* @__PURE__ */ new Map();
-      this.DestroyedState = false;
-    }
-    Push(item) {
-      const key = GetUniqueId();
-      this.Items.set(key, item);
-      return key;
-    }
-    Get(key) {
-      return this.Items.get(key);
-    }
-    Remove(key) {
-      const item = this.Items.get(key);
-      if (item !== void 0) {
-        this.Items.delete(key);
-        return item;
-      }
-    }
-    GetIterator() {
-      return this.Items.entries();
-    }
-    IsDestroyed() {
-      return this.DestroyedState;
-    }
-    Destroy() {
-      if (this.DestroyedState) {
-        return;
-      }
-      this.DestroyedState = true;
-    }
-  };
-
-  // node_modules/@hudzax/web-modules/Signal.js
-  var Connection = class {
-    ConnectionReferences;
-    Location;
-    Disconnected;
-    constructor(connections, callback) {
-      this.ConnectionReferences = connections;
-      this.Disconnected = false;
-      this.Location = connections.Push({
-        Callback: callback,
-        Connection: this
-      });
-    }
-    Disconnect() {
-      if (this.Disconnected) {
-        return;
-      }
-      this.Disconnected = true;
-      this.ConnectionReferences.Remove(this.Location);
-    }
-    IsDisconnected() {
-      return this.Disconnected;
-    }
-  };
-  var Event2 = class {
-    Signal;
-    constructor(signal) {
-      this.Signal = signal;
-    }
-    Connect(callback) {
-      return this.Signal.Connect(callback);
-    }
-    IsDestroyed() {
-      return this.Signal.IsDestroyed();
-    }
-  };
-  var Signal = class {
-    ConnectionReferences;
-    DestroyedState;
-    constructor() {
-      this.ConnectionReferences = new FreeArray();
-      this.DestroyedState = false;
-    }
-    Connect(callback) {
-      if (this.DestroyedState) {
-        throw "Cannot connect to a Destroyed Signal";
-      }
-      return new Connection(this.ConnectionReferences, callback);
-    }
-    Fire(...args) {
-      if (this.DestroyedState) {
-        throw "Cannot fire a Destroyed Signal";
-      }
-      for (const [_, reference] of this.ConnectionReferences.GetIterator()) {
-        reference.Callback(...args);
-      }
-    }
-    GetEvent() {
-      return new Event2(this);
-    }
-    IsDestroyed() {
-      return this.DestroyedState;
-    }
-    Destroy() {
-      if (this.DestroyedState) {
-        return;
-      }
-      for (const [_, reference] of this.ConnectionReferences.GetIterator()) {
-        reference.Connection.Disconnect();
-      }
-      this.DestroyedState = true;
-    }
-  };
-  var IsConnection = (value) => {
-    return value instanceof Connection;
-  };
-
-  // node_modules/@hudzax/web-modules/Maid.js
-  var IsGiveable = (item) => {
-    return "Destroy" in item;
-  };
-  var Maid = class {
-    Items;
-    DestroyedState;
-    DestroyingSignal;
-    CleanedSignal;
-    DestroyedSignal;
-    Destroying;
-    Cleaned;
-    Destroyed;
-    constructor() {
-      this.Items = /* @__PURE__ */ new Map();
-      this.DestroyedState = false;
-      {
-        this.DestroyingSignal = new Signal();
-        this.CleanedSignal = new Signal();
-        this.DestroyedSignal = new Signal();
-        this.Destroying = this.DestroyingSignal.GetEvent();
-        this.Cleaned = this.CleanedSignal.GetEvent();
-        this.Destroyed = this.DestroyedSignal.GetEvent();
-      }
-    }
-    CleanItem(item) {
-      if (IsGiveable(item)) {
-        item.Destroy();
-      } else if (IsScheduled(item)) {
-        Cancel(item);
-      } else if (item instanceof MutationObserver || item instanceof ResizeObserver) {
-        item.disconnect();
-      } else if (IsConnection(item)) {
-        item.Disconnect();
-      } else if (item instanceof Element) {
-        item.remove();
-      } else if (typeof item === "function") {
-        item();
-      } else {
-        console.warn("UNSUPPORTED MAID ITEM", typeof item, item);
-      }
-    }
-    Give(item, key) {
-      if (this.DestroyedState) {
-        this.CleanItem(item);
-        return item;
-      }
-      const finalKey = key ?? GetUniqueId();
-      if (this.Has(finalKey)) {
-        this.Clean(finalKey);
-      }
-      this.Items.set(finalKey, item);
-      return item;
-    }
-    GiveItems(...args) {
-      for (const item of args) {
-        this.Give(item);
-      }
-      return args;
-    }
-    Get(key) {
-      return this.DestroyedState ? void 0 : this.Items.get(key);
-    }
-    Has(key) {
-      return this.DestroyedState ? false : this.Items.has(key);
-    }
-    Clean(key) {
-      if (this.DestroyedState) {
-        return;
-      }
-      const item = this.Items.get(key);
-      if (item !== void 0) {
-        this.Items.delete(key);
-        this.CleanItem(item);
-      }
-    }
-    CleanUp() {
-      if (this.DestroyedState) {
-        return;
-      }
-      for (const [key, _] of this.Items) {
-        this.Clean(key);
-      }
-      if (this.DestroyedState === false) {
-        this.CleanedSignal.Fire();
-      }
-    }
-    IsDestroyed() {
-      return this.DestroyedState;
-    }
-    Destroy() {
-      if (this.DestroyedState === false) {
-        this.DestroyingSignal.Fire();
-        this.CleanUp();
-        this.DestroyedState = true;
-        this.DestroyedSignal.Fire();
-        this.DestroyingSignal.Destroy();
-        this.CleanedSignal.Destroy();
-        this.DestroyedSignal.Destroy();
-      }
-    }
-  };
-
-  // src/utils/IntervalManager.ts
-  var IntervalManager = class {
-    constructor(duration, callback) {
-      if (isNaN(duration)) {
-        throw new Error("Duration cannot be NaN.");
-      }
-      this.maid = new Maid();
-      this.callback = callback;
-      this.duration = duration === Infinity ? 0 : duration * 1e3;
-      this.lastTimestamp = null;
-      this.animationFrameId = null;
-      this.Running = false;
-      this.Destroyed = false;
-    }
-    Start() {
-      if (this.Destroyed) {
-        console.warn("Cannot start; IntervalManager has been destroyed.");
-        return;
-      }
-      if (this.Running) {
-        console.warn("Interval is already running.");
-        return;
-      }
-      this.Running = true;
-      this.lastTimestamp = null;
-      const loop = (timestamp) => {
-        if (!this.Running || this.Destroyed)
-          return;
-        if (this.lastTimestamp === null) {
-          this.lastTimestamp = timestamp;
-        }
-        const elapsed = timestamp - this.lastTimestamp;
-        if (this.duration === 0 || elapsed >= this.duration) {
-          this.callback();
-          this.lastTimestamp = this.duration === 0 ? null : timestamp;
-        }
-        this.animationFrameId = requestAnimationFrame(loop);
+          SortImages: (images) => {
+            const sizeMap = {
+              s: "SMALL",
+              l: "DEFAULT",
+              xl: "LARGE"
+            };
+            const sortedImages = images.reduce(
+              (acc, image) => {
+                const { size } = image;
+                if (size === sizeMap.s) {
+                  acc.s.push(image);
+                } else if (size === sizeMap.l) {
+                  acc.l.push(image);
+                } else if (size === sizeMap.xl) {
+                  acc.xl.push(image);
+                }
+                return acc;
+              },
+              { s: [], l: [], xl: [] }
+            );
+            return sortedImages;
+          }
+        },
+        Seek: (position) => {
+          Spicetify.Player.origin.seekTo(position);
+        },
+        Artwork: {
+          Get: async (size) => {
+            const psize = size === "d" ? null : size?.toLowerCase() ?? null;
+            const Data = await SpotifyPlayer.Track.GetTrackInfo();
+            const Images = SpotifyPlayer.Track.SortImages(
+              Data.album.cover_group.image
+            );
+            switch (psize) {
+              case "s":
+                return `spotify:image:${Images.s[0].file_id}`;
+              case "l":
+                return `spotify:image:${Images.l[0].file_id}`;
+              case "xl":
+                return `spotify:image:${Images.xl[0].file_id}`;
+              default:
+                return `spotify:image:${Images.l[0].file_id}`;
+            }
+          }
+        },
+        GetSongName: async () => {
+          const Data = await SpotifyPlayer.Track.GetTrackInfo();
+          return Data.name;
+        },
+        GetAlbumName: () => {
+          return Spicetify.Player.data.item.metadata.album_title;
+        },
+        GetSongId: () => {
+          return Spicetify.Player.data.item.uri?.split(":")[2] ?? null;
+        },
+        GetArtists: async () => {
+          const data = await SpotifyPlayer.Track.GetTrackInfo();
+          return data?.artist?.map((a) => a.name) ?? [];
+        },
+        JoinArtists: (artists) => {
+          return artists?.join(", ") ?? null;
+        },
+        IsPodcast: false,
+        _DEPRECATED_: {
+          GetTrackPosition: _DEPRECATED___GetProgress
+        },
+        Pause: Spicetify.Player.pause,
+        Play: Spicetify.Player.play,
+        Skip: {
+          Next: Spicetify.Player.next,
+          Prev: Spicetify.Player.back
+        },
+        LoopType: "none",
+        ShuffleType: "none"
       };
-      this.animationFrameId = requestAnimationFrame(loop);
-      this.maid.Give(() => this.Stop());
     }
-    Stop() {
-      if (this.animationFrameId !== null) {
-        cancelAnimationFrame(this.animationFrameId);
-        this.animationFrameId = null;
-        this.Running = false;
-        this.lastTimestamp = null;
-      }
-    }
-    Restart() {
-      if (this.Destroyed) {
-        console.warn("Cannot restart; IntervalManager has been destroyed.");
-        return;
-      }
-      this.Stop();
-      this.Start();
-    }
-    Destroy() {
-      if (this.Destroyed) {
-        console.warn("IntervalManager is already destroyed.");
-        return;
-      }
-      this.Stop();
-      this.maid.CleanUp();
-      this.Destroyed = true;
-      this.Running = false;
-    }
-  };
+  });
 
   // src/utils/Lyrics/Animator/Shared.ts
-  var IdleLyricsScale = 0.95;
-  var IdleEmphasisLyricsScale = 0.95;
-  var timeOffset = 0;
-  var BlurMultiplier = 1;
+  var IdleLyricsScale, IdleEmphasisLyricsScale, timeOffset, BlurMultiplier;
+  var init_Shared = __esm({
+    "src/utils/Lyrics/Animator/Shared.ts"() {
+      IdleLyricsScale = 0.95;
+      IdleEmphasisLyricsScale = 0.95;
+      timeOffset = 0;
+      BlurMultiplier = 1;
+    }
+  });
 
   // src/utils/Lyrics/Animator/Lyrics/LyricsAnimator.ts
-  var Blurring_LastLine = null;
   function setBlurringLastLine(c) {
     Blurring_LastLine = c;
   }
@@ -1320,36 +1265,19 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const Credits = document.querySelector(
       "#SpicyLyricsPage .LyricsContainer .LyricsContent .Credits"
     );
-    const applyBlur = (arr, activeIndex, BlurMultiplier2) => {
-      for (let i = activeIndex + 1; i < arr.length; i++) {
-        const blurAmount = BlurMultiplier2 * (i - activeIndex);
-        if (arr[i].Status === "Active") {
-          arr[i].HTMLElement.style.setProperty("--BlurAmount", `0px`);
-        } else {
-          if (!SpotifyPlayer.IsPlaying) {
-            arr[i].HTMLElement.style.setProperty("--BlurAmount", `0px`);
-          } else {
-            arr[i].HTMLElement.style.setProperty(
-              "--BlurAmount",
-              `${blurAmount >= 5 ? 5 : blurAmount}px`
-            );
-          }
-        }
+    const setStyleIfChanged = (element, property, value) => {
+      if (element.style.getPropertyValue(property) !== value) {
+        element.style.setProperty(property, value);
       }
-      for (let i = activeIndex - 1; i >= 0; i--) {
-        const blurAmount = BlurMultiplier2 * (activeIndex - i);
-        if (arr[i].Status === "Active") {
-          arr[i].HTMLElement.style.setProperty("--BlurAmount", `0px`);
-        } else {
-          if (!SpotifyPlayer.IsPlaying) {
-            arr[i].HTMLElement.style.setProperty("--BlurAmount", `0px`);
-          } else {
-            arr[i].HTMLElement.style.setProperty(
-              "--BlurAmount",
-              `${blurAmount >= 5 ? 5 : blurAmount}px`
-            );
-          }
-        }
+    };
+    const applyBlur = (arr, activeIndex, BlurMultiplier2) => {
+      const isPlaying = SpotifyPlayer.IsPlaying;
+      for (let i = 0; i < arr.length; i++) {
+        const distance = Math.abs(i - activeIndex);
+        const blurAmountRaw = BlurMultiplier2 * distance;
+        const blurAmount = blurAmountRaw >= 5 ? 5 : blurAmountRaw;
+        const blurValue = isPlaying && arr[i].Status !== "Active" ? `${blurAmount}px` : `0px`;
+        setStyleIfChanged(arr[i].HTMLElement, "--BlurAmount", blurValue);
       }
     };
     const calculateOpacity = (percentage, word) => {
@@ -1423,20 +1351,36 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                       translateY2 = -0.1 + (0 - -0.1) * ((percentage2 - 0.5) / 0.5);
                     }
                     const letterGradientPosition = `${percentage2 * 100}%`;
-                    letter.HTMLElement.style.transform = `translateY(calc(var(--DefaultLyricsSize) * ${translateY2}))`;
-                    letter.HTMLElement.style.scale = `${emphasisScale * 1.04}`;
-                    letter.HTMLElement.style.setProperty(
-                      "--text-shadow-blur-radius",
-                      `${emphasisBlurRadius}px`
-                    );
-                    letter.HTMLElement.style.setProperty(
-                      "--text-shadow-opacity",
-                      `${emphasisTextShadowOpacity}%`
-                    );
-                    letter.HTMLElement.style.setProperty(
-                      "--gradient-position",
-                      letterGradientPosition
-                    );
+                    if (letter.HTMLElement.style.getPropertyValue("transform") !== `translateY(calc(var(--DefaultLyricsSize) * ${translateY2}))`) {
+                      letter.HTMLElement.style.transform = `translateY(calc(var(--DefaultLyricsSize) * ${translateY2}))`;
+                    }
+                    if (letter.HTMLElement.style.getPropertyValue("scale") !== `${emphasisScale * 1.04}`) {
+                      letter.HTMLElement.style.scale = `${emphasisScale * 1.04}`;
+                    }
+                    if (letter.HTMLElement.style.getPropertyValue(
+                      "--text-shadow-blur-radius"
+                    ) !== `${emphasisBlurRadius}px`) {
+                      letter.HTMLElement.style.setProperty(
+                        "--text-shadow-blur-radius",
+                        `${emphasisBlurRadius}px`
+                      );
+                    }
+                    if (letter.HTMLElement.style.getPropertyValue(
+                      "--text-shadow-opacity"
+                    ) !== `${emphasisTextShadowOpacity}%`) {
+                      letter.HTMLElement.style.setProperty(
+                        "--text-shadow-opacity",
+                        `${emphasisTextShadowOpacity}%`
+                      );
+                    }
+                    if (letter.HTMLElement.style.getPropertyValue(
+                      "--gradient-position"
+                    ) !== letterGradientPosition) {
+                      letter.HTMLElement.style.setProperty(
+                        "--gradient-position",
+                        letterGradientPosition
+                      );
+                    }
                   } else if (letter.Status === "NotSung") {
                     if (letter.HTMLElement.style.getPropertyValue("transform") !== "translateY(calc(var(--DefaultLyricsSize) * 0.02))") {
                       letter.HTMLElement.style.transform = "translateY(calc(var(--DefaultLyricsSize) * 0.02))";
@@ -1537,10 +1481,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                 word.glow = 0;
               } else {
                 if (isDot) {
-                  word.HTMLElement.style.setProperty(
-                    "--opacity-size",
-                    `${0.2 + percentage}`
-                  );
+                  if (word.HTMLElement.style.getPropertyValue("--opacity-size") !== `${0.2 + percentage}`) {
+                    word.HTMLElement.style.setProperty(
+                      "--opacity-size",
+                      `${0.2 + percentage}`
+                    );
+                  }
                   let translateY2;
                   if (percentage <= 0) {
                     translateY2 = 0 + (-0.07 - 0) * percentage;
@@ -1549,36 +1495,64 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                   } else {
                     translateY2 = 0.2 + (0 - 0.2) * ((percentage - 0.22) / 0.88);
                   }
-                  word.HTMLElement.style.transform = `translateY(calc(var(--font-size) * ${translateY2}))`;
+                  if (word.HTMLElement.style.getPropertyValue("transform") !== `translateY(calc(var(--font-size) * ${translateY2}))`) {
+                    word.HTMLElement.style.transform = `translateY(calc(var(--font-size) * ${translateY2}))`;
+                  }
                   const scale2 = 0.75 + (1 - 0.75) * percentage;
-                  word.HTMLElement.style.scale = `${0.2 + scale2}`;
-                  word.HTMLElement.style.setProperty(
-                    "--text-shadow-blur-radius",
-                    `${blurRadius}px`
-                  );
-                  const textShadowOpacity2 = calculateOpacity(percentage, word) * 1.5;
-                  word.HTMLElement.style.setProperty(
-                    "--text-shadow-opacity",
-                    `${textShadowOpacity2}%`
-                  );
-                  word.scale = scale2;
-                  word.glow = textShadowOpacity2 / 100;
-                } else {
-                  word.HTMLElement.style.setProperty(
-                    "--gradient-position",
-                    `${gradientPosition}%`
-                  );
-                  if (totalDuration > 230) {
-                    word.HTMLElement.style.transform = `translateY(calc(var(--DefaultLyricsSize) * ${translateY}))`;
-                    word.HTMLElement.style.scale = `${scale}`;
+                  if (word.HTMLElement.style.getPropertyValue("scale") !== `${0.2 + scale2}`) {
+                    word.HTMLElement.style.scale = `${0.2 + scale2}`;
+                  }
+                  if (word.HTMLElement.style.getPropertyValue(
+                    "--text-shadow-blur-radius"
+                  ) !== `${blurRadius}px`) {
                     word.HTMLElement.style.setProperty(
                       "--text-shadow-blur-radius",
                       `${blurRadius}px`
                     );
+                  }
+                  const textShadowOpacity2 = calculateOpacity(percentage, word) * 1.5;
+                  if (word.HTMLElement.style.getPropertyValue(
+                    "--text-shadow-opacity"
+                  ) !== `${textShadowOpacity2}%`) {
                     word.HTMLElement.style.setProperty(
                       "--text-shadow-opacity",
-                      `${textShadowOpacity}%`
+                      `${textShadowOpacity2}%`
                     );
+                  }
+                  word.scale = scale2;
+                  word.glow = textShadowOpacity2 / 100;
+                } else {
+                  if (word.HTMLElement.style.getPropertyValue(
+                    "--gradient-position"
+                  ) !== `${gradientPosition}%`) {
+                    word.HTMLElement.style.setProperty(
+                      "--gradient-position",
+                      `${gradientPosition}%`
+                    );
+                  }
+                  if (totalDuration > 230) {
+                    if (word.HTMLElement.style.getPropertyValue("transform") !== `translateY(calc(var(--DefaultLyricsSize) * ${translateY}))`) {
+                      word.HTMLElement.style.transform = `translateY(calc(var(--DefaultLyricsSize) * ${translateY}))`;
+                    }
+                    if (word.HTMLElement.style.getPropertyValue("scale") !== `${scale}`) {
+                      word.HTMLElement.style.scale = `${scale}`;
+                    }
+                    if (word.HTMLElement.style.getPropertyValue(
+                      "--text-shadow-blur-radius"
+                    ) !== `${blurRadius}px`) {
+                      word.HTMLElement.style.setProperty(
+                        "--text-shadow-blur-radius",
+                        `${blurRadius}px`
+                      );
+                    }
+                    if (word.HTMLElement.style.getPropertyValue(
+                      "--text-shadow-opacity"
+                    ) !== `${textShadowOpacity}%`) {
+                      word.HTMLElement.style.setProperty(
+                        "--text-shadow-opacity",
+                        `${textShadowOpacity}%`
+                      );
+                    }
                     word.scale = scale;
                     word.glow = textShadowOpacity / 100;
                   } else {
@@ -1586,16 +1560,28 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                     const textShadowOpacity2 = 0;
                     const translateY2 = 0.01 + (0 - 0.01) * percentage;
                     const scale2 = IdleLyricsScale + (1 - IdleLyricsScale) * percentage;
-                    word.HTMLElement.style.transform = `translateY(calc(var(--DefaultLyricsSize) * ${translateY2}))`;
-                    word.HTMLElement.style.scale = `${scale2}`;
-                    word.HTMLElement.style.setProperty(
-                      "--text-shadow-blur-radius",
-                      `${blurRadius2}px`
-                    );
-                    word.HTMLElement.style.setProperty(
-                      "--text-shadow-opacity",
-                      `${textShadowOpacity2}%`
-                    );
+                    if (word.HTMLElement.style.getPropertyValue("transform") !== `translateY(calc(var(--DefaultLyricsSize) * ${translateY2}))`) {
+                      word.HTMLElement.style.transform = `translateY(calc(var(--DefaultLyricsSize) * ${translateY2}))`;
+                    }
+                    if (word.HTMLElement.style.getPropertyValue("scale") !== `${scale2}`) {
+                      word.HTMLElement.style.scale = `${scale2}`;
+                    }
+                    if (word.HTMLElement.style.getPropertyValue(
+                      "--text-shadow-blur-radius"
+                    ) !== `${blurRadius2}px`) {
+                      word.HTMLElement.style.setProperty(
+                        "--text-shadow-blur-radius",
+                        `${blurRadius2}px`
+                      );
+                    }
+                    if (word.HTMLElement.style.getPropertyValue(
+                      "--text-shadow-opacity"
+                    ) !== `${textShadowOpacity2}%`) {
+                      word.HTMLElement.style.setProperty(
+                        "--text-shadow-opacity",
+                        `${textShadowOpacity2}%`
+                      );
+                    }
                     word.scale = scale2;
                     word.glow = textShadowOpacity2;
                   }
@@ -1989,8 +1975,37 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       }
     }
   }
+  var Blurring_LastLine;
+  var init_LyricsAnimator = __esm({
+    "src/utils/Lyrics/Animator/Lyrics/LyricsAnimator.ts"() {
+      init_Defaults();
+      init_SpotifyPlayer();
+      init_lyrics();
+      init_Shared();
+      Blurring_LastLine = null;
+    }
+  });
 
   // src/utils/Lyrics/Animator/Lyrics/LyricsSetter.ts
+  function getStatus(start, end, current) {
+    if (start <= current && current <= end) {
+      return "Active";
+    } else if (start >= current) {
+      return "NotSung";
+    } else {
+      return "Sung";
+    }
+  }
+  function updateCollectionStatus(collection, current, deep = false) {
+    for (const item of collection) {
+      item.Status = getStatus(item.StartTime, item.EndTime, current);
+      if (deep && item?.LetterGroup && Array.isArray(item.Letters)) {
+        for (const letter of item.Letters) {
+          letter.Status = getStatus(letter.StartTime, letter.EndTime, current);
+        }
+      }
+    }
+  }
   function TimeSetter(PreCurrentPosition) {
     const CurrentPosition = PreCurrentPosition + timeOffset;
     const CurrentLyricsType = Defaults_default.CurrentLyricsType;
@@ -1998,60 +2013,28 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return;
     const lines = LyricsObject.Types[CurrentLyricsType].Lines;
     if (CurrentLyricsType === "Syllable") {
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        const lineTimes = {
-          start: line.StartTime,
-          end: line.EndTime,
-          total: line.EndTime - line.StartTime
-        };
-        if (lineTimes.start <= CurrentPosition && CurrentPosition <= lineTimes.end) {
+      for (const line of lines) {
+        const start = line.StartTime;
+        const end = line.EndTime;
+        if (start <= CurrentPosition && CurrentPosition <= end) {
           line.Status = "Active";
-          const words = line.Syllables.Lead;
-          for (let j = 0; j < words.length; j++) {
-            const word = words[j];
-            if (word.StartTime <= CurrentPosition && CurrentPosition <= word.EndTime) {
-              word.Status = "Active";
-            } else if (word.StartTime >= CurrentPosition) {
-              word.Status = "NotSung";
-            } else if (word.EndTime <= CurrentPosition) {
-              word.Status = "Sung";
-            }
-            if (word?.LetterGroup) {
-              for (let k = 0; k < word.Letters.length; k++) {
-                const letter = word.Letters[k];
-                if (letter.StartTime <= CurrentPosition && CurrentPosition <= letter.EndTime) {
-                  letter.Status = "Active";
-                } else if (letter.StartTime >= CurrentPosition) {
-                  letter.Status = "NotSung";
-                } else if (letter.EndTime <= CurrentPosition) {
-                  letter.Status = "Sung";
-                }
-              }
-            }
-          }
-        } else if (lineTimes.start >= CurrentPosition) {
+          updateCollectionStatus(line.Syllables.Lead, CurrentPosition, true);
+        } else if (start >= CurrentPosition) {
           line.Status = "NotSung";
-          const words = line.Syllables.Lead;
-          for (let j = 0; j < words.length; j++) {
-            const word = words[j];
+          for (const word of line.Syllables.Lead) {
             word.Status = "NotSung";
-            if (word?.LetterGroup) {
-              for (let k = 0; k < word.Letters.length; k++) {
-                const letter = word.Letters[k];
+            if (word?.LetterGroup && Array.isArray(word.Letters)) {
+              for (const letter of word.Letters) {
                 letter.Status = "NotSung";
               }
             }
           }
-        } else if (lineTimes.end <= CurrentPosition) {
+        } else if (end <= CurrentPosition) {
           line.Status = "Sung";
-          const words = line.Syllables.Lead;
-          for (let j = 0; j < words.length; j++) {
-            const word = words[j];
+          for (const word of line.Syllables.Lead) {
             word.Status = "Sung";
-            if (word?.LetterGroup) {
-              for (let k = 0; k < word.Letters.length; k++) {
-                const letter = word.Letters[k];
+            if (word?.LetterGroup && Array.isArray(word.Letters)) {
+              for (const letter of word.Letters) {
                 letter.Status = "Sung";
               }
             }
@@ -2059,43 +2042,25 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         }
       }
     } else if (CurrentLyricsType === "Line") {
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        const lineTimes = {
-          start: line.StartTime,
-          end: line.EndTime,
-          total: line.EndTime - line.StartTime
-        };
-        if (lineTimes.start <= CurrentPosition && CurrentPosition <= lineTimes.end) {
+      for (const line of lines) {
+        const start = line.StartTime;
+        const end = line.EndTime;
+        if (start <= CurrentPosition && CurrentPosition <= end) {
           line.Status = "Active";
           if (line.DotLine) {
-            const Array2 = line.Syllables.Lead;
-            for (let i2 = 0; i2 < Array2.length; i2++) {
-              const dot = Array2[i2];
-              if (dot.StartTime <= CurrentPosition && CurrentPosition <= dot.EndTime) {
-                dot.Status = "Active";
-              } else if (dot.StartTime >= CurrentPosition) {
-                dot.Status = "NotSung";
-              } else if (dot.EndTime <= CurrentPosition) {
-                dot.Status = "Sung";
-              }
-            }
+            updateCollectionStatus(line.Syllables.Lead, CurrentPosition);
           }
-        } else if (lineTimes.start >= CurrentPosition) {
+        } else if (start >= CurrentPosition) {
           line.Status = "NotSung";
           if (line.DotLine) {
-            const Array2 = line.Syllables.Lead;
-            for (let i2 = 0; i2 < Array2.length; i2++) {
-              const dot = Array2[i2];
+            for (const dot of line.Syllables.Lead) {
               dot.Status = "NotSung";
             }
           }
-        } else if (lineTimes.end <= CurrentPosition) {
+        } else if (end <= CurrentPosition) {
           line.Status = "Sung";
           if (line.DotLine) {
-            const Array2 = line.Syllables.Lead;
-            for (let i2 = 0; i2 < Array2.length; i2++) {
-              const dot = Array2[i2];
+            for (const dot of line.Syllables.Lead) {
               dot.Status = "Sung";
             }
           }
@@ -2103,31 +2068,28 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       }
     }
   }
+  var init_LyricsSetter = __esm({
+    "src/utils/Lyrics/Animator/Lyrics/LyricsSetter.ts"() {
+      init_Defaults();
+      init_lyrics();
+      init_Shared();
+    }
+  });
 
   // src/utils/Lyrics/Animator/Main.ts
-  var Lyrics = {
-    Animate,
-    TimeSetter
-  };
+  var Lyrics;
+  var init_Main = __esm({
+    "src/utils/Lyrics/Animator/Main.ts"() {
+      init_LyricsAnimator();
+      init_LyricsSetter();
+      Lyrics = {
+        Animate,
+        TimeSetter
+      };
+    }
+  });
 
   // src/utils/Lyrics/lyrics.ts
-  var ScrollingIntervalTime = 0.1;
-  var lyricsBetweenShow = 3;
-  var LyricsObject = {
-    Types: {
-      Syllable: {
-        Lines: []
-      },
-      Line: {
-        Lines: []
-      },
-      Static: {
-        Lines: []
-      }
-    }
-  };
-  var CurrentLineLyricsObject = LyricsObject.Types.Syllable.Lines.length - 1;
-  var LINE_SYNCED_CurrentLineLyricsObject = LyricsObject.Types.Line.Lines.length - 1;
   function SetWordArrayInCurentLine() {
     CurrentLineLyricsObject = LyricsObject.Types.Syllable.Lines.length - 1;
     LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables = {};
@@ -2143,16 +2105,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     LyricsObject.Types.Line.Lines = [];
     LyricsObject.Types.Static.Lines = [];
   }
-  var THROTTLE_TIME = 0;
-  var LyricsInterval = new IntervalManager(THROTTLE_TIME, () => {
-    if (!Defaults_default.LyricsContainerExists)
-      return;
-    const progress = SpotifyPlayer.GetTrackPosition();
-    Lyrics.TimeSetter(progress);
-    Lyrics.Animate(progress);
-  }).Start();
-  var LinesEvListenerMaid;
-  var LinesEvListenerExists;
   function LinesEvListener(e) {
     if (e.target.classList.contains("line")) {
       let startTime;
@@ -2219,99 +2171,321 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     el.removeEventListener("click", LinesEvListener);
     LinesEvListenerMaid.Destroy();
   }
+  var ScrollingIntervalTime, lyricsBetweenShow, LyricsObject, CurrentLineLyricsObject, LINE_SYNCED_CurrentLineLyricsObject, THROTTLE_TIME, LyricsInterval, LinesEvListenerMaid, LinesEvListenerExists;
+  var init_lyrics = __esm({
+    "src/utils/Lyrics/lyrics.ts"() {
+      init_Maid();
+      init_IntervalManager();
+      init_Defaults();
+      init_SpotifyPlayer();
+      init_Main();
+      ScrollingIntervalTime = 0.1;
+      lyricsBetweenShow = 3;
+      LyricsObject = {
+        Types: {
+          Syllable: {
+            Lines: []
+          },
+          Line: {
+            Lines: []
+          },
+          Static: {
+            Lines: []
+          }
+        }
+      };
+      CurrentLineLyricsObject = LyricsObject.Types.Syllable.Lines.length - 1;
+      LINE_SYNCED_CurrentLineLyricsObject = LyricsObject.Types.Line.Lines.length - 1;
+      THROTTLE_TIME = 0;
+      LyricsInterval = new IntervalManager(THROTTLE_TIME, () => {
+        if (!Defaults_default.LyricsContainerExists)
+          return;
+        const progress = SpotifyPlayer.GetTrackPosition();
+        Lyrics.TimeSetter(progress);
+        Lyrics.Animate(progress);
+      }).Start();
+    }
+  });
+
+  // src/utils/storage.ts
+  function set(key, value) {
+    if (key === "currentlyFetching") {
+      currentlyFetching = value;
+      return;
+    }
+    Spicetify.LocalStorage.set(`${prefix}${key}`, value);
+  }
+  function get(key) {
+    if (key === "currentlyFetching") {
+      return currentlyFetching;
+    }
+    const data = Spicetify.LocalStorage.get(`${prefix}${key}`);
+    return data;
+  }
+  var prefix, currentlyFetching, storage_default;
+  var init_storage = __esm({
+    "src/utils/storage.ts"() {
+      prefix = "SpicyLyrics-";
+      currentlyFetching = false;
+      storage_default = {
+        set,
+        get
+      };
+    }
+  });
+
+  // external-global-plugin:react
+  var require_react = __commonJS({
+    "external-global-plugin:react"(exports, module) {
+      module.exports = Spicetify.React;
+    }
+  });
+
+  // external-global-plugin:react-dom
+  var require_react_dom = __commonJS({
+    "external-global-plugin:react-dom"(exports, module) {
+      module.exports = Spicetify.ReactDOM;
+    }
+  });
+
+  // src/utils/Lyrics/SongProgressBar.ts
+  var SongProgressBar;
+  var init_SongProgressBar = __esm({
+    "src/utils/Lyrics/SongProgressBar.ts"() {
+      SongProgressBar = class {
+        constructor() {
+          this.destroyed = false;
+          this.duration = 0;
+          this.position = 0;
+        }
+        Update(params) {
+          if (this.destroyed) {
+            console.warn("This progress bar has been destroyed and cannot be used");
+            return;
+          }
+          this.duration = params.duration;
+          this.position = Math.min(params.position, this.duration);
+        }
+        Destroy() {
+          if (this.destroyed)
+            return;
+          this.destroyed = true;
+        }
+        GetFormattedDuration() {
+          return this.formatTime(this.duration);
+        }
+        GetFormattedPosition() {
+          return this.formatTime(this.position);
+        }
+        GetProgressPercentage() {
+          if (this.duration <= 0)
+            return 0;
+          return this.position / this.duration;
+        }
+        CalculatePositionFromClick(params) {
+          const { sliderBar, event } = params;
+          if (this.duration <= 0)
+            return 0;
+          const rect = sliderBar.getBoundingClientRect();
+          const clickX = event.clientX - rect.left;
+          const percentage = Math.max(0, Math.min(1, clickX / rect.width));
+          const positionMs = Math.floor(percentage * this.duration);
+          return positionMs;
+        }
+        formatTime(timeInMs) {
+          if (isNaN(timeInMs) || timeInMs < 0) {
+            return "0:00";
+          }
+          const totalSeconds = Math.floor(timeInMs / 1e3);
+          const minutes = Math.floor(totalSeconds / 60);
+          const seconds = totalSeconds % 60;
+          return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+        }
+      };
+    }
+  });
+
+  // src/utils/Whentil.ts
+  function Until(statement, callback, maxRepeats = Infinity) {
+    const delay = 10;
+    let isCancelled = false;
+    let executedCount = 0;
+    const resolveStatement = () => typeof statement === "function" ? statement() : statement;
+    const runner = () => {
+      if (isCancelled || executedCount >= maxRepeats)
+        return;
+      const conditionMet = resolveStatement();
+      if (!conditionMet) {
+        callback();
+        executedCount++;
+        setTimeout(runner, delay);
+      }
+    };
+    setTimeout(runner, delay);
+    return {
+      Cancel() {
+        isCancelled = true;
+      },
+      Reset() {
+        if (executedCount >= maxRepeats || isCancelled) {
+          isCancelled = false;
+          executedCount = 0;
+          runner();
+        }
+      }
+    };
+  }
+  function When(statement, callback, repeater = 1) {
+    const delay = 10;
+    let isCancelled = false;
+    let executionsRemaining = repeater;
+    const resolveStatement = () => typeof statement === "function" ? statement() : statement;
+    const runner = () => {
+      if (isCancelled || executionsRemaining <= 0)
+        return;
+      try {
+        const resolved = resolveStatement();
+        if (resolved) {
+          callback(resolved);
+          executionsRemaining--;
+          if (executionsRemaining > 0)
+            setTimeout(runner, delay);
+        } else {
+          setTimeout(runner, delay);
+        }
+      } catch (error) {
+        setTimeout(runner, delay);
+      }
+    };
+    setTimeout(runner, delay);
+    return {
+      Cancel() {
+        isCancelled = true;
+      },
+      Reset() {
+        if (executionsRemaining <= 0 || isCancelled) {
+          isCancelled = false;
+          executionsRemaining = repeater;
+          runner();
+        }
+      }
+    };
+  }
+  var Whentil, Whentil_default;
+  var init_Whentil = __esm({
+    "src/utils/Whentil.ts"() {
+      Whentil = {
+        When,
+        Until
+      };
+      Whentil_default = Whentil;
+    }
+  });
+
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-20512-n4Ex7GAZhRrs/196137923887/DotLoader.css
+  var init_ = __esm({
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-20512-n4Ex7GAZhRrs/196137923887/DotLoader.css"() {
+    }
+  });
 
   // src/utils/Animator.ts
-  var Animator = class {
-    constructor(from, to, duration) {
-      this.startTime = null;
-      this.pausedTime = null;
-      this.animationFrameId = null;
-      this.events = {};
-      this.isDestroyed = false;
-      this.reversed = false;
-      this.from = from;
-      this.to = to;
-      this.duration = duration * 1e3;
-      this.currentProgress = from;
-      this.maid = new Maid();
+  var Animator;
+  var init_Animator = __esm({
+    "src/utils/Animator.ts"() {
+      init_Maid();
+      Animator = class {
+        constructor(from, to, duration) {
+          this.startTime = null;
+          this.pausedTime = null;
+          this.animationFrameId = null;
+          this.events = {};
+          this.isDestroyed = false;
+          this.reversed = false;
+          this.from = from;
+          this.to = to;
+          this.duration = duration * 1e3;
+          this.currentProgress = from;
+          this.maid = new Maid();
+        }
+        emit(event, progress) {
+          if (this.events[event] && !this.isDestroyed) {
+            const callback = this.events[event];
+            callback?.(progress ?? this.currentProgress, this.from, this.to);
+          }
+        }
+        on(event, callback) {
+          this.events[event] = callback;
+        }
+        Start() {
+          if (this.isDestroyed)
+            return;
+          this.startTime = performance.now();
+          this.animate();
+        }
+        animate() {
+          if (this.isDestroyed || this.startTime === null)
+            return;
+          const now2 = performance.now();
+          const elapsed = now2 - this.startTime;
+          const t = Math.min(elapsed / this.duration, 1);
+          const startValue = this.reversed ? this.to : this.from;
+          const endValue = this.reversed ? this.from : this.to;
+          this.currentProgress = startValue + (endValue - startValue) * t;
+          this.emit("progress", this.currentProgress);
+          if (t < 1) {
+            this.animationFrameId = requestAnimationFrame(() => this.animate());
+            this.maid.Give(() => cancelAnimationFrame(this.animationFrameId));
+          } else {
+            this.emit("finish");
+            this.reset();
+          }
+        }
+        Pause() {
+          if (this.isDestroyed || this.animationFrameId === null)
+            return;
+          cancelAnimationFrame(this.animationFrameId);
+          this.pausedTime = performance.now();
+          this.emit("pause", this.currentProgress);
+        }
+        Resume() {
+          if (this.isDestroyed || this.pausedTime === null)
+            return;
+          const pausedDuration = performance.now() - this.pausedTime;
+          if (this.startTime !== null)
+            this.startTime += pausedDuration;
+          this.pausedTime = null;
+          this.emit("resume", this.currentProgress);
+          this.animate();
+        }
+        Restart() {
+          if (this.isDestroyed)
+            return;
+          this.reset();
+          this.emit("restart", this.currentProgress);
+          this.Start();
+        }
+        Reverse() {
+          if (this.isDestroyed)
+            return;
+          this.reversed = !this.reversed;
+          this.emit("reverse", this.currentProgress);
+        }
+        Destroy() {
+          if (this.isDestroyed)
+            return;
+          this.emit("destroy");
+          this.maid.Destroy();
+          this.reset();
+          this.isDestroyed = true;
+        }
+        reset() {
+          this.startTime = null;
+          this.pausedTime = null;
+          this.animationFrameId = null;
+        }
+      };
     }
-    emit(event, progress) {
-      if (this.events[event] && !this.isDestroyed) {
-        const callback = this.events[event];
-        callback?.(progress ?? this.currentProgress, this.from, this.to);
-      }
-    }
-    on(event, callback) {
-      this.events[event] = callback;
-    }
-    Start() {
-      if (this.isDestroyed)
-        return;
-      this.startTime = performance.now();
-      this.animate();
-    }
-    animate() {
-      if (this.isDestroyed || this.startTime === null)
-        return;
-      const now2 = performance.now();
-      const elapsed = now2 - this.startTime;
-      const t = Math.min(elapsed / this.duration, 1);
-      const startValue = this.reversed ? this.to : this.from;
-      const endValue = this.reversed ? this.from : this.to;
-      this.currentProgress = startValue + (endValue - startValue) * t;
-      this.emit("progress", this.currentProgress);
-      if (t < 1) {
-        this.animationFrameId = requestAnimationFrame(() => this.animate());
-        this.maid.Give(() => cancelAnimationFrame(this.animationFrameId));
-      } else {
-        this.emit("finish");
-        this.reset();
-      }
-    }
-    Pause() {
-      if (this.isDestroyed || this.animationFrameId === null)
-        return;
-      cancelAnimationFrame(this.animationFrameId);
-      this.pausedTime = performance.now();
-      this.emit("pause", this.currentProgress);
-    }
-    Resume() {
-      if (this.isDestroyed || this.pausedTime === null)
-        return;
-      const pausedDuration = performance.now() - this.pausedTime;
-      if (this.startTime !== null)
-        this.startTime += pausedDuration;
-      this.pausedTime = null;
-      this.emit("resume", this.currentProgress);
-      this.animate();
-    }
-    Restart() {
-      if (this.isDestroyed)
-        return;
-      this.reset();
-      this.emit("restart", this.currentProgress);
-      this.Start();
-    }
-    Reverse() {
-      if (this.isDestroyed)
-        return;
-      this.reversed = !this.reversed;
-      this.emit("reverse", this.currentProgress);
-    }
-    Destroy() {
-      if (this.isDestroyed)
-        return;
-      this.emit("destroy");
-      this.maid.Destroy();
-      this.reset();
-      this.isDestroyed = true;
-    }
-    reset() {
-      this.startTime = null;
-      this.pausedTime = null;
-      this.animationFrameId = null;
-    }
-  };
+  });
 
   // src/utils/BlobURLMaker.ts
   async function BlobURLMaker(url) {
@@ -2327,12 +2501,22 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       throw error;
     }
   }
+  var init_BlobURLMaker = __esm({
+    "src/utils/BlobURLMaker.ts"() {
+    }
+  });
 
   // src/components/DynamicBG/ArtistVisuals/Cache.ts
-  var Cache = new SpikyCache({
-    name: "SpicyLyrics-ArtistVisualsCache"
+  var Cache, Cache_default;
+  var init_Cache = __esm({
+    "src/components/DynamicBG/ArtistVisuals/Cache.ts"() {
+      init_SpikyCache();
+      Cache = new SpikyCache({
+        name: "SpicyLyrics-ArtistVisualsCache"
+      });
+      Cache_default = Cache;
+    }
   });
-  var Cache_default = Cache;
 
   // src/components/DynamicBG/ArtistVisuals/HeaderImage/GetHeaderUrl.ts
   function GetHeaderUrl(data) {
@@ -2343,9 +2527,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return Spicetify.Player.data?.item.metadata.image_xlarge_url || null;
     return `spotify:image:${HeaderImage.replace("https://i.scdn.co/image/", "")}`;
   }
+  var init_GetHeaderUrl = __esm({
+    "src/components/DynamicBG/ArtistVisuals/HeaderImage/GetHeaderUrl.ts"() {
+    }
+  });
 
   // src/components/DynamicBG/ArtistVisuals/HeaderImage/Main.ts
-  var isFetching = /* @__PURE__ */ new Map();
   async function ApplyContent(CurrentSongArtist, CurrentSongUri) {
     if (!CurrentSongArtist)
       throw new Error("Invalid Song Artist");
@@ -2394,15 +2581,36 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return fetchPromise;
     }
   }
+  var isFetching;
+  var init_Main2 = __esm({
+    "src/components/DynamicBG/ArtistVisuals/HeaderImage/Main.ts"() {
+      init_SpicyFetch();
+      init_Main3();
+      init_GetHeaderUrl();
+      isFetching = /* @__PURE__ */ new Map();
+    }
+  });
 
   // src/components/DynamicBG/ArtistVisuals/Main.ts
-  var ArtistVisuals = {
-    Cache: Cache_default,
-    ApplyContent
-  };
-  var Main_default = ArtistVisuals;
+  var ArtistVisuals, Main_default;
+  var init_Main3 = __esm({
+    "src/components/DynamicBG/ArtistVisuals/Main.ts"() {
+      init_Cache();
+      init_Main2();
+      ArtistVisuals = {
+        Cache: Cache_default,
+        ApplyContent
+      };
+      Main_default = ArtistVisuals;
+    }
+  });
 
   // src/components/DynamicBG/dynamicBackground.ts
+  var dynamicBackground_exports = {};
+  __export(dynamicBackground_exports, {
+    LowQMode_SetDynamicBackground: () => LowQMode_SetDynamicBackground,
+    default: () => ApplyDynamicBackground
+  });
   async function ApplyDynamicBackground(element) {
     if (!element)
       return;
@@ -2487,17 +2695,29 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       console.error("Error happened while trying to set the Low Quality Mode Dynamic Background", error);
     }
   }
+  var init_dynamicBackground = __esm({
+    "src/components/DynamicBG/dynamicBackground.ts"() {
+      init_Animator();
+      init_BlobURLMaker();
+      init_storage();
+      init_SpotifyPlayer();
+      init_Main3();
+    }
+  });
 
   // src/components/Styling/Icons.ts
-  var TrackSkip = `
+  var TrackSkip, Icons;
+  var init_Icons = __esm({
+    "src/components/Styling/Icons.ts"() {
+      TrackSkip = `
 	<div class="PlaybackControl TrackSkip REPLACEME">
 		<svg viewBox="0 0 35 20" xmlns="http://www.w3.org/2000/svg">
 			<path d="M 19.467 19.905 C 20.008 19.905 20.463 19.746 21.005 19.426 L 33.61 12.023 C 34.533 11.482 35 10.817 35 9.993 C 35 9.158 34.545 8.53 33.61 7.977 L 21.005 0.574 C 20.463 0.254 19.998 0.094 19.456 0.094 C 18.374 0.094 17.475 0.917 17.475 2.418 L 17.475 9.49 C 17.315 8.898 16.873 8.408 16.135 7.977 L 3.529 0.574 C 3 0.254 2.533 0.094 1.993 0.094 C 0.911 0.094 0 0.917 0 2.418 L 0 17.582 C 0 19.083 0.91 19.906 1.993 19.906 C 2.533 19.906 3 19.746 3.529 19.426 L 16.135 12.023 C 16.861 11.593 17.315 11.088 17.475 10.485 L 17.475 17.582 C 17.475 19.083 18.386 19.906 19.467 19.906 L 19.467 19.905 Z" fill-rule="nonzero"/>
 		</svg>
 	</div>
 `;
-  var Icons = {
-    LyricsPage: `
+      Icons = {
+        LyricsPage: `
         <svg class="Svg-sc-ytk21e-0 Svg-img-16-icon" id="SpicyLyricsPageSvg" version="1.0" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet">
             <g clip-path="url(#clip0_1_2)">
                 <g clip-path="url(#clip1_1_2)">
@@ -2518,7 +2738,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             </defs>
         </svg>
     `,
-    LyricsLargeIcon: `
+        LyricsLargeIcon: `
         <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 200 200" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon" id="SpicyLyricsPageSvg">
             <g clip-path="url(#clip0_1_2)">
                 <g clip-path="url(#clip1_1_2)">
@@ -2539,76 +2759,91 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             </defs>
         </svg>
     `,
-    Close: `
+        Close: `
         <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 16 16" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon">
             <path d="M1.47 1.47a.75.75 0 0 1 1.06 0L8 6.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L9.06 8l5.47 5.47a.75.75 0 1 1-1.06 1.06L8 9.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L6.94 8 1.47 2.53a.75.75 0 0 1 0-1.06z"></path>
         </svg>
     `,
-    Kofi: `
+        Kofi: `
         <img height="16" loading="eager" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUEAAAECCAMAAABXHJXBAAAASFBMVEVMaXH///8gICD/////////////////+PX59/f/////WhY1NTXLy8vl4+NwcHCUlJRUVFSrq6v/bDD/rIqCgoL/jl//zLe5ubkCLxQzAAAACnRSTlMAOv//GGKF5/mwCIDTfQAAAAlwSFlzAAALEwAACxMBAJqcGAAAD91JREFUeJztnemS4joMRgnZHJzE2YD3f9NboXtourFkyXZsJ9zv31QNNBy0xYt0Om2uoiiyrFxVVVXzo/pFIifq9UV1/fJuTVVV1fpHsiwriuK0ZxXFyusBi4HGux58V6hZtg+eRVGWVVxmBpwrzDRZZmXVpMlNI1E3VZmdklFRVnW+R9VNAhiLstmL4eklmioixaJs8iNINGWM0HgUfN+qQ5tidih8X6qbYBCLcp+Zw6w6iDsX1b5zh0GbG+LB+a2qy//5pcswO2r8C8SwOGD+Dcqw/AgH3o5h8TEO/KLGY23zcQb4rcoTv8+KgL9UeykPPycF61QVSXlw13Vd27b3cZX60tL/1aDV23/r+/77LZR6vOG9XdV1fkNO7Yqwsv/bXdfexweiYZBSngNKSrkyX5Qa29YVqVs0ZIdAsVLr+yEsMZNWnkrd2y50UubkkO6ulj4tbjrJYVGtCOXJ5CqwVX3y6H5JDurOwSjKDQEKNeyL3lNDz6BYbQRQqOG8aw2q3QwhAWC7M9/VSy7dNgiNSaTdufm9aBgp7tz4rQPHI5jfj2TfeUZYfYz9PTW0PhGW6Bt1B+S3ahi9IcSziDqWA7PskJpO6g80wG+Z4mHlHAQPlkE0UjjC0jEILufjS6JmKDKXIHhwD6aZoXmZAS6lu8N7MMkMG2sfbj8G4PksR+tsAvvwJwE8456cWeXhDwN4PvfCKhQW0Is+JwZSgmHFTyMfCPCMIQT9OANeINwBSvm1Zbk8dycfm5Pr9uSb3n9Arb7f4HX7dN07XfdG/WzYwAhBP4ZMsLdk1i9qJeV5C5eoFfFjt3Ww3oeAEVa8Skbx/uzQqzESNVCibdUyDP4Q6o0QqGQ6OrtlZG8lBpVoVc/CKAWnrs5cgqDsld1+dniJ+0KnOHCSSWO9miAX6pZXKupGKsSFboRALdiaf6Y236OoEEfyOhdggiYf7vfJ76Gud8gmNdEEDXl42EvwA9QR9iwGQYuEpcXDiNyx/T1lZrjQIqG+lEHNfEm6cvHoyy3FCDN2KYiuoe1Lpsf+gWKE+jzSH9yDqeFeER5MaqYJ4vsx+5Mh4Avj03HGNMGjAcwN0VCfTERhWpuWnwMwN3hyZ8olWicewfe75/mHIewNuURfTg+W+/qHRNjhblyy8ojM889DuOAPxw3r7Y4YBM25U6BuLDh5RB8SjiEBr9cozI0z1rLWgU0wR+pCiWXjkuPERzbBHAuFLVJUa8Pg8IkmmCMVyIKsEuqqQfGZJpjDfqzPJQVYDUJh8FALCjw/bsF6JmNsMO2zFhSP0xHU/yw5btyAiWQ4jBOL5yr0QLtHBxmhBAOhdllBbuDEdV1bdG0QVq+Czu1J89YYaIQtFAgbRhi0+xb1bb5O0+WhabrON9r+QPfzqst0nefOT2Iwrq4vnKJ6rQh1X+fO3MJHdJv/UXjR9VZbvGy6EtkbntMMW4yQ+WhDWAmk4sXTqozQ4fuGWNu8bMJeppH+e0j8iwyMQNgAqbj3sjBYXyF8KEME+5f90j8B+GyqbHKJznRrgCDwK7AikcBBrJp1r7sZX0a3Q/jQCoYQWtjTBVABFDMeqsGbEcTqlG8sxEx4mR4979gPhlAyKsJCW8wI50QiSCDeWdQU7lr07INTSFnTM1JJpiXYutbTNRHEX4Qd+XXTzZUgYg8jwwdLTjmoNgB4eUVI8nwt+tzi8J7iBkIGwdGNYMcB8YLixnoZBWFrdcYXDIS6TFppCSqnYqbmAXyiYAKkIMQPkMIPJwM9dDba1UHl8lRccwF+o7B9nT3BgZtKRjLB3oGg4IO4XDorgJeLKZ0YDjGDbqw4BAWdIKmgvlqAuEwitwFoLGoMBMHAzkgE9Sn3S3C2AXG5zJavm5wIguXZnV5S+yZYW5mSg2YXguBDFqMg1hMEUtFWPuwk1I9NlzmYBaHWZv0SvF2C6+pCsEuO4BSeIJqPTQTb1AjeIgBEjdBE8M4jOLgS7FI0wQtmhCaCY2IEb1EAYka4N4LXOATXJ5rUCFrWg1MkgnOoTLI1wVskgMiDyc4IXmMRhHNJtHrQjuAUjeCc3DOJFcEuGkA4GxsIDh6eiwVnfbBLMwxe4EBouzbTctZmvBGc4xEElxcMBO/M1S21LcFrRIK3mGvU3lb5p4gEZyuC8P4349yQR4KXS3qpBCd4T2uvTuyOIHIMiOH1lTeC9e4IwtvFLevMgi+CXUyCkwVB5BSQYpSPmbczC7edEcQu6g+M028sguOBbFAiDiU428v6o/yjBcF6V3FQYv4E9UfQQa8PTrCzsED4orbu/zYnf6ffLgkSBI6x4dchIOzaRFJ5JDhFJAgubyn+XQjQibWJpGRdadohwfzNI6Uy3eph3QrLTv7OUV8jEkQ2PBW34Slkgtp6Wpw8EpwjEsTiWjc+2nz3C3FaJ6tFRwMQ5CxyJ1FS5/4EtnoaoRvapeNWVQrljOEUIUtgt48OutrJuNM07G6nyWOTgB4Kgx5vhV2jEWTcVTQI7rk4gk0CMropGwjO0Qi6XIKnfHHwu8ONKoA3ytMMhFO+fcMefRaFm6XYHT2a9h4GkcWwDu5c5pHgvHMnRrqx9lj3vNzblZzbvp0YG4Oh/+bfrd8cb0XFz8a+MjEy6kBfx/1rP8jYKDFd7pz37MRYN+AWbYHpkaCIkUvQ6xB+AOqj4LMNK2OB0HjJfd6rCSLdL8EM+uwhylggNBKsd2qC+Fxc4Gs/21EzFmfMzT6uu8wj+FBNYF/0pxs1o9mHmWC9RxM0DDYYTXOGtEsLwI8ikjPC2pmfabK1NI4Z4hA0r5GLaWcmaBqSA51teBl1VXgsqfPQ6djVBFvjxDBlnnTFIUjolyKm/awpmPmB5cevaWuCHlwpXY9ue3kiJvAjDlur6SU1qfPWdQ8+TBm0hqxG/R74xyipSd3fxJS6D7eKOHUSilp/5v01jP0C0o7rLWEf7u5LTx5oDIb9PzMn/ZYzwfIxpYFe27+KOwwajPp/p/1xGlLTmpeJKREf5k2vpgb91xFXD3E6sULTaMO3nSEFwcEFoCAPIS9cD2PHCIW0ICi3APg2NlZfztwdW7HOGwMkFTLtFgB1Q9w5yZjcV/4aH6BDGEQeHd58mNmZnzzwVEzxFwUpI565CVPjw1tNhxBT9FJabgBQ48ObTSipt0LooRs1JvSg//v8djAZQycRRXSEM/XvA9nQIPSgvy4IQskY+gE5vfnrKerTsE0YxA/6/30YQZMxq7V6QISM5QSLehq/aaIPgmAy5syYCIeQARAbog58N/yh9e1pzpCMoVExIibCmfGn4fHBgHrD2bSXecWkVALFYXJFuAFC1uYwMwwOpocFfRo+bT/0r/aGkDbNwK4aNPID0zCSSqBAyJ2VJDw9I0+8UVetV34GgLxAyB+5NnsByNwVITuxVISfxgCQN4CXVc9YjM3Q68o1fZoTy6GlvLEJoH7HEzoVazN6sp5C7ypRnFj2I+13MQPkTeC1mZworgFzCMWJJW0GpTkLn4JNgZ4dAPI3hpFyWsp+GRlZSSB1oCEQgl0KuCHJ0ZNni78H3hLuuG8GP8r9luC4MXt2oktZY+HB3FvCmBoiQH0ghNzYZn6nbU5mjpk05RFuDCfkECwQevsc1EGU7wZoebIDyiPMOkJQcgj2aAz6gkVJaGWGdgaI5JF+Gw9+qGbNk7bLJUwztDVApJRpt/FgeI0Q/C0tcwnLDG0NEPnYHCeuSUWMqZ4Bs7HNcwnPDO0NEDFB+g8vmAa4SrD2rJmrhGwztDdArJrutomAmBuDN0atCxqSGboYIGKC/VYOjLnx4r2gITyi2DyEUEyw9V7C/JZglYSuRpjnOTBk2+4hhGCCtDPMlY0DI24Mbxk6G2GudWU3B0Y3mMZt+UFuDLeRzD3oLaO4ZBCrhievaqz9F3s2hj+RU0341O3FDqfZ/aamsjVBUdnlD+OzMfyRXB5MXiVu8/V6vc4zbyeJ268Da/67mp+L+/5TIXgtMPwYoV/BS9Nqa3ywG8N+0eWpCU4jkAkKf/jAXAIb4ZAnJqTnjnJagN7MCFW+Fx8GErHF069NLhGW0Tm4kJPnQCL2bYJALkE+2ZAnJGx/jnmi8uT5uQTZ/1f5HoJgMBMEjRA5ANDmqQjZY++DmSBohPCBWplKKMSu33TBTBDaccJCzJAnD1AFNEGooME+4JInIOygEbSksIkJgkaItTdUedJZBEojG5kgaITYj6zylAH2YU0QNEL0ONmYpwsQSnWbmSCYjjE/Po/JAgTLrc1MEKwJ8fsZY54oQCjCeH8iJhghfixU5ZFkaB4IvMr7ogzJCFE/PkdCONp0X6Qd7PW+RGMcxSry8LLrvqi/qR6gojF8Xhn8AU8YzpuDfrGpD8OL1cYLp3JMKQQiD5wbVjKmZIKHwvN5CenJtu0rN04jeDIx/uwy2GqXqX8qElQ2TiN4MjHf2u3DRENz/0Cwn0EAH8aSibkNjgwQDQn9K8EsEsKHUT+GD8TRJrN6UEe4twmXp0F8GPVjyr3TYcNwKCgNQGGAgXwY9WN8DMC3hntEfsiqbygfxv2YhPAsiVdPOWoX0rVh5LhvQICYH+PLIU/J3qszi3HYpHNbhLqajPBMu4Lv0/zwjZuAQfChoravZ380EEbeGiTo+Cw6t22KEI5ktFj4LdnTL5S/qVWsHr7KqmlRhFDI7ogjh+XOxdjdF2YHZHSxPFglSAuFdk06h16Nrbm9RteOqufCMz2WB84ixqrQrd2zHIa+79VfLWvjbWndwhddoQydRQjZxLxSE1joKnn4LEJC2KWEEN2piQfwdMrQqLWcExG+MhkTIJ6Qc8NmWTDh+1wx6hg6ws6l+70nmbpXul9X2rCmySnrxRsLb58aqRBkIeysu48HMMAkABoR5hGjoXF/MAmAZoRdpKRsXA23v7IeGmEew5XNOzLxkwgDYU6ZAOeVn/m0U0oAKQjzkAylMu8ixC2kuXXhl9pAvjwQ+CUH8HTKKF0QugAMabupVn13Yi4zPNVtW9tI4oJ3pPVALwjzvKVPJmSK1v44nTLQKp986b4BRFL0c+n8FEQlfSO99QmR3D061RDI9+SHWuWFIqN7dLoh8EcF2ZO/1I69Q524bpUyh6Ik7MH/VLKbO4lWsXcu5dCrO//MQ9oe/E8FtocHS7R3tZjG4Eo59OumqN15kXRWEjwmFK26rtWoY/cs36UBOpnhptqPAdpGw43l1D1wF0l5WzU7SMEpu7LYmQOn5spifw6cFEOxa37xGe6fX1yGx+C3qoySU47DL05edm5/nJyKkM7so/1xisqaMBC9NqBNTWWz9U33Q+P7UrmhJX4Avi9l1QaJxW/36PRVlJVHU/w0ev9UZJV7WBR19Zn0niqysrHkWDdVecyqxUJFVlZNU9NI1iu6svhsyztBKrIsK8vqS81Tj3+WZZllewL3H/2YOVHv+BUaAAAAAElFTkSuQmCC" />
     `,
-    NowBar: `
+        NowBar: `
         <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 16 16" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon">
             <path d="M11.5 9.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/><path d="M1.75 3A1.75 1.75 0 000 4.75v6.5C0 12.216.784 13 1.75 13H2v1.25a.75.75 0 001.5 0V13h9v1.25a.75.75 0 001.5 0V13h.25A1.75 1.75 0 0016 11.25v-6.5A1.75 1.75 0 0014.25 3H1.75zM1.5 4.75a.25.25 0 01.25-.25h12.5a.25.25 0 01.25.25v6.5a.25.25 0 01-.25.25H1.75a.25.25 0 01-.25-.25v-6.5z"/>
         </svg>
     `,
-    Fullscreen: `
+        Fullscreen: `
         <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 16 16" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon">
             <path d="M6.064 10.229l-2.418 2.418L2 11v4h4l-1.647-1.646 2.418-2.418-.707-.707zM11 2l1.647 1.647-2.418 2.418.707.707 2.418-2.418L15 6V2h-4z"/>
         </svg>
     `,
-    CloseFullscreen: `
+        CloseFullscreen: `
         <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 24 24" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon">
             <path d="M21.707 2.293a1 1 0 0 1 0 1.414L17.414 8h1.829a1 1 0 0 1 0 2H14V4.757a1 1 0 1 1 2 0v1.829l4.293-4.293a1 1 0 0 1 1.414 0zM2.293 21.707a1 1 0 0 1 0-1.414L6.586 16H4.757a1 1 0 0 1 0-2H10v5.243a1 1 0 0 1-2 0v-1.829l-4.293 4.293a1 1 0 0 1-1.414 0z" />
         </svg>
     `,
-    PrevTrack: TrackSkip.replace("REPLACEME", "PrevTrack"),
-    Play: `
+        PrevTrack: TrackSkip.replace("REPLACEME", "PrevTrack"),
+        Play: `
 		<svg viewBox="0 0 18 20" xmlns="http://www.w3.org/2000/svg" class="Play">
 			<path d="M 1.558 20 C 2.006 20 2.381 19.838 2.874 19.561 L 16.622 11.572 C 17.527 11.053 17.894 10.65 17.894 9.997 C 17.894 9.35 17.527 8.948 16.622 8.419 L 2.874 0.439 C 2.381 0.153 2.006 0 1.558 0 C 0.706 0 0.106 0.654 0.106 1.694 L 0.106 18.298 C 0.106 19.346 0.706 20 1.558 20 L 1.558 20 Z" fill-rule="nonzero" transform="matrix(1, 0, 0, 1, 0, 8.881784197001252e-16)"/>
 		</svg>
 	`,
-    Pause: `
+        Pause: `
 		<svg viewBox="0 0 15 20" xmlns="http://www.w3.org/2000/svg" class="Pause">
 			<path d="M 4.427 19.963 C 5.513 19.963 6.06 19.416 6.06 18.33 L 6.06 1.66 C 6.06 0.545 5.513 0.037 4.427 0.037 L 1.633 0.037 C 0.548 0.037 0 0.575 0 1.66 L 0 18.331 C -0.009 19.416 0.538 19.963 1.633 19.963 L 4.427 19.963 Z M 13.377 19.963 C 14.462 19.963 15 19.416 15 18.33 L 15 1.66 C 15 0.545 14.462 0.037 13.376 0.037 L 10.573 0.037 C 9.487 0.037 8.949 0.575 8.949 1.66 L 8.949 18.331 C 8.949 19.416 9.487 19.963 10.573 19.963 L 13.376 19.963 L 13.377 19.963 Z" fill-rule="nonzero"/>
 		</svg>
 	`,
-    NextTrack: TrackSkip.replace("REPLACEME", "NextTrack"),
-    Shuffle: `
+        NextTrack: TrackSkip.replace("REPLACEME", "NextTrack"),
+        Shuffle: `
         <svg viewBox="0 0 25 20" xmlns="http://www.w3.org/2000/svg">
             <path d="M 19.857 19.948 C 20.135 19.94 20.403 19.841 20.62 19.663 L 24.632 16.281 C 25.123 15.868 25.123 15.223 24.632 14.797 L 20.62 11.402 C 20.403 11.224 20.135 11.125 19.857 11.117 C 19.212 11.117 18.81 11.518 18.81 12.164 L 18.81 14.1 L 17.003 14.1 C 15.853 14.1 15.144 13.738 14.33 12.782 L 11.956 9.981 L 14.33 7.167 C 15.17 6.186 15.802 5.849 16.939 5.849 L 18.81 5.849 L 18.81 7.838 C 18.81 8.471 19.212 8.871 19.857 8.871 C 20.133 8.868 20.403 8.773 20.62 8.6 L 24.632 5.216 C 25.123 4.803 25.123 4.145 24.632 3.732 L 20.62 0.337 C 20.406 0.154 20.136 0.053 19.857 0.052 C 19.212 0.052 18.81 0.453 18.81 1.087 L 18.81 3.241 L 16.925 3.241 C 15.015 3.241 13.827 3.771 12.472 5.398 L 10.277 7.992 L 7.992 5.269 C 6.738 3.798 5.55 3.241 3.719 3.241 L 1.393 3.241 C 0.569 3.241 0 3.784 0 4.546 C 0 5.308 0.567 5.849 1.393 5.849 L 3.628 5.849 C 4.712 5.849 5.436 6.199 6.249 7.167 L 8.611 9.967 L 6.247 12.782 C 5.423 13.752 4.763 14.1 3.691 14.1 L 1.393 14.1 C 0.569 14.1 0 14.641 0 15.403 C 0 16.165 0.567 16.707 1.393 16.707 L 3.783 16.707 C 5.617 16.707 6.738 16.153 7.992 14.68 L 10.29 11.956 L 12.537 14.629 C 13.815 16.153 15.066 16.707 16.925 16.707 L 18.81 16.707 L 18.81 18.902 C 18.81 19.548 19.212 19.948 19.857 19.948 Z"/>
         </svg>
 	`,
-    Loop: `
+        Loop: `
 		<svg viewBox="0 0 20 17" xmlns="http://www.w3.org/2000/svg" class="Loop">
 			<path d="M 1.148 8.951 C 1.786 8.956 2.307 8.441 2.307 7.803 L 2.307 7.201 C 2.307 5.853 3.255 4.949 4.705 4.949 L 11.426 4.949 L 11.426 6.778 C 11.426 7.325 11.773 7.67 12.33 7.67 C 12.572 7.67 12.806 7.583 12.988 7.424 L 16.454 4.515 C 16.879 4.158 16.879 3.589 16.454 3.233 L 12.988 0.301 C 12.806 0.142 12.572 0.055 12.33 0.055 C 11.773 0.055 11.428 0.402 11.428 0.948 L 11.428 2.686 L 4.872 2.686 C 1.895 2.686 0 4.37 0 7.001 L 0 7.803 C 0 8.44 0.513 8.951 1.148 8.951 L 1.148 8.951 Z M 7.681 16.945 C 8.227 16.945 8.572 16.6 8.572 16.053 L 8.572 14.303 L 15.128 14.303 C 18.116 14.303 20 12.619 20 9.988 L 20 9.186 C 20 8.302 19.043 7.75 18.278 8.192 C 17.922 8.397 17.703 8.776 17.703 9.186 L 17.703 9.788 C 17.703 11.136 16.745 12.04 15.295 12.04 L 8.572 12.04 L 8.572 10.223 C 8.572 9.676 8.227 9.331 7.681 9.331 C 7.436 9.331 7.199 9.417 7.012 9.576 L 3.556 12.497 C 3.121 12.842 3.133 13.41 3.556 13.767 L 7.012 16.711 C 7.202 16.862 7.438 16.944 7.681 16.945 L 7.681 16.945 Z" fill-rule="nonzero"/>
 		</svg>
 	`,
-    LoopTrack: `
+        LoopTrack: `
 		<svg viewBox="0 0 20 17" xmlns="http://www.w3.org/2000/svg" class="LoopTrack">
 			<path d="M 18.885 6.353 C 19.52 6.353 19.888 6.008 19.888 5.318 L 19.888 1.236 C 19.888 0.511 19.409 0.022 18.696 0.022 C 18.105 0.022 17.758 0.21 17.302 0.556 L 16.176 1.437 C 15.907 1.639 15.819 1.839 15.819 2.073 C 15.819 2.418 16.074 2.697 16.488 2.697 C 16.666 2.697 16.81 2.641 16.956 2.529 L 17.781 1.839 L 17.859 1.839 L 17.859 5.318 C 17.859 6.008 18.227 6.353 18.885 6.353 L 18.885 6.353 Z M 1.147 8.986 C 1.791 9.003 2.319 8.48 2.306 7.836 L 2.306 7.234 C 2.306 5.886 3.254 4.982 4.703 4.982 L 9.274 4.982 L 9.274 6.811 C 9.274 7.358 9.62 7.703 10.178 7.703 C 10.42 7.703 10.653 7.616 10.836 7.457 L 14.302 4.548 C 14.727 4.191 14.727 3.621 14.302 3.265 L 10.837 0.333 C 10.655 0.175 10.421 0.087 10.179 0.088 C 9.622 0.088 9.275 0.434 9.275 0.981 L 9.275 2.719 L 4.873 2.719 C 1.895 2.719 0 4.403 0 7.034 L 0 7.836 C 0 8.494 0.502 8.984 1.148 8.984 L 1.147 8.986 Z M 7.68 16.978 C 8.226 16.978 8.572 16.633 8.572 16.086 L 8.572 14.336 L 15.127 14.336 C 18.115 14.336 20 12.652 20 10.021 L 20 9.219 C 20.013 8.58 19.491 8.058 18.851 8.071 C 18.21 8.054 17.686 8.578 17.703 9.219 L 17.703 9.821 C 17.703 11.169 16.744 12.073 15.295 12.073 L 8.572 12.073 L 8.572 10.256 C 8.572 9.709 8.226 9.364 7.68 9.364 C 7.435 9.364 7.198 9.45 7.011 9.609 L 3.555 12.53 C 3.12 12.875 3.132 13.443 3.555 13.8 L 7.011 16.744 C 7.201 16.895 7.437 16.977 7.68 16.978 L 7.68 16.978 Z" fill-rule="nonzero" transform="matrix(1, 0, 0, 1, 0, -8.881784197001252e-16)"/>
 		</svg>
 	`
-  };
+      };
+    }
+  });
 
   // node_modules/lodash-es/_freeGlobal.js
-  var freeGlobal = typeof global == "object" && global && global.Object === Object && global;
-  var freeGlobal_default = freeGlobal;
+  var freeGlobal, freeGlobal_default;
+  var init_freeGlobal = __esm({
+    "node_modules/lodash-es/_freeGlobal.js"() {
+      freeGlobal = typeof global == "object" && global && global.Object === Object && global;
+      freeGlobal_default = freeGlobal;
+    }
+  });
 
   // node_modules/lodash-es/_root.js
-  var freeSelf = typeof self == "object" && self && self.Object === Object && self;
-  var root = freeGlobal_default || freeSelf || Function("return this")();
-  var root_default = root;
+  var freeSelf, root, root_default;
+  var init_root = __esm({
+    "node_modules/lodash-es/_root.js"() {
+      init_freeGlobal();
+      freeSelf = typeof self == "object" && self && self.Object === Object && self;
+      root = freeGlobal_default || freeSelf || Function("return this")();
+      root_default = root;
+    }
+  });
 
   // node_modules/lodash-es/_Symbol.js
-  var Symbol2 = root_default.Symbol;
-  var Symbol_default = Symbol2;
+  var Symbol2, Symbol_default;
+  var init_Symbol = __esm({
+    "node_modules/lodash-es/_Symbol.js"() {
+      init_root();
+      Symbol2 = root_default.Symbol;
+      Symbol_default = Symbol2;
+    }
+  });
 
   // node_modules/lodash-es/_getRawTag.js
-  var objectProto = Object.prototype;
-  var hasOwnProperty = objectProto.hasOwnProperty;
-  var nativeObjectToString = objectProto.toString;
-  var symToStringTag = Symbol_default ? Symbol_default.toStringTag : void 0;
   function getRawTag(value) {
     var isOwn = hasOwnProperty.call(value, symToStringTag), tag = value[symToStringTag];
     try {
@@ -2626,71 +2861,117 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return result;
   }
-  var getRawTag_default = getRawTag;
+  var objectProto, hasOwnProperty, nativeObjectToString, symToStringTag, getRawTag_default;
+  var init_getRawTag = __esm({
+    "node_modules/lodash-es/_getRawTag.js"() {
+      init_Symbol();
+      objectProto = Object.prototype;
+      hasOwnProperty = objectProto.hasOwnProperty;
+      nativeObjectToString = objectProto.toString;
+      symToStringTag = Symbol_default ? Symbol_default.toStringTag : void 0;
+      getRawTag_default = getRawTag;
+    }
+  });
 
   // node_modules/lodash-es/_objectToString.js
-  var objectProto2 = Object.prototype;
-  var nativeObjectToString2 = objectProto2.toString;
   function objectToString(value) {
     return nativeObjectToString2.call(value);
   }
-  var objectToString_default = objectToString;
+  var objectProto2, nativeObjectToString2, objectToString_default;
+  var init_objectToString = __esm({
+    "node_modules/lodash-es/_objectToString.js"() {
+      objectProto2 = Object.prototype;
+      nativeObjectToString2 = objectProto2.toString;
+      objectToString_default = objectToString;
+    }
+  });
 
   // node_modules/lodash-es/_baseGetTag.js
-  var nullTag = "[object Null]";
-  var undefinedTag = "[object Undefined]";
-  var symToStringTag2 = Symbol_default ? Symbol_default.toStringTag : void 0;
   function baseGetTag(value) {
     if (value == null) {
       return value === void 0 ? undefinedTag : nullTag;
     }
     return symToStringTag2 && symToStringTag2 in Object(value) ? getRawTag_default(value) : objectToString_default(value);
   }
-  var baseGetTag_default = baseGetTag;
+  var nullTag, undefinedTag, symToStringTag2, baseGetTag_default;
+  var init_baseGetTag = __esm({
+    "node_modules/lodash-es/_baseGetTag.js"() {
+      init_Symbol();
+      init_getRawTag();
+      init_objectToString();
+      nullTag = "[object Null]";
+      undefinedTag = "[object Undefined]";
+      symToStringTag2 = Symbol_default ? Symbol_default.toStringTag : void 0;
+      baseGetTag_default = baseGetTag;
+    }
+  });
 
   // node_modules/lodash-es/isObjectLike.js
   function isObjectLike(value) {
     return value != null && typeof value == "object";
   }
-  var isObjectLike_default = isObjectLike;
+  var isObjectLike_default;
+  var init_isObjectLike = __esm({
+    "node_modules/lodash-es/isObjectLike.js"() {
+      isObjectLike_default = isObjectLike;
+    }
+  });
 
   // node_modules/lodash-es/isSymbol.js
-  var symbolTag = "[object Symbol]";
   function isSymbol(value) {
     return typeof value == "symbol" || isObjectLike_default(value) && baseGetTag_default(value) == symbolTag;
   }
-  var isSymbol_default = isSymbol;
+  var symbolTag, isSymbol_default;
+  var init_isSymbol = __esm({
+    "node_modules/lodash-es/isSymbol.js"() {
+      init_baseGetTag();
+      init_isObjectLike();
+      symbolTag = "[object Symbol]";
+      isSymbol_default = isSymbol;
+    }
+  });
 
   // node_modules/lodash-es/_trimmedEndIndex.js
-  var reWhitespace = /\s/;
   function trimmedEndIndex(string) {
     var index = string.length;
     while (index-- && reWhitespace.test(string.charAt(index))) {
     }
     return index;
   }
-  var trimmedEndIndex_default = trimmedEndIndex;
+  var reWhitespace, trimmedEndIndex_default;
+  var init_trimmedEndIndex = __esm({
+    "node_modules/lodash-es/_trimmedEndIndex.js"() {
+      reWhitespace = /\s/;
+      trimmedEndIndex_default = trimmedEndIndex;
+    }
+  });
 
   // node_modules/lodash-es/_baseTrim.js
-  var reTrimStart = /^\s+/;
   function baseTrim(string) {
     return string ? string.slice(0, trimmedEndIndex_default(string) + 1).replace(reTrimStart, "") : string;
   }
-  var baseTrim_default = baseTrim;
+  var reTrimStart, baseTrim_default;
+  var init_baseTrim = __esm({
+    "node_modules/lodash-es/_baseTrim.js"() {
+      init_trimmedEndIndex();
+      reTrimStart = /^\s+/;
+      baseTrim_default = baseTrim;
+    }
+  });
 
   // node_modules/lodash-es/isObject.js
   function isObject(value) {
     var type = typeof value;
     return value != null && (type == "object" || type == "function");
   }
-  var isObject_default = isObject;
+  var isObject_default;
+  var init_isObject = __esm({
+    "node_modules/lodash-es/isObject.js"() {
+      isObject_default = isObject;
+    }
+  });
 
   // node_modules/lodash-es/toNumber.js
-  var NAN = 0 / 0;
-  var reIsBadHex = /^[-+]0x[0-9a-f]+$/i;
-  var reIsBinary = /^0b[01]+$/i;
-  var reIsOctal = /^0o[0-7]+$/i;
-  var freeParseInt = parseInt;
   function toNumber(value) {
     if (typeof value == "number") {
       return value;
@@ -2709,18 +2990,34 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     var isBinary = reIsBinary.test(value);
     return isBinary || reIsOctal.test(value) ? freeParseInt(value.slice(2), isBinary ? 2 : 8) : reIsBadHex.test(value) ? NAN : +value;
   }
-  var toNumber_default = toNumber;
+  var NAN, reIsBadHex, reIsBinary, reIsOctal, freeParseInt, toNumber_default;
+  var init_toNumber = __esm({
+    "node_modules/lodash-es/toNumber.js"() {
+      init_baseTrim();
+      init_isObject();
+      init_isSymbol();
+      NAN = 0 / 0;
+      reIsBadHex = /^[-+]0x[0-9a-f]+$/i;
+      reIsBinary = /^0b[01]+$/i;
+      reIsOctal = /^0o[0-7]+$/i;
+      freeParseInt = parseInt;
+      toNumber_default = toNumber;
+    }
+  });
 
   // node_modules/lodash-es/now.js
-  var now = function() {
-    return root_default.Date.now();
-  };
-  var now_default = now;
+  var now, now_default;
+  var init_now = __esm({
+    "node_modules/lodash-es/now.js"() {
+      init_root();
+      now = function() {
+        return root_default.Date.now();
+      };
+      now_default = now;
+    }
+  });
 
   // node_modules/lodash-es/debounce.js
-  var FUNC_ERROR_TEXT = "Expected a function";
-  var nativeMax = Math.max;
-  var nativeMin = Math.min;
   function debounce(func, wait, options) {
     var lastArgs, lastThis, maxWait, result, timerId, lastCallTime, lastInvokeTime = 0, leading = false, maxing = false, trailing = true;
     if (typeof func != "function") {
@@ -2802,10 +3099,20 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     debounced.flush = flush;
     return debounced;
   }
-  var debounce_default = debounce;
+  var FUNC_ERROR_TEXT, nativeMax, nativeMin, debounce_default;
+  var init_debounce = __esm({
+    "node_modules/lodash-es/debounce.js"() {
+      init_isObject();
+      init_now();
+      init_toNumber();
+      FUNC_ERROR_TEXT = "Expected a function";
+      nativeMax = Math.max;
+      nativeMin = Math.min;
+      debounce_default = debounce;
+    }
+  });
 
   // node_modules/lodash-es/throttle.js
-  var FUNC_ERROR_TEXT2 = "Expected a function";
   function throttle(func, wait, options) {
     var leading = true, trailing = true;
     if (typeof func != "function") {
@@ -2821,21 +3128,25 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       "trailing": trailing
     });
   }
-  var throttle_default = throttle;
+  var FUNC_ERROR_TEXT2, throttle_default;
+  var init_throttle = __esm({
+    "node_modules/lodash-es/throttle.js"() {
+      init_debounce();
+      init_isObject();
+      FUNC_ERROR_TEXT2 = "Expected a function";
+      throttle_default = throttle;
+    }
+  });
+
+  // node_modules/lodash-es/lodash.js
+  var init_lodash = __esm({
+    "node_modules/lodash-es/lodash.js"() {
+      init_debounce();
+      init_throttle();
+    }
+  });
 
   // node_modules/simplebar-core/dist/index.mjs
-  var __assign = function() {
-    __assign = Object.assign || function __assign2(t) {
-      for (var s, i = 1, n = arguments.length; i < n; i++) {
-        s = arguments[i];
-        for (var p in s)
-          if (Object.prototype.hasOwnProperty.call(s, p))
-            t[p] = s[p];
-      }
-      return t;
-    };
-    return __assign.apply(this, arguments);
-  };
   function getElementWindow$1(element) {
     if (!element || !element.ownerDocument || !element.ownerDocument.defaultView) {
       return window;
@@ -2848,32 +3159,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return element.ownerDocument;
   }
-  var getOptions$1 = function(obj) {
-    var initialObj = {};
-    var options = Array.prototype.reduce.call(obj, function(acc, attribute) {
-      var option = attribute.name.match(/data-simplebar-(.+)/);
-      if (option) {
-        var key = option[1].replace(/\W+(.)/g, function(_, chr) {
-          return chr.toUpperCase();
-        });
-        switch (attribute.value) {
-          case "true":
-            acc[key] = true;
-            break;
-          case "false":
-            acc[key] = false;
-            break;
-          case void 0:
-            acc[key] = true;
-            break;
-          default:
-            acc[key] = attribute.value;
-        }
-      }
-      return acc;
-    }, initialObj);
-    return options;
-  };
   function addClasses$1(el, classes) {
     var _a2;
     if (!el)
@@ -2889,27 +3174,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   function classNamesToQuery$1(classNames) {
     return ".".concat(classNames.split(" ").join("."));
-  }
-  var canUseDOM = !!(typeof window !== "undefined" && window.document && window.document.createElement);
-  var helpers = /* @__PURE__ */ Object.freeze({
-    __proto__: null,
-    addClasses: addClasses$1,
-    canUseDOM,
-    classNamesToQuery: classNamesToQuery$1,
-    getElementDocument: getElementDocument$1,
-    getElementWindow: getElementWindow$1,
-    getOptions: getOptions$1,
-    removeClasses: removeClasses$1
-  });
-  var cachedScrollbarWidth = null;
-  var cachedDevicePixelRatio = null;
-  if (canUseDOM) {
-    window.addEventListener("resize", function() {
-      if (cachedDevicePixelRatio !== window.devicePixelRatio) {
-        cachedDevicePixelRatio = window.devicePixelRatio;
-        cachedScrollbarWidth = null;
-      }
-    });
   }
   function scrollbarWidth() {
     if (cachedScrollbarWidth === null) {
@@ -2927,674 +3191,729 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return cachedScrollbarWidth;
   }
-  var getElementWindow = getElementWindow$1;
-  var getElementDocument = getElementDocument$1;
-  var getOptions = getOptions$1;
-  var addClasses = addClasses$1;
-  var removeClasses = removeClasses$1;
-  var classNamesToQuery = classNamesToQuery$1;
-  var SimpleBarCore = function() {
-    function SimpleBarCore2(element, options) {
-      if (options === void 0) {
-        options = {};
-      }
-      var _this = this;
-      this.removePreventClickId = null;
-      this.minScrollbarWidth = 20;
-      this.stopScrollDelay = 175;
-      this.isScrolling = false;
-      this.isMouseEntering = false;
-      this.isDragging = false;
-      this.scrollXTicking = false;
-      this.scrollYTicking = false;
-      this.wrapperEl = null;
-      this.contentWrapperEl = null;
-      this.contentEl = null;
-      this.offsetEl = null;
-      this.maskEl = null;
-      this.placeholderEl = null;
-      this.heightAutoObserverWrapperEl = null;
-      this.heightAutoObserverEl = null;
-      this.rtlHelpers = null;
-      this.scrollbarWidth = 0;
-      this.resizeObserver = null;
-      this.mutationObserver = null;
-      this.elStyles = null;
-      this.isRtl = null;
-      this.mouseX = 0;
-      this.mouseY = 0;
-      this.onMouseMove = function() {
+  var __assign, getOptions$1, canUseDOM, helpers, cachedScrollbarWidth, cachedDevicePixelRatio, getElementWindow, getElementDocument, getOptions, addClasses, removeClasses, classNamesToQuery, SimpleBarCore;
+  var init_dist = __esm({
+    "node_modules/simplebar-core/dist/index.mjs"() {
+      init_lodash();
+      __assign = function() {
+        __assign = Object.assign || function __assign2(t) {
+          for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s)
+              if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+          }
+          return t;
+        };
+        return __assign.apply(this, arguments);
       };
-      this.onWindowResize = function() {
-      };
-      this.onStopScrolling = function() {
-      };
-      this.onMouseEntered = function() {
-      };
-      this.onScroll = function() {
-        var elWindow = getElementWindow(_this.el);
-        if (!_this.scrollXTicking) {
-          elWindow.requestAnimationFrame(_this.scrollX);
-          _this.scrollXTicking = true;
-        }
-        if (!_this.scrollYTicking) {
-          elWindow.requestAnimationFrame(_this.scrollY);
-          _this.scrollYTicking = true;
-        }
-        if (!_this.isScrolling) {
-          _this.isScrolling = true;
-          addClasses(_this.el, _this.classNames.scrolling);
-        }
-        _this.showScrollbar("x");
-        _this.showScrollbar("y");
-        _this.onStopScrolling();
-      };
-      this.scrollX = function() {
-        if (_this.axis.x.isOverflowing) {
-          _this.positionScrollbar("x");
-        }
-        _this.scrollXTicking = false;
-      };
-      this.scrollY = function() {
-        if (_this.axis.y.isOverflowing) {
-          _this.positionScrollbar("y");
-        }
-        _this.scrollYTicking = false;
-      };
-      this._onStopScrolling = function() {
-        removeClasses(_this.el, _this.classNames.scrolling);
-        if (_this.options.autoHide) {
-          _this.hideScrollbar("x");
-          _this.hideScrollbar("y");
-        }
-        _this.isScrolling = false;
-      };
-      this.onMouseEnter = function() {
-        if (!_this.isMouseEntering) {
-          addClasses(_this.el, _this.classNames.mouseEntered);
-          _this.showScrollbar("x");
-          _this.showScrollbar("y");
-          _this.isMouseEntering = true;
-        }
-        _this.onMouseEntered();
-      };
-      this._onMouseEntered = function() {
-        removeClasses(_this.el, _this.classNames.mouseEntered);
-        if (_this.options.autoHide) {
-          _this.hideScrollbar("x");
-          _this.hideScrollbar("y");
-        }
-        _this.isMouseEntering = false;
-      };
-      this._onMouseMove = function(e) {
-        _this.mouseX = e.clientX;
-        _this.mouseY = e.clientY;
-        if (_this.axis.x.isOverflowing || _this.axis.x.forceVisible) {
-          _this.onMouseMoveForAxis("x");
-        }
-        if (_this.axis.y.isOverflowing || _this.axis.y.forceVisible) {
-          _this.onMouseMoveForAxis("y");
-        }
-      };
-      this.onMouseLeave = function() {
-        _this.onMouseMove.cancel();
-        if (_this.axis.x.isOverflowing || _this.axis.x.forceVisible) {
-          _this.onMouseLeaveForAxis("x");
-        }
-        if (_this.axis.y.isOverflowing || _this.axis.y.forceVisible) {
-          _this.onMouseLeaveForAxis("y");
-        }
-        _this.mouseX = -1;
-        _this.mouseY = -1;
-      };
-      this._onWindowResize = function() {
-        _this.scrollbarWidth = _this.getScrollbarWidth();
-        _this.hideNativeScrollbar();
-      };
-      this.onPointerEvent = function(e) {
-        if (!_this.axis.x.track.el || !_this.axis.y.track.el || !_this.axis.x.scrollbar.el || !_this.axis.y.scrollbar.el)
-          return;
-        var isWithinTrackXBounds, isWithinTrackYBounds;
-        _this.axis.x.track.rect = _this.axis.x.track.el.getBoundingClientRect();
-        _this.axis.y.track.rect = _this.axis.y.track.el.getBoundingClientRect();
-        if (_this.axis.x.isOverflowing || _this.axis.x.forceVisible) {
-          isWithinTrackXBounds = _this.isWithinBounds(_this.axis.x.track.rect);
-        }
-        if (_this.axis.y.isOverflowing || _this.axis.y.forceVisible) {
-          isWithinTrackYBounds = _this.isWithinBounds(_this.axis.y.track.rect);
-        }
-        if (isWithinTrackXBounds || isWithinTrackYBounds) {
-          e.stopPropagation();
-          if (e.type === "pointerdown" && e.pointerType !== "touch") {
-            if (isWithinTrackXBounds) {
-              _this.axis.x.scrollbar.rect = _this.axis.x.scrollbar.el.getBoundingClientRect();
-              if (_this.isWithinBounds(_this.axis.x.scrollbar.rect)) {
-                _this.onDragStart(e, "x");
-              } else {
-                _this.onTrackClick(e, "x");
-              }
-            }
-            if (isWithinTrackYBounds) {
-              _this.axis.y.scrollbar.rect = _this.axis.y.scrollbar.el.getBoundingClientRect();
-              if (_this.isWithinBounds(_this.axis.y.scrollbar.rect)) {
-                _this.onDragStart(e, "y");
-              } else {
-                _this.onTrackClick(e, "y");
-              }
+      getOptions$1 = function(obj) {
+        var initialObj = {};
+        var options = Array.prototype.reduce.call(obj, function(acc, attribute) {
+          var option = attribute.name.match(/data-simplebar-(.+)/);
+          if (option) {
+            var key = option[1].replace(/\W+(.)/g, function(_, chr) {
+              return chr.toUpperCase();
+            });
+            switch (attribute.value) {
+              case "true":
+                acc[key] = true;
+                break;
+              case "false":
+                acc[key] = false;
+                break;
+              case void 0:
+                acc[key] = true;
+                break;
+              default:
+                acc[key] = attribute.value;
             }
           }
-        }
+          return acc;
+        }, initialObj);
+        return options;
       };
-      this.drag = function(e) {
-        var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
-        if (!_this.draggedAxis || !_this.contentWrapperEl)
-          return;
-        var eventOffset;
-        var track = _this.axis[_this.draggedAxis].track;
-        var trackSize = (_b = (_a2 = track.rect) === null || _a2 === void 0 ? void 0 : _a2[_this.axis[_this.draggedAxis].sizeAttr]) !== null && _b !== void 0 ? _b : 0;
-        var scrollbar = _this.axis[_this.draggedAxis].scrollbar;
-        var contentSize = (_d = (_c = _this.contentWrapperEl) === null || _c === void 0 ? void 0 : _c[_this.axis[_this.draggedAxis].scrollSizeAttr]) !== null && _d !== void 0 ? _d : 0;
-        var hostSize = parseInt((_f = (_e = _this.elStyles) === null || _e === void 0 ? void 0 : _e[_this.axis[_this.draggedAxis].sizeAttr]) !== null && _f !== void 0 ? _f : "0px", 10);
-        e.preventDefault();
-        e.stopPropagation();
-        if (_this.draggedAxis === "y") {
-          eventOffset = e.pageY;
-        } else {
-          eventOffset = e.pageX;
-        }
-        var dragPos = eventOffset - ((_h = (_g = track.rect) === null || _g === void 0 ? void 0 : _g[_this.axis[_this.draggedAxis].offsetAttr]) !== null && _h !== void 0 ? _h : 0) - _this.axis[_this.draggedAxis].dragOffset;
-        dragPos = _this.draggedAxis === "x" && _this.isRtl ? ((_k = (_j = track.rect) === null || _j === void 0 ? void 0 : _j[_this.axis[_this.draggedAxis].sizeAttr]) !== null && _k !== void 0 ? _k : 0) - scrollbar.size - dragPos : dragPos;
-        var dragPerc = dragPos / (trackSize - scrollbar.size);
-        var scrollPos = dragPerc * (contentSize - hostSize);
-        if (_this.draggedAxis === "x" && _this.isRtl) {
-          scrollPos = ((_l = SimpleBarCore2.getRtlHelpers()) === null || _l === void 0 ? void 0 : _l.isScrollingToNegative) ? -scrollPos : scrollPos;
-        }
-        _this.contentWrapperEl[_this.axis[_this.draggedAxis].scrollOffsetAttr] = scrollPos;
-      };
-      this.onEndDrag = function(e) {
-        _this.isDragging = false;
-        var elDocument = getElementDocument(_this.el);
-        var elWindow = getElementWindow(_this.el);
-        e.preventDefault();
-        e.stopPropagation();
-        removeClasses(_this.el, _this.classNames.dragging);
-        _this.onStopScrolling();
-        elDocument.removeEventListener("mousemove", _this.drag, true);
-        elDocument.removeEventListener("mouseup", _this.onEndDrag, true);
-        _this.removePreventClickId = elWindow.setTimeout(function() {
-          elDocument.removeEventListener("click", _this.preventClick, true);
-          elDocument.removeEventListener("dblclick", _this.preventClick, true);
-          _this.removePreventClickId = null;
-        });
-      };
-      this.preventClick = function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-      };
-      this.el = element;
-      this.options = __assign(__assign({}, SimpleBarCore2.defaultOptions), options);
-      this.classNames = __assign(__assign({}, SimpleBarCore2.defaultOptions.classNames), options.classNames);
-      this.axis = {
-        x: {
-          scrollOffsetAttr: "scrollLeft",
-          sizeAttr: "width",
-          scrollSizeAttr: "scrollWidth",
-          offsetSizeAttr: "offsetWidth",
-          offsetAttr: "left",
-          overflowAttr: "overflowX",
-          dragOffset: 0,
-          isOverflowing: true,
-          forceVisible: false,
-          track: { size: null, el: null, rect: null, isVisible: false },
-          scrollbar: { size: null, el: null, rect: null, isVisible: false }
-        },
-        y: {
-          scrollOffsetAttr: "scrollTop",
-          sizeAttr: "height",
-          scrollSizeAttr: "scrollHeight",
-          offsetSizeAttr: "offsetHeight",
-          offsetAttr: "top",
-          overflowAttr: "overflowY",
-          dragOffset: 0,
-          isOverflowing: true,
-          forceVisible: false,
-          track: { size: null, el: null, rect: null, isVisible: false },
-          scrollbar: { size: null, el: null, rect: null, isVisible: false }
-        }
-      };
-      if (typeof this.el !== "object" || !this.el.nodeName) {
-        throw new Error("Argument passed to SimpleBar must be an HTML element instead of ".concat(this.el));
-      }
-      this.onMouseMove = throttle_default(this._onMouseMove, 64);
-      this.onWindowResize = debounce_default(this._onWindowResize, 64, { leading: true });
-      this.onStopScrolling = debounce_default(this._onStopScrolling, this.stopScrollDelay);
-      this.onMouseEntered = debounce_default(this._onMouseEntered, this.stopScrollDelay);
-      this.init();
-    }
-    SimpleBarCore2.getRtlHelpers = function() {
-      if (SimpleBarCore2.rtlHelpers) {
-        return SimpleBarCore2.rtlHelpers;
-      }
-      var dummyDiv = document.createElement("div");
-      dummyDiv.innerHTML = '<div class="simplebar-dummy-scrollbar-size"><div></div></div>';
-      var scrollbarDummyEl = dummyDiv.firstElementChild;
-      var dummyChild = scrollbarDummyEl === null || scrollbarDummyEl === void 0 ? void 0 : scrollbarDummyEl.firstElementChild;
-      if (!dummyChild)
-        return null;
-      document.body.appendChild(scrollbarDummyEl);
-      scrollbarDummyEl.scrollLeft = 0;
-      var dummyContainerOffset = SimpleBarCore2.getOffset(scrollbarDummyEl);
-      var dummyChildOffset = SimpleBarCore2.getOffset(dummyChild);
-      scrollbarDummyEl.scrollLeft = -999;
-      var dummyChildOffsetAfterScroll = SimpleBarCore2.getOffset(dummyChild);
-      document.body.removeChild(scrollbarDummyEl);
-      SimpleBarCore2.rtlHelpers = {
-        isScrollOriginAtZero: dummyContainerOffset.left !== dummyChildOffset.left,
-        isScrollingToNegative: dummyChildOffset.left !== dummyChildOffsetAfterScroll.left
-      };
-      return SimpleBarCore2.rtlHelpers;
-    };
-    SimpleBarCore2.prototype.getScrollbarWidth = function() {
-      try {
-        if (this.contentWrapperEl && getComputedStyle(this.contentWrapperEl, "::-webkit-scrollbar").display === "none" || "scrollbarWidth" in document.documentElement.style || "-ms-overflow-style" in document.documentElement.style) {
-          return 0;
-        } else {
-          return scrollbarWidth();
-        }
-      } catch (e) {
-        return scrollbarWidth();
-      }
-    };
-    SimpleBarCore2.getOffset = function(el) {
-      var rect = el.getBoundingClientRect();
-      var elDocument = getElementDocument(el);
-      var elWindow = getElementWindow(el);
-      return {
-        top: rect.top + (elWindow.pageYOffset || elDocument.documentElement.scrollTop),
-        left: rect.left + (elWindow.pageXOffset || elDocument.documentElement.scrollLeft)
-      };
-    };
-    SimpleBarCore2.prototype.init = function() {
+      canUseDOM = !!(typeof window !== "undefined" && window.document && window.document.createElement);
+      helpers = /* @__PURE__ */ Object.freeze({
+        __proto__: null,
+        addClasses: addClasses$1,
+        canUseDOM,
+        classNamesToQuery: classNamesToQuery$1,
+        getElementDocument: getElementDocument$1,
+        getElementWindow: getElementWindow$1,
+        getOptions: getOptions$1,
+        removeClasses: removeClasses$1
+      });
+      cachedScrollbarWidth = null;
+      cachedDevicePixelRatio = null;
       if (canUseDOM) {
-        this.initDOM();
-        this.rtlHelpers = SimpleBarCore2.getRtlHelpers();
-        this.scrollbarWidth = this.getScrollbarWidth();
-        this.recalculate();
-        this.initListeners();
+        window.addEventListener("resize", function() {
+          if (cachedDevicePixelRatio !== window.devicePixelRatio) {
+            cachedDevicePixelRatio = window.devicePixelRatio;
+            cachedScrollbarWidth = null;
+          }
+        });
       }
-    };
-    SimpleBarCore2.prototype.initDOM = function() {
-      var _a2, _b;
-      this.wrapperEl = this.el.querySelector(classNamesToQuery(this.classNames.wrapper));
-      this.contentWrapperEl = this.options.scrollableNode || this.el.querySelector(classNamesToQuery(this.classNames.contentWrapper));
-      this.contentEl = this.options.contentNode || this.el.querySelector(classNamesToQuery(this.classNames.contentEl));
-      this.offsetEl = this.el.querySelector(classNamesToQuery(this.classNames.offset));
-      this.maskEl = this.el.querySelector(classNamesToQuery(this.classNames.mask));
-      this.placeholderEl = this.findChild(this.wrapperEl, classNamesToQuery(this.classNames.placeholder));
-      this.heightAutoObserverWrapperEl = this.el.querySelector(classNamesToQuery(this.classNames.heightAutoObserverWrapperEl));
-      this.heightAutoObserverEl = this.el.querySelector(classNamesToQuery(this.classNames.heightAutoObserverEl));
-      this.axis.x.track.el = this.findChild(this.el, "".concat(classNamesToQuery(this.classNames.track)).concat(classNamesToQuery(this.classNames.horizontal)));
-      this.axis.y.track.el = this.findChild(this.el, "".concat(classNamesToQuery(this.classNames.track)).concat(classNamesToQuery(this.classNames.vertical)));
-      this.axis.x.scrollbar.el = ((_a2 = this.axis.x.track.el) === null || _a2 === void 0 ? void 0 : _a2.querySelector(classNamesToQuery(this.classNames.scrollbar))) || null;
-      this.axis.y.scrollbar.el = ((_b = this.axis.y.track.el) === null || _b === void 0 ? void 0 : _b.querySelector(classNamesToQuery(this.classNames.scrollbar))) || null;
-      if (!this.options.autoHide) {
-        addClasses(this.axis.x.scrollbar.el, this.classNames.visible);
-        addClasses(this.axis.y.scrollbar.el, this.classNames.visible);
-      }
-    };
-    SimpleBarCore2.prototype.initListeners = function() {
-      var _this = this;
-      var _a2;
-      var elWindow = getElementWindow(this.el);
-      this.el.addEventListener("mouseenter", this.onMouseEnter);
-      this.el.addEventListener("pointerdown", this.onPointerEvent, true);
-      this.el.addEventListener("mousemove", this.onMouseMove);
-      this.el.addEventListener("mouseleave", this.onMouseLeave);
-      (_a2 = this.contentWrapperEl) === null || _a2 === void 0 ? void 0 : _a2.addEventListener("scroll", this.onScroll);
-      elWindow.addEventListener("resize", this.onWindowResize);
-      if (!this.contentEl)
-        return;
-      if (window.ResizeObserver) {
-        var resizeObserverStarted_1 = false;
-        var resizeObserver = elWindow.ResizeObserver || ResizeObserver;
-        this.resizeObserver = new resizeObserver(function() {
-          if (!resizeObserverStarted_1)
+      getElementWindow = getElementWindow$1;
+      getElementDocument = getElementDocument$1;
+      getOptions = getOptions$1;
+      addClasses = addClasses$1;
+      removeClasses = removeClasses$1;
+      classNamesToQuery = classNamesToQuery$1;
+      SimpleBarCore = function() {
+        function SimpleBarCore2(element, options) {
+          if (options === void 0) {
+            options = {};
+          }
+          var _this = this;
+          this.removePreventClickId = null;
+          this.minScrollbarWidth = 20;
+          this.stopScrollDelay = 175;
+          this.isScrolling = false;
+          this.isMouseEntering = false;
+          this.isDragging = false;
+          this.scrollXTicking = false;
+          this.scrollYTicking = false;
+          this.wrapperEl = null;
+          this.contentWrapperEl = null;
+          this.contentEl = null;
+          this.offsetEl = null;
+          this.maskEl = null;
+          this.placeholderEl = null;
+          this.heightAutoObserverWrapperEl = null;
+          this.heightAutoObserverEl = null;
+          this.rtlHelpers = null;
+          this.scrollbarWidth = 0;
+          this.resizeObserver = null;
+          this.mutationObserver = null;
+          this.elStyles = null;
+          this.isRtl = null;
+          this.mouseX = 0;
+          this.mouseY = 0;
+          this.onMouseMove = function() {
+          };
+          this.onWindowResize = function() {
+          };
+          this.onStopScrolling = function() {
+          };
+          this.onMouseEntered = function() {
+          };
+          this.onScroll = function() {
+            var elWindow = getElementWindow(_this.el);
+            if (!_this.scrollXTicking) {
+              elWindow.requestAnimationFrame(_this.scrollX);
+              _this.scrollXTicking = true;
+            }
+            if (!_this.scrollYTicking) {
+              elWindow.requestAnimationFrame(_this.scrollY);
+              _this.scrollYTicking = true;
+            }
+            if (!_this.isScrolling) {
+              _this.isScrolling = true;
+              addClasses(_this.el, _this.classNames.scrolling);
+            }
+            _this.showScrollbar("x");
+            _this.showScrollbar("y");
+            _this.onStopScrolling();
+          };
+          this.scrollX = function() {
+            if (_this.axis.x.isOverflowing) {
+              _this.positionScrollbar("x");
+            }
+            _this.scrollXTicking = false;
+          };
+          this.scrollY = function() {
+            if (_this.axis.y.isOverflowing) {
+              _this.positionScrollbar("y");
+            }
+            _this.scrollYTicking = false;
+          };
+          this._onStopScrolling = function() {
+            removeClasses(_this.el, _this.classNames.scrolling);
+            if (_this.options.autoHide) {
+              _this.hideScrollbar("x");
+              _this.hideScrollbar("y");
+            }
+            _this.isScrolling = false;
+          };
+          this.onMouseEnter = function() {
+            if (!_this.isMouseEntering) {
+              addClasses(_this.el, _this.classNames.mouseEntered);
+              _this.showScrollbar("x");
+              _this.showScrollbar("y");
+              _this.isMouseEntering = true;
+            }
+            _this.onMouseEntered();
+          };
+          this._onMouseEntered = function() {
+            removeClasses(_this.el, _this.classNames.mouseEntered);
+            if (_this.options.autoHide) {
+              _this.hideScrollbar("x");
+              _this.hideScrollbar("y");
+            }
+            _this.isMouseEntering = false;
+          };
+          this._onMouseMove = function(e) {
+            _this.mouseX = e.clientX;
+            _this.mouseY = e.clientY;
+            if (_this.axis.x.isOverflowing || _this.axis.x.forceVisible) {
+              _this.onMouseMoveForAxis("x");
+            }
+            if (_this.axis.y.isOverflowing || _this.axis.y.forceVisible) {
+              _this.onMouseMoveForAxis("y");
+            }
+          };
+          this.onMouseLeave = function() {
+            _this.onMouseMove.cancel();
+            if (_this.axis.x.isOverflowing || _this.axis.x.forceVisible) {
+              _this.onMouseLeaveForAxis("x");
+            }
+            if (_this.axis.y.isOverflowing || _this.axis.y.forceVisible) {
+              _this.onMouseLeaveForAxis("y");
+            }
+            _this.mouseX = -1;
+            _this.mouseY = -1;
+          };
+          this._onWindowResize = function() {
+            _this.scrollbarWidth = _this.getScrollbarWidth();
+            _this.hideNativeScrollbar();
+          };
+          this.onPointerEvent = function(e) {
+            if (!_this.axis.x.track.el || !_this.axis.y.track.el || !_this.axis.x.scrollbar.el || !_this.axis.y.scrollbar.el)
+              return;
+            var isWithinTrackXBounds, isWithinTrackYBounds;
+            _this.axis.x.track.rect = _this.axis.x.track.el.getBoundingClientRect();
+            _this.axis.y.track.rect = _this.axis.y.track.el.getBoundingClientRect();
+            if (_this.axis.x.isOverflowing || _this.axis.x.forceVisible) {
+              isWithinTrackXBounds = _this.isWithinBounds(_this.axis.x.track.rect);
+            }
+            if (_this.axis.y.isOverflowing || _this.axis.y.forceVisible) {
+              isWithinTrackYBounds = _this.isWithinBounds(_this.axis.y.track.rect);
+            }
+            if (isWithinTrackXBounds || isWithinTrackYBounds) {
+              e.stopPropagation();
+              if (e.type === "pointerdown" && e.pointerType !== "touch") {
+                if (isWithinTrackXBounds) {
+                  _this.axis.x.scrollbar.rect = _this.axis.x.scrollbar.el.getBoundingClientRect();
+                  if (_this.isWithinBounds(_this.axis.x.scrollbar.rect)) {
+                    _this.onDragStart(e, "x");
+                  } else {
+                    _this.onTrackClick(e, "x");
+                  }
+                }
+                if (isWithinTrackYBounds) {
+                  _this.axis.y.scrollbar.rect = _this.axis.y.scrollbar.el.getBoundingClientRect();
+                  if (_this.isWithinBounds(_this.axis.y.scrollbar.rect)) {
+                    _this.onDragStart(e, "y");
+                  } else {
+                    _this.onTrackClick(e, "y");
+                  }
+                }
+              }
+            }
+          };
+          this.drag = function(e) {
+            var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+            if (!_this.draggedAxis || !_this.contentWrapperEl)
+              return;
+            var eventOffset;
+            var track = _this.axis[_this.draggedAxis].track;
+            var trackSize = (_b = (_a2 = track.rect) === null || _a2 === void 0 ? void 0 : _a2[_this.axis[_this.draggedAxis].sizeAttr]) !== null && _b !== void 0 ? _b : 0;
+            var scrollbar = _this.axis[_this.draggedAxis].scrollbar;
+            var contentSize = (_d = (_c = _this.contentWrapperEl) === null || _c === void 0 ? void 0 : _c[_this.axis[_this.draggedAxis].scrollSizeAttr]) !== null && _d !== void 0 ? _d : 0;
+            var hostSize = parseInt((_f = (_e = _this.elStyles) === null || _e === void 0 ? void 0 : _e[_this.axis[_this.draggedAxis].sizeAttr]) !== null && _f !== void 0 ? _f : "0px", 10);
+            e.preventDefault();
+            e.stopPropagation();
+            if (_this.draggedAxis === "y") {
+              eventOffset = e.pageY;
+            } else {
+              eventOffset = e.pageX;
+            }
+            var dragPos = eventOffset - ((_h = (_g = track.rect) === null || _g === void 0 ? void 0 : _g[_this.axis[_this.draggedAxis].offsetAttr]) !== null && _h !== void 0 ? _h : 0) - _this.axis[_this.draggedAxis].dragOffset;
+            dragPos = _this.draggedAxis === "x" && _this.isRtl ? ((_k = (_j = track.rect) === null || _j === void 0 ? void 0 : _j[_this.axis[_this.draggedAxis].sizeAttr]) !== null && _k !== void 0 ? _k : 0) - scrollbar.size - dragPos : dragPos;
+            var dragPerc = dragPos / (trackSize - scrollbar.size);
+            var scrollPos = dragPerc * (contentSize - hostSize);
+            if (_this.draggedAxis === "x" && _this.isRtl) {
+              scrollPos = ((_l = SimpleBarCore2.getRtlHelpers()) === null || _l === void 0 ? void 0 : _l.isScrollingToNegative) ? -scrollPos : scrollPos;
+            }
+            _this.contentWrapperEl[_this.axis[_this.draggedAxis].scrollOffsetAttr] = scrollPos;
+          };
+          this.onEndDrag = function(e) {
+            _this.isDragging = false;
+            var elDocument = getElementDocument(_this.el);
+            var elWindow = getElementWindow(_this.el);
+            e.preventDefault();
+            e.stopPropagation();
+            removeClasses(_this.el, _this.classNames.dragging);
+            _this.onStopScrolling();
+            elDocument.removeEventListener("mousemove", _this.drag, true);
+            elDocument.removeEventListener("mouseup", _this.onEndDrag, true);
+            _this.removePreventClickId = elWindow.setTimeout(function() {
+              elDocument.removeEventListener("click", _this.preventClick, true);
+              elDocument.removeEventListener("dblclick", _this.preventClick, true);
+              _this.removePreventClickId = null;
+            });
+          };
+          this.preventClick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+          };
+          this.el = element;
+          this.options = __assign(__assign({}, SimpleBarCore2.defaultOptions), options);
+          this.classNames = __assign(__assign({}, SimpleBarCore2.defaultOptions.classNames), options.classNames);
+          this.axis = {
+            x: {
+              scrollOffsetAttr: "scrollLeft",
+              sizeAttr: "width",
+              scrollSizeAttr: "scrollWidth",
+              offsetSizeAttr: "offsetWidth",
+              offsetAttr: "left",
+              overflowAttr: "overflowX",
+              dragOffset: 0,
+              isOverflowing: true,
+              forceVisible: false,
+              track: { size: null, el: null, rect: null, isVisible: false },
+              scrollbar: { size: null, el: null, rect: null, isVisible: false }
+            },
+            y: {
+              scrollOffsetAttr: "scrollTop",
+              sizeAttr: "height",
+              scrollSizeAttr: "scrollHeight",
+              offsetSizeAttr: "offsetHeight",
+              offsetAttr: "top",
+              overflowAttr: "overflowY",
+              dragOffset: 0,
+              isOverflowing: true,
+              forceVisible: false,
+              track: { size: null, el: null, rect: null, isVisible: false },
+              scrollbar: { size: null, el: null, rect: null, isVisible: false }
+            }
+          };
+          if (typeof this.el !== "object" || !this.el.nodeName) {
+            throw new Error("Argument passed to SimpleBar must be an HTML element instead of ".concat(this.el));
+          }
+          this.onMouseMove = throttle_default(this._onMouseMove, 64);
+          this.onWindowResize = debounce_default(this._onWindowResize, 64, { leading: true });
+          this.onStopScrolling = debounce_default(this._onStopScrolling, this.stopScrollDelay);
+          this.onMouseEntered = debounce_default(this._onMouseEntered, this.stopScrollDelay);
+          this.init();
+        }
+        SimpleBarCore2.getRtlHelpers = function() {
+          if (SimpleBarCore2.rtlHelpers) {
+            return SimpleBarCore2.rtlHelpers;
+          }
+          var dummyDiv = document.createElement("div");
+          dummyDiv.innerHTML = '<div class="simplebar-dummy-scrollbar-size"><div></div></div>';
+          var scrollbarDummyEl = dummyDiv.firstElementChild;
+          var dummyChild = scrollbarDummyEl === null || scrollbarDummyEl === void 0 ? void 0 : scrollbarDummyEl.firstElementChild;
+          if (!dummyChild)
+            return null;
+          document.body.appendChild(scrollbarDummyEl);
+          scrollbarDummyEl.scrollLeft = 0;
+          var dummyContainerOffset = SimpleBarCore2.getOffset(scrollbarDummyEl);
+          var dummyChildOffset = SimpleBarCore2.getOffset(dummyChild);
+          scrollbarDummyEl.scrollLeft = -999;
+          var dummyChildOffsetAfterScroll = SimpleBarCore2.getOffset(dummyChild);
+          document.body.removeChild(scrollbarDummyEl);
+          SimpleBarCore2.rtlHelpers = {
+            isScrollOriginAtZero: dummyContainerOffset.left !== dummyChildOffset.left,
+            isScrollingToNegative: dummyChildOffset.left !== dummyChildOffsetAfterScroll.left
+          };
+          return SimpleBarCore2.rtlHelpers;
+        };
+        SimpleBarCore2.prototype.getScrollbarWidth = function() {
+          try {
+            if (this.contentWrapperEl && getComputedStyle(this.contentWrapperEl, "::-webkit-scrollbar").display === "none" || "scrollbarWidth" in document.documentElement.style || "-ms-overflow-style" in document.documentElement.style) {
+              return 0;
+            } else {
+              return scrollbarWidth();
+            }
+          } catch (e) {
+            return scrollbarWidth();
+          }
+        };
+        SimpleBarCore2.getOffset = function(el) {
+          var rect = el.getBoundingClientRect();
+          var elDocument = getElementDocument(el);
+          var elWindow = getElementWindow(el);
+          return {
+            top: rect.top + (elWindow.pageYOffset || elDocument.documentElement.scrollTop),
+            left: rect.left + (elWindow.pageXOffset || elDocument.documentElement.scrollLeft)
+          };
+        };
+        SimpleBarCore2.prototype.init = function() {
+          if (canUseDOM) {
+            this.initDOM();
+            this.rtlHelpers = SimpleBarCore2.getRtlHelpers();
+            this.scrollbarWidth = this.getScrollbarWidth();
+            this.recalculate();
+            this.initListeners();
+          }
+        };
+        SimpleBarCore2.prototype.initDOM = function() {
+          var _a2, _b;
+          this.wrapperEl = this.el.querySelector(classNamesToQuery(this.classNames.wrapper));
+          this.contentWrapperEl = this.options.scrollableNode || this.el.querySelector(classNamesToQuery(this.classNames.contentWrapper));
+          this.contentEl = this.options.contentNode || this.el.querySelector(classNamesToQuery(this.classNames.contentEl));
+          this.offsetEl = this.el.querySelector(classNamesToQuery(this.classNames.offset));
+          this.maskEl = this.el.querySelector(classNamesToQuery(this.classNames.mask));
+          this.placeholderEl = this.findChild(this.wrapperEl, classNamesToQuery(this.classNames.placeholder));
+          this.heightAutoObserverWrapperEl = this.el.querySelector(classNamesToQuery(this.classNames.heightAutoObserverWrapperEl));
+          this.heightAutoObserverEl = this.el.querySelector(classNamesToQuery(this.classNames.heightAutoObserverEl));
+          this.axis.x.track.el = this.findChild(this.el, "".concat(classNamesToQuery(this.classNames.track)).concat(classNamesToQuery(this.classNames.horizontal)));
+          this.axis.y.track.el = this.findChild(this.el, "".concat(classNamesToQuery(this.classNames.track)).concat(classNamesToQuery(this.classNames.vertical)));
+          this.axis.x.scrollbar.el = ((_a2 = this.axis.x.track.el) === null || _a2 === void 0 ? void 0 : _a2.querySelector(classNamesToQuery(this.classNames.scrollbar))) || null;
+          this.axis.y.scrollbar.el = ((_b = this.axis.y.track.el) === null || _b === void 0 ? void 0 : _b.querySelector(classNamesToQuery(this.classNames.scrollbar))) || null;
+          if (!this.options.autoHide) {
+            addClasses(this.axis.x.scrollbar.el, this.classNames.visible);
+            addClasses(this.axis.y.scrollbar.el, this.classNames.visible);
+          }
+        };
+        SimpleBarCore2.prototype.initListeners = function() {
+          var _this = this;
+          var _a2;
+          var elWindow = getElementWindow(this.el);
+          this.el.addEventListener("mouseenter", this.onMouseEnter);
+          this.el.addEventListener("pointerdown", this.onPointerEvent, true);
+          this.el.addEventListener("mousemove", this.onMouseMove);
+          this.el.addEventListener("mouseleave", this.onMouseLeave);
+          (_a2 = this.contentWrapperEl) === null || _a2 === void 0 ? void 0 : _a2.addEventListener("scroll", this.onScroll);
+          elWindow.addEventListener("resize", this.onWindowResize);
+          if (!this.contentEl)
             return;
-          elWindow.requestAnimationFrame(function() {
-            _this.recalculate();
+          if (window.ResizeObserver) {
+            var resizeObserverStarted_1 = false;
+            var resizeObserver = elWindow.ResizeObserver || ResizeObserver;
+            this.resizeObserver = new resizeObserver(function() {
+              if (!resizeObserverStarted_1)
+                return;
+              elWindow.requestAnimationFrame(function() {
+                _this.recalculate();
+              });
+            });
+            this.resizeObserver.observe(this.el);
+            this.resizeObserver.observe(this.contentEl);
+            elWindow.requestAnimationFrame(function() {
+              resizeObserverStarted_1 = true;
+            });
+          }
+          this.mutationObserver = new elWindow.MutationObserver(function() {
+            elWindow.requestAnimationFrame(function() {
+              _this.recalculate();
+            });
           });
-        });
-        this.resizeObserver.observe(this.el);
-        this.resizeObserver.observe(this.contentEl);
-        elWindow.requestAnimationFrame(function() {
-          resizeObserverStarted_1 = true;
-        });
-      }
-      this.mutationObserver = new elWindow.MutationObserver(function() {
-        elWindow.requestAnimationFrame(function() {
-          _this.recalculate();
-        });
-      });
-      this.mutationObserver.observe(this.contentEl, {
-        childList: true,
-        subtree: true,
-        characterData: true
-      });
-    };
-    SimpleBarCore2.prototype.recalculate = function() {
-      if (!this.heightAutoObserverEl || !this.contentEl || !this.contentWrapperEl || !this.wrapperEl || !this.placeholderEl)
-        return;
-      var elWindow = getElementWindow(this.el);
-      this.elStyles = elWindow.getComputedStyle(this.el);
-      this.isRtl = this.elStyles.direction === "rtl";
-      var contentElOffsetWidth = this.contentEl.offsetWidth;
-      var isHeightAuto = this.heightAutoObserverEl.offsetHeight <= 1;
-      var isWidthAuto = this.heightAutoObserverEl.offsetWidth <= 1 || contentElOffsetWidth > 0;
-      var contentWrapperElOffsetWidth = this.contentWrapperEl.offsetWidth;
-      var elOverflowX = this.elStyles.overflowX;
-      var elOverflowY = this.elStyles.overflowY;
-      this.contentEl.style.padding = "".concat(this.elStyles.paddingTop, " ").concat(this.elStyles.paddingRight, " ").concat(this.elStyles.paddingBottom, " ").concat(this.elStyles.paddingLeft);
-      this.wrapperEl.style.margin = "-".concat(this.elStyles.paddingTop, " -").concat(this.elStyles.paddingRight, " -").concat(this.elStyles.paddingBottom, " -").concat(this.elStyles.paddingLeft);
-      var contentElScrollHeight = this.contentEl.scrollHeight;
-      var contentElScrollWidth = this.contentEl.scrollWidth;
-      this.contentWrapperEl.style.height = isHeightAuto ? "auto" : "100%";
-      this.placeholderEl.style.width = isWidthAuto ? "".concat(contentElOffsetWidth || contentElScrollWidth, "px") : "auto";
-      this.placeholderEl.style.height = "".concat(contentElScrollHeight, "px");
-      var contentWrapperElOffsetHeight = this.contentWrapperEl.offsetHeight;
-      this.axis.x.isOverflowing = contentElOffsetWidth !== 0 && contentElScrollWidth > contentElOffsetWidth;
-      this.axis.y.isOverflowing = contentElScrollHeight > contentWrapperElOffsetHeight;
-      this.axis.x.isOverflowing = elOverflowX === "hidden" ? false : this.axis.x.isOverflowing;
-      this.axis.y.isOverflowing = elOverflowY === "hidden" ? false : this.axis.y.isOverflowing;
-      this.axis.x.forceVisible = this.options.forceVisible === "x" || this.options.forceVisible === true;
-      this.axis.y.forceVisible = this.options.forceVisible === "y" || this.options.forceVisible === true;
-      this.hideNativeScrollbar();
-      var offsetForXScrollbar = this.axis.x.isOverflowing ? this.scrollbarWidth : 0;
-      var offsetForYScrollbar = this.axis.y.isOverflowing ? this.scrollbarWidth : 0;
-      this.axis.x.isOverflowing = this.axis.x.isOverflowing && contentElScrollWidth > contentWrapperElOffsetWidth - offsetForYScrollbar;
-      this.axis.y.isOverflowing = this.axis.y.isOverflowing && contentElScrollHeight > contentWrapperElOffsetHeight - offsetForXScrollbar;
-      this.axis.x.scrollbar.size = this.getScrollbarSize("x");
-      this.axis.y.scrollbar.size = this.getScrollbarSize("y");
-      if (this.axis.x.scrollbar.el)
-        this.axis.x.scrollbar.el.style.width = "".concat(this.axis.x.scrollbar.size, "px");
-      if (this.axis.y.scrollbar.el)
-        this.axis.y.scrollbar.el.style.height = "".concat(this.axis.y.scrollbar.size, "px");
-      this.positionScrollbar("x");
-      this.positionScrollbar("y");
-      this.toggleTrackVisibility("x");
-      this.toggleTrackVisibility("y");
-    };
-    SimpleBarCore2.prototype.getScrollbarSize = function(axis) {
-      var _a2, _b;
-      if (axis === void 0) {
-        axis = "y";
-      }
-      if (!this.axis[axis].isOverflowing || !this.contentEl) {
-        return 0;
-      }
-      var contentSize = this.contentEl[this.axis[axis].scrollSizeAttr];
-      var trackSize = (_b = (_a2 = this.axis[axis].track.el) === null || _a2 === void 0 ? void 0 : _a2[this.axis[axis].offsetSizeAttr]) !== null && _b !== void 0 ? _b : 0;
-      var scrollbarRatio = trackSize / contentSize;
-      var scrollbarSize;
-      scrollbarSize = Math.max(~~(scrollbarRatio * trackSize), this.options.scrollbarMinSize);
-      if (this.options.scrollbarMaxSize) {
-        scrollbarSize = Math.min(scrollbarSize, this.options.scrollbarMaxSize);
-      }
-      return scrollbarSize;
-    };
-    SimpleBarCore2.prototype.positionScrollbar = function(axis) {
-      var _a2, _b, _c;
-      if (axis === void 0) {
-        axis = "y";
-      }
-      var scrollbar = this.axis[axis].scrollbar;
-      if (!this.axis[axis].isOverflowing || !this.contentWrapperEl || !scrollbar.el || !this.elStyles) {
-        return;
-      }
-      var contentSize = this.contentWrapperEl[this.axis[axis].scrollSizeAttr];
-      var trackSize = ((_a2 = this.axis[axis].track.el) === null || _a2 === void 0 ? void 0 : _a2[this.axis[axis].offsetSizeAttr]) || 0;
-      var hostSize = parseInt(this.elStyles[this.axis[axis].sizeAttr], 10);
-      var scrollOffset = this.contentWrapperEl[this.axis[axis].scrollOffsetAttr];
-      scrollOffset = axis === "x" && this.isRtl && ((_b = SimpleBarCore2.getRtlHelpers()) === null || _b === void 0 ? void 0 : _b.isScrollOriginAtZero) ? -scrollOffset : scrollOffset;
-      if (axis === "x" && this.isRtl) {
-        scrollOffset = ((_c = SimpleBarCore2.getRtlHelpers()) === null || _c === void 0 ? void 0 : _c.isScrollingToNegative) ? scrollOffset : -scrollOffset;
-      }
-      var scrollPourcent = scrollOffset / (contentSize - hostSize);
-      var handleOffset = ~~((trackSize - scrollbar.size) * scrollPourcent);
-      handleOffset = axis === "x" && this.isRtl ? -handleOffset + (trackSize - scrollbar.size) : handleOffset;
-      scrollbar.el.style.transform = axis === "x" ? "translate3d(".concat(handleOffset, "px, 0, 0)") : "translate3d(0, ".concat(handleOffset, "px, 0)");
-    };
-    SimpleBarCore2.prototype.toggleTrackVisibility = function(axis) {
-      if (axis === void 0) {
-        axis = "y";
-      }
-      var track = this.axis[axis].track.el;
-      var scrollbar = this.axis[axis].scrollbar.el;
-      if (!track || !scrollbar || !this.contentWrapperEl)
-        return;
-      if (this.axis[axis].isOverflowing || this.axis[axis].forceVisible) {
-        track.style.visibility = "visible";
-        this.contentWrapperEl.style[this.axis[axis].overflowAttr] = "scroll";
-        this.el.classList.add("".concat(this.classNames.scrollable, "-").concat(axis));
-      } else {
-        track.style.visibility = "hidden";
-        this.contentWrapperEl.style[this.axis[axis].overflowAttr] = "hidden";
-        this.el.classList.remove("".concat(this.classNames.scrollable, "-").concat(axis));
-      }
-      if (this.axis[axis].isOverflowing) {
-        scrollbar.style.display = "block";
-      } else {
-        scrollbar.style.display = "none";
-      }
-    };
-    SimpleBarCore2.prototype.showScrollbar = function(axis) {
-      if (axis === void 0) {
-        axis = "y";
-      }
-      if (this.axis[axis].isOverflowing && !this.axis[axis].scrollbar.isVisible) {
-        addClasses(this.axis[axis].scrollbar.el, this.classNames.visible);
-        this.axis[axis].scrollbar.isVisible = true;
-      }
-    };
-    SimpleBarCore2.prototype.hideScrollbar = function(axis) {
-      if (axis === void 0) {
-        axis = "y";
-      }
-      if (this.isDragging)
-        return;
-      if (this.axis[axis].isOverflowing && this.axis[axis].scrollbar.isVisible) {
-        removeClasses(this.axis[axis].scrollbar.el, this.classNames.visible);
-        this.axis[axis].scrollbar.isVisible = false;
-      }
-    };
-    SimpleBarCore2.prototype.hideNativeScrollbar = function() {
-      if (!this.offsetEl)
-        return;
-      this.offsetEl.style[this.isRtl ? "left" : "right"] = this.axis.y.isOverflowing || this.axis.y.forceVisible ? "-".concat(this.scrollbarWidth, "px") : "0px";
-      this.offsetEl.style.bottom = this.axis.x.isOverflowing || this.axis.x.forceVisible ? "-".concat(this.scrollbarWidth, "px") : "0px";
-    };
-    SimpleBarCore2.prototype.onMouseMoveForAxis = function(axis) {
-      if (axis === void 0) {
-        axis = "y";
-      }
-      var currentAxis = this.axis[axis];
-      if (!currentAxis.track.el || !currentAxis.scrollbar.el)
-        return;
-      currentAxis.track.rect = currentAxis.track.el.getBoundingClientRect();
-      currentAxis.scrollbar.rect = currentAxis.scrollbar.el.getBoundingClientRect();
-      if (this.isWithinBounds(currentAxis.track.rect)) {
-        this.showScrollbar(axis);
-        addClasses(currentAxis.track.el, this.classNames.hover);
-        if (this.isWithinBounds(currentAxis.scrollbar.rect)) {
-          addClasses(currentAxis.scrollbar.el, this.classNames.hover);
-        } else {
-          removeClasses(currentAxis.scrollbar.el, this.classNames.hover);
-        }
-      } else {
-        removeClasses(currentAxis.track.el, this.classNames.hover);
-        if (this.options.autoHide) {
-          this.hideScrollbar(axis);
-        }
-      }
-    };
-    SimpleBarCore2.prototype.onMouseLeaveForAxis = function(axis) {
-      if (axis === void 0) {
-        axis = "y";
-      }
-      removeClasses(this.axis[axis].track.el, this.classNames.hover);
-      removeClasses(this.axis[axis].scrollbar.el, this.classNames.hover);
-      if (this.options.autoHide) {
-        this.hideScrollbar(axis);
-      }
-    };
-    SimpleBarCore2.prototype.onDragStart = function(e, axis) {
-      var _a2;
-      if (axis === void 0) {
-        axis = "y";
-      }
-      this.isDragging = true;
-      var elDocument = getElementDocument(this.el);
-      var elWindow = getElementWindow(this.el);
-      var scrollbar = this.axis[axis].scrollbar;
-      var eventOffset = axis === "y" ? e.pageY : e.pageX;
-      this.axis[axis].dragOffset = eventOffset - (((_a2 = scrollbar.rect) === null || _a2 === void 0 ? void 0 : _a2[this.axis[axis].offsetAttr]) || 0);
-      this.draggedAxis = axis;
-      addClasses(this.el, this.classNames.dragging);
-      elDocument.addEventListener("mousemove", this.drag, true);
-      elDocument.addEventListener("mouseup", this.onEndDrag, true);
-      if (this.removePreventClickId === null) {
-        elDocument.addEventListener("click", this.preventClick, true);
-        elDocument.addEventListener("dblclick", this.preventClick, true);
-      } else {
-        elWindow.clearTimeout(this.removePreventClickId);
-        this.removePreventClickId = null;
-      }
-    };
-    SimpleBarCore2.prototype.onTrackClick = function(e, axis) {
-      var _this = this;
-      var _a2, _b, _c, _d;
-      if (axis === void 0) {
-        axis = "y";
-      }
-      var currentAxis = this.axis[axis];
-      if (!this.options.clickOnTrack || !currentAxis.scrollbar.el || !this.contentWrapperEl)
-        return;
-      e.preventDefault();
-      var elWindow = getElementWindow(this.el);
-      this.axis[axis].scrollbar.rect = currentAxis.scrollbar.el.getBoundingClientRect();
-      var scrollbar = this.axis[axis].scrollbar;
-      var scrollbarOffset = (_b = (_a2 = scrollbar.rect) === null || _a2 === void 0 ? void 0 : _a2[this.axis[axis].offsetAttr]) !== null && _b !== void 0 ? _b : 0;
-      var hostSize = parseInt((_d = (_c = this.elStyles) === null || _c === void 0 ? void 0 : _c[this.axis[axis].sizeAttr]) !== null && _d !== void 0 ? _d : "0px", 10);
-      var scrolled = this.contentWrapperEl[this.axis[axis].scrollOffsetAttr];
-      var t = axis === "y" ? this.mouseY - scrollbarOffset : this.mouseX - scrollbarOffset;
-      var dir = t < 0 ? -1 : 1;
-      var scrollSize = dir === -1 ? scrolled - hostSize : scrolled + hostSize;
-      var speed = 40;
-      var scrollTo = function() {
-        if (!_this.contentWrapperEl)
-          return;
-        if (dir === -1) {
-          if (scrolled > scrollSize) {
-            scrolled -= speed;
-            _this.contentWrapperEl[_this.axis[axis].scrollOffsetAttr] = scrolled;
-            elWindow.requestAnimationFrame(scrollTo);
+          this.mutationObserver.observe(this.contentEl, {
+            childList: true,
+            subtree: true,
+            characterData: true
+          });
+        };
+        SimpleBarCore2.prototype.recalculate = function() {
+          if (!this.heightAutoObserverEl || !this.contentEl || !this.contentWrapperEl || !this.wrapperEl || !this.placeholderEl)
+            return;
+          var elWindow = getElementWindow(this.el);
+          this.elStyles = elWindow.getComputedStyle(this.el);
+          this.isRtl = this.elStyles.direction === "rtl";
+          var contentElOffsetWidth = this.contentEl.offsetWidth;
+          var isHeightAuto = this.heightAutoObserverEl.offsetHeight <= 1;
+          var isWidthAuto = this.heightAutoObserverEl.offsetWidth <= 1 || contentElOffsetWidth > 0;
+          var contentWrapperElOffsetWidth = this.contentWrapperEl.offsetWidth;
+          var elOverflowX = this.elStyles.overflowX;
+          var elOverflowY = this.elStyles.overflowY;
+          this.contentEl.style.padding = "".concat(this.elStyles.paddingTop, " ").concat(this.elStyles.paddingRight, " ").concat(this.elStyles.paddingBottom, " ").concat(this.elStyles.paddingLeft);
+          this.wrapperEl.style.margin = "-".concat(this.elStyles.paddingTop, " -").concat(this.elStyles.paddingRight, " -").concat(this.elStyles.paddingBottom, " -").concat(this.elStyles.paddingLeft);
+          var contentElScrollHeight = this.contentEl.scrollHeight;
+          var contentElScrollWidth = this.contentEl.scrollWidth;
+          this.contentWrapperEl.style.height = isHeightAuto ? "auto" : "100%";
+          this.placeholderEl.style.width = isWidthAuto ? "".concat(contentElOffsetWidth || contentElScrollWidth, "px") : "auto";
+          this.placeholderEl.style.height = "".concat(contentElScrollHeight, "px");
+          var contentWrapperElOffsetHeight = this.contentWrapperEl.offsetHeight;
+          this.axis.x.isOverflowing = contentElOffsetWidth !== 0 && contentElScrollWidth > contentElOffsetWidth;
+          this.axis.y.isOverflowing = contentElScrollHeight > contentWrapperElOffsetHeight;
+          this.axis.x.isOverflowing = elOverflowX === "hidden" ? false : this.axis.x.isOverflowing;
+          this.axis.y.isOverflowing = elOverflowY === "hidden" ? false : this.axis.y.isOverflowing;
+          this.axis.x.forceVisible = this.options.forceVisible === "x" || this.options.forceVisible === true;
+          this.axis.y.forceVisible = this.options.forceVisible === "y" || this.options.forceVisible === true;
+          this.hideNativeScrollbar();
+          var offsetForXScrollbar = this.axis.x.isOverflowing ? this.scrollbarWidth : 0;
+          var offsetForYScrollbar = this.axis.y.isOverflowing ? this.scrollbarWidth : 0;
+          this.axis.x.isOverflowing = this.axis.x.isOverflowing && contentElScrollWidth > contentWrapperElOffsetWidth - offsetForYScrollbar;
+          this.axis.y.isOverflowing = this.axis.y.isOverflowing && contentElScrollHeight > contentWrapperElOffsetHeight - offsetForXScrollbar;
+          this.axis.x.scrollbar.size = this.getScrollbarSize("x");
+          this.axis.y.scrollbar.size = this.getScrollbarSize("y");
+          if (this.axis.x.scrollbar.el)
+            this.axis.x.scrollbar.el.style.width = "".concat(this.axis.x.scrollbar.size, "px");
+          if (this.axis.y.scrollbar.el)
+            this.axis.y.scrollbar.el.style.height = "".concat(this.axis.y.scrollbar.size, "px");
+          this.positionScrollbar("x");
+          this.positionScrollbar("y");
+          this.toggleTrackVisibility("x");
+          this.toggleTrackVisibility("y");
+        };
+        SimpleBarCore2.prototype.getScrollbarSize = function(axis) {
+          var _a2, _b;
+          if (axis === void 0) {
+            axis = "y";
           }
-        } else {
-          if (scrolled < scrollSize) {
-            scrolled += speed;
-            _this.contentWrapperEl[_this.axis[axis].scrollOffsetAttr] = scrolled;
-            elWindow.requestAnimationFrame(scrollTo);
+          if (!this.axis[axis].isOverflowing || !this.contentEl) {
+            return 0;
           }
-        }
-      };
-      scrollTo();
-    };
-    SimpleBarCore2.prototype.getContentElement = function() {
-      return this.contentEl;
-    };
-    SimpleBarCore2.prototype.getScrollElement = function() {
-      return this.contentWrapperEl;
-    };
-    SimpleBarCore2.prototype.removeListeners = function() {
-      var elWindow = getElementWindow(this.el);
-      this.el.removeEventListener("mouseenter", this.onMouseEnter);
-      this.el.removeEventListener("pointerdown", this.onPointerEvent, true);
-      this.el.removeEventListener("mousemove", this.onMouseMove);
-      this.el.removeEventListener("mouseleave", this.onMouseLeave);
-      if (this.contentWrapperEl) {
-        this.contentWrapperEl.removeEventListener("scroll", this.onScroll);
-      }
-      elWindow.removeEventListener("resize", this.onWindowResize);
-      if (this.mutationObserver) {
-        this.mutationObserver.disconnect();
-      }
-      if (this.resizeObserver) {
-        this.resizeObserver.disconnect();
-      }
-      this.onMouseMove.cancel();
-      this.onWindowResize.cancel();
-      this.onStopScrolling.cancel();
-      this.onMouseEntered.cancel();
-    };
-    SimpleBarCore2.prototype.unMount = function() {
-      this.removeListeners();
-    };
-    SimpleBarCore2.prototype.isWithinBounds = function(bbox) {
-      return this.mouseX >= bbox.left && this.mouseX <= bbox.left + bbox.width && this.mouseY >= bbox.top && this.mouseY <= bbox.top + bbox.height;
-    };
-    SimpleBarCore2.prototype.findChild = function(el, query) {
-      var matches = el.matches || el.webkitMatchesSelector || el.mozMatchesSelector || el.msMatchesSelector;
-      return Array.prototype.filter.call(el.children, function(child) {
-        return matches.call(child, query);
-      })[0];
-    };
-    SimpleBarCore2.rtlHelpers = null;
-    SimpleBarCore2.defaultOptions = {
-      forceVisible: false,
-      clickOnTrack: true,
-      scrollbarMinSize: 25,
-      scrollbarMaxSize: 0,
-      ariaLabel: "scrollable content",
-      tabIndex: 0,
-      classNames: {
-        contentEl: "simplebar-content",
-        contentWrapper: "simplebar-content-wrapper",
-        offset: "simplebar-offset",
-        mask: "simplebar-mask",
-        wrapper: "simplebar-wrapper",
-        placeholder: "simplebar-placeholder",
-        scrollbar: "simplebar-scrollbar",
-        track: "simplebar-track",
-        heightAutoObserverWrapperEl: "simplebar-height-auto-observer-wrapper",
-        heightAutoObserverEl: "simplebar-height-auto-observer",
-        visible: "simplebar-visible",
-        horizontal: "simplebar-horizontal",
-        vertical: "simplebar-vertical",
-        hover: "simplebar-hover",
-        dragging: "simplebar-dragging",
-        scrolling: "simplebar-scrolling",
-        scrollable: "simplebar-scrollable",
-        mouseEntered: "simplebar-mouse-entered"
-      },
-      scrollableNode: null,
-      contentNode: null,
-      autoHide: true
-    };
-    SimpleBarCore2.getOptions = getOptions;
-    SimpleBarCore2.helpers = helpers;
-    return SimpleBarCore2;
-  }();
+          var contentSize = this.contentEl[this.axis[axis].scrollSizeAttr];
+          var trackSize = (_b = (_a2 = this.axis[axis].track.el) === null || _a2 === void 0 ? void 0 : _a2[this.axis[axis].offsetSizeAttr]) !== null && _b !== void 0 ? _b : 0;
+          var scrollbarRatio = trackSize / contentSize;
+          var scrollbarSize;
+          scrollbarSize = Math.max(~~(scrollbarRatio * trackSize), this.options.scrollbarMinSize);
+          if (this.options.scrollbarMaxSize) {
+            scrollbarSize = Math.min(scrollbarSize, this.options.scrollbarMaxSize);
+          }
+          return scrollbarSize;
+        };
+        SimpleBarCore2.prototype.positionScrollbar = function(axis) {
+          var _a2, _b, _c;
+          if (axis === void 0) {
+            axis = "y";
+          }
+          var scrollbar = this.axis[axis].scrollbar;
+          if (!this.axis[axis].isOverflowing || !this.contentWrapperEl || !scrollbar.el || !this.elStyles) {
+            return;
+          }
+          var contentSize = this.contentWrapperEl[this.axis[axis].scrollSizeAttr];
+          var trackSize = ((_a2 = this.axis[axis].track.el) === null || _a2 === void 0 ? void 0 : _a2[this.axis[axis].offsetSizeAttr]) || 0;
+          var hostSize = parseInt(this.elStyles[this.axis[axis].sizeAttr], 10);
+          var scrollOffset = this.contentWrapperEl[this.axis[axis].scrollOffsetAttr];
+          scrollOffset = axis === "x" && this.isRtl && ((_b = SimpleBarCore2.getRtlHelpers()) === null || _b === void 0 ? void 0 : _b.isScrollOriginAtZero) ? -scrollOffset : scrollOffset;
+          if (axis === "x" && this.isRtl) {
+            scrollOffset = ((_c = SimpleBarCore2.getRtlHelpers()) === null || _c === void 0 ? void 0 : _c.isScrollingToNegative) ? scrollOffset : -scrollOffset;
+          }
+          var scrollPourcent = scrollOffset / (contentSize - hostSize);
+          var handleOffset = ~~((trackSize - scrollbar.size) * scrollPourcent);
+          handleOffset = axis === "x" && this.isRtl ? -handleOffset + (trackSize - scrollbar.size) : handleOffset;
+          scrollbar.el.style.transform = axis === "x" ? "translate3d(".concat(handleOffset, "px, 0, 0)") : "translate3d(0, ".concat(handleOffset, "px, 0)");
+        };
+        SimpleBarCore2.prototype.toggleTrackVisibility = function(axis) {
+          if (axis === void 0) {
+            axis = "y";
+          }
+          var track = this.axis[axis].track.el;
+          var scrollbar = this.axis[axis].scrollbar.el;
+          if (!track || !scrollbar || !this.contentWrapperEl)
+            return;
+          if (this.axis[axis].isOverflowing || this.axis[axis].forceVisible) {
+            track.style.visibility = "visible";
+            this.contentWrapperEl.style[this.axis[axis].overflowAttr] = "scroll";
+            this.el.classList.add("".concat(this.classNames.scrollable, "-").concat(axis));
+          } else {
+            track.style.visibility = "hidden";
+            this.contentWrapperEl.style[this.axis[axis].overflowAttr] = "hidden";
+            this.el.classList.remove("".concat(this.classNames.scrollable, "-").concat(axis));
+          }
+          if (this.axis[axis].isOverflowing) {
+            scrollbar.style.display = "block";
+          } else {
+            scrollbar.style.display = "none";
+          }
+        };
+        SimpleBarCore2.prototype.showScrollbar = function(axis) {
+          if (axis === void 0) {
+            axis = "y";
+          }
+          if (this.axis[axis].isOverflowing && !this.axis[axis].scrollbar.isVisible) {
+            addClasses(this.axis[axis].scrollbar.el, this.classNames.visible);
+            this.axis[axis].scrollbar.isVisible = true;
+          }
+        };
+        SimpleBarCore2.prototype.hideScrollbar = function(axis) {
+          if (axis === void 0) {
+            axis = "y";
+          }
+          if (this.isDragging)
+            return;
+          if (this.axis[axis].isOverflowing && this.axis[axis].scrollbar.isVisible) {
+            removeClasses(this.axis[axis].scrollbar.el, this.classNames.visible);
+            this.axis[axis].scrollbar.isVisible = false;
+          }
+        };
+        SimpleBarCore2.prototype.hideNativeScrollbar = function() {
+          if (!this.offsetEl)
+            return;
+          this.offsetEl.style[this.isRtl ? "left" : "right"] = this.axis.y.isOverflowing || this.axis.y.forceVisible ? "-".concat(this.scrollbarWidth, "px") : "0px";
+          this.offsetEl.style.bottom = this.axis.x.isOverflowing || this.axis.x.forceVisible ? "-".concat(this.scrollbarWidth, "px") : "0px";
+        };
+        SimpleBarCore2.prototype.onMouseMoveForAxis = function(axis) {
+          if (axis === void 0) {
+            axis = "y";
+          }
+          var currentAxis = this.axis[axis];
+          if (!currentAxis.track.el || !currentAxis.scrollbar.el)
+            return;
+          currentAxis.track.rect = currentAxis.track.el.getBoundingClientRect();
+          currentAxis.scrollbar.rect = currentAxis.scrollbar.el.getBoundingClientRect();
+          if (this.isWithinBounds(currentAxis.track.rect)) {
+            this.showScrollbar(axis);
+            addClasses(currentAxis.track.el, this.classNames.hover);
+            if (this.isWithinBounds(currentAxis.scrollbar.rect)) {
+              addClasses(currentAxis.scrollbar.el, this.classNames.hover);
+            } else {
+              removeClasses(currentAxis.scrollbar.el, this.classNames.hover);
+            }
+          } else {
+            removeClasses(currentAxis.track.el, this.classNames.hover);
+            if (this.options.autoHide) {
+              this.hideScrollbar(axis);
+            }
+          }
+        };
+        SimpleBarCore2.prototype.onMouseLeaveForAxis = function(axis) {
+          if (axis === void 0) {
+            axis = "y";
+          }
+          removeClasses(this.axis[axis].track.el, this.classNames.hover);
+          removeClasses(this.axis[axis].scrollbar.el, this.classNames.hover);
+          if (this.options.autoHide) {
+            this.hideScrollbar(axis);
+          }
+        };
+        SimpleBarCore2.prototype.onDragStart = function(e, axis) {
+          var _a2;
+          if (axis === void 0) {
+            axis = "y";
+          }
+          this.isDragging = true;
+          var elDocument = getElementDocument(this.el);
+          var elWindow = getElementWindow(this.el);
+          var scrollbar = this.axis[axis].scrollbar;
+          var eventOffset = axis === "y" ? e.pageY : e.pageX;
+          this.axis[axis].dragOffset = eventOffset - (((_a2 = scrollbar.rect) === null || _a2 === void 0 ? void 0 : _a2[this.axis[axis].offsetAttr]) || 0);
+          this.draggedAxis = axis;
+          addClasses(this.el, this.classNames.dragging);
+          elDocument.addEventListener("mousemove", this.drag, true);
+          elDocument.addEventListener("mouseup", this.onEndDrag, true);
+          if (this.removePreventClickId === null) {
+            elDocument.addEventListener("click", this.preventClick, true);
+            elDocument.addEventListener("dblclick", this.preventClick, true);
+          } else {
+            elWindow.clearTimeout(this.removePreventClickId);
+            this.removePreventClickId = null;
+          }
+        };
+        SimpleBarCore2.prototype.onTrackClick = function(e, axis) {
+          var _this = this;
+          var _a2, _b, _c, _d;
+          if (axis === void 0) {
+            axis = "y";
+          }
+          var currentAxis = this.axis[axis];
+          if (!this.options.clickOnTrack || !currentAxis.scrollbar.el || !this.contentWrapperEl)
+            return;
+          e.preventDefault();
+          var elWindow = getElementWindow(this.el);
+          this.axis[axis].scrollbar.rect = currentAxis.scrollbar.el.getBoundingClientRect();
+          var scrollbar = this.axis[axis].scrollbar;
+          var scrollbarOffset = (_b = (_a2 = scrollbar.rect) === null || _a2 === void 0 ? void 0 : _a2[this.axis[axis].offsetAttr]) !== null && _b !== void 0 ? _b : 0;
+          var hostSize = parseInt((_d = (_c = this.elStyles) === null || _c === void 0 ? void 0 : _c[this.axis[axis].sizeAttr]) !== null && _d !== void 0 ? _d : "0px", 10);
+          var scrolled = this.contentWrapperEl[this.axis[axis].scrollOffsetAttr];
+          var t = axis === "y" ? this.mouseY - scrollbarOffset : this.mouseX - scrollbarOffset;
+          var dir = t < 0 ? -1 : 1;
+          var scrollSize = dir === -1 ? scrolled - hostSize : scrolled + hostSize;
+          var speed = 40;
+          var scrollTo = function() {
+            if (!_this.contentWrapperEl)
+              return;
+            if (dir === -1) {
+              if (scrolled > scrollSize) {
+                scrolled -= speed;
+                _this.contentWrapperEl[_this.axis[axis].scrollOffsetAttr] = scrolled;
+                elWindow.requestAnimationFrame(scrollTo);
+              }
+            } else {
+              if (scrolled < scrollSize) {
+                scrolled += speed;
+                _this.contentWrapperEl[_this.axis[axis].scrollOffsetAttr] = scrolled;
+                elWindow.requestAnimationFrame(scrollTo);
+              }
+            }
+          };
+          scrollTo();
+        };
+        SimpleBarCore2.prototype.getContentElement = function() {
+          return this.contentEl;
+        };
+        SimpleBarCore2.prototype.getScrollElement = function() {
+          return this.contentWrapperEl;
+        };
+        SimpleBarCore2.prototype.removeListeners = function() {
+          var elWindow = getElementWindow(this.el);
+          this.el.removeEventListener("mouseenter", this.onMouseEnter);
+          this.el.removeEventListener("pointerdown", this.onPointerEvent, true);
+          this.el.removeEventListener("mousemove", this.onMouseMove);
+          this.el.removeEventListener("mouseleave", this.onMouseLeave);
+          if (this.contentWrapperEl) {
+            this.contentWrapperEl.removeEventListener("scroll", this.onScroll);
+          }
+          elWindow.removeEventListener("resize", this.onWindowResize);
+          if (this.mutationObserver) {
+            this.mutationObserver.disconnect();
+          }
+          if (this.resizeObserver) {
+            this.resizeObserver.disconnect();
+          }
+          this.onMouseMove.cancel();
+          this.onWindowResize.cancel();
+          this.onStopScrolling.cancel();
+          this.onMouseEntered.cancel();
+        };
+        SimpleBarCore2.prototype.unMount = function() {
+          this.removeListeners();
+        };
+        SimpleBarCore2.prototype.isWithinBounds = function(bbox) {
+          return this.mouseX >= bbox.left && this.mouseX <= bbox.left + bbox.width && this.mouseY >= bbox.top && this.mouseY <= bbox.top + bbox.height;
+        };
+        SimpleBarCore2.prototype.findChild = function(el, query) {
+          var matches = el.matches || el.webkitMatchesSelector || el.mozMatchesSelector || el.msMatchesSelector;
+          return Array.prototype.filter.call(el.children, function(child) {
+            return matches.call(child, query);
+          })[0];
+        };
+        SimpleBarCore2.rtlHelpers = null;
+        SimpleBarCore2.defaultOptions = {
+          forceVisible: false,
+          clickOnTrack: true,
+          scrollbarMinSize: 25,
+          scrollbarMaxSize: 0,
+          ariaLabel: "scrollable content",
+          tabIndex: 0,
+          classNames: {
+            contentEl: "simplebar-content",
+            contentWrapper: "simplebar-content-wrapper",
+            offset: "simplebar-offset",
+            mask: "simplebar-mask",
+            wrapper: "simplebar-wrapper",
+            placeholder: "simplebar-placeholder",
+            scrollbar: "simplebar-scrollbar",
+            track: "simplebar-track",
+            heightAutoObserverWrapperEl: "simplebar-height-auto-observer-wrapper",
+            heightAutoObserverEl: "simplebar-height-auto-observer",
+            visible: "simplebar-visible",
+            horizontal: "simplebar-horizontal",
+            vertical: "simplebar-vertical",
+            hover: "simplebar-hover",
+            dragging: "simplebar-dragging",
+            scrolling: "simplebar-scrolling",
+            scrollable: "simplebar-scrollable",
+            mouseEntered: "simplebar-mouse-entered"
+          },
+          scrollableNode: null,
+          contentNode: null,
+          autoHide: true
+        };
+        SimpleBarCore2.getOptions = getOptions;
+        SimpleBarCore2.helpers = helpers;
+        return SimpleBarCore2;
+      }();
+    }
+  });
 
   // node_modules/simplebar/dist/index.mjs
-  var extendStatics = function(d, b) {
-    extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
-      d2.__proto__ = b2;
-    } || function(d2, b2) {
-      for (var p in b2)
-        if (Object.prototype.hasOwnProperty.call(b2, p))
-          d2[p] = b2[p];
-    };
-    return extendStatics(d, b);
-  };
   function __extends(d, b) {
     if (typeof b !== "function" && b !== null)
       throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
@@ -3604,138 +3923,154 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   }
-  var _a = SimpleBarCore.helpers;
-  var getOptions2 = _a.getOptions;
-  var addClasses2 = _a.addClasses;
-  var canUseDOM2 = _a.canUseDOM;
-  var SimpleBar = function(_super) {
-    __extends(SimpleBar2, _super);
-    function SimpleBar2() {
-      var args = [];
-      for (var _i = 0; _i < arguments.length; _i++) {
-        args[_i] = arguments[_i];
-      }
-      var _this = _super.apply(this, args) || this;
-      SimpleBar2.instances.set(args[0], _this);
-      return _this;
-    }
-    SimpleBar2.initDOMLoadedElements = function() {
-      document.removeEventListener("DOMContentLoaded", this.initDOMLoadedElements);
-      window.removeEventListener("load", this.initDOMLoadedElements);
-      Array.prototype.forEach.call(document.querySelectorAll("[data-simplebar]"), function(el) {
-        if (el.getAttribute("data-simplebar") !== "init" && !SimpleBar2.instances.has(el))
-          new SimpleBar2(el, getOptions2(el.attributes));
-      });
-    };
-    SimpleBar2.removeObserver = function() {
-      var _a2;
-      (_a2 = SimpleBar2.globalObserver) === null || _a2 === void 0 ? void 0 : _a2.disconnect();
-    };
-    SimpleBar2.prototype.initDOM = function() {
-      var _this = this;
-      var _a2, _b, _c;
-      if (!Array.prototype.filter.call(this.el.children, function(child) {
-        return child.classList.contains(_this.classNames.wrapper);
-      }).length) {
-        this.wrapperEl = document.createElement("div");
-        this.contentWrapperEl = document.createElement("div");
-        this.offsetEl = document.createElement("div");
-        this.maskEl = document.createElement("div");
-        this.contentEl = document.createElement("div");
-        this.placeholderEl = document.createElement("div");
-        this.heightAutoObserverWrapperEl = document.createElement("div");
-        this.heightAutoObserverEl = document.createElement("div");
-        addClasses2(this.wrapperEl, this.classNames.wrapper);
-        addClasses2(this.contentWrapperEl, this.classNames.contentWrapper);
-        addClasses2(this.offsetEl, this.classNames.offset);
-        addClasses2(this.maskEl, this.classNames.mask);
-        addClasses2(this.contentEl, this.classNames.contentEl);
-        addClasses2(this.placeholderEl, this.classNames.placeholder);
-        addClasses2(this.heightAutoObserverWrapperEl, this.classNames.heightAutoObserverWrapperEl);
-        addClasses2(this.heightAutoObserverEl, this.classNames.heightAutoObserverEl);
-        while (this.el.firstChild) {
-          this.contentEl.appendChild(this.el.firstChild);
+  var extendStatics, _a, getOptions2, addClasses2, canUseDOM2, SimpleBar;
+  var init_dist2 = __esm({
+    "node_modules/simplebar/dist/index.mjs"() {
+      init_dist();
+      extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
+          d2.__proto__ = b2;
+        } || function(d2, b2) {
+          for (var p in b2)
+            if (Object.prototype.hasOwnProperty.call(b2, p))
+              d2[p] = b2[p];
+        };
+        return extendStatics(d, b);
+      };
+      _a = SimpleBarCore.helpers;
+      getOptions2 = _a.getOptions;
+      addClasses2 = _a.addClasses;
+      canUseDOM2 = _a.canUseDOM;
+      SimpleBar = function(_super) {
+        __extends(SimpleBar2, _super);
+        function SimpleBar2() {
+          var args = [];
+          for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+          }
+          var _this = _super.apply(this, args) || this;
+          SimpleBar2.instances.set(args[0], _this);
+          return _this;
         }
-        this.contentWrapperEl.appendChild(this.contentEl);
-        this.offsetEl.appendChild(this.contentWrapperEl);
-        this.maskEl.appendChild(this.offsetEl);
-        this.heightAutoObserverWrapperEl.appendChild(this.heightAutoObserverEl);
-        this.wrapperEl.appendChild(this.heightAutoObserverWrapperEl);
-        this.wrapperEl.appendChild(this.maskEl);
-        this.wrapperEl.appendChild(this.placeholderEl);
-        this.el.appendChild(this.wrapperEl);
-        (_a2 = this.contentWrapperEl) === null || _a2 === void 0 ? void 0 : _a2.setAttribute("tabindex", this.options.tabIndex.toString());
-        (_b = this.contentWrapperEl) === null || _b === void 0 ? void 0 : _b.setAttribute("role", "region");
-        (_c = this.contentWrapperEl) === null || _c === void 0 ? void 0 : _c.setAttribute("aria-label", this.options.ariaLabel);
-      }
-      if (!this.axis.x.track.el || !this.axis.y.track.el) {
-        var track = document.createElement("div");
-        var scrollbar = document.createElement("div");
-        addClasses2(track, this.classNames.track);
-        addClasses2(scrollbar, this.classNames.scrollbar);
-        track.appendChild(scrollbar);
-        this.axis.x.track.el = track.cloneNode(true);
-        addClasses2(this.axis.x.track.el, this.classNames.horizontal);
-        this.axis.y.track.el = track.cloneNode(true);
-        addClasses2(this.axis.y.track.el, this.classNames.vertical);
-        this.el.appendChild(this.axis.x.track.el);
-        this.el.appendChild(this.axis.y.track.el);
-      }
-      SimpleBarCore.prototype.initDOM.call(this);
-      this.el.setAttribute("data-simplebar", "init");
-    };
-    SimpleBar2.prototype.unMount = function() {
-      SimpleBarCore.prototype.unMount.call(this);
-      SimpleBar2.instances["delete"](this.el);
-    };
-    SimpleBar2.initHtmlApi = function() {
-      this.initDOMLoadedElements = this.initDOMLoadedElements.bind(this);
-      if (typeof MutationObserver !== "undefined") {
-        this.globalObserver = new MutationObserver(SimpleBar2.handleMutations);
-        this.globalObserver.observe(document, { childList: true, subtree: true });
-      }
-      if (document.readyState === "complete" || document.readyState !== "loading" && !document.documentElement.doScroll) {
-        window.setTimeout(this.initDOMLoadedElements);
-      } else {
-        document.addEventListener("DOMContentLoaded", this.initDOMLoadedElements);
-        window.addEventListener("load", this.initDOMLoadedElements);
-      }
-    };
-    SimpleBar2.handleMutations = function(mutations) {
-      mutations.forEach(function(mutation) {
-        mutation.addedNodes.forEach(function(addedNode) {
-          if (addedNode.nodeType === 1) {
-            if (addedNode.hasAttribute("data-simplebar")) {
-              !SimpleBar2.instances.has(addedNode) && document.documentElement.contains(addedNode) && new SimpleBar2(addedNode, getOptions2(addedNode.attributes));
-            } else {
-              addedNode.querySelectorAll("[data-simplebar]").forEach(function(el) {
-                if (el.getAttribute("data-simplebar") !== "init" && !SimpleBar2.instances.has(el) && document.documentElement.contains(el))
-                  new SimpleBar2(el, getOptions2(el.attributes));
-              });
-            }
-          }
-        });
-        mutation.removedNodes.forEach(function(removedNode) {
+        SimpleBar2.initDOMLoadedElements = function() {
+          document.removeEventListener("DOMContentLoaded", this.initDOMLoadedElements);
+          window.removeEventListener("load", this.initDOMLoadedElements);
+          Array.prototype.forEach.call(document.querySelectorAll("[data-simplebar]"), function(el) {
+            if (el.getAttribute("data-simplebar") !== "init" && !SimpleBar2.instances.has(el))
+              new SimpleBar2(el, getOptions2(el.attributes));
+          });
+        };
+        SimpleBar2.removeObserver = function() {
           var _a2;
-          if (removedNode.nodeType === 1) {
-            if (removedNode.getAttribute("data-simplebar") === "init") {
-              !document.documentElement.contains(removedNode) && ((_a2 = SimpleBar2.instances.get(removedNode)) === null || _a2 === void 0 ? void 0 : _a2.unMount());
-            } else {
-              Array.prototype.forEach.call(removedNode.querySelectorAll('[data-simplebar="init"]'), function(el) {
-                var _a3;
-                !document.documentElement.contains(el) && ((_a3 = SimpleBar2.instances.get(el)) === null || _a3 === void 0 ? void 0 : _a3.unMount());
-              });
+          (_a2 = SimpleBar2.globalObserver) === null || _a2 === void 0 ? void 0 : _a2.disconnect();
+        };
+        SimpleBar2.prototype.initDOM = function() {
+          var _this = this;
+          var _a2, _b, _c;
+          if (!Array.prototype.filter.call(this.el.children, function(child) {
+            return child.classList.contains(_this.classNames.wrapper);
+          }).length) {
+            this.wrapperEl = document.createElement("div");
+            this.contentWrapperEl = document.createElement("div");
+            this.offsetEl = document.createElement("div");
+            this.maskEl = document.createElement("div");
+            this.contentEl = document.createElement("div");
+            this.placeholderEl = document.createElement("div");
+            this.heightAutoObserverWrapperEl = document.createElement("div");
+            this.heightAutoObserverEl = document.createElement("div");
+            addClasses2(this.wrapperEl, this.classNames.wrapper);
+            addClasses2(this.contentWrapperEl, this.classNames.contentWrapper);
+            addClasses2(this.offsetEl, this.classNames.offset);
+            addClasses2(this.maskEl, this.classNames.mask);
+            addClasses2(this.contentEl, this.classNames.contentEl);
+            addClasses2(this.placeholderEl, this.classNames.placeholder);
+            addClasses2(this.heightAutoObserverWrapperEl, this.classNames.heightAutoObserverWrapperEl);
+            addClasses2(this.heightAutoObserverEl, this.classNames.heightAutoObserverEl);
+            while (this.el.firstChild) {
+              this.contentEl.appendChild(this.el.firstChild);
             }
+            this.contentWrapperEl.appendChild(this.contentEl);
+            this.offsetEl.appendChild(this.contentWrapperEl);
+            this.maskEl.appendChild(this.offsetEl);
+            this.heightAutoObserverWrapperEl.appendChild(this.heightAutoObserverEl);
+            this.wrapperEl.appendChild(this.heightAutoObserverWrapperEl);
+            this.wrapperEl.appendChild(this.maskEl);
+            this.wrapperEl.appendChild(this.placeholderEl);
+            this.el.appendChild(this.wrapperEl);
+            (_a2 = this.contentWrapperEl) === null || _a2 === void 0 ? void 0 : _a2.setAttribute("tabindex", this.options.tabIndex.toString());
+            (_b = this.contentWrapperEl) === null || _b === void 0 ? void 0 : _b.setAttribute("role", "region");
+            (_c = this.contentWrapperEl) === null || _c === void 0 ? void 0 : _c.setAttribute("aria-label", this.options.ariaLabel);
           }
-        });
-      });
-    };
-    SimpleBar2.instances = /* @__PURE__ */ new WeakMap();
-    return SimpleBar2;
-  }(SimpleBarCore);
-  if (canUseDOM2) {
-    SimpleBar.initHtmlApi();
-  }
+          if (!this.axis.x.track.el || !this.axis.y.track.el) {
+            var track = document.createElement("div");
+            var scrollbar = document.createElement("div");
+            addClasses2(track, this.classNames.track);
+            addClasses2(scrollbar, this.classNames.scrollbar);
+            track.appendChild(scrollbar);
+            this.axis.x.track.el = track.cloneNode(true);
+            addClasses2(this.axis.x.track.el, this.classNames.horizontal);
+            this.axis.y.track.el = track.cloneNode(true);
+            addClasses2(this.axis.y.track.el, this.classNames.vertical);
+            this.el.appendChild(this.axis.x.track.el);
+            this.el.appendChild(this.axis.y.track.el);
+          }
+          SimpleBarCore.prototype.initDOM.call(this);
+          this.el.setAttribute("data-simplebar", "init");
+        };
+        SimpleBar2.prototype.unMount = function() {
+          SimpleBarCore.prototype.unMount.call(this);
+          SimpleBar2.instances["delete"](this.el);
+        };
+        SimpleBar2.initHtmlApi = function() {
+          this.initDOMLoadedElements = this.initDOMLoadedElements.bind(this);
+          if (typeof MutationObserver !== "undefined") {
+            this.globalObserver = new MutationObserver(SimpleBar2.handleMutations);
+            this.globalObserver.observe(document, { childList: true, subtree: true });
+          }
+          if (document.readyState === "complete" || document.readyState !== "loading" && !document.documentElement.doScroll) {
+            window.setTimeout(this.initDOMLoadedElements);
+          } else {
+            document.addEventListener("DOMContentLoaded", this.initDOMLoadedElements);
+            window.addEventListener("load", this.initDOMLoadedElements);
+          }
+        };
+        SimpleBar2.handleMutations = function(mutations) {
+          mutations.forEach(function(mutation) {
+            mutation.addedNodes.forEach(function(addedNode) {
+              if (addedNode.nodeType === 1) {
+                if (addedNode.hasAttribute("data-simplebar")) {
+                  !SimpleBar2.instances.has(addedNode) && document.documentElement.contains(addedNode) && new SimpleBar2(addedNode, getOptions2(addedNode.attributes));
+                } else {
+                  addedNode.querySelectorAll("[data-simplebar]").forEach(function(el) {
+                    if (el.getAttribute("data-simplebar") !== "init" && !SimpleBar2.instances.has(el) && document.documentElement.contains(el))
+                      new SimpleBar2(el, getOptions2(el.attributes));
+                  });
+                }
+              }
+            });
+            mutation.removedNodes.forEach(function(removedNode) {
+              var _a2;
+              if (removedNode.nodeType === 1) {
+                if (removedNode.getAttribute("data-simplebar") === "init") {
+                  !document.documentElement.contains(removedNode) && ((_a2 = SimpleBar2.instances.get(removedNode)) === null || _a2 === void 0 ? void 0 : _a2.unMount());
+                } else {
+                  Array.prototype.forEach.call(removedNode.querySelectorAll('[data-simplebar="init"]'), function(el) {
+                    var _a3;
+                    !document.documentElement.contains(el) && ((_a3 = SimpleBar2.instances.get(el)) === null || _a3 === void 0 ? void 0 : _a3.unMount());
+                  });
+                }
+              }
+            });
+          });
+        };
+        SimpleBar2.instances = /* @__PURE__ */ new WeakMap();
+        return SimpleBar2;
+      }(SimpleBarCore);
+      if (canUseDOM2) {
+        SimpleBar.initHtmlApi();
+      }
+    }
+  });
 
   // src/utils/Gets/GetElementHeight.ts
   function GetElementHeight(element) {
@@ -3743,9 +4078,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const afterStyles = getComputedStyle(element, "::after");
     return element.offsetHeight + beforeStyles.height + afterStyles.height;
   }
+  var init_GetElementHeight = __esm({
+    "src/utils/Gets/GetElementHeight.ts"() {
+    }
+  });
 
   // src/utils/Scrolling/Page/IsHovering.ts
-  var IsMouseInLyricsPage = false;
   function LyricsPageMouseEnter() {
     IsMouseInLyricsPage = true;
   }
@@ -3755,10 +4093,14 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   function SetIsMouseInLyricsPage(value) {
     IsMouseInLyricsPage = value;
   }
+  var IsMouseInLyricsPage;
+  var init_IsHovering = __esm({
+    "src/utils/Scrolling/Page/IsHovering.ts"() {
+      IsMouseInLyricsPage = false;
+    }
+  });
 
   // src/utils/Scrolling/Simplebar/ScrollSimplebar.ts
-  var ScrollSimplebar;
-  var ElementEventQuery = "#SpicyLyricsPage .ContentBox .LyricsContainer";
   function MountScrollSimplebar() {
     const LyricsContainer = document.querySelector("#SpicyLyricsPage .LyricsContainer .LyricsContent");
     LyricsContainer.style.height = `${GetElementHeight(LyricsContainer)}px`;
@@ -3776,20 +4118,30 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   function RecalculateScrollSimplebar() {
     ScrollSimplebar?.recalculate();
   }
-  new IntervalManager(Infinity, () => {
-    const LyricsContainer = document.querySelector("#SpicyLyricsPage .LyricsContainer .LyricsContent");
-    if (!LyricsContainer || !ScrollSimplebar)
-      return;
-    if (IsMouseInLyricsPage) {
-      LyricsContainer.classList.remove("hide-scrollbar");
-    } else {
-      if (ScrollSimplebar.isDragging) {
-        LyricsContainer.classList.remove("hide-scrollbar");
-      } else {
-        LyricsContainer.classList.add("hide-scrollbar");
-      }
+  var ScrollSimplebar, ElementEventQuery;
+  var init_ScrollSimplebar = __esm({
+    "src/utils/Scrolling/Simplebar/ScrollSimplebar.ts"() {
+      init_dist2();
+      init_GetElementHeight();
+      init_IntervalManager();
+      init_IsHovering();
+      ElementEventQuery = "#SpicyLyricsPage .ContentBox .LyricsContainer";
+      new IntervalManager(Infinity, () => {
+        const LyricsContainer = document.querySelector("#SpicyLyricsPage .LyricsContainer .LyricsContent");
+        if (!LyricsContainer || !ScrollSimplebar)
+          return;
+        if (IsMouseInLyricsPage) {
+          LyricsContainer.classList.remove("hide-scrollbar");
+        } else {
+          if (ScrollSimplebar.isDragging) {
+            LyricsContainer.classList.remove("hide-scrollbar");
+          } else {
+            LyricsContainer.classList.add("hide-scrollbar");
+          }
+        }
+      }).Start();
     }
-  }).Start();
+  });
 
   // src/utils/Addons.ts
   function IsPlaying() {
@@ -3806,7 +4158,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     div.classList.add("BottomSpacer");
     Container.appendChild(div);
   }
-  var ArabicPersianRegex = /[\u0600-\u06FF]/;
+  var ArabicPersianRegex;
+  var init_Addons = __esm({
+    "src/utils/Addons.ts"() {
+      ArabicPersianRegex = /[\u0600-\u06FF]/;
+    }
+  });
 
   // src/utils/CSS/Styles.ts
   function applyStyles(element, styles) {
@@ -3825,6 +4182,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       console.warn("Element not found");
     }
   }
+  var init_Styles = __esm({
+    "src/utils/CSS/Styles.ts"() {
+    }
+  });
 
   // src/utils/Lyrics/Applyer/Credits/ApplyLyricsCredits.ts
   function ApplyLyricsCredits(data) {
@@ -3839,6 +4200,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     CreditsElement.textContent = `Credits: ${SongWriters}`;
     LyricsContainer.appendChild(CreditsElement);
   }
+  var init_ApplyLyricsCredits = __esm({
+    "src/utils/Lyrics/Applyer/Credits/ApplyLyricsCredits.ts"() {
+    }
+  });
 
   // src/utils/Lyrics/Applyer/Info/ApplyInfo.ts
   function ApplyInfo(data) {
@@ -3868,6 +4233,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       TopBarContainer.removeChild(infoElement);
     }, duration);
   }
+  var init_ApplyInfo = __esm({
+    "src/utils/Lyrics/Applyer/Info/ApplyInfo.ts"() {
+    }
+  });
 
   // src/utils/Lyrics/isRtl.ts
   function isRtl(text) {
@@ -3883,7 +4252,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return false;
   }
-  var isRtl_default = isRtl;
+  var isRtl_default;
+  var init_isRtl = __esm({
+    "src/utils/Lyrics/isRtl.ts"() {
+      isRtl_default = isRtl;
+    }
+  });
 
   // src/utils/Lyrics/Applyer/Static.ts
   function ApplyStaticLyrics(data) {
@@ -3896,6 +4270,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ClearLyricsContentArrays();
     ClearScrollSimplebar();
     TOP_ApplyLyricsSpacer(LyricsContainer);
+    const fragment = document.createDocumentFragment();
     data.Lines.forEach((line, index) => {
       const lineElem = document.createElement("div");
       const JapaneseRegex = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/g;
@@ -3944,16 +4319,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       if (isRtl_default(line.Text) && !lineElem.classList.contains("rtl")) {
         lineElem.classList.add("rtl");
       }
-      lineElem.classList.add("line");
-      lineElem.classList.add("static");
+      lineElem.classList.add("line", "static");
       if (ArabicPersianRegex.test(line.Text)) {
         lineElem.setAttribute("font", "Vazirmatn");
       }
       LyricsObject.Types.Static.Lines.push({
         HTMLElement: lineElem
       });
-      LyricsContainer.appendChild(lineElem);
+      fragment.appendChild(lineElem);
     });
+    LyricsContainer.appendChild(fragment);
     ApplyInfo(data);
     ApplyLyricsCredits(data);
     BOTTOM_ApplyLyricsSpacer(LyricsContainer);
@@ -3975,11 +4350,28 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       applyStyles(LyricsStylingContainer, data.styles);
     }
   }
+  var init_Static = __esm({
+    "src/utils/Lyrics/Applyer/Static.ts"() {
+      init_Addons();
+      init_Defaults();
+      init_Styles();
+      init_ScrollSimplebar();
+      init_lyrics();
+      init_ApplyLyricsCredits();
+      init_ApplyInfo();
+      init_isRtl();
+      init_storage();
+    }
+  });
 
   // src/utils/Lyrics/ConvertTime.ts
   function ConvertTime(time) {
     return time * 1e3;
   }
+  var init_ConvertTime = __esm({
+    "src/utils/Lyrics/ConvertTime.ts"() {
+    }
+  });
 
   // src/utils/Lyrics/Applyer/Synced/Line.ts
   function ApplyLineLyrics(data) {
@@ -3992,63 +4384,47 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ClearLyricsContentArrays();
     ClearScrollSimplebar();
     TOP_ApplyLyricsSpacer(LyricsContainer);
+    const fragment = document.createDocumentFragment();
+    const convertStartTime = ConvertTime(data.StartTime);
+    function createDotGroup(startTime, endTime) {
+      const dotGroup = document.createElement("div");
+      dotGroup.classList.add("dotGroup");
+      const totalTime = endTime - startTime;
+      const dotTime = totalTime / 3;
+      const dots = [];
+      for (let i = 0; i < 3; i++) {
+        const dot = document.createElement("span");
+        dot.classList.add("word", "dot");
+        dot.textContent = "\u2022";
+        LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables.Lead.push({
+          HTMLElement: dot,
+          StartTime: startTime + dotTime * i,
+          EndTime: i === 2 ? endTime - 400 : startTime + dotTime * (i + 1),
+          TotalTime: dotTime,
+          Dot: true
+        });
+        dots.push(dot);
+      }
+      dots.forEach((d) => dotGroup.appendChild(d));
+      return dotGroup;
+    }
     if (data.StartTime >= lyricsBetweenShow) {
       const musicalLine = document.createElement("div");
-      musicalLine.classList.add("line");
-      musicalLine.classList.add("musical-line");
+      musicalLine.classList.add("line", "musical-line");
       LyricsObject.Types.Line.Lines.push({
         HTMLElement: musicalLine,
         StartTime: 0,
-        EndTime: ConvertTime(data.StartTime),
-        TotalTime: ConvertTime(data.StartTime),
+        EndTime: convertStartTime,
+        TotalTime: convertStartTime,
         DotLine: true
       });
       SetWordArrayInCurentLine_LINE_SYNCED();
       if (data.Content[0].OppositeAligned) {
         musicalLine.classList.add("OppositeAligned");
       }
-      const dotGroup = document.createElement("div");
-      dotGroup.classList.add("dotGroup");
-      const musicalDots1 = document.createElement("span");
-      const musicalDots2 = document.createElement("span");
-      const musicalDots3 = document.createElement("span");
-      const totalTime = ConvertTime(data.StartTime);
-      const dotTime = totalTime / 3;
-      musicalDots1.classList.add("word");
-      musicalDots1.classList.add("dot");
-      musicalDots1.textContent = "\u2022";
-      LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables.Lead.push({
-        HTMLElement: musicalDots1,
-        StartTime: 0,
-        EndTime: dotTime,
-        TotalTime: dotTime,
-        Dot: true
-      });
-      musicalDots2.classList.add("word");
-      musicalDots2.classList.add("dot");
-      musicalDots2.textContent = "\u2022";
-      LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables.Lead.push({
-        HTMLElement: musicalDots2,
-        StartTime: dotTime,
-        EndTime: dotTime * 2,
-        TotalTime: dotTime,
-        Dot: true
-      });
-      musicalDots3.classList.add("word");
-      musicalDots3.classList.add("dot");
-      musicalDots3.textContent = "\u2022";
-      LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables.Lead.push({
-        HTMLElement: musicalDots3,
-        StartTime: dotTime * 2,
-        EndTime: ConvertTime(data.StartTime) - 400,
-        TotalTime: dotTime,
-        Dot: true
-      });
-      dotGroup.appendChild(musicalDots1);
-      dotGroup.appendChild(musicalDots2);
-      dotGroup.appendChild(musicalDots3);
+      const dotGroup = createDotGroup(0, convertStartTime);
       musicalLine.appendChild(dotGroup);
-      LyricsContainer.appendChild(musicalLine);
+      fragment.appendChild(musicalLine);
     }
     data.Content.forEach((line, index, arr) => {
       const lineElem = document.createElement("div");
@@ -4094,75 +4470,41 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       if (ArabicPersianRegex.test(line.Text)) {
         lineElem.setAttribute("font", "Vazirmatn");
       }
+      const startTime = ConvertTime(line.StartTime);
+      const endTime = ConvertTime(line.EndTime);
       LyricsObject.Types.Line.Lines.push({
         HTMLElement: lineElem,
-        StartTime: ConvertTime(line.StartTime),
-        EndTime: ConvertTime(line.EndTime),
-        TotalTime: ConvertTime(line.EndTime) - ConvertTime(line.StartTime)
+        StartTime: startTime,
+        EndTime: endTime,
+        TotalTime: endTime - startTime
       });
       if (line.OppositeAligned) {
         lineElem.classList.add("OppositeAligned");
       }
-      LyricsContainer.appendChild(lineElem);
-      if (arr[index + 1] && arr[index + 1].StartTime - line.EndTime >= lyricsBetweenShow) {
+      fragment.appendChild(lineElem);
+      const nextLine = arr[index + 1];
+      if (nextLine && nextLine.StartTime - line.EndTime >= lyricsBetweenShow) {
         const musicalLine = document.createElement("div");
-        musicalLine.classList.add("line");
-        musicalLine.classList.add("musical-line");
+        musicalLine.classList.add("line", "musical-line");
+        const nextStartTime = ConvertTime(nextLine.StartTime);
+        const curEndTime = endTime;
         LyricsObject.Types.Line.Lines.push({
           HTMLElement: musicalLine,
-          StartTime: ConvertTime(line.EndTime),
-          EndTime: ConvertTime(arr[index + 1].StartTime),
-          TotalTime: ConvertTime(arr[index + 1].StartTime) - ConvertTime(line.EndTime),
+          StartTime: curEndTime,
+          EndTime: nextStartTime,
+          TotalTime: nextStartTime - curEndTime,
           DotLine: true
         });
         SetWordArrayInCurentLine_LINE_SYNCED();
-        if (arr[index + 1].OppositeAligned) {
+        if (nextLine.OppositeAligned) {
           musicalLine.classList.add("OppositeAligned");
         }
-        const dotGroup = document.createElement("div");
-        dotGroup.classList.add("dotGroup");
-        const musicalDots1 = document.createElement("span");
-        const musicalDots2 = document.createElement("span");
-        const musicalDots3 = document.createElement("span");
-        const totalTime = ConvertTime(arr[index + 1].StartTime) - ConvertTime(line.EndTime);
-        const dotTime = totalTime / 3;
-        musicalDots1.classList.add("word");
-        musicalDots1.classList.add("dot");
-        musicalDots1.textContent = "\u2022";
-        LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables.Lead.push({
-          HTMLElement: musicalDots1,
-          StartTime: ConvertTime(line.EndTime),
-          EndTime: ConvertTime(line.EndTime) + dotTime,
-          TotalTime: dotTime,
-          Dot: true
-        });
-        musicalDots2.classList.add("word");
-        musicalDots2.classList.add("dot");
-        musicalDots2.textContent = "\u2022";
-        LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables.Lead.push({
-          HTMLElement: musicalDots2,
-          StartTime: ConvertTime(line.EndTime) + dotTime,
-          EndTime: ConvertTime(line.EndTime) + dotTime * 2,
-          TotalTime: dotTime,
-          Dot: true
-        });
-        musicalDots3.classList.add("word");
-        musicalDots3.classList.add("dot");
-        musicalDots3.textContent = "\u2022";
-        LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables.Lead.push({
-          HTMLElement: musicalDots3,
-          StartTime: ConvertTime(line.EndTime) + dotTime * 2,
-          EndTime: ConvertTime(arr[index + 1].StartTime) - 400,
-          TotalTime: dotTime,
-          Dot: true
-        });
-        dotGroup.appendChild(musicalDots1);
-        dotGroup.appendChild(musicalDots2);
-        dotGroup.appendChild(musicalDots3);
+        const dotGroup = createDotGroup(curEndTime, nextStartTime);
         musicalLine.appendChild(dotGroup);
-        LyricsContainer.appendChild(musicalLine);
+        fragment.appendChild(musicalLine);
       }
     });
+    LyricsContainer.appendChild(fragment);
     ApplyInfo(data);
     ApplyLyricsCredits(data);
     BOTTOM_ApplyLyricsSpacer(LyricsContainer);
@@ -4181,6 +4523,20 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       applyStyles(LyricsStylingContainer, data.styles);
     }
   }
+  var init_Line = __esm({
+    "src/utils/Lyrics/Applyer/Synced/Line.ts"() {
+      init_Addons();
+      init_Defaults();
+      init_Styles();
+      init_ScrollSimplebar();
+      init_ConvertTime();
+      init_lyrics();
+      init_ApplyLyricsCredits();
+      init_ApplyInfo();
+      init_isRtl();
+      init_storage();
+    }
+  });
 
   // src/utils/Lyrics/Applyer/Utils/IsLetterCapable.ts
   function IsLetterCapable(letterLength, totalDuration) {
@@ -4190,6 +4546,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const minDuration = 1500 + (letterLength - 1) / 1 * 25;
     return totalDuration >= minDuration;
   }
+  var init_IsLetterCapable = __esm({
+    "src/utils/Lyrics/Applyer/Utils/IsLetterCapable.ts"() {
+    }
+  });
 
   // src/utils/Lyrics/Applyer/Utils/Emphasize.ts
   function Emphasize(letters, applyTo, lead, isBgWord = false) {
@@ -4245,6 +4605,14 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     });
     Letters = [];
   }
+  var init_Emphasize = __esm({
+    "src/utils/Lyrics/Applyer/Utils/Emphasize.ts"() {
+      init_Addons();
+      init_Shared();
+      init_ConvertTime();
+      init_lyrics();
+    }
+  });
 
   // src/utils/Lyrics/Applyer/Synced/Syllable.ts
   function ApplySyllableLyrics(data) {
@@ -4508,8 +4876,29 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       applyStyles(LyricsStylingContainer, data.styles);
     }
   }
+  var init_Syllable = __esm({
+    "src/utils/Lyrics/Applyer/Synced/Syllable.ts"() {
+      init_SpotifyPlayer();
+      init_Addons();
+      init_Defaults();
+      init_Styles();
+      init_ScrollSimplebar();
+      init_ConvertTime();
+      init_lyrics();
+      init_ApplyLyricsCredits();
+      init_ApplyInfo();
+      init_IsLetterCapable();
+      init_Emphasize();
+      init_Shared();
+      init_isRtl();
+    }
+  });
 
   // src/utils/Lyrics/Global/Applyer.ts
+  var Applyer_exports = {};
+  __export(Applyer_exports, {
+    default: () => ApplyLyrics
+  });
   function ApplyLyrics(lyrics) {
     if (!document.querySelector("#SpicyLyricsPage"))
       return;
@@ -4531,9 +4920,17 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       applyHandler(lyrics);
     }
   }
+  var init_Applyer = __esm({
+    "src/utils/Lyrics/Global/Applyer.ts"() {
+      init_LyricsAnimator();
+      init_Static();
+      init_Line();
+      init_Syllable();
+      init_fetchLyrics();
+    }
+  });
 
   // src/utils/ScrollIntoView/Center.ts
-  var containerRects = /* @__PURE__ */ new WeakMap();
   function ScrollIntoCenterView(container, element, duration = 150, offset = 0) {
     function resetContainerData(container2) {
       containerRects.delete(container2);
@@ -4580,9 +4977,19 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       resizeObserver.disconnect();
     }, duration);
   }
+  var containerRects;
+  var init_Center = __esm({
+    "src/utils/ScrollIntoView/Center.ts"() {
+      containerRects = /* @__PURE__ */ new WeakMap();
+    }
+  });
 
   // src/utils/Scrolling/ScrollToActiveLine.ts
-  var lastLine = null;
+  var ScrollToActiveLine_exports = {};
+  __export(ScrollToActiveLine_exports, {
+    ResetLastLine: () => ResetLastLine,
+    ScrollToActiveLine: () => ScrollToActiveLine
+  });
   function ScrollToActiveLine(ScrollSimplebar2) {
     if (!SpotifyPlayer.IsPlaying)
       return;
@@ -4624,6 +5031,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   function ResetLastLine() {
     lastLine = null;
   }
+  var lastLine;
+  var init_ScrollToActiveLine = __esm({
+    "src/utils/Scrolling/ScrollToActiveLine.ts"() {
+      init_Defaults();
+      init_SpotifyPlayer();
+      init_lyrics();
+      init_Center();
+      lastLine = null;
+    }
+  });
 
   // src/components/Utils/TransferElement.ts
   function TransferElement(element, targetContainer, index = -1) {
@@ -4641,52 +5058,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       console.error("Error transferring element:", error);
     }
   }
+  var init_TransferElement = __esm({
+    "src/components/Utils/TransferElement.ts"() {
+    }
+  });
 
   // src/components/Utils/Fullscreen.ts
-  var Fullscreen = {
-    Open,
-    Close,
-    Toggle,
-    IsOpen: false
-  };
-  var MediaBox_Data = {
-    Eventified: false,
-    Functions: {
-      MouseIn: () => {
-        if (MediaBox_Data.Animators.brightness.reversed)
-          MediaBox_Data.Animators.brightness.Reverse();
-        if (MediaBox_Data.Animators.blur.reversed)
-          MediaBox_Data.Animators.blur.Reverse();
-        MediaBox_Data.Animators.brightness.Start();
-        MediaBox_Data.Animators.blur.Start();
-      },
-      MouseOut: () => {
-        if (!MediaBox_Data.Animators.brightness.reversed)
-          MediaBox_Data.Animators.brightness.Reverse();
-        if (!MediaBox_Data.Animators.blur.reversed)
-          MediaBox_Data.Animators.blur.Reverse();
-        MediaBox_Data.Animators.brightness.Start();
-        MediaBox_Data.Animators.blur.Start();
-      },
-      Reset: (MediaImage) => {
-        MediaImage.style.removeProperty("--ArtworkBrightness");
-        MediaImage.style.removeProperty("--ArtworkBlur");
-      },
-      Eventify: (MediaImage) => {
-        MediaBox_Data.Animators.brightness.on("progress", (progress) => {
-          MediaImage.style.setProperty("--ArtworkBrightness", `${progress}`);
-        });
-        MediaBox_Data.Animators.blur.on("progress", (progress) => {
-          MediaImage.style.setProperty("--ArtworkBlur", `${progress}px`);
-        });
-        MediaBox_Data.Eventified = true;
-      }
-    },
-    Animators: {
-      brightness: new Animator(1, 0.5, 0.25),
-      blur: new Animator(0, 0.2, 0.25)
-    }
-  };
   function Open() {
     const SpicyPage = document.querySelector(
       ".Root__main-view #SpicyLyricsPage"
@@ -4769,61 +5146,114 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       }
     }
   }
-  var Fullscreen_default = Fullscreen;
+  var Fullscreen, MediaBox_Data, Fullscreen_default;
+  var init_Fullscreen = __esm({
+    "src/components/Utils/Fullscreen.ts"() {
+      init_Animator();
+      init_ScrollToActiveLine();
+      init_storage();
+      init_Global();
+      init_PageView();
+      init_NowBar();
+      init_TransferElement();
+      Fullscreen = {
+        Open,
+        Close,
+        Toggle,
+        IsOpen: false
+      };
+      MediaBox_Data = {
+        Eventified: false,
+        Functions: {
+          MouseIn: () => {
+            if (MediaBox_Data.Animators.brightness.reversed)
+              MediaBox_Data.Animators.brightness.Reverse();
+            if (MediaBox_Data.Animators.blur.reversed)
+              MediaBox_Data.Animators.blur.Reverse();
+            MediaBox_Data.Animators.brightness.Start();
+            MediaBox_Data.Animators.blur.Start();
+          },
+          MouseOut: () => {
+            if (!MediaBox_Data.Animators.brightness.reversed)
+              MediaBox_Data.Animators.brightness.Reverse();
+            if (!MediaBox_Data.Animators.blur.reversed)
+              MediaBox_Data.Animators.blur.Reverse();
+            MediaBox_Data.Animators.brightness.Start();
+            MediaBox_Data.Animators.blur.Start();
+          },
+          Reset: (MediaImage) => {
+            MediaImage.style.removeProperty("--ArtworkBrightness");
+            MediaImage.style.removeProperty("--ArtworkBlur");
+          },
+          Eventify: (MediaImage) => {
+            MediaBox_Data.Animators.brightness.on("progress", (progress) => {
+              MediaImage.style.setProperty("--ArtworkBrightness", `${progress}`);
+            });
+            MediaBox_Data.Animators.blur.on("progress", (progress) => {
+              MediaImage.style.setProperty("--ArtworkBlur", `${progress}px`);
+            });
+            MediaBox_Data.Eventified = true;
+          }
+        },
+        Animators: {
+          brightness: new Animator(1, 0.5, 0.25),
+          blur: new Animator(0, 0.2, 0.25)
+        }
+      };
+      Fullscreen_default = Fullscreen;
+    }
+  });
 
   // src/components/Global/Session.ts
-  var sessionHistory = [];
-  var Session = {
-    Navigate: (data) => {
-      Spicetify.Platform.History.push(data);
-    },
-    GoBack: () => {
-      if (sessionHistory.length > 1) {
-        Session.Navigate(sessionHistory[sessionHistory.length - 2]);
-      } else {
-        Session.Navigate({ pathname: "/" });
-      }
-    },
-    GetPreviousLocation: () => {
-      if (sessionHistory.length > 1) {
-        return sessionHistory[sessionHistory.length - 2];
-      }
-      return null;
-    },
-    RecordNavigation: (data) => {
-      Session.PushToHistory(data);
-      Global_default.Event.evoke("session:navigation", data);
-    },
-    FilterOutTheSameLocation: (data) => {
-      const filtered = sessionHistory.filter(
-        (location) => location.pathname !== data.pathname && location.search !== data?.search && location.hash !== data?.hash
-      );
-      sessionHistory = filtered;
-    },
-    PushToHistory: (data) => {
-      sessionHistory.push(data);
+  var sessionHistory, Session, Session_default;
+  var init_Session = __esm({
+    "src/components/Global/Session.ts"() {
+      init_Global();
+      sessionHistory = [];
+      Session = {
+        Navigate: (data) => {
+          Spicetify.Platform.History.push(data);
+        },
+        GoBack: () => {
+          if (sessionHistory.length > 1) {
+            Session.Navigate(sessionHistory[sessionHistory.length - 2]);
+          } else {
+            Session.Navigate({ pathname: "/" });
+          }
+        },
+        GetPreviousLocation: () => {
+          if (sessionHistory.length > 1) {
+            return sessionHistory[sessionHistory.length - 2];
+          }
+          return null;
+        },
+        RecordNavigation: (data) => {
+          Session.PushToHistory(data);
+          Global_default.Event.evoke("session:navigation", data);
+        },
+        FilterOutTheSameLocation: (data) => {
+          const filtered = sessionHistory.filter(
+            (location) => location.pathname !== data.pathname && location.search !== data?.search && location.hash !== data?.hash
+          );
+          sessionHistory = filtered;
+        },
+        PushToHistory: (data) => {
+          sessionHistory.push(data);
+        }
+      };
+      window._spicy_lyrics_session = Session;
+      Session_default = Session;
     }
-  };
-  window._spicy_lyrics_session = Session;
-  var Session_default = Session;
+  });
 
   // src/components/Pages/PageView.ts
-  var Tooltips = {
-    Close: null,
-    Kofi: null,
-    NowBarToggle: null,
-    FullscreenToggle: null,
-    LyricsToggle: null
-  };
-  var PageView = {
-    Open: OpenPage,
-    Destroy: DestroyPage,
-    AppendViewControls,
-    IsOpened: false
-  };
-  var PageRoot = document.querySelector(
-    ".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]"
-  );
+  var PageView_exports = {};
+  __export(PageView_exports, {
+    PageRoot: () => PageRoot,
+    SpicyLyrics_Notification: () => SpicyLyrics_Notification,
+    Tooltips: () => Tooltips,
+    default: () => PageView_default
+  });
   function OpenPage() {
     if (PageView.IsOpened)
       return;
@@ -4975,12 +5405,148 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       }
     }
   }
-  var PageView_default = PageView;
+  function SpicyLyrics_Notification({
+    icon,
+    metadata: { title, description },
+    type,
+    closeBtn
+  }) {
+    const nonFunctionalReturnObject = {
+      cleanup: () => {
+      },
+      close: () => {
+      },
+      open: () => {
+      }
+    };
+    if (!PageView.IsOpened)
+      return nonFunctionalReturnObject;
+    const NotificationContainer = document.querySelector(
+      "#SpicyLyricsPage .NotificationContainer"
+    );
+    if (!NotificationContainer)
+      return nonFunctionalReturnObject;
+    const Title = NotificationContainer.querySelector(
+      ".NotificationText .NotificationTitle"
+    );
+    const Description = NotificationContainer.querySelector(
+      ".NotificationText .NotificationDescription"
+    );
+    const Icon = NotificationContainer.querySelector(".NotificationIcon");
+    const CloseButton = NotificationContainer.querySelector(
+      ".NotificationCloseButton"
+    );
+    if (Title && title) {
+      Title.textContent = title;
+    }
+    if (Description && description) {
+      Description.textContent = description;
+    }
+    if (Icon && icon) {
+      Icon.innerHTML = icon;
+    }
+    const closeBtnHandler = () => {
+      NotificationContainer.classList.remove("Visible");
+      if (Title) {
+        Title.textContent = "";
+      }
+      if (Description) {
+        Description.textContent = "";
+      }
+      if (Icon) {
+        Icon.innerHTML = "";
+      }
+      if (CloseButton) {
+        CloseButton.classList.remove("Disabled");
+      }
+    };
+    NotificationContainer.classList.add(type ?? "Information");
+    const closeBtnA = closeBtn ?? true;
+    if (CloseButton) {
+      if (!closeBtnA) {
+        CloseButton.classList.add("Disabled");
+      } else {
+        CloseButton.addEventListener("click", closeBtnHandler);
+      }
+    }
+    return {
+      cleanup: () => {
+        if (closeBtnA && CloseButton) {
+          CloseButton.removeEventListener("click", closeBtnHandler);
+        }
+        NotificationContainer.classList.remove("Visible");
+        NotificationContainer.classList.remove(type ?? "Information");
+        if (Title) {
+          Title.textContent = "";
+        }
+        if (Description) {
+          Description.textContent = "";
+        }
+        if (Icon) {
+          Icon.innerHTML = "";
+        }
+        if (CloseButton) {
+          CloseButton.classList.remove("Disabled");
+        }
+      },
+      close: () => {
+        NotificationContainer.classList.remove("Visible");
+      },
+      open: () => {
+        NotificationContainer.classList.add("Visible");
+      }
+    };
+  }
+  var Tooltips, PageView, PageRoot, PageView_default;
+  var init_PageView = __esm({
+    "src/components/Pages/PageView.ts"() {
+      init_fetchLyrics();
+      init_storage();
+      init_();
+      init_lyrics();
+      init_dynamicBackground();
+      init_Defaults();
+      init_Icons();
+      init_ScrollSimplebar();
+      init_Applyer();
+      init_SpotifyPlayer();
+      init_NowBar();
+      init_Fullscreen();
+      init_TransferElement();
+      init_Session();
+      init_ScrollToActiveLine();
+      Tooltips = {
+        Close: null,
+        Kofi: null,
+        NowBarToggle: null,
+        FullscreenToggle: null,
+        LyricsToggle: null
+      };
+      PageView = {
+        Open: OpenPage,
+        Destroy: DestroyPage,
+        AppendViewControls,
+        IsOpened: false
+      };
+      PageRoot = document.querySelector(
+        ".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]"
+      );
+      PageView_default = PageView;
+    }
+  });
 
   // src/components/Utils/NowBar.ts
-  var ActivePlaybackControlsInstance = null;
-  var ActiveSongProgressBarInstance_Map = /* @__PURE__ */ new Map();
-  var ActiveSetupSongProgressBarInstance = null;
+  var NowBar_exports = {};
+  __export(NowBar_exports, {
+    CloseNowBar: () => CloseNowBar,
+    DeregisterNowBarBtn: () => DeregisterNowBarBtn,
+    NowBar_SwapSides: () => NowBar_SwapSides,
+    OpenNowBar: () => OpenNowBar,
+    Session_NowBar_SetSide: () => Session_NowBar_SetSide,
+    Session_OpenNowBar: () => Session_OpenNowBar,
+    ToggleNowBar: () => ToggleNowBar,
+    UpdateNowBar: () => UpdateNowBar
+  });
   function OpenNowBar() {
     const NowBar = document.querySelector("#SpicyLyricsPage .ContentBox .NowBar");
     if (!NowBar)
@@ -5416,6 +5982,25 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       }
     }
   }
+  function NowBar_SwapSides() {
+    const NowBar = document.querySelector("#SpicyLyricsPage .ContentBox .NowBar");
+    if (!NowBar)
+      return;
+    const CurrentSide = storage_default.get("NowBarSide");
+    if (CurrentSide === "left") {
+      storage_default.set("NowBarSide", "right");
+      NowBar.classList.remove("LeftSide");
+      NowBar.classList.add("RightSide");
+    } else if (CurrentSide === "right") {
+      storage_default.set("NowBarSide", "left");
+      NowBar.classList.remove("RightSide");
+      NowBar.classList.add("LeftSide");
+    } else {
+      storage_default.set("NowBarSide", "right");
+      NowBar.classList.remove("LeftSide");
+      NowBar.classList.add("RightSide");
+    }
+  }
   function Session_NowBar_SetSide() {
     const NowBar = document.querySelector("#SpicyLyricsPage .ContentBox .NowBar");
     if (!NowBar)
@@ -5443,78 +6028,93 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     );
     nowBarButton?.remove();
   }
-  Global_default.Event.listen("playback:playpause", (e) => {
-    if (Fullscreen_default.IsOpen) {
-      if (ActivePlaybackControlsInstance) {
-        const PlaybackControls = ActivePlaybackControlsInstance.GetElement();
-        const PlayPauseButton = PlaybackControls.querySelector(".PlayStateToggle");
-        if (e.data.isPaused) {
-          PlayPauseButton.classList.remove("Playing");
-          PlayPauseButton.classList.add("Paused");
-          const SVG = PlayPauseButton.querySelector("svg");
-          SVG.innerHTML = Icons.Play;
-        } else {
-          PlayPauseButton.classList.remove("Paused");
-          PlayPauseButton.classList.add("Playing");
-          const SVG = PlayPauseButton.querySelector("svg");
-          SVG.innerHTML = Icons.Pause;
+  var ActivePlaybackControlsInstance, ActiveSongProgressBarInstance_Map, ActiveSetupSongProgressBarInstance;
+  var init_NowBar = __esm({
+    "src/components/Utils/NowBar.ts"() {
+      init_SongProgressBar();
+      init_storage();
+      init_Whentil();
+      init_Global();
+      init_SpotifyPlayer();
+      init_PageView();
+      init_Icons();
+      init_Fullscreen();
+      ActivePlaybackControlsInstance = null;
+      ActiveSongProgressBarInstance_Map = /* @__PURE__ */ new Map();
+      ActiveSetupSongProgressBarInstance = null;
+      Global_default.Event.listen("playback:playpause", (e) => {
+        if (Fullscreen_default.IsOpen) {
+          if (ActivePlaybackControlsInstance) {
+            const PlaybackControls = ActivePlaybackControlsInstance.GetElement();
+            const PlayPauseButton = PlaybackControls.querySelector(".PlayStateToggle");
+            if (e.data.isPaused) {
+              PlayPauseButton.classList.remove("Playing");
+              PlayPauseButton.classList.add("Paused");
+              const SVG = PlayPauseButton.querySelector("svg");
+              SVG.innerHTML = Icons.Play;
+            } else {
+              PlayPauseButton.classList.remove("Paused");
+              PlayPauseButton.classList.add("Playing");
+              const SVG = PlayPauseButton.querySelector("svg");
+              SVG.innerHTML = Icons.Pause;
+            }
+          }
         }
-      }
-    }
-  });
-  Global_default.Event.listen("playback:loop", (e) => {
-    if (Fullscreen_default.IsOpen) {
-      if (ActivePlaybackControlsInstance) {
-        const PlaybackControls = ActivePlaybackControlsInstance.GetElement();
-        const LoopButton = PlaybackControls.querySelector(".LoopToggle");
-        const SVG = LoopButton.querySelector("svg");
-        SVG.style.filter = "";
-        if (e === "track") {
-          SVG.innerHTML = Icons.LoopTrack;
-        } else {
-          SVG.innerHTML = Icons.Loop;
+      });
+      Global_default.Event.listen("playback:loop", (e) => {
+        if (Fullscreen_default.IsOpen) {
+          if (ActivePlaybackControlsInstance) {
+            const PlaybackControls = ActivePlaybackControlsInstance.GetElement();
+            const LoopButton = PlaybackControls.querySelector(".LoopToggle");
+            const SVG = LoopButton.querySelector("svg");
+            SVG.style.filter = "";
+            if (e === "track") {
+              SVG.innerHTML = Icons.LoopTrack;
+            } else {
+              SVG.innerHTML = Icons.Loop;
+            }
+            if (e !== "none") {
+              LoopButton.classList.add("Enabled");
+              SVG.style.filter = "drop-shadow(0 0 5px white)";
+            } else {
+              LoopButton.classList.remove("Enabled");
+            }
+          }
         }
-        if (e !== "none") {
-          LoopButton.classList.add("Enabled");
-          SVG.style.filter = "drop-shadow(0 0 5px white)";
-        } else {
-          LoopButton.classList.remove("Enabled");
+      });
+      Global_default.Event.listen("playback:shuffle", (e) => {
+        if (Fullscreen_default.IsOpen) {
+          if (ActivePlaybackControlsInstance) {
+            const PlaybackControls = ActivePlaybackControlsInstance.GetElement();
+            const ShuffleButton = PlaybackControls.querySelector(".ShuffleToggle");
+            const SVG = ShuffleButton.querySelector("svg");
+            SVG.style.filter = "";
+            if (e !== "none") {
+              ShuffleButton.classList.add("Enabled");
+              SVG.style.filter = "drop-shadow(0 0 5px white)";
+            } else {
+              ShuffleButton.classList.remove("Enabled");
+            }
+          }
         }
-      }
-    }
-  });
-  Global_default.Event.listen("playback:shuffle", (e) => {
-    if (Fullscreen_default.IsOpen) {
-      if (ActivePlaybackControlsInstance) {
-        const PlaybackControls = ActivePlaybackControlsInstance.GetElement();
-        const ShuffleButton = PlaybackControls.querySelector(".ShuffleToggle");
-        const SVG = ShuffleButton.querySelector("svg");
-        SVG.style.filter = "";
-        if (e !== "none") {
-          ShuffleButton.classList.add("Enabled");
-          SVG.style.filter = "drop-shadow(0 0 5px white)";
-        } else {
-          ShuffleButton.classList.remove("Enabled");
+      });
+      Global_default.Event.listen("playback:position", (e) => {
+        if (Fullscreen_default.IsOpen) {
+          if (ActiveSetupSongProgressBarInstance) {
+            const updateTimelineState = ActiveSongProgressBarInstance_Map.get(
+              "updateTimelineState_Function"
+            );
+            updateTimelineState(e);
+          }
         }
-      }
+      });
+      Global_default.Event.listen("fullscreen:exit", () => {
+        CleanUpActiveComponents();
+      });
     }
-  });
-  Global_default.Event.listen("playback:position", (e) => {
-    if (Fullscreen_default.IsOpen) {
-      if (ActiveSetupSongProgressBarInstance) {
-        const updateTimelineState = ActiveSongProgressBarInstance_Map.get(
-          "updateTimelineState_Function"
-        );
-        updateTimelineState(e);
-      }
-    }
-  });
-  Global_default.Event.listen("fullscreen:exit", () => {
-    CleanUpActiveComponents();
   });
 
   // src/utils/API/Lyrics.ts
-  var API_URL = Defaults_default.lyrics.api.url;
   async function getLyrics(id, headers = {}) {
     let [userData, status] = await SpicyFetch(
       "https://api.spotify.com/v1/me",
@@ -5548,10 +6148,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return { response: data, status };
   }
+  var API_URL;
+  var init_Lyrics = __esm({
+    "src/utils/API/Lyrics.ts"() {
+      init_Defaults();
+      init_SpicyFetch();
+      API_URL = Defaults_default.lyrics.api.url;
+    }
+  });
 
   // node_modules/@google/genai/dist/web/index.mjs
-  var BaseModule = class {
-  };
   function formatMap(templateString, valueMap) {
     const regex = /\{([^}]+)\}/g;
     return templateString.replace(regex, (match, key) => {
@@ -6735,630 +7341,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
-  var PagedItem;
-  (function(PagedItem2) {
-    PagedItem2["PAGED_ITEM_BATCH_JOBS"] = "batchJobs";
-    PagedItem2["PAGED_ITEM_MODELS"] = "models";
-    PagedItem2["PAGED_ITEM_TUNING_JOBS"] = "tuningJobs";
-    PagedItem2["PAGED_ITEM_FILES"] = "files";
-    PagedItem2["PAGED_ITEM_CACHED_CONTENTS"] = "cachedContents";
-  })(PagedItem || (PagedItem = {}));
-  var Pager = class {
-    constructor(name, request, response, params) {
-      this.pageInternal = [];
-      this.paramsInternal = {};
-      this.requestInternal = request;
-      this.init(name, response, params);
-    }
-    init(name, response, params) {
-      var _a2, _b;
-      this.nameInternal = name;
-      this.pageInternal = response[this.nameInternal] || [];
-      this.idxInternal = 0;
-      let requestParams = { config: {} };
-      if (!params) {
-        requestParams = { config: {} };
-      } else if (typeof params === "object") {
-        requestParams = Object.assign({}, params);
-      } else {
-        requestParams = params;
-      }
-      if (requestParams["config"]) {
-        requestParams["config"]["pageToken"] = response["nextPageToken"];
-      }
-      this.paramsInternal = requestParams;
-      this.pageInternalSize = (_b = (_a2 = requestParams["config"]) === null || _a2 === void 0 ? void 0 : _a2["pageSize"]) !== null && _b !== void 0 ? _b : this.pageInternal.length;
-    }
-    initNextPage(response) {
-      this.init(this.nameInternal, response, this.paramsInternal);
-    }
-    get page() {
-      return this.pageInternal;
-    }
-    get name() {
-      return this.nameInternal;
-    }
-    get pageSize() {
-      return this.pageInternalSize;
-    }
-    get params() {
-      return this.paramsInternal;
-    }
-    get pageLength() {
-      return this.pageInternal.length;
-    }
-    getItem(index) {
-      return this.pageInternal[index];
-    }
-    [Symbol.asyncIterator]() {
-      return {
-        next: async () => {
-          if (this.idxInternal >= this.pageLength) {
-            if (this.hasNextPage()) {
-              await this.nextPage();
-            } else {
-              return { value: void 0, done: true };
-            }
-          }
-          const item = this.getItem(this.idxInternal);
-          this.idxInternal += 1;
-          return { value: item, done: false };
-        },
-        return: async () => {
-          return { value: void 0, done: true };
-        }
-      };
-    }
-    async nextPage() {
-      if (!this.hasNextPage()) {
-        throw new Error("No more pages to fetch.");
-      }
-      const response = await this.requestInternal(this.params);
-      this.initNextPage(response);
-      return this.page;
-    }
-    hasNextPage() {
-      var _a2;
-      if (((_a2 = this.params["config"]) === null || _a2 === void 0 ? void 0 : _a2["pageToken"]) !== void 0) {
-        return true;
-      }
-      return false;
-    }
-  };
-  var Outcome;
-  (function(Outcome2) {
-    Outcome2["OUTCOME_UNSPECIFIED"] = "OUTCOME_UNSPECIFIED";
-    Outcome2["OUTCOME_OK"] = "OUTCOME_OK";
-    Outcome2["OUTCOME_FAILED"] = "OUTCOME_FAILED";
-    Outcome2["OUTCOME_DEADLINE_EXCEEDED"] = "OUTCOME_DEADLINE_EXCEEDED";
-  })(Outcome || (Outcome = {}));
-  var Language;
-  (function(Language2) {
-    Language2["LANGUAGE_UNSPECIFIED"] = "LANGUAGE_UNSPECIFIED";
-    Language2["PYTHON"] = "PYTHON";
-  })(Language || (Language = {}));
-  var Type;
-  (function(Type2) {
-    Type2["TYPE_UNSPECIFIED"] = "TYPE_UNSPECIFIED";
-    Type2["STRING"] = "STRING";
-    Type2["NUMBER"] = "NUMBER";
-    Type2["INTEGER"] = "INTEGER";
-    Type2["BOOLEAN"] = "BOOLEAN";
-    Type2["ARRAY"] = "ARRAY";
-    Type2["OBJECT"] = "OBJECT";
-  })(Type || (Type = {}));
-  var HarmCategory;
-  (function(HarmCategory2) {
-    HarmCategory2["HARM_CATEGORY_UNSPECIFIED"] = "HARM_CATEGORY_UNSPECIFIED";
-    HarmCategory2["HARM_CATEGORY_HATE_SPEECH"] = "HARM_CATEGORY_HATE_SPEECH";
-    HarmCategory2["HARM_CATEGORY_DANGEROUS_CONTENT"] = "HARM_CATEGORY_DANGEROUS_CONTENT";
-    HarmCategory2["HARM_CATEGORY_HARASSMENT"] = "HARM_CATEGORY_HARASSMENT";
-    HarmCategory2["HARM_CATEGORY_SEXUALLY_EXPLICIT"] = "HARM_CATEGORY_SEXUALLY_EXPLICIT";
-    HarmCategory2["HARM_CATEGORY_CIVIC_INTEGRITY"] = "HARM_CATEGORY_CIVIC_INTEGRITY";
-  })(HarmCategory || (HarmCategory = {}));
-  var HarmBlockMethod;
-  (function(HarmBlockMethod2) {
-    HarmBlockMethod2["HARM_BLOCK_METHOD_UNSPECIFIED"] = "HARM_BLOCK_METHOD_UNSPECIFIED";
-    HarmBlockMethod2["SEVERITY"] = "SEVERITY";
-    HarmBlockMethod2["PROBABILITY"] = "PROBABILITY";
-  })(HarmBlockMethod || (HarmBlockMethod = {}));
-  var HarmBlockThreshold;
-  (function(HarmBlockThreshold2) {
-    HarmBlockThreshold2["HARM_BLOCK_THRESHOLD_UNSPECIFIED"] = "HARM_BLOCK_THRESHOLD_UNSPECIFIED";
-    HarmBlockThreshold2["BLOCK_LOW_AND_ABOVE"] = "BLOCK_LOW_AND_ABOVE";
-    HarmBlockThreshold2["BLOCK_MEDIUM_AND_ABOVE"] = "BLOCK_MEDIUM_AND_ABOVE";
-    HarmBlockThreshold2["BLOCK_ONLY_HIGH"] = "BLOCK_ONLY_HIGH";
-    HarmBlockThreshold2["BLOCK_NONE"] = "BLOCK_NONE";
-    HarmBlockThreshold2["OFF"] = "OFF";
-  })(HarmBlockThreshold || (HarmBlockThreshold = {}));
-  var Mode;
-  (function(Mode2) {
-    Mode2["MODE_UNSPECIFIED"] = "MODE_UNSPECIFIED";
-    Mode2["MODE_DYNAMIC"] = "MODE_DYNAMIC";
-  })(Mode || (Mode = {}));
-  var FinishReason;
-  (function(FinishReason2) {
-    FinishReason2["FINISH_REASON_UNSPECIFIED"] = "FINISH_REASON_UNSPECIFIED";
-    FinishReason2["STOP"] = "STOP";
-    FinishReason2["MAX_TOKENS"] = "MAX_TOKENS";
-    FinishReason2["SAFETY"] = "SAFETY";
-    FinishReason2["RECITATION"] = "RECITATION";
-    FinishReason2["OTHER"] = "OTHER";
-    FinishReason2["BLOCKLIST"] = "BLOCKLIST";
-    FinishReason2["PROHIBITED_CONTENT"] = "PROHIBITED_CONTENT";
-    FinishReason2["SPII"] = "SPII";
-    FinishReason2["MALFORMED_FUNCTION_CALL"] = "MALFORMED_FUNCTION_CALL";
-    FinishReason2["IMAGE_SAFETY"] = "IMAGE_SAFETY";
-  })(FinishReason || (FinishReason = {}));
-  var HarmProbability;
-  (function(HarmProbability2) {
-    HarmProbability2["HARM_PROBABILITY_UNSPECIFIED"] = "HARM_PROBABILITY_UNSPECIFIED";
-    HarmProbability2["NEGLIGIBLE"] = "NEGLIGIBLE";
-    HarmProbability2["LOW"] = "LOW";
-    HarmProbability2["MEDIUM"] = "MEDIUM";
-    HarmProbability2["HIGH"] = "HIGH";
-  })(HarmProbability || (HarmProbability = {}));
-  var HarmSeverity;
-  (function(HarmSeverity2) {
-    HarmSeverity2["HARM_SEVERITY_UNSPECIFIED"] = "HARM_SEVERITY_UNSPECIFIED";
-    HarmSeverity2["HARM_SEVERITY_NEGLIGIBLE"] = "HARM_SEVERITY_NEGLIGIBLE";
-    HarmSeverity2["HARM_SEVERITY_LOW"] = "HARM_SEVERITY_LOW";
-    HarmSeverity2["HARM_SEVERITY_MEDIUM"] = "HARM_SEVERITY_MEDIUM";
-    HarmSeverity2["HARM_SEVERITY_HIGH"] = "HARM_SEVERITY_HIGH";
-  })(HarmSeverity || (HarmSeverity = {}));
-  var BlockedReason;
-  (function(BlockedReason2) {
-    BlockedReason2["BLOCKED_REASON_UNSPECIFIED"] = "BLOCKED_REASON_UNSPECIFIED";
-    BlockedReason2["SAFETY"] = "SAFETY";
-    BlockedReason2["OTHER"] = "OTHER";
-    BlockedReason2["BLOCKLIST"] = "BLOCKLIST";
-    BlockedReason2["PROHIBITED_CONTENT"] = "PROHIBITED_CONTENT";
-  })(BlockedReason || (BlockedReason = {}));
-  var Modality;
-  (function(Modality2) {
-    Modality2["MODALITY_UNSPECIFIED"] = "MODALITY_UNSPECIFIED";
-    Modality2["TEXT"] = "TEXT";
-    Modality2["IMAGE"] = "IMAGE";
-    Modality2["AUDIO"] = "AUDIO";
-  })(Modality || (Modality = {}));
-  var State;
-  (function(State2) {
-    State2["STATE_UNSPECIFIED"] = "STATE_UNSPECIFIED";
-    State2["ACTIVE"] = "ACTIVE";
-    State2["ERROR"] = "ERROR";
-  })(State || (State = {}));
-  var DynamicRetrievalConfigMode;
-  (function(DynamicRetrievalConfigMode2) {
-    DynamicRetrievalConfigMode2["MODE_UNSPECIFIED"] = "MODE_UNSPECIFIED";
-    DynamicRetrievalConfigMode2["MODE_DYNAMIC"] = "MODE_DYNAMIC";
-  })(DynamicRetrievalConfigMode || (DynamicRetrievalConfigMode = {}));
-  var FunctionCallingConfigMode;
-  (function(FunctionCallingConfigMode2) {
-    FunctionCallingConfigMode2["MODE_UNSPECIFIED"] = "MODE_UNSPECIFIED";
-    FunctionCallingConfigMode2["AUTO"] = "AUTO";
-    FunctionCallingConfigMode2["ANY"] = "ANY";
-    FunctionCallingConfigMode2["NONE"] = "NONE";
-  })(FunctionCallingConfigMode || (FunctionCallingConfigMode = {}));
-  var MediaResolution;
-  (function(MediaResolution2) {
-    MediaResolution2["MEDIA_RESOLUTION_UNSPECIFIED"] = "MEDIA_RESOLUTION_UNSPECIFIED";
-    MediaResolution2["MEDIA_RESOLUTION_LOW"] = "MEDIA_RESOLUTION_LOW";
-    MediaResolution2["MEDIA_RESOLUTION_MEDIUM"] = "MEDIA_RESOLUTION_MEDIUM";
-    MediaResolution2["MEDIA_RESOLUTION_HIGH"] = "MEDIA_RESOLUTION_HIGH";
-  })(MediaResolution || (MediaResolution = {}));
-  var SafetyFilterLevel;
-  (function(SafetyFilterLevel2) {
-    SafetyFilterLevel2["BLOCK_LOW_AND_ABOVE"] = "BLOCK_LOW_AND_ABOVE";
-    SafetyFilterLevel2["BLOCK_MEDIUM_AND_ABOVE"] = "BLOCK_MEDIUM_AND_ABOVE";
-    SafetyFilterLevel2["BLOCK_ONLY_HIGH"] = "BLOCK_ONLY_HIGH";
-    SafetyFilterLevel2["BLOCK_NONE"] = "BLOCK_NONE";
-  })(SafetyFilterLevel || (SafetyFilterLevel = {}));
-  var PersonGeneration;
-  (function(PersonGeneration2) {
-    PersonGeneration2["DONT_ALLOW"] = "DONT_ALLOW";
-    PersonGeneration2["ALLOW_ADULT"] = "ALLOW_ADULT";
-    PersonGeneration2["ALLOW_ALL"] = "ALLOW_ALL";
-  })(PersonGeneration || (PersonGeneration = {}));
-  var ImagePromptLanguage;
-  (function(ImagePromptLanguage2) {
-    ImagePromptLanguage2["auto"] = "auto";
-    ImagePromptLanguage2["en"] = "en";
-    ImagePromptLanguage2["ja"] = "ja";
-    ImagePromptLanguage2["ko"] = "ko";
-    ImagePromptLanguage2["hi"] = "hi";
-  })(ImagePromptLanguage || (ImagePromptLanguage = {}));
-  var FileState;
-  (function(FileState2) {
-    FileState2["STATE_UNSPECIFIED"] = "STATE_UNSPECIFIED";
-    FileState2["PROCESSING"] = "PROCESSING";
-    FileState2["ACTIVE"] = "ACTIVE";
-    FileState2["FAILED"] = "FAILED";
-  })(FileState || (FileState = {}));
-  var FileSource;
-  (function(FileSource2) {
-    FileSource2["SOURCE_UNSPECIFIED"] = "SOURCE_UNSPECIFIED";
-    FileSource2["UPLOADED"] = "UPLOADED";
-    FileSource2["GENERATED"] = "GENERATED";
-  })(FileSource || (FileSource = {}));
-  var MaskReferenceMode;
-  (function(MaskReferenceMode2) {
-    MaskReferenceMode2["MASK_MODE_DEFAULT"] = "MASK_MODE_DEFAULT";
-    MaskReferenceMode2["MASK_MODE_USER_PROVIDED"] = "MASK_MODE_USER_PROVIDED";
-    MaskReferenceMode2["MASK_MODE_BACKGROUND"] = "MASK_MODE_BACKGROUND";
-    MaskReferenceMode2["MASK_MODE_FOREGROUND"] = "MASK_MODE_FOREGROUND";
-    MaskReferenceMode2["MASK_MODE_SEMANTIC"] = "MASK_MODE_SEMANTIC";
-  })(MaskReferenceMode || (MaskReferenceMode = {}));
-  var ControlReferenceType;
-  (function(ControlReferenceType2) {
-    ControlReferenceType2["CONTROL_TYPE_DEFAULT"] = "CONTROL_TYPE_DEFAULT";
-    ControlReferenceType2["CONTROL_TYPE_CANNY"] = "CONTROL_TYPE_CANNY";
-    ControlReferenceType2["CONTROL_TYPE_SCRIBBLE"] = "CONTROL_TYPE_SCRIBBLE";
-    ControlReferenceType2["CONTROL_TYPE_FACE_MESH"] = "CONTROL_TYPE_FACE_MESH";
-  })(ControlReferenceType || (ControlReferenceType = {}));
-  var SubjectReferenceType;
-  (function(SubjectReferenceType2) {
-    SubjectReferenceType2["SUBJECT_TYPE_DEFAULT"] = "SUBJECT_TYPE_DEFAULT";
-    SubjectReferenceType2["SUBJECT_TYPE_PERSON"] = "SUBJECT_TYPE_PERSON";
-    SubjectReferenceType2["SUBJECT_TYPE_ANIMAL"] = "SUBJECT_TYPE_ANIMAL";
-    SubjectReferenceType2["SUBJECT_TYPE_PRODUCT"] = "SUBJECT_TYPE_PRODUCT";
-  })(SubjectReferenceType || (SubjectReferenceType = {}));
-  var GenerateContentResponse = class {
-    get text() {
-      var _a2, _b, _c, _d, _e, _f, _g, _h;
-      if (((_d = (_c = (_b = (_a2 = this.candidates) === null || _a2 === void 0 ? void 0 : _a2[0]) === null || _b === void 0 ? void 0 : _b.content) === null || _c === void 0 ? void 0 : _c.parts) === null || _d === void 0 ? void 0 : _d.length) === 0) {
-        return void 0;
-      }
-      if (this.candidates && this.candidates.length > 1) {
-        console.warn("there are multiple candidates in the response, returning text from the first one.");
-      }
-      let text = "";
-      let anyTextPartText = false;
-      const nonTextParts = [];
-      for (const part of (_h = (_g = (_f = (_e = this.candidates) === null || _e === void 0 ? void 0 : _e[0]) === null || _f === void 0 ? void 0 : _f.content) === null || _g === void 0 ? void 0 : _g.parts) !== null && _h !== void 0 ? _h : []) {
-        for (const [fieldName, fieldValue] of Object.entries(part)) {
-          if (fieldName !== "text" && fieldName !== "thought" && (fieldValue !== null || fieldValue !== void 0)) {
-            nonTextParts.push(fieldName);
-          }
-        }
-        if (typeof part.text === "string") {
-          if (typeof part.thought === "boolean" && part.thought) {
-            continue;
-          }
-          anyTextPartText = true;
-          text += part.text;
-        }
-      }
-      if (nonTextParts.length > 0) {
-        console.warn(`there are non-text parts ${nonTextParts} in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.`);
-      }
-      return anyTextPartText ? text : void 0;
-    }
-    get functionCalls() {
-      var _a2, _b, _c, _d, _e, _f, _g, _h;
-      if (((_d = (_c = (_b = (_a2 = this.candidates) === null || _a2 === void 0 ? void 0 : _a2[0]) === null || _b === void 0 ? void 0 : _b.content) === null || _c === void 0 ? void 0 : _c.parts) === null || _d === void 0 ? void 0 : _d.length) === 0) {
-        return void 0;
-      }
-      if (this.candidates && this.candidates.length > 1) {
-        console.warn("there are multiple candidates in the response, returning function calls from the first one.");
-      }
-      const functionCalls = (_h = (_g = (_f = (_e = this.candidates) === null || _e === void 0 ? void 0 : _e[0]) === null || _f === void 0 ? void 0 : _f.content) === null || _g === void 0 ? void 0 : _g.parts) === null || _h === void 0 ? void 0 : _h.filter((part) => part.functionCall).map((part) => part.functionCall).filter((functionCall) => functionCall !== void 0);
-      if ((functionCalls === null || functionCalls === void 0 ? void 0 : functionCalls.length) === 0) {
-        return void 0;
-      }
-      return functionCalls;
-    }
-    get executableCode() {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j;
-      if (((_d = (_c = (_b = (_a2 = this.candidates) === null || _a2 === void 0 ? void 0 : _a2[0]) === null || _b === void 0 ? void 0 : _b.content) === null || _c === void 0 ? void 0 : _c.parts) === null || _d === void 0 ? void 0 : _d.length) === 0) {
-        return void 0;
-      }
-      if (this.candidates && this.candidates.length > 1) {
-        console.warn("there are multiple candidates in the response, returning executable code from the first one.");
-      }
-      const executableCode = (_h = (_g = (_f = (_e = this.candidates) === null || _e === void 0 ? void 0 : _e[0]) === null || _f === void 0 ? void 0 : _f.content) === null || _g === void 0 ? void 0 : _g.parts) === null || _h === void 0 ? void 0 : _h.filter((part) => part.executableCode).map((part) => part.executableCode).filter((executableCode2) => executableCode2 !== void 0);
-      if ((executableCode === null || executableCode === void 0 ? void 0 : executableCode.length) === 0) {
-        return void 0;
-      }
-      return (_j = executableCode === null || executableCode === void 0 ? void 0 : executableCode[0]) === null || _j === void 0 ? void 0 : _j.code;
-    }
-    get codeExecutionResult() {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j;
-      if (((_d = (_c = (_b = (_a2 = this.candidates) === null || _a2 === void 0 ? void 0 : _a2[0]) === null || _b === void 0 ? void 0 : _b.content) === null || _c === void 0 ? void 0 : _c.parts) === null || _d === void 0 ? void 0 : _d.length) === 0) {
-        return void 0;
-      }
-      if (this.candidates && this.candidates.length > 1) {
-        console.warn("there are multiple candidates in the response, returning code execution result from the first one.");
-      }
-      const codeExecutionResult = (_h = (_g = (_f = (_e = this.candidates) === null || _e === void 0 ? void 0 : _e[0]) === null || _f === void 0 ? void 0 : _f.content) === null || _g === void 0 ? void 0 : _g.parts) === null || _h === void 0 ? void 0 : _h.filter((part) => part.codeExecutionResult).map((part) => part.codeExecutionResult).filter((codeExecutionResult2) => codeExecutionResult2 !== void 0);
-      if ((codeExecutionResult === null || codeExecutionResult === void 0 ? void 0 : codeExecutionResult.length) === 0) {
-        return void 0;
-      }
-      return (_j = codeExecutionResult === null || codeExecutionResult === void 0 ? void 0 : codeExecutionResult[0]) === null || _j === void 0 ? void 0 : _j.output;
-    }
-  };
-  var EmbedContentResponse = class {
-  };
-  var GenerateImagesResponse = class {
-  };
-  var CountTokensResponse = class {
-  };
-  var ComputeTokensResponse = class {
-  };
-  var DeleteCachedContentResponse = class {
-  };
-  var ListCachedContentsResponse = class {
-  };
-  var ListFilesResponse = class {
-  };
-  var HttpResponse = class {
-    constructor(response) {
-      const headers = {};
-      for (const pair of response.headers.entries()) {
-        headers[pair[0]] = pair[1];
-      }
-      this.headers = headers;
-      this.responseInternal = response;
-    }
-    json() {
-      return this.responseInternal.json();
-    }
-  };
-  var CreateFileResponse = class {
-  };
-  var DeleteFileResponse = class {
-  };
-  var Caches = class extends BaseModule {
-    constructor(apiClient) {
-      super();
-      this.apiClient = apiClient;
-      this.list = async (params = {}) => {
-        return new Pager(PagedItem.PAGED_ITEM_CACHED_CONTENTS, (x) => this.listInternal(x), await this.listInternal(params), params);
-      };
-    }
-    async create(params) {
-      var _a2, _b;
-      let response;
-      let path = "";
-      let queryParams = {};
-      if (this.apiClient.isVertexAI()) {
-        const body = createCachedContentParametersToVertex(this.apiClient, params);
-        path = formatMap("cachedContents", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        response = this.apiClient.request({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "POST",
-          httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
-        }).then((httpResponse) => {
-          return httpResponse.json();
-        });
-        return response.then((apiResponse) => {
-          const resp = cachedContentFromVertex(this.apiClient, apiResponse);
-          return resp;
-        });
-      } else {
-        const body = createCachedContentParametersToMldev(this.apiClient, params);
-        path = formatMap("cachedContents", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        response = this.apiClient.request({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "POST",
-          httpOptions: (_b = params.config) === null || _b === void 0 ? void 0 : _b.httpOptions
-        }).then((httpResponse) => {
-          return httpResponse.json();
-        });
-        return response.then((apiResponse) => {
-          const resp = cachedContentFromMldev(this.apiClient, apiResponse);
-          return resp;
-        });
-      }
-    }
-    async get(params) {
-      var _a2, _b;
-      let response;
-      let path = "";
-      let queryParams = {};
-      if (this.apiClient.isVertexAI()) {
-        const body = getCachedContentParametersToVertex(this.apiClient, params);
-        path = formatMap("{name}", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        response = this.apiClient.request({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "GET",
-          httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
-        }).then((httpResponse) => {
-          return httpResponse.json();
-        });
-        return response.then((apiResponse) => {
-          const resp = cachedContentFromVertex(this.apiClient, apiResponse);
-          return resp;
-        });
-      } else {
-        const body = getCachedContentParametersToMldev(this.apiClient, params);
-        path = formatMap("{name}", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        response = this.apiClient.request({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "GET",
-          httpOptions: (_b = params.config) === null || _b === void 0 ? void 0 : _b.httpOptions
-        }).then((httpResponse) => {
-          return httpResponse.json();
-        });
-        return response.then((apiResponse) => {
-          const resp = cachedContentFromMldev(this.apiClient, apiResponse);
-          return resp;
-        });
-      }
-    }
-    async delete(params) {
-      var _a2, _b;
-      let response;
-      let path = "";
-      let queryParams = {};
-      if (this.apiClient.isVertexAI()) {
-        const body = deleteCachedContentParametersToVertex(this.apiClient, params);
-        path = formatMap("{name}", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        response = this.apiClient.request({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "DELETE",
-          httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
-        }).then((httpResponse) => {
-          return httpResponse.json();
-        });
-        return response.then(() => {
-          const resp = deleteCachedContentResponseFromVertex();
-          const typedResp = new DeleteCachedContentResponse();
-          Object.assign(typedResp, resp);
-          return typedResp;
-        });
-      } else {
-        const body = deleteCachedContentParametersToMldev(this.apiClient, params);
-        path = formatMap("{name}", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        response = this.apiClient.request({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "DELETE",
-          httpOptions: (_b = params.config) === null || _b === void 0 ? void 0 : _b.httpOptions
-        }).then((httpResponse) => {
-          return httpResponse.json();
-        });
-        return response.then(() => {
-          const resp = deleteCachedContentResponseFromMldev();
-          const typedResp = new DeleteCachedContentResponse();
-          Object.assign(typedResp, resp);
-          return typedResp;
-        });
-      }
-    }
-    async update(params) {
-      var _a2, _b;
-      let response;
-      let path = "";
-      let queryParams = {};
-      if (this.apiClient.isVertexAI()) {
-        const body = updateCachedContentParametersToVertex(this.apiClient, params);
-        path = formatMap("{name}", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        response = this.apiClient.request({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "PATCH",
-          httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
-        }).then((httpResponse) => {
-          return httpResponse.json();
-        });
-        return response.then((apiResponse) => {
-          const resp = cachedContentFromVertex(this.apiClient, apiResponse);
-          return resp;
-        });
-      } else {
-        const body = updateCachedContentParametersToMldev(this.apiClient, params);
-        path = formatMap("{name}", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        response = this.apiClient.request({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "PATCH",
-          httpOptions: (_b = params.config) === null || _b === void 0 ? void 0 : _b.httpOptions
-        }).then((httpResponse) => {
-          return httpResponse.json();
-        });
-        return response.then((apiResponse) => {
-          const resp = cachedContentFromMldev(this.apiClient, apiResponse);
-          return resp;
-        });
-      }
-    }
-    async listInternal(params) {
-      var _a2, _b;
-      let response;
-      let path = "";
-      let queryParams = {};
-      if (this.apiClient.isVertexAI()) {
-        const body = listCachedContentsParametersToVertex(this.apiClient, params);
-        path = formatMap("cachedContents", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        response = this.apiClient.request({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "GET",
-          httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
-        }).then((httpResponse) => {
-          return httpResponse.json();
-        });
-        return response.then((apiResponse) => {
-          const resp = listCachedContentsResponseFromVertex(this.apiClient, apiResponse);
-          const typedResp = new ListCachedContentsResponse();
-          Object.assign(typedResp, resp);
-          return typedResp;
-        });
-      } else {
-        const body = listCachedContentsParametersToMldev(this.apiClient, params);
-        path = formatMap("cachedContents", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        response = this.apiClient.request({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "GET",
-          httpOptions: (_b = params.config) === null || _b === void 0 ? void 0 : _b.httpOptions
-        }).then((httpResponse) => {
-          return httpResponse.json();
-        });
-        return response.then((apiResponse) => {
-          const resp = listCachedContentsResponseFromMldev(this.apiClient, apiResponse);
-          const typedResp = new ListCachedContentsResponse();
-          Object.assign(typedResp, resp);
-          return typedResp;
-        });
-      }
-    }
-  };
   function __values(o) {
     var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
     if (m)
@@ -7508,108 +7490,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return curatedHistory;
   }
-  var Chats = class {
-    constructor(modelsModule, apiClient) {
-      this.modelsModule = modelsModule;
-      this.apiClient = apiClient;
-    }
-    create(params) {
-      return new Chat(this.apiClient, this.modelsModule, params.model, params.config, params.history);
-    }
-  };
-  var Chat = class {
-    constructor(apiClient, modelsModule, model, config = {}, history = []) {
-      this.apiClient = apiClient;
-      this.modelsModule = modelsModule;
-      this.model = model;
-      this.config = config;
-      this.history = history;
-      this.sendPromise = Promise.resolve();
-      validateHistory(history);
-    }
-    async sendMessage(params) {
-      var _a2;
-      await this.sendPromise;
-      const inputContent = tContent(this.apiClient, params.message);
-      const responsePromise = this.modelsModule.generateContent({
-        model: this.model,
-        contents: this.getHistory(true).concat(inputContent),
-        config: (_a2 = params.config) !== null && _a2 !== void 0 ? _a2 : this.config
-      });
-      this.sendPromise = (async () => {
-        var _a3, _b;
-        const response = await responsePromise;
-        const outputContent = (_b = (_a3 = response.candidates) === null || _a3 === void 0 ? void 0 : _a3[0]) === null || _b === void 0 ? void 0 : _b.content;
-        const modelOutput = outputContent ? [outputContent] : [];
-        this.recordHistory(inputContent, modelOutput);
-        return;
-      })();
-      await this.sendPromise;
-      return responsePromise;
-    }
-    async sendMessageStream(params) {
-      var _a2;
-      await this.sendPromise;
-      const inputContent = tContent(this.apiClient, params.message);
-      const streamResponse = this.modelsModule.generateContentStream({
-        model: this.model,
-        contents: this.getHistory(true).concat(inputContent),
-        config: (_a2 = params.config) !== null && _a2 !== void 0 ? _a2 : this.config
-      });
-      this.sendPromise = streamResponse.then(() => void 0);
-      const response = await streamResponse;
-      const result = this.processStreamResponse(response, inputContent);
-      return result;
-    }
-    getHistory(curated = false) {
-      return curated ? extractCuratedHistory(this.history) : this.history;
-    }
-    processStreamResponse(streamResponse, inputContent) {
-      var _a2, _b;
-      return __asyncGenerator(this, arguments, function* processStreamResponse_1() {
-        var _c, e_1, _d, _e;
-        const outputContent = [];
-        try {
-          for (var _f = true, streamResponse_1 = __asyncValues(streamResponse), streamResponse_1_1; streamResponse_1_1 = yield __await(streamResponse_1.next()), _c = streamResponse_1_1.done, !_c; _f = true) {
-            _e = streamResponse_1_1.value;
-            _f = false;
-            const chunk = _e;
-            if (isValidResponse(chunk)) {
-              const content = (_b = (_a2 = chunk.candidates) === null || _a2 === void 0 ? void 0 : _a2[0]) === null || _b === void 0 ? void 0 : _b.content;
-              if (content !== void 0) {
-                outputContent.push(content);
-              }
-            }
-            yield yield __await(chunk);
-          }
-        } catch (e_1_1) {
-          e_1 = { error: e_1_1 };
-        } finally {
-          try {
-            if (!_f && !_c && (_d = streamResponse_1.return))
-              yield __await(_d.call(streamResponse_1));
-          } finally {
-            if (e_1)
-              throw e_1.error;
-          }
-        }
-        this.recordHistory(inputContent, outputContent);
-      });
-    }
-    recordHistory(userInput, modelOutput) {
-      let outputContents = [];
-      if (modelOutput.length > 0 && modelOutput.every((content) => content.role === "model")) {
-        outputContents = modelOutput;
-      } else {
-        outputContents.push({
-          role: "model",
-          parts: []
-        });
-      }
-      this.history.push(userInput);
-      this.history.push(...outputContents);
-    }
-  };
   function partToMldev(apiClient, fromObject) {
     const toObject = {};
     if (getValueByPath(fromObject, ["videoMetadata"]) !== void 0) {
@@ -9781,7 +9661,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
-  var FUNCTION_RESPONSE_REQUIRES_ID = "FunctionResponse request must have an `id` field from the response of a ToolCall.FunctionalCalls in Google AI.";
   async function handleWebSocketMessage(apiClient, onmessage, event) {
     let serverMessage;
     let data;
@@ -9797,155 +9676,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     onmessage(serverMessage);
   }
-  var Live = class {
-    constructor(apiClient, auth, webSocketFactory) {
-      this.apiClient = apiClient;
-      this.auth = auth;
-      this.webSocketFactory = webSocketFactory;
-    }
-    async connect(params) {
-      var _a2, _b;
-      const websocketBaseUrl = this.apiClient.getWebsocketBaseUrl();
-      const apiVersion = this.apiClient.getApiVersion();
-      let url;
-      const headers = mapToHeaders(this.apiClient.getDefaultHeaders());
-      if (this.apiClient.isVertexAI()) {
-        url = `${websocketBaseUrl}/ws/google.cloud.aiplatform.${apiVersion}.LlmBidiService/BidiGenerateContent`;
-        await this.auth.addAuthHeaders(headers);
-      } else {
-        const apiKey = this.apiClient.getApiKey();
-        url = `${websocketBaseUrl}/ws/google.ai.generativelanguage.${apiVersion}.GenerativeService.BidiGenerateContent?key=${apiKey}`;
-      }
-      let onopenResolve = () => {
-      };
-      const onopenPromise = new Promise((resolve) => {
-        onopenResolve = resolve;
-      });
-      const callbacks = params.callbacks;
-      const onopenAwaitedCallback = function() {
-        var _a3;
-        (_a3 = callbacks === null || callbacks === void 0 ? void 0 : callbacks.onopen) === null || _a3 === void 0 ? void 0 : _a3.call(callbacks);
-        onopenResolve({});
-      };
-      const apiClient = this.apiClient;
-      const websocketCallbacks = {
-        onopen: onopenAwaitedCallback,
-        onmessage: (event) => {
-          void handleWebSocketMessage(apiClient, callbacks.onmessage, event);
-        },
-        onerror: (_a2 = callbacks === null || callbacks === void 0 ? void 0 : callbacks.onerror) !== null && _a2 !== void 0 ? _a2 : function(e) {
-        },
-        onclose: (_b = callbacks === null || callbacks === void 0 ? void 0 : callbacks.onclose) !== null && _b !== void 0 ? _b : function(e) {
-        }
-      };
-      const conn = this.webSocketFactory.create(url, headersToMap(headers), websocketCallbacks);
-      conn.connect();
-      await onopenPromise;
-      let transformedModel = tModel(this.apiClient, params.model);
-      if (this.apiClient.isVertexAI() && transformedModel.startsWith("publishers/")) {
-        const project = this.apiClient.getProject();
-        const location = this.apiClient.getLocation();
-        transformedModel = `projects/${project}/locations/${location}/` + transformedModel;
-      }
-      let clientMessage = {};
-      const liveConnectParameters = {
-        model: transformedModel,
-        config: params.config,
-        callbacks: params.callbacks
-      };
-      if (this.apiClient.isVertexAI()) {
-        clientMessage = liveConnectParametersToVertex(this.apiClient, liveConnectParameters);
-      } else {
-        clientMessage = liveConnectParametersToMldev(this.apiClient, liveConnectParameters);
-      }
-      conn.send(JSON.stringify(clientMessage));
-      return new Session2(conn, this.apiClient);
-    }
-  };
-  var defaultLiveSendClientContentParamerters = {
-    turnComplete: true
-  };
-  var Session2 = class {
-    constructor(conn, apiClient) {
-      this.conn = conn;
-      this.apiClient = apiClient;
-    }
-    tLiveClientContent(apiClient, params) {
-      if (params.turns !== null && params.turns !== void 0) {
-        let contents = [];
-        try {
-          contents = tContents(apiClient, params.turns);
-          if (apiClient.isVertexAI()) {
-            contents = contents.map((item) => contentToVertex(apiClient, item));
-          } else {
-            contents = contents.map((item) => contentToMldev(apiClient, item));
-          }
-        } catch (_a2) {
-          throw new Error(`Failed to parse client content "turns", type: '${typeof params.turns}'`);
-        }
-        return {
-          clientContent: { turns: contents, turnComplete: params.turnComplete }
-        };
-      }
-      return {
-        clientContent: { turnComplete: params.turnComplete }
-      };
-    }
-    tLiveClientRealtimeInput(apiClient, params) {
-      let clientMessage = {};
-      if (!("media" in params) || !params.media) {
-        throw new Error(`Failed to convert realtime input "media", type: '${typeof params.media}'`);
-      }
-      clientMessage = { realtimeInput: { mediaChunks: [params.media] } };
-      return clientMessage;
-    }
-    tLiveClienttToolResponse(apiClient, params) {
-      let functionResponses = [];
-      if (params.functionResponses == null) {
-        throw new Error("functionResponses is required.");
-      }
-      if (!Array.isArray(params.functionResponses)) {
-        functionResponses = [params.functionResponses];
-      }
-      if (functionResponses.length === 0) {
-        throw new Error("functionResponses is required.");
-      }
-      for (const functionResponse of functionResponses) {
-        if (typeof functionResponse !== "object" || functionResponse === null || !("name" in functionResponse) || !("response" in functionResponse)) {
-          throw new Error(`Could not parse function response, type '${typeof functionResponse}'.`);
-        }
-        if (!apiClient.isVertexAI() && !("id" in functionResponse)) {
-          throw new Error(FUNCTION_RESPONSE_REQUIRES_ID);
-        }
-      }
-      const clientMessage = {
-        toolResponse: { functionResponses }
-      };
-      return clientMessage;
-    }
-    sendClientContent(params) {
-      params = Object.assign(Object.assign({}, defaultLiveSendClientContentParamerters), params);
-      const clientMessage = this.tLiveClientContent(this.apiClient, params);
-      this.conn.send(JSON.stringify(clientMessage));
-    }
-    sendRealtimeInput(params) {
-      if (params.media == null) {
-        throw new Error("Media is required.");
-      }
-      const clientMessage = this.tLiveClientRealtimeInput(this.apiClient, params);
-      this.conn.send(JSON.stringify(clientMessage));
-    }
-    sendToolResponse(params) {
-      if (params.functionResponses == null) {
-        throw new Error("Tool response parameters are required.");
-      }
-      const clientMessage = this.tLiveClienttToolResponse(this.apiClient, params);
-      this.conn.send(JSON.stringify(clientMessage));
-    }
-    close() {
-      this.conn.close();
-    }
-  };
   function headersToMap(headers) {
     const headerMap = {};
     headers.forEach((value, key) => {
@@ -9960,698 +9690,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return headers;
   }
-  var Models = class extends BaseModule {
-    constructor(apiClient) {
-      super();
-      this.apiClient = apiClient;
-      this.generateContent = async (params) => {
-        return await this.generateContentInternal(params);
-      };
-      this.generateContentStream = async (params) => {
-        return await this.generateContentStreamInternal(params);
-      };
-      this.generateImages = async (params) => {
-        return await this.generateImagesInternal(params).then((apiResponse) => {
-          var _a2;
-          let positivePromptSafetyAttributes;
-          const generatedImages = [];
-          if (apiResponse === null || apiResponse === void 0 ? void 0 : apiResponse.generatedImages) {
-            for (const generatedImage of apiResponse.generatedImages) {
-              if (generatedImage && (generatedImage === null || generatedImage === void 0 ? void 0 : generatedImage.safetyAttributes) && ((_a2 = generatedImage === null || generatedImage === void 0 ? void 0 : generatedImage.safetyAttributes) === null || _a2 === void 0 ? void 0 : _a2.contentType) === "Positive Prompt") {
-                positivePromptSafetyAttributes = generatedImage === null || generatedImage === void 0 ? void 0 : generatedImage.safetyAttributes;
-              } else {
-                generatedImages.push(generatedImage);
-              }
-            }
-          }
-          let response;
-          if (positivePromptSafetyAttributes) {
-            response = {
-              generatedImages,
-              positivePromptSafetyAttributes
-            };
-          } else {
-            response = {
-              generatedImages
-            };
-          }
-          return response;
-        });
-      };
-    }
-    async generateContentInternal(params) {
-      var _a2, _b;
-      let response;
-      let path = "";
-      let queryParams = {};
-      if (this.apiClient.isVertexAI()) {
-        const body = generateContentParametersToVertex(this.apiClient, params);
-        path = formatMap("{model}:generateContent", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        response = this.apiClient.request({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "POST",
-          httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
-        }).then((httpResponse) => {
-          return httpResponse.json();
-        });
-        return response.then((apiResponse) => {
-          const resp = generateContentResponseFromVertex(this.apiClient, apiResponse);
-          const typedResp = new GenerateContentResponse();
-          Object.assign(typedResp, resp);
-          return typedResp;
-        });
-      } else {
-        const body = generateContentParametersToMldev(this.apiClient, params);
-        path = formatMap("{model}:generateContent", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        response = this.apiClient.request({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "POST",
-          httpOptions: (_b = params.config) === null || _b === void 0 ? void 0 : _b.httpOptions
-        }).then((httpResponse) => {
-          return httpResponse.json();
-        });
-        return response.then((apiResponse) => {
-          const resp = generateContentResponseFromMldev(this.apiClient, apiResponse);
-          const typedResp = new GenerateContentResponse();
-          Object.assign(typedResp, resp);
-          return typedResp;
-        });
-      }
-    }
-    async generateContentStreamInternal(params) {
-      var _a2, _b;
-      let response;
-      let path = "";
-      let queryParams = {};
-      if (this.apiClient.isVertexAI()) {
-        const body = generateContentParametersToVertex(this.apiClient, params);
-        path = formatMap("{model}:streamGenerateContent?alt=sse", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        const apiClient = this.apiClient;
-        response = apiClient.requestStream({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "POST",
-          httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
-        });
-        return response.then(function(apiResponse) {
-          return __asyncGenerator(this, arguments, function* () {
-            var _a3, e_1, _b2, _c;
-            try {
-              for (var _d = true, apiResponse_1 = __asyncValues(apiResponse), apiResponse_1_1; apiResponse_1_1 = yield __await(apiResponse_1.next()), _a3 = apiResponse_1_1.done, !_a3; _d = true) {
-                _c = apiResponse_1_1.value;
-                _d = false;
-                const chunk = _c;
-                const resp = generateContentResponseFromVertex(apiClient, chunk);
-                const typedResp = new GenerateContentResponse();
-                Object.assign(typedResp, resp);
-                yield yield __await(typedResp);
-              }
-            } catch (e_1_1) {
-              e_1 = { error: e_1_1 };
-            } finally {
-              try {
-                if (!_d && !_a3 && (_b2 = apiResponse_1.return))
-                  yield __await(_b2.call(apiResponse_1));
-              } finally {
-                if (e_1)
-                  throw e_1.error;
-              }
-            }
-          });
-        });
-      } else {
-        const body = generateContentParametersToMldev(this.apiClient, params);
-        path = formatMap("{model}:streamGenerateContent?alt=sse", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        const apiClient = this.apiClient;
-        response = apiClient.requestStream({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "POST",
-          httpOptions: (_b = params.config) === null || _b === void 0 ? void 0 : _b.httpOptions
-        });
-        return response.then(function(apiResponse) {
-          return __asyncGenerator(this, arguments, function* () {
-            var _a3, e_2, _b2, _c;
-            try {
-              for (var _d = true, apiResponse_2 = __asyncValues(apiResponse), apiResponse_2_1; apiResponse_2_1 = yield __await(apiResponse_2.next()), _a3 = apiResponse_2_1.done, !_a3; _d = true) {
-                _c = apiResponse_2_1.value;
-                _d = false;
-                const chunk = _c;
-                const resp = generateContentResponseFromMldev(apiClient, chunk);
-                const typedResp = new GenerateContentResponse();
-                Object.assign(typedResp, resp);
-                yield yield __await(typedResp);
-              }
-            } catch (e_2_1) {
-              e_2 = { error: e_2_1 };
-            } finally {
-              try {
-                if (!_d && !_a3 && (_b2 = apiResponse_2.return))
-                  yield __await(_b2.call(apiResponse_2));
-              } finally {
-                if (e_2)
-                  throw e_2.error;
-              }
-            }
-          });
-        });
-      }
-    }
-    async embedContent(params) {
-      var _a2, _b;
-      let response;
-      let path = "";
-      let queryParams = {};
-      if (this.apiClient.isVertexAI()) {
-        const body = embedContentParametersToVertex(this.apiClient, params);
-        path = formatMap("{model}:predict", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        response = this.apiClient.request({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "POST",
-          httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
-        }).then((httpResponse) => {
-          return httpResponse.json();
-        });
-        return response.then((apiResponse) => {
-          const resp = embedContentResponseFromVertex(this.apiClient, apiResponse);
-          const typedResp = new EmbedContentResponse();
-          Object.assign(typedResp, resp);
-          return typedResp;
-        });
-      } else {
-        const body = embedContentParametersToMldev(this.apiClient, params);
-        path = formatMap("{model}:batchEmbedContents", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        response = this.apiClient.request({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "POST",
-          httpOptions: (_b = params.config) === null || _b === void 0 ? void 0 : _b.httpOptions
-        }).then((httpResponse) => {
-          return httpResponse.json();
-        });
-        return response.then((apiResponse) => {
-          const resp = embedContentResponseFromMldev(this.apiClient, apiResponse);
-          const typedResp = new EmbedContentResponse();
-          Object.assign(typedResp, resp);
-          return typedResp;
-        });
-      }
-    }
-    async generateImagesInternal(params) {
-      var _a2, _b;
-      let response;
-      let path = "";
-      let queryParams = {};
-      if (this.apiClient.isVertexAI()) {
-        const body = generateImagesParametersToVertex(this.apiClient, params);
-        path = formatMap("{model}:predict", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        response = this.apiClient.request({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "POST",
-          httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
-        }).then((httpResponse) => {
-          return httpResponse.json();
-        });
-        return response.then((apiResponse) => {
-          const resp = generateImagesResponseFromVertex(this.apiClient, apiResponse);
-          const typedResp = new GenerateImagesResponse();
-          Object.assign(typedResp, resp);
-          return typedResp;
-        });
-      } else {
-        const body = generateImagesParametersToMldev(this.apiClient, params);
-        path = formatMap("{model}:predict", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        response = this.apiClient.request({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "POST",
-          httpOptions: (_b = params.config) === null || _b === void 0 ? void 0 : _b.httpOptions
-        }).then((httpResponse) => {
-          return httpResponse.json();
-        });
-        return response.then((apiResponse) => {
-          const resp = generateImagesResponseFromMldev(this.apiClient, apiResponse);
-          const typedResp = new GenerateImagesResponse();
-          Object.assign(typedResp, resp);
-          return typedResp;
-        });
-      }
-    }
-    async countTokens(params) {
-      var _a2, _b;
-      let response;
-      let path = "";
-      let queryParams = {};
-      if (this.apiClient.isVertexAI()) {
-        const body = countTokensParametersToVertex(this.apiClient, params);
-        path = formatMap("{model}:countTokens", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        response = this.apiClient.request({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "POST",
-          httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
-        }).then((httpResponse) => {
-          return httpResponse.json();
-        });
-        return response.then((apiResponse) => {
-          const resp = countTokensResponseFromVertex(this.apiClient, apiResponse);
-          const typedResp = new CountTokensResponse();
-          Object.assign(typedResp, resp);
-          return typedResp;
-        });
-      } else {
-        const body = countTokensParametersToMldev(this.apiClient, params);
-        path = formatMap("{model}:countTokens", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        response = this.apiClient.request({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "POST",
-          httpOptions: (_b = params.config) === null || _b === void 0 ? void 0 : _b.httpOptions
-        }).then((httpResponse) => {
-          return httpResponse.json();
-        });
-        return response.then((apiResponse) => {
-          const resp = countTokensResponseFromMldev(this.apiClient, apiResponse);
-          const typedResp = new CountTokensResponse();
-          Object.assign(typedResp, resp);
-          return typedResp;
-        });
-      }
-    }
-    async computeTokens(params) {
-      var _a2;
-      let response;
-      let path = "";
-      let queryParams = {};
-      if (this.apiClient.isVertexAI()) {
-        const body = computeTokensParametersToVertex(this.apiClient, params);
-        path = formatMap("{model}:computeTokens", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        response = this.apiClient.request({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "POST",
-          httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
-        }).then((httpResponse) => {
-          return httpResponse.json();
-        });
-        return response.then((apiResponse) => {
-          const resp = computeTokensResponseFromVertex(this.apiClient, apiResponse);
-          const typedResp = new ComputeTokensResponse();
-          Object.assign(typedResp, resp);
-          return typedResp;
-        });
-      } else {
-        throw new Error("This method is only supported by the Vertex AI.");
-      }
-    }
-  };
-  var CONTENT_TYPE_HEADER = "Content-Type";
-  var USER_AGENT_HEADER = "User-Agent";
-  var GOOGLE_API_CLIENT_HEADER = "x-goog-api-client";
-  var SDK_VERSION = "0.6.1";
-  var LIBRARY_LABEL = `google-genai-sdk/${SDK_VERSION}`;
-  var VERTEX_AI_API_DEFAULT_VERSION = "v1beta1";
-  var GOOGLE_AI_API_DEFAULT_VERSION = "v1beta";
-  var responseLineRE = /^data: (.*)(?:\n\n|\r\r|\r\n\r\n)/;
-  var ClientError = class extends Error {
-    constructor(message, stackTrace) {
-      if (stackTrace) {
-        super(message, { cause: stackTrace });
-      } else {
-        super(message, { cause: new Error().stack });
-      }
-      this.message = message;
-      this.name = "ClientError";
-    }
-  };
-  var ServerError = class extends Error {
-    constructor(message, stackTrace) {
-      if (stackTrace) {
-        super(message, { cause: stackTrace });
-      } else {
-        super(message, { cause: new Error().stack });
-      }
-      this.message = message;
-      this.name = "ServerError";
-    }
-  };
-  var ApiClient = class {
-    constructor(opts) {
-      var _a2, _b;
-      this.clientOptions = Object.assign(Object.assign({}, opts), { project: opts.project, location: opts.location, apiKey: opts.apiKey, vertexai: opts.vertexai });
-      const initHttpOptions = {};
-      if (this.clientOptions.vertexai) {
-        initHttpOptions.apiVersion = (_a2 = this.clientOptions.apiVersion) !== null && _a2 !== void 0 ? _a2 : VERTEX_AI_API_DEFAULT_VERSION;
-        if (this.getProject() || this.getLocation()) {
-          initHttpOptions.baseUrl = `https://${this.clientOptions.location}-aiplatform.googleapis.com/`;
-          this.clientOptions.apiKey = void 0;
-        } else {
-          initHttpOptions.baseUrl = `https://aiplatform.googleapis.com/`;
-          this.clientOptions.project = void 0;
-          this.clientOptions.location = void 0;
-        }
-      } else {
-        initHttpOptions.apiVersion = (_b = this.clientOptions.apiVersion) !== null && _b !== void 0 ? _b : GOOGLE_AI_API_DEFAULT_VERSION;
-        initHttpOptions.baseUrl = `https://generativelanguage.googleapis.com/`;
-      }
-      initHttpOptions.headers = this.getDefaultHeaders();
-      this.clientOptions.httpOptions = initHttpOptions;
-      if (opts.httpOptions) {
-        this.clientOptions.httpOptions = this.patchHttpOptions(initHttpOptions, opts.httpOptions);
-      }
-    }
-    isVertexAI() {
-      var _a2;
-      return (_a2 = this.clientOptions.vertexai) !== null && _a2 !== void 0 ? _a2 : false;
-    }
-    getProject() {
-      return this.clientOptions.project;
-    }
-    getLocation() {
-      return this.clientOptions.location;
-    }
-    getApiVersion() {
-      if (this.clientOptions.httpOptions && this.clientOptions.httpOptions.apiVersion !== void 0) {
-        return this.clientOptions.httpOptions.apiVersion;
-      }
-      throw new Error("API version is not set.");
-    }
-    getBaseUrl() {
-      if (this.clientOptions.httpOptions && this.clientOptions.httpOptions.baseUrl !== void 0) {
-        return this.clientOptions.httpOptions.baseUrl;
-      }
-      throw new Error("Base URL is not set.");
-    }
-    getRequestUrl() {
-      return this.getRequestUrlInternal(this.clientOptions.httpOptions);
-    }
-    getHeaders() {
-      if (this.clientOptions.httpOptions && this.clientOptions.httpOptions.headers !== void 0) {
-        return this.clientOptions.httpOptions.headers;
-      } else {
-        throw new Error("Headers are not set.");
-      }
-    }
-    getRequestUrlInternal(httpOptions) {
-      if (!httpOptions || httpOptions.baseUrl === void 0 || httpOptions.apiVersion === void 0) {
-        throw new Error("HTTP options are not correctly set.");
-      }
-      const baseUrl = httpOptions.baseUrl.endsWith("/") ? httpOptions.baseUrl.slice(0, -1) : httpOptions.baseUrl;
-      const urlElement = [baseUrl];
-      if (httpOptions.apiVersion && httpOptions.apiVersion !== "") {
-        urlElement.push(httpOptions.apiVersion);
-      }
-      return urlElement.join("/");
-    }
-    getBaseResourcePath() {
-      return `projects/${this.clientOptions.project}/locations/${this.clientOptions.location}`;
-    }
-    getApiKey() {
-      return this.clientOptions.apiKey;
-    }
-    getWebsocketBaseUrl() {
-      const baseUrl = this.getBaseUrl();
-      const urlParts = new URL(baseUrl);
-      urlParts.protocol = "wss";
-      return urlParts.toString();
-    }
-    setBaseUrl(url) {
-      if (this.clientOptions.httpOptions) {
-        this.clientOptions.httpOptions.baseUrl = url;
-      } else {
-        throw new Error("HTTP options are not correctly set.");
-      }
-    }
-    constructUrl(path, httpOptions) {
-      const urlElement = [this.getRequestUrlInternal(httpOptions)];
-      if (this.clientOptions.vertexai && !this.clientOptions.apiKey && !path.startsWith("projects/")) {
-        urlElement.push(this.getBaseResourcePath());
-      }
-      if (path !== "") {
-        urlElement.push(path);
-      }
-      const url = new URL(`${urlElement.join("/")}`);
-      return url;
-    }
-    async request(request) {
-      let patchedHttpOptions = this.clientOptions.httpOptions;
-      if (request.httpOptions) {
-        patchedHttpOptions = this.patchHttpOptions(this.clientOptions.httpOptions, request.httpOptions);
-      }
-      const url = this.constructUrl(request.path, patchedHttpOptions);
-      if (request.queryParams) {
-        for (const [key, value] of Object.entries(request.queryParams)) {
-          url.searchParams.append(key, String(value));
-        }
-      }
-      let requestInit = {};
-      if (request.httpMethod === "GET") {
-        if (request.body && request.body !== "{}") {
-          throw new Error("Request body should be empty for GET request, but got non empty request body");
-        }
-      } else {
-        requestInit.body = request.body;
-      }
-      requestInit = await this.includeExtraHttpOptionsToRequestInit(requestInit, patchedHttpOptions);
-      return this.unaryApiCall(url, requestInit, request.httpMethod);
-    }
-    patchHttpOptions(baseHttpOptions, requestHttpOptions) {
-      const patchedHttpOptions = JSON.parse(JSON.stringify(baseHttpOptions));
-      for (const [key, value] of Object.entries(requestHttpOptions)) {
-        if (typeof value === "object") {
-          patchedHttpOptions[key] = Object.assign(Object.assign({}, patchedHttpOptions[key]), value);
-        } else if (value !== void 0) {
-          patchedHttpOptions[key] = value;
-        }
-      }
-      return patchedHttpOptions;
-    }
-    async requestStream(request) {
-      let patchedHttpOptions = this.clientOptions.httpOptions;
-      if (request.httpOptions) {
-        patchedHttpOptions = this.patchHttpOptions(this.clientOptions.httpOptions, request.httpOptions);
-      }
-      const url = this.constructUrl(request.path, patchedHttpOptions);
-      if (!url.searchParams.has("alt") || url.searchParams.get("alt") !== "sse") {
-        url.searchParams.set("alt", "sse");
-      }
-      let requestInit = {};
-      requestInit.body = request.body;
-      requestInit = await this.includeExtraHttpOptionsToRequestInit(requestInit, patchedHttpOptions);
-      return this.streamApiCall(url, requestInit, request.httpMethod);
-    }
-    async includeExtraHttpOptionsToRequestInit(requestInit, httpOptions) {
-      if (httpOptions && httpOptions.timeout && httpOptions.timeout > 0) {
-        const abortController = new AbortController();
-        const signal = abortController.signal;
-        setTimeout(() => abortController.abort(), httpOptions.timeout);
-        requestInit.signal = signal;
-      }
-      requestInit.headers = await this.getHeadersInternal(httpOptions);
-      return requestInit;
-    }
-    async unaryApiCall(url, requestInit, httpMethod) {
-      return this.apiCall(url.toString(), Object.assign(Object.assign({}, requestInit), { method: httpMethod })).then(async (response) => {
-        await throwErrorIfNotOK(response);
-        return new HttpResponse(response);
-      }).catch((e) => {
-        if (e instanceof Error) {
-          throw e;
-        } else {
-          throw new Error(JSON.stringify(e));
-        }
-      });
-    }
-    async streamApiCall(url, requestInit, httpMethod) {
-      return this.apiCall(url.toString(), Object.assign(Object.assign({}, requestInit), { method: httpMethod })).then(async (response) => {
-        await throwErrorIfNotOK(response);
-        return this.processStreamResponse(response);
-      }).catch((e) => {
-        if (e instanceof Error) {
-          throw e;
-        } else {
-          throw new Error(JSON.stringify(e));
-        }
-      });
-    }
-    processStreamResponse(response) {
-      var _a2;
-      return __asyncGenerator(this, arguments, function* processStreamResponse_1() {
-        const reader = (_a2 = response === null || response === void 0 ? void 0 : response.body) === null || _a2 === void 0 ? void 0 : _a2.getReader();
-        const decoder = new TextDecoder("utf-8");
-        if (!reader) {
-          throw new Error("Response body is empty");
-        }
-        try {
-          let buffer = "";
-          while (true) {
-            const { done, value } = yield __await(reader.read());
-            if (done) {
-              if (buffer.trim().length > 0) {
-                throw new Error("Incomplete JSON segment at the end");
-              }
-              break;
-            }
-            const chunkString = decoder.decode(value);
-            buffer += chunkString;
-            let match = buffer.match(responseLineRE);
-            while (match) {
-              const processedChunkString = match[1];
-              try {
-                const chunkData = JSON.parse(processedChunkString);
-                yield yield __await(chunkData);
-                buffer = buffer.slice(match[0].length);
-                match = buffer.match(responseLineRE);
-              } catch (e) {
-                throw new Error(`exception parsing stream chunk ${processedChunkString}. ${e}`);
-              }
-            }
-          }
-        } finally {
-          reader.releaseLock();
-        }
-      });
-    }
-    async apiCall(url, requestInit) {
-      return fetch(url, requestInit).catch((e) => {
-        throw new Error(`exception ${e} sending request`);
-      });
-    }
-    getDefaultHeaders() {
-      const headers = {};
-      const versionHeaderValue = LIBRARY_LABEL + " " + this.clientOptions.userAgentExtra;
-      headers[USER_AGENT_HEADER] = versionHeaderValue;
-      headers[GOOGLE_API_CLIENT_HEADER] = versionHeaderValue;
-      headers[CONTENT_TYPE_HEADER] = "application/json";
-      return headers;
-    }
-    async getHeadersInternal(httpOptions) {
-      const headers = new Headers();
-      if (httpOptions && httpOptions.headers) {
-        for (const [key, value] of Object.entries(httpOptions.headers)) {
-          headers.append(key, value);
-        }
-      }
-      await this.clientOptions.auth.addAuthHeaders(headers);
-      return headers;
-    }
-    async uploadFile(file, config) {
-      var _a2;
-      const fileToUpload = {};
-      if (config != null) {
-        fileToUpload.mimeType = config.mimeType;
-        fileToUpload.name = config.name;
-        fileToUpload.displayName = config.displayName;
-      }
-      if (fileToUpload.name && !fileToUpload.name.startsWith("files/")) {
-        fileToUpload.name = `files/${fileToUpload.name}`;
-      }
-      const uploader = this.clientOptions.uploader;
-      const fileStat = await uploader.stat(file);
-      fileToUpload.sizeBytes = fileStat.size;
-      const mimeType = (_a2 = config === null || config === void 0 ? void 0 : config.mimeType) !== null && _a2 !== void 0 ? _a2 : fileStat.type;
-      if (mimeType === void 0 || mimeType === "") {
-        throw new Error("Can not determine mimeType. Please provide mimeType in the config.");
-      }
-      fileToUpload.mimeType = mimeType;
-      const uploadUrl = await this.fetchUploadUrl(fileToUpload, config);
-      return uploader.upload(file, uploadUrl, this);
-    }
-    async fetchUploadUrl(file, config) {
-      var _a2;
-      let httpOptions = {};
-      if (config === null || config === void 0 ? void 0 : config.httpOptions) {
-        httpOptions = config.httpOptions;
-      } else {
-        httpOptions = {
-          apiVersion: "",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Goog-Upload-Protocol": "resumable",
-            "X-Goog-Upload-Command": "start",
-            "X-Goog-Upload-Header-Content-Length": `${file.sizeBytes}`,
-            "X-Goog-Upload-Header-Content-Type": `${file.mimeType}`
-          }
-        };
-      }
-      const body = {
-        "file": file
-      };
-      const httpResponse = await this.request({
-        path: formatMap("upload/v1beta/files", body["_url"]),
-        body: JSON.stringify(body),
-        httpMethod: "POST",
-        httpOptions
-      });
-      if (!httpResponse || !(httpResponse === null || httpResponse === void 0 ? void 0 : httpResponse.headers)) {
-        throw new Error("Server did not return an HttpResponse or the returned HttpResponse did not have headers.");
-      }
-      const uploadUrl = (_a2 = httpResponse === null || httpResponse === void 0 ? void 0 : httpResponse.headers) === null || _a2 === void 0 ? void 0 : _a2["x-goog-upload-url"];
-      if (uploadUrl === void 0) {
-        throw new Error("Failed to get upload url. Server did not return the x-google-upload-url in the headers");
-      }
-      return uploadUrl;
-    }
-  };
   async function throwErrorIfNotOK(response) {
     var _a2;
     if (response === void 0) {
@@ -10931,147 +9969,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const toObject = {};
     return toObject;
   }
-  var Files = class extends BaseModule {
-    constructor(apiClient) {
-      super();
-      this.apiClient = apiClient;
-      this.list = async (params = {}) => {
-        return new Pager(PagedItem.PAGED_ITEM_FILES, (x) => this.listInternal(x), await this.listInternal(params), params);
-      };
-    }
-    async upload(params) {
-      if (this.apiClient.isVertexAI()) {
-        throw new Error("Vertex AI does not support uploading files. You can share files through a GCS bucket.");
-      }
-      return this.apiClient.uploadFile(params.file, params.config).then((response) => {
-        const file = fileFromMldev(this.apiClient, response);
-        return file;
-      });
-    }
-    async listInternal(params) {
-      var _a2;
-      let response;
-      let path = "";
-      let queryParams = {};
-      if (this.apiClient.isVertexAI()) {
-        throw new Error("This method is only supported by the Gemini Developer API.");
-      } else {
-        const body = listFilesParametersToMldev(this.apiClient, params);
-        path = formatMap("files", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        response = this.apiClient.request({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "GET",
-          httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
-        }).then((httpResponse) => {
-          return httpResponse.json();
-        });
-        return response.then((apiResponse) => {
-          const resp = listFilesResponseFromMldev(this.apiClient, apiResponse);
-          const typedResp = new ListFilesResponse();
-          Object.assign(typedResp, resp);
-          return typedResp;
-        });
-      }
-    }
-    async createInternal(params) {
-      var _a2;
-      let response;
-      let path = "";
-      let queryParams = {};
-      if (this.apiClient.isVertexAI()) {
-        throw new Error("This method is only supported by the Gemini Developer API.");
-      } else {
-        const body = createFileParametersToMldev(this.apiClient, params);
-        path = formatMap("upload/v1beta/files", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        response = this.apiClient.request({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "POST",
-          httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
-        }).then((httpResponse) => {
-          return httpResponse.json();
-        });
-        return response.then((apiResponse) => {
-          const resp = createFileResponseFromMldev(this.apiClient, apiResponse);
-          const typedResp = new CreateFileResponse();
-          Object.assign(typedResp, resp);
-          return typedResp;
-        });
-      }
-    }
-    async get(params) {
-      var _a2;
-      let response;
-      let path = "";
-      let queryParams = {};
-      if (this.apiClient.isVertexAI()) {
-        throw new Error("This method is only supported by the Gemini Developer API.");
-      } else {
-        const body = getFileParametersToMldev(this.apiClient, params);
-        path = formatMap("files/{file}", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        response = this.apiClient.request({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "GET",
-          httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
-        }).then((httpResponse) => {
-          return httpResponse.json();
-        });
-        return response.then((apiResponse) => {
-          const resp = fileFromMldev(this.apiClient, apiResponse);
-          return resp;
-        });
-      }
-    }
-    async delete(params) {
-      var _a2;
-      let response;
-      let path = "";
-      let queryParams = {};
-      if (this.apiClient.isVertexAI()) {
-        throw new Error("This method is only supported by the Gemini Developer API.");
-      } else {
-        const body = deleteFileParametersToMldev(this.apiClient, params);
-        path = formatMap("files/{file}", body["_url"]);
-        queryParams = body["_query"];
-        delete body["config"];
-        delete body["_url"];
-        delete body["_query"];
-        response = this.apiClient.request({
-          path,
-          queryParams,
-          body: JSON.stringify(body),
-          httpMethod: "DELETE",
-          httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
-        }).then((httpResponse) => {
-          return httpResponse.json();
-        });
-        return response.then(() => {
-          const resp = deleteFileResponseFromMldev();
-          const typedResp = new DeleteFileResponse();
-          Object.assign(typedResp, resp);
-          return typedResp;
-        });
-      }
-    }
-  };
-  var MAX_CHUNK_SIZE = 1024 * 1024 * 8;
   async function uploadBlob(file, uploadUrl, apiClient) {
     var _a2, _b;
     let fileSize = 0;
@@ -11117,102 +10014,1791 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const fileStat = { size: file.size, type: file.type };
     return fileStat;
   }
-  var BrowserUploader = class {
-    async upload(file, uploadUrl, apiClient) {
-      if (typeof file === "string") {
-        throw new Error("File path is not supported in browser uploader.");
-      }
-      return await uploadBlob(file, uploadUrl, apiClient);
+  var BaseModule, PagedItem, Pager, Outcome, Language, Type, HarmCategory, HarmBlockMethod, HarmBlockThreshold, Mode, FinishReason, HarmProbability, HarmSeverity, BlockedReason, Modality, State, DynamicRetrievalConfigMode, FunctionCallingConfigMode, MediaResolution, SafetyFilterLevel, PersonGeneration, ImagePromptLanguage, FileState, FileSource, MaskReferenceMode, ControlReferenceType, SubjectReferenceType, GenerateContentResponse, EmbedContentResponse, GenerateImagesResponse, CountTokensResponse, ComputeTokensResponse, DeleteCachedContentResponse, ListCachedContentsResponse, ListFilesResponse, HttpResponse, CreateFileResponse, DeleteFileResponse, Caches, Chats, Chat, FUNCTION_RESPONSE_REQUIRES_ID, Live, defaultLiveSendClientContentParamerters, Session2, Models, CONTENT_TYPE_HEADER, USER_AGENT_HEADER, GOOGLE_API_CLIENT_HEADER, SDK_VERSION, LIBRARY_LABEL, VERTEX_AI_API_DEFAULT_VERSION, GOOGLE_AI_API_DEFAULT_VERSION, responseLineRE, ClientError, ServerError, ApiClient, Files, MAX_CHUNK_SIZE, BrowserUploader, BrowserWebSocketFactory, BrowserWebSocket, GOOGLE_API_KEY_HEADER, WebAuth, LANGUAGE_LABEL_PREFIX, GoogleGenAI;
+  var init_web = __esm({
+    "node_modules/@google/genai/dist/web/index.mjs"() {
+      BaseModule = class {
+      };
+      (function(PagedItem2) {
+        PagedItem2["PAGED_ITEM_BATCH_JOBS"] = "batchJobs";
+        PagedItem2["PAGED_ITEM_MODELS"] = "models";
+        PagedItem2["PAGED_ITEM_TUNING_JOBS"] = "tuningJobs";
+        PagedItem2["PAGED_ITEM_FILES"] = "files";
+        PagedItem2["PAGED_ITEM_CACHED_CONTENTS"] = "cachedContents";
+      })(PagedItem || (PagedItem = {}));
+      Pager = class {
+        constructor(name, request, response, params) {
+          this.pageInternal = [];
+          this.paramsInternal = {};
+          this.requestInternal = request;
+          this.init(name, response, params);
+        }
+        init(name, response, params) {
+          var _a2, _b;
+          this.nameInternal = name;
+          this.pageInternal = response[this.nameInternal] || [];
+          this.idxInternal = 0;
+          let requestParams = { config: {} };
+          if (!params) {
+            requestParams = { config: {} };
+          } else if (typeof params === "object") {
+            requestParams = Object.assign({}, params);
+          } else {
+            requestParams = params;
+          }
+          if (requestParams["config"]) {
+            requestParams["config"]["pageToken"] = response["nextPageToken"];
+          }
+          this.paramsInternal = requestParams;
+          this.pageInternalSize = (_b = (_a2 = requestParams["config"]) === null || _a2 === void 0 ? void 0 : _a2["pageSize"]) !== null && _b !== void 0 ? _b : this.pageInternal.length;
+        }
+        initNextPage(response) {
+          this.init(this.nameInternal, response, this.paramsInternal);
+        }
+        get page() {
+          return this.pageInternal;
+        }
+        get name() {
+          return this.nameInternal;
+        }
+        get pageSize() {
+          return this.pageInternalSize;
+        }
+        get params() {
+          return this.paramsInternal;
+        }
+        get pageLength() {
+          return this.pageInternal.length;
+        }
+        getItem(index) {
+          return this.pageInternal[index];
+        }
+        [Symbol.asyncIterator]() {
+          return {
+            next: async () => {
+              if (this.idxInternal >= this.pageLength) {
+                if (this.hasNextPage()) {
+                  await this.nextPage();
+                } else {
+                  return { value: void 0, done: true };
+                }
+              }
+              const item = this.getItem(this.idxInternal);
+              this.idxInternal += 1;
+              return { value: item, done: false };
+            },
+            return: async () => {
+              return { value: void 0, done: true };
+            }
+          };
+        }
+        async nextPage() {
+          if (!this.hasNextPage()) {
+            throw new Error("No more pages to fetch.");
+          }
+          const response = await this.requestInternal(this.params);
+          this.initNextPage(response);
+          return this.page;
+        }
+        hasNextPage() {
+          var _a2;
+          if (((_a2 = this.params["config"]) === null || _a2 === void 0 ? void 0 : _a2["pageToken"]) !== void 0) {
+            return true;
+          }
+          return false;
+        }
+      };
+      (function(Outcome2) {
+        Outcome2["OUTCOME_UNSPECIFIED"] = "OUTCOME_UNSPECIFIED";
+        Outcome2["OUTCOME_OK"] = "OUTCOME_OK";
+        Outcome2["OUTCOME_FAILED"] = "OUTCOME_FAILED";
+        Outcome2["OUTCOME_DEADLINE_EXCEEDED"] = "OUTCOME_DEADLINE_EXCEEDED";
+      })(Outcome || (Outcome = {}));
+      (function(Language2) {
+        Language2["LANGUAGE_UNSPECIFIED"] = "LANGUAGE_UNSPECIFIED";
+        Language2["PYTHON"] = "PYTHON";
+      })(Language || (Language = {}));
+      (function(Type2) {
+        Type2["TYPE_UNSPECIFIED"] = "TYPE_UNSPECIFIED";
+        Type2["STRING"] = "STRING";
+        Type2["NUMBER"] = "NUMBER";
+        Type2["INTEGER"] = "INTEGER";
+        Type2["BOOLEAN"] = "BOOLEAN";
+        Type2["ARRAY"] = "ARRAY";
+        Type2["OBJECT"] = "OBJECT";
+      })(Type || (Type = {}));
+      (function(HarmCategory2) {
+        HarmCategory2["HARM_CATEGORY_UNSPECIFIED"] = "HARM_CATEGORY_UNSPECIFIED";
+        HarmCategory2["HARM_CATEGORY_HATE_SPEECH"] = "HARM_CATEGORY_HATE_SPEECH";
+        HarmCategory2["HARM_CATEGORY_DANGEROUS_CONTENT"] = "HARM_CATEGORY_DANGEROUS_CONTENT";
+        HarmCategory2["HARM_CATEGORY_HARASSMENT"] = "HARM_CATEGORY_HARASSMENT";
+        HarmCategory2["HARM_CATEGORY_SEXUALLY_EXPLICIT"] = "HARM_CATEGORY_SEXUALLY_EXPLICIT";
+        HarmCategory2["HARM_CATEGORY_CIVIC_INTEGRITY"] = "HARM_CATEGORY_CIVIC_INTEGRITY";
+      })(HarmCategory || (HarmCategory = {}));
+      (function(HarmBlockMethod2) {
+        HarmBlockMethod2["HARM_BLOCK_METHOD_UNSPECIFIED"] = "HARM_BLOCK_METHOD_UNSPECIFIED";
+        HarmBlockMethod2["SEVERITY"] = "SEVERITY";
+        HarmBlockMethod2["PROBABILITY"] = "PROBABILITY";
+      })(HarmBlockMethod || (HarmBlockMethod = {}));
+      (function(HarmBlockThreshold2) {
+        HarmBlockThreshold2["HARM_BLOCK_THRESHOLD_UNSPECIFIED"] = "HARM_BLOCK_THRESHOLD_UNSPECIFIED";
+        HarmBlockThreshold2["BLOCK_LOW_AND_ABOVE"] = "BLOCK_LOW_AND_ABOVE";
+        HarmBlockThreshold2["BLOCK_MEDIUM_AND_ABOVE"] = "BLOCK_MEDIUM_AND_ABOVE";
+        HarmBlockThreshold2["BLOCK_ONLY_HIGH"] = "BLOCK_ONLY_HIGH";
+        HarmBlockThreshold2["BLOCK_NONE"] = "BLOCK_NONE";
+        HarmBlockThreshold2["OFF"] = "OFF";
+      })(HarmBlockThreshold || (HarmBlockThreshold = {}));
+      (function(Mode2) {
+        Mode2["MODE_UNSPECIFIED"] = "MODE_UNSPECIFIED";
+        Mode2["MODE_DYNAMIC"] = "MODE_DYNAMIC";
+      })(Mode || (Mode = {}));
+      (function(FinishReason2) {
+        FinishReason2["FINISH_REASON_UNSPECIFIED"] = "FINISH_REASON_UNSPECIFIED";
+        FinishReason2["STOP"] = "STOP";
+        FinishReason2["MAX_TOKENS"] = "MAX_TOKENS";
+        FinishReason2["SAFETY"] = "SAFETY";
+        FinishReason2["RECITATION"] = "RECITATION";
+        FinishReason2["OTHER"] = "OTHER";
+        FinishReason2["BLOCKLIST"] = "BLOCKLIST";
+        FinishReason2["PROHIBITED_CONTENT"] = "PROHIBITED_CONTENT";
+        FinishReason2["SPII"] = "SPII";
+        FinishReason2["MALFORMED_FUNCTION_CALL"] = "MALFORMED_FUNCTION_CALL";
+        FinishReason2["IMAGE_SAFETY"] = "IMAGE_SAFETY";
+      })(FinishReason || (FinishReason = {}));
+      (function(HarmProbability2) {
+        HarmProbability2["HARM_PROBABILITY_UNSPECIFIED"] = "HARM_PROBABILITY_UNSPECIFIED";
+        HarmProbability2["NEGLIGIBLE"] = "NEGLIGIBLE";
+        HarmProbability2["LOW"] = "LOW";
+        HarmProbability2["MEDIUM"] = "MEDIUM";
+        HarmProbability2["HIGH"] = "HIGH";
+      })(HarmProbability || (HarmProbability = {}));
+      (function(HarmSeverity2) {
+        HarmSeverity2["HARM_SEVERITY_UNSPECIFIED"] = "HARM_SEVERITY_UNSPECIFIED";
+        HarmSeverity2["HARM_SEVERITY_NEGLIGIBLE"] = "HARM_SEVERITY_NEGLIGIBLE";
+        HarmSeverity2["HARM_SEVERITY_LOW"] = "HARM_SEVERITY_LOW";
+        HarmSeverity2["HARM_SEVERITY_MEDIUM"] = "HARM_SEVERITY_MEDIUM";
+        HarmSeverity2["HARM_SEVERITY_HIGH"] = "HARM_SEVERITY_HIGH";
+      })(HarmSeverity || (HarmSeverity = {}));
+      (function(BlockedReason2) {
+        BlockedReason2["BLOCKED_REASON_UNSPECIFIED"] = "BLOCKED_REASON_UNSPECIFIED";
+        BlockedReason2["SAFETY"] = "SAFETY";
+        BlockedReason2["OTHER"] = "OTHER";
+        BlockedReason2["BLOCKLIST"] = "BLOCKLIST";
+        BlockedReason2["PROHIBITED_CONTENT"] = "PROHIBITED_CONTENT";
+      })(BlockedReason || (BlockedReason = {}));
+      (function(Modality2) {
+        Modality2["MODALITY_UNSPECIFIED"] = "MODALITY_UNSPECIFIED";
+        Modality2["TEXT"] = "TEXT";
+        Modality2["IMAGE"] = "IMAGE";
+        Modality2["AUDIO"] = "AUDIO";
+      })(Modality || (Modality = {}));
+      (function(State2) {
+        State2["STATE_UNSPECIFIED"] = "STATE_UNSPECIFIED";
+        State2["ACTIVE"] = "ACTIVE";
+        State2["ERROR"] = "ERROR";
+      })(State || (State = {}));
+      (function(DynamicRetrievalConfigMode2) {
+        DynamicRetrievalConfigMode2["MODE_UNSPECIFIED"] = "MODE_UNSPECIFIED";
+        DynamicRetrievalConfigMode2["MODE_DYNAMIC"] = "MODE_DYNAMIC";
+      })(DynamicRetrievalConfigMode || (DynamicRetrievalConfigMode = {}));
+      (function(FunctionCallingConfigMode2) {
+        FunctionCallingConfigMode2["MODE_UNSPECIFIED"] = "MODE_UNSPECIFIED";
+        FunctionCallingConfigMode2["AUTO"] = "AUTO";
+        FunctionCallingConfigMode2["ANY"] = "ANY";
+        FunctionCallingConfigMode2["NONE"] = "NONE";
+      })(FunctionCallingConfigMode || (FunctionCallingConfigMode = {}));
+      (function(MediaResolution2) {
+        MediaResolution2["MEDIA_RESOLUTION_UNSPECIFIED"] = "MEDIA_RESOLUTION_UNSPECIFIED";
+        MediaResolution2["MEDIA_RESOLUTION_LOW"] = "MEDIA_RESOLUTION_LOW";
+        MediaResolution2["MEDIA_RESOLUTION_MEDIUM"] = "MEDIA_RESOLUTION_MEDIUM";
+        MediaResolution2["MEDIA_RESOLUTION_HIGH"] = "MEDIA_RESOLUTION_HIGH";
+      })(MediaResolution || (MediaResolution = {}));
+      (function(SafetyFilterLevel2) {
+        SafetyFilterLevel2["BLOCK_LOW_AND_ABOVE"] = "BLOCK_LOW_AND_ABOVE";
+        SafetyFilterLevel2["BLOCK_MEDIUM_AND_ABOVE"] = "BLOCK_MEDIUM_AND_ABOVE";
+        SafetyFilterLevel2["BLOCK_ONLY_HIGH"] = "BLOCK_ONLY_HIGH";
+        SafetyFilterLevel2["BLOCK_NONE"] = "BLOCK_NONE";
+      })(SafetyFilterLevel || (SafetyFilterLevel = {}));
+      (function(PersonGeneration2) {
+        PersonGeneration2["DONT_ALLOW"] = "DONT_ALLOW";
+        PersonGeneration2["ALLOW_ADULT"] = "ALLOW_ADULT";
+        PersonGeneration2["ALLOW_ALL"] = "ALLOW_ALL";
+      })(PersonGeneration || (PersonGeneration = {}));
+      (function(ImagePromptLanguage2) {
+        ImagePromptLanguage2["auto"] = "auto";
+        ImagePromptLanguage2["en"] = "en";
+        ImagePromptLanguage2["ja"] = "ja";
+        ImagePromptLanguage2["ko"] = "ko";
+        ImagePromptLanguage2["hi"] = "hi";
+      })(ImagePromptLanguage || (ImagePromptLanguage = {}));
+      (function(FileState2) {
+        FileState2["STATE_UNSPECIFIED"] = "STATE_UNSPECIFIED";
+        FileState2["PROCESSING"] = "PROCESSING";
+        FileState2["ACTIVE"] = "ACTIVE";
+        FileState2["FAILED"] = "FAILED";
+      })(FileState || (FileState = {}));
+      (function(FileSource2) {
+        FileSource2["SOURCE_UNSPECIFIED"] = "SOURCE_UNSPECIFIED";
+        FileSource2["UPLOADED"] = "UPLOADED";
+        FileSource2["GENERATED"] = "GENERATED";
+      })(FileSource || (FileSource = {}));
+      (function(MaskReferenceMode2) {
+        MaskReferenceMode2["MASK_MODE_DEFAULT"] = "MASK_MODE_DEFAULT";
+        MaskReferenceMode2["MASK_MODE_USER_PROVIDED"] = "MASK_MODE_USER_PROVIDED";
+        MaskReferenceMode2["MASK_MODE_BACKGROUND"] = "MASK_MODE_BACKGROUND";
+        MaskReferenceMode2["MASK_MODE_FOREGROUND"] = "MASK_MODE_FOREGROUND";
+        MaskReferenceMode2["MASK_MODE_SEMANTIC"] = "MASK_MODE_SEMANTIC";
+      })(MaskReferenceMode || (MaskReferenceMode = {}));
+      (function(ControlReferenceType2) {
+        ControlReferenceType2["CONTROL_TYPE_DEFAULT"] = "CONTROL_TYPE_DEFAULT";
+        ControlReferenceType2["CONTROL_TYPE_CANNY"] = "CONTROL_TYPE_CANNY";
+        ControlReferenceType2["CONTROL_TYPE_SCRIBBLE"] = "CONTROL_TYPE_SCRIBBLE";
+        ControlReferenceType2["CONTROL_TYPE_FACE_MESH"] = "CONTROL_TYPE_FACE_MESH";
+      })(ControlReferenceType || (ControlReferenceType = {}));
+      (function(SubjectReferenceType2) {
+        SubjectReferenceType2["SUBJECT_TYPE_DEFAULT"] = "SUBJECT_TYPE_DEFAULT";
+        SubjectReferenceType2["SUBJECT_TYPE_PERSON"] = "SUBJECT_TYPE_PERSON";
+        SubjectReferenceType2["SUBJECT_TYPE_ANIMAL"] = "SUBJECT_TYPE_ANIMAL";
+        SubjectReferenceType2["SUBJECT_TYPE_PRODUCT"] = "SUBJECT_TYPE_PRODUCT";
+      })(SubjectReferenceType || (SubjectReferenceType = {}));
+      GenerateContentResponse = class {
+        get text() {
+          var _a2, _b, _c, _d, _e, _f, _g, _h;
+          if (((_d = (_c = (_b = (_a2 = this.candidates) === null || _a2 === void 0 ? void 0 : _a2[0]) === null || _b === void 0 ? void 0 : _b.content) === null || _c === void 0 ? void 0 : _c.parts) === null || _d === void 0 ? void 0 : _d.length) === 0) {
+            return void 0;
+          }
+          if (this.candidates && this.candidates.length > 1) {
+            console.warn("there are multiple candidates in the response, returning text from the first one.");
+          }
+          let text = "";
+          let anyTextPartText = false;
+          const nonTextParts = [];
+          for (const part of (_h = (_g = (_f = (_e = this.candidates) === null || _e === void 0 ? void 0 : _e[0]) === null || _f === void 0 ? void 0 : _f.content) === null || _g === void 0 ? void 0 : _g.parts) !== null && _h !== void 0 ? _h : []) {
+            for (const [fieldName, fieldValue] of Object.entries(part)) {
+              if (fieldName !== "text" && fieldName !== "thought" && (fieldValue !== null || fieldValue !== void 0)) {
+                nonTextParts.push(fieldName);
+              }
+            }
+            if (typeof part.text === "string") {
+              if (typeof part.thought === "boolean" && part.thought) {
+                continue;
+              }
+              anyTextPartText = true;
+              text += part.text;
+            }
+          }
+          if (nonTextParts.length > 0) {
+            console.warn(`there are non-text parts ${nonTextParts} in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.`);
+          }
+          return anyTextPartText ? text : void 0;
+        }
+        get functionCalls() {
+          var _a2, _b, _c, _d, _e, _f, _g, _h;
+          if (((_d = (_c = (_b = (_a2 = this.candidates) === null || _a2 === void 0 ? void 0 : _a2[0]) === null || _b === void 0 ? void 0 : _b.content) === null || _c === void 0 ? void 0 : _c.parts) === null || _d === void 0 ? void 0 : _d.length) === 0) {
+            return void 0;
+          }
+          if (this.candidates && this.candidates.length > 1) {
+            console.warn("there are multiple candidates in the response, returning function calls from the first one.");
+          }
+          const functionCalls = (_h = (_g = (_f = (_e = this.candidates) === null || _e === void 0 ? void 0 : _e[0]) === null || _f === void 0 ? void 0 : _f.content) === null || _g === void 0 ? void 0 : _g.parts) === null || _h === void 0 ? void 0 : _h.filter((part) => part.functionCall).map((part) => part.functionCall).filter((functionCall) => functionCall !== void 0);
+          if ((functionCalls === null || functionCalls === void 0 ? void 0 : functionCalls.length) === 0) {
+            return void 0;
+          }
+          return functionCalls;
+        }
+        get executableCode() {
+          var _a2, _b, _c, _d, _e, _f, _g, _h, _j;
+          if (((_d = (_c = (_b = (_a2 = this.candidates) === null || _a2 === void 0 ? void 0 : _a2[0]) === null || _b === void 0 ? void 0 : _b.content) === null || _c === void 0 ? void 0 : _c.parts) === null || _d === void 0 ? void 0 : _d.length) === 0) {
+            return void 0;
+          }
+          if (this.candidates && this.candidates.length > 1) {
+            console.warn("there are multiple candidates in the response, returning executable code from the first one.");
+          }
+          const executableCode = (_h = (_g = (_f = (_e = this.candidates) === null || _e === void 0 ? void 0 : _e[0]) === null || _f === void 0 ? void 0 : _f.content) === null || _g === void 0 ? void 0 : _g.parts) === null || _h === void 0 ? void 0 : _h.filter((part) => part.executableCode).map((part) => part.executableCode).filter((executableCode2) => executableCode2 !== void 0);
+          if ((executableCode === null || executableCode === void 0 ? void 0 : executableCode.length) === 0) {
+            return void 0;
+          }
+          return (_j = executableCode === null || executableCode === void 0 ? void 0 : executableCode[0]) === null || _j === void 0 ? void 0 : _j.code;
+        }
+        get codeExecutionResult() {
+          var _a2, _b, _c, _d, _e, _f, _g, _h, _j;
+          if (((_d = (_c = (_b = (_a2 = this.candidates) === null || _a2 === void 0 ? void 0 : _a2[0]) === null || _b === void 0 ? void 0 : _b.content) === null || _c === void 0 ? void 0 : _c.parts) === null || _d === void 0 ? void 0 : _d.length) === 0) {
+            return void 0;
+          }
+          if (this.candidates && this.candidates.length > 1) {
+            console.warn("there are multiple candidates in the response, returning code execution result from the first one.");
+          }
+          const codeExecutionResult = (_h = (_g = (_f = (_e = this.candidates) === null || _e === void 0 ? void 0 : _e[0]) === null || _f === void 0 ? void 0 : _f.content) === null || _g === void 0 ? void 0 : _g.parts) === null || _h === void 0 ? void 0 : _h.filter((part) => part.codeExecutionResult).map((part) => part.codeExecutionResult).filter((codeExecutionResult2) => codeExecutionResult2 !== void 0);
+          if ((codeExecutionResult === null || codeExecutionResult === void 0 ? void 0 : codeExecutionResult.length) === 0) {
+            return void 0;
+          }
+          return (_j = codeExecutionResult === null || codeExecutionResult === void 0 ? void 0 : codeExecutionResult[0]) === null || _j === void 0 ? void 0 : _j.output;
+        }
+      };
+      EmbedContentResponse = class {
+      };
+      GenerateImagesResponse = class {
+      };
+      CountTokensResponse = class {
+      };
+      ComputeTokensResponse = class {
+      };
+      DeleteCachedContentResponse = class {
+      };
+      ListCachedContentsResponse = class {
+      };
+      ListFilesResponse = class {
+      };
+      HttpResponse = class {
+        constructor(response) {
+          const headers = {};
+          for (const pair of response.headers.entries()) {
+            headers[pair[0]] = pair[1];
+          }
+          this.headers = headers;
+          this.responseInternal = response;
+        }
+        json() {
+          return this.responseInternal.json();
+        }
+      };
+      CreateFileResponse = class {
+      };
+      DeleteFileResponse = class {
+      };
+      Caches = class extends BaseModule {
+        constructor(apiClient) {
+          super();
+          this.apiClient = apiClient;
+          this.list = async (params = {}) => {
+            return new Pager(PagedItem.PAGED_ITEM_CACHED_CONTENTS, (x) => this.listInternal(x), await this.listInternal(params), params);
+          };
+        }
+        async create(params) {
+          var _a2, _b;
+          let response;
+          let path = "";
+          let queryParams = {};
+          if (this.apiClient.isVertexAI()) {
+            const body = createCachedContentParametersToVertex(this.apiClient, params);
+            path = formatMap("cachedContents", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "POST",
+              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = cachedContentFromVertex(this.apiClient, apiResponse);
+              return resp;
+            });
+          } else {
+            const body = createCachedContentParametersToMldev(this.apiClient, params);
+            path = formatMap("cachedContents", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "POST",
+              httpOptions: (_b = params.config) === null || _b === void 0 ? void 0 : _b.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = cachedContentFromMldev(this.apiClient, apiResponse);
+              return resp;
+            });
+          }
+        }
+        async get(params) {
+          var _a2, _b;
+          let response;
+          let path = "";
+          let queryParams = {};
+          if (this.apiClient.isVertexAI()) {
+            const body = getCachedContentParametersToVertex(this.apiClient, params);
+            path = formatMap("{name}", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "GET",
+              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = cachedContentFromVertex(this.apiClient, apiResponse);
+              return resp;
+            });
+          } else {
+            const body = getCachedContentParametersToMldev(this.apiClient, params);
+            path = formatMap("{name}", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "GET",
+              httpOptions: (_b = params.config) === null || _b === void 0 ? void 0 : _b.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = cachedContentFromMldev(this.apiClient, apiResponse);
+              return resp;
+            });
+          }
+        }
+        async delete(params) {
+          var _a2, _b;
+          let response;
+          let path = "";
+          let queryParams = {};
+          if (this.apiClient.isVertexAI()) {
+            const body = deleteCachedContentParametersToVertex(this.apiClient, params);
+            path = formatMap("{name}", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "DELETE",
+              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then(() => {
+              const resp = deleteCachedContentResponseFromVertex();
+              const typedResp = new DeleteCachedContentResponse();
+              Object.assign(typedResp, resp);
+              return typedResp;
+            });
+          } else {
+            const body = deleteCachedContentParametersToMldev(this.apiClient, params);
+            path = formatMap("{name}", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "DELETE",
+              httpOptions: (_b = params.config) === null || _b === void 0 ? void 0 : _b.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then(() => {
+              const resp = deleteCachedContentResponseFromMldev();
+              const typedResp = new DeleteCachedContentResponse();
+              Object.assign(typedResp, resp);
+              return typedResp;
+            });
+          }
+        }
+        async update(params) {
+          var _a2, _b;
+          let response;
+          let path = "";
+          let queryParams = {};
+          if (this.apiClient.isVertexAI()) {
+            const body = updateCachedContentParametersToVertex(this.apiClient, params);
+            path = formatMap("{name}", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "PATCH",
+              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = cachedContentFromVertex(this.apiClient, apiResponse);
+              return resp;
+            });
+          } else {
+            const body = updateCachedContentParametersToMldev(this.apiClient, params);
+            path = formatMap("{name}", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "PATCH",
+              httpOptions: (_b = params.config) === null || _b === void 0 ? void 0 : _b.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = cachedContentFromMldev(this.apiClient, apiResponse);
+              return resp;
+            });
+          }
+        }
+        async listInternal(params) {
+          var _a2, _b;
+          let response;
+          let path = "";
+          let queryParams = {};
+          if (this.apiClient.isVertexAI()) {
+            const body = listCachedContentsParametersToVertex(this.apiClient, params);
+            path = formatMap("cachedContents", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "GET",
+              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = listCachedContentsResponseFromVertex(this.apiClient, apiResponse);
+              const typedResp = new ListCachedContentsResponse();
+              Object.assign(typedResp, resp);
+              return typedResp;
+            });
+          } else {
+            const body = listCachedContentsParametersToMldev(this.apiClient, params);
+            path = formatMap("cachedContents", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "GET",
+              httpOptions: (_b = params.config) === null || _b === void 0 ? void 0 : _b.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = listCachedContentsResponseFromMldev(this.apiClient, apiResponse);
+              const typedResp = new ListCachedContentsResponse();
+              Object.assign(typedResp, resp);
+              return typedResp;
+            });
+          }
+        }
+      };
+      Chats = class {
+        constructor(modelsModule, apiClient) {
+          this.modelsModule = modelsModule;
+          this.apiClient = apiClient;
+        }
+        create(params) {
+          return new Chat(this.apiClient, this.modelsModule, params.model, params.config, params.history);
+        }
+      };
+      Chat = class {
+        constructor(apiClient, modelsModule, model, config = {}, history = []) {
+          this.apiClient = apiClient;
+          this.modelsModule = modelsModule;
+          this.model = model;
+          this.config = config;
+          this.history = history;
+          this.sendPromise = Promise.resolve();
+          validateHistory(history);
+        }
+        async sendMessage(params) {
+          var _a2;
+          await this.sendPromise;
+          const inputContent = tContent(this.apiClient, params.message);
+          const responsePromise = this.modelsModule.generateContent({
+            model: this.model,
+            contents: this.getHistory(true).concat(inputContent),
+            config: (_a2 = params.config) !== null && _a2 !== void 0 ? _a2 : this.config
+          });
+          this.sendPromise = (async () => {
+            var _a3, _b;
+            const response = await responsePromise;
+            const outputContent = (_b = (_a3 = response.candidates) === null || _a3 === void 0 ? void 0 : _a3[0]) === null || _b === void 0 ? void 0 : _b.content;
+            const modelOutput = outputContent ? [outputContent] : [];
+            this.recordHistory(inputContent, modelOutput);
+            return;
+          })();
+          await this.sendPromise;
+          return responsePromise;
+        }
+        async sendMessageStream(params) {
+          var _a2;
+          await this.sendPromise;
+          const inputContent = tContent(this.apiClient, params.message);
+          const streamResponse = this.modelsModule.generateContentStream({
+            model: this.model,
+            contents: this.getHistory(true).concat(inputContent),
+            config: (_a2 = params.config) !== null && _a2 !== void 0 ? _a2 : this.config
+          });
+          this.sendPromise = streamResponse.then(() => void 0);
+          const response = await streamResponse;
+          const result = this.processStreamResponse(response, inputContent);
+          return result;
+        }
+        getHistory(curated = false) {
+          return curated ? extractCuratedHistory(this.history) : this.history;
+        }
+        processStreamResponse(streamResponse, inputContent) {
+          var _a2, _b;
+          return __asyncGenerator(this, arguments, function* processStreamResponse_1() {
+            var _c, e_1, _d, _e;
+            const outputContent = [];
+            try {
+              for (var _f = true, streamResponse_1 = __asyncValues(streamResponse), streamResponse_1_1; streamResponse_1_1 = yield __await(streamResponse_1.next()), _c = streamResponse_1_1.done, !_c; _f = true) {
+                _e = streamResponse_1_1.value;
+                _f = false;
+                const chunk = _e;
+                if (isValidResponse(chunk)) {
+                  const content = (_b = (_a2 = chunk.candidates) === null || _a2 === void 0 ? void 0 : _a2[0]) === null || _b === void 0 ? void 0 : _b.content;
+                  if (content !== void 0) {
+                    outputContent.push(content);
+                  }
+                }
+                yield yield __await(chunk);
+              }
+            } catch (e_1_1) {
+              e_1 = { error: e_1_1 };
+            } finally {
+              try {
+                if (!_f && !_c && (_d = streamResponse_1.return))
+                  yield __await(_d.call(streamResponse_1));
+              } finally {
+                if (e_1)
+                  throw e_1.error;
+              }
+            }
+            this.recordHistory(inputContent, outputContent);
+          });
+        }
+        recordHistory(userInput, modelOutput) {
+          let outputContents = [];
+          if (modelOutput.length > 0 && modelOutput.every((content) => content.role === "model")) {
+            outputContents = modelOutput;
+          } else {
+            outputContents.push({
+              role: "model",
+              parts: []
+            });
+          }
+          this.history.push(userInput);
+          this.history.push(...outputContents);
+        }
+      };
+      FUNCTION_RESPONSE_REQUIRES_ID = "FunctionResponse request must have an `id` field from the response of a ToolCall.FunctionalCalls in Google AI.";
+      Live = class {
+        constructor(apiClient, auth, webSocketFactory) {
+          this.apiClient = apiClient;
+          this.auth = auth;
+          this.webSocketFactory = webSocketFactory;
+        }
+        async connect(params) {
+          var _a2, _b;
+          const websocketBaseUrl = this.apiClient.getWebsocketBaseUrl();
+          const apiVersion = this.apiClient.getApiVersion();
+          let url;
+          const headers = mapToHeaders(this.apiClient.getDefaultHeaders());
+          if (this.apiClient.isVertexAI()) {
+            url = `${websocketBaseUrl}/ws/google.cloud.aiplatform.${apiVersion}.LlmBidiService/BidiGenerateContent`;
+            await this.auth.addAuthHeaders(headers);
+          } else {
+            const apiKey = this.apiClient.getApiKey();
+            url = `${websocketBaseUrl}/ws/google.ai.generativelanguage.${apiVersion}.GenerativeService.BidiGenerateContent?key=${apiKey}`;
+          }
+          let onopenResolve = () => {
+          };
+          const onopenPromise = new Promise((resolve) => {
+            onopenResolve = resolve;
+          });
+          const callbacks = params.callbacks;
+          const onopenAwaitedCallback = function() {
+            var _a3;
+            (_a3 = callbacks === null || callbacks === void 0 ? void 0 : callbacks.onopen) === null || _a3 === void 0 ? void 0 : _a3.call(callbacks);
+            onopenResolve({});
+          };
+          const apiClient = this.apiClient;
+          const websocketCallbacks = {
+            onopen: onopenAwaitedCallback,
+            onmessage: (event) => {
+              void handleWebSocketMessage(apiClient, callbacks.onmessage, event);
+            },
+            onerror: (_a2 = callbacks === null || callbacks === void 0 ? void 0 : callbacks.onerror) !== null && _a2 !== void 0 ? _a2 : function(e) {
+            },
+            onclose: (_b = callbacks === null || callbacks === void 0 ? void 0 : callbacks.onclose) !== null && _b !== void 0 ? _b : function(e) {
+            }
+          };
+          const conn = this.webSocketFactory.create(url, headersToMap(headers), websocketCallbacks);
+          conn.connect();
+          await onopenPromise;
+          let transformedModel = tModel(this.apiClient, params.model);
+          if (this.apiClient.isVertexAI() && transformedModel.startsWith("publishers/")) {
+            const project = this.apiClient.getProject();
+            const location = this.apiClient.getLocation();
+            transformedModel = `projects/${project}/locations/${location}/` + transformedModel;
+          }
+          let clientMessage = {};
+          const liveConnectParameters = {
+            model: transformedModel,
+            config: params.config,
+            callbacks: params.callbacks
+          };
+          if (this.apiClient.isVertexAI()) {
+            clientMessage = liveConnectParametersToVertex(this.apiClient, liveConnectParameters);
+          } else {
+            clientMessage = liveConnectParametersToMldev(this.apiClient, liveConnectParameters);
+          }
+          conn.send(JSON.stringify(clientMessage));
+          return new Session2(conn, this.apiClient);
+        }
+      };
+      defaultLiveSendClientContentParamerters = {
+        turnComplete: true
+      };
+      Session2 = class {
+        constructor(conn, apiClient) {
+          this.conn = conn;
+          this.apiClient = apiClient;
+        }
+        tLiveClientContent(apiClient, params) {
+          if (params.turns !== null && params.turns !== void 0) {
+            let contents = [];
+            try {
+              contents = tContents(apiClient, params.turns);
+              if (apiClient.isVertexAI()) {
+                contents = contents.map((item) => contentToVertex(apiClient, item));
+              } else {
+                contents = contents.map((item) => contentToMldev(apiClient, item));
+              }
+            } catch (_a2) {
+              throw new Error(`Failed to parse client content "turns", type: '${typeof params.turns}'`);
+            }
+            return {
+              clientContent: { turns: contents, turnComplete: params.turnComplete }
+            };
+          }
+          return {
+            clientContent: { turnComplete: params.turnComplete }
+          };
+        }
+        tLiveClientRealtimeInput(apiClient, params) {
+          let clientMessage = {};
+          if (!("media" in params) || !params.media) {
+            throw new Error(`Failed to convert realtime input "media", type: '${typeof params.media}'`);
+          }
+          clientMessage = { realtimeInput: { mediaChunks: [params.media] } };
+          return clientMessage;
+        }
+        tLiveClienttToolResponse(apiClient, params) {
+          let functionResponses = [];
+          if (params.functionResponses == null) {
+            throw new Error("functionResponses is required.");
+          }
+          if (!Array.isArray(params.functionResponses)) {
+            functionResponses = [params.functionResponses];
+          }
+          if (functionResponses.length === 0) {
+            throw new Error("functionResponses is required.");
+          }
+          for (const functionResponse of functionResponses) {
+            if (typeof functionResponse !== "object" || functionResponse === null || !("name" in functionResponse) || !("response" in functionResponse)) {
+              throw new Error(`Could not parse function response, type '${typeof functionResponse}'.`);
+            }
+            if (!apiClient.isVertexAI() && !("id" in functionResponse)) {
+              throw new Error(FUNCTION_RESPONSE_REQUIRES_ID);
+            }
+          }
+          const clientMessage = {
+            toolResponse: { functionResponses }
+          };
+          return clientMessage;
+        }
+        sendClientContent(params) {
+          params = Object.assign(Object.assign({}, defaultLiveSendClientContentParamerters), params);
+          const clientMessage = this.tLiveClientContent(this.apiClient, params);
+          this.conn.send(JSON.stringify(clientMessage));
+        }
+        sendRealtimeInput(params) {
+          if (params.media == null) {
+            throw new Error("Media is required.");
+          }
+          const clientMessage = this.tLiveClientRealtimeInput(this.apiClient, params);
+          this.conn.send(JSON.stringify(clientMessage));
+        }
+        sendToolResponse(params) {
+          if (params.functionResponses == null) {
+            throw new Error("Tool response parameters are required.");
+          }
+          const clientMessage = this.tLiveClienttToolResponse(this.apiClient, params);
+          this.conn.send(JSON.stringify(clientMessage));
+        }
+        close() {
+          this.conn.close();
+        }
+      };
+      Models = class extends BaseModule {
+        constructor(apiClient) {
+          super();
+          this.apiClient = apiClient;
+          this.generateContent = async (params) => {
+            return await this.generateContentInternal(params);
+          };
+          this.generateContentStream = async (params) => {
+            return await this.generateContentStreamInternal(params);
+          };
+          this.generateImages = async (params) => {
+            return await this.generateImagesInternal(params).then((apiResponse) => {
+              var _a2;
+              let positivePromptSafetyAttributes;
+              const generatedImages = [];
+              if (apiResponse === null || apiResponse === void 0 ? void 0 : apiResponse.generatedImages) {
+                for (const generatedImage of apiResponse.generatedImages) {
+                  if (generatedImage && (generatedImage === null || generatedImage === void 0 ? void 0 : generatedImage.safetyAttributes) && ((_a2 = generatedImage === null || generatedImage === void 0 ? void 0 : generatedImage.safetyAttributes) === null || _a2 === void 0 ? void 0 : _a2.contentType) === "Positive Prompt") {
+                    positivePromptSafetyAttributes = generatedImage === null || generatedImage === void 0 ? void 0 : generatedImage.safetyAttributes;
+                  } else {
+                    generatedImages.push(generatedImage);
+                  }
+                }
+              }
+              let response;
+              if (positivePromptSafetyAttributes) {
+                response = {
+                  generatedImages,
+                  positivePromptSafetyAttributes
+                };
+              } else {
+                response = {
+                  generatedImages
+                };
+              }
+              return response;
+            });
+          };
+        }
+        async generateContentInternal(params) {
+          var _a2, _b;
+          let response;
+          let path = "";
+          let queryParams = {};
+          if (this.apiClient.isVertexAI()) {
+            const body = generateContentParametersToVertex(this.apiClient, params);
+            path = formatMap("{model}:generateContent", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "POST",
+              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = generateContentResponseFromVertex(this.apiClient, apiResponse);
+              const typedResp = new GenerateContentResponse();
+              Object.assign(typedResp, resp);
+              return typedResp;
+            });
+          } else {
+            const body = generateContentParametersToMldev(this.apiClient, params);
+            path = formatMap("{model}:generateContent", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "POST",
+              httpOptions: (_b = params.config) === null || _b === void 0 ? void 0 : _b.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = generateContentResponseFromMldev(this.apiClient, apiResponse);
+              const typedResp = new GenerateContentResponse();
+              Object.assign(typedResp, resp);
+              return typedResp;
+            });
+          }
+        }
+        async generateContentStreamInternal(params) {
+          var _a2, _b;
+          let response;
+          let path = "";
+          let queryParams = {};
+          if (this.apiClient.isVertexAI()) {
+            const body = generateContentParametersToVertex(this.apiClient, params);
+            path = formatMap("{model}:streamGenerateContent?alt=sse", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            const apiClient = this.apiClient;
+            response = apiClient.requestStream({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "POST",
+              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
+            });
+            return response.then(function(apiResponse) {
+              return __asyncGenerator(this, arguments, function* () {
+                var _a3, e_1, _b2, _c;
+                try {
+                  for (var _d = true, apiResponse_1 = __asyncValues(apiResponse), apiResponse_1_1; apiResponse_1_1 = yield __await(apiResponse_1.next()), _a3 = apiResponse_1_1.done, !_a3; _d = true) {
+                    _c = apiResponse_1_1.value;
+                    _d = false;
+                    const chunk = _c;
+                    const resp = generateContentResponseFromVertex(apiClient, chunk);
+                    const typedResp = new GenerateContentResponse();
+                    Object.assign(typedResp, resp);
+                    yield yield __await(typedResp);
+                  }
+                } catch (e_1_1) {
+                  e_1 = { error: e_1_1 };
+                } finally {
+                  try {
+                    if (!_d && !_a3 && (_b2 = apiResponse_1.return))
+                      yield __await(_b2.call(apiResponse_1));
+                  } finally {
+                    if (e_1)
+                      throw e_1.error;
+                  }
+                }
+              });
+            });
+          } else {
+            const body = generateContentParametersToMldev(this.apiClient, params);
+            path = formatMap("{model}:streamGenerateContent?alt=sse", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            const apiClient = this.apiClient;
+            response = apiClient.requestStream({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "POST",
+              httpOptions: (_b = params.config) === null || _b === void 0 ? void 0 : _b.httpOptions
+            });
+            return response.then(function(apiResponse) {
+              return __asyncGenerator(this, arguments, function* () {
+                var _a3, e_2, _b2, _c;
+                try {
+                  for (var _d = true, apiResponse_2 = __asyncValues(apiResponse), apiResponse_2_1; apiResponse_2_1 = yield __await(apiResponse_2.next()), _a3 = apiResponse_2_1.done, !_a3; _d = true) {
+                    _c = apiResponse_2_1.value;
+                    _d = false;
+                    const chunk = _c;
+                    const resp = generateContentResponseFromMldev(apiClient, chunk);
+                    const typedResp = new GenerateContentResponse();
+                    Object.assign(typedResp, resp);
+                    yield yield __await(typedResp);
+                  }
+                } catch (e_2_1) {
+                  e_2 = { error: e_2_1 };
+                } finally {
+                  try {
+                    if (!_d && !_a3 && (_b2 = apiResponse_2.return))
+                      yield __await(_b2.call(apiResponse_2));
+                  } finally {
+                    if (e_2)
+                      throw e_2.error;
+                  }
+                }
+              });
+            });
+          }
+        }
+        async embedContent(params) {
+          var _a2, _b;
+          let response;
+          let path = "";
+          let queryParams = {};
+          if (this.apiClient.isVertexAI()) {
+            const body = embedContentParametersToVertex(this.apiClient, params);
+            path = formatMap("{model}:predict", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "POST",
+              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = embedContentResponseFromVertex(this.apiClient, apiResponse);
+              const typedResp = new EmbedContentResponse();
+              Object.assign(typedResp, resp);
+              return typedResp;
+            });
+          } else {
+            const body = embedContentParametersToMldev(this.apiClient, params);
+            path = formatMap("{model}:batchEmbedContents", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "POST",
+              httpOptions: (_b = params.config) === null || _b === void 0 ? void 0 : _b.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = embedContentResponseFromMldev(this.apiClient, apiResponse);
+              const typedResp = new EmbedContentResponse();
+              Object.assign(typedResp, resp);
+              return typedResp;
+            });
+          }
+        }
+        async generateImagesInternal(params) {
+          var _a2, _b;
+          let response;
+          let path = "";
+          let queryParams = {};
+          if (this.apiClient.isVertexAI()) {
+            const body = generateImagesParametersToVertex(this.apiClient, params);
+            path = formatMap("{model}:predict", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "POST",
+              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = generateImagesResponseFromVertex(this.apiClient, apiResponse);
+              const typedResp = new GenerateImagesResponse();
+              Object.assign(typedResp, resp);
+              return typedResp;
+            });
+          } else {
+            const body = generateImagesParametersToMldev(this.apiClient, params);
+            path = formatMap("{model}:predict", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "POST",
+              httpOptions: (_b = params.config) === null || _b === void 0 ? void 0 : _b.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = generateImagesResponseFromMldev(this.apiClient, apiResponse);
+              const typedResp = new GenerateImagesResponse();
+              Object.assign(typedResp, resp);
+              return typedResp;
+            });
+          }
+        }
+        async countTokens(params) {
+          var _a2, _b;
+          let response;
+          let path = "";
+          let queryParams = {};
+          if (this.apiClient.isVertexAI()) {
+            const body = countTokensParametersToVertex(this.apiClient, params);
+            path = formatMap("{model}:countTokens", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "POST",
+              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = countTokensResponseFromVertex(this.apiClient, apiResponse);
+              const typedResp = new CountTokensResponse();
+              Object.assign(typedResp, resp);
+              return typedResp;
+            });
+          } else {
+            const body = countTokensParametersToMldev(this.apiClient, params);
+            path = formatMap("{model}:countTokens", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "POST",
+              httpOptions: (_b = params.config) === null || _b === void 0 ? void 0 : _b.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = countTokensResponseFromMldev(this.apiClient, apiResponse);
+              const typedResp = new CountTokensResponse();
+              Object.assign(typedResp, resp);
+              return typedResp;
+            });
+          }
+        }
+        async computeTokens(params) {
+          var _a2;
+          let response;
+          let path = "";
+          let queryParams = {};
+          if (this.apiClient.isVertexAI()) {
+            const body = computeTokensParametersToVertex(this.apiClient, params);
+            path = formatMap("{model}:computeTokens", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "POST",
+              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = computeTokensResponseFromVertex(this.apiClient, apiResponse);
+              const typedResp = new ComputeTokensResponse();
+              Object.assign(typedResp, resp);
+              return typedResp;
+            });
+          } else {
+            throw new Error("This method is only supported by the Vertex AI.");
+          }
+        }
+      };
+      CONTENT_TYPE_HEADER = "Content-Type";
+      USER_AGENT_HEADER = "User-Agent";
+      GOOGLE_API_CLIENT_HEADER = "x-goog-api-client";
+      SDK_VERSION = "0.6.1";
+      LIBRARY_LABEL = `google-genai-sdk/${SDK_VERSION}`;
+      VERTEX_AI_API_DEFAULT_VERSION = "v1beta1";
+      GOOGLE_AI_API_DEFAULT_VERSION = "v1beta";
+      responseLineRE = /^data: (.*)(?:\n\n|\r\r|\r\n\r\n)/;
+      ClientError = class extends Error {
+        constructor(message, stackTrace) {
+          if (stackTrace) {
+            super(message, { cause: stackTrace });
+          } else {
+            super(message, { cause: new Error().stack });
+          }
+          this.message = message;
+          this.name = "ClientError";
+        }
+      };
+      ServerError = class extends Error {
+        constructor(message, stackTrace) {
+          if (stackTrace) {
+            super(message, { cause: stackTrace });
+          } else {
+            super(message, { cause: new Error().stack });
+          }
+          this.message = message;
+          this.name = "ServerError";
+        }
+      };
+      ApiClient = class {
+        constructor(opts) {
+          var _a2, _b;
+          this.clientOptions = Object.assign(Object.assign({}, opts), { project: opts.project, location: opts.location, apiKey: opts.apiKey, vertexai: opts.vertexai });
+          const initHttpOptions = {};
+          if (this.clientOptions.vertexai) {
+            initHttpOptions.apiVersion = (_a2 = this.clientOptions.apiVersion) !== null && _a2 !== void 0 ? _a2 : VERTEX_AI_API_DEFAULT_VERSION;
+            if (this.getProject() || this.getLocation()) {
+              initHttpOptions.baseUrl = `https://${this.clientOptions.location}-aiplatform.googleapis.com/`;
+              this.clientOptions.apiKey = void 0;
+            } else {
+              initHttpOptions.baseUrl = `https://aiplatform.googleapis.com/`;
+              this.clientOptions.project = void 0;
+              this.clientOptions.location = void 0;
+            }
+          } else {
+            initHttpOptions.apiVersion = (_b = this.clientOptions.apiVersion) !== null && _b !== void 0 ? _b : GOOGLE_AI_API_DEFAULT_VERSION;
+            initHttpOptions.baseUrl = `https://generativelanguage.googleapis.com/`;
+          }
+          initHttpOptions.headers = this.getDefaultHeaders();
+          this.clientOptions.httpOptions = initHttpOptions;
+          if (opts.httpOptions) {
+            this.clientOptions.httpOptions = this.patchHttpOptions(initHttpOptions, opts.httpOptions);
+          }
+        }
+        isVertexAI() {
+          var _a2;
+          return (_a2 = this.clientOptions.vertexai) !== null && _a2 !== void 0 ? _a2 : false;
+        }
+        getProject() {
+          return this.clientOptions.project;
+        }
+        getLocation() {
+          return this.clientOptions.location;
+        }
+        getApiVersion() {
+          if (this.clientOptions.httpOptions && this.clientOptions.httpOptions.apiVersion !== void 0) {
+            return this.clientOptions.httpOptions.apiVersion;
+          }
+          throw new Error("API version is not set.");
+        }
+        getBaseUrl() {
+          if (this.clientOptions.httpOptions && this.clientOptions.httpOptions.baseUrl !== void 0) {
+            return this.clientOptions.httpOptions.baseUrl;
+          }
+          throw new Error("Base URL is not set.");
+        }
+        getRequestUrl() {
+          return this.getRequestUrlInternal(this.clientOptions.httpOptions);
+        }
+        getHeaders() {
+          if (this.clientOptions.httpOptions && this.clientOptions.httpOptions.headers !== void 0) {
+            return this.clientOptions.httpOptions.headers;
+          } else {
+            throw new Error("Headers are not set.");
+          }
+        }
+        getRequestUrlInternal(httpOptions) {
+          if (!httpOptions || httpOptions.baseUrl === void 0 || httpOptions.apiVersion === void 0) {
+            throw new Error("HTTP options are not correctly set.");
+          }
+          const baseUrl = httpOptions.baseUrl.endsWith("/") ? httpOptions.baseUrl.slice(0, -1) : httpOptions.baseUrl;
+          const urlElement = [baseUrl];
+          if (httpOptions.apiVersion && httpOptions.apiVersion !== "") {
+            urlElement.push(httpOptions.apiVersion);
+          }
+          return urlElement.join("/");
+        }
+        getBaseResourcePath() {
+          return `projects/${this.clientOptions.project}/locations/${this.clientOptions.location}`;
+        }
+        getApiKey() {
+          return this.clientOptions.apiKey;
+        }
+        getWebsocketBaseUrl() {
+          const baseUrl = this.getBaseUrl();
+          const urlParts = new URL(baseUrl);
+          urlParts.protocol = "wss";
+          return urlParts.toString();
+        }
+        setBaseUrl(url) {
+          if (this.clientOptions.httpOptions) {
+            this.clientOptions.httpOptions.baseUrl = url;
+          } else {
+            throw new Error("HTTP options are not correctly set.");
+          }
+        }
+        constructUrl(path, httpOptions) {
+          const urlElement = [this.getRequestUrlInternal(httpOptions)];
+          if (this.clientOptions.vertexai && !this.clientOptions.apiKey && !path.startsWith("projects/")) {
+            urlElement.push(this.getBaseResourcePath());
+          }
+          if (path !== "") {
+            urlElement.push(path);
+          }
+          const url = new URL(`${urlElement.join("/")}`);
+          return url;
+        }
+        async request(request) {
+          let patchedHttpOptions = this.clientOptions.httpOptions;
+          if (request.httpOptions) {
+            patchedHttpOptions = this.patchHttpOptions(this.clientOptions.httpOptions, request.httpOptions);
+          }
+          const url = this.constructUrl(request.path, patchedHttpOptions);
+          if (request.queryParams) {
+            for (const [key, value] of Object.entries(request.queryParams)) {
+              url.searchParams.append(key, String(value));
+            }
+          }
+          let requestInit = {};
+          if (request.httpMethod === "GET") {
+            if (request.body && request.body !== "{}") {
+              throw new Error("Request body should be empty for GET request, but got non empty request body");
+            }
+          } else {
+            requestInit.body = request.body;
+          }
+          requestInit = await this.includeExtraHttpOptionsToRequestInit(requestInit, patchedHttpOptions);
+          return this.unaryApiCall(url, requestInit, request.httpMethod);
+        }
+        patchHttpOptions(baseHttpOptions, requestHttpOptions) {
+          const patchedHttpOptions = JSON.parse(JSON.stringify(baseHttpOptions));
+          for (const [key, value] of Object.entries(requestHttpOptions)) {
+            if (typeof value === "object") {
+              patchedHttpOptions[key] = Object.assign(Object.assign({}, patchedHttpOptions[key]), value);
+            } else if (value !== void 0) {
+              patchedHttpOptions[key] = value;
+            }
+          }
+          return patchedHttpOptions;
+        }
+        async requestStream(request) {
+          let patchedHttpOptions = this.clientOptions.httpOptions;
+          if (request.httpOptions) {
+            patchedHttpOptions = this.patchHttpOptions(this.clientOptions.httpOptions, request.httpOptions);
+          }
+          const url = this.constructUrl(request.path, patchedHttpOptions);
+          if (!url.searchParams.has("alt") || url.searchParams.get("alt") !== "sse") {
+            url.searchParams.set("alt", "sse");
+          }
+          let requestInit = {};
+          requestInit.body = request.body;
+          requestInit = await this.includeExtraHttpOptionsToRequestInit(requestInit, patchedHttpOptions);
+          return this.streamApiCall(url, requestInit, request.httpMethod);
+        }
+        async includeExtraHttpOptionsToRequestInit(requestInit, httpOptions) {
+          if (httpOptions && httpOptions.timeout && httpOptions.timeout > 0) {
+            const abortController = new AbortController();
+            const signal = abortController.signal;
+            setTimeout(() => abortController.abort(), httpOptions.timeout);
+            requestInit.signal = signal;
+          }
+          requestInit.headers = await this.getHeadersInternal(httpOptions);
+          return requestInit;
+        }
+        async unaryApiCall(url, requestInit, httpMethod) {
+          return this.apiCall(url.toString(), Object.assign(Object.assign({}, requestInit), { method: httpMethod })).then(async (response) => {
+            await throwErrorIfNotOK(response);
+            return new HttpResponse(response);
+          }).catch((e) => {
+            if (e instanceof Error) {
+              throw e;
+            } else {
+              throw new Error(JSON.stringify(e));
+            }
+          });
+        }
+        async streamApiCall(url, requestInit, httpMethod) {
+          return this.apiCall(url.toString(), Object.assign(Object.assign({}, requestInit), { method: httpMethod })).then(async (response) => {
+            await throwErrorIfNotOK(response);
+            return this.processStreamResponse(response);
+          }).catch((e) => {
+            if (e instanceof Error) {
+              throw e;
+            } else {
+              throw new Error(JSON.stringify(e));
+            }
+          });
+        }
+        processStreamResponse(response) {
+          var _a2;
+          return __asyncGenerator(this, arguments, function* processStreamResponse_1() {
+            const reader = (_a2 = response === null || response === void 0 ? void 0 : response.body) === null || _a2 === void 0 ? void 0 : _a2.getReader();
+            const decoder = new TextDecoder("utf-8");
+            if (!reader) {
+              throw new Error("Response body is empty");
+            }
+            try {
+              let buffer = "";
+              while (true) {
+                const { done, value } = yield __await(reader.read());
+                if (done) {
+                  if (buffer.trim().length > 0) {
+                    throw new Error("Incomplete JSON segment at the end");
+                  }
+                  break;
+                }
+                const chunkString = decoder.decode(value);
+                buffer += chunkString;
+                let match = buffer.match(responseLineRE);
+                while (match) {
+                  const processedChunkString = match[1];
+                  try {
+                    const chunkData = JSON.parse(processedChunkString);
+                    yield yield __await(chunkData);
+                    buffer = buffer.slice(match[0].length);
+                    match = buffer.match(responseLineRE);
+                  } catch (e) {
+                    throw new Error(`exception parsing stream chunk ${processedChunkString}. ${e}`);
+                  }
+                }
+              }
+            } finally {
+              reader.releaseLock();
+            }
+          });
+        }
+        async apiCall(url, requestInit) {
+          return fetch(url, requestInit).catch((e) => {
+            throw new Error(`exception ${e} sending request`);
+          });
+        }
+        getDefaultHeaders() {
+          const headers = {};
+          const versionHeaderValue = LIBRARY_LABEL + " " + this.clientOptions.userAgentExtra;
+          headers[USER_AGENT_HEADER] = versionHeaderValue;
+          headers[GOOGLE_API_CLIENT_HEADER] = versionHeaderValue;
+          headers[CONTENT_TYPE_HEADER] = "application/json";
+          return headers;
+        }
+        async getHeadersInternal(httpOptions) {
+          const headers = new Headers();
+          if (httpOptions && httpOptions.headers) {
+            for (const [key, value] of Object.entries(httpOptions.headers)) {
+              headers.append(key, value);
+            }
+          }
+          await this.clientOptions.auth.addAuthHeaders(headers);
+          return headers;
+        }
+        async uploadFile(file, config) {
+          var _a2;
+          const fileToUpload = {};
+          if (config != null) {
+            fileToUpload.mimeType = config.mimeType;
+            fileToUpload.name = config.name;
+            fileToUpload.displayName = config.displayName;
+          }
+          if (fileToUpload.name && !fileToUpload.name.startsWith("files/")) {
+            fileToUpload.name = `files/${fileToUpload.name}`;
+          }
+          const uploader = this.clientOptions.uploader;
+          const fileStat = await uploader.stat(file);
+          fileToUpload.sizeBytes = fileStat.size;
+          const mimeType = (_a2 = config === null || config === void 0 ? void 0 : config.mimeType) !== null && _a2 !== void 0 ? _a2 : fileStat.type;
+          if (mimeType === void 0 || mimeType === "") {
+            throw new Error("Can not determine mimeType. Please provide mimeType in the config.");
+          }
+          fileToUpload.mimeType = mimeType;
+          const uploadUrl = await this.fetchUploadUrl(fileToUpload, config);
+          return uploader.upload(file, uploadUrl, this);
+        }
+        async fetchUploadUrl(file, config) {
+          var _a2;
+          let httpOptions = {};
+          if (config === null || config === void 0 ? void 0 : config.httpOptions) {
+            httpOptions = config.httpOptions;
+          } else {
+            httpOptions = {
+              apiVersion: "",
+              headers: {
+                "Content-Type": "application/json",
+                "X-Goog-Upload-Protocol": "resumable",
+                "X-Goog-Upload-Command": "start",
+                "X-Goog-Upload-Header-Content-Length": `${file.sizeBytes}`,
+                "X-Goog-Upload-Header-Content-Type": `${file.mimeType}`
+              }
+            };
+          }
+          const body = {
+            "file": file
+          };
+          const httpResponse = await this.request({
+            path: formatMap("upload/v1beta/files", body["_url"]),
+            body: JSON.stringify(body),
+            httpMethod: "POST",
+            httpOptions
+          });
+          if (!httpResponse || !(httpResponse === null || httpResponse === void 0 ? void 0 : httpResponse.headers)) {
+            throw new Error("Server did not return an HttpResponse or the returned HttpResponse did not have headers.");
+          }
+          const uploadUrl = (_a2 = httpResponse === null || httpResponse === void 0 ? void 0 : httpResponse.headers) === null || _a2 === void 0 ? void 0 : _a2["x-goog-upload-url"];
+          if (uploadUrl === void 0) {
+            throw new Error("Failed to get upload url. Server did not return the x-google-upload-url in the headers");
+          }
+          return uploadUrl;
+        }
+      };
+      Files = class extends BaseModule {
+        constructor(apiClient) {
+          super();
+          this.apiClient = apiClient;
+          this.list = async (params = {}) => {
+            return new Pager(PagedItem.PAGED_ITEM_FILES, (x) => this.listInternal(x), await this.listInternal(params), params);
+          };
+        }
+        async upload(params) {
+          if (this.apiClient.isVertexAI()) {
+            throw new Error("Vertex AI does not support uploading files. You can share files through a GCS bucket.");
+          }
+          return this.apiClient.uploadFile(params.file, params.config).then((response) => {
+            const file = fileFromMldev(this.apiClient, response);
+            return file;
+          });
+        }
+        async listInternal(params) {
+          var _a2;
+          let response;
+          let path = "";
+          let queryParams = {};
+          if (this.apiClient.isVertexAI()) {
+            throw new Error("This method is only supported by the Gemini Developer API.");
+          } else {
+            const body = listFilesParametersToMldev(this.apiClient, params);
+            path = formatMap("files", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "GET",
+              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = listFilesResponseFromMldev(this.apiClient, apiResponse);
+              const typedResp = new ListFilesResponse();
+              Object.assign(typedResp, resp);
+              return typedResp;
+            });
+          }
+        }
+        async createInternal(params) {
+          var _a2;
+          let response;
+          let path = "";
+          let queryParams = {};
+          if (this.apiClient.isVertexAI()) {
+            throw new Error("This method is only supported by the Gemini Developer API.");
+          } else {
+            const body = createFileParametersToMldev(this.apiClient, params);
+            path = formatMap("upload/v1beta/files", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "POST",
+              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = createFileResponseFromMldev(this.apiClient, apiResponse);
+              const typedResp = new CreateFileResponse();
+              Object.assign(typedResp, resp);
+              return typedResp;
+            });
+          }
+        }
+        async get(params) {
+          var _a2;
+          let response;
+          let path = "";
+          let queryParams = {};
+          if (this.apiClient.isVertexAI()) {
+            throw new Error("This method is only supported by the Gemini Developer API.");
+          } else {
+            const body = getFileParametersToMldev(this.apiClient, params);
+            path = formatMap("files/{file}", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "GET",
+              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = fileFromMldev(this.apiClient, apiResponse);
+              return resp;
+            });
+          }
+        }
+        async delete(params) {
+          var _a2;
+          let response;
+          let path = "";
+          let queryParams = {};
+          if (this.apiClient.isVertexAI()) {
+            throw new Error("This method is only supported by the Gemini Developer API.");
+          } else {
+            const body = deleteFileParametersToMldev(this.apiClient, params);
+            path = formatMap("files/{file}", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "DELETE",
+              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then(() => {
+              const resp = deleteFileResponseFromMldev();
+              const typedResp = new DeleteFileResponse();
+              Object.assign(typedResp, resp);
+              return typedResp;
+            });
+          }
+        }
+      };
+      MAX_CHUNK_SIZE = 1024 * 1024 * 8;
+      BrowserUploader = class {
+        async upload(file, uploadUrl, apiClient) {
+          if (typeof file === "string") {
+            throw new Error("File path is not supported in browser uploader.");
+          }
+          return await uploadBlob(file, uploadUrl, apiClient);
+        }
+        async stat(file) {
+          if (typeof file === "string") {
+            throw new Error("File path is not supported in browser uploader.");
+          } else {
+            return await getBlobStat(file);
+          }
+        }
+      };
+      BrowserWebSocketFactory = class {
+        create(url, headers, callbacks) {
+          return new BrowserWebSocket(url, headers, callbacks);
+        }
+      };
+      BrowserWebSocket = class {
+        constructor(url, headers, callbacks) {
+          this.url = url;
+          this.headers = headers;
+          this.callbacks = callbacks;
+        }
+        connect() {
+          this.ws = new WebSocket(this.url);
+          this.ws.onopen = this.callbacks.onopen;
+          this.ws.onerror = this.callbacks.onerror;
+          this.ws.onclose = this.callbacks.onclose;
+          this.ws.onmessage = this.callbacks.onmessage;
+        }
+        send(message) {
+          if (this.ws === void 0) {
+            throw new Error("WebSocket is not connected");
+          }
+          this.ws.send(message);
+        }
+        close() {
+          if (this.ws === void 0) {
+            throw new Error("WebSocket is not connected");
+          }
+          this.ws.close();
+        }
+      };
+      GOOGLE_API_KEY_HEADER = "x-goog-api-key";
+      WebAuth = class {
+        constructor(apiKey) {
+          this.apiKey = apiKey;
+        }
+        async addAuthHeaders(headers) {
+          if (headers.get(GOOGLE_API_KEY_HEADER) !== null) {
+            return;
+          }
+          headers.append(GOOGLE_API_KEY_HEADER, this.apiKey);
+        }
+      };
+      LANGUAGE_LABEL_PREFIX = "gl-node/";
+      GoogleGenAI = class {
+        constructor(options) {
+          var _a2;
+          if (options.apiKey == null) {
+            throw new Error("An API Key must be set when running in a browser");
+          }
+          if (options.project || options.location) {
+            throw new Error("Vertex AI project based authentication is not supported on browser runtimes. Please do not provide a project or location.");
+          }
+          this.vertexai = (_a2 = options.vertexai) !== null && _a2 !== void 0 ? _a2 : false;
+          this.apiKey = options.apiKey;
+          this.apiVersion = options.apiVersion;
+          const auth = new WebAuth(this.apiKey);
+          this.apiClient = new ApiClient({
+            auth,
+            apiVersion: this.apiVersion,
+            apiKey: this.apiKey,
+            vertexai: this.vertexai,
+            httpOptions: options.httpOptions,
+            userAgentExtra: LANGUAGE_LABEL_PREFIX + "web",
+            uploader: new BrowserUploader()
+          });
+          this.models = new Models(this.apiClient);
+          this.live = new Live(this.apiClient, auth, new BrowserWebSocketFactory());
+          this.chats = new Chats(this.models, this.apiClient);
+          this.caches = new Caches(this.apiClient);
+          this.files = new Files(this.apiClient);
+        }
+      };
     }
-    async stat(file) {
-      if (typeof file === "string") {
-        throw new Error("File path is not supported in browser uploader.");
-      } else {
-        return await getBlobStat(file);
-      }
-    }
-  };
-  var BrowserWebSocketFactory = class {
-    create(url, headers, callbacks) {
-      return new BrowserWebSocket(url, headers, callbacks);
-    }
-  };
-  var BrowserWebSocket = class {
-    constructor(url, headers, callbacks) {
-      this.url = url;
-      this.headers = headers;
-      this.callbacks = callbacks;
-    }
-    connect() {
-      this.ws = new WebSocket(this.url);
-      this.ws.onopen = this.callbacks.onopen;
-      this.ws.onerror = this.callbacks.onerror;
-      this.ws.onclose = this.callbacks.onclose;
-      this.ws.onmessage = this.callbacks.onmessage;
-    }
-    send(message) {
-      if (this.ws === void 0) {
-        throw new Error("WebSocket is not connected");
-      }
-      this.ws.send(message);
-    }
-    close() {
-      if (this.ws === void 0) {
-        throw new Error("WebSocket is not connected");
-      }
-      this.ws.close();
-    }
-  };
-  var GOOGLE_API_KEY_HEADER = "x-goog-api-key";
-  var WebAuth = class {
-    constructor(apiKey) {
-      this.apiKey = apiKey;
-    }
-    async addAuthHeaders(headers) {
-      if (headers.get(GOOGLE_API_KEY_HEADER) !== null) {
-        return;
-      }
-      headers.append(GOOGLE_API_KEY_HEADER, this.apiKey);
-    }
-  };
-  var LANGUAGE_LABEL_PREFIX = "gl-node/";
-  var GoogleGenAI = class {
-    constructor(options) {
-      var _a2;
-      if (options.apiKey == null) {
-        throw new Error("An API Key must be set when running in a browser");
-      }
-      if (options.project || options.location) {
-        throw new Error("Vertex AI project based authentication is not supported on browser runtimes. Please do not provide a project or location.");
-      }
-      this.vertexai = (_a2 = options.vertexai) !== null && _a2 !== void 0 ? _a2 : false;
-      this.apiKey = options.apiKey;
-      this.apiVersion = options.apiVersion;
-      const auth = new WebAuth(this.apiKey);
-      this.apiClient = new ApiClient({
-        auth,
-        apiVersion: this.apiVersion,
-        apiKey: this.apiKey,
-        vertexai: this.vertexai,
-        httpOptions: options.httpOptions,
-        userAgentExtra: LANGUAGE_LABEL_PREFIX + "web",
-        uploader: new BrowserUploader()
-      });
-      this.models = new Models(this.apiClient);
-      this.live = new Live(this.apiClient, auth, new BrowserWebSocketFactory());
-      this.chats = new Chats(this.models, this.apiClient);
-      this.caches = new Caches(this.apiClient);
-      this.files = new Files(this.apiClient);
-    }
-  };
+  });
 
   // src/utils/Lyrics/fetchLyrics.ts
-  var JAPANESE_REGEX = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
-  var KOREAN_REGEX = /[\uAC00-\uD7AF]/;
-  var CACHE_EXPIRATION_TIME = 1e3 * 60 * 60 * 24 * 7;
-  var LYRICS_TIMING_OFFSET = 0.55;
-  var lyricsCache = new SpikyCache({
-    name: "Cache_Lyrics"
+  var fetchLyrics_exports = {};
+  __export(fetchLyrics_exports, {
+    default: () => fetchLyrics,
+    lyricsCache: () => lyricsCache
   });
   async function fetchLyrics(uri) {
     resetLyricsUI();
@@ -11605,7 +12191,6 @@ ${JSON.stringify(
     }
     return "1";
   }
-  var ContainerShowLoaderTimeout = null;
   function ShowLoaderContainer() {
     const loaderContainer = document.querySelector(
       "#SpicyLyricsPage .LyricsContainer .loaderContainer"
@@ -11705,6 +12290,32 @@ ${JSON.stringify(
       };
     });
   }
+  var JAPANESE_REGEX, KOREAN_REGEX, CACHE_EXPIRATION_TIME, LYRICS_TIMING_OFFSET, lyricsCache, ContainerShowLoaderTimeout;
+  var init_fetchLyrics = __esm({
+    "src/utils/Lyrics/fetchLyrics.ts"() {
+      init_SpikyCache();
+      init_storage();
+      init_Defaults();
+      init_NowBar();
+      init_PageView();
+      init_Fullscreen();
+      init_Lyrics();
+      init_Platform();
+      init_web();
+      JAPANESE_REGEX = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
+      KOREAN_REGEX = /[\uAC00-\uD7AF]/;
+      CACHE_EXPIRATION_TIME = 1e3 * 60 * 60 * 24 * 7;
+      LYRICS_TIMING_OFFSET = 0.55;
+      lyricsCache = new SpikyCache({
+        name: "Cache_Lyrics"
+      });
+      ContainerShowLoaderTimeout = null;
+    }
+  });
+
+  // src/app.tsx
+  init_lyrics();
+  init_storage();
 
   // src/edited_packages/spcr-settings/settingsSection.tsx
   var import_react = __toESM(require_react());
@@ -11934,6 +12545,11 @@ ${JSON.stringify(
   };
 
   // src/utils/settings.ts
+  init_storage();
+  init_fetchLyrics();
+  init_Defaults();
+  init_fetchLyrics();
+  init_Applyer();
   function setSettingsMenu() {
     generalSettings();
     devSettings();
@@ -12037,14 +12653,33 @@ ${JSON.stringify(
     const settings = new SettingsSection("Amai - Info", "amai-info");
     settings.addButton(
       "more-info",
-      "Enhances your Spotify experience by adding Furigana, Romaji for Japanese, and Romanization for Korean lyrics.",
+      "Enhances your Spotify experience with Furigana for Japanese Kanji, Romaji for Japanese lyrics, Romanization for Korean lyrics, and line-by-line translations powered by Google Gemini AI.",
       `${Defaults_default.Version}`,
       () => {
         window.location.href = "https://github.com/hudzax/amai-lyrics";
       }
     );
+    settings.addButton(
+      "report-issue",
+      "Found a bug or have a feature request?",
+      "Report Issue",
+      () => {
+        window.location.href = "https://github.com/hudzax/amai-lyrics/issues";
+      }
+    );
     settings.pushSettings();
   }
+
+  // src/app.tsx
+  init_Icons();
+  init_IntervalManager();
+  init_SpotifyPlayer();
+  init_Addons();
+  init_ScrollSimplebar();
+  init_Global();
+  init_Platform();
+  init_Whentil();
+  init_Session();
 
   // src/utils/sleep.ts
   async function sleep(seconds) {
@@ -12139,36 +12774,56 @@ ${JSON.stringify(
   }
   function setupDynamicBackground(button) {
     const Hometinue = async () => {
+      const [{ requestPositionSync: requestPositionSync2 }] = await Promise.all([Promise.resolve().then(() => (init_GetProgress(), GetProgress_exports))]);
+      const { default: fetchLyrics2 } = await Promise.resolve().then(() => (init_fetchLyrics(), fetchLyrics_exports));
+      const { default: ApplyLyrics2 } = await Promise.resolve().then(() => (init_Applyer(), Applyer_exports));
+      const { default: ApplyDynamicBackground2 } = await Promise.resolve().then(() => (init_dynamicBackground(), dynamicBackground_exports));
+      const { UpdateNowBar: UpdateNowBar2 } = await Promise.resolve().then(() => (init_NowBar(), NowBar_exports));
+      const { ScrollToActiveLine: ScrollToActiveLine2 } = await Promise.resolve().then(() => (init_ScrollToActiveLine(), ScrollToActiveLine_exports));
+      const { default: PageView2 } = await Promise.resolve().then(() => (init_PageView(), PageView_exports));
       Whentil_default.When(() => Spicetify.Platform.PlaybackAPI, () => {
-        requestPositionSync();
+        requestPositionSync2();
       });
       let lastImgUrl = null;
       const lowQModeEnabled = storage_default.get("lowQMode") === "true";
+      const cached = {
+        nowPlayingBar: null,
+        dynamicBg: null
+      };
       function applyDynamicBackgroundToNowPlayingBar(coverUrl) {
         if (lowQModeEnabled)
           return;
-        const nowPlayingBar = document.querySelector(
-          ".Root__right-sidebar aside.NowPlayingView"
-        );
         try {
+          if (!cached.nowPlayingBar) {
+            cached.nowPlayingBar = document.querySelector(
+              ".Root__right-sidebar aside.NowPlayingView"
+            );
+          }
+          const nowPlayingBar = cached.nowPlayingBar;
           if (!nowPlayingBar) {
             lastImgUrl = null;
+            cached.dynamicBg = null;
             return;
           }
-          if (coverUrl === lastImgUrl)
+          if (coverUrl === lastImgUrl && cached.dynamicBg)
             return;
-          const dynamicBackground = document.createElement("div");
-          dynamicBackground.classList.add("spicy-dynamic-bg");
-          dynamicBackground.innerHTML = `
-          <img class="Front" src="${coverUrl}" />
-          <img class="Back" src="${coverUrl}" />
-          <img class="BackCenter" src="${coverUrl}" />
-        `;
-          nowPlayingBar.classList.add("spicy-dynamic-bg-in-this");
-          const existing = nowPlayingBar.querySelector(".spicy-dynamic-bg");
-          if (existing)
-            existing.remove();
-          nowPlayingBar.appendChild(dynamicBackground);
+          if (!cached.dynamicBg) {
+            const dynamicBackground = document.createElement("div");
+            dynamicBackground.classList.add("spicy-dynamic-bg");
+            dynamicBackground.innerHTML = `
+            <img class="Front" src="${coverUrl}" />
+            <img class="Back" src="${coverUrl}" />
+            <img class="BackCenter" src="${coverUrl}" />
+          `;
+            nowPlayingBar.classList.add("spicy-dynamic-bg-in-this");
+            nowPlayingBar.appendChild(dynamicBackground);
+            cached.dynamicBg = dynamicBackground;
+          } else {
+            const imgs = cached.dynamicBg.querySelectorAll("img");
+            imgs.forEach((img) => {
+              img.src = coverUrl;
+            });
+          }
           lastImgUrl = coverUrl;
         } catch (error) {
           console.error(
@@ -12187,7 +12842,7 @@ ${JSON.stringify(
           return;
         const uri = event?.data?.item?.uri;
         if (uri) {
-          fetchLyrics(uri).then(ApplyLyrics);
+          fetchLyrics2(uri).then(ApplyLyrics2);
         }
       });
       async function onSongChange(event) {
@@ -12214,40 +12869,40 @@ ${JSON.stringify(
         if (!IsSomethingElseThanTrack) {
           await SpotifyPlayer.Track.GetTrackInfo();
           if (document.querySelector("#SpicyLyricsPage .ContentBox .NowBar"))
-            UpdateNowBar();
+            UpdateNowBar2();
         }
         applyDynamicBackgroundToNowPlayingBar(
           Spicetify.Player.data?.item?.metadata?.image_url
         );
         if (!document.querySelector("#SpicyLyricsPage .LyricsContainer"))
           return;
-        ApplyDynamicBackground(
+        ApplyDynamicBackground2(
           document.querySelector("#SpicyLyricsPage .ContentBox")
         );
       }
       const currentUri = Spicetify.Player.data?.item?.uri;
       if (currentUri) {
-        fetchLyrics(currentUri).then(ApplyLyrics);
+        fetchLyrics2(currentUri).then(ApplyLyrics2);
       }
       window.addEventListener("online", async () => {
         storage_default.set("lastFetchedUri", null);
         const currentUri2 = Spicetify.Player.data?.item?.uri;
         if (currentUri2) {
-          fetchLyrics(currentUri2).then(ApplyLyrics);
+          fetchLyrics2(currentUri2).then(ApplyLyrics2);
         }
       });
       new IntervalManager(
         ScrollingIntervalTime,
-        () => ScrollToActiveLine(ScrollSimplebar)
+        () => ScrollToActiveLine2(ScrollSimplebar)
       ).Start();
       let lastLocation = null;
       function loadPage(location) {
         if (location.pathname === "/AmaiLyrics") {
-          PageView_default.Open();
+          PageView2.Open();
           button.active = true;
         } else {
           if (lastLocation?.pathname === "/AmaiLyrics") {
-            PageView_default.Destroy();
+            PageView2.Destroy();
             button.active = false;
           }
         }
@@ -12339,8 +12994,10 @@ ${JSON.stringify(
     fontLink.rel = "stylesheet";
     fontLink.href = "https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Vazirmatn&display=swap";
     document.head.appendChild(fontLink);
-    await initializePlatformAndSettings();
-    await loadExternalScripts();
+    await Promise.all([
+      initializePlatformAndSettings(),
+      loadExternalScripts()
+    ]);
     const button = setupUI();
     setupEventListeners(button);
     setupDynamicBackground(button);
@@ -12371,7 +13028,7 @@ ${JSON.stringify(
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-17804-Fi2xno5sY2Sy/1960def2c717/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-20512-n4Ex7GAZhRrs/196137923887/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -12397,7 +13054,7 @@ ${JSON.stringify(
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17804-Fi2xno5sY2Sy/1960def2c150/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20512-n4Ex7GAZhRrs/1961379232a0/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -12536,7 +13193,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17804-Fi2xno5sY2Sy/1960def2c421/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20512-n4Ex7GAZhRrs/196137923581/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -12744,7 +13401,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17804-Fi2xno5sY2Sy/1960def2c492/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20512-n4Ex7GAZhRrs/1961379235f2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -12787,12 +13444,12 @@ button:has(#SpicyLyricsPageSvg):after {
   justify-content: center;
   height: 100cqh;
   z-index: -1;
-  margin: 0 5cqw 0 5cqw;
+  margin: 0 3.5cqw 0 3.5cqw;
   transition: opacity 0.2s ease-in-out;
   opacity: 0;
 }
 #SpicyLyricsPage .ContentBox .NowBar.RightSide {
-  margin: 0 5cqw 0 5cqw;
+  margin: 0 3.5cqw 0 3.5cqw;
 }
 #SpicyLyricsPage .ContentBox .NowBar.Active {
   position: relative;
@@ -12874,7 +13531,7 @@ button:has(#SpicyLyricsPageSvg):after {
 }
 #SpicyLyricsPage .ContentBox .NowBar .Header .Metadata .Artists {
   font-size: calc(var(--default-font-size)* 0.65);
-  line-height: calc(var(--title-height) * 0.5);
+  line-height: calc(var(--title-height) * 0.65);
   font-weight: 400;
   color: white;
   opacity: .7;
@@ -13218,7 +13875,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17804-Fi2xno5sY2Sy/1960def2c533/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20512-n4Ex7GAZhRrs/1961379236a3/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -13326,7 +13983,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17804-Fi2xno5sY2Sy/1960def2c584/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20512-n4Ex7GAZhRrs/1961379236f4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -13377,10 +14034,10 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   padding: 0 18cqw;
 }
 #SpicyLyricsPage .ContentBox .NowBar.Active:is(.LeftSide) + .LyricsContainer .LyricsContent .simplebar-content-wrapper .simplebar-content {
-  padding: 0 5cqw 0 2cqw !important;
+  padding: 0 5cqw 0 3.5cqw !important;
 }
 #SpicyLyricsPage .ContentBox .NowBar.Active:is(.RightSide) + .LyricsContainer .LyricsContent .simplebar-content-wrapper .simplebar-content {
-  padding: 0 2cqw 0 5cqw !important;
+  padding: 0 3.5cqw 0 5cqw !important;
 }
 header.main-topBar-container .amai-info {
   position: fixed;
@@ -13469,7 +14126,7 @@ header.main-topBar-container .amai-info {
 }
 #SpicyLyricsPage .ContentBox .NowBar .Header,
 #SpicyLyricsPage .ContentBox .NowBar.Active + .LyricsContainer .LyricsContent .simplebar-content-wrapper .simplebar-content {
-  padding: 3cqh 3cqh 2cqh 3cqh;
+  padding: 3cqh 3cqh 1.8cqh 3cqh;
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: 1cqh;
   backdrop-filter: blur(20px);
@@ -13525,7 +14182,7 @@ ruby > rt {
   width: 100%;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17804-Fi2xno5sY2Sy/1960def2c5d5/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20512-n4Ex7GAZhRrs/196137923755/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -13557,12 +14214,15 @@ ruby > rt {
   --gradient-offset: 0%;
   background-image: linear-gradient(var(--gradient-degrees), rgba(255, 255, 255, var(--gradient-alpha)) var(--gradient-position), rgba(255, 255, 255, var(--gradient-alpha-end)) calc(var(--gradient-position) + 20% + var(--gradient-offset)));
 }
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.static {
+  background-image: linear-gradient(var(--gradient-degrees), rgba(255, 255, 255, 0.8) var(--gradient-position), rgba(255, 255, 255, var(--gradient-alpha-end)) calc(var(--gradient-position) + 20% + var(--gradient-offset)));
+}
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --BlurAmount: 0px;
   --DefaultLyricsScale: 0.95;
   --DefaultEmphasisLyricsScale: 0.95;
   --DefaultLineScale: 1;
-  --Vocal-NotSung-opacity: 0.85;
+  --Vocal-NotSung-opacity: 1;
   --Vocal-Active-opacity: 1;
   --Vocal-Sung-opacity: 0.497;
   --Vocal-Hover-opacity: 1;
@@ -13810,7 +14470,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17804-Fi2xno5sY2Sy/1960def2c646/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20512-n4Ex7GAZhRrs/1961379237c6/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
