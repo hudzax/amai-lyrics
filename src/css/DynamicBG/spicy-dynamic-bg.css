@@ -59,7 +59,7 @@
 }
 
 .spicy-dynamic-bg-in-this:is(aside) .spicy-dynamic-bg {
-  filter: saturate(2) brightness(0.7);
+  filter: saturate(2) brightness(0.55);
   max-height: 100%;
   max-width: 100%;
 }
