@@ -214,3 +214,11 @@ ruby > rt {
   display: block;
   width: 100%;
 }
+
+.main-trackList-trackListRow:focus-within, .main-trackList-trackListRow:hover, .BoxComponent-group-card-naked-isInteractive-draggable:hover::after {
+  background-color: rgba(255, 255, 255, 0.1); /* Lowered opacity for stronger acrylic effect */
+  backdrop-filter: blur(20px); /* Increased blur for more acrylic */
+  -webkit-backdrop-filter: blur(20px); /* Safari support */
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Optional: enhances the frosted look */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Optional shadow */
+}
