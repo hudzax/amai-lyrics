@@ -7,6 +7,30 @@ type ArtworkSize = 's' | 'l' | 'xl' | 'd';
 
 const TrackData_Map = new Map();
 
+async function getOrFetchTrackData(trackId: string): Promise<any> {
+  if (TrackData_Map.has(trackId)) {
+    const cached = TrackData_Map.get(trackId);
+    if (cached instanceof Promise || (cached && typeof cached === 'object')) {
+      return cached;
+    }
+  }
+  const fetchPromise = (async () => {
+    const URL = `https://spclient.wg.spotify.com/metadata/4/track/${trackId}?market=from_token`;
+    const [data, status] = await SpicyFetch(URL, true, true, false);
+    if (status !== 200) return null;
+    TrackData_Map.set(trackId, data);
+    return data;
+  })();
+  TrackData_Map.set(trackId, fetchPromise);
+  return fetchPromise;
+}
+
+if (typeof Spicetify !== 'undefined' && Spicetify?.Player) {
+  Spicetify.Player.addEventListener('songchange', () => {
+    TrackData_Map.clear();
+  });
+}
+
 export const SpotifyPlayer = {
   IsPlaying: false,
   GetTrackPosition: GetProgress,
@@ -21,13 +45,7 @@ export const SpotifyPlayer = {
       const spotifyHexString = SpicyHasher.spotifyHex(
         SpotifyPlayer.GetSongId(),
       );
-      if (TrackData_Map.has(spotifyHexString))
-        return TrackData_Map.get(spotifyHexString);
-      const URL = `https://spclient.wg.spotify.com/metadata/4/track/${spotifyHexString}?market=from_token`;
-      const [data, status] = await SpicyFetch(URL, true, true, false);
-      if (status !== 200) return null;
-      TrackData_Map.set(spotifyHexString, data);
-      return data;
+      return getOrFetchTrackData(spotifyHexString);
     },
     SortImages: (images: any[]) => {
       // Define size thresholds
@@ -65,18 +83,19 @@ export const SpotifyPlayer = {
     Get: async (size: ArtworkSize): Promise<string> => {
       const psize = size === 'd' ? null : size?.toLowerCase() ?? null;
       const Data = await SpotifyPlayer.Track.GetTrackInfo();
+      if (!Data || !Data.album?.cover_group?.image) return '';
       const Images = SpotifyPlayer.Track.SortImages(
         Data.album.cover_group.image,
       );
       switch (psize) {
         case 's':
-          return `spotify:image:${Images.s[0].file_id}`;
+          return Images.s[0] ? `spotify:image:${Images.s[0].file_id}` : '';
         case 'l':
-          return `spotify:image:${Images.l[0].file_id}`;
+          return Images.l[0] ? `spotify:image:${Images.l[0].file_id}` : '';
         case 'xl':
-          return `spotify:image:${Images.xl[0].file_id}`;
+          return Images.xl[0] ? `spotify:image:${Images.xl[0].file_id}` : '';
         default:
-          return `spotify:image:${Images.l[0].file_id}`;
+          return Images.l[0] ? `spotify:image:${Images.l[0].file_id}` : '';
       }
     },
   },
