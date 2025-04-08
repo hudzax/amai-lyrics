@@ -123,8 +123,10 @@ export default async function fetchLyrics(
 ): Promise<LyricsData | string> {
   // Reset UI and prepare for new lyrics
   resetLyricsUI();
-
   ClearLyricsPageContainer();
+  document
+    .querySelector<HTMLElement>('#SpicyLyricsPage .ContentBox')
+    ?.classList.remove('LyricsHidden');
 
   // Extract track ID from URI
   const trackId = uri.split(':')[2];
@@ -146,9 +148,6 @@ export default async function fetchLyrics(
 
   // Mark as fetching and update UI
   storage.set('currentlyFetching', 'true');
-  document
-    .querySelector<HTMLElement>('#SpicyLyricsPage .ContentBox')
-    ?.classList.remove('LyricsHidden');
 
   // Show loading indicator and fetch from API
   ShowLoaderContainer();
