@@ -224,7 +224,7 @@
 }
 
 #SpicyLyricsPage .spicy-dynamic-bg {
-  filter: saturate(2.5) brightness(.65);
+  filter: saturate(2.5) brightness(.55);
 }
 
 #SpicyLyricsPage .spicy-dynamic-bg:is(.lowqmode) {
