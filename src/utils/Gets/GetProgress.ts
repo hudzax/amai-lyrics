@@ -70,40 +70,45 @@ export async function requestPositionSync(): Promise<void> {
 
 // Function to get the current progress
 export default function GetProgress() {
+  // Fast path: no sync data, fallback
   if (!syncedPosition.StartedSyncAt && !syncedPosition.Position) {
     if (SpotifyPlayer?._DEPRECATED_?.GetTrackPosition) {
-      return SpotifyPlayer._DEPRECATED_.GetTrackPosition();
+      const fallback = SpotifyPlayer._DEPRECATED_.GetTrackPosition();
+      return fallback;
     }
-    console.warn('Synced Position: Skip, Returning 0');
+    console.warn('[GetProgress] Synced Position: Skip, Returning 0');
     return 0;
   }
 
-  const SpotifyPlatform = Spicetify.Platform;
-  const isLocallyPlaying = SpotifyPlatform.PlaybackAPI._isLocal;
-  const { StartedSyncAt, Position } = syncedPosition;
-  const deltaTime = performance.now() - StartedSyncAt;
+  const platform = Spicetify.Platform;
+  const isPlaying = Spicetify.Player.isPlaying();
+  const isLocal = platform.PlaybackAPI._isLocal;
 
-  if (!Spicetify.Player.isPlaying()) {
-    return SpotifyPlatform.PlayerAPI._state.positionAsOfTimestamp;
+  const startedAt = syncedPosition.StartedSyncAt;
+  const basePosition = syncedPosition.Position;
+  const delta = performance.now() - startedAt;
+
+  if (!isPlaying) {
+    const pausedPos = platform.PlayerAPI._state.positionAsOfTimestamp;
+    return pausedPos;
   }
 
-  const FinalPosition = Position + deltaTime;
-  return isLocallyPlaying
-    ? FinalPosition
-    : FinalPosition + Global.NonLocalTimeOffset;
+  const calculated = basePosition + delta;
+  const finalPos = isLocal
+    ? calculated
+    : calculated + Global.NonLocalTimeOffset;
+  return finalPos;
 }
 
 // DEPRECATED
 export function _DEPRECATED___GetProgress() {
-  if (!Spicetify?.Player?.origin?._state) {
+  const state = Spicetify?.Player?.origin?._state;
+  if (!state) {
     console.error('Spicetify Player state is not available.');
     return 0;
   }
 
-  const state = Spicetify.Player.origin._state;
-  const positionAsOfTimestamp = state.positionAsOfTimestamp;
-  const timestamp = state.timestamp;
-  const isPaused = state.isPaused;
+  const { positionAsOfTimestamp, timestamp, isPaused } = state;
 
   if (positionAsOfTimestamp == null || timestamp == null) {
     console.error('Playback state is incomplete.');
@@ -111,10 +116,10 @@ export function _DEPRECATED___GetProgress() {
   }
 
   const now = Date.now();
-
   if (isPaused) {
     return positionAsOfTimestamp;
   } else {
-    return positionAsOfTimestamp + (now - timestamp);
+    const calc = positionAsOfTimestamp + (now - timestamp);
+    return calc;
   }
 }
