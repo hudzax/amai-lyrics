@@ -222,10 +222,19 @@ function infos() {
 
   settings.addButton(
     'more-info',
-    'Enhances your Spotify experience by adding Furigana, Romaji for Japanese, and Romanization for Korean lyrics.',
+    'Enhances your Spotify experience with Furigana for Japanese Kanji, Romaji for Japanese lyrics, Romanization for Korean lyrics, and line-by-line translations powered by Google Gemini AI.',
     `${Defaults.Version}`,
     () => {
       window.location.href = 'https://github.com/hudzax/amai-lyrics';
+    },
+  );
+
+  settings.addButton(
+    'report-issue',
+    'Found a bug or have a feature request?',
+    'Report Issue',
+    () => {
+      window.location.href = 'https://github.com/hudzax/amai-lyrics/issues';
     },
   );
 
