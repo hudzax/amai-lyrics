@@ -1,103 +1,40 @@
-import Animator from "../../utils/Animator";
-import BlobURLMaker from "../../utils/BlobURLMaker";
-import storage from "../../utils/storage";
-import { SpotifyPlayer } from "../Global/SpotifyPlayer";
-import ArtistVisuals from "./ArtistVisuals/Main";
+import { SpotifyPlayer } from '../Global/SpotifyPlayer';
 
 export default async function ApplyDynamicBackground(element) {
-    if (!element) return
-    let currentImgCover = await SpotifyPlayer.Artwork.Get("d");
-    const lowQMode = storage.get("lowQMode");
-    const lowQModeEnabled = lowQMode && lowQMode === "true";
-    const IsEpisode = Spicetify.Player.data.item.type === "episode";
-    const CurrentSongArtist = IsEpisode ? null : Spicetify.Player.data?.item.artists[0].uri;
-    const CurrentSongUri = Spicetify.Player.data?.item.uri;
+  if (!element) return;
 
-    if (lowQModeEnabled) {
-        try {
-            currentImgCover = (IsEpisode ? null : (storage.get("force-cover-bg_in-lowqmode") == "true" ? currentImgCover : await LowQMode_SetDynamicBackground(CurrentSongArtist, CurrentSongUri)));
-        } catch (error) {
-            console.error("Error happened while trying to set the Low Quality Mode Dynamic Background", error)
-        }
+  // Cache player data
+  const playerData = Spicetify.Player.data;
+  const isEpisode = playerData.item.type === 'episode';
+
+  // Fetch cover image
+  const currentImgCover = await SpotifyPlayer.Artwork.Get('d');
+
+  const prevDiv = element.querySelector(
+    '.spicy-dynamic-bg',
+  ) as HTMLDivElement | null;
+
+  if (prevDiv) {
+    if (prevDiv.getAttribute('current_tag') === currentImgCover) {
+      // No change needed
+      return;
     }
-    
-
-    if (lowQModeEnabled) {
-        if (IsEpisode) return;
-        const dynamicBg = document.createElement("img");
-        const prevBg = element.querySelector(".spicy-dynamic-bg.lowqmode");
-
-        if (prevBg && prevBg.getAttribute("spotifyimageurl") === currentImgCover) {
-            dynamicBg.remove();
-            return;
-        }
-
-        dynamicBg.classList.add("spicy-dynamic-bg", "lowqmode")
-
-        const processedCover = `https://i.scdn.co/image/${currentImgCover.replace("spotify:image:", "")}`;
-
-        dynamicBg.src = await BlobURLMaker(processedCover) ?? currentImgCover;
-        dynamicBg.setAttribute("spotifyimageurl", currentImgCover);
-        element.appendChild(dynamicBg);
-
-        const Animator1 = new Animator(0, 1, 0.3);
-        const Animator2 = new Animator(1, 0, 0.3);
-
-        Animator1.on("progress", (progress) => {
-            dynamicBg.style.opacity = progress.toString();
-        });
-
-        Animator2.on("progress", (progress) => {
-            if (!prevBg) return;
-            prevBg.style.opacity = progress.toString();
-        });
-
-        Animator1.on("finish", () => {
-            dynamicBg.style.opacity = "1";
-            Animator1.Destroy();
-        });
-
-        Animator2.on("finish", () => {
-            prevBg?.remove();
-            Animator2.Destroy();
-        });
-
-        Animator2.Start();
-        Animator1.Start();
-    } else {
-
-        if (element?.querySelector(".spicy-dynamic-bg")) {
-            if (element.querySelector(".spicy-dynamic-bg").getAttribute("current_tag") === currentImgCover) return;
-            const e = element.querySelector(".spicy-dynamic-bg");
-            e.setAttribute("current_tag", currentImgCover);
-            e.innerHTML = `
+    prevDiv.setAttribute('current_tag', currentImgCover);
+    prevDiv.innerHTML = `
                 <img class="Front" src="${currentImgCover}" />
                 <img class="Back" src="${currentImgCover}" />
                 <img class="BackCenter" src="${currentImgCover}" />
-            `
-            return;
-        }
+            `;
+    return;
+  }
 
-        const dynamicBg = document.createElement("div")
-        dynamicBg.classList.add("spicy-dynamic-bg")
-        dynamicBg.classList.remove("lowqmode")
-        dynamicBg.setAttribute("current_tag", currentImgCover);
-
-        dynamicBg.innerHTML = `
+  const dynamicBgDiv = document.createElement('div');
+  dynamicBgDiv.classList.add('spicy-dynamic-bg');
+  dynamicBgDiv.setAttribute('current_tag', currentImgCover);
+  dynamicBgDiv.innerHTML = `
             <img class="Front" src="${currentImgCover}" />
             <img class="Back" src="${currentImgCover}" />
             <img class="BackCenter" src="${currentImgCover}" />
-        `
-        element.appendChild(dynamicBg);
-    }
-
-}
-
-export async function LowQMode_SetDynamicBackground(CurrentSongArtist, CurrentSongUri) {
-    if (storage.get("force-cover-bg_in-lowqmode") == "true") return;
-    try {
-        return await ArtistVisuals.ApplyContent(CurrentSongArtist, CurrentSongUri);
-    } catch (error) {
-        console.error("Error happened while trying to set the Low Quality Mode Dynamic Background", error)
-    }
+        `;
+  element.appendChild(dynamicBgDiv);
 }
