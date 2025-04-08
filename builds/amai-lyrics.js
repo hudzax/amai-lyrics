@@ -412,7 +412,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.0.43";
+      version = "1.0.44";
     }
   });
 
@@ -1135,12 +1135,35 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   });
 
   // src/components/Global/SpotifyPlayer.ts
+  async function getOrFetchTrackData(trackId) {
+    if (TrackData_Map.has(trackId)) {
+      const cached = TrackData_Map.get(trackId);
+      if (cached instanceof Promise || cached && typeof cached === "object") {
+        return cached;
+      }
+    }
+    const fetchPromise = (async () => {
+      const URL2 = `https://spclient.wg.spotify.com/metadata/4/track/${trackId}?market=from_token`;
+      const [data, status] = await SpicyFetch(URL2, true, true, false);
+      if (status !== 200)
+        return null;
+      TrackData_Map.set(trackId, data);
+      return data;
+    })();
+    TrackData_Map.set(trackId, fetchPromise);
+    return fetchPromise;
+  }
   var TrackData_Map, SpotifyPlayer;
   var init_SpotifyPlayer = __esm({
     "src/components/Global/SpotifyPlayer.ts"() {
       init_SpicyFetch();
       init_GetProgress();
       TrackData_Map = /* @__PURE__ */ new Map();
+      if (typeof Spicetify !== "undefined" && Spicetify?.Player) {
+        Spicetify.Player.addEventListener("songchange", () => {
+          TrackData_Map.clear();
+        });
+      }
       SpotifyPlayer = {
         IsPlaying: false,
         GetTrackPosition: GetProgress,
@@ -1155,14 +1178,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             const spotifyHexString = SpicyHasher.spotifyHex(
               SpotifyPlayer.GetSongId()
             );
-            if (TrackData_Map.has(spotifyHexString))
-              return TrackData_Map.get(spotifyHexString);
-            const URL2 = `https://spclient.wg.spotify.com/metadata/4/track/${spotifyHexString}?market=from_token`;
-            const [data, status] = await SpicyFetch(URL2, true, true, false);
-            if (status !== 200)
-              return null;
-            TrackData_Map.set(spotifyHexString, data);
-            return data;
+            return getOrFetchTrackData(spotifyHexString);
           },
           SortImages: (images) => {
             const sizeMap = {
@@ -1194,18 +1210,20 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           Get: async (size) => {
             const psize = size === "d" ? null : size?.toLowerCase() ?? null;
             const Data = await SpotifyPlayer.Track.GetTrackInfo();
+            if (!Data || !Data.album?.cover_group?.image)
+              return "";
             const Images = SpotifyPlayer.Track.SortImages(
               Data.album.cover_group.image
             );
             switch (psize) {
               case "s":
-                return `spotify:image:${Images.s[0].file_id}`;
+                return Images.s[0] ? `spotify:image:${Images.s[0].file_id}` : "";
               case "l":
-                return `spotify:image:${Images.l[0].file_id}`;
+                return Images.l[0] ? `spotify:image:${Images.l[0].file_id}` : "";
               case "xl":
-                return `spotify:image:${Images.xl[0].file_id}`;
+                return Images.xl[0] ? `spotify:image:${Images.xl[0].file_id}` : "";
               default:
-                return `spotify:image:${Images.l[0].file_id}`;
+                return Images.l[0] ? `spotify:image:${Images.l[0].file_id}` : "";
             }
           }
         },
@@ -2382,326 +2400,51 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-20512-n4Ex7GAZhRrs/196137923887/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-21888-52uxwp0encwp/19616ccf5bb7/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-20512-n4Ex7GAZhRrs/196137923887/DotLoader.css"() {
-    }
-  });
-
-  // src/utils/Animator.ts
-  var Animator;
-  var init_Animator = __esm({
-    "src/utils/Animator.ts"() {
-      init_Maid();
-      Animator = class {
-        constructor(from, to, duration) {
-          this.startTime = null;
-          this.pausedTime = null;
-          this.animationFrameId = null;
-          this.events = {};
-          this.isDestroyed = false;
-          this.reversed = false;
-          this.from = from;
-          this.to = to;
-          this.duration = duration * 1e3;
-          this.currentProgress = from;
-          this.maid = new Maid();
-        }
-        emit(event, progress) {
-          if (this.events[event] && !this.isDestroyed) {
-            const callback = this.events[event];
-            callback?.(progress ?? this.currentProgress, this.from, this.to);
-          }
-        }
-        on(event, callback) {
-          this.events[event] = callback;
-        }
-        Start() {
-          if (this.isDestroyed)
-            return;
-          this.startTime = performance.now();
-          this.animate();
-        }
-        animate() {
-          if (this.isDestroyed || this.startTime === null)
-            return;
-          const now2 = performance.now();
-          const elapsed = now2 - this.startTime;
-          const t = Math.min(elapsed / this.duration, 1);
-          const startValue = this.reversed ? this.to : this.from;
-          const endValue = this.reversed ? this.from : this.to;
-          this.currentProgress = startValue + (endValue - startValue) * t;
-          this.emit("progress", this.currentProgress);
-          if (t < 1) {
-            this.animationFrameId = requestAnimationFrame(() => this.animate());
-            this.maid.Give(() => cancelAnimationFrame(this.animationFrameId));
-          } else {
-            this.emit("finish");
-            this.reset();
-          }
-        }
-        Pause() {
-          if (this.isDestroyed || this.animationFrameId === null)
-            return;
-          cancelAnimationFrame(this.animationFrameId);
-          this.pausedTime = performance.now();
-          this.emit("pause", this.currentProgress);
-        }
-        Resume() {
-          if (this.isDestroyed || this.pausedTime === null)
-            return;
-          const pausedDuration = performance.now() - this.pausedTime;
-          if (this.startTime !== null)
-            this.startTime += pausedDuration;
-          this.pausedTime = null;
-          this.emit("resume", this.currentProgress);
-          this.animate();
-        }
-        Restart() {
-          if (this.isDestroyed)
-            return;
-          this.reset();
-          this.emit("restart", this.currentProgress);
-          this.Start();
-        }
-        Reverse() {
-          if (this.isDestroyed)
-            return;
-          this.reversed = !this.reversed;
-          this.emit("reverse", this.currentProgress);
-        }
-        Destroy() {
-          if (this.isDestroyed)
-            return;
-          this.emit("destroy");
-          this.maid.Destroy();
-          this.reset();
-          this.isDestroyed = true;
-        }
-        reset() {
-          this.startTime = null;
-          this.pausedTime = null;
-          this.animationFrameId = null;
-        }
-      };
-    }
-  });
-
-  // src/utils/BlobURLMaker.ts
-  async function BlobURLMaker(url) {
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        return null;
-      }
-      const blob = await response.blob();
-      return URL.createObjectURL(blob);
-    } catch (error) {
-      console.error("Error fetching and converting to blob URL:", error);
-      throw error;
-    }
-  }
-  var init_BlobURLMaker = __esm({
-    "src/utils/BlobURLMaker.ts"() {
-    }
-  });
-
-  // src/components/DynamicBG/ArtistVisuals/Cache.ts
-  var Cache, Cache_default;
-  var init_Cache = __esm({
-    "src/components/DynamicBG/ArtistVisuals/Cache.ts"() {
-      init_SpikyCache();
-      Cache = new SpikyCache({
-        name: "SpicyLyrics-ArtistVisualsCache"
-      });
-      Cache_default = Cache;
-    }
-  });
-
-  // src/components/DynamicBG/ArtistVisuals/HeaderImage/GetHeaderUrl.ts
-  function GetHeaderUrl(data) {
-    if (!data)
-      return Spicetify.Player.data?.item.metadata.image_xlarge_url || null;
-    const HeaderImage = typeof data === "object" ? data?.Visuals?.headerImage?.sources[0]?.url : JSON.parse(data)?.Visuals?.headerImage?.sources[0]?.url;
-    if (!HeaderImage)
-      return Spicetify.Player.data?.item.metadata.image_xlarge_url || null;
-    return `spotify:image:${HeaderImage.replace("https://i.scdn.co/image/", "")}`;
-  }
-  var init_GetHeaderUrl = __esm({
-    "src/components/DynamicBG/ArtistVisuals/HeaderImage/GetHeaderUrl.ts"() {
-    }
-  });
-
-  // src/components/DynamicBG/ArtistVisuals/HeaderImage/Main.ts
-  async function ApplyContent(CurrentSongArtist, CurrentSongUri) {
-    if (!CurrentSongArtist)
-      throw new Error("Invalid Song Artist");
-    if (!CurrentSongUri)
-      throw new Error("Invalid Song URI");
-    const TrackId = CurrentSongUri.split(":")[2];
-    const ArtistId = CurrentSongArtist.split(":")[2];
-    if (!TrackId || !ArtistId)
-      throw new Error("Invalid URIs");
-    const Cached = await Main_default.Cache.get(ArtistId);
-    if (Cached) {
-      if (Cached.metadata.expiresIn <= Date.now()) {
-        await Main_default.Cache.remove(ArtistId);
-        return Continue();
-      }
-      if (Cached?.data) {
-        return GetHeaderUrl(Cached?.data);
-      }
-      await Main_default.Cache.remove(ArtistId);
-      return Continue();
-    }
-    return Continue();
-    async function Continue() {
-      if (isFetching.has(ArtistId)) {
-        return isFetching.get(ArtistId);
-      }
-      const fetchPromise = (async () => {
-        try {
-          const [res, status] = await SpicyFetch(`artist/visuals?artist=${CurrentSongArtist}&track=${CurrentSongUri}`);
-          if (status === 200) {
-            await Main_default.Cache.set(ArtistId, {
-              data: res ?? "",
-              metadata: {
-                expiresIn: Date.now() + 2592e5
-              }
-            });
-            return GetHeaderUrl(res ?? "");
-          } else {
-            throw new Error(`Failed to fetch visuals: ${status}`);
-          }
-        } finally {
-          isFetching.delete(ArtistId);
-        }
-      })();
-      isFetching.set(ArtistId, fetchPromise);
-      return fetchPromise;
-    }
-  }
-  var isFetching;
-  var init_Main2 = __esm({
-    "src/components/DynamicBG/ArtistVisuals/HeaderImage/Main.ts"() {
-      init_SpicyFetch();
-      init_Main3();
-      init_GetHeaderUrl();
-      isFetching = /* @__PURE__ */ new Map();
-    }
-  });
-
-  // src/components/DynamicBG/ArtistVisuals/Main.ts
-  var ArtistVisuals, Main_default;
-  var init_Main3 = __esm({
-    "src/components/DynamicBG/ArtistVisuals/Main.ts"() {
-      init_Cache();
-      init_Main2();
-      ArtistVisuals = {
-        Cache: Cache_default,
-        ApplyContent
-      };
-      Main_default = ArtistVisuals;
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-21888-52uxwp0encwp/19616ccf5bb7/DotLoader.css"() {
     }
   });
 
   // src/components/DynamicBG/dynamicBackground.ts
   var dynamicBackground_exports = {};
   __export(dynamicBackground_exports, {
-    LowQMode_SetDynamicBackground: () => LowQMode_SetDynamicBackground,
     default: () => ApplyDynamicBackground
   });
   async function ApplyDynamicBackground(element) {
     if (!element)
       return;
-    let currentImgCover = await SpotifyPlayer.Artwork.Get("d");
-    const lowQMode = storage_default.get("lowQMode");
-    const lowQModeEnabled = lowQMode && lowQMode === "true";
-    const IsEpisode = Spicetify.Player.data.item.type === "episode";
-    const CurrentSongArtist = IsEpisode ? null : Spicetify.Player.data?.item.artists[0].uri;
-    const CurrentSongUri = Spicetify.Player.data?.item.uri;
-    if (lowQModeEnabled) {
-      try {
-        currentImgCover = IsEpisode ? null : storage_default.get("force-cover-bg_in-lowqmode") == "true" ? currentImgCover : await LowQMode_SetDynamicBackground(CurrentSongArtist, CurrentSongUri);
-      } catch (error) {
-        console.error("Error happened while trying to set the Low Quality Mode Dynamic Background", error);
-      }
-    }
-    if (lowQModeEnabled) {
-      if (IsEpisode)
-        return;
-      const dynamicBg = document.createElement("img");
-      const prevBg = element.querySelector(".spicy-dynamic-bg.lowqmode");
-      if (prevBg && prevBg.getAttribute("spotifyimageurl") === currentImgCover) {
-        dynamicBg.remove();
+    const playerData = Spicetify.Player.data;
+    const isEpisode = playerData.item.type === "episode";
+    const currentImgCover = await SpotifyPlayer.Artwork.Get("d");
+    const prevDiv = element.querySelector(
+      ".spicy-dynamic-bg"
+    );
+    if (prevDiv) {
+      if (prevDiv.getAttribute("current_tag") === currentImgCover) {
         return;
       }
-      dynamicBg.classList.add("spicy-dynamic-bg", "lowqmode");
-      const processedCover = `https://i.scdn.co/image/${currentImgCover.replace("spotify:image:", "")}`;
-      dynamicBg.src = await BlobURLMaker(processedCover) ?? currentImgCover;
-      dynamicBg.setAttribute("spotifyimageurl", currentImgCover);
-      element.appendChild(dynamicBg);
-      const Animator1 = new Animator(0, 1, 0.3);
-      const Animator2 = new Animator(1, 0, 0.3);
-      Animator1.on("progress", (progress) => {
-        dynamicBg.style.opacity = progress.toString();
-      });
-      Animator2.on("progress", (progress) => {
-        if (!prevBg)
-          return;
-        prevBg.style.opacity = progress.toString();
-      });
-      Animator1.on("finish", () => {
-        dynamicBg.style.opacity = "1";
-        Animator1.Destroy();
-      });
-      Animator2.on("finish", () => {
-        prevBg?.remove();
-        Animator2.Destroy();
-      });
-      Animator2.Start();
-      Animator1.Start();
-    } else {
-      if (element?.querySelector(".spicy-dynamic-bg")) {
-        if (element.querySelector(".spicy-dynamic-bg").getAttribute("current_tag") === currentImgCover)
-          return;
-        const e = element.querySelector(".spicy-dynamic-bg");
-        e.setAttribute("current_tag", currentImgCover);
-        e.innerHTML = `
+      prevDiv.setAttribute("current_tag", currentImgCover);
+      prevDiv.innerHTML = `
                 <img class="Front" src="${currentImgCover}" />
                 <img class="Back" src="${currentImgCover}" />
                 <img class="BackCenter" src="${currentImgCover}" />
             `;
-        return;
-      }
-      const dynamicBg = document.createElement("div");
-      dynamicBg.classList.add("spicy-dynamic-bg");
-      dynamicBg.classList.remove("lowqmode");
-      dynamicBg.setAttribute("current_tag", currentImgCover);
-      dynamicBg.innerHTML = `
+      return;
+    }
+    const dynamicBgDiv = document.createElement("div");
+    dynamicBgDiv.classList.add("spicy-dynamic-bg");
+    dynamicBgDiv.setAttribute("current_tag", currentImgCover);
+    dynamicBgDiv.innerHTML = `
             <img class="Front" src="${currentImgCover}" />
             <img class="Back" src="${currentImgCover}" />
             <img class="BackCenter" src="${currentImgCover}" />
         `;
-      element.appendChild(dynamicBg);
-    }
-  }
-  async function LowQMode_SetDynamicBackground(CurrentSongArtist, CurrentSongUri) {
-    if (storage_default.get("force-cover-bg_in-lowqmode") == "true")
-      return;
-    try {
-      return await Main_default.ApplyContent(CurrentSongArtist, CurrentSongUri);
-    } catch (error) {
-      console.error("Error happened while trying to set the Low Quality Mode Dynamic Background", error);
-    }
+    element.appendChild(dynamicBgDiv);
   }
   var init_dynamicBackground = __esm({
     "src/components/DynamicBG/dynamicBackground.ts"() {
-      init_Animator();
-      init_BlobURLMaker();
-      init_storage();
       init_SpotifyPlayer();
-      init_Main3();
     }
   });
 
@@ -4207,11 +3950,14 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
 
   // src/utils/Lyrics/Applyer/Info/ApplyInfo.ts
   function ApplyInfo(data) {
+    const DEFAULT_WPM = 200;
+    const DEFAULT_DURATION = 8e3;
     const TopBarContainer = document.querySelector(
       "header.main-topBar-container"
     );
     if (!data?.Info || !TopBarContainer)
       return;
+    TopBarContainer.querySelectorAll(".amai-info").forEach((el) => el.remove());
     const infoElement = document.createElement("a");
     infoElement.className = "amai-info";
     infoElement.textContent = data.Info;
@@ -4225,12 +3971,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       });
     });
     TopBarContainer.appendChild(infoElement);
-    const words = data.Info.split(/\s+/).length;
-    const wpm = 200;
-    const readingTimeSeconds = words / wpm * 60;
-    const duration = readingTimeSeconds * 1e3;
+    let duration = data.InfoDuration;
+    if (!duration) {
+      const words = data.Info.split(/\s+/).length;
+      const readingTimeSeconds = words / DEFAULT_WPM * 60;
+      duration = readingTimeSeconds * 1e3 || DEFAULT_DURATION;
+    }
     setTimeout(() => {
-      TopBarContainer.removeChild(infoElement);
+      if (TopBarContainer.contains(infoElement)) {
+        TopBarContainer.removeChild(infoElement);
+      }
     }, duration);
   }
   var init_ApplyInfo = __esm({
@@ -4927,6 +4677,105 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_Line();
       init_Syllable();
       init_fetchLyrics();
+    }
+  });
+
+  // src/utils/Animator.ts
+  var Animator;
+  var init_Animator = __esm({
+    "src/utils/Animator.ts"() {
+      init_Maid();
+      Animator = class {
+        constructor(from, to, duration) {
+          this.startTime = null;
+          this.pausedTime = null;
+          this.animationFrameId = null;
+          this.events = {};
+          this.isDestroyed = false;
+          this.reversed = false;
+          this.from = from;
+          this.to = to;
+          this.duration = duration * 1e3;
+          this.currentProgress = from;
+          this.maid = new Maid();
+        }
+        emit(event, progress) {
+          if (this.events[event] && !this.isDestroyed) {
+            const callback = this.events[event];
+            callback?.(progress ?? this.currentProgress, this.from, this.to);
+          }
+        }
+        on(event, callback) {
+          this.events[event] = callback;
+        }
+        Start() {
+          if (this.isDestroyed)
+            return;
+          this.startTime = performance.now();
+          this.animate();
+        }
+        animate() {
+          if (this.isDestroyed || this.startTime === null)
+            return;
+          const now2 = performance.now();
+          const elapsed = now2 - this.startTime;
+          const t = Math.min(elapsed / this.duration, 1);
+          const startValue = this.reversed ? this.to : this.from;
+          const endValue = this.reversed ? this.from : this.to;
+          this.currentProgress = startValue + (endValue - startValue) * t;
+          this.emit("progress", this.currentProgress);
+          if (t < 1) {
+            this.animationFrameId = requestAnimationFrame(() => this.animate());
+            this.maid.Give(() => cancelAnimationFrame(this.animationFrameId));
+          } else {
+            this.emit("finish");
+            this.reset();
+          }
+        }
+        Pause() {
+          if (this.isDestroyed || this.animationFrameId === null)
+            return;
+          cancelAnimationFrame(this.animationFrameId);
+          this.pausedTime = performance.now();
+          this.emit("pause", this.currentProgress);
+        }
+        Resume() {
+          if (this.isDestroyed || this.pausedTime === null)
+            return;
+          const pausedDuration = performance.now() - this.pausedTime;
+          if (this.startTime !== null)
+            this.startTime += pausedDuration;
+          this.pausedTime = null;
+          this.emit("resume", this.currentProgress);
+          this.animate();
+        }
+        Restart() {
+          if (this.isDestroyed)
+            return;
+          this.reset();
+          this.emit("restart", this.currentProgress);
+          this.Start();
+        }
+        Reverse() {
+          if (this.isDestroyed)
+            return;
+          this.reversed = !this.reversed;
+          this.emit("reverse", this.currentProgress);
+        }
+        Destroy() {
+          if (this.isDestroyed)
+            return;
+          this.emit("destroy");
+          this.maid.Destroy();
+          this.reset();
+          this.isDestroyed = true;
+        }
+        reset() {
+          this.startTime = null;
+          this.pausedTime = null;
+          this.animationFrameId = null;
+        }
+      };
     }
   });
 
@@ -11803,6 +11652,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   async function fetchLyrics(uri) {
     resetLyricsUI();
     ClearLyricsPageContainer();
+    document.querySelector("#SpicyLyricsPage .ContentBox")?.classList.remove("LyricsHidden");
     const trackId = uri.split(":")[2];
     const localLyrics = await getLyricsFromLocalStorage(trackId);
     if (localLyrics)
@@ -11816,7 +11666,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return "Currently fetching lyrics";
     }
     storage_default.set("currentlyFetching", "true");
-    document.querySelector("#SpicyLyricsPage .ContentBox")?.classList.remove("LyricsHidden");
     ShowLoaderContainer();
     return await fetchLyricsFromAPI(trackId);
   }
@@ -12654,7 +12503,7 @@ ${JSON.stringify(
     settings.addButton(
       "more-info",
       "Enhances your Spotify experience with Furigana for Japanese Kanji, Romaji for Japanese lyrics, Romanization for Korean lyrics, and line-by-line translations powered by Google Gemini AI.",
-      `${Defaults_default.Version}`,
+      `v${Defaults_default.Version}`,
       () => {
         window.location.href = "https://github.com/hudzax/amai-lyrics";
       }
@@ -13028,7 +12877,7 @@ ${JSON.stringify(
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-20512-n4Ex7GAZhRrs/196137923887/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-21888-52uxwp0encwp/19616ccf5bb7/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -13054,7 +12903,7 @@ ${JSON.stringify(
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20512-n4Ex7GAZhRrs/1961379232a0/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21888-52uxwp0encwp/19616ccf55d0/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -13193,7 +13042,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20512-n4Ex7GAZhRrs/196137923581/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21888-52uxwp0encwp/19616ccf58a1/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -13401,7 +13250,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20512-n4Ex7GAZhRrs/1961379235f2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21888-52uxwp0encwp/19616ccf5912/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -13434,6 +13283,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100%;
   width: 100%;
   --default-font-size: clamp(0.5rem, calc(0.8cqw * 3), 3rem);
+  --songname-font-size: clamp(0.5rem, calc(0.7cqw * 3), 3rem);
 }
 #SpicyLyricsPage .ContentBox .NowBar {
   --title-height: 5cqh;
@@ -13515,7 +13365,7 @@ button:has(#SpicyLyricsPageSvg):after {
 }
 #SpicyLyricsPage .ContentBox .NowBar .Header .Metadata .SongName {
   font-weight: 700;
-  font-size: var(--default-font-size);
+  font-size: var(--songname-font-size);
   color: white;
   text-align: center;
   opacity: .95;
@@ -13875,7 +13725,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20512-n4Ex7GAZhRrs/1961379236a3/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21888-52uxwp0encwp/19616ccf59c3/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -13934,7 +13784,7 @@ button:has(#SpicyLyricsPageSvg):after {
   position: relative;
 }
 .spicy-dynamic-bg-in-this:is(aside) .spicy-dynamic-bg {
-  filter: saturate(2) brightness(0.7);
+  filter: saturate(2) brightness(0.55);
   max-height: 100%;
   max-width: 100%;
 }
@@ -13958,7 +13808,7 @@ button:has(#SpicyLyricsPageSvg):after {
   transform-origin: left top;
 }
 #SpicyLyricsPage .spicy-dynamic-bg {
-  filter: saturate(2.5) brightness(.65);
+  filter: saturate(2.5) brightness(.55);
 }
 #SpicyLyricsPage .spicy-dynamic-bg:is(.lowqmode) {
   -o-object-fit: cover;
@@ -13983,7 +13833,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20512-n4Ex7GAZhRrs/1961379236f4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21888-52uxwp0encwp/19616ccf5a14/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -14182,7 +14032,7 @@ ruby > rt {
   width: 100%;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20512-n4Ex7GAZhRrs/196137923755/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21888-52uxwp0encwp/19616ccf5a85/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -14470,7 +14320,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20512-n4Ex7GAZhRrs/1961379237c6/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21888-52uxwp0encwp/19616ccf5ae6/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
