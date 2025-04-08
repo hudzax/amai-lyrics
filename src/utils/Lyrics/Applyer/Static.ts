@@ -20,23 +20,23 @@ import storage from '../../storage';
 
 export function ApplyStaticLyrics(data) {
   if (!Defaults.LyricsContainerExists) return;
+
   const LyricsContainer = document.querySelector<HTMLElement>(
     '#SpicyLyricsPage .LyricsContainer .LyricsContent',
   );
-
   LyricsContainer.setAttribute('data-lyrics-type', 'Static');
 
   ClearLyricsContentArrays();
   ClearScrollSimplebar();
-
   TOP_ApplyLyricsSpacer(LyricsContainer);
+
+  const fragment = document.createDocumentFragment();
 
   data.Lines.forEach((line, index) => {
     const lineElem = document.createElement('div');
-    // if test contains japanese characters
+
     const JapaneseRegex = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/g;
     if (JapaneseRegex.test(line.Text)) {
-      // Notify user for romaji or furigana option
       if (
         !data.Info &&
         (!storage.get('disable_romaji_toggle_notification') ||
@@ -46,7 +46,6 @@ export function ApplyStaticLyrics(data) {
           'Toggle between Romaji or Furigana in settings. Disable this notification there as well.';
       }
       if (storage.get('enable_romaji') === 'true') {
-        // Generate ruby text for romaji
         line.Text = line.Text?.replace(
           /(([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)|[(\uFF08]([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)[)\uFF09])(?:{|\uFF5B)([^}\uFF5D]+)(?:}|\uFF5D)/g,
           (match, p1, p2, p3, p4) => {
@@ -55,19 +54,18 @@ export function ApplyStaticLyrics(data) {
           },
         );
       } else {
-        // Generate ruby text for furigana
         line.Text = line.Text?.replace(
           /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^\}]+)}/g,
           '<ruby>$1<rt>$2</rt></ruby>',
         );
       }
     } else {
-      // Generate ruby text for korean romaja
       line.Text = line.Text?.replace(
         /((?:\([0-9\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)(?:[a-zA-Z]*)[?.!,"']?){([^\}]+)}/g,
         '<ruby class="romaja">$1<rt>$2</rt></ruby>',
       );
     }
+
     const mainTextContainer = document.createElement('span');
     mainTextContainer.classList.add('main-lyrics-text');
 
@@ -83,7 +81,6 @@ export function ApplyStaticLyrics(data) {
 
     lineElem.appendChild(mainTextContainer);
 
-    // Add translation if available and different from original text
     if (
       line.Translation &&
       line.Translation.trim() !== '' &&
@@ -99,8 +96,7 @@ export function ApplyStaticLyrics(data) {
       lineElem.classList.add('rtl');
     }
 
-    lineElem.classList.add('line');
-    lineElem.classList.add('static');
+    lineElem.classList.add('line', 'static');
 
     if (ArabicPersianRegex.test(line.Text)) {
       lineElem.setAttribute('font', 'Vazirmatn');
@@ -110,13 +106,13 @@ export function ApplyStaticLyrics(data) {
       HTMLElement: lineElem,
     });
 
-    LyricsContainer.appendChild(lineElem);
+    fragment.appendChild(lineElem);
   });
 
+  LyricsContainer.appendChild(fragment);
+
   ApplyInfo(data);
-
   ApplyLyricsCredits(data);
-
   BOTTOM_ApplyLyricsSpacer(LyricsContainer);
 
   if (ScrollSimplebar) RecalculateScrollSimplebar();
