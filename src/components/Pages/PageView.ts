@@ -20,7 +20,6 @@ import Fullscreen from '../Utils/Fullscreen';
 import TransferElement from '../Utils/TransferElement';
 import Session from '../Global/Session';
 import { ResetLastLine } from '../../utils/Scrolling/ScrollToActiveLine';
-import Global from '../Global/Global';
 
 export const Tooltips = {
   Close: null,
@@ -40,13 +39,6 @@ const PageView = {
 export const PageRoot = document.querySelector<HTMLElement>(
   '.Root__main-view .main-view-container div[data-overlayscrollbars-viewport]',
 );
-
-// let isWsConnected = false;
-
-// Global.Event.listen("sockets:ws:connection-status-change", (e) => {
-// 	isWsConnected = e.connected;
-// 	SocketStatusChange(e.connected);
-// });
 
 function OpenPage() {
   if (PageView.IsOpened) return;
@@ -128,17 +120,10 @@ function OpenPage() {
 
   Session_OpenNowBar();
 
-  /* const ArtworkButton = document.querySelector<HTMLElement>("#SpicyLyricsPage .ContentBox .NowBar .Header .Artwork");
-
-    ArtworkButton.addEventListener("click", () => {
-        NowBar_SwapSides();
-    }) */
-
   Session_NowBar_SetSide();
 
   AppendViewControls();
   PageView.IsOpened = true;
-  // SocketStatusChange(isWsConnected);
 }
 
 function DestroyPage() {
@@ -198,7 +183,6 @@ function AppendViewControls(ReAppend: boolean = false) {
   }
 
   function SetupTippy(elem: HTMLElement) {
-    // Let's set up our TippyProps
     {
       const closeButton = elem.querySelector('#Close');
 
@@ -209,25 +193,7 @@ function AppendViewControls(ReAppend: boolean = false) {
 
       closeButton.addEventListener('click', () => Session.GoBack());
 
-      /* // Kofi Donation
-
-            const kofiButton = elem.querySelector("#Kofi");
-
-            Tooltips.Kofi = Spicetify.Tippy(
-                kofiButton,
-                {
-                    ...Spicetify.TippyProps,
-                    content: `Donate`
-                }
-            )
-
-            kofiButton.addEventListener(
-                "click",
-                () => window.open("https://ko-fi.com/spikerko")
-            ) */
-
       // NowBar Toggle Button
-
       const nowBarButton = elem.querySelector('#NowBarToggle');
 
       Tooltips.NowBarToggle = Spicetify.Tippy(nowBarButton, {
@@ -351,27 +317,5 @@ export function SpicyLyrics_Notification({
     },
   };
 }
-
-// function SocketStatusChange(status: boolean) {
-// 	if (!PageView.IsOpened) return;
-// 	if (!document.querySelector("#SpicyLyricsPage")) return;
-// 	const notif = SpicyLyrics_Notification({
-// 		icon: Icons.LyricsPage,
-// 		metadata: {
-// 			title: "Connection Error",
-// 			description: "We're recconecting you back to Spicy Lyrics. Be patient.",
-// 		},
-// 		type: "Warning",
-// 		closeBtn: false,
-// 	});
-// 	if (status) {
-// 		notif.close();
-// 		notif.cleanup();
-// 	} else {
-// 		notif.open();
-// 	}
-// }
-
-// SocketStatusChange(isWsConnected);
 
 export default PageView;
