@@ -34,6 +34,7 @@
     height: 100%;
     width: 100%;
     --default-font-size: clamp(0.5rem, calc(0.8cqw * 3), 3rem);
+    --songname-font-size: clamp(0.5rem, calc(0.7cqw * 3), 3rem);
 }
 
 #SpicyLyricsPage .ContentBox .NowBar {
@@ -132,7 +133,7 @@
 
 #SpicyLyricsPage .ContentBox .NowBar .Header .Metadata .SongName {
     font-weight: 700;
-    font-size: var(--default-font-size);
+    font-size: var(--songname-font-size);
     color: white;
     text-align: center;           /* Fallback for child alignment */
     opacity: .95;
