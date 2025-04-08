@@ -140,33 +140,48 @@ function setupDynamicBackground(button) {
     let lastImgUrl: string | null = null;
     const lowQModeEnabled = storage.get("lowQMode") === "true";
 
+    const cached = {
+      nowPlayingBar: null as HTMLElement | null,
+      dynamicBg: null as HTMLElement | null,
+    };
+
     function applyDynamicBackgroundToNowPlayingBar(coverUrl: string) {
       if (lowQModeEnabled) return;
-      const nowPlayingBar = document.querySelector<HTMLElement>(
-        ".Root__right-sidebar aside.NowPlayingView"
-      );
 
       try {
+        if (!cached.nowPlayingBar) {
+          cached.nowPlayingBar = document.querySelector<HTMLElement>(
+            ".Root__right-sidebar aside.NowPlayingView"
+          );
+        }
+
+        const nowPlayingBar = cached.nowPlayingBar;
+
         if (!nowPlayingBar) {
           lastImgUrl = null;
+          cached.dynamicBg = null;
           return;
         }
-        if (coverUrl === lastImgUrl) return;
 
-        const dynamicBackground = document.createElement("div");
-        dynamicBackground.classList.add("spicy-dynamic-bg");
-        dynamicBackground.innerHTML = `
-          <img class="Front" src="${coverUrl}" />
-          <img class="Back" src="${coverUrl}" />
-          <img class="BackCenter" src="${coverUrl}" />
-        `;
+        if (coverUrl === lastImgUrl && cached.dynamicBg) return;
 
-        nowPlayingBar.classList.add("spicy-dynamic-bg-in-this");
-
-        const existing = nowPlayingBar.querySelector(".spicy-dynamic-bg");
-        if (existing) existing.remove();
-
-        nowPlayingBar.appendChild(dynamicBackground);
+        if (!cached.dynamicBg) {
+          const dynamicBackground = document.createElement("div");
+          dynamicBackground.classList.add("spicy-dynamic-bg");
+          dynamicBackground.innerHTML = `
+            <img class="Front" src="${coverUrl}" />
+            <img class="Back" src="${coverUrl}" />
+            <img class="BackCenter" src="${coverUrl}" />
+          `;
+          nowPlayingBar.classList.add("spicy-dynamic-bg-in-this");
+          nowPlayingBar.appendChild(dynamicBackground);
+          cached.dynamicBg = dynamicBackground;
+        } else {
+          const imgs = cached.dynamicBg.querySelectorAll("img");
+          imgs.forEach((img) => {
+            img.src = coverUrl;
+          });
+        }
 
         lastImgUrl = coverUrl;
       } catch (error) {
