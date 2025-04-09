@@ -1,17 +1,26 @@
 # 🎶 Amai Lyrics
 
-Welcome! **Amai Lyrics** is a extension for [Spicetify](https://spicetify.app/), which customizes your Spotify app. It adds helpful features like Furigana (small pronunciation guides for Japanese Kanji), Romaji (Japanese lyrics in Latin letters), and Romanization for Korean lyrics, making songs in these languages more accessible and enjoyable.
+Welcome! **Amai Lyrics** is an extension for [Spicetify](https://spicetify.app/) that helps you enjoy Japanese and Korean songs on Spotify. It adds Furigana to help you read Kanji, shows Romaji and Korean Romanization so you can follow along, and provides line-by-line translations.
+
+Using Google's Gemini AI, it automatically generates:
+
+- **Translations** for each line
+- **Furigana** (pronunciation guides) above Kanji
+- **Romaji** (Latin script) for Japanese lyrics
+- **Korean Romanization** (Latin script) for Korean lyrics
+
+—all displayed seamlessly inside Spotify. Setup is simple with your own API key, and the clean design keeps everything easy to read.
 
 ---
 
 ## 🌟 Features
 
+- **Line-by-line Translation:** See translations for each line of lyrics.
 - **Furigana Support:** Shows pronunciation guides above Kanji characters.
 - **Romaji Support:** Displays Japanese lyrics in Latin letters.
 - **Korean Romanization:** Shows Korean lyrics in Latin letters.
-- **Line-by-line Translation:** See translations for each line of lyrics.
-- **Better Visuals:** Clean and easy-to-read design.
 - **Gemini Integration:** Uses Google's Gemini AI to generate annotations.
+- **Better Visuals:** Clean and easy-to-read design.
 - **Easy Setup:** Just get an API key from [Google AI Studio](https://aistudio.google.com/app/apikey) and add it in Spotify settings (explained below).
 
 ---
@@ -123,9 +132,9 @@ Follow these steps to set up your Gemini API key:
 
    - Play a song.
    - Click the lyrics icon at the bottom of Spotify.
-   - Wait a few seconds — the lyrics with Furigana, Romaji, or Romanization will appear!
+   - Wait a few seconds — the lyrics will appear with line-by-line translation, Furigana, Romaji, or Romanization!
 
-   ![Lyrics Toggle Screenshot](./previews/toggle-lyrics-page.jpg)
+   ![Lyrics Toggle Screenshot](./previews/toggle-lyrics-page.png)
 
 ---
 
