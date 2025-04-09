@@ -201,7 +201,7 @@ async function fetchLyricsFromAPI(
     // Process the lyrics for display and AI enhancement
     return await processAndEnhanceLyrics(trackId, lyricsJson);
   } catch (error) {
-    console.error('Error fetching lyrics:', error);
+    console.error('Error fetching lyrics:', error?.message, error?.stack);
     storage.set('currentlyFetching', 'false');
     ClearLyricsPageContainer();
     return await noLyricsMessage();
