@@ -412,7 +412,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.0.44";
+      version = "1.0.45";
     }
   });
 
@@ -2400,9 +2400,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-21888-52uxwp0encwp/19616ccf5bb7/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-248-VGyXKSFJZstE/1961cea3f087/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-21888-52uxwp0encwp/19616ccf5bb7/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-248-VGyXKSFJZstE/1961cea3f087/DotLoader.css"() {
     }
   });
 
@@ -11690,7 +11690,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         return await noLyricsMessage(trackId);
       return await processAndEnhanceLyrics(trackId, lyricsJson);
     } catch (error) {
-      console.error("Error fetching lyrics:", error);
+      console.error("Error fetching lyrics:", error?.message, error?.stack);
       storage_default.set("currentlyFetching", "false");
       ClearLyricsPageContainer();
       return await noLyricsMessage();
@@ -12877,7 +12877,7 @@ ${JSON.stringify(
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-21888-52uxwp0encwp/19616ccf5bb7/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-248-VGyXKSFJZstE/1961cea3f087/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -12903,7 +12903,7 @@ ${JSON.stringify(
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21888-52uxwp0encwp/19616ccf55d0/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-248-VGyXKSFJZstE/1961cea3eab0/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -13042,7 +13042,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21888-52uxwp0encwp/19616ccf58a1/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-248-VGyXKSFJZstE/1961cea3ed91/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -13250,7 +13250,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21888-52uxwp0encwp/19616ccf5912/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-248-VGyXKSFJZstE/1961cea3ee02/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -13725,7 +13725,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21888-52uxwp0encwp/19616ccf59c3/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-248-VGyXKSFJZstE/1961cea3eeb3/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -13833,7 +13833,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21888-52uxwp0encwp/19616ccf5a14/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-248-VGyXKSFJZstE/1961cea3eef4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -14031,8 +14031,17 @@ ruby > rt {
   display: block;
   width: 100%;
 }
+.main-trackList-trackListRow:focus-within,
+.main-trackList-trackListRow:hover,
+.BoxComponent-group-card-naked-isInteractive-draggable:hover::after {
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21888-52uxwp0encwp/19616ccf5a85/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-248-VGyXKSFJZstE/1961cea3ef55/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -14320,7 +14329,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21888-52uxwp0encwp/19616ccf5ae6/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-248-VGyXKSFJZstE/1961cea3efb6/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
