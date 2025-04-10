@@ -412,7 +412,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.0.45";
+      version = "1.0.46";
     }
   });
 
@@ -815,6 +815,4554 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
+  // node_modules/pako/dist/pako.esm.mjs
+  function zero$1(buf) {
+    let len = buf.length;
+    while (--len >= 0) {
+      buf[len] = 0;
+    }
+  }
+  function StaticTreeDesc(static_tree, extra_bits, extra_base, elems, max_length) {
+    this.static_tree = static_tree;
+    this.extra_bits = extra_bits;
+    this.extra_base = extra_base;
+    this.elems = elems;
+    this.max_length = max_length;
+    this.has_stree = static_tree && static_tree.length;
+  }
+  function TreeDesc(dyn_tree, stat_desc) {
+    this.dyn_tree = dyn_tree;
+    this.max_code = 0;
+    this.stat_desc = stat_desc;
+  }
+  function Config(good_length, max_lazy, nice_length, max_chain, func) {
+    this.good_length = good_length;
+    this.max_lazy = max_lazy;
+    this.nice_length = nice_length;
+    this.max_chain = max_chain;
+    this.func = func;
+  }
+  function DeflateState() {
+    this.strm = null;
+    this.status = 0;
+    this.pending_buf = null;
+    this.pending_buf_size = 0;
+    this.pending_out = 0;
+    this.pending = 0;
+    this.wrap = 0;
+    this.gzhead = null;
+    this.gzindex = 0;
+    this.method = Z_DEFLATED$2;
+    this.last_flush = -1;
+    this.w_size = 0;
+    this.w_bits = 0;
+    this.w_mask = 0;
+    this.window = null;
+    this.window_size = 0;
+    this.prev = null;
+    this.head = null;
+    this.ins_h = 0;
+    this.hash_size = 0;
+    this.hash_bits = 0;
+    this.hash_mask = 0;
+    this.hash_shift = 0;
+    this.block_start = 0;
+    this.match_length = 0;
+    this.prev_match = 0;
+    this.match_available = 0;
+    this.strstart = 0;
+    this.match_start = 0;
+    this.lookahead = 0;
+    this.prev_length = 0;
+    this.max_chain_length = 0;
+    this.max_lazy_match = 0;
+    this.level = 0;
+    this.strategy = 0;
+    this.good_match = 0;
+    this.nice_match = 0;
+    this.dyn_ltree = new Uint16Array(HEAP_SIZE * 2);
+    this.dyn_dtree = new Uint16Array((2 * D_CODES + 1) * 2);
+    this.bl_tree = new Uint16Array((2 * BL_CODES + 1) * 2);
+    zero(this.dyn_ltree);
+    zero(this.dyn_dtree);
+    zero(this.bl_tree);
+    this.l_desc = null;
+    this.d_desc = null;
+    this.bl_desc = null;
+    this.bl_count = new Uint16Array(MAX_BITS + 1);
+    this.heap = new Uint16Array(2 * L_CODES + 1);
+    zero(this.heap);
+    this.heap_len = 0;
+    this.heap_max = 0;
+    this.depth = new Uint16Array(2 * L_CODES + 1);
+    zero(this.depth);
+    this.sym_buf = 0;
+    this.lit_bufsize = 0;
+    this.sym_next = 0;
+    this.sym_end = 0;
+    this.opt_len = 0;
+    this.static_len = 0;
+    this.matches = 0;
+    this.insert = 0;
+    this.bi_buf = 0;
+    this.bi_valid = 0;
+  }
+  function ZStream() {
+    this.input = null;
+    this.next_in = 0;
+    this.avail_in = 0;
+    this.total_in = 0;
+    this.output = null;
+    this.next_out = 0;
+    this.avail_out = 0;
+    this.total_out = 0;
+    this.msg = "";
+    this.state = null;
+    this.data_type = 2;
+    this.adler = 0;
+  }
+  function Deflate$1(options) {
+    this.options = common.assign({
+      level: Z_DEFAULT_COMPRESSION,
+      method: Z_DEFLATED$1,
+      chunkSize: 16384,
+      windowBits: 15,
+      memLevel: 8,
+      strategy: Z_DEFAULT_STRATEGY
+    }, options || {});
+    let opt = this.options;
+    if (opt.raw && opt.windowBits > 0) {
+      opt.windowBits = -opt.windowBits;
+    } else if (opt.gzip && opt.windowBits > 0 && opt.windowBits < 16) {
+      opt.windowBits += 16;
+    }
+    this.err = 0;
+    this.msg = "";
+    this.ended = false;
+    this.chunks = [];
+    this.strm = new zstream();
+    this.strm.avail_out = 0;
+    let status = deflate_1$2.deflateInit2(
+      this.strm,
+      opt.level,
+      opt.method,
+      opt.windowBits,
+      opt.memLevel,
+      opt.strategy
+    );
+    if (status !== Z_OK$2) {
+      throw new Error(messages[status]);
+    }
+    if (opt.header) {
+      deflate_1$2.deflateSetHeader(this.strm, opt.header);
+    }
+    if (opt.dictionary) {
+      let dict;
+      if (typeof opt.dictionary === "string") {
+        dict = strings.string2buf(opt.dictionary);
+      } else if (toString$1.call(opt.dictionary) === "[object ArrayBuffer]") {
+        dict = new Uint8Array(opt.dictionary);
+      } else {
+        dict = opt.dictionary;
+      }
+      status = deflate_1$2.deflateSetDictionary(this.strm, dict);
+      if (status !== Z_OK$2) {
+        throw new Error(messages[status]);
+      }
+      this._dict_set = true;
+    }
+  }
+  function deflate$1(input, options) {
+    const deflator = new Deflate$1(options);
+    deflator.push(input, true);
+    if (deflator.err) {
+      throw deflator.msg || messages[deflator.err];
+    }
+    return deflator.result;
+  }
+  function deflateRaw$1(input, options) {
+    options = options || {};
+    options.raw = true;
+    return deflate$1(input, options);
+  }
+  function gzip$1(input, options) {
+    options = options || {};
+    options.gzip = true;
+    return deflate$1(input, options);
+  }
+  function InflateState() {
+    this.strm = null;
+    this.mode = 0;
+    this.last = false;
+    this.wrap = 0;
+    this.havedict = false;
+    this.flags = 0;
+    this.dmax = 0;
+    this.check = 0;
+    this.total = 0;
+    this.head = null;
+    this.wbits = 0;
+    this.wsize = 0;
+    this.whave = 0;
+    this.wnext = 0;
+    this.window = null;
+    this.hold = 0;
+    this.bits = 0;
+    this.length = 0;
+    this.offset = 0;
+    this.extra = 0;
+    this.lencode = null;
+    this.distcode = null;
+    this.lenbits = 0;
+    this.distbits = 0;
+    this.ncode = 0;
+    this.nlen = 0;
+    this.ndist = 0;
+    this.have = 0;
+    this.next = null;
+    this.lens = new Uint16Array(320);
+    this.work = new Uint16Array(288);
+    this.lendyn = null;
+    this.distdyn = null;
+    this.sane = 0;
+    this.back = 0;
+    this.was = 0;
+  }
+  function GZheader() {
+    this.text = 0;
+    this.time = 0;
+    this.xflags = 0;
+    this.os = 0;
+    this.extra = null;
+    this.extra_len = 0;
+    this.name = "";
+    this.comment = "";
+    this.hcrc = 0;
+    this.done = false;
+  }
+  function Inflate$1(options) {
+    this.options = common.assign({
+      chunkSize: 1024 * 64,
+      windowBits: 15,
+      to: ""
+    }, options || {});
+    const opt = this.options;
+    if (opt.raw && opt.windowBits >= 0 && opt.windowBits < 16) {
+      opt.windowBits = -opt.windowBits;
+      if (opt.windowBits === 0) {
+        opt.windowBits = -15;
+      }
+    }
+    if (opt.windowBits >= 0 && opt.windowBits < 16 && !(options && options.windowBits)) {
+      opt.windowBits += 32;
+    }
+    if (opt.windowBits > 15 && opt.windowBits < 48) {
+      if ((opt.windowBits & 15) === 0) {
+        opt.windowBits |= 15;
+      }
+    }
+    this.err = 0;
+    this.msg = "";
+    this.ended = false;
+    this.chunks = [];
+    this.strm = new zstream();
+    this.strm.avail_out = 0;
+    let status = inflate_1$2.inflateInit2(
+      this.strm,
+      opt.windowBits
+    );
+    if (status !== Z_OK) {
+      throw new Error(messages[status]);
+    }
+    this.header = new gzheader();
+    inflate_1$2.inflateGetHeader(this.strm, this.header);
+    if (opt.dictionary) {
+      if (typeof opt.dictionary === "string") {
+        opt.dictionary = strings.string2buf(opt.dictionary);
+      } else if (toString.call(opt.dictionary) === "[object ArrayBuffer]") {
+        opt.dictionary = new Uint8Array(opt.dictionary);
+      }
+      if (opt.raw) {
+        status = inflate_1$2.inflateSetDictionary(this.strm, opt.dictionary);
+        if (status !== Z_OK) {
+          throw new Error(messages[status]);
+        }
+      }
+    }
+  }
+  function inflate$1(input, options) {
+    const inflator = new Inflate$1(options);
+    inflator.push(input);
+    if (inflator.err)
+      throw inflator.msg || messages[inflator.err];
+    return inflator.result;
+  }
+  function inflateRaw$1(input, options) {
+    options = options || {};
+    options.raw = true;
+    return inflate$1(input, options);
+  }
+  var Z_FIXED$1, Z_BINARY, Z_TEXT, Z_UNKNOWN$1, STORED_BLOCK, STATIC_TREES, DYN_TREES, MIN_MATCH$1, MAX_MATCH$1, LENGTH_CODES$1, LITERALS$1, L_CODES$1, D_CODES$1, BL_CODES$1, HEAP_SIZE$1, MAX_BITS$1, Buf_size, MAX_BL_BITS, END_BLOCK, REP_3_6, REPZ_3_10, REPZ_11_138, extra_lbits, extra_dbits, extra_blbits, bl_order, DIST_CODE_LEN, static_ltree, static_dtree, _dist_code, _length_code, base_length, base_dist, static_l_desc, static_d_desc, static_bl_desc, d_code, put_short, send_bits, send_code, bi_reverse, bi_flush, gen_bitlen, gen_codes, tr_static_init, init_block, bi_windup, smaller, pqdownheap, compress_block, build_tree, scan_tree, send_tree, build_bl_tree, send_all_trees, detect_data_type, static_init_done, _tr_init$1, _tr_stored_block$1, _tr_align$1, _tr_flush_block$1, _tr_tally$1, _tr_init_1, _tr_stored_block_1, _tr_flush_block_1, _tr_tally_1, _tr_align_1, trees, adler32, adler32_1, makeTable, crcTable, crc32, crc32_1, messages, constants$2, _tr_init, _tr_stored_block, _tr_flush_block, _tr_tally, _tr_align, Z_NO_FLUSH$2, Z_PARTIAL_FLUSH, Z_FULL_FLUSH$1, Z_FINISH$3, Z_BLOCK$1, Z_OK$3, Z_STREAM_END$3, Z_STREAM_ERROR$2, Z_DATA_ERROR$2, Z_BUF_ERROR$1, Z_DEFAULT_COMPRESSION$1, Z_FILTERED, Z_HUFFMAN_ONLY, Z_RLE, Z_FIXED, Z_DEFAULT_STRATEGY$1, Z_UNKNOWN, Z_DEFLATED$2, MAX_MEM_LEVEL, MAX_WBITS$1, DEF_MEM_LEVEL, LENGTH_CODES, LITERALS, L_CODES, D_CODES, BL_CODES, HEAP_SIZE, MAX_BITS, MIN_MATCH, MAX_MATCH, MIN_LOOKAHEAD, PRESET_DICT, INIT_STATE, GZIP_STATE, EXTRA_STATE, NAME_STATE, COMMENT_STATE, HCRC_STATE, BUSY_STATE, FINISH_STATE, BS_NEED_MORE, BS_BLOCK_DONE, BS_FINISH_STARTED, BS_FINISH_DONE, OS_CODE, err, rank, zero, slide_hash, HASH_ZLIB, HASH, flush_pending, flush_block_only, put_byte, putShortMSB, read_buf, longest_match, fill_window, deflate_stored, deflate_fast, deflate_slow, deflate_rle, deflate_huff, configuration_table, lm_init, deflateStateCheck, deflateResetKeep, deflateReset, deflateSetHeader, deflateInit2, deflateInit, deflate$2, deflateEnd, deflateSetDictionary, deflateInit_1, deflateInit2_1, deflateReset_1, deflateResetKeep_1, deflateSetHeader_1, deflate_2$1, deflateEnd_1, deflateSetDictionary_1, deflateInfo, deflate_1$2, _has, assign, flattenChunks, common, STR_APPLY_UIA_OK, _utf8len, string2buf, buf2binstring, buf2string, utf8border, strings, zstream, toString$1, Z_NO_FLUSH$1, Z_SYNC_FLUSH, Z_FULL_FLUSH, Z_FINISH$2, Z_OK$2, Z_STREAM_END$2, Z_DEFAULT_COMPRESSION, Z_DEFAULT_STRATEGY, Z_DEFLATED$1, Deflate_1$1, deflate_2, deflateRaw_1$1, gzip_1$1, constants$1, deflate_1$1, BAD$1, TYPE$1, inffast, MAXBITS, ENOUGH_LENS$1, ENOUGH_DISTS$1, CODES$1, LENS$1, DISTS$1, lbase, lext, dbase, dext, inflate_table, inftrees, CODES, LENS, DISTS, Z_FINISH$1, Z_BLOCK, Z_TREES, Z_OK$1, Z_STREAM_END$1, Z_NEED_DICT$1, Z_STREAM_ERROR$1, Z_DATA_ERROR$1, Z_MEM_ERROR$1, Z_BUF_ERROR, Z_DEFLATED, HEAD, FLAGS, TIME, OS, EXLEN, EXTRA, NAME, COMMENT, HCRC, DICTID, DICT, TYPE, TYPEDO, STORED, COPY_, COPY, TABLE, LENLENS, CODELENS, LEN_, LEN, LENEXT, DIST, DISTEXT, MATCH, LIT, CHECK, LENGTH, DONE, BAD, MEM, SYNC, ENOUGH_LENS, ENOUGH_DISTS, MAX_WBITS, DEF_WBITS, zswap32, inflateStateCheck, inflateResetKeep, inflateReset, inflateReset2, inflateInit2, inflateInit, virgin, lenfix, distfix, fixedtables, updatewindow, inflate$2, inflateEnd, inflateGetHeader, inflateSetDictionary, inflateReset_1, inflateReset2_1, inflateResetKeep_1, inflateInit_1, inflateInit2_1, inflate_2$1, inflateEnd_1, inflateGetHeader_1, inflateSetDictionary_1, inflateInfo, inflate_1$2, gzheader, toString, Z_NO_FLUSH, Z_FINISH, Z_OK, Z_STREAM_END, Z_NEED_DICT, Z_STREAM_ERROR, Z_DATA_ERROR, Z_MEM_ERROR, Inflate_1$1, inflate_2, inflateRaw_1$1, ungzip$1, constants, inflate_1$1, Deflate, deflate, deflateRaw, gzip, Inflate, inflate, inflateRaw, ungzip, Deflate_1, deflate_1, deflateRaw_1, gzip_1, Inflate_1, inflate_1, inflateRaw_1, ungzip_1, constants_1, pako;
+  var init_pako_esm = __esm({
+    "node_modules/pako/dist/pako.esm.mjs"() {
+      Z_FIXED$1 = 4;
+      Z_BINARY = 0;
+      Z_TEXT = 1;
+      Z_UNKNOWN$1 = 2;
+      STORED_BLOCK = 0;
+      STATIC_TREES = 1;
+      DYN_TREES = 2;
+      MIN_MATCH$1 = 3;
+      MAX_MATCH$1 = 258;
+      LENGTH_CODES$1 = 29;
+      LITERALS$1 = 256;
+      L_CODES$1 = LITERALS$1 + 1 + LENGTH_CODES$1;
+      D_CODES$1 = 30;
+      BL_CODES$1 = 19;
+      HEAP_SIZE$1 = 2 * L_CODES$1 + 1;
+      MAX_BITS$1 = 15;
+      Buf_size = 16;
+      MAX_BL_BITS = 7;
+      END_BLOCK = 256;
+      REP_3_6 = 16;
+      REPZ_3_10 = 17;
+      REPZ_11_138 = 18;
+      extra_lbits = new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0]);
+      extra_dbits = new Uint8Array([0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13]);
+      extra_blbits = new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 7]);
+      bl_order = new Uint8Array([16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15]);
+      DIST_CODE_LEN = 512;
+      static_ltree = new Array((L_CODES$1 + 2) * 2);
+      zero$1(static_ltree);
+      static_dtree = new Array(D_CODES$1 * 2);
+      zero$1(static_dtree);
+      _dist_code = new Array(DIST_CODE_LEN);
+      zero$1(_dist_code);
+      _length_code = new Array(MAX_MATCH$1 - MIN_MATCH$1 + 1);
+      zero$1(_length_code);
+      base_length = new Array(LENGTH_CODES$1);
+      zero$1(base_length);
+      base_dist = new Array(D_CODES$1);
+      zero$1(base_dist);
+      d_code = (dist) => {
+        return dist < 256 ? _dist_code[dist] : _dist_code[256 + (dist >>> 7)];
+      };
+      put_short = (s, w) => {
+        s.pending_buf[s.pending++] = w & 255;
+        s.pending_buf[s.pending++] = w >>> 8 & 255;
+      };
+      send_bits = (s, value, length) => {
+        if (s.bi_valid > Buf_size - length) {
+          s.bi_buf |= value << s.bi_valid & 65535;
+          put_short(s, s.bi_buf);
+          s.bi_buf = value >> Buf_size - s.bi_valid;
+          s.bi_valid += length - Buf_size;
+        } else {
+          s.bi_buf |= value << s.bi_valid & 65535;
+          s.bi_valid += length;
+        }
+      };
+      send_code = (s, c, tree) => {
+        send_bits(s, tree[c * 2], tree[c * 2 + 1]);
+      };
+      bi_reverse = (code, len) => {
+        let res = 0;
+        do {
+          res |= code & 1;
+          code >>>= 1;
+          res <<= 1;
+        } while (--len > 0);
+        return res >>> 1;
+      };
+      bi_flush = (s) => {
+        if (s.bi_valid === 16) {
+          put_short(s, s.bi_buf);
+          s.bi_buf = 0;
+          s.bi_valid = 0;
+        } else if (s.bi_valid >= 8) {
+          s.pending_buf[s.pending++] = s.bi_buf & 255;
+          s.bi_buf >>= 8;
+          s.bi_valid -= 8;
+        }
+      };
+      gen_bitlen = (s, desc) => {
+        const tree = desc.dyn_tree;
+        const max_code = desc.max_code;
+        const stree = desc.stat_desc.static_tree;
+        const has_stree = desc.stat_desc.has_stree;
+        const extra = desc.stat_desc.extra_bits;
+        const base = desc.stat_desc.extra_base;
+        const max_length = desc.stat_desc.max_length;
+        let h;
+        let n, m;
+        let bits;
+        let xbits;
+        let f;
+        let overflow = 0;
+        for (bits = 0; bits <= MAX_BITS$1; bits++) {
+          s.bl_count[bits] = 0;
+        }
+        tree[s.heap[s.heap_max] * 2 + 1] = 0;
+        for (h = s.heap_max + 1; h < HEAP_SIZE$1; h++) {
+          n = s.heap[h];
+          bits = tree[tree[n * 2 + 1] * 2 + 1] + 1;
+          if (bits > max_length) {
+            bits = max_length;
+            overflow++;
+          }
+          tree[n * 2 + 1] = bits;
+          if (n > max_code) {
+            continue;
+          }
+          s.bl_count[bits]++;
+          xbits = 0;
+          if (n >= base) {
+            xbits = extra[n - base];
+          }
+          f = tree[n * 2];
+          s.opt_len += f * (bits + xbits);
+          if (has_stree) {
+            s.static_len += f * (stree[n * 2 + 1] + xbits);
+          }
+        }
+        if (overflow === 0) {
+          return;
+        }
+        do {
+          bits = max_length - 1;
+          while (s.bl_count[bits] === 0) {
+            bits--;
+          }
+          s.bl_count[bits]--;
+          s.bl_count[bits + 1] += 2;
+          s.bl_count[max_length]--;
+          overflow -= 2;
+        } while (overflow > 0);
+        for (bits = max_length; bits !== 0; bits--) {
+          n = s.bl_count[bits];
+          while (n !== 0) {
+            m = s.heap[--h];
+            if (m > max_code) {
+              continue;
+            }
+            if (tree[m * 2 + 1] !== bits) {
+              s.opt_len += (bits - tree[m * 2 + 1]) * tree[m * 2];
+              tree[m * 2 + 1] = bits;
+            }
+            n--;
+          }
+        }
+      };
+      gen_codes = (tree, max_code, bl_count) => {
+        const next_code = new Array(MAX_BITS$1 + 1);
+        let code = 0;
+        let bits;
+        let n;
+        for (bits = 1; bits <= MAX_BITS$1; bits++) {
+          code = code + bl_count[bits - 1] << 1;
+          next_code[bits] = code;
+        }
+        for (n = 0; n <= max_code; n++) {
+          let len = tree[n * 2 + 1];
+          if (len === 0) {
+            continue;
+          }
+          tree[n * 2] = bi_reverse(next_code[len]++, len);
+        }
+      };
+      tr_static_init = () => {
+        let n;
+        let bits;
+        let length;
+        let code;
+        let dist;
+        const bl_count = new Array(MAX_BITS$1 + 1);
+        length = 0;
+        for (code = 0; code < LENGTH_CODES$1 - 1; code++) {
+          base_length[code] = length;
+          for (n = 0; n < 1 << extra_lbits[code]; n++) {
+            _length_code[length++] = code;
+          }
+        }
+        _length_code[length - 1] = code;
+        dist = 0;
+        for (code = 0; code < 16; code++) {
+          base_dist[code] = dist;
+          for (n = 0; n < 1 << extra_dbits[code]; n++) {
+            _dist_code[dist++] = code;
+          }
+        }
+        dist >>= 7;
+        for (; code < D_CODES$1; code++) {
+          base_dist[code] = dist << 7;
+          for (n = 0; n < 1 << extra_dbits[code] - 7; n++) {
+            _dist_code[256 + dist++] = code;
+          }
+        }
+        for (bits = 0; bits <= MAX_BITS$1; bits++) {
+          bl_count[bits] = 0;
+        }
+        n = 0;
+        while (n <= 143) {
+          static_ltree[n * 2 + 1] = 8;
+          n++;
+          bl_count[8]++;
+        }
+        while (n <= 255) {
+          static_ltree[n * 2 + 1] = 9;
+          n++;
+          bl_count[9]++;
+        }
+        while (n <= 279) {
+          static_ltree[n * 2 + 1] = 7;
+          n++;
+          bl_count[7]++;
+        }
+        while (n <= 287) {
+          static_ltree[n * 2 + 1] = 8;
+          n++;
+          bl_count[8]++;
+        }
+        gen_codes(static_ltree, L_CODES$1 + 1, bl_count);
+        for (n = 0; n < D_CODES$1; n++) {
+          static_dtree[n * 2 + 1] = 5;
+          static_dtree[n * 2] = bi_reverse(n, 5);
+        }
+        static_l_desc = new StaticTreeDesc(static_ltree, extra_lbits, LITERALS$1 + 1, L_CODES$1, MAX_BITS$1);
+        static_d_desc = new StaticTreeDesc(static_dtree, extra_dbits, 0, D_CODES$1, MAX_BITS$1);
+        static_bl_desc = new StaticTreeDesc(new Array(0), extra_blbits, 0, BL_CODES$1, MAX_BL_BITS);
+      };
+      init_block = (s) => {
+        let n;
+        for (n = 0; n < L_CODES$1; n++) {
+          s.dyn_ltree[n * 2] = 0;
+        }
+        for (n = 0; n < D_CODES$1; n++) {
+          s.dyn_dtree[n * 2] = 0;
+        }
+        for (n = 0; n < BL_CODES$1; n++) {
+          s.bl_tree[n * 2] = 0;
+        }
+        s.dyn_ltree[END_BLOCK * 2] = 1;
+        s.opt_len = s.static_len = 0;
+        s.sym_next = s.matches = 0;
+      };
+      bi_windup = (s) => {
+        if (s.bi_valid > 8) {
+          put_short(s, s.bi_buf);
+        } else if (s.bi_valid > 0) {
+          s.pending_buf[s.pending++] = s.bi_buf;
+        }
+        s.bi_buf = 0;
+        s.bi_valid = 0;
+      };
+      smaller = (tree, n, m, depth) => {
+        const _n2 = n * 2;
+        const _m2 = m * 2;
+        return tree[_n2] < tree[_m2] || tree[_n2] === tree[_m2] && depth[n] <= depth[m];
+      };
+      pqdownheap = (s, tree, k) => {
+        const v = s.heap[k];
+        let j = k << 1;
+        while (j <= s.heap_len) {
+          if (j < s.heap_len && smaller(tree, s.heap[j + 1], s.heap[j], s.depth)) {
+            j++;
+          }
+          if (smaller(tree, v, s.heap[j], s.depth)) {
+            break;
+          }
+          s.heap[k] = s.heap[j];
+          k = j;
+          j <<= 1;
+        }
+        s.heap[k] = v;
+      };
+      compress_block = (s, ltree, dtree) => {
+        let dist;
+        let lc;
+        let sx = 0;
+        let code;
+        let extra;
+        if (s.sym_next !== 0) {
+          do {
+            dist = s.pending_buf[s.sym_buf + sx++] & 255;
+            dist += (s.pending_buf[s.sym_buf + sx++] & 255) << 8;
+            lc = s.pending_buf[s.sym_buf + sx++];
+            if (dist === 0) {
+              send_code(s, lc, ltree);
+            } else {
+              code = _length_code[lc];
+              send_code(s, code + LITERALS$1 + 1, ltree);
+              extra = extra_lbits[code];
+              if (extra !== 0) {
+                lc -= base_length[code];
+                send_bits(s, lc, extra);
+              }
+              dist--;
+              code = d_code(dist);
+              send_code(s, code, dtree);
+              extra = extra_dbits[code];
+              if (extra !== 0) {
+                dist -= base_dist[code];
+                send_bits(s, dist, extra);
+              }
+            }
+          } while (sx < s.sym_next);
+        }
+        send_code(s, END_BLOCK, ltree);
+      };
+      build_tree = (s, desc) => {
+        const tree = desc.dyn_tree;
+        const stree = desc.stat_desc.static_tree;
+        const has_stree = desc.stat_desc.has_stree;
+        const elems = desc.stat_desc.elems;
+        let n, m;
+        let max_code = -1;
+        let node;
+        s.heap_len = 0;
+        s.heap_max = HEAP_SIZE$1;
+        for (n = 0; n < elems; n++) {
+          if (tree[n * 2] !== 0) {
+            s.heap[++s.heap_len] = max_code = n;
+            s.depth[n] = 0;
+          } else {
+            tree[n * 2 + 1] = 0;
+          }
+        }
+        while (s.heap_len < 2) {
+          node = s.heap[++s.heap_len] = max_code < 2 ? ++max_code : 0;
+          tree[node * 2] = 1;
+          s.depth[node] = 0;
+          s.opt_len--;
+          if (has_stree) {
+            s.static_len -= stree[node * 2 + 1];
+          }
+        }
+        desc.max_code = max_code;
+        for (n = s.heap_len >> 1; n >= 1; n--) {
+          pqdownheap(s, tree, n);
+        }
+        node = elems;
+        do {
+          n = s.heap[1];
+          s.heap[1] = s.heap[s.heap_len--];
+          pqdownheap(s, tree, 1);
+          m = s.heap[1];
+          s.heap[--s.heap_max] = n;
+          s.heap[--s.heap_max] = m;
+          tree[node * 2] = tree[n * 2] + tree[m * 2];
+          s.depth[node] = (s.depth[n] >= s.depth[m] ? s.depth[n] : s.depth[m]) + 1;
+          tree[n * 2 + 1] = tree[m * 2 + 1] = node;
+          s.heap[1] = node++;
+          pqdownheap(s, tree, 1);
+        } while (s.heap_len >= 2);
+        s.heap[--s.heap_max] = s.heap[1];
+        gen_bitlen(s, desc);
+        gen_codes(tree, max_code, s.bl_count);
+      };
+      scan_tree = (s, tree, max_code) => {
+        let n;
+        let prevlen = -1;
+        let curlen;
+        let nextlen = tree[0 * 2 + 1];
+        let count = 0;
+        let max_count = 7;
+        let min_count = 4;
+        if (nextlen === 0) {
+          max_count = 138;
+          min_count = 3;
+        }
+        tree[(max_code + 1) * 2 + 1] = 65535;
+        for (n = 0; n <= max_code; n++) {
+          curlen = nextlen;
+          nextlen = tree[(n + 1) * 2 + 1];
+          if (++count < max_count && curlen === nextlen) {
+            continue;
+          } else if (count < min_count) {
+            s.bl_tree[curlen * 2] += count;
+          } else if (curlen !== 0) {
+            if (curlen !== prevlen) {
+              s.bl_tree[curlen * 2]++;
+            }
+            s.bl_tree[REP_3_6 * 2]++;
+          } else if (count <= 10) {
+            s.bl_tree[REPZ_3_10 * 2]++;
+          } else {
+            s.bl_tree[REPZ_11_138 * 2]++;
+          }
+          count = 0;
+          prevlen = curlen;
+          if (nextlen === 0) {
+            max_count = 138;
+            min_count = 3;
+          } else if (curlen === nextlen) {
+            max_count = 6;
+            min_count = 3;
+          } else {
+            max_count = 7;
+            min_count = 4;
+          }
+        }
+      };
+      send_tree = (s, tree, max_code) => {
+        let n;
+        let prevlen = -1;
+        let curlen;
+        let nextlen = tree[0 * 2 + 1];
+        let count = 0;
+        let max_count = 7;
+        let min_count = 4;
+        if (nextlen === 0) {
+          max_count = 138;
+          min_count = 3;
+        }
+        for (n = 0; n <= max_code; n++) {
+          curlen = nextlen;
+          nextlen = tree[(n + 1) * 2 + 1];
+          if (++count < max_count && curlen === nextlen) {
+            continue;
+          } else if (count < min_count) {
+            do {
+              send_code(s, curlen, s.bl_tree);
+            } while (--count !== 0);
+          } else if (curlen !== 0) {
+            if (curlen !== prevlen) {
+              send_code(s, curlen, s.bl_tree);
+              count--;
+            }
+            send_code(s, REP_3_6, s.bl_tree);
+            send_bits(s, count - 3, 2);
+          } else if (count <= 10) {
+            send_code(s, REPZ_3_10, s.bl_tree);
+            send_bits(s, count - 3, 3);
+          } else {
+            send_code(s, REPZ_11_138, s.bl_tree);
+            send_bits(s, count - 11, 7);
+          }
+          count = 0;
+          prevlen = curlen;
+          if (nextlen === 0) {
+            max_count = 138;
+            min_count = 3;
+          } else if (curlen === nextlen) {
+            max_count = 6;
+            min_count = 3;
+          } else {
+            max_count = 7;
+            min_count = 4;
+          }
+        }
+      };
+      build_bl_tree = (s) => {
+        let max_blindex;
+        scan_tree(s, s.dyn_ltree, s.l_desc.max_code);
+        scan_tree(s, s.dyn_dtree, s.d_desc.max_code);
+        build_tree(s, s.bl_desc);
+        for (max_blindex = BL_CODES$1 - 1; max_blindex >= 3; max_blindex--) {
+          if (s.bl_tree[bl_order[max_blindex] * 2 + 1] !== 0) {
+            break;
+          }
+        }
+        s.opt_len += 3 * (max_blindex + 1) + 5 + 5 + 4;
+        return max_blindex;
+      };
+      send_all_trees = (s, lcodes, dcodes, blcodes) => {
+        let rank2;
+        send_bits(s, lcodes - 257, 5);
+        send_bits(s, dcodes - 1, 5);
+        send_bits(s, blcodes - 4, 4);
+        for (rank2 = 0; rank2 < blcodes; rank2++) {
+          send_bits(s, s.bl_tree[bl_order[rank2] * 2 + 1], 3);
+        }
+        send_tree(s, s.dyn_ltree, lcodes - 1);
+        send_tree(s, s.dyn_dtree, dcodes - 1);
+      };
+      detect_data_type = (s) => {
+        let block_mask = 4093624447;
+        let n;
+        for (n = 0; n <= 31; n++, block_mask >>>= 1) {
+          if (block_mask & 1 && s.dyn_ltree[n * 2] !== 0) {
+            return Z_BINARY;
+          }
+        }
+        if (s.dyn_ltree[9 * 2] !== 0 || s.dyn_ltree[10 * 2] !== 0 || s.dyn_ltree[13 * 2] !== 0) {
+          return Z_TEXT;
+        }
+        for (n = 32; n < LITERALS$1; n++) {
+          if (s.dyn_ltree[n * 2] !== 0) {
+            return Z_TEXT;
+          }
+        }
+        return Z_BINARY;
+      };
+      static_init_done = false;
+      _tr_init$1 = (s) => {
+        if (!static_init_done) {
+          tr_static_init();
+          static_init_done = true;
+        }
+        s.l_desc = new TreeDesc(s.dyn_ltree, static_l_desc);
+        s.d_desc = new TreeDesc(s.dyn_dtree, static_d_desc);
+        s.bl_desc = new TreeDesc(s.bl_tree, static_bl_desc);
+        s.bi_buf = 0;
+        s.bi_valid = 0;
+        init_block(s);
+      };
+      _tr_stored_block$1 = (s, buf, stored_len, last) => {
+        send_bits(s, (STORED_BLOCK << 1) + (last ? 1 : 0), 3);
+        bi_windup(s);
+        put_short(s, stored_len);
+        put_short(s, ~stored_len);
+        if (stored_len) {
+          s.pending_buf.set(s.window.subarray(buf, buf + stored_len), s.pending);
+        }
+        s.pending += stored_len;
+      };
+      _tr_align$1 = (s) => {
+        send_bits(s, STATIC_TREES << 1, 3);
+        send_code(s, END_BLOCK, static_ltree);
+        bi_flush(s);
+      };
+      _tr_flush_block$1 = (s, buf, stored_len, last) => {
+        let opt_lenb, static_lenb;
+        let max_blindex = 0;
+        if (s.level > 0) {
+          if (s.strm.data_type === Z_UNKNOWN$1) {
+            s.strm.data_type = detect_data_type(s);
+          }
+          build_tree(s, s.l_desc);
+          build_tree(s, s.d_desc);
+          max_blindex = build_bl_tree(s);
+          opt_lenb = s.opt_len + 3 + 7 >>> 3;
+          static_lenb = s.static_len + 3 + 7 >>> 3;
+          if (static_lenb <= opt_lenb) {
+            opt_lenb = static_lenb;
+          }
+        } else {
+          opt_lenb = static_lenb = stored_len + 5;
+        }
+        if (stored_len + 4 <= opt_lenb && buf !== -1) {
+          _tr_stored_block$1(s, buf, stored_len, last);
+        } else if (s.strategy === Z_FIXED$1 || static_lenb === opt_lenb) {
+          send_bits(s, (STATIC_TREES << 1) + (last ? 1 : 0), 3);
+          compress_block(s, static_ltree, static_dtree);
+        } else {
+          send_bits(s, (DYN_TREES << 1) + (last ? 1 : 0), 3);
+          send_all_trees(s, s.l_desc.max_code + 1, s.d_desc.max_code + 1, max_blindex + 1);
+          compress_block(s, s.dyn_ltree, s.dyn_dtree);
+        }
+        init_block(s);
+        if (last) {
+          bi_windup(s);
+        }
+      };
+      _tr_tally$1 = (s, dist, lc) => {
+        s.pending_buf[s.sym_buf + s.sym_next++] = dist;
+        s.pending_buf[s.sym_buf + s.sym_next++] = dist >> 8;
+        s.pending_buf[s.sym_buf + s.sym_next++] = lc;
+        if (dist === 0) {
+          s.dyn_ltree[lc * 2]++;
+        } else {
+          s.matches++;
+          dist--;
+          s.dyn_ltree[(_length_code[lc] + LITERALS$1 + 1) * 2]++;
+          s.dyn_dtree[d_code(dist) * 2]++;
+        }
+        return s.sym_next === s.sym_end;
+      };
+      _tr_init_1 = _tr_init$1;
+      _tr_stored_block_1 = _tr_stored_block$1;
+      _tr_flush_block_1 = _tr_flush_block$1;
+      _tr_tally_1 = _tr_tally$1;
+      _tr_align_1 = _tr_align$1;
+      trees = {
+        _tr_init: _tr_init_1,
+        _tr_stored_block: _tr_stored_block_1,
+        _tr_flush_block: _tr_flush_block_1,
+        _tr_tally: _tr_tally_1,
+        _tr_align: _tr_align_1
+      };
+      adler32 = (adler, buf, len, pos) => {
+        let s1 = adler & 65535 | 0, s2 = adler >>> 16 & 65535 | 0, n = 0;
+        while (len !== 0) {
+          n = len > 2e3 ? 2e3 : len;
+          len -= n;
+          do {
+            s1 = s1 + buf[pos++] | 0;
+            s2 = s2 + s1 | 0;
+          } while (--n);
+          s1 %= 65521;
+          s2 %= 65521;
+        }
+        return s1 | s2 << 16 | 0;
+      };
+      adler32_1 = adler32;
+      makeTable = () => {
+        let c, table = [];
+        for (var n = 0; n < 256; n++) {
+          c = n;
+          for (var k = 0; k < 8; k++) {
+            c = c & 1 ? 3988292384 ^ c >>> 1 : c >>> 1;
+          }
+          table[n] = c;
+        }
+        return table;
+      };
+      crcTable = new Uint32Array(makeTable());
+      crc32 = (crc, buf, len, pos) => {
+        const t = crcTable;
+        const end = pos + len;
+        crc ^= -1;
+        for (let i = pos; i < end; i++) {
+          crc = crc >>> 8 ^ t[(crc ^ buf[i]) & 255];
+        }
+        return crc ^ -1;
+      };
+      crc32_1 = crc32;
+      messages = {
+        2: "need dictionary",
+        1: "stream end",
+        0: "",
+        "-1": "file error",
+        "-2": "stream error",
+        "-3": "data error",
+        "-4": "insufficient memory",
+        "-5": "buffer error",
+        "-6": "incompatible version"
+      };
+      constants$2 = {
+        Z_NO_FLUSH: 0,
+        Z_PARTIAL_FLUSH: 1,
+        Z_SYNC_FLUSH: 2,
+        Z_FULL_FLUSH: 3,
+        Z_FINISH: 4,
+        Z_BLOCK: 5,
+        Z_TREES: 6,
+        Z_OK: 0,
+        Z_STREAM_END: 1,
+        Z_NEED_DICT: 2,
+        Z_ERRNO: -1,
+        Z_STREAM_ERROR: -2,
+        Z_DATA_ERROR: -3,
+        Z_MEM_ERROR: -4,
+        Z_BUF_ERROR: -5,
+        Z_NO_COMPRESSION: 0,
+        Z_BEST_SPEED: 1,
+        Z_BEST_COMPRESSION: 9,
+        Z_DEFAULT_COMPRESSION: -1,
+        Z_FILTERED: 1,
+        Z_HUFFMAN_ONLY: 2,
+        Z_RLE: 3,
+        Z_FIXED: 4,
+        Z_DEFAULT_STRATEGY: 0,
+        Z_BINARY: 0,
+        Z_TEXT: 1,
+        Z_UNKNOWN: 2,
+        Z_DEFLATED: 8
+      };
+      ({ _tr_init, _tr_stored_block, _tr_flush_block, _tr_tally, _tr_align } = trees);
+      ({
+        Z_NO_FLUSH: Z_NO_FLUSH$2,
+        Z_PARTIAL_FLUSH,
+        Z_FULL_FLUSH: Z_FULL_FLUSH$1,
+        Z_FINISH: Z_FINISH$3,
+        Z_BLOCK: Z_BLOCK$1,
+        Z_OK: Z_OK$3,
+        Z_STREAM_END: Z_STREAM_END$3,
+        Z_STREAM_ERROR: Z_STREAM_ERROR$2,
+        Z_DATA_ERROR: Z_DATA_ERROR$2,
+        Z_BUF_ERROR: Z_BUF_ERROR$1,
+        Z_DEFAULT_COMPRESSION: Z_DEFAULT_COMPRESSION$1,
+        Z_FILTERED,
+        Z_HUFFMAN_ONLY,
+        Z_RLE,
+        Z_FIXED,
+        Z_DEFAULT_STRATEGY: Z_DEFAULT_STRATEGY$1,
+        Z_UNKNOWN,
+        Z_DEFLATED: Z_DEFLATED$2
+      } = constants$2);
+      MAX_MEM_LEVEL = 9;
+      MAX_WBITS$1 = 15;
+      DEF_MEM_LEVEL = 8;
+      LENGTH_CODES = 29;
+      LITERALS = 256;
+      L_CODES = LITERALS + 1 + LENGTH_CODES;
+      D_CODES = 30;
+      BL_CODES = 19;
+      HEAP_SIZE = 2 * L_CODES + 1;
+      MAX_BITS = 15;
+      MIN_MATCH = 3;
+      MAX_MATCH = 258;
+      MIN_LOOKAHEAD = MAX_MATCH + MIN_MATCH + 1;
+      PRESET_DICT = 32;
+      INIT_STATE = 42;
+      GZIP_STATE = 57;
+      EXTRA_STATE = 69;
+      NAME_STATE = 73;
+      COMMENT_STATE = 91;
+      HCRC_STATE = 103;
+      BUSY_STATE = 113;
+      FINISH_STATE = 666;
+      BS_NEED_MORE = 1;
+      BS_BLOCK_DONE = 2;
+      BS_FINISH_STARTED = 3;
+      BS_FINISH_DONE = 4;
+      OS_CODE = 3;
+      err = (strm, errorCode) => {
+        strm.msg = messages[errorCode];
+        return errorCode;
+      };
+      rank = (f) => {
+        return f * 2 - (f > 4 ? 9 : 0);
+      };
+      zero = (buf) => {
+        let len = buf.length;
+        while (--len >= 0) {
+          buf[len] = 0;
+        }
+      };
+      slide_hash = (s) => {
+        let n, m;
+        let p;
+        let wsize = s.w_size;
+        n = s.hash_size;
+        p = n;
+        do {
+          m = s.head[--p];
+          s.head[p] = m >= wsize ? m - wsize : 0;
+        } while (--n);
+        n = wsize;
+        p = n;
+        do {
+          m = s.prev[--p];
+          s.prev[p] = m >= wsize ? m - wsize : 0;
+        } while (--n);
+      };
+      HASH_ZLIB = (s, prev, data) => (prev << s.hash_shift ^ data) & s.hash_mask;
+      HASH = HASH_ZLIB;
+      flush_pending = (strm) => {
+        const s = strm.state;
+        let len = s.pending;
+        if (len > strm.avail_out) {
+          len = strm.avail_out;
+        }
+        if (len === 0) {
+          return;
+        }
+        strm.output.set(s.pending_buf.subarray(s.pending_out, s.pending_out + len), strm.next_out);
+        strm.next_out += len;
+        s.pending_out += len;
+        strm.total_out += len;
+        strm.avail_out -= len;
+        s.pending -= len;
+        if (s.pending === 0) {
+          s.pending_out = 0;
+        }
+      };
+      flush_block_only = (s, last) => {
+        _tr_flush_block(s, s.block_start >= 0 ? s.block_start : -1, s.strstart - s.block_start, last);
+        s.block_start = s.strstart;
+        flush_pending(s.strm);
+      };
+      put_byte = (s, b) => {
+        s.pending_buf[s.pending++] = b;
+      };
+      putShortMSB = (s, b) => {
+        s.pending_buf[s.pending++] = b >>> 8 & 255;
+        s.pending_buf[s.pending++] = b & 255;
+      };
+      read_buf = (strm, buf, start, size) => {
+        let len = strm.avail_in;
+        if (len > size) {
+          len = size;
+        }
+        if (len === 0) {
+          return 0;
+        }
+        strm.avail_in -= len;
+        buf.set(strm.input.subarray(strm.next_in, strm.next_in + len), start);
+        if (strm.state.wrap === 1) {
+          strm.adler = adler32_1(strm.adler, buf, len, start);
+        } else if (strm.state.wrap === 2) {
+          strm.adler = crc32_1(strm.adler, buf, len, start);
+        }
+        strm.next_in += len;
+        strm.total_in += len;
+        return len;
+      };
+      longest_match = (s, cur_match) => {
+        let chain_length = s.max_chain_length;
+        let scan = s.strstart;
+        let match;
+        let len;
+        let best_len = s.prev_length;
+        let nice_match = s.nice_match;
+        const limit = s.strstart > s.w_size - MIN_LOOKAHEAD ? s.strstart - (s.w_size - MIN_LOOKAHEAD) : 0;
+        const _win = s.window;
+        const wmask = s.w_mask;
+        const prev = s.prev;
+        const strend = s.strstart + MAX_MATCH;
+        let scan_end1 = _win[scan + best_len - 1];
+        let scan_end = _win[scan + best_len];
+        if (s.prev_length >= s.good_match) {
+          chain_length >>= 2;
+        }
+        if (nice_match > s.lookahead) {
+          nice_match = s.lookahead;
+        }
+        do {
+          match = cur_match;
+          if (_win[match + best_len] !== scan_end || _win[match + best_len - 1] !== scan_end1 || _win[match] !== _win[scan] || _win[++match] !== _win[scan + 1]) {
+            continue;
+          }
+          scan += 2;
+          match++;
+          do {
+          } while (_win[++scan] === _win[++match] && _win[++scan] === _win[++match] && _win[++scan] === _win[++match] && _win[++scan] === _win[++match] && _win[++scan] === _win[++match] && _win[++scan] === _win[++match] && _win[++scan] === _win[++match] && _win[++scan] === _win[++match] && scan < strend);
+          len = MAX_MATCH - (strend - scan);
+          scan = strend - MAX_MATCH;
+          if (len > best_len) {
+            s.match_start = cur_match;
+            best_len = len;
+            if (len >= nice_match) {
+              break;
+            }
+            scan_end1 = _win[scan + best_len - 1];
+            scan_end = _win[scan + best_len];
+          }
+        } while ((cur_match = prev[cur_match & wmask]) > limit && --chain_length !== 0);
+        if (best_len <= s.lookahead) {
+          return best_len;
+        }
+        return s.lookahead;
+      };
+      fill_window = (s) => {
+        const _w_size = s.w_size;
+        let n, more, str;
+        do {
+          more = s.window_size - s.lookahead - s.strstart;
+          if (s.strstart >= _w_size + (_w_size - MIN_LOOKAHEAD)) {
+            s.window.set(s.window.subarray(_w_size, _w_size + _w_size - more), 0);
+            s.match_start -= _w_size;
+            s.strstart -= _w_size;
+            s.block_start -= _w_size;
+            if (s.insert > s.strstart) {
+              s.insert = s.strstart;
+            }
+            slide_hash(s);
+            more += _w_size;
+          }
+          if (s.strm.avail_in === 0) {
+            break;
+          }
+          n = read_buf(s.strm, s.window, s.strstart + s.lookahead, more);
+          s.lookahead += n;
+          if (s.lookahead + s.insert >= MIN_MATCH) {
+            str = s.strstart - s.insert;
+            s.ins_h = s.window[str];
+            s.ins_h = HASH(s, s.ins_h, s.window[str + 1]);
+            while (s.insert) {
+              s.ins_h = HASH(s, s.ins_h, s.window[str + MIN_MATCH - 1]);
+              s.prev[str & s.w_mask] = s.head[s.ins_h];
+              s.head[s.ins_h] = str;
+              str++;
+              s.insert--;
+              if (s.lookahead + s.insert < MIN_MATCH) {
+                break;
+              }
+            }
+          }
+        } while (s.lookahead < MIN_LOOKAHEAD && s.strm.avail_in !== 0);
+      };
+      deflate_stored = (s, flush) => {
+        let min_block = s.pending_buf_size - 5 > s.w_size ? s.w_size : s.pending_buf_size - 5;
+        let len, left, have, last = 0;
+        let used = s.strm.avail_in;
+        do {
+          len = 65535;
+          have = s.bi_valid + 42 >> 3;
+          if (s.strm.avail_out < have) {
+            break;
+          }
+          have = s.strm.avail_out - have;
+          left = s.strstart - s.block_start;
+          if (len > left + s.strm.avail_in) {
+            len = left + s.strm.avail_in;
+          }
+          if (len > have) {
+            len = have;
+          }
+          if (len < min_block && (len === 0 && flush !== Z_FINISH$3 || flush === Z_NO_FLUSH$2 || len !== left + s.strm.avail_in)) {
+            break;
+          }
+          last = flush === Z_FINISH$3 && len === left + s.strm.avail_in ? 1 : 0;
+          _tr_stored_block(s, 0, 0, last);
+          s.pending_buf[s.pending - 4] = len;
+          s.pending_buf[s.pending - 3] = len >> 8;
+          s.pending_buf[s.pending - 2] = ~len;
+          s.pending_buf[s.pending - 1] = ~len >> 8;
+          flush_pending(s.strm);
+          if (left) {
+            if (left > len) {
+              left = len;
+            }
+            s.strm.output.set(s.window.subarray(s.block_start, s.block_start + left), s.strm.next_out);
+            s.strm.next_out += left;
+            s.strm.avail_out -= left;
+            s.strm.total_out += left;
+            s.block_start += left;
+            len -= left;
+          }
+          if (len) {
+            read_buf(s.strm, s.strm.output, s.strm.next_out, len);
+            s.strm.next_out += len;
+            s.strm.avail_out -= len;
+            s.strm.total_out += len;
+          }
+        } while (last === 0);
+        used -= s.strm.avail_in;
+        if (used) {
+          if (used >= s.w_size) {
+            s.matches = 2;
+            s.window.set(s.strm.input.subarray(s.strm.next_in - s.w_size, s.strm.next_in), 0);
+            s.strstart = s.w_size;
+            s.insert = s.strstart;
+          } else {
+            if (s.window_size - s.strstart <= used) {
+              s.strstart -= s.w_size;
+              s.window.set(s.window.subarray(s.w_size, s.w_size + s.strstart), 0);
+              if (s.matches < 2) {
+                s.matches++;
+              }
+              if (s.insert > s.strstart) {
+                s.insert = s.strstart;
+              }
+            }
+            s.window.set(s.strm.input.subarray(s.strm.next_in - used, s.strm.next_in), s.strstart);
+            s.strstart += used;
+            s.insert += used > s.w_size - s.insert ? s.w_size - s.insert : used;
+          }
+          s.block_start = s.strstart;
+        }
+        if (s.high_water < s.strstart) {
+          s.high_water = s.strstart;
+        }
+        if (last) {
+          return BS_FINISH_DONE;
+        }
+        if (flush !== Z_NO_FLUSH$2 && flush !== Z_FINISH$3 && s.strm.avail_in === 0 && s.strstart === s.block_start) {
+          return BS_BLOCK_DONE;
+        }
+        have = s.window_size - s.strstart;
+        if (s.strm.avail_in > have && s.block_start >= s.w_size) {
+          s.block_start -= s.w_size;
+          s.strstart -= s.w_size;
+          s.window.set(s.window.subarray(s.w_size, s.w_size + s.strstart), 0);
+          if (s.matches < 2) {
+            s.matches++;
+          }
+          have += s.w_size;
+          if (s.insert > s.strstart) {
+            s.insert = s.strstart;
+          }
+        }
+        if (have > s.strm.avail_in) {
+          have = s.strm.avail_in;
+        }
+        if (have) {
+          read_buf(s.strm, s.window, s.strstart, have);
+          s.strstart += have;
+          s.insert += have > s.w_size - s.insert ? s.w_size - s.insert : have;
+        }
+        if (s.high_water < s.strstart) {
+          s.high_water = s.strstart;
+        }
+        have = s.bi_valid + 42 >> 3;
+        have = s.pending_buf_size - have > 65535 ? 65535 : s.pending_buf_size - have;
+        min_block = have > s.w_size ? s.w_size : have;
+        left = s.strstart - s.block_start;
+        if (left >= min_block || (left || flush === Z_FINISH$3) && flush !== Z_NO_FLUSH$2 && s.strm.avail_in === 0 && left <= have) {
+          len = left > have ? have : left;
+          last = flush === Z_FINISH$3 && s.strm.avail_in === 0 && len === left ? 1 : 0;
+          _tr_stored_block(s, s.block_start, len, last);
+          s.block_start += len;
+          flush_pending(s.strm);
+        }
+        return last ? BS_FINISH_STARTED : BS_NEED_MORE;
+      };
+      deflate_fast = (s, flush) => {
+        let hash_head;
+        let bflush;
+        for (; ; ) {
+          if (s.lookahead < MIN_LOOKAHEAD) {
+            fill_window(s);
+            if (s.lookahead < MIN_LOOKAHEAD && flush === Z_NO_FLUSH$2) {
+              return BS_NEED_MORE;
+            }
+            if (s.lookahead === 0) {
+              break;
+            }
+          }
+          hash_head = 0;
+          if (s.lookahead >= MIN_MATCH) {
+            s.ins_h = HASH(s, s.ins_h, s.window[s.strstart + MIN_MATCH - 1]);
+            hash_head = s.prev[s.strstart & s.w_mask] = s.head[s.ins_h];
+            s.head[s.ins_h] = s.strstart;
+          }
+          if (hash_head !== 0 && s.strstart - hash_head <= s.w_size - MIN_LOOKAHEAD) {
+            s.match_length = longest_match(s, hash_head);
+          }
+          if (s.match_length >= MIN_MATCH) {
+            bflush = _tr_tally(s, s.strstart - s.match_start, s.match_length - MIN_MATCH);
+            s.lookahead -= s.match_length;
+            if (s.match_length <= s.max_lazy_match && s.lookahead >= MIN_MATCH) {
+              s.match_length--;
+              do {
+                s.strstart++;
+                s.ins_h = HASH(s, s.ins_h, s.window[s.strstart + MIN_MATCH - 1]);
+                hash_head = s.prev[s.strstart & s.w_mask] = s.head[s.ins_h];
+                s.head[s.ins_h] = s.strstart;
+              } while (--s.match_length !== 0);
+              s.strstart++;
+            } else {
+              s.strstart += s.match_length;
+              s.match_length = 0;
+              s.ins_h = s.window[s.strstart];
+              s.ins_h = HASH(s, s.ins_h, s.window[s.strstart + 1]);
+            }
+          } else {
+            bflush = _tr_tally(s, 0, s.window[s.strstart]);
+            s.lookahead--;
+            s.strstart++;
+          }
+          if (bflush) {
+            flush_block_only(s, false);
+            if (s.strm.avail_out === 0) {
+              return BS_NEED_MORE;
+            }
+          }
+        }
+        s.insert = s.strstart < MIN_MATCH - 1 ? s.strstart : MIN_MATCH - 1;
+        if (flush === Z_FINISH$3) {
+          flush_block_only(s, true);
+          if (s.strm.avail_out === 0) {
+            return BS_FINISH_STARTED;
+          }
+          return BS_FINISH_DONE;
+        }
+        if (s.sym_next) {
+          flush_block_only(s, false);
+          if (s.strm.avail_out === 0) {
+            return BS_NEED_MORE;
+          }
+        }
+        return BS_BLOCK_DONE;
+      };
+      deflate_slow = (s, flush) => {
+        let hash_head;
+        let bflush;
+        let max_insert;
+        for (; ; ) {
+          if (s.lookahead < MIN_LOOKAHEAD) {
+            fill_window(s);
+            if (s.lookahead < MIN_LOOKAHEAD && flush === Z_NO_FLUSH$2) {
+              return BS_NEED_MORE;
+            }
+            if (s.lookahead === 0) {
+              break;
+            }
+          }
+          hash_head = 0;
+          if (s.lookahead >= MIN_MATCH) {
+            s.ins_h = HASH(s, s.ins_h, s.window[s.strstart + MIN_MATCH - 1]);
+            hash_head = s.prev[s.strstart & s.w_mask] = s.head[s.ins_h];
+            s.head[s.ins_h] = s.strstart;
+          }
+          s.prev_length = s.match_length;
+          s.prev_match = s.match_start;
+          s.match_length = MIN_MATCH - 1;
+          if (hash_head !== 0 && s.prev_length < s.max_lazy_match && s.strstart - hash_head <= s.w_size - MIN_LOOKAHEAD) {
+            s.match_length = longest_match(s, hash_head);
+            if (s.match_length <= 5 && (s.strategy === Z_FILTERED || s.match_length === MIN_MATCH && s.strstart - s.match_start > 4096)) {
+              s.match_length = MIN_MATCH - 1;
+            }
+          }
+          if (s.prev_length >= MIN_MATCH && s.match_length <= s.prev_length) {
+            max_insert = s.strstart + s.lookahead - MIN_MATCH;
+            bflush = _tr_tally(s, s.strstart - 1 - s.prev_match, s.prev_length - MIN_MATCH);
+            s.lookahead -= s.prev_length - 1;
+            s.prev_length -= 2;
+            do {
+              if (++s.strstart <= max_insert) {
+                s.ins_h = HASH(s, s.ins_h, s.window[s.strstart + MIN_MATCH - 1]);
+                hash_head = s.prev[s.strstart & s.w_mask] = s.head[s.ins_h];
+                s.head[s.ins_h] = s.strstart;
+              }
+            } while (--s.prev_length !== 0);
+            s.match_available = 0;
+            s.match_length = MIN_MATCH - 1;
+            s.strstart++;
+            if (bflush) {
+              flush_block_only(s, false);
+              if (s.strm.avail_out === 0) {
+                return BS_NEED_MORE;
+              }
+            }
+          } else if (s.match_available) {
+            bflush = _tr_tally(s, 0, s.window[s.strstart - 1]);
+            if (bflush) {
+              flush_block_only(s, false);
+            }
+            s.strstart++;
+            s.lookahead--;
+            if (s.strm.avail_out === 0) {
+              return BS_NEED_MORE;
+            }
+          } else {
+            s.match_available = 1;
+            s.strstart++;
+            s.lookahead--;
+          }
+        }
+        if (s.match_available) {
+          bflush = _tr_tally(s, 0, s.window[s.strstart - 1]);
+          s.match_available = 0;
+        }
+        s.insert = s.strstart < MIN_MATCH - 1 ? s.strstart : MIN_MATCH - 1;
+        if (flush === Z_FINISH$3) {
+          flush_block_only(s, true);
+          if (s.strm.avail_out === 0) {
+            return BS_FINISH_STARTED;
+          }
+          return BS_FINISH_DONE;
+        }
+        if (s.sym_next) {
+          flush_block_only(s, false);
+          if (s.strm.avail_out === 0) {
+            return BS_NEED_MORE;
+          }
+        }
+        return BS_BLOCK_DONE;
+      };
+      deflate_rle = (s, flush) => {
+        let bflush;
+        let prev;
+        let scan, strend;
+        const _win = s.window;
+        for (; ; ) {
+          if (s.lookahead <= MAX_MATCH) {
+            fill_window(s);
+            if (s.lookahead <= MAX_MATCH && flush === Z_NO_FLUSH$2) {
+              return BS_NEED_MORE;
+            }
+            if (s.lookahead === 0) {
+              break;
+            }
+          }
+          s.match_length = 0;
+          if (s.lookahead >= MIN_MATCH && s.strstart > 0) {
+            scan = s.strstart - 1;
+            prev = _win[scan];
+            if (prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan]) {
+              strend = s.strstart + MAX_MATCH;
+              do {
+              } while (prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan] && scan < strend);
+              s.match_length = MAX_MATCH - (strend - scan);
+              if (s.match_length > s.lookahead) {
+                s.match_length = s.lookahead;
+              }
+            }
+          }
+          if (s.match_length >= MIN_MATCH) {
+            bflush = _tr_tally(s, 1, s.match_length - MIN_MATCH);
+            s.lookahead -= s.match_length;
+            s.strstart += s.match_length;
+            s.match_length = 0;
+          } else {
+            bflush = _tr_tally(s, 0, s.window[s.strstart]);
+            s.lookahead--;
+            s.strstart++;
+          }
+          if (bflush) {
+            flush_block_only(s, false);
+            if (s.strm.avail_out === 0) {
+              return BS_NEED_MORE;
+            }
+          }
+        }
+        s.insert = 0;
+        if (flush === Z_FINISH$3) {
+          flush_block_only(s, true);
+          if (s.strm.avail_out === 0) {
+            return BS_FINISH_STARTED;
+          }
+          return BS_FINISH_DONE;
+        }
+        if (s.sym_next) {
+          flush_block_only(s, false);
+          if (s.strm.avail_out === 0) {
+            return BS_NEED_MORE;
+          }
+        }
+        return BS_BLOCK_DONE;
+      };
+      deflate_huff = (s, flush) => {
+        let bflush;
+        for (; ; ) {
+          if (s.lookahead === 0) {
+            fill_window(s);
+            if (s.lookahead === 0) {
+              if (flush === Z_NO_FLUSH$2) {
+                return BS_NEED_MORE;
+              }
+              break;
+            }
+          }
+          s.match_length = 0;
+          bflush = _tr_tally(s, 0, s.window[s.strstart]);
+          s.lookahead--;
+          s.strstart++;
+          if (bflush) {
+            flush_block_only(s, false);
+            if (s.strm.avail_out === 0) {
+              return BS_NEED_MORE;
+            }
+          }
+        }
+        s.insert = 0;
+        if (flush === Z_FINISH$3) {
+          flush_block_only(s, true);
+          if (s.strm.avail_out === 0) {
+            return BS_FINISH_STARTED;
+          }
+          return BS_FINISH_DONE;
+        }
+        if (s.sym_next) {
+          flush_block_only(s, false);
+          if (s.strm.avail_out === 0) {
+            return BS_NEED_MORE;
+          }
+        }
+        return BS_BLOCK_DONE;
+      };
+      configuration_table = [
+        new Config(0, 0, 0, 0, deflate_stored),
+        new Config(4, 4, 8, 4, deflate_fast),
+        new Config(4, 5, 16, 8, deflate_fast),
+        new Config(4, 6, 32, 32, deflate_fast),
+        new Config(4, 4, 16, 16, deflate_slow),
+        new Config(8, 16, 32, 32, deflate_slow),
+        new Config(8, 16, 128, 128, deflate_slow),
+        new Config(8, 32, 128, 256, deflate_slow),
+        new Config(32, 128, 258, 1024, deflate_slow),
+        new Config(32, 258, 258, 4096, deflate_slow)
+      ];
+      lm_init = (s) => {
+        s.window_size = 2 * s.w_size;
+        zero(s.head);
+        s.max_lazy_match = configuration_table[s.level].max_lazy;
+        s.good_match = configuration_table[s.level].good_length;
+        s.nice_match = configuration_table[s.level].nice_length;
+        s.max_chain_length = configuration_table[s.level].max_chain;
+        s.strstart = 0;
+        s.block_start = 0;
+        s.lookahead = 0;
+        s.insert = 0;
+        s.match_length = s.prev_length = MIN_MATCH - 1;
+        s.match_available = 0;
+        s.ins_h = 0;
+      };
+      deflateStateCheck = (strm) => {
+        if (!strm) {
+          return 1;
+        }
+        const s = strm.state;
+        if (!s || s.strm !== strm || s.status !== INIT_STATE && s.status !== GZIP_STATE && s.status !== EXTRA_STATE && s.status !== NAME_STATE && s.status !== COMMENT_STATE && s.status !== HCRC_STATE && s.status !== BUSY_STATE && s.status !== FINISH_STATE) {
+          return 1;
+        }
+        return 0;
+      };
+      deflateResetKeep = (strm) => {
+        if (deflateStateCheck(strm)) {
+          return err(strm, Z_STREAM_ERROR$2);
+        }
+        strm.total_in = strm.total_out = 0;
+        strm.data_type = Z_UNKNOWN;
+        const s = strm.state;
+        s.pending = 0;
+        s.pending_out = 0;
+        if (s.wrap < 0) {
+          s.wrap = -s.wrap;
+        }
+        s.status = s.wrap === 2 ? GZIP_STATE : s.wrap ? INIT_STATE : BUSY_STATE;
+        strm.adler = s.wrap === 2 ? 0 : 1;
+        s.last_flush = -2;
+        _tr_init(s);
+        return Z_OK$3;
+      };
+      deflateReset = (strm) => {
+        const ret = deflateResetKeep(strm);
+        if (ret === Z_OK$3) {
+          lm_init(strm.state);
+        }
+        return ret;
+      };
+      deflateSetHeader = (strm, head) => {
+        if (deflateStateCheck(strm) || strm.state.wrap !== 2) {
+          return Z_STREAM_ERROR$2;
+        }
+        strm.state.gzhead = head;
+        return Z_OK$3;
+      };
+      deflateInit2 = (strm, level, method, windowBits, memLevel, strategy) => {
+        if (!strm) {
+          return Z_STREAM_ERROR$2;
+        }
+        let wrap = 1;
+        if (level === Z_DEFAULT_COMPRESSION$1) {
+          level = 6;
+        }
+        if (windowBits < 0) {
+          wrap = 0;
+          windowBits = -windowBits;
+        } else if (windowBits > 15) {
+          wrap = 2;
+          windowBits -= 16;
+        }
+        if (memLevel < 1 || memLevel > MAX_MEM_LEVEL || method !== Z_DEFLATED$2 || windowBits < 8 || windowBits > 15 || level < 0 || level > 9 || strategy < 0 || strategy > Z_FIXED || windowBits === 8 && wrap !== 1) {
+          return err(strm, Z_STREAM_ERROR$2);
+        }
+        if (windowBits === 8) {
+          windowBits = 9;
+        }
+        const s = new DeflateState();
+        strm.state = s;
+        s.strm = strm;
+        s.status = INIT_STATE;
+        s.wrap = wrap;
+        s.gzhead = null;
+        s.w_bits = windowBits;
+        s.w_size = 1 << s.w_bits;
+        s.w_mask = s.w_size - 1;
+        s.hash_bits = memLevel + 7;
+        s.hash_size = 1 << s.hash_bits;
+        s.hash_mask = s.hash_size - 1;
+        s.hash_shift = ~~((s.hash_bits + MIN_MATCH - 1) / MIN_MATCH);
+        s.window = new Uint8Array(s.w_size * 2);
+        s.head = new Uint16Array(s.hash_size);
+        s.prev = new Uint16Array(s.w_size);
+        s.lit_bufsize = 1 << memLevel + 6;
+        s.pending_buf_size = s.lit_bufsize * 4;
+        s.pending_buf = new Uint8Array(s.pending_buf_size);
+        s.sym_buf = s.lit_bufsize;
+        s.sym_end = (s.lit_bufsize - 1) * 3;
+        s.level = level;
+        s.strategy = strategy;
+        s.method = method;
+        return deflateReset(strm);
+      };
+      deflateInit = (strm, level) => {
+        return deflateInit2(strm, level, Z_DEFLATED$2, MAX_WBITS$1, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY$1);
+      };
+      deflate$2 = (strm, flush) => {
+        if (deflateStateCheck(strm) || flush > Z_BLOCK$1 || flush < 0) {
+          return strm ? err(strm, Z_STREAM_ERROR$2) : Z_STREAM_ERROR$2;
+        }
+        const s = strm.state;
+        if (!strm.output || strm.avail_in !== 0 && !strm.input || s.status === FINISH_STATE && flush !== Z_FINISH$3) {
+          return err(strm, strm.avail_out === 0 ? Z_BUF_ERROR$1 : Z_STREAM_ERROR$2);
+        }
+        const old_flush = s.last_flush;
+        s.last_flush = flush;
+        if (s.pending !== 0) {
+          flush_pending(strm);
+          if (strm.avail_out === 0) {
+            s.last_flush = -1;
+            return Z_OK$3;
+          }
+        } else if (strm.avail_in === 0 && rank(flush) <= rank(old_flush) && flush !== Z_FINISH$3) {
+          return err(strm, Z_BUF_ERROR$1);
+        }
+        if (s.status === FINISH_STATE && strm.avail_in !== 0) {
+          return err(strm, Z_BUF_ERROR$1);
+        }
+        if (s.status === INIT_STATE && s.wrap === 0) {
+          s.status = BUSY_STATE;
+        }
+        if (s.status === INIT_STATE) {
+          let header = Z_DEFLATED$2 + (s.w_bits - 8 << 4) << 8;
+          let level_flags = -1;
+          if (s.strategy >= Z_HUFFMAN_ONLY || s.level < 2) {
+            level_flags = 0;
+          } else if (s.level < 6) {
+            level_flags = 1;
+          } else if (s.level === 6) {
+            level_flags = 2;
+          } else {
+            level_flags = 3;
+          }
+          header |= level_flags << 6;
+          if (s.strstart !== 0) {
+            header |= PRESET_DICT;
+          }
+          header += 31 - header % 31;
+          putShortMSB(s, header);
+          if (s.strstart !== 0) {
+            putShortMSB(s, strm.adler >>> 16);
+            putShortMSB(s, strm.adler & 65535);
+          }
+          strm.adler = 1;
+          s.status = BUSY_STATE;
+          flush_pending(strm);
+          if (s.pending !== 0) {
+            s.last_flush = -1;
+            return Z_OK$3;
+          }
+        }
+        if (s.status === GZIP_STATE) {
+          strm.adler = 0;
+          put_byte(s, 31);
+          put_byte(s, 139);
+          put_byte(s, 8);
+          if (!s.gzhead) {
+            put_byte(s, 0);
+            put_byte(s, 0);
+            put_byte(s, 0);
+            put_byte(s, 0);
+            put_byte(s, 0);
+            put_byte(s, s.level === 9 ? 2 : s.strategy >= Z_HUFFMAN_ONLY || s.level < 2 ? 4 : 0);
+            put_byte(s, OS_CODE);
+            s.status = BUSY_STATE;
+            flush_pending(strm);
+            if (s.pending !== 0) {
+              s.last_flush = -1;
+              return Z_OK$3;
+            }
+          } else {
+            put_byte(
+              s,
+              (s.gzhead.text ? 1 : 0) + (s.gzhead.hcrc ? 2 : 0) + (!s.gzhead.extra ? 0 : 4) + (!s.gzhead.name ? 0 : 8) + (!s.gzhead.comment ? 0 : 16)
+            );
+            put_byte(s, s.gzhead.time & 255);
+            put_byte(s, s.gzhead.time >> 8 & 255);
+            put_byte(s, s.gzhead.time >> 16 & 255);
+            put_byte(s, s.gzhead.time >> 24 & 255);
+            put_byte(s, s.level === 9 ? 2 : s.strategy >= Z_HUFFMAN_ONLY || s.level < 2 ? 4 : 0);
+            put_byte(s, s.gzhead.os & 255);
+            if (s.gzhead.extra && s.gzhead.extra.length) {
+              put_byte(s, s.gzhead.extra.length & 255);
+              put_byte(s, s.gzhead.extra.length >> 8 & 255);
+            }
+            if (s.gzhead.hcrc) {
+              strm.adler = crc32_1(strm.adler, s.pending_buf, s.pending, 0);
+            }
+            s.gzindex = 0;
+            s.status = EXTRA_STATE;
+          }
+        }
+        if (s.status === EXTRA_STATE) {
+          if (s.gzhead.extra) {
+            let beg = s.pending;
+            let left = (s.gzhead.extra.length & 65535) - s.gzindex;
+            while (s.pending + left > s.pending_buf_size) {
+              let copy = s.pending_buf_size - s.pending;
+              s.pending_buf.set(s.gzhead.extra.subarray(s.gzindex, s.gzindex + copy), s.pending);
+              s.pending = s.pending_buf_size;
+              if (s.gzhead.hcrc && s.pending > beg) {
+                strm.adler = crc32_1(strm.adler, s.pending_buf, s.pending - beg, beg);
+              }
+              s.gzindex += copy;
+              flush_pending(strm);
+              if (s.pending !== 0) {
+                s.last_flush = -1;
+                return Z_OK$3;
+              }
+              beg = 0;
+              left -= copy;
+            }
+            let gzhead_extra = new Uint8Array(s.gzhead.extra);
+            s.pending_buf.set(gzhead_extra.subarray(s.gzindex, s.gzindex + left), s.pending);
+            s.pending += left;
+            if (s.gzhead.hcrc && s.pending > beg) {
+              strm.adler = crc32_1(strm.adler, s.pending_buf, s.pending - beg, beg);
+            }
+            s.gzindex = 0;
+          }
+          s.status = NAME_STATE;
+        }
+        if (s.status === NAME_STATE) {
+          if (s.gzhead.name) {
+            let beg = s.pending;
+            let val;
+            do {
+              if (s.pending === s.pending_buf_size) {
+                if (s.gzhead.hcrc && s.pending > beg) {
+                  strm.adler = crc32_1(strm.adler, s.pending_buf, s.pending - beg, beg);
+                }
+                flush_pending(strm);
+                if (s.pending !== 0) {
+                  s.last_flush = -1;
+                  return Z_OK$3;
+                }
+                beg = 0;
+              }
+              if (s.gzindex < s.gzhead.name.length) {
+                val = s.gzhead.name.charCodeAt(s.gzindex++) & 255;
+              } else {
+                val = 0;
+              }
+              put_byte(s, val);
+            } while (val !== 0);
+            if (s.gzhead.hcrc && s.pending > beg) {
+              strm.adler = crc32_1(strm.adler, s.pending_buf, s.pending - beg, beg);
+            }
+            s.gzindex = 0;
+          }
+          s.status = COMMENT_STATE;
+        }
+        if (s.status === COMMENT_STATE) {
+          if (s.gzhead.comment) {
+            let beg = s.pending;
+            let val;
+            do {
+              if (s.pending === s.pending_buf_size) {
+                if (s.gzhead.hcrc && s.pending > beg) {
+                  strm.adler = crc32_1(strm.adler, s.pending_buf, s.pending - beg, beg);
+                }
+                flush_pending(strm);
+                if (s.pending !== 0) {
+                  s.last_flush = -1;
+                  return Z_OK$3;
+                }
+                beg = 0;
+              }
+              if (s.gzindex < s.gzhead.comment.length) {
+                val = s.gzhead.comment.charCodeAt(s.gzindex++) & 255;
+              } else {
+                val = 0;
+              }
+              put_byte(s, val);
+            } while (val !== 0);
+            if (s.gzhead.hcrc && s.pending > beg) {
+              strm.adler = crc32_1(strm.adler, s.pending_buf, s.pending - beg, beg);
+            }
+          }
+          s.status = HCRC_STATE;
+        }
+        if (s.status === HCRC_STATE) {
+          if (s.gzhead.hcrc) {
+            if (s.pending + 2 > s.pending_buf_size) {
+              flush_pending(strm);
+              if (s.pending !== 0) {
+                s.last_flush = -1;
+                return Z_OK$3;
+              }
+            }
+            put_byte(s, strm.adler & 255);
+            put_byte(s, strm.adler >> 8 & 255);
+            strm.adler = 0;
+          }
+          s.status = BUSY_STATE;
+          flush_pending(strm);
+          if (s.pending !== 0) {
+            s.last_flush = -1;
+            return Z_OK$3;
+          }
+        }
+        if (strm.avail_in !== 0 || s.lookahead !== 0 || flush !== Z_NO_FLUSH$2 && s.status !== FINISH_STATE) {
+          let bstate = s.level === 0 ? deflate_stored(s, flush) : s.strategy === Z_HUFFMAN_ONLY ? deflate_huff(s, flush) : s.strategy === Z_RLE ? deflate_rle(s, flush) : configuration_table[s.level].func(s, flush);
+          if (bstate === BS_FINISH_STARTED || bstate === BS_FINISH_DONE) {
+            s.status = FINISH_STATE;
+          }
+          if (bstate === BS_NEED_MORE || bstate === BS_FINISH_STARTED) {
+            if (strm.avail_out === 0) {
+              s.last_flush = -1;
+            }
+            return Z_OK$3;
+          }
+          if (bstate === BS_BLOCK_DONE) {
+            if (flush === Z_PARTIAL_FLUSH) {
+              _tr_align(s);
+            } else if (flush !== Z_BLOCK$1) {
+              _tr_stored_block(s, 0, 0, false);
+              if (flush === Z_FULL_FLUSH$1) {
+                zero(s.head);
+                if (s.lookahead === 0) {
+                  s.strstart = 0;
+                  s.block_start = 0;
+                  s.insert = 0;
+                }
+              }
+            }
+            flush_pending(strm);
+            if (strm.avail_out === 0) {
+              s.last_flush = -1;
+              return Z_OK$3;
+            }
+          }
+        }
+        if (flush !== Z_FINISH$3) {
+          return Z_OK$3;
+        }
+        if (s.wrap <= 0) {
+          return Z_STREAM_END$3;
+        }
+        if (s.wrap === 2) {
+          put_byte(s, strm.adler & 255);
+          put_byte(s, strm.adler >> 8 & 255);
+          put_byte(s, strm.adler >> 16 & 255);
+          put_byte(s, strm.adler >> 24 & 255);
+          put_byte(s, strm.total_in & 255);
+          put_byte(s, strm.total_in >> 8 & 255);
+          put_byte(s, strm.total_in >> 16 & 255);
+          put_byte(s, strm.total_in >> 24 & 255);
+        } else {
+          putShortMSB(s, strm.adler >>> 16);
+          putShortMSB(s, strm.adler & 65535);
+        }
+        flush_pending(strm);
+        if (s.wrap > 0) {
+          s.wrap = -s.wrap;
+        }
+        return s.pending !== 0 ? Z_OK$3 : Z_STREAM_END$3;
+      };
+      deflateEnd = (strm) => {
+        if (deflateStateCheck(strm)) {
+          return Z_STREAM_ERROR$2;
+        }
+        const status = strm.state.status;
+        strm.state = null;
+        return status === BUSY_STATE ? err(strm, Z_DATA_ERROR$2) : Z_OK$3;
+      };
+      deflateSetDictionary = (strm, dictionary) => {
+        let dictLength = dictionary.length;
+        if (deflateStateCheck(strm)) {
+          return Z_STREAM_ERROR$2;
+        }
+        const s = strm.state;
+        const wrap = s.wrap;
+        if (wrap === 2 || wrap === 1 && s.status !== INIT_STATE || s.lookahead) {
+          return Z_STREAM_ERROR$2;
+        }
+        if (wrap === 1) {
+          strm.adler = adler32_1(strm.adler, dictionary, dictLength, 0);
+        }
+        s.wrap = 0;
+        if (dictLength >= s.w_size) {
+          if (wrap === 0) {
+            zero(s.head);
+            s.strstart = 0;
+            s.block_start = 0;
+            s.insert = 0;
+          }
+          let tmpDict = new Uint8Array(s.w_size);
+          tmpDict.set(dictionary.subarray(dictLength - s.w_size, dictLength), 0);
+          dictionary = tmpDict;
+          dictLength = s.w_size;
+        }
+        const avail = strm.avail_in;
+        const next = strm.next_in;
+        const input = strm.input;
+        strm.avail_in = dictLength;
+        strm.next_in = 0;
+        strm.input = dictionary;
+        fill_window(s);
+        while (s.lookahead >= MIN_MATCH) {
+          let str = s.strstart;
+          let n = s.lookahead - (MIN_MATCH - 1);
+          do {
+            s.ins_h = HASH(s, s.ins_h, s.window[str + MIN_MATCH - 1]);
+            s.prev[str & s.w_mask] = s.head[s.ins_h];
+            s.head[s.ins_h] = str;
+            str++;
+          } while (--n);
+          s.strstart = str;
+          s.lookahead = MIN_MATCH - 1;
+          fill_window(s);
+        }
+        s.strstart += s.lookahead;
+        s.block_start = s.strstart;
+        s.insert = s.lookahead;
+        s.lookahead = 0;
+        s.match_length = s.prev_length = MIN_MATCH - 1;
+        s.match_available = 0;
+        strm.next_in = next;
+        strm.input = input;
+        strm.avail_in = avail;
+        s.wrap = wrap;
+        return Z_OK$3;
+      };
+      deflateInit_1 = deflateInit;
+      deflateInit2_1 = deflateInit2;
+      deflateReset_1 = deflateReset;
+      deflateResetKeep_1 = deflateResetKeep;
+      deflateSetHeader_1 = deflateSetHeader;
+      deflate_2$1 = deflate$2;
+      deflateEnd_1 = deflateEnd;
+      deflateSetDictionary_1 = deflateSetDictionary;
+      deflateInfo = "pako deflate (from Nodeca project)";
+      deflate_1$2 = {
+        deflateInit: deflateInit_1,
+        deflateInit2: deflateInit2_1,
+        deflateReset: deflateReset_1,
+        deflateResetKeep: deflateResetKeep_1,
+        deflateSetHeader: deflateSetHeader_1,
+        deflate: deflate_2$1,
+        deflateEnd: deflateEnd_1,
+        deflateSetDictionary: deflateSetDictionary_1,
+        deflateInfo
+      };
+      _has = (obj, key) => {
+        return Object.prototype.hasOwnProperty.call(obj, key);
+      };
+      assign = function(obj) {
+        const sources = Array.prototype.slice.call(arguments, 1);
+        while (sources.length) {
+          const source = sources.shift();
+          if (!source) {
+            continue;
+          }
+          if (typeof source !== "object") {
+            throw new TypeError(source + "must be non-object");
+          }
+          for (const p in source) {
+            if (_has(source, p)) {
+              obj[p] = source[p];
+            }
+          }
+        }
+        return obj;
+      };
+      flattenChunks = (chunks) => {
+        let len = 0;
+        for (let i = 0, l = chunks.length; i < l; i++) {
+          len += chunks[i].length;
+        }
+        const result = new Uint8Array(len);
+        for (let i = 0, pos = 0, l = chunks.length; i < l; i++) {
+          let chunk = chunks[i];
+          result.set(chunk, pos);
+          pos += chunk.length;
+        }
+        return result;
+      };
+      common = {
+        assign,
+        flattenChunks
+      };
+      STR_APPLY_UIA_OK = true;
+      try {
+        String.fromCharCode.apply(null, new Uint8Array(1));
+      } catch (__) {
+        STR_APPLY_UIA_OK = false;
+      }
+      _utf8len = new Uint8Array(256);
+      for (let q = 0; q < 256; q++) {
+        _utf8len[q] = q >= 252 ? 6 : q >= 248 ? 5 : q >= 240 ? 4 : q >= 224 ? 3 : q >= 192 ? 2 : 1;
+      }
+      _utf8len[254] = _utf8len[254] = 1;
+      string2buf = (str) => {
+        if (typeof TextEncoder === "function" && TextEncoder.prototype.encode) {
+          return new TextEncoder().encode(str);
+        }
+        let buf, c, c2, m_pos, i, str_len = str.length, buf_len = 0;
+        for (m_pos = 0; m_pos < str_len; m_pos++) {
+          c = str.charCodeAt(m_pos);
+          if ((c & 64512) === 55296 && m_pos + 1 < str_len) {
+            c2 = str.charCodeAt(m_pos + 1);
+            if ((c2 & 64512) === 56320) {
+              c = 65536 + (c - 55296 << 10) + (c2 - 56320);
+              m_pos++;
+            }
+          }
+          buf_len += c < 128 ? 1 : c < 2048 ? 2 : c < 65536 ? 3 : 4;
+        }
+        buf = new Uint8Array(buf_len);
+        for (i = 0, m_pos = 0; i < buf_len; m_pos++) {
+          c = str.charCodeAt(m_pos);
+          if ((c & 64512) === 55296 && m_pos + 1 < str_len) {
+            c2 = str.charCodeAt(m_pos + 1);
+            if ((c2 & 64512) === 56320) {
+              c = 65536 + (c - 55296 << 10) + (c2 - 56320);
+              m_pos++;
+            }
+          }
+          if (c < 128) {
+            buf[i++] = c;
+          } else if (c < 2048) {
+            buf[i++] = 192 | c >>> 6;
+            buf[i++] = 128 | c & 63;
+          } else if (c < 65536) {
+            buf[i++] = 224 | c >>> 12;
+            buf[i++] = 128 | c >>> 6 & 63;
+            buf[i++] = 128 | c & 63;
+          } else {
+            buf[i++] = 240 | c >>> 18;
+            buf[i++] = 128 | c >>> 12 & 63;
+            buf[i++] = 128 | c >>> 6 & 63;
+            buf[i++] = 128 | c & 63;
+          }
+        }
+        return buf;
+      };
+      buf2binstring = (buf, len) => {
+        if (len < 65534) {
+          if (buf.subarray && STR_APPLY_UIA_OK) {
+            return String.fromCharCode.apply(null, buf.length === len ? buf : buf.subarray(0, len));
+          }
+        }
+        let result = "";
+        for (let i = 0; i < len; i++) {
+          result += String.fromCharCode(buf[i]);
+        }
+        return result;
+      };
+      buf2string = (buf, max) => {
+        const len = max || buf.length;
+        if (typeof TextDecoder === "function" && TextDecoder.prototype.decode) {
+          return new TextDecoder().decode(buf.subarray(0, max));
+        }
+        let i, out;
+        const utf16buf = new Array(len * 2);
+        for (out = 0, i = 0; i < len; ) {
+          let c = buf[i++];
+          if (c < 128) {
+            utf16buf[out++] = c;
+            continue;
+          }
+          let c_len = _utf8len[c];
+          if (c_len > 4) {
+            utf16buf[out++] = 65533;
+            i += c_len - 1;
+            continue;
+          }
+          c &= c_len === 2 ? 31 : c_len === 3 ? 15 : 7;
+          while (c_len > 1 && i < len) {
+            c = c << 6 | buf[i++] & 63;
+            c_len--;
+          }
+          if (c_len > 1) {
+            utf16buf[out++] = 65533;
+            continue;
+          }
+          if (c < 65536) {
+            utf16buf[out++] = c;
+          } else {
+            c -= 65536;
+            utf16buf[out++] = 55296 | c >> 10 & 1023;
+            utf16buf[out++] = 56320 | c & 1023;
+          }
+        }
+        return buf2binstring(utf16buf, out);
+      };
+      utf8border = (buf, max) => {
+        max = max || buf.length;
+        if (max > buf.length) {
+          max = buf.length;
+        }
+        let pos = max - 1;
+        while (pos >= 0 && (buf[pos] & 192) === 128) {
+          pos--;
+        }
+        if (pos < 0) {
+          return max;
+        }
+        if (pos === 0) {
+          return max;
+        }
+        return pos + _utf8len[buf[pos]] > max ? pos : max;
+      };
+      strings = {
+        string2buf,
+        buf2string,
+        utf8border
+      };
+      zstream = ZStream;
+      toString$1 = Object.prototype.toString;
+      ({
+        Z_NO_FLUSH: Z_NO_FLUSH$1,
+        Z_SYNC_FLUSH,
+        Z_FULL_FLUSH,
+        Z_FINISH: Z_FINISH$2,
+        Z_OK: Z_OK$2,
+        Z_STREAM_END: Z_STREAM_END$2,
+        Z_DEFAULT_COMPRESSION,
+        Z_DEFAULT_STRATEGY,
+        Z_DEFLATED: Z_DEFLATED$1
+      } = constants$2);
+      Deflate$1.prototype.push = function(data, flush_mode) {
+        const strm = this.strm;
+        const chunkSize = this.options.chunkSize;
+        let status, _flush_mode;
+        if (this.ended) {
+          return false;
+        }
+        if (flush_mode === ~~flush_mode)
+          _flush_mode = flush_mode;
+        else
+          _flush_mode = flush_mode === true ? Z_FINISH$2 : Z_NO_FLUSH$1;
+        if (typeof data === "string") {
+          strm.input = strings.string2buf(data);
+        } else if (toString$1.call(data) === "[object ArrayBuffer]") {
+          strm.input = new Uint8Array(data);
+        } else {
+          strm.input = data;
+        }
+        strm.next_in = 0;
+        strm.avail_in = strm.input.length;
+        for (; ; ) {
+          if (strm.avail_out === 0) {
+            strm.output = new Uint8Array(chunkSize);
+            strm.next_out = 0;
+            strm.avail_out = chunkSize;
+          }
+          if ((_flush_mode === Z_SYNC_FLUSH || _flush_mode === Z_FULL_FLUSH) && strm.avail_out <= 6) {
+            this.onData(strm.output.subarray(0, strm.next_out));
+            strm.avail_out = 0;
+            continue;
+          }
+          status = deflate_1$2.deflate(strm, _flush_mode);
+          if (status === Z_STREAM_END$2) {
+            if (strm.next_out > 0) {
+              this.onData(strm.output.subarray(0, strm.next_out));
+            }
+            status = deflate_1$2.deflateEnd(this.strm);
+            this.onEnd(status);
+            this.ended = true;
+            return status === Z_OK$2;
+          }
+          if (strm.avail_out === 0) {
+            this.onData(strm.output);
+            continue;
+          }
+          if (_flush_mode > 0 && strm.next_out > 0) {
+            this.onData(strm.output.subarray(0, strm.next_out));
+            strm.avail_out = 0;
+            continue;
+          }
+          if (strm.avail_in === 0)
+            break;
+        }
+        return true;
+      };
+      Deflate$1.prototype.onData = function(chunk) {
+        this.chunks.push(chunk);
+      };
+      Deflate$1.prototype.onEnd = function(status) {
+        if (status === Z_OK$2) {
+          this.result = common.flattenChunks(this.chunks);
+        }
+        this.chunks = [];
+        this.err = status;
+        this.msg = this.strm.msg;
+      };
+      Deflate_1$1 = Deflate$1;
+      deflate_2 = deflate$1;
+      deflateRaw_1$1 = deflateRaw$1;
+      gzip_1$1 = gzip$1;
+      constants$1 = constants$2;
+      deflate_1$1 = {
+        Deflate: Deflate_1$1,
+        deflate: deflate_2,
+        deflateRaw: deflateRaw_1$1,
+        gzip: gzip_1$1,
+        constants: constants$1
+      };
+      BAD$1 = 16209;
+      TYPE$1 = 16191;
+      inffast = function inflate_fast(strm, start) {
+        let _in;
+        let last;
+        let _out;
+        let beg;
+        let end;
+        let dmax;
+        let wsize;
+        let whave;
+        let wnext;
+        let s_window;
+        let hold;
+        let bits;
+        let lcode;
+        let dcode;
+        let lmask;
+        let dmask;
+        let here;
+        let op;
+        let len;
+        let dist;
+        let from;
+        let from_source;
+        let input, output;
+        const state = strm.state;
+        _in = strm.next_in;
+        input = strm.input;
+        last = _in + (strm.avail_in - 5);
+        _out = strm.next_out;
+        output = strm.output;
+        beg = _out - (start - strm.avail_out);
+        end = _out + (strm.avail_out - 257);
+        dmax = state.dmax;
+        wsize = state.wsize;
+        whave = state.whave;
+        wnext = state.wnext;
+        s_window = state.window;
+        hold = state.hold;
+        bits = state.bits;
+        lcode = state.lencode;
+        dcode = state.distcode;
+        lmask = (1 << state.lenbits) - 1;
+        dmask = (1 << state.distbits) - 1;
+        top:
+          do {
+            if (bits < 15) {
+              hold += input[_in++] << bits;
+              bits += 8;
+              hold += input[_in++] << bits;
+              bits += 8;
+            }
+            here = lcode[hold & lmask];
+            dolen:
+              for (; ; ) {
+                op = here >>> 24;
+                hold >>>= op;
+                bits -= op;
+                op = here >>> 16 & 255;
+                if (op === 0) {
+                  output[_out++] = here & 65535;
+                } else if (op & 16) {
+                  len = here & 65535;
+                  op &= 15;
+                  if (op) {
+                    if (bits < op) {
+                      hold += input[_in++] << bits;
+                      bits += 8;
+                    }
+                    len += hold & (1 << op) - 1;
+                    hold >>>= op;
+                    bits -= op;
+                  }
+                  if (bits < 15) {
+                    hold += input[_in++] << bits;
+                    bits += 8;
+                    hold += input[_in++] << bits;
+                    bits += 8;
+                  }
+                  here = dcode[hold & dmask];
+                  dodist:
+                    for (; ; ) {
+                      op = here >>> 24;
+                      hold >>>= op;
+                      bits -= op;
+                      op = here >>> 16 & 255;
+                      if (op & 16) {
+                        dist = here & 65535;
+                        op &= 15;
+                        if (bits < op) {
+                          hold += input[_in++] << bits;
+                          bits += 8;
+                          if (bits < op) {
+                            hold += input[_in++] << bits;
+                            bits += 8;
+                          }
+                        }
+                        dist += hold & (1 << op) - 1;
+                        if (dist > dmax) {
+                          strm.msg = "invalid distance too far back";
+                          state.mode = BAD$1;
+                          break top;
+                        }
+                        hold >>>= op;
+                        bits -= op;
+                        op = _out - beg;
+                        if (dist > op) {
+                          op = dist - op;
+                          if (op > whave) {
+                            if (state.sane) {
+                              strm.msg = "invalid distance too far back";
+                              state.mode = BAD$1;
+                              break top;
+                            }
+                          }
+                          from = 0;
+                          from_source = s_window;
+                          if (wnext === 0) {
+                            from += wsize - op;
+                            if (op < len) {
+                              len -= op;
+                              do {
+                                output[_out++] = s_window[from++];
+                              } while (--op);
+                              from = _out - dist;
+                              from_source = output;
+                            }
+                          } else if (wnext < op) {
+                            from += wsize + wnext - op;
+                            op -= wnext;
+                            if (op < len) {
+                              len -= op;
+                              do {
+                                output[_out++] = s_window[from++];
+                              } while (--op);
+                              from = 0;
+                              if (wnext < len) {
+                                op = wnext;
+                                len -= op;
+                                do {
+                                  output[_out++] = s_window[from++];
+                                } while (--op);
+                                from = _out - dist;
+                                from_source = output;
+                              }
+                            }
+                          } else {
+                            from += wnext - op;
+                            if (op < len) {
+                              len -= op;
+                              do {
+                                output[_out++] = s_window[from++];
+                              } while (--op);
+                              from = _out - dist;
+                              from_source = output;
+                            }
+                          }
+                          while (len > 2) {
+                            output[_out++] = from_source[from++];
+                            output[_out++] = from_source[from++];
+                            output[_out++] = from_source[from++];
+                            len -= 3;
+                          }
+                          if (len) {
+                            output[_out++] = from_source[from++];
+                            if (len > 1) {
+                              output[_out++] = from_source[from++];
+                            }
+                          }
+                        } else {
+                          from = _out - dist;
+                          do {
+                            output[_out++] = output[from++];
+                            output[_out++] = output[from++];
+                            output[_out++] = output[from++];
+                            len -= 3;
+                          } while (len > 2);
+                          if (len) {
+                            output[_out++] = output[from++];
+                            if (len > 1) {
+                              output[_out++] = output[from++];
+                            }
+                          }
+                        }
+                      } else if ((op & 64) === 0) {
+                        here = dcode[(here & 65535) + (hold & (1 << op) - 1)];
+                        continue dodist;
+                      } else {
+                        strm.msg = "invalid distance code";
+                        state.mode = BAD$1;
+                        break top;
+                      }
+                      break;
+                    }
+                } else if ((op & 64) === 0) {
+                  here = lcode[(here & 65535) + (hold & (1 << op) - 1)];
+                  continue dolen;
+                } else if (op & 32) {
+                  state.mode = TYPE$1;
+                  break top;
+                } else {
+                  strm.msg = "invalid literal/length code";
+                  state.mode = BAD$1;
+                  break top;
+                }
+                break;
+              }
+          } while (_in < last && _out < end);
+        len = bits >> 3;
+        _in -= len;
+        bits -= len << 3;
+        hold &= (1 << bits) - 1;
+        strm.next_in = _in;
+        strm.next_out = _out;
+        strm.avail_in = _in < last ? 5 + (last - _in) : 5 - (_in - last);
+        strm.avail_out = _out < end ? 257 + (end - _out) : 257 - (_out - end);
+        state.hold = hold;
+        state.bits = bits;
+        return;
+      };
+      MAXBITS = 15;
+      ENOUGH_LENS$1 = 852;
+      ENOUGH_DISTS$1 = 592;
+      CODES$1 = 0;
+      LENS$1 = 1;
+      DISTS$1 = 2;
+      lbase = new Uint16Array([
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        13,
+        15,
+        17,
+        19,
+        23,
+        27,
+        31,
+        35,
+        43,
+        51,
+        59,
+        67,
+        83,
+        99,
+        115,
+        131,
+        163,
+        195,
+        227,
+        258,
+        0,
+        0
+      ]);
+      lext = new Uint8Array([
+        16,
+        16,
+        16,
+        16,
+        16,
+        16,
+        16,
+        16,
+        17,
+        17,
+        17,
+        17,
+        18,
+        18,
+        18,
+        18,
+        19,
+        19,
+        19,
+        19,
+        20,
+        20,
+        20,
+        20,
+        21,
+        21,
+        21,
+        21,
+        16,
+        72,
+        78
+      ]);
+      dbase = new Uint16Array([
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        13,
+        17,
+        25,
+        33,
+        49,
+        65,
+        97,
+        129,
+        193,
+        257,
+        385,
+        513,
+        769,
+        1025,
+        1537,
+        2049,
+        3073,
+        4097,
+        6145,
+        8193,
+        12289,
+        16385,
+        24577,
+        0,
+        0
+      ]);
+      dext = new Uint8Array([
+        16,
+        16,
+        16,
+        16,
+        17,
+        17,
+        18,
+        18,
+        19,
+        19,
+        20,
+        20,
+        21,
+        21,
+        22,
+        22,
+        23,
+        23,
+        24,
+        24,
+        25,
+        25,
+        26,
+        26,
+        27,
+        27,
+        28,
+        28,
+        29,
+        29,
+        64,
+        64
+      ]);
+      inflate_table = (type, lens, lens_index, codes, table, table_index, work, opts) => {
+        const bits = opts.bits;
+        let len = 0;
+        let sym = 0;
+        let min = 0, max = 0;
+        let root2 = 0;
+        let curr = 0;
+        let drop = 0;
+        let left = 0;
+        let used = 0;
+        let huff = 0;
+        let incr;
+        let fill;
+        let low;
+        let mask;
+        let next;
+        let base = null;
+        let match;
+        const count = new Uint16Array(MAXBITS + 1);
+        const offs = new Uint16Array(MAXBITS + 1);
+        let extra = null;
+        let here_bits, here_op, here_val;
+        for (len = 0; len <= MAXBITS; len++) {
+          count[len] = 0;
+        }
+        for (sym = 0; sym < codes; sym++) {
+          count[lens[lens_index + sym]]++;
+        }
+        root2 = bits;
+        for (max = MAXBITS; max >= 1; max--) {
+          if (count[max] !== 0) {
+            break;
+          }
+        }
+        if (root2 > max) {
+          root2 = max;
+        }
+        if (max === 0) {
+          table[table_index++] = 1 << 24 | 64 << 16 | 0;
+          table[table_index++] = 1 << 24 | 64 << 16 | 0;
+          opts.bits = 1;
+          return 0;
+        }
+        for (min = 1; min < max; min++) {
+          if (count[min] !== 0) {
+            break;
+          }
+        }
+        if (root2 < min) {
+          root2 = min;
+        }
+        left = 1;
+        for (len = 1; len <= MAXBITS; len++) {
+          left <<= 1;
+          left -= count[len];
+          if (left < 0) {
+            return -1;
+          }
+        }
+        if (left > 0 && (type === CODES$1 || max !== 1)) {
+          return -1;
+        }
+        offs[1] = 0;
+        for (len = 1; len < MAXBITS; len++) {
+          offs[len + 1] = offs[len] + count[len];
+        }
+        for (sym = 0; sym < codes; sym++) {
+          if (lens[lens_index + sym] !== 0) {
+            work[offs[lens[lens_index + sym]]++] = sym;
+          }
+        }
+        if (type === CODES$1) {
+          base = extra = work;
+          match = 20;
+        } else if (type === LENS$1) {
+          base = lbase;
+          extra = lext;
+          match = 257;
+        } else {
+          base = dbase;
+          extra = dext;
+          match = 0;
+        }
+        huff = 0;
+        sym = 0;
+        len = min;
+        next = table_index;
+        curr = root2;
+        drop = 0;
+        low = -1;
+        used = 1 << root2;
+        mask = used - 1;
+        if (type === LENS$1 && used > ENOUGH_LENS$1 || type === DISTS$1 && used > ENOUGH_DISTS$1) {
+          return 1;
+        }
+        for (; ; ) {
+          here_bits = len - drop;
+          if (work[sym] + 1 < match) {
+            here_op = 0;
+            here_val = work[sym];
+          } else if (work[sym] >= match) {
+            here_op = extra[work[sym] - match];
+            here_val = base[work[sym] - match];
+          } else {
+            here_op = 32 + 64;
+            here_val = 0;
+          }
+          incr = 1 << len - drop;
+          fill = 1 << curr;
+          min = fill;
+          do {
+            fill -= incr;
+            table[next + (huff >> drop) + fill] = here_bits << 24 | here_op << 16 | here_val | 0;
+          } while (fill !== 0);
+          incr = 1 << len - 1;
+          while (huff & incr) {
+            incr >>= 1;
+          }
+          if (incr !== 0) {
+            huff &= incr - 1;
+            huff += incr;
+          } else {
+            huff = 0;
+          }
+          sym++;
+          if (--count[len] === 0) {
+            if (len === max) {
+              break;
+            }
+            len = lens[lens_index + work[sym]];
+          }
+          if (len > root2 && (huff & mask) !== low) {
+            if (drop === 0) {
+              drop = root2;
+            }
+            next += min;
+            curr = len - drop;
+            left = 1 << curr;
+            while (curr + drop < max) {
+              left -= count[curr + drop];
+              if (left <= 0) {
+                break;
+              }
+              curr++;
+              left <<= 1;
+            }
+            used += 1 << curr;
+            if (type === LENS$1 && used > ENOUGH_LENS$1 || type === DISTS$1 && used > ENOUGH_DISTS$1) {
+              return 1;
+            }
+            low = huff & mask;
+            table[low] = root2 << 24 | curr << 16 | next - table_index | 0;
+          }
+        }
+        if (huff !== 0) {
+          table[next + huff] = len - drop << 24 | 64 << 16 | 0;
+        }
+        opts.bits = root2;
+        return 0;
+      };
+      inftrees = inflate_table;
+      CODES = 0;
+      LENS = 1;
+      DISTS = 2;
+      ({
+        Z_FINISH: Z_FINISH$1,
+        Z_BLOCK,
+        Z_TREES,
+        Z_OK: Z_OK$1,
+        Z_STREAM_END: Z_STREAM_END$1,
+        Z_NEED_DICT: Z_NEED_DICT$1,
+        Z_STREAM_ERROR: Z_STREAM_ERROR$1,
+        Z_DATA_ERROR: Z_DATA_ERROR$1,
+        Z_MEM_ERROR: Z_MEM_ERROR$1,
+        Z_BUF_ERROR,
+        Z_DEFLATED
+      } = constants$2);
+      HEAD = 16180;
+      FLAGS = 16181;
+      TIME = 16182;
+      OS = 16183;
+      EXLEN = 16184;
+      EXTRA = 16185;
+      NAME = 16186;
+      COMMENT = 16187;
+      HCRC = 16188;
+      DICTID = 16189;
+      DICT = 16190;
+      TYPE = 16191;
+      TYPEDO = 16192;
+      STORED = 16193;
+      COPY_ = 16194;
+      COPY = 16195;
+      TABLE = 16196;
+      LENLENS = 16197;
+      CODELENS = 16198;
+      LEN_ = 16199;
+      LEN = 16200;
+      LENEXT = 16201;
+      DIST = 16202;
+      DISTEXT = 16203;
+      MATCH = 16204;
+      LIT = 16205;
+      CHECK = 16206;
+      LENGTH = 16207;
+      DONE = 16208;
+      BAD = 16209;
+      MEM = 16210;
+      SYNC = 16211;
+      ENOUGH_LENS = 852;
+      ENOUGH_DISTS = 592;
+      MAX_WBITS = 15;
+      DEF_WBITS = MAX_WBITS;
+      zswap32 = (q) => {
+        return (q >>> 24 & 255) + (q >>> 8 & 65280) + ((q & 65280) << 8) + ((q & 255) << 24);
+      };
+      inflateStateCheck = (strm) => {
+        if (!strm) {
+          return 1;
+        }
+        const state = strm.state;
+        if (!state || state.strm !== strm || state.mode < HEAD || state.mode > SYNC) {
+          return 1;
+        }
+        return 0;
+      };
+      inflateResetKeep = (strm) => {
+        if (inflateStateCheck(strm)) {
+          return Z_STREAM_ERROR$1;
+        }
+        const state = strm.state;
+        strm.total_in = strm.total_out = state.total = 0;
+        strm.msg = "";
+        if (state.wrap) {
+          strm.adler = state.wrap & 1;
+        }
+        state.mode = HEAD;
+        state.last = 0;
+        state.havedict = 0;
+        state.flags = -1;
+        state.dmax = 32768;
+        state.head = null;
+        state.hold = 0;
+        state.bits = 0;
+        state.lencode = state.lendyn = new Int32Array(ENOUGH_LENS);
+        state.distcode = state.distdyn = new Int32Array(ENOUGH_DISTS);
+        state.sane = 1;
+        state.back = -1;
+        return Z_OK$1;
+      };
+      inflateReset = (strm) => {
+        if (inflateStateCheck(strm)) {
+          return Z_STREAM_ERROR$1;
+        }
+        const state = strm.state;
+        state.wsize = 0;
+        state.whave = 0;
+        state.wnext = 0;
+        return inflateResetKeep(strm);
+      };
+      inflateReset2 = (strm, windowBits) => {
+        let wrap;
+        if (inflateStateCheck(strm)) {
+          return Z_STREAM_ERROR$1;
+        }
+        const state = strm.state;
+        if (windowBits < 0) {
+          wrap = 0;
+          windowBits = -windowBits;
+        } else {
+          wrap = (windowBits >> 4) + 5;
+          if (windowBits < 48) {
+            windowBits &= 15;
+          }
+        }
+        if (windowBits && (windowBits < 8 || windowBits > 15)) {
+          return Z_STREAM_ERROR$1;
+        }
+        if (state.window !== null && state.wbits !== windowBits) {
+          state.window = null;
+        }
+        state.wrap = wrap;
+        state.wbits = windowBits;
+        return inflateReset(strm);
+      };
+      inflateInit2 = (strm, windowBits) => {
+        if (!strm) {
+          return Z_STREAM_ERROR$1;
+        }
+        const state = new InflateState();
+        strm.state = state;
+        state.strm = strm;
+        state.window = null;
+        state.mode = HEAD;
+        const ret = inflateReset2(strm, windowBits);
+        if (ret !== Z_OK$1) {
+          strm.state = null;
+        }
+        return ret;
+      };
+      inflateInit = (strm) => {
+        return inflateInit2(strm, DEF_WBITS);
+      };
+      virgin = true;
+      fixedtables = (state) => {
+        if (virgin) {
+          lenfix = new Int32Array(512);
+          distfix = new Int32Array(32);
+          let sym = 0;
+          while (sym < 144) {
+            state.lens[sym++] = 8;
+          }
+          while (sym < 256) {
+            state.lens[sym++] = 9;
+          }
+          while (sym < 280) {
+            state.lens[sym++] = 7;
+          }
+          while (sym < 288) {
+            state.lens[sym++] = 8;
+          }
+          inftrees(LENS, state.lens, 0, 288, lenfix, 0, state.work, { bits: 9 });
+          sym = 0;
+          while (sym < 32) {
+            state.lens[sym++] = 5;
+          }
+          inftrees(DISTS, state.lens, 0, 32, distfix, 0, state.work, { bits: 5 });
+          virgin = false;
+        }
+        state.lencode = lenfix;
+        state.lenbits = 9;
+        state.distcode = distfix;
+        state.distbits = 5;
+      };
+      updatewindow = (strm, src, end, copy) => {
+        let dist;
+        const state = strm.state;
+        if (state.window === null) {
+          state.wsize = 1 << state.wbits;
+          state.wnext = 0;
+          state.whave = 0;
+          state.window = new Uint8Array(state.wsize);
+        }
+        if (copy >= state.wsize) {
+          state.window.set(src.subarray(end - state.wsize, end), 0);
+          state.wnext = 0;
+          state.whave = state.wsize;
+        } else {
+          dist = state.wsize - state.wnext;
+          if (dist > copy) {
+            dist = copy;
+          }
+          state.window.set(src.subarray(end - copy, end - copy + dist), state.wnext);
+          copy -= dist;
+          if (copy) {
+            state.window.set(src.subarray(end - copy, end), 0);
+            state.wnext = copy;
+            state.whave = state.wsize;
+          } else {
+            state.wnext += dist;
+            if (state.wnext === state.wsize) {
+              state.wnext = 0;
+            }
+            if (state.whave < state.wsize) {
+              state.whave += dist;
+            }
+          }
+        }
+        return 0;
+      };
+      inflate$2 = (strm, flush) => {
+        let state;
+        let input, output;
+        let next;
+        let put;
+        let have, left;
+        let hold;
+        let bits;
+        let _in, _out;
+        let copy;
+        let from;
+        let from_source;
+        let here = 0;
+        let here_bits, here_op, here_val;
+        let last_bits, last_op, last_val;
+        let len;
+        let ret;
+        const hbuf = new Uint8Array(4);
+        let opts;
+        let n;
+        const order = new Uint8Array([16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15]);
+        if (inflateStateCheck(strm) || !strm.output || !strm.input && strm.avail_in !== 0) {
+          return Z_STREAM_ERROR$1;
+        }
+        state = strm.state;
+        if (state.mode === TYPE) {
+          state.mode = TYPEDO;
+        }
+        put = strm.next_out;
+        output = strm.output;
+        left = strm.avail_out;
+        next = strm.next_in;
+        input = strm.input;
+        have = strm.avail_in;
+        hold = state.hold;
+        bits = state.bits;
+        _in = have;
+        _out = left;
+        ret = Z_OK$1;
+        inf_leave:
+          for (; ; ) {
+            switch (state.mode) {
+              case HEAD:
+                if (state.wrap === 0) {
+                  state.mode = TYPEDO;
+                  break;
+                }
+                while (bits < 16) {
+                  if (have === 0) {
+                    break inf_leave;
+                  }
+                  have--;
+                  hold += input[next++] << bits;
+                  bits += 8;
+                }
+                if (state.wrap & 2 && hold === 35615) {
+                  if (state.wbits === 0) {
+                    state.wbits = 15;
+                  }
+                  state.check = 0;
+                  hbuf[0] = hold & 255;
+                  hbuf[1] = hold >>> 8 & 255;
+                  state.check = crc32_1(state.check, hbuf, 2, 0);
+                  hold = 0;
+                  bits = 0;
+                  state.mode = FLAGS;
+                  break;
+                }
+                if (state.head) {
+                  state.head.done = false;
+                }
+                if (!(state.wrap & 1) || (((hold & 255) << 8) + (hold >> 8)) % 31) {
+                  strm.msg = "incorrect header check";
+                  state.mode = BAD;
+                  break;
+                }
+                if ((hold & 15) !== Z_DEFLATED) {
+                  strm.msg = "unknown compression method";
+                  state.mode = BAD;
+                  break;
+                }
+                hold >>>= 4;
+                bits -= 4;
+                len = (hold & 15) + 8;
+                if (state.wbits === 0) {
+                  state.wbits = len;
+                }
+                if (len > 15 || len > state.wbits) {
+                  strm.msg = "invalid window size";
+                  state.mode = BAD;
+                  break;
+                }
+                state.dmax = 1 << state.wbits;
+                state.flags = 0;
+                strm.adler = state.check = 1;
+                state.mode = hold & 512 ? DICTID : TYPE;
+                hold = 0;
+                bits = 0;
+                break;
+              case FLAGS:
+                while (bits < 16) {
+                  if (have === 0) {
+                    break inf_leave;
+                  }
+                  have--;
+                  hold += input[next++] << bits;
+                  bits += 8;
+                }
+                state.flags = hold;
+                if ((state.flags & 255) !== Z_DEFLATED) {
+                  strm.msg = "unknown compression method";
+                  state.mode = BAD;
+                  break;
+                }
+                if (state.flags & 57344) {
+                  strm.msg = "unknown header flags set";
+                  state.mode = BAD;
+                  break;
+                }
+                if (state.head) {
+                  state.head.text = hold >> 8 & 1;
+                }
+                if (state.flags & 512 && state.wrap & 4) {
+                  hbuf[0] = hold & 255;
+                  hbuf[1] = hold >>> 8 & 255;
+                  state.check = crc32_1(state.check, hbuf, 2, 0);
+                }
+                hold = 0;
+                bits = 0;
+                state.mode = TIME;
+              case TIME:
+                while (bits < 32) {
+                  if (have === 0) {
+                    break inf_leave;
+                  }
+                  have--;
+                  hold += input[next++] << bits;
+                  bits += 8;
+                }
+                if (state.head) {
+                  state.head.time = hold;
+                }
+                if (state.flags & 512 && state.wrap & 4) {
+                  hbuf[0] = hold & 255;
+                  hbuf[1] = hold >>> 8 & 255;
+                  hbuf[2] = hold >>> 16 & 255;
+                  hbuf[3] = hold >>> 24 & 255;
+                  state.check = crc32_1(state.check, hbuf, 4, 0);
+                }
+                hold = 0;
+                bits = 0;
+                state.mode = OS;
+              case OS:
+                while (bits < 16) {
+                  if (have === 0) {
+                    break inf_leave;
+                  }
+                  have--;
+                  hold += input[next++] << bits;
+                  bits += 8;
+                }
+                if (state.head) {
+                  state.head.xflags = hold & 255;
+                  state.head.os = hold >> 8;
+                }
+                if (state.flags & 512 && state.wrap & 4) {
+                  hbuf[0] = hold & 255;
+                  hbuf[1] = hold >>> 8 & 255;
+                  state.check = crc32_1(state.check, hbuf, 2, 0);
+                }
+                hold = 0;
+                bits = 0;
+                state.mode = EXLEN;
+              case EXLEN:
+                if (state.flags & 1024) {
+                  while (bits < 16) {
+                    if (have === 0) {
+                      break inf_leave;
+                    }
+                    have--;
+                    hold += input[next++] << bits;
+                    bits += 8;
+                  }
+                  state.length = hold;
+                  if (state.head) {
+                    state.head.extra_len = hold;
+                  }
+                  if (state.flags & 512 && state.wrap & 4) {
+                    hbuf[0] = hold & 255;
+                    hbuf[1] = hold >>> 8 & 255;
+                    state.check = crc32_1(state.check, hbuf, 2, 0);
+                  }
+                  hold = 0;
+                  bits = 0;
+                } else if (state.head) {
+                  state.head.extra = null;
+                }
+                state.mode = EXTRA;
+              case EXTRA:
+                if (state.flags & 1024) {
+                  copy = state.length;
+                  if (copy > have) {
+                    copy = have;
+                  }
+                  if (copy) {
+                    if (state.head) {
+                      len = state.head.extra_len - state.length;
+                      if (!state.head.extra) {
+                        state.head.extra = new Uint8Array(state.head.extra_len);
+                      }
+                      state.head.extra.set(
+                        input.subarray(
+                          next,
+                          next + copy
+                        ),
+                        len
+                      );
+                    }
+                    if (state.flags & 512 && state.wrap & 4) {
+                      state.check = crc32_1(state.check, input, copy, next);
+                    }
+                    have -= copy;
+                    next += copy;
+                    state.length -= copy;
+                  }
+                  if (state.length) {
+                    break inf_leave;
+                  }
+                }
+                state.length = 0;
+                state.mode = NAME;
+              case NAME:
+                if (state.flags & 2048) {
+                  if (have === 0) {
+                    break inf_leave;
+                  }
+                  copy = 0;
+                  do {
+                    len = input[next + copy++];
+                    if (state.head && len && state.length < 65536) {
+                      state.head.name += String.fromCharCode(len);
+                    }
+                  } while (len && copy < have);
+                  if (state.flags & 512 && state.wrap & 4) {
+                    state.check = crc32_1(state.check, input, copy, next);
+                  }
+                  have -= copy;
+                  next += copy;
+                  if (len) {
+                    break inf_leave;
+                  }
+                } else if (state.head) {
+                  state.head.name = null;
+                }
+                state.length = 0;
+                state.mode = COMMENT;
+              case COMMENT:
+                if (state.flags & 4096) {
+                  if (have === 0) {
+                    break inf_leave;
+                  }
+                  copy = 0;
+                  do {
+                    len = input[next + copy++];
+                    if (state.head && len && state.length < 65536) {
+                      state.head.comment += String.fromCharCode(len);
+                    }
+                  } while (len && copy < have);
+                  if (state.flags & 512 && state.wrap & 4) {
+                    state.check = crc32_1(state.check, input, copy, next);
+                  }
+                  have -= copy;
+                  next += copy;
+                  if (len) {
+                    break inf_leave;
+                  }
+                } else if (state.head) {
+                  state.head.comment = null;
+                }
+                state.mode = HCRC;
+              case HCRC:
+                if (state.flags & 512) {
+                  while (bits < 16) {
+                    if (have === 0) {
+                      break inf_leave;
+                    }
+                    have--;
+                    hold += input[next++] << bits;
+                    bits += 8;
+                  }
+                  if (state.wrap & 4 && hold !== (state.check & 65535)) {
+                    strm.msg = "header crc mismatch";
+                    state.mode = BAD;
+                    break;
+                  }
+                  hold = 0;
+                  bits = 0;
+                }
+                if (state.head) {
+                  state.head.hcrc = state.flags >> 9 & 1;
+                  state.head.done = true;
+                }
+                strm.adler = state.check = 0;
+                state.mode = TYPE;
+                break;
+              case DICTID:
+                while (bits < 32) {
+                  if (have === 0) {
+                    break inf_leave;
+                  }
+                  have--;
+                  hold += input[next++] << bits;
+                  bits += 8;
+                }
+                strm.adler = state.check = zswap32(hold);
+                hold = 0;
+                bits = 0;
+                state.mode = DICT;
+              case DICT:
+                if (state.havedict === 0) {
+                  strm.next_out = put;
+                  strm.avail_out = left;
+                  strm.next_in = next;
+                  strm.avail_in = have;
+                  state.hold = hold;
+                  state.bits = bits;
+                  return Z_NEED_DICT$1;
+                }
+                strm.adler = state.check = 1;
+                state.mode = TYPE;
+              case TYPE:
+                if (flush === Z_BLOCK || flush === Z_TREES) {
+                  break inf_leave;
+                }
+              case TYPEDO:
+                if (state.last) {
+                  hold >>>= bits & 7;
+                  bits -= bits & 7;
+                  state.mode = CHECK;
+                  break;
+                }
+                while (bits < 3) {
+                  if (have === 0) {
+                    break inf_leave;
+                  }
+                  have--;
+                  hold += input[next++] << bits;
+                  bits += 8;
+                }
+                state.last = hold & 1;
+                hold >>>= 1;
+                bits -= 1;
+                switch (hold & 3) {
+                  case 0:
+                    state.mode = STORED;
+                    break;
+                  case 1:
+                    fixedtables(state);
+                    state.mode = LEN_;
+                    if (flush === Z_TREES) {
+                      hold >>>= 2;
+                      bits -= 2;
+                      break inf_leave;
+                    }
+                    break;
+                  case 2:
+                    state.mode = TABLE;
+                    break;
+                  case 3:
+                    strm.msg = "invalid block type";
+                    state.mode = BAD;
+                }
+                hold >>>= 2;
+                bits -= 2;
+                break;
+              case STORED:
+                hold >>>= bits & 7;
+                bits -= bits & 7;
+                while (bits < 32) {
+                  if (have === 0) {
+                    break inf_leave;
+                  }
+                  have--;
+                  hold += input[next++] << bits;
+                  bits += 8;
+                }
+                if ((hold & 65535) !== (hold >>> 16 ^ 65535)) {
+                  strm.msg = "invalid stored block lengths";
+                  state.mode = BAD;
+                  break;
+                }
+                state.length = hold & 65535;
+                hold = 0;
+                bits = 0;
+                state.mode = COPY_;
+                if (flush === Z_TREES) {
+                  break inf_leave;
+                }
+              case COPY_:
+                state.mode = COPY;
+              case COPY:
+                copy = state.length;
+                if (copy) {
+                  if (copy > have) {
+                    copy = have;
+                  }
+                  if (copy > left) {
+                    copy = left;
+                  }
+                  if (copy === 0) {
+                    break inf_leave;
+                  }
+                  output.set(input.subarray(next, next + copy), put);
+                  have -= copy;
+                  next += copy;
+                  left -= copy;
+                  put += copy;
+                  state.length -= copy;
+                  break;
+                }
+                state.mode = TYPE;
+                break;
+              case TABLE:
+                while (bits < 14) {
+                  if (have === 0) {
+                    break inf_leave;
+                  }
+                  have--;
+                  hold += input[next++] << bits;
+                  bits += 8;
+                }
+                state.nlen = (hold & 31) + 257;
+                hold >>>= 5;
+                bits -= 5;
+                state.ndist = (hold & 31) + 1;
+                hold >>>= 5;
+                bits -= 5;
+                state.ncode = (hold & 15) + 4;
+                hold >>>= 4;
+                bits -= 4;
+                if (state.nlen > 286 || state.ndist > 30) {
+                  strm.msg = "too many length or distance symbols";
+                  state.mode = BAD;
+                  break;
+                }
+                state.have = 0;
+                state.mode = LENLENS;
+              case LENLENS:
+                while (state.have < state.ncode) {
+                  while (bits < 3) {
+                    if (have === 0) {
+                      break inf_leave;
+                    }
+                    have--;
+                    hold += input[next++] << bits;
+                    bits += 8;
+                  }
+                  state.lens[order[state.have++]] = hold & 7;
+                  hold >>>= 3;
+                  bits -= 3;
+                }
+                while (state.have < 19) {
+                  state.lens[order[state.have++]] = 0;
+                }
+                state.lencode = state.lendyn;
+                state.lenbits = 7;
+                opts = { bits: state.lenbits };
+                ret = inftrees(CODES, state.lens, 0, 19, state.lencode, 0, state.work, opts);
+                state.lenbits = opts.bits;
+                if (ret) {
+                  strm.msg = "invalid code lengths set";
+                  state.mode = BAD;
+                  break;
+                }
+                state.have = 0;
+                state.mode = CODELENS;
+              case CODELENS:
+                while (state.have < state.nlen + state.ndist) {
+                  for (; ; ) {
+                    here = state.lencode[hold & (1 << state.lenbits) - 1];
+                    here_bits = here >>> 24;
+                    here_op = here >>> 16 & 255;
+                    here_val = here & 65535;
+                    if (here_bits <= bits) {
+                      break;
+                    }
+                    if (have === 0) {
+                      break inf_leave;
+                    }
+                    have--;
+                    hold += input[next++] << bits;
+                    bits += 8;
+                  }
+                  if (here_val < 16) {
+                    hold >>>= here_bits;
+                    bits -= here_bits;
+                    state.lens[state.have++] = here_val;
+                  } else {
+                    if (here_val === 16) {
+                      n = here_bits + 2;
+                      while (bits < n) {
+                        if (have === 0) {
+                          break inf_leave;
+                        }
+                        have--;
+                        hold += input[next++] << bits;
+                        bits += 8;
+                      }
+                      hold >>>= here_bits;
+                      bits -= here_bits;
+                      if (state.have === 0) {
+                        strm.msg = "invalid bit length repeat";
+                        state.mode = BAD;
+                        break;
+                      }
+                      len = state.lens[state.have - 1];
+                      copy = 3 + (hold & 3);
+                      hold >>>= 2;
+                      bits -= 2;
+                    } else if (here_val === 17) {
+                      n = here_bits + 3;
+                      while (bits < n) {
+                        if (have === 0) {
+                          break inf_leave;
+                        }
+                        have--;
+                        hold += input[next++] << bits;
+                        bits += 8;
+                      }
+                      hold >>>= here_bits;
+                      bits -= here_bits;
+                      len = 0;
+                      copy = 3 + (hold & 7);
+                      hold >>>= 3;
+                      bits -= 3;
+                    } else {
+                      n = here_bits + 7;
+                      while (bits < n) {
+                        if (have === 0) {
+                          break inf_leave;
+                        }
+                        have--;
+                        hold += input[next++] << bits;
+                        bits += 8;
+                      }
+                      hold >>>= here_bits;
+                      bits -= here_bits;
+                      len = 0;
+                      copy = 11 + (hold & 127);
+                      hold >>>= 7;
+                      bits -= 7;
+                    }
+                    if (state.have + copy > state.nlen + state.ndist) {
+                      strm.msg = "invalid bit length repeat";
+                      state.mode = BAD;
+                      break;
+                    }
+                    while (copy--) {
+                      state.lens[state.have++] = len;
+                    }
+                  }
+                }
+                if (state.mode === BAD) {
+                  break;
+                }
+                if (state.lens[256] === 0) {
+                  strm.msg = "invalid code -- missing end-of-block";
+                  state.mode = BAD;
+                  break;
+                }
+                state.lenbits = 9;
+                opts = { bits: state.lenbits };
+                ret = inftrees(LENS, state.lens, 0, state.nlen, state.lencode, 0, state.work, opts);
+                state.lenbits = opts.bits;
+                if (ret) {
+                  strm.msg = "invalid literal/lengths set";
+                  state.mode = BAD;
+                  break;
+                }
+                state.distbits = 6;
+                state.distcode = state.distdyn;
+                opts = { bits: state.distbits };
+                ret = inftrees(DISTS, state.lens, state.nlen, state.ndist, state.distcode, 0, state.work, opts);
+                state.distbits = opts.bits;
+                if (ret) {
+                  strm.msg = "invalid distances set";
+                  state.mode = BAD;
+                  break;
+                }
+                state.mode = LEN_;
+                if (flush === Z_TREES) {
+                  break inf_leave;
+                }
+              case LEN_:
+                state.mode = LEN;
+              case LEN:
+                if (have >= 6 && left >= 258) {
+                  strm.next_out = put;
+                  strm.avail_out = left;
+                  strm.next_in = next;
+                  strm.avail_in = have;
+                  state.hold = hold;
+                  state.bits = bits;
+                  inffast(strm, _out);
+                  put = strm.next_out;
+                  output = strm.output;
+                  left = strm.avail_out;
+                  next = strm.next_in;
+                  input = strm.input;
+                  have = strm.avail_in;
+                  hold = state.hold;
+                  bits = state.bits;
+                  if (state.mode === TYPE) {
+                    state.back = -1;
+                  }
+                  break;
+                }
+                state.back = 0;
+                for (; ; ) {
+                  here = state.lencode[hold & (1 << state.lenbits) - 1];
+                  here_bits = here >>> 24;
+                  here_op = here >>> 16 & 255;
+                  here_val = here & 65535;
+                  if (here_bits <= bits) {
+                    break;
+                  }
+                  if (have === 0) {
+                    break inf_leave;
+                  }
+                  have--;
+                  hold += input[next++] << bits;
+                  bits += 8;
+                }
+                if (here_op && (here_op & 240) === 0) {
+                  last_bits = here_bits;
+                  last_op = here_op;
+                  last_val = here_val;
+                  for (; ; ) {
+                    here = state.lencode[last_val + ((hold & (1 << last_bits + last_op) - 1) >> last_bits)];
+                    here_bits = here >>> 24;
+                    here_op = here >>> 16 & 255;
+                    here_val = here & 65535;
+                    if (last_bits + here_bits <= bits) {
+                      break;
+                    }
+                    if (have === 0) {
+                      break inf_leave;
+                    }
+                    have--;
+                    hold += input[next++] << bits;
+                    bits += 8;
+                  }
+                  hold >>>= last_bits;
+                  bits -= last_bits;
+                  state.back += last_bits;
+                }
+                hold >>>= here_bits;
+                bits -= here_bits;
+                state.back += here_bits;
+                state.length = here_val;
+                if (here_op === 0) {
+                  state.mode = LIT;
+                  break;
+                }
+                if (here_op & 32) {
+                  state.back = -1;
+                  state.mode = TYPE;
+                  break;
+                }
+                if (here_op & 64) {
+                  strm.msg = "invalid literal/length code";
+                  state.mode = BAD;
+                  break;
+                }
+                state.extra = here_op & 15;
+                state.mode = LENEXT;
+              case LENEXT:
+                if (state.extra) {
+                  n = state.extra;
+                  while (bits < n) {
+                    if (have === 0) {
+                      break inf_leave;
+                    }
+                    have--;
+                    hold += input[next++] << bits;
+                    bits += 8;
+                  }
+                  state.length += hold & (1 << state.extra) - 1;
+                  hold >>>= state.extra;
+                  bits -= state.extra;
+                  state.back += state.extra;
+                }
+                state.was = state.length;
+                state.mode = DIST;
+              case DIST:
+                for (; ; ) {
+                  here = state.distcode[hold & (1 << state.distbits) - 1];
+                  here_bits = here >>> 24;
+                  here_op = here >>> 16 & 255;
+                  here_val = here & 65535;
+                  if (here_bits <= bits) {
+                    break;
+                  }
+                  if (have === 0) {
+                    break inf_leave;
+                  }
+                  have--;
+                  hold += input[next++] << bits;
+                  bits += 8;
+                }
+                if ((here_op & 240) === 0) {
+                  last_bits = here_bits;
+                  last_op = here_op;
+                  last_val = here_val;
+                  for (; ; ) {
+                    here = state.distcode[last_val + ((hold & (1 << last_bits + last_op) - 1) >> last_bits)];
+                    here_bits = here >>> 24;
+                    here_op = here >>> 16 & 255;
+                    here_val = here & 65535;
+                    if (last_bits + here_bits <= bits) {
+                      break;
+                    }
+                    if (have === 0) {
+                      break inf_leave;
+                    }
+                    have--;
+                    hold += input[next++] << bits;
+                    bits += 8;
+                  }
+                  hold >>>= last_bits;
+                  bits -= last_bits;
+                  state.back += last_bits;
+                }
+                hold >>>= here_bits;
+                bits -= here_bits;
+                state.back += here_bits;
+                if (here_op & 64) {
+                  strm.msg = "invalid distance code";
+                  state.mode = BAD;
+                  break;
+                }
+                state.offset = here_val;
+                state.extra = here_op & 15;
+                state.mode = DISTEXT;
+              case DISTEXT:
+                if (state.extra) {
+                  n = state.extra;
+                  while (bits < n) {
+                    if (have === 0) {
+                      break inf_leave;
+                    }
+                    have--;
+                    hold += input[next++] << bits;
+                    bits += 8;
+                  }
+                  state.offset += hold & (1 << state.extra) - 1;
+                  hold >>>= state.extra;
+                  bits -= state.extra;
+                  state.back += state.extra;
+                }
+                if (state.offset > state.dmax) {
+                  strm.msg = "invalid distance too far back";
+                  state.mode = BAD;
+                  break;
+                }
+                state.mode = MATCH;
+              case MATCH:
+                if (left === 0) {
+                  break inf_leave;
+                }
+                copy = _out - left;
+                if (state.offset > copy) {
+                  copy = state.offset - copy;
+                  if (copy > state.whave) {
+                    if (state.sane) {
+                      strm.msg = "invalid distance too far back";
+                      state.mode = BAD;
+                      break;
+                    }
+                  }
+                  if (copy > state.wnext) {
+                    copy -= state.wnext;
+                    from = state.wsize - copy;
+                  } else {
+                    from = state.wnext - copy;
+                  }
+                  if (copy > state.length) {
+                    copy = state.length;
+                  }
+                  from_source = state.window;
+                } else {
+                  from_source = output;
+                  from = put - state.offset;
+                  copy = state.length;
+                }
+                if (copy > left) {
+                  copy = left;
+                }
+                left -= copy;
+                state.length -= copy;
+                do {
+                  output[put++] = from_source[from++];
+                } while (--copy);
+                if (state.length === 0) {
+                  state.mode = LEN;
+                }
+                break;
+              case LIT:
+                if (left === 0) {
+                  break inf_leave;
+                }
+                output[put++] = state.length;
+                left--;
+                state.mode = LEN;
+                break;
+              case CHECK:
+                if (state.wrap) {
+                  while (bits < 32) {
+                    if (have === 0) {
+                      break inf_leave;
+                    }
+                    have--;
+                    hold |= input[next++] << bits;
+                    bits += 8;
+                  }
+                  _out -= left;
+                  strm.total_out += _out;
+                  state.total += _out;
+                  if (state.wrap & 4 && _out) {
+                    strm.adler = state.check = state.flags ? crc32_1(state.check, output, _out, put - _out) : adler32_1(state.check, output, _out, put - _out);
+                  }
+                  _out = left;
+                  if (state.wrap & 4 && (state.flags ? hold : zswap32(hold)) !== state.check) {
+                    strm.msg = "incorrect data check";
+                    state.mode = BAD;
+                    break;
+                  }
+                  hold = 0;
+                  bits = 0;
+                }
+                state.mode = LENGTH;
+              case LENGTH:
+                if (state.wrap && state.flags) {
+                  while (bits < 32) {
+                    if (have === 0) {
+                      break inf_leave;
+                    }
+                    have--;
+                    hold += input[next++] << bits;
+                    bits += 8;
+                  }
+                  if (state.wrap & 4 && hold !== (state.total & 4294967295)) {
+                    strm.msg = "incorrect length check";
+                    state.mode = BAD;
+                    break;
+                  }
+                  hold = 0;
+                  bits = 0;
+                }
+                state.mode = DONE;
+              case DONE:
+                ret = Z_STREAM_END$1;
+                break inf_leave;
+              case BAD:
+                ret = Z_DATA_ERROR$1;
+                break inf_leave;
+              case MEM:
+                return Z_MEM_ERROR$1;
+              case SYNC:
+              default:
+                return Z_STREAM_ERROR$1;
+            }
+          }
+        strm.next_out = put;
+        strm.avail_out = left;
+        strm.next_in = next;
+        strm.avail_in = have;
+        state.hold = hold;
+        state.bits = bits;
+        if (state.wsize || _out !== strm.avail_out && state.mode < BAD && (state.mode < CHECK || flush !== Z_FINISH$1)) {
+          if (updatewindow(strm, strm.output, strm.next_out, _out - strm.avail_out))
+            ;
+        }
+        _in -= strm.avail_in;
+        _out -= strm.avail_out;
+        strm.total_in += _in;
+        strm.total_out += _out;
+        state.total += _out;
+        if (state.wrap & 4 && _out) {
+          strm.adler = state.check = state.flags ? crc32_1(state.check, output, _out, strm.next_out - _out) : adler32_1(state.check, output, _out, strm.next_out - _out);
+        }
+        strm.data_type = state.bits + (state.last ? 64 : 0) + (state.mode === TYPE ? 128 : 0) + (state.mode === LEN_ || state.mode === COPY_ ? 256 : 0);
+        if ((_in === 0 && _out === 0 || flush === Z_FINISH$1) && ret === Z_OK$1) {
+          ret = Z_BUF_ERROR;
+        }
+        return ret;
+      };
+      inflateEnd = (strm) => {
+        if (inflateStateCheck(strm)) {
+          return Z_STREAM_ERROR$1;
+        }
+        let state = strm.state;
+        if (state.window) {
+          state.window = null;
+        }
+        strm.state = null;
+        return Z_OK$1;
+      };
+      inflateGetHeader = (strm, head) => {
+        if (inflateStateCheck(strm)) {
+          return Z_STREAM_ERROR$1;
+        }
+        const state = strm.state;
+        if ((state.wrap & 2) === 0) {
+          return Z_STREAM_ERROR$1;
+        }
+        state.head = head;
+        head.done = false;
+        return Z_OK$1;
+      };
+      inflateSetDictionary = (strm, dictionary) => {
+        const dictLength = dictionary.length;
+        let state;
+        let dictid;
+        let ret;
+        if (inflateStateCheck(strm)) {
+          return Z_STREAM_ERROR$1;
+        }
+        state = strm.state;
+        if (state.wrap !== 0 && state.mode !== DICT) {
+          return Z_STREAM_ERROR$1;
+        }
+        if (state.mode === DICT) {
+          dictid = 1;
+          dictid = adler32_1(dictid, dictionary, dictLength, 0);
+          if (dictid !== state.check) {
+            return Z_DATA_ERROR$1;
+          }
+        }
+        ret = updatewindow(strm, dictionary, dictLength, dictLength);
+        if (ret) {
+          state.mode = MEM;
+          return Z_MEM_ERROR$1;
+        }
+        state.havedict = 1;
+        return Z_OK$1;
+      };
+      inflateReset_1 = inflateReset;
+      inflateReset2_1 = inflateReset2;
+      inflateResetKeep_1 = inflateResetKeep;
+      inflateInit_1 = inflateInit;
+      inflateInit2_1 = inflateInit2;
+      inflate_2$1 = inflate$2;
+      inflateEnd_1 = inflateEnd;
+      inflateGetHeader_1 = inflateGetHeader;
+      inflateSetDictionary_1 = inflateSetDictionary;
+      inflateInfo = "pako inflate (from Nodeca project)";
+      inflate_1$2 = {
+        inflateReset: inflateReset_1,
+        inflateReset2: inflateReset2_1,
+        inflateResetKeep: inflateResetKeep_1,
+        inflateInit: inflateInit_1,
+        inflateInit2: inflateInit2_1,
+        inflate: inflate_2$1,
+        inflateEnd: inflateEnd_1,
+        inflateGetHeader: inflateGetHeader_1,
+        inflateSetDictionary: inflateSetDictionary_1,
+        inflateInfo
+      };
+      gzheader = GZheader;
+      toString = Object.prototype.toString;
+      ({
+        Z_NO_FLUSH,
+        Z_FINISH,
+        Z_OK,
+        Z_STREAM_END,
+        Z_NEED_DICT,
+        Z_STREAM_ERROR,
+        Z_DATA_ERROR,
+        Z_MEM_ERROR
+      } = constants$2);
+      Inflate$1.prototype.push = function(data, flush_mode) {
+        const strm = this.strm;
+        const chunkSize = this.options.chunkSize;
+        const dictionary = this.options.dictionary;
+        let status, _flush_mode, last_avail_out;
+        if (this.ended)
+          return false;
+        if (flush_mode === ~~flush_mode)
+          _flush_mode = flush_mode;
+        else
+          _flush_mode = flush_mode === true ? Z_FINISH : Z_NO_FLUSH;
+        if (toString.call(data) === "[object ArrayBuffer]") {
+          strm.input = new Uint8Array(data);
+        } else {
+          strm.input = data;
+        }
+        strm.next_in = 0;
+        strm.avail_in = strm.input.length;
+        for (; ; ) {
+          if (strm.avail_out === 0) {
+            strm.output = new Uint8Array(chunkSize);
+            strm.next_out = 0;
+            strm.avail_out = chunkSize;
+          }
+          status = inflate_1$2.inflate(strm, _flush_mode);
+          if (status === Z_NEED_DICT && dictionary) {
+            status = inflate_1$2.inflateSetDictionary(strm, dictionary);
+            if (status === Z_OK) {
+              status = inflate_1$2.inflate(strm, _flush_mode);
+            } else if (status === Z_DATA_ERROR) {
+              status = Z_NEED_DICT;
+            }
+          }
+          while (strm.avail_in > 0 && status === Z_STREAM_END && strm.state.wrap > 0 && data[strm.next_in] !== 0) {
+            inflate_1$2.inflateReset(strm);
+            status = inflate_1$2.inflate(strm, _flush_mode);
+          }
+          switch (status) {
+            case Z_STREAM_ERROR:
+            case Z_DATA_ERROR:
+            case Z_NEED_DICT:
+            case Z_MEM_ERROR:
+              this.onEnd(status);
+              this.ended = true;
+              return false;
+          }
+          last_avail_out = strm.avail_out;
+          if (strm.next_out) {
+            if (strm.avail_out === 0 || status === Z_STREAM_END) {
+              if (this.options.to === "string") {
+                let next_out_utf8 = strings.utf8border(strm.output, strm.next_out);
+                let tail = strm.next_out - next_out_utf8;
+                let utf8str = strings.buf2string(strm.output, next_out_utf8);
+                strm.next_out = tail;
+                strm.avail_out = chunkSize - tail;
+                if (tail)
+                  strm.output.set(strm.output.subarray(next_out_utf8, next_out_utf8 + tail), 0);
+                this.onData(utf8str);
+              } else {
+                this.onData(strm.output.length === strm.next_out ? strm.output : strm.output.subarray(0, strm.next_out));
+              }
+            }
+          }
+          if (status === Z_OK && last_avail_out === 0)
+            continue;
+          if (status === Z_STREAM_END) {
+            status = inflate_1$2.inflateEnd(this.strm);
+            this.onEnd(status);
+            this.ended = true;
+            return true;
+          }
+          if (strm.avail_in === 0)
+            break;
+        }
+        return true;
+      };
+      Inflate$1.prototype.onData = function(chunk) {
+        this.chunks.push(chunk);
+      };
+      Inflate$1.prototype.onEnd = function(status) {
+        if (status === Z_OK) {
+          if (this.options.to === "string") {
+            this.result = this.chunks.join("");
+          } else {
+            this.result = common.flattenChunks(this.chunks);
+          }
+        }
+        this.chunks = [];
+        this.err = status;
+        this.msg = this.strm.msg;
+      };
+      Inflate_1$1 = Inflate$1;
+      inflate_2 = inflate$1;
+      inflateRaw_1$1 = inflateRaw$1;
+      ungzip$1 = inflate$1;
+      constants = constants$2;
+      inflate_1$1 = {
+        Inflate: Inflate_1$1,
+        inflate: inflate_2,
+        inflateRaw: inflateRaw_1$1,
+        ungzip: ungzip$1,
+        constants
+      };
+      ({ Deflate, deflate, deflateRaw, gzip } = deflate_1$1);
+      ({ Inflate, inflate, inflateRaw, ungzip } = inflate_1$1);
+      Deflate_1 = Deflate;
+      deflate_1 = deflate;
+      deflateRaw_1 = deflateRaw;
+      gzip_1 = gzip;
+      Inflate_1 = Inflate;
+      inflate_1 = inflate;
+      inflateRaw_1 = inflateRaw;
+      ungzip_1 = ungzip;
+      constants_1 = constants$2;
+      pako = {
+        Deflate: Deflate_1,
+        deflate: deflate_1,
+        deflateRaw: deflateRaw_1,
+        gzip: gzip_1,
+        Inflate: Inflate_1,
+        inflate: inflate_1,
+        inflateRaw: inflateRaw_1,
+        ungzip: ungzip_1,
+        constants: constants_1
+      };
+    }
+  });
+
+  // node_modules/spark-md5/spark-md5.js
+  var require_spark_md5 = __commonJS({
+    "node_modules/spark-md5/spark-md5.js"(exports, module) {
+      (function(factory) {
+        if (typeof exports === "object") {
+          module.exports = factory();
+        } else if (typeof define === "function" && define.amd) {
+          define(factory);
+        } else {
+          var glob;
+          try {
+            glob = window;
+          } catch (e) {
+            glob = self;
+          }
+          glob.SparkMD5 = factory();
+        }
+      })(function(undefined2) {
+        "use strict";
+        var add32 = function(a, b) {
+          return a + b & 4294967295;
+        }, hex_chr = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"];
+        function cmn(q, a, b, x, s, t) {
+          a = add32(add32(a, q), add32(x, t));
+          return add32(a << s | a >>> 32 - s, b);
+        }
+        function md5cycle(x, k) {
+          var a = x[0], b = x[1], c = x[2], d = x[3];
+          a += (b & c | ~b & d) + k[0] - 680876936 | 0;
+          a = (a << 7 | a >>> 25) + b | 0;
+          d += (a & b | ~a & c) + k[1] - 389564586 | 0;
+          d = (d << 12 | d >>> 20) + a | 0;
+          c += (d & a | ~d & b) + k[2] + 606105819 | 0;
+          c = (c << 17 | c >>> 15) + d | 0;
+          b += (c & d | ~c & a) + k[3] - 1044525330 | 0;
+          b = (b << 22 | b >>> 10) + c | 0;
+          a += (b & c | ~b & d) + k[4] - 176418897 | 0;
+          a = (a << 7 | a >>> 25) + b | 0;
+          d += (a & b | ~a & c) + k[5] + 1200080426 | 0;
+          d = (d << 12 | d >>> 20) + a | 0;
+          c += (d & a | ~d & b) + k[6] - 1473231341 | 0;
+          c = (c << 17 | c >>> 15) + d | 0;
+          b += (c & d | ~c & a) + k[7] - 45705983 | 0;
+          b = (b << 22 | b >>> 10) + c | 0;
+          a += (b & c | ~b & d) + k[8] + 1770035416 | 0;
+          a = (a << 7 | a >>> 25) + b | 0;
+          d += (a & b | ~a & c) + k[9] - 1958414417 | 0;
+          d = (d << 12 | d >>> 20) + a | 0;
+          c += (d & a | ~d & b) + k[10] - 42063 | 0;
+          c = (c << 17 | c >>> 15) + d | 0;
+          b += (c & d | ~c & a) + k[11] - 1990404162 | 0;
+          b = (b << 22 | b >>> 10) + c | 0;
+          a += (b & c | ~b & d) + k[12] + 1804603682 | 0;
+          a = (a << 7 | a >>> 25) + b | 0;
+          d += (a & b | ~a & c) + k[13] - 40341101 | 0;
+          d = (d << 12 | d >>> 20) + a | 0;
+          c += (d & a | ~d & b) + k[14] - 1502002290 | 0;
+          c = (c << 17 | c >>> 15) + d | 0;
+          b += (c & d | ~c & a) + k[15] + 1236535329 | 0;
+          b = (b << 22 | b >>> 10) + c | 0;
+          a += (b & d | c & ~d) + k[1] - 165796510 | 0;
+          a = (a << 5 | a >>> 27) + b | 0;
+          d += (a & c | b & ~c) + k[6] - 1069501632 | 0;
+          d = (d << 9 | d >>> 23) + a | 0;
+          c += (d & b | a & ~b) + k[11] + 643717713 | 0;
+          c = (c << 14 | c >>> 18) + d | 0;
+          b += (c & a | d & ~a) + k[0] - 373897302 | 0;
+          b = (b << 20 | b >>> 12) + c | 0;
+          a += (b & d | c & ~d) + k[5] - 701558691 | 0;
+          a = (a << 5 | a >>> 27) + b | 0;
+          d += (a & c | b & ~c) + k[10] + 38016083 | 0;
+          d = (d << 9 | d >>> 23) + a | 0;
+          c += (d & b | a & ~b) + k[15] - 660478335 | 0;
+          c = (c << 14 | c >>> 18) + d | 0;
+          b += (c & a | d & ~a) + k[4] - 405537848 | 0;
+          b = (b << 20 | b >>> 12) + c | 0;
+          a += (b & d | c & ~d) + k[9] + 568446438 | 0;
+          a = (a << 5 | a >>> 27) + b | 0;
+          d += (a & c | b & ~c) + k[14] - 1019803690 | 0;
+          d = (d << 9 | d >>> 23) + a | 0;
+          c += (d & b | a & ~b) + k[3] - 187363961 | 0;
+          c = (c << 14 | c >>> 18) + d | 0;
+          b += (c & a | d & ~a) + k[8] + 1163531501 | 0;
+          b = (b << 20 | b >>> 12) + c | 0;
+          a += (b & d | c & ~d) + k[13] - 1444681467 | 0;
+          a = (a << 5 | a >>> 27) + b | 0;
+          d += (a & c | b & ~c) + k[2] - 51403784 | 0;
+          d = (d << 9 | d >>> 23) + a | 0;
+          c += (d & b | a & ~b) + k[7] + 1735328473 | 0;
+          c = (c << 14 | c >>> 18) + d | 0;
+          b += (c & a | d & ~a) + k[12] - 1926607734 | 0;
+          b = (b << 20 | b >>> 12) + c | 0;
+          a += (b ^ c ^ d) + k[5] - 378558 | 0;
+          a = (a << 4 | a >>> 28) + b | 0;
+          d += (a ^ b ^ c) + k[8] - 2022574463 | 0;
+          d = (d << 11 | d >>> 21) + a | 0;
+          c += (d ^ a ^ b) + k[11] + 1839030562 | 0;
+          c = (c << 16 | c >>> 16) + d | 0;
+          b += (c ^ d ^ a) + k[14] - 35309556 | 0;
+          b = (b << 23 | b >>> 9) + c | 0;
+          a += (b ^ c ^ d) + k[1] - 1530992060 | 0;
+          a = (a << 4 | a >>> 28) + b | 0;
+          d += (a ^ b ^ c) + k[4] + 1272893353 | 0;
+          d = (d << 11 | d >>> 21) + a | 0;
+          c += (d ^ a ^ b) + k[7] - 155497632 | 0;
+          c = (c << 16 | c >>> 16) + d | 0;
+          b += (c ^ d ^ a) + k[10] - 1094730640 | 0;
+          b = (b << 23 | b >>> 9) + c | 0;
+          a += (b ^ c ^ d) + k[13] + 681279174 | 0;
+          a = (a << 4 | a >>> 28) + b | 0;
+          d += (a ^ b ^ c) + k[0] - 358537222 | 0;
+          d = (d << 11 | d >>> 21) + a | 0;
+          c += (d ^ a ^ b) + k[3] - 722521979 | 0;
+          c = (c << 16 | c >>> 16) + d | 0;
+          b += (c ^ d ^ a) + k[6] + 76029189 | 0;
+          b = (b << 23 | b >>> 9) + c | 0;
+          a += (b ^ c ^ d) + k[9] - 640364487 | 0;
+          a = (a << 4 | a >>> 28) + b | 0;
+          d += (a ^ b ^ c) + k[12] - 421815835 | 0;
+          d = (d << 11 | d >>> 21) + a | 0;
+          c += (d ^ a ^ b) + k[15] + 530742520 | 0;
+          c = (c << 16 | c >>> 16) + d | 0;
+          b += (c ^ d ^ a) + k[2] - 995338651 | 0;
+          b = (b << 23 | b >>> 9) + c | 0;
+          a += (c ^ (b | ~d)) + k[0] - 198630844 | 0;
+          a = (a << 6 | a >>> 26) + b | 0;
+          d += (b ^ (a | ~c)) + k[7] + 1126891415 | 0;
+          d = (d << 10 | d >>> 22) + a | 0;
+          c += (a ^ (d | ~b)) + k[14] - 1416354905 | 0;
+          c = (c << 15 | c >>> 17) + d | 0;
+          b += (d ^ (c | ~a)) + k[5] - 57434055 | 0;
+          b = (b << 21 | b >>> 11) + c | 0;
+          a += (c ^ (b | ~d)) + k[12] + 1700485571 | 0;
+          a = (a << 6 | a >>> 26) + b | 0;
+          d += (b ^ (a | ~c)) + k[3] - 1894986606 | 0;
+          d = (d << 10 | d >>> 22) + a | 0;
+          c += (a ^ (d | ~b)) + k[10] - 1051523 | 0;
+          c = (c << 15 | c >>> 17) + d | 0;
+          b += (d ^ (c | ~a)) + k[1] - 2054922799 | 0;
+          b = (b << 21 | b >>> 11) + c | 0;
+          a += (c ^ (b | ~d)) + k[8] + 1873313359 | 0;
+          a = (a << 6 | a >>> 26) + b | 0;
+          d += (b ^ (a | ~c)) + k[15] - 30611744 | 0;
+          d = (d << 10 | d >>> 22) + a | 0;
+          c += (a ^ (d | ~b)) + k[6] - 1560198380 | 0;
+          c = (c << 15 | c >>> 17) + d | 0;
+          b += (d ^ (c | ~a)) + k[13] + 1309151649 | 0;
+          b = (b << 21 | b >>> 11) + c | 0;
+          a += (c ^ (b | ~d)) + k[4] - 145523070 | 0;
+          a = (a << 6 | a >>> 26) + b | 0;
+          d += (b ^ (a | ~c)) + k[11] - 1120210379 | 0;
+          d = (d << 10 | d >>> 22) + a | 0;
+          c += (a ^ (d | ~b)) + k[2] + 718787259 | 0;
+          c = (c << 15 | c >>> 17) + d | 0;
+          b += (d ^ (c | ~a)) + k[9] - 343485551 | 0;
+          b = (b << 21 | b >>> 11) + c | 0;
+          x[0] = a + x[0] | 0;
+          x[1] = b + x[1] | 0;
+          x[2] = c + x[2] | 0;
+          x[3] = d + x[3] | 0;
+        }
+        function md5blk(s) {
+          var md5blks = [], i;
+          for (i = 0; i < 64; i += 4) {
+            md5blks[i >> 2] = s.charCodeAt(i) + (s.charCodeAt(i + 1) << 8) + (s.charCodeAt(i + 2) << 16) + (s.charCodeAt(i + 3) << 24);
+          }
+          return md5blks;
+        }
+        function md5blk_array(a) {
+          var md5blks = [], i;
+          for (i = 0; i < 64; i += 4) {
+            md5blks[i >> 2] = a[i] + (a[i + 1] << 8) + (a[i + 2] << 16) + (a[i + 3] << 24);
+          }
+          return md5blks;
+        }
+        function md51(s) {
+          var n = s.length, state = [1732584193, -271733879, -1732584194, 271733878], i, length, tail, tmp, lo, hi;
+          for (i = 64; i <= n; i += 64) {
+            md5cycle(state, md5blk(s.substring(i - 64, i)));
+          }
+          s = s.substring(i - 64);
+          length = s.length;
+          tail = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+          for (i = 0; i < length; i += 1) {
+            tail[i >> 2] |= s.charCodeAt(i) << (i % 4 << 3);
+          }
+          tail[i >> 2] |= 128 << (i % 4 << 3);
+          if (i > 55) {
+            md5cycle(state, tail);
+            for (i = 0; i < 16; i += 1) {
+              tail[i] = 0;
+            }
+          }
+          tmp = n * 8;
+          tmp = tmp.toString(16).match(/(.*?)(.{0,8})$/);
+          lo = parseInt(tmp[2], 16);
+          hi = parseInt(tmp[1], 16) || 0;
+          tail[14] = lo;
+          tail[15] = hi;
+          md5cycle(state, tail);
+          return state;
+        }
+        function md51_array(a) {
+          var n = a.length, state = [1732584193, -271733879, -1732584194, 271733878], i, length, tail, tmp, lo, hi;
+          for (i = 64; i <= n; i += 64) {
+            md5cycle(state, md5blk_array(a.subarray(i - 64, i)));
+          }
+          a = i - 64 < n ? a.subarray(i - 64) : new Uint8Array(0);
+          length = a.length;
+          tail = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+          for (i = 0; i < length; i += 1) {
+            tail[i >> 2] |= a[i] << (i % 4 << 3);
+          }
+          tail[i >> 2] |= 128 << (i % 4 << 3);
+          if (i > 55) {
+            md5cycle(state, tail);
+            for (i = 0; i < 16; i += 1) {
+              tail[i] = 0;
+            }
+          }
+          tmp = n * 8;
+          tmp = tmp.toString(16).match(/(.*?)(.{0,8})$/);
+          lo = parseInt(tmp[2], 16);
+          hi = parseInt(tmp[1], 16) || 0;
+          tail[14] = lo;
+          tail[15] = hi;
+          md5cycle(state, tail);
+          return state;
+        }
+        function rhex(n) {
+          var s = "", j;
+          for (j = 0; j < 4; j += 1) {
+            s += hex_chr[n >> j * 8 + 4 & 15] + hex_chr[n >> j * 8 & 15];
+          }
+          return s;
+        }
+        function hex(x) {
+          var i;
+          for (i = 0; i < x.length; i += 1) {
+            x[i] = rhex(x[i]);
+          }
+          return x.join("");
+        }
+        if (hex(md51("hello")) !== "5d41402abc4b2a76b9719d911017c592") {
+          add32 = function(x, y) {
+            var lsw = (x & 65535) + (y & 65535), msw = (x >> 16) + (y >> 16) + (lsw >> 16);
+            return msw << 16 | lsw & 65535;
+          };
+        }
+        if (typeof ArrayBuffer !== "undefined" && !ArrayBuffer.prototype.slice) {
+          (function() {
+            function clamp(val, length) {
+              val = val | 0 || 0;
+              if (val < 0) {
+                return Math.max(val + length, 0);
+              }
+              return Math.min(val, length);
+            }
+            ArrayBuffer.prototype.slice = function(from, to) {
+              var length = this.byteLength, begin = clamp(from, length), end = length, num, target, targetArray, sourceArray;
+              if (to !== undefined2) {
+                end = clamp(to, length);
+              }
+              if (begin > end) {
+                return new ArrayBuffer(0);
+              }
+              num = end - begin;
+              target = new ArrayBuffer(num);
+              targetArray = new Uint8Array(target);
+              sourceArray = new Uint8Array(this, begin, num);
+              targetArray.set(sourceArray);
+              return target;
+            };
+          })();
+        }
+        function toUtf8(str) {
+          if (/[\u0080-\uFFFF]/.test(str)) {
+            str = unescape(encodeURIComponent(str));
+          }
+          return str;
+        }
+        function utf8Str2ArrayBuffer(str, returnUInt8Array) {
+          var length = str.length, buff = new ArrayBuffer(length), arr = new Uint8Array(buff), i;
+          for (i = 0; i < length; i += 1) {
+            arr[i] = str.charCodeAt(i);
+          }
+          return returnUInt8Array ? arr : buff;
+        }
+        function arrayBuffer2Utf8Str(buff) {
+          return String.fromCharCode.apply(null, new Uint8Array(buff));
+        }
+        function concatenateArrayBuffers(first, second, returnUInt8Array) {
+          var result = new Uint8Array(first.byteLength + second.byteLength);
+          result.set(new Uint8Array(first));
+          result.set(new Uint8Array(second), first.byteLength);
+          return returnUInt8Array ? result : result.buffer;
+        }
+        function hexToBinaryString(hex2) {
+          var bytes = [], length = hex2.length, x;
+          for (x = 0; x < length - 1; x += 2) {
+            bytes.push(parseInt(hex2.substr(x, 2), 16));
+          }
+          return String.fromCharCode.apply(String, bytes);
+        }
+        function SparkMD52() {
+          this.reset();
+        }
+        SparkMD52.prototype.append = function(str) {
+          this.appendBinary(toUtf8(str));
+          return this;
+        };
+        SparkMD52.prototype.appendBinary = function(contents) {
+          this._buff += contents;
+          this._length += contents.length;
+          var length = this._buff.length, i;
+          for (i = 64; i <= length; i += 64) {
+            md5cycle(this._hash, md5blk(this._buff.substring(i - 64, i)));
+          }
+          this._buff = this._buff.substring(i - 64);
+          return this;
+        };
+        SparkMD52.prototype.end = function(raw) {
+          var buff = this._buff, length = buff.length, i, tail = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], ret;
+          for (i = 0; i < length; i += 1) {
+            tail[i >> 2] |= buff.charCodeAt(i) << (i % 4 << 3);
+          }
+          this._finish(tail, length);
+          ret = hex(this._hash);
+          if (raw) {
+            ret = hexToBinaryString(ret);
+          }
+          this.reset();
+          return ret;
+        };
+        SparkMD52.prototype.reset = function() {
+          this._buff = "";
+          this._length = 0;
+          this._hash = [1732584193, -271733879, -1732584194, 271733878];
+          return this;
+        };
+        SparkMD52.prototype.getState = function() {
+          return {
+            buff: this._buff,
+            length: this._length,
+            hash: this._hash.slice()
+          };
+        };
+        SparkMD52.prototype.setState = function(state) {
+          this._buff = state.buff;
+          this._length = state.length;
+          this._hash = state.hash;
+          return this;
+        };
+        SparkMD52.prototype.destroy = function() {
+          delete this._hash;
+          delete this._buff;
+          delete this._length;
+        };
+        SparkMD52.prototype._finish = function(tail, length) {
+          var i = length, tmp, lo, hi;
+          tail[i >> 2] |= 128 << (i % 4 << 3);
+          if (i > 55) {
+            md5cycle(this._hash, tail);
+            for (i = 0; i < 16; i += 1) {
+              tail[i] = 0;
+            }
+          }
+          tmp = this._length * 8;
+          tmp = tmp.toString(16).match(/(.*?)(.{0,8})$/);
+          lo = parseInt(tmp[2], 16);
+          hi = parseInt(tmp[1], 16) || 0;
+          tail[14] = lo;
+          tail[15] = hi;
+          md5cycle(this._hash, tail);
+        };
+        SparkMD52.hash = function(str, raw) {
+          return SparkMD52.hashBinary(toUtf8(str), raw);
+        };
+        SparkMD52.hashBinary = function(content, raw) {
+          var hash = md51(content), ret = hex(hash);
+          return raw ? hexToBinaryString(ret) : ret;
+        };
+        SparkMD52.ArrayBuffer = function() {
+          this.reset();
+        };
+        SparkMD52.ArrayBuffer.prototype.append = function(arr) {
+          var buff = concatenateArrayBuffers(this._buff.buffer, arr, true), length = buff.length, i;
+          this._length += arr.byteLength;
+          for (i = 64; i <= length; i += 64) {
+            md5cycle(this._hash, md5blk_array(buff.subarray(i - 64, i)));
+          }
+          this._buff = i - 64 < length ? new Uint8Array(buff.buffer.slice(i - 64)) : new Uint8Array(0);
+          return this;
+        };
+        SparkMD52.ArrayBuffer.prototype.end = function(raw) {
+          var buff = this._buff, length = buff.length, tail = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], i, ret;
+          for (i = 0; i < length; i += 1) {
+            tail[i >> 2] |= buff[i] << (i % 4 << 3);
+          }
+          this._finish(tail, length);
+          ret = hex(this._hash);
+          if (raw) {
+            ret = hexToBinaryString(ret);
+          }
+          this.reset();
+          return ret;
+        };
+        SparkMD52.ArrayBuffer.prototype.reset = function() {
+          this._buff = new Uint8Array(0);
+          this._length = 0;
+          this._hash = [1732584193, -271733879, -1732584194, 271733878];
+          return this;
+        };
+        SparkMD52.ArrayBuffer.prototype.getState = function() {
+          var state = SparkMD52.prototype.getState.call(this);
+          state.buff = arrayBuffer2Utf8Str(state.buff);
+          return state;
+        };
+        SparkMD52.ArrayBuffer.prototype.setState = function(state) {
+          state.buff = utf8Str2ArrayBuffer(state.buff, true);
+          return SparkMD52.prototype.setState.call(this, state);
+        };
+        SparkMD52.ArrayBuffer.prototype.destroy = SparkMD52.prototype.destroy;
+        SparkMD52.ArrayBuffer.prototype._finish = SparkMD52.prototype._finish;
+        SparkMD52.ArrayBuffer.hash = function(arr, raw) {
+          var hash = md51_array(new Uint8Array(arr)), ret = hex(hash);
+          return raw ? hexToBinaryString(ret) : ret;
+        };
+        return SparkMD52;
+      });
+    }
+  });
+
+  // src/utils/Hasher.ts
+  function md5(input) {
+    return import_spark_md5.default.hash(input);
+  }
+  function spotifyHex(base62) {
+    const base62chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let num = BigInt(0);
+    for (const char of base62) {
+      const index = base62chars.indexOf(char);
+      if (index === -1)
+        throw new Error("Invalid character in base62 string");
+      num = num * BigInt(62) + BigInt(index);
+    }
+    return num.toString(16).padStart(32, "0");
+  }
+  var import_spark_md5;
+  var init_Hasher = __esm({
+    "src/utils/Hasher.ts"() {
+      import_spark_md5 = __toESM(require_spark_md5());
+    }
+  });
+
   // src/utils/API/SpicyFetch.ts
   async function SpicyFetch(path, IsExternal = false, cache = false, cosmos = false) {
     return new Promise(async (resolve, reject) => {
@@ -843,9 +5391,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           if (cache) {
             await CacheContent(url, sentData, 6048e5);
           }
-        }).catch((err) => {
-          console.error("CosmosAsync Error:", err);
-          reject(err);
+        }).catch((err2) => {
+          console.error("CosmosAsync Error:", err2);
+          reject(err2);
         });
       } else {
         const SpicyLyricsAPI_Headers = IsExternal ? null : {};
@@ -879,9 +5427,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           if (cache) {
             await CacheContent(url, sentData, 6048e5);
           }
-        }).catch((err) => {
-          console.error("Fetch Error:", err);
-          reject(err);
+        }).catch((err2) => {
+          console.error("Fetch Error:", err2);
+          reject(err2);
         });
       }
     });
@@ -889,10 +5437,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   async function CacheContent(key, data, expirationTtl = 6048e5) {
     try {
       const expiresIn = Date.now() + expirationTtl;
-      const processedKey = SpicyHasher.md5(key);
+      const processedKey = md5(key);
       const processedData = typeof data === "object" ? JSON.stringify(data) : data;
       const compressedData = pako.deflate(processedData, {
-        to: "string",
         level: 1
       });
       const compressedString = String.fromCharCode(
@@ -909,7 +5456,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   async function GetCachedContent(key) {
     try {
-      const processedKey = SpicyHasher.md5(key);
+      const processedKey = md5(key);
       const content = await SpicyFetchCache.get(processedKey);
       if (content) {
         if (content.expiresIn > Date.now()) {
@@ -939,6 +5486,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     "src/utils/API/SpicyFetch.ts"() {
       init_SpikyCache();
       init_Platform();
+      init_pako_esm();
+      init_Hasher();
       SpicyFetchCache = new SpikyCache({
         name: "SpicyFetch__Cache"
       });
@@ -1157,6 +5706,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var init_SpotifyPlayer = __esm({
     "src/components/Global/SpotifyPlayer.ts"() {
       init_SpicyFetch();
+      init_Hasher();
       init_GetProgress();
       TrackData_Map = /* @__PURE__ */ new Map();
       if (typeof Spicetify !== "undefined" && Spicetify?.Player) {
@@ -1175,9 +5725,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         },
         Track: {
           GetTrackInfo: async () => {
-            const spotifyHexString = SpicyHasher.spotifyHex(
-              SpotifyPlayer.GetSongId()
-            );
+            const spotifyHexString = spotifyHex(SpotifyPlayer.GetSongId());
             return getOrFetchTrackData(spotifyHexString);
           },
           SortImages: (images) => {
@@ -2400,9 +6948,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-248-VGyXKSFJZstE/1961cea3f087/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-5796-Dcvc5mnU2DeY/1961e9fb1e87/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-248-VGyXKSFJZstE/1961cea3f087/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-5796-Dcvc5mnU2DeY/1961e9fb1e87/DotLoader.css"() {
     }
   });
 
@@ -3845,44 +8393,67 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
 
   // src/utils/Scrolling/Simplebar/ScrollSimplebar.ts
   function MountScrollSimplebar() {
-    const LyricsContainer = document.querySelector("#SpicyLyricsPage .LyricsContainer .LyricsContent");
+    const LyricsContainer = document.querySelector(
+      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
+    );
     LyricsContainer.style.height = `${GetElementHeight(LyricsContainer)}px`;
     ScrollSimplebar = new SimpleBar(LyricsContainer, { autoHide: false });
-    document.querySelector(ElementEventQuery)?.addEventListener("mouseenter", LyricsPageMouseEnter);
-    document.querySelector(ElementEventQuery)?.addEventListener("mouseleave", LyricsPageMouseLeave);
+    const container = document.querySelector(ElementEventQuery);
+    container?.addEventListener("mouseenter", () => {
+      LyricsPageMouseEnter();
+      updateScrollbarVisibility();
+    });
+    container?.addEventListener("mouseleave", () => {
+      LyricsPageMouseLeave();
+      updateScrollbarVisibility();
+    });
+    LyricsContainer.addEventListener("simplebar-dragstart", () => {
+      isDragging = true;
+      updateScrollbarVisibility();
+    });
+    LyricsContainer.addEventListener("simplebar-dragend", () => {
+      isDragging = false;
+      updateScrollbarVisibility();
+    });
   }
   function ClearScrollSimplebar() {
+    const LyricsContainer = document.querySelector(
+      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
+    );
+    const container = document.querySelector(ElementEventQuery);
     ScrollSimplebar?.unMount();
     ScrollSimplebar = null;
     SetIsMouseInLyricsPage(false);
-    document.querySelector(ElementEventQuery)?.removeEventListener("mouseenter", LyricsPageMouseEnter);
-    document.querySelector(ElementEventQuery)?.removeEventListener("mouseleave", LyricsPageMouseLeave);
+    container?.removeEventListener("mouseenter", LyricsPageMouseEnter);
+    container?.removeEventListener("mouseleave", LyricsPageMouseLeave);
+    LyricsContainer?.removeEventListener("simplebar-dragstart", () => {
+    });
+    LyricsContainer?.removeEventListener("simplebar-dragend", () => {
+    });
   }
   function RecalculateScrollSimplebar() {
     ScrollSimplebar?.recalculate();
   }
-  var ScrollSimplebar, ElementEventQuery;
+  function updateScrollbarVisibility() {
+    const LyricsContainer = document.querySelector(
+      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
+    );
+    if (!LyricsContainer)
+      return;
+    if (IsMouseInLyricsPage || isDragging) {
+      LyricsContainer.classList.remove("hide-scrollbar");
+    } else {
+      LyricsContainer.classList.add("hide-scrollbar");
+    }
+  }
+  var ScrollSimplebar, isDragging, ElementEventQuery;
   var init_ScrollSimplebar = __esm({
     "src/utils/Scrolling/Simplebar/ScrollSimplebar.ts"() {
       init_dist2();
       init_GetElementHeight();
-      init_IntervalManager();
       init_IsHovering();
+      isDragging = false;
       ElementEventQuery = "#SpicyLyricsPage .ContentBox .LyricsContainer";
-      new IntervalManager(Infinity, () => {
-        const LyricsContainer = document.querySelector("#SpicyLyricsPage .LyricsContainer .LyricsContent");
-        if (!LyricsContainer || !ScrollSimplebar)
-          return;
-        if (IsMouseInLyricsPage) {
-          LyricsContainer.classList.remove("hide-scrollbar");
-        } else {
-          if (ScrollSimplebar.isDragging) {
-            LyricsContainer.classList.remove("hide-scrollbar");
-          } else {
-            LyricsContainer.classList.add("hide-scrollbar");
-          }
-        }
-      }).Start();
     }
   });
 
@@ -4779,57 +9350,74 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // src/utils/ScrollIntoView/Center.ts
-  function ScrollIntoCenterView(container, element, duration = 150, offset = 0) {
-    function resetContainerData(container2) {
-      containerRects.delete(container2);
-    }
-    const observer = new MutationObserver(() => {
-      resetContainerData(container);
-    });
-    observer.observe(container, { childList: true, subtree: true });
-    const resizeObserver = new ResizeObserver(() => {
-      resetContainerData(container);
-    });
-    resizeObserver.observe(container);
-    let containerData = containerRects.get(container);
-    if (!containerData) {
-      containerData = {
-        container: container.getBoundingClientRect(),
-        elements: /* @__PURE__ */ new Map()
-      };
-      containerRects.set(container, containerData);
-    }
-    const containerRect = containerData.container;
-    let elementRect = containerData.elements.get(element);
-    if (!elementRect) {
-      elementRect = element.getBoundingClientRect();
-      containerData.elements.set(element, elementRect);
-    }
-    const targetScrollTop = elementRect.top - containerRect.top + container.scrollTop - (container.clientHeight / 2 - element.clientHeight / 2) - offset;
-    const startScrollTop = container.scrollTop;
-    const distance = targetScrollTop - startScrollTop;
-    const startTime = performance.now();
-    function smoothScroll(currentTime) {
-      const elapsedTime = currentTime - startTime;
-      const progress = Math.min(elapsedTime / duration, 1);
-      const easing = progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-      const newScrollTop = startScrollTop + distance * easing;
-      container.scrollTop = newScrollTop;
-      if (progress < 1) {
-        requestAnimationFrame(smoothScroll);
+  // src/utils/ScrollIntoView/index.ts
+  function cubicEaseInOut(progress) {
+    return progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+  }
+  function smoothScrollIntoView(options) {
+    const {
+      container,
+      element,
+      duration = 150,
+      offset = 0,
+      align = "top",
+      axis = "vertical"
+    } = options;
+    const containerRect = container.getBoundingClientRect();
+    const elementRect = element.getBoundingClientRect();
+    let targetScroll;
+    let startScroll;
+    if (axis === "vertical") {
+      startScroll = container.scrollTop;
+      if (align === "center") {
+        targetScroll = elementRect.top - containerRect.top + container.scrollTop - (container.clientHeight / 2 - element.clientHeight / 2) - offset;
+      } else {
+        targetScroll = elementRect.top - containerRect.top + container.scrollTop - offset;
+      }
+    } else {
+      startScroll = container.scrollLeft;
+      if (align === "center") {
+        targetScroll = elementRect.left - containerRect.left + container.scrollLeft - (container.clientWidth / 2 - element.clientWidth / 2) - offset;
+      } else {
+        targetScroll = elementRect.left - containerRect.left + container.scrollLeft - offset;
       }
     }
-    requestAnimationFrame(smoothScroll);
-    setTimeout(() => {
-      observer.disconnect();
-      resizeObserver.disconnect();
-    }, duration);
+    const distance = targetScroll - startScroll;
+    const startTime = performance.now();
+    let animationFrameId;
+    function animate(currentTime) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easedProgress = cubicEaseInOut(progress);
+      const newScroll = startScroll + distance * easedProgress;
+      if (axis === "vertical") {
+        container.scrollTop = newScroll;
+      } else {
+        container.scrollLeft = newScroll;
+      }
+      if (progress < 1) {
+        animationFrameId = requestAnimationFrame(animate);
+      }
+    }
+    animationFrameId = requestAnimationFrame(animate);
+    return {
+      cancel: () => {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
   }
-  var containerRects;
-  var init_Center = __esm({
-    "src/utils/ScrollIntoView/Center.ts"() {
-      containerRects = /* @__PURE__ */ new WeakMap();
+  function scrollIntoCenterView(container, element, duration = 150, offset = 0, axis = "vertical") {
+    return smoothScrollIntoView({
+      container,
+      element,
+      duration,
+      offset,
+      align: "center",
+      axis
+    });
+  }
+  var init_ScrollIntoView = __esm({
+    "src/utils/ScrollIntoView/index.ts"() {
     }
   });
 
@@ -4858,7 +9446,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             () => LineElem.classList.add("Active", "OverridenByScroller"),
             PositionOffset / 2
           );
-          ScrollIntoCenterView(container, LineElem, 270, -50);
+          scrollIntoCenterView(container, LineElem, 270, -50);
         }
       };
       const Lines = LyricsObject.Types[Defaults_default.CurrentLyricsType]?.Lines;
@@ -4886,7 +9474,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_Defaults();
       init_SpotifyPlayer();
       init_lyrics();
-      init_Center();
+      init_ScrollIntoView();
       lastLine = null;
     }
   });
@@ -4932,9 +9520,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       }
       OpenNowBar();
       if (!document.fullscreenElement) {
-        Root.querySelector("#SpicyLyricsPage").requestFullscreen().catch((err) => {
+        Root.querySelector("#SpicyLyricsPage").requestFullscreen().catch((err2) => {
           alert(
-            `Error attempting to enable fullscreen mode: ${err.message} (${err.name})`
+            `Error attempting to enable fullscreen mode: ${err2.message} (${err2.name})`
           );
         });
       } else {
@@ -5959,6 +10547,161 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       });
       Global_default.Event.listen("fullscreen:exit", () => {
         CleanUpActiveComponents();
+      });
+    }
+  });
+
+  // src/utils/Lyrics/ui.ts
+  function resetLyricsUI() {
+    const lyricsContent = document.querySelector(
+      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
+    );
+    if (lyricsContent?.classList.contains("offline")) {
+      lyricsContent.classList.remove("offline");
+    }
+    document.querySelector("#SpicyLyricsPage .ContentBox .LyricsContainer")?.classList.remove("Hidden");
+    if (!Fullscreen_default.IsOpen)
+      PageView_default.AppendViewControls(true);
+  }
+  async function noLyricsMessage(trackId) {
+    try {
+      storage_default.set("currentlyFetching", "false");
+      if (Spicetify.Player.data.item.uri?.split(":")[2] === trackId) {
+        Spicetify.showNotification("Lyrics unavailable", false, 1e3);
+        HideLoaderContainer();
+        Defaults_default.CurrentLyricsType = "None";
+        document.querySelector(
+          "#SpicyLyricsPage .ContentBox .LyricsContainer"
+        )?.classList.add("Hidden");
+        document.querySelector("#SpicyLyricsPage .ContentBox")?.classList.add("LyricsHidden");
+        OpenNowBar();
+        DeregisterNowBarBtn();
+      }
+    } catch (error) {
+      console.error("Amai Lyrics: Error showing no lyrics message", error);
+      storage_default.set("currentlyFetching", "false");
+    }
+    return "1";
+  }
+  function ShowLoaderContainer() {
+    const loaderContainer = document.querySelector(
+      "#SpicyLyricsPage .LyricsContainer .loaderContainer"
+    );
+    if (loaderContainer) {
+      ContainerShowLoaderTimeout = window.setTimeout(
+        () => loaderContainer.classList.add("active"),
+        1e3
+      );
+    }
+  }
+  function HideLoaderContainer() {
+    const loaderContainer = document.querySelector(
+      "#SpicyLyricsPage .LyricsContainer .loaderContainer"
+    );
+    if (loaderContainer) {
+      if (ContainerShowLoaderTimeout) {
+        clearTimeout(ContainerShowLoaderTimeout);
+        ContainerShowLoaderTimeout = null;
+      }
+      loaderContainer.classList.remove("active");
+    }
+  }
+  function ClearLyricsPageContainer() {
+    const lyricsContent = document.querySelector(
+      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
+    );
+    if (lyricsContent) {
+      lyricsContent.innerHTML = "";
+    }
+  }
+  var ContainerShowLoaderTimeout;
+  var init_ui = __esm({
+    "src/utils/Lyrics/ui.ts"() {
+      init_storage();
+      init_Defaults();
+      init_NowBar();
+      init_PageView();
+      init_Fullscreen();
+      ContainerShowLoaderTimeout = null;
+    }
+  });
+
+  // src/utils/Lyrics/cache.ts
+  async function cacheLyrics(trackId, lyricsJson) {
+    if (!lyricsCache)
+      return;
+    const expiresAt = new Date().getTime() + CACHE_EXPIRATION_TIME;
+    try {
+      await lyricsCache.set(trackId, {
+        ...lyricsJson,
+        expiresAt
+      });
+    } catch (error) {
+      console.error("Error saving lyrics to cache:", error);
+    }
+  }
+  async function getLyricsFromCache(trackId) {
+    if (!lyricsCache)
+      return null;
+    try {
+      const lyricsFromCache = await lyricsCache.get(trackId);
+      if (!lyricsFromCache)
+        return null;
+      if (lyricsFromCache.expiresAt < new Date().getTime()) {
+        await lyricsCache.remove(trackId);
+        return null;
+      }
+      if (lyricsFromCache.status === "NO_LYRICS") {
+        return await noLyricsMessage();
+      }
+      storage_default.set("currentLyricsData", JSON.stringify(lyricsFromCache));
+      HideLoaderContainer();
+      ClearLyricsPageContainer();
+      Defaults_default.CurrentLyricsType = lyricsFromCache.Type;
+      return { ...lyricsFromCache, fromCache: true };
+    } catch (error) {
+      ClearLyricsPageContainer();
+      console.log("Error parsing saved lyrics data:", error);
+      return await noLyricsMessage();
+    }
+  }
+  async function getLyricsFromLocalStorage(trackId) {
+    const savedLyricsData = storage_default.get("currentLyricsData")?.toString();
+    if (!savedLyricsData)
+      return null;
+    try {
+      if (savedLyricsData.includes("NO_LYRICS")) {
+        const split = savedLyricsData.split(":");
+        const id = split[1];
+        if (id === trackId) {
+          return await noLyricsMessage();
+        }
+      } else {
+        const lyricsData = JSON.parse(savedLyricsData);
+        if (lyricsData?.id === trackId) {
+          HideLoaderContainer();
+          ClearLyricsPageContainer();
+          Defaults_default.CurrentLyricsType = lyricsData.Type;
+          return lyricsData;
+        }
+      }
+    } catch (error) {
+      console.error("Error parsing saved lyrics data:", error);
+      HideLoaderContainer();
+      ClearLyricsPageContainer();
+    }
+    return null;
+  }
+  var CACHE_EXPIRATION_TIME, lyricsCache;
+  var init_cache = __esm({
+    "src/utils/Lyrics/cache.ts"() {
+      init_SpikyCache();
+      init_storage();
+      init_Defaults();
+      init_ui();
+      CACHE_EXPIRATION_TIME = 1e3 * 60 * 60 * 24 * 7;
+      lyricsCache = new SpikyCache({
+        name: "Cache_Lyrics"
       });
     }
   });
@@ -11643,120 +16386,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // src/utils/Lyrics/fetchLyrics.ts
-  var fetchLyrics_exports = {};
-  __export(fetchLyrics_exports, {
-    default: () => fetchLyrics,
-    lyricsCache: () => lyricsCache
-  });
-  async function fetchLyrics(uri) {
-    resetLyricsUI();
-    ClearLyricsPageContainer();
-    document.querySelector("#SpicyLyricsPage .ContentBox")?.classList.remove("LyricsHidden");
-    const trackId = uri.split(":")[2];
-    const localLyrics = await getLyricsFromLocalStorage(trackId);
-    if (localLyrics)
-      return localLyrics;
-    const cachedLyrics = await getLyricsFromCache(trackId);
-    if (cachedLyrics)
-      return cachedLyrics;
-    const currFetching = storage_default.get("currentlyFetching");
-    if (currFetching === "true") {
-      Spicetify.showNotification("Currently fetching, please wait..");
-      return "Currently fetching lyrics";
-    }
-    storage_default.set("currentlyFetching", "true");
-    ShowLoaderContainer();
-    return await fetchLyricsFromAPI(trackId);
-  }
-  async function fetchLyricsFromAPI(trackId) {
-    try {
-      Spicetify.showNotification("Fetching lyrics..", false, 1e3);
-      const spotifyAccessToken = await Platform_default.GetSpotifyAccessToken();
-      const getLyricsResult = await getLyrics(trackId, {
-        Authorization: `Bearer ${spotifyAccessToken}`
-      });
-      let lyricsJson = getLyricsResult.response;
-      const status = getLyricsResult.status;
-      if (!lyricsJson || typeof lyricsJson === "object" && !("id" in lyricsJson)) {
-        lyricsJson = "";
-      }
-      if (status !== 200) {
-        return handleErrorStatus(status);
-      }
-      if (lyricsJson === null)
-        return await noLyricsMessage(trackId);
-      if (lyricsJson === "")
-        return await noLyricsMessage(trackId);
-      return await processAndEnhanceLyrics(trackId, lyricsJson);
-    } catch (error) {
-      console.error("Error fetching lyrics:", error?.message, error?.stack);
-      storage_default.set("currentlyFetching", "false");
-      ClearLyricsPageContainer();
-      return await noLyricsMessage();
-    }
-  }
-  async function handleErrorStatus(status) {
-    if (status === 401) {
-      storage_default.set("currentlyFetching", "false");
-      return await noLyricsMessage();
-    }
-    ClearLyricsPageContainer();
-    return await noLyricsMessage();
-  }
-  async function processAndEnhanceLyrics(trackId, lyricsJson) {
-    const { lyricsJson: preparedLyricsJson, lyricsOnly } = await prepareLyricsForGemini(lyricsJson);
-    const { hasKanji, hasKorean } = detectLanguages(preparedLyricsJson);
-    const phoneticLyricsJson = JSON.parse(JSON.stringify(preparedLyricsJson));
-    const [processedLyricsJson, translations] = await Promise.all([
-      getPhoneticLyrics(phoneticLyricsJson, hasKanji, hasKorean, lyricsOnly),
-      fetchTranslationsWithGemini(preparedLyricsJson, lyricsOnly)
-    ]);
-    attachTranslations(processedLyricsJson, translations);
-    await cacheLyrics(trackId, processedLyricsJson);
-    storage_default.set("currentlyFetching", "false");
-    if (Spicetify.Player.data.item.uri?.split(":")[2] === trackId) {
-      Spicetify.showNotification("Completed", false, 1e3);
-      Defaults_default.CurrentLyricsType = processedLyricsJson.Type;
-      storage_default.set("currentLyricsData", JSON.stringify(processedLyricsJson));
-      HideLoaderContainer();
-      ClearLyricsPageContainer();
-    }
-    return { ...processedLyricsJson, fromCache: false };
-  }
-  function detectLanguages(lyricsJson) {
-    const hasKanji = lyricsJson.Content?.some(
-      (item) => item.Lead?.Syllables?.some((syl) => JAPANESE_REGEX.test(syl.Text))
-    ) || lyricsJson.Content?.some((item) => JAPANESE_REGEX.test(item.Text)) || lyricsJson.Lines?.some((item) => JAPANESE_REGEX.test(item.Text)) || false;
-    const hasKorean = lyricsJson.Content?.some(
-      (item) => item.Lead?.Syllables?.some((syl) => KOREAN_REGEX.test(syl.Text))
-    ) || lyricsJson.Content?.some((item) => KOREAN_REGEX.test(item.Text)) || lyricsJson.Lines?.some((item) => KOREAN_REGEX.test(item.Text)) || false;
-    return { hasKanji, hasKorean };
-  }
-  function attachTranslations(lyricsJson, translations) {
-    if (lyricsJson.Type === "Line" && lyricsJson.Content) {
-      lyricsJson.Content.forEach((line, idx) => {
-        line.Translation = translations[idx] || "";
-      });
-    } else if (lyricsJson.Type === "Static" && lyricsJson.Lines) {
-      lyricsJson.Lines.forEach((line, idx) => {
-        line.Translation = translations[idx] || "";
-      });
-    }
-  }
-  async function cacheLyrics(trackId, lyricsJson) {
-    if (!lyricsCache)
-      return;
-    const expiresAt = new Date().getTime() + CACHE_EXPIRATION_TIME;
-    try {
-      await lyricsCache.set(trackId, {
-        ...lyricsJson,
-        expiresAt
-      });
-    } catch (error) {
-      console.error("Error saving lyrics to cache:", error);
-    }
-  }
+  // src/utils/Lyrics/ai.ts
   async function getPhoneticLyrics(lyricsJson, hasKanji, hasKorean, lyricsOnly) {
     if (hasKanji) {
       if (storage_default.get("enable_romaji") === "true") {
@@ -11769,17 +16399,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     } else {
       return lyricsJson;
     }
-  }
-  async function prepareLyricsForGemini(lyricsJson) {
-    if (lyricsJson.Type === "Syllable") {
-      lyricsJson.Type = "Line";
-      lyricsJson.Content = await convertLyrics(lyricsJson.Content);
-    }
-    const lyricsOnly = await extractLyrics(lyricsJson);
-    if (lyricsOnly.length > 0) {
-      lyricsJson.Raw = lyricsOnly;
-    }
-    return { lyricsJson, lyricsOnly };
   }
   async function fetchTranslationsWithGemini(lyricsJson, lyricsOnly) {
     if (storage_default.get("disable_translation") === "true") {
@@ -11931,146 +16550,15 @@ ${JSON.stringify(
       }));
     }
   }
-  async function extractLyrics(lyricsJson) {
-    const removeEmptyLinesAndCharacters = (items) => {
-      items = items.filter((item) => item.Text?.trim() !== "");
-      items = items.map((item) => {
-        if (item.Text) {
-          item.Text = item.Text.replace(/[「」",.!]/g, "");
-          item.Text = item.Text.normalize("NFKC");
-        }
-        return item;
-      });
-      return items;
-    };
-    if (lyricsJson.Type === "Line" && lyricsJson.Content) {
-      lyricsJson.Content = lyricsJson.Content.map((item) => ({
-        ...item,
-        StartTime: Math.max(0, (item.StartTime || 0) - LYRICS_TIMING_OFFSET)
-      }));
-      lyricsJson.Content = removeEmptyLinesAndCharacters(lyricsJson.Content);
-      return lyricsJson.Content.map((item) => item.Text);
+  var init_ai = __esm({
+    "src/utils/Lyrics/ai.ts"() {
+      init_storage();
+      init_Defaults();
+      init_web();
     }
-    if (lyricsJson.Type === "Static" && lyricsJson.Lines) {
-      lyricsJson.Lines = removeEmptyLinesAndCharacters(lyricsJson.Lines);
-      return lyricsJson.Lines.map((item) => item.Text);
-    }
-    return [];
-  }
-  async function getLyricsFromCache(trackId) {
-    if (!lyricsCache)
-      return null;
-    try {
-      const lyricsFromCache = await lyricsCache.get(trackId);
-      if (!lyricsFromCache)
-        return null;
-      if (lyricsFromCache.expiresAt < new Date().getTime()) {
-        await lyricsCache.remove(trackId);
-        return null;
-      }
-      if (lyricsFromCache.status === "NO_LYRICS") {
-        return await noLyricsMessage();
-      }
-      storage_default.set("currentLyricsData", JSON.stringify(lyricsFromCache));
-      HideLoaderContainer();
-      ClearLyricsPageContainer();
-      Defaults_default.CurrentLyricsType = lyricsFromCache.Type;
-      return { ...lyricsFromCache, fromCache: true };
-    } catch (error) {
-      ClearLyricsPageContainer();
-      console.log("Error parsing saved lyrics data:", error);
-      return await noLyricsMessage();
-    }
-  }
-  async function getLyricsFromLocalStorage(trackId) {
-    const savedLyricsData = storage_default.get("currentLyricsData")?.toString();
-    if (!savedLyricsData)
-      return null;
-    try {
-      if (savedLyricsData.includes("NO_LYRICS")) {
-        const split = savedLyricsData.split(":");
-        const id = split[1];
-        if (id === trackId) {
-          return await noLyricsMessage();
-        }
-      } else {
-        const lyricsData = JSON.parse(savedLyricsData);
-        if (lyricsData?.id === trackId) {
-          HideLoaderContainer();
-          ClearLyricsPageContainer();
-          Defaults_default.CurrentLyricsType = lyricsData.Type;
-          return lyricsData;
-        }
-      }
-    } catch (error) {
-      console.error("Error parsing saved lyrics data:", error);
-      HideLoaderContainer();
-      ClearLyricsPageContainer();
-    }
-    return null;
-  }
-  function resetLyricsUI() {
-    const lyricsContent = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
-    );
-    if (lyricsContent?.classList.contains("offline")) {
-      lyricsContent.classList.remove("offline");
-    }
-    document.querySelector("#SpicyLyricsPage .ContentBox .LyricsContainer")?.classList.remove("Hidden");
-    if (!Fullscreen_default.IsOpen)
-      PageView_default.AppendViewControls(true);
-  }
-  async function noLyricsMessage(trackId) {
-    try {
-      storage_default.set("currentlyFetching", "false");
-      if (Spicetify.Player.data.item.uri?.split(":")[2] === trackId) {
-        Spicetify.showNotification("Lyrics unavailable", false, 1e3);
-        HideLoaderContainer();
-        Defaults_default.CurrentLyricsType = "None";
-        document.querySelector(
-          "#SpicyLyricsPage .ContentBox .LyricsContainer"
-        )?.classList.add("Hidden");
-        document.querySelector("#SpicyLyricsPage .ContentBox")?.classList.add("LyricsHidden");
-        OpenNowBar();
-        DeregisterNowBarBtn();
-      }
-    } catch (error) {
-      console.error("Amai Lyrics: Error showing no lyrics message", error);
-      storage_default.set("currentlyFetching", "false");
-    }
-    return "1";
-  }
-  function ShowLoaderContainer() {
-    const loaderContainer = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .loaderContainer"
-    );
-    if (loaderContainer) {
-      ContainerShowLoaderTimeout = window.setTimeout(
-        () => loaderContainer.classList.add("active"),
-        1e3
-      );
-    }
-  }
-  function HideLoaderContainer() {
-    const loaderContainer = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .loaderContainer"
-    );
-    if (loaderContainer) {
-      if (ContainerShowLoaderTimeout) {
-        clearTimeout(ContainerShowLoaderTimeout);
-        ContainerShowLoaderTimeout = null;
-      }
-      loaderContainer.classList.remove("active");
-    }
-  }
-  function ClearLyricsPageContainer() {
-    const lyricsContent = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
-    );
-    if (lyricsContent) {
-      lyricsContent.innerHTML = "";
-    }
-  }
+  });
+
+  // src/utils/Lyrics/conversion.ts
   function convertLyrics(data) {
     console.log("Converting Syllable to Line type");
     return data.map((item) => {
@@ -12139,26 +16627,189 @@ ${JSON.stringify(
       };
     });
   }
-  var JAPANESE_REGEX, KOREAN_REGEX, CACHE_EXPIRATION_TIME, LYRICS_TIMING_OFFSET, lyricsCache, ContainerShowLoaderTimeout;
-  var init_fetchLyrics = __esm({
-    "src/utils/Lyrics/fetchLyrics.ts"() {
-      init_SpikyCache();
+  var JAPANESE_REGEX;
+  var init_conversion = __esm({
+    "src/utils/Lyrics/conversion.ts"() {
+      JAPANESE_REGEX = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
+    }
+  });
+
+  // src/utils/Lyrics/processing.ts
+  async function processAndEnhanceLyrics(trackId, lyricsJson) {
+    const { lyricsJson: preparedLyricsJson, lyricsOnly } = await prepareLyricsForGemini(lyricsJson);
+    const { hasKanji, hasKorean } = detectLanguages(preparedLyricsJson);
+    const phoneticLyricsJson = JSON.parse(JSON.stringify(preparedLyricsJson));
+    const [processedLyricsJson, translations] = await Promise.all([
+      getPhoneticLyrics(phoneticLyricsJson, hasKanji, hasKorean, lyricsOnly),
+      fetchTranslationsWithGemini(preparedLyricsJson, lyricsOnly)
+    ]);
+    attachTranslations(processedLyricsJson, translations);
+    await cacheLyrics(trackId, processedLyricsJson);
+    storage_default.set("currentlyFetching", "false");
+    if (Spicetify.Player.data.item.uri?.split(":")[2] === trackId) {
+      Spicetify.showNotification("Completed", false, 1e3);
+      Defaults_default.CurrentLyricsType = processedLyricsJson.Type;
+      storage_default.set("currentLyricsData", JSON.stringify(processedLyricsJson));
+      HideLoaderContainer();
+      ClearLyricsPageContainer();
+    }
+    return { ...processedLyricsJson, fromCache: false };
+  }
+  function detectLanguages(lyricsJson) {
+    const hasKanji = lyricsJson.Content?.some(
+      (item) => item.Lead?.Syllables?.some((syl) => JAPANESE_REGEX2.test(syl.Text))
+    ) || lyricsJson.Content?.some((item) => JAPANESE_REGEX2.test(item.Text)) || lyricsJson.Lines?.some((item) => JAPANESE_REGEX2.test(item.Text)) || false;
+    const hasKorean = lyricsJson.Content?.some(
+      (item) => item.Lead?.Syllables?.some((syl) => KOREAN_REGEX.test(syl.Text))
+    ) || lyricsJson.Content?.some((item) => KOREAN_REGEX.test(item.Text)) || lyricsJson.Lines?.some((item) => KOREAN_REGEX.test(item.Text)) || false;
+    return { hasKanji, hasKorean };
+  }
+  function attachTranslations(lyricsJson, translations) {
+    if (lyricsJson.Type === "Line" && lyricsJson.Content) {
+      lyricsJson.Content.forEach((line, idx) => {
+        line.Translation = translations[idx] || "";
+      });
+    } else if (lyricsJson.Type === "Static" && lyricsJson.Lines) {
+      lyricsJson.Lines.forEach((line, idx) => {
+        line.Translation = translations[idx] || "";
+      });
+    }
+  }
+  async function prepareLyricsForGemini(lyricsJson) {
+    if (lyricsJson.Type === "Syllable") {
+      lyricsJson.Type = "Line";
+      lyricsJson.Content = await convertLyrics(lyricsJson.Content);
+    }
+    const lyricsOnly = await extractLyrics(lyricsJson);
+    if (lyricsOnly.length > 0) {
+      lyricsJson.Raw = lyricsOnly;
+    }
+    return { lyricsJson, lyricsOnly };
+  }
+  async function extractLyrics(lyricsJson) {
+    const removeEmptyLinesAndCharacters = (items) => {
+      items = items.filter((item) => item.Text?.trim() !== "");
+      items = items.map((item) => {
+        if (item.Text) {
+          item.Text = item.Text.replace(/[「」",.!]/g, "");
+          item.Text = item.Text.normalize("NFKC");
+        }
+        return item;
+      });
+      return items;
+    };
+    if (lyricsJson.Type === "Line" && lyricsJson.Content) {
+      lyricsJson.Content = lyricsJson.Content.map((item) => ({
+        ...item,
+        StartTime: Math.max(0, (item.StartTime || 0) - LYRICS_TIMING_OFFSET)
+      }));
+      lyricsJson.Content = removeEmptyLinesAndCharacters(lyricsJson.Content);
+      return lyricsJson.Content.map((item) => item.Text);
+    }
+    if (lyricsJson.Type === "Static" && lyricsJson.Lines) {
+      lyricsJson.Lines = removeEmptyLinesAndCharacters(lyricsJson.Lines);
+      return lyricsJson.Lines.map((item) => item.Text);
+    }
+    return [];
+  }
+  var JAPANESE_REGEX2, KOREAN_REGEX, LYRICS_TIMING_OFFSET;
+  var init_processing = __esm({
+    "src/utils/Lyrics/processing.ts"() {
       init_storage();
       init_Defaults();
-      init_NowBar();
-      init_PageView();
-      init_Fullscreen();
-      init_Lyrics();
-      init_Platform();
-      init_web();
-      JAPANESE_REGEX = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
+      init_ui();
+      init_cache();
+      init_ai();
+      init_conversion();
+      JAPANESE_REGEX2 = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
       KOREAN_REGEX = /[\uAC00-\uD7AF]/;
-      CACHE_EXPIRATION_TIME = 1e3 * 60 * 60 * 24 * 7;
       LYRICS_TIMING_OFFSET = 0.55;
-      lyricsCache = new SpikyCache({
-        name: "Cache_Lyrics"
+    }
+  });
+
+  // src/utils/Lyrics/api.ts
+  async function fetchLyricsFromAPI(trackId) {
+    try {
+      Spicetify.showNotification("Fetching lyrics..", false, 1e3);
+      const spotifyAccessToken = await Platform_default.GetSpotifyAccessToken();
+      const getLyricsResult = await getLyrics(trackId, {
+        Authorization: `Bearer ${spotifyAccessToken}`
       });
-      ContainerShowLoaderTimeout = null;
+      let lyricsJson = getLyricsResult.response;
+      const status = getLyricsResult.status;
+      if (!lyricsJson || typeof lyricsJson === "object" && !("id" in lyricsJson)) {
+        lyricsJson = "";
+      }
+      if (status !== 200) {
+        return await handleErrorStatus(status);
+      }
+      if (lyricsJson === null)
+        return await noLyricsMessage(trackId);
+      if (lyricsJson === "")
+        return await noLyricsMessage(trackId);
+      return await processAndEnhanceLyrics(trackId, lyricsJson);
+    } catch (error) {
+      console.error("Error fetching lyrics:", error?.message, error?.stack);
+      storage_default.set("currentlyFetching", "false");
+      ClearLyricsPageContainer();
+      return await noLyricsMessage();
+    }
+  }
+  async function handleErrorStatus(status) {
+    if (status === 401) {
+      storage_default.set("currentlyFetching", "false");
+      return await noLyricsMessage();
+    }
+    ClearLyricsPageContainer();
+    return await noLyricsMessage();
+  }
+  var init_api = __esm({
+    "src/utils/Lyrics/api.ts"() {
+      init_storage();
+      init_Platform();
+      init_Lyrics();
+      init_ui();
+      init_processing();
+    }
+  });
+
+  // src/utils/Lyrics/fetchLyrics.ts
+  var fetchLyrics_exports = {};
+  __export(fetchLyrics_exports, {
+    JAPANESE_REGEX: () => JAPANESE_REGEX3,
+    KOREAN_REGEX: () => KOREAN_REGEX2,
+    default: () => fetchLyrics,
+    lyricsCache: () => lyricsCache
+  });
+  async function fetchLyrics(uri) {
+    resetLyricsUI();
+    ClearLyricsPageContainer();
+    document.querySelector("#SpicyLyricsPage .ContentBox")?.classList.remove("LyricsHidden");
+    const trackId = uri.split(":")[2];
+    const localLyrics = await getLyricsFromLocalStorage(trackId);
+    if (localLyrics)
+      return localLyrics;
+    const cachedLyrics = await getLyricsFromCache(trackId);
+    if (cachedLyrics)
+      return cachedLyrics;
+    const currFetching = storage_default.get("currentlyFetching");
+    if (currFetching === "true") {
+      Spicetify.showNotification("Currently fetching, please wait..");
+      return "Currently fetching lyrics";
+    }
+    storage_default.set("currentlyFetching", "true");
+    ShowLoaderContainer();
+    return await fetchLyricsFromAPI(trackId);
+  }
+  var JAPANESE_REGEX3, KOREAN_REGEX2;
+  var init_fetchLyrics = __esm({
+    "src/utils/Lyrics/fetchLyrics.ts"() {
+      init_storage();
+      init_ui();
+      init_cache();
+      init_api();
+      JAPANESE_REGEX3 = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
+      KOREAN_REGEX2 = /[\uAC00-\uD7AF]/;
     }
   });
 
@@ -12559,9 +17210,6 @@ ${JSON.stringify(
       scripts.push(script);
     };
     Global_default.SetScope("func_main._add_script", AddScript);
-    AddScript("spicy-hasher.js");
-    AddScript("pako.min.js");
-    AddScript("vibrant.min.js");
     const AppendScripts = () => {
       for (const script of scripts) {
         document.head.appendChild(script);
@@ -12833,10 +17481,7 @@ ${JSON.stringify(
         Session_default.RecordNavigation(Spicetify.Platform.History.location);
       }
     };
-    Whentil_default.When(
-      () => typeof SpicyHasher !== "undefined" && typeof pako !== "undefined",
-      Hometinue
-    );
+    Hometinue();
   }
   async function main() {
     const fontLink = document.createElement("link");
@@ -12858,6 +17503,7 @@ ${JSON.stringify(
     await app_default();
   })();
 })();
+/*! pako 2.1.0 https://github.com/nodeca/pako @license (MIT AND Zlib) */
 /**
  * @license
  * Copyright 2025 Google LLC
@@ -12877,7 +17523,7 @@ ${JSON.stringify(
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-248-VGyXKSFJZstE/1961cea3f087/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-5796-Dcvc5mnU2DeY/1961e9fb1e87/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -12903,7 +17549,7 @@ ${JSON.stringify(
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-248-VGyXKSFJZstE/1961cea3eab0/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5796-Dcvc5mnU2DeY/1961e9fb18d0/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -13042,7 +17688,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-248-VGyXKSFJZstE/1961cea3ed91/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5796-Dcvc5mnU2DeY/1961e9fb1ba1/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -13250,7 +17896,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-248-VGyXKSFJZstE/1961cea3ee02/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5796-Dcvc5mnU2DeY/1961e9fb1c12/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -13725,7 +18371,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-248-VGyXKSFJZstE/1961cea3eeb3/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5796-Dcvc5mnU2DeY/1961e9fb1cc3/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -13833,7 +18479,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-248-VGyXKSFJZstE/1961cea3eef4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5796-Dcvc5mnU2DeY/1961e9fb1d14/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -14041,7 +18687,7 @@ ruby > rt {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-248-VGyXKSFJZstE/1961cea3ef55/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5796-Dcvc5mnU2DeY/1961e9fb1d75/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -14329,7 +18975,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-248-VGyXKSFJZstE/1961cea3efb6/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5796-Dcvc5mnU2DeY/1961e9fb1dd6/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
