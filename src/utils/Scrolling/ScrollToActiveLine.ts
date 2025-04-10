@@ -1,7 +1,7 @@
 import Defaults from '../../components/Global/Defaults';
 import { SpotifyPlayer } from '../../components/Global/SpotifyPlayer';
 import { LyricsObject } from '../Lyrics/lyrics';
-import ScrollIntoCenterView from '../ScrollIntoView/Center';
+import { scrollIntoCenterView } from '../ScrollIntoView';
 import SimpleBar from 'simplebar';
 
 let lastLine = null;
@@ -46,7 +46,7 @@ export function ScrollToActiveLine(ScrollSimplebar: SimpleBar) {
           () => LineElem.classList.add('Active', 'OverridenByScroller'),
           PositionOffset / 2,
         );
-        ScrollIntoCenterView(container, LineElem, 270, -50); // Scroll Into View with a 300ms Animation
+        scrollIntoCenterView(container, LineElem, 270, -50); // Scroll Into View with a 300ms Animation
       }
     }
   }
