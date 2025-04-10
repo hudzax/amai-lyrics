@@ -1,4 +1,5 @@
 import SpicyFetch from '../../utils/API/SpicyFetch';
+import { spotifyHex } from '../../utils/Hasher';
 import GetProgress, {
   _DEPRECATED___GetProgress,
 } from '../../utils/Gets/GetProgress';
@@ -42,9 +43,7 @@ export const SpotifyPlayer = {
   },
   Track: {
     GetTrackInfo: async () => {
-      const spotifyHexString = SpicyHasher.spotifyHex(
-        SpotifyPlayer.GetSongId(),
-      );
+      const spotifyHexString = spotifyHex(SpotifyPlayer.GetSongId());
       return getOrFetchTrackData(spotifyHexString);
     },
     SortImages: (images: any[]) => {

@@ -1,5 +1,7 @@
 import { SpikyCache } from '@hudzax/web-modules/SpikyCache';
 import Platform from '../../components/Global/Platform';
+import pako from 'pako';
+import { md5 } from '../Hasher';
 
 export let SpicyFetchCache = new SpikyCache({
   name: 'SpicyFetch__Cache',
@@ -109,13 +111,12 @@ async function CacheContent(
 ): Promise<void> {
   try {
     const expiresIn = Date.now() + expirationTtl;
-    const processedKey = SpicyHasher.md5(key);
+    const processedKey = md5(key);
 
     const processedData =
       typeof data === 'object' ? JSON.stringify(data) : data;
 
     const compressedData = pako.deflate(processedData, {
-      to: 'string',
       level: 1,
     }); // Max compression level
     const compressedString = String.fromCharCode(
@@ -134,7 +135,7 @@ async function CacheContent(
 
 async function GetCachedContent(key): Promise<object | null> {
   try {
-    const processedKey = SpicyHasher.md5(key);
+    const processedKey = md5(key);
     const content = await SpicyFetchCache.get(processedKey);
     if (content) {
       if (content.expiresIn > Date.now()) {

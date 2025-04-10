@@ -51,9 +51,6 @@ async function loadExternalScripts() {
 
   Global.SetScope("func_main._add_script", AddScript);
 
-  AddScript("spicy-hasher.js");
-  AddScript("pako.min.js");
-  AddScript("vibrant.min.js");
 
   const AppendScripts = () => {
     for (const script of scripts) {
@@ -374,10 +371,7 @@ function setupDynamicBackground(button) {
     }
   };
 
-  Whentil.When(
-    () => typeof SpicyHasher !== "undefined" && typeof pako !== "undefined",
-    Hometinue
-  );
+  Hometinue();
 }
 
 async function main() {
