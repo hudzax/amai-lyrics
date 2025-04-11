@@ -339,9 +339,14 @@ function setupDynamicBackground(button) {
 async function main() {
   // Inject Google Fonts dynamically
   const fontLink = document.createElement("link");
-  fontLink.rel = "stylesheet";
-  fontLink.href = "https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Vazirmatn&display=swap"; // Replace with your desired Google Fonts URL
+  fontLink.rel = "preload";
+  fontLink.as = "style";
+  fontLink.href = "https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Vazirmatn&display=swap";
   document.head.appendChild(fontLink);
+
+  fontLink.onload = () => {
+    fontLink.rel = "stylesheet";
+  };
 
   await Promise.all([
     initializePlatformAndSettings()
