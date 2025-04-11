@@ -412,7 +412,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.0.46";
+      version = "1.0.47";
     }
   });
 
@@ -3434,7 +3434,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         let len = 0;
         let sym = 0;
         let min = 0, max = 0;
-        let root2 = 0;
+        let root = 0;
         let curr = 0;
         let drop = 0;
         let left = 0;
@@ -3457,14 +3457,14 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         for (sym = 0; sym < codes; sym++) {
           count[lens[lens_index + sym]]++;
         }
-        root2 = bits;
+        root = bits;
         for (max = MAXBITS; max >= 1; max--) {
           if (count[max] !== 0) {
             break;
           }
         }
-        if (root2 > max) {
-          root2 = max;
+        if (root > max) {
+          root = max;
         }
         if (max === 0) {
           table[table_index++] = 1 << 24 | 64 << 16 | 0;
@@ -3477,8 +3477,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             break;
           }
         }
-        if (root2 < min) {
-          root2 = min;
+        if (root < min) {
+          root = min;
         }
         left = 1;
         for (len = 1; len <= MAXBITS; len++) {
@@ -3516,10 +3516,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         sym = 0;
         len = min;
         next = table_index;
-        curr = root2;
+        curr = root;
         drop = 0;
         low = -1;
-        used = 1 << root2;
+        used = 1 << root;
         mask = used - 1;
         if (type === LENS$1 && used > ENOUGH_LENS$1 || type === DISTS$1 && used > ENOUGH_DISTS$1) {
           return 1;
@@ -3560,9 +3560,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             }
             len = lens[lens_index + work[sym]];
           }
-          if (len > root2 && (huff & mask) !== low) {
+          if (len > root && (huff & mask) !== low) {
             if (drop === 0) {
-              drop = root2;
+              drop = root;
             }
             next += min;
             curr = len - drop;
@@ -3580,13 +3580,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
               return 1;
             }
             low = huff & mask;
-            table[low] = root2 << 24 | curr << 16 | next - table_index | 0;
+            table[low] = root << 24 | curr << 16 | next - table_index | 0;
           }
         }
         if (huff !== 0) {
           table[next + huff] = len - drop << 24 | 64 << 16 | 0;
         }
-        opts.bits = root2;
+        opts.bits = root;
         return 0;
       };
       inftrees = inflate_table;
@@ -5661,11 +5661,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       console.error("Playback state is incomplete.");
       return null;
     }
-    const now2 = Date.now();
+    const now = Date.now();
     if (isPaused) {
       return positionAsOfTimestamp;
     } else {
-      const calc = positionAsOfTimestamp + (now2 - timestamp);
+      const calc = positionAsOfTimestamp + (now - timestamp);
       return calc;
     }
   }
@@ -6349,10 +6349,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                 if (!word.AnimatorStoreTime_glow) {
                   word.AnimatorStoreTime_glow = performance.now();
                 }
-                const now2 = performance.now();
-                const elapsed_translateY = now2 - word.AnimatorStoreTime_translateY;
-                const elapsed_scale = now2 - word.AnimatorStoreTime_scale;
-                const elapsed_glow = now2 - word.AnimatorStoreTime_glow;
+                const now = performance.now();
+                const elapsed_translateY = now - word.AnimatorStoreTime_translateY;
+                const elapsed_scale = now - word.AnimatorStoreTime_scale;
+                const elapsed_glow = now - word.AnimatorStoreTime_glow;
                 const duration_translateY = 550;
                 const progress_translateY = Math.min(
                   elapsed_translateY / duration_translateY,
@@ -6948,9 +6948,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-5796-Dcvc5mnU2DeY/1961e9fb1e87/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-13620-qYu0HnNABbVR/1962596fffe7/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-5796-Dcvc5mnU2DeY/1961e9fb1e87/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-13620-qYu0HnNABbVR/1962596fffe7/DotLoader.css"() {
     }
   });
 
@@ -7104,336 +7104,313 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // node_modules/lodash-es/_freeGlobal.js
-  var freeGlobal, freeGlobal_default;
-  var init_freeGlobal = __esm({
-    "node_modules/lodash-es/_freeGlobal.js"() {
-      freeGlobal = typeof global == "object" && global && global.Object === Object && global;
-      freeGlobal_default = freeGlobal;
-    }
-  });
-
-  // node_modules/lodash-es/_root.js
-  var freeSelf, root, root_default;
-  var init_root = __esm({
-    "node_modules/lodash-es/_root.js"() {
-      init_freeGlobal();
-      freeSelf = typeof self == "object" && self && self.Object === Object && self;
-      root = freeGlobal_default || freeSelf || Function("return this")();
-      root_default = root;
-    }
-  });
-
-  // node_modules/lodash-es/_Symbol.js
-  var Symbol2, Symbol_default;
-  var init_Symbol = __esm({
-    "node_modules/lodash-es/_Symbol.js"() {
-      init_root();
-      Symbol2 = root_default.Symbol;
-      Symbol_default = Symbol2;
-    }
-  });
-
-  // node_modules/lodash-es/_getRawTag.js
-  function getRawTag(value) {
-    var isOwn = hasOwnProperty.call(value, symToStringTag), tag = value[symToStringTag];
-    try {
-      value[symToStringTag] = void 0;
-      var unmasked = true;
-    } catch (e) {
-    }
-    var result = nativeObjectToString.call(value);
-    if (unmasked) {
-      if (isOwn) {
-        value[symToStringTag] = tag;
-      } else {
-        delete value[symToStringTag];
+  // node_modules/lodash/isObject.js
+  var require_isObject = __commonJS({
+    "node_modules/lodash/isObject.js"(exports, module) {
+      function isObject(value) {
+        var type = typeof value;
+        return value != null && (type == "object" || type == "function");
       }
-    }
-    return result;
-  }
-  var objectProto, hasOwnProperty, nativeObjectToString, symToStringTag, getRawTag_default;
-  var init_getRawTag = __esm({
-    "node_modules/lodash-es/_getRawTag.js"() {
-      init_Symbol();
-      objectProto = Object.prototype;
-      hasOwnProperty = objectProto.hasOwnProperty;
-      nativeObjectToString = objectProto.toString;
-      symToStringTag = Symbol_default ? Symbol_default.toStringTag : void 0;
-      getRawTag_default = getRawTag;
+      module.exports = isObject;
     }
   });
 
-  // node_modules/lodash-es/_objectToString.js
-  function objectToString(value) {
-    return nativeObjectToString2.call(value);
-  }
-  var objectProto2, nativeObjectToString2, objectToString_default;
-  var init_objectToString = __esm({
-    "node_modules/lodash-es/_objectToString.js"() {
-      objectProto2 = Object.prototype;
-      nativeObjectToString2 = objectProto2.toString;
-      objectToString_default = objectToString;
+  // node_modules/lodash/_freeGlobal.js
+  var require_freeGlobal = __commonJS({
+    "node_modules/lodash/_freeGlobal.js"(exports, module) {
+      var freeGlobal = typeof global == "object" && global && global.Object === Object && global;
+      module.exports = freeGlobal;
     }
   });
 
-  // node_modules/lodash-es/_baseGetTag.js
-  function baseGetTag(value) {
-    if (value == null) {
-      return value === void 0 ? undefinedTag : nullTag;
-    }
-    return symToStringTag2 && symToStringTag2 in Object(value) ? getRawTag_default(value) : objectToString_default(value);
-  }
-  var nullTag, undefinedTag, symToStringTag2, baseGetTag_default;
-  var init_baseGetTag = __esm({
-    "node_modules/lodash-es/_baseGetTag.js"() {
-      init_Symbol();
-      init_getRawTag();
-      init_objectToString();
-      nullTag = "[object Null]";
-      undefinedTag = "[object Undefined]";
-      symToStringTag2 = Symbol_default ? Symbol_default.toStringTag : void 0;
-      baseGetTag_default = baseGetTag;
+  // node_modules/lodash/_root.js
+  var require_root = __commonJS({
+    "node_modules/lodash/_root.js"(exports, module) {
+      var freeGlobal = require_freeGlobal();
+      var freeSelf = typeof self == "object" && self && self.Object === Object && self;
+      var root = freeGlobal || freeSelf || Function("return this")();
+      module.exports = root;
     }
   });
 
-  // node_modules/lodash-es/isObjectLike.js
-  function isObjectLike(value) {
-    return value != null && typeof value == "object";
-  }
-  var isObjectLike_default;
-  var init_isObjectLike = __esm({
-    "node_modules/lodash-es/isObjectLike.js"() {
-      isObjectLike_default = isObjectLike;
-    }
-  });
-
-  // node_modules/lodash-es/isSymbol.js
-  function isSymbol(value) {
-    return typeof value == "symbol" || isObjectLike_default(value) && baseGetTag_default(value) == symbolTag;
-  }
-  var symbolTag, isSymbol_default;
-  var init_isSymbol = __esm({
-    "node_modules/lodash-es/isSymbol.js"() {
-      init_baseGetTag();
-      init_isObjectLike();
-      symbolTag = "[object Symbol]";
-      isSymbol_default = isSymbol;
-    }
-  });
-
-  // node_modules/lodash-es/_trimmedEndIndex.js
-  function trimmedEndIndex(string) {
-    var index = string.length;
-    while (index-- && reWhitespace.test(string.charAt(index))) {
-    }
-    return index;
-  }
-  var reWhitespace, trimmedEndIndex_default;
-  var init_trimmedEndIndex = __esm({
-    "node_modules/lodash-es/_trimmedEndIndex.js"() {
-      reWhitespace = /\s/;
-      trimmedEndIndex_default = trimmedEndIndex;
-    }
-  });
-
-  // node_modules/lodash-es/_baseTrim.js
-  function baseTrim(string) {
-    return string ? string.slice(0, trimmedEndIndex_default(string) + 1).replace(reTrimStart, "") : string;
-  }
-  var reTrimStart, baseTrim_default;
-  var init_baseTrim = __esm({
-    "node_modules/lodash-es/_baseTrim.js"() {
-      init_trimmedEndIndex();
-      reTrimStart = /^\s+/;
-      baseTrim_default = baseTrim;
-    }
-  });
-
-  // node_modules/lodash-es/isObject.js
-  function isObject(value) {
-    var type = typeof value;
-    return value != null && (type == "object" || type == "function");
-  }
-  var isObject_default;
-  var init_isObject = __esm({
-    "node_modules/lodash-es/isObject.js"() {
-      isObject_default = isObject;
-    }
-  });
-
-  // node_modules/lodash-es/toNumber.js
-  function toNumber(value) {
-    if (typeof value == "number") {
-      return value;
-    }
-    if (isSymbol_default(value)) {
-      return NAN;
-    }
-    if (isObject_default(value)) {
-      var other = typeof value.valueOf == "function" ? value.valueOf() : value;
-      value = isObject_default(other) ? other + "" : other;
-    }
-    if (typeof value != "string") {
-      return value === 0 ? value : +value;
-    }
-    value = baseTrim_default(value);
-    var isBinary = reIsBinary.test(value);
-    return isBinary || reIsOctal.test(value) ? freeParseInt(value.slice(2), isBinary ? 2 : 8) : reIsBadHex.test(value) ? NAN : +value;
-  }
-  var NAN, reIsBadHex, reIsBinary, reIsOctal, freeParseInt, toNumber_default;
-  var init_toNumber = __esm({
-    "node_modules/lodash-es/toNumber.js"() {
-      init_baseTrim();
-      init_isObject();
-      init_isSymbol();
-      NAN = 0 / 0;
-      reIsBadHex = /^[-+]0x[0-9a-f]+$/i;
-      reIsBinary = /^0b[01]+$/i;
-      reIsOctal = /^0o[0-7]+$/i;
-      freeParseInt = parseInt;
-      toNumber_default = toNumber;
-    }
-  });
-
-  // node_modules/lodash-es/now.js
-  var now, now_default;
-  var init_now = __esm({
-    "node_modules/lodash-es/now.js"() {
-      init_root();
-      now = function() {
-        return root_default.Date.now();
+  // node_modules/lodash/now.js
+  var require_now = __commonJS({
+    "node_modules/lodash/now.js"(exports, module) {
+      var root = require_root();
+      var now = function() {
+        return root.Date.now();
       };
-      now_default = now;
+      module.exports = now;
     }
   });
 
-  // node_modules/lodash-es/debounce.js
-  function debounce(func, wait, options) {
-    var lastArgs, lastThis, maxWait, result, timerId, lastCallTime, lastInvokeTime = 0, leading = false, maxing = false, trailing = true;
-    if (typeof func != "function") {
-      throw new TypeError(FUNC_ERROR_TEXT);
-    }
-    wait = toNumber_default(wait) || 0;
-    if (isObject_default(options)) {
-      leading = !!options.leading;
-      maxing = "maxWait" in options;
-      maxWait = maxing ? nativeMax(toNumber_default(options.maxWait) || 0, wait) : maxWait;
-      trailing = "trailing" in options ? !!options.trailing : trailing;
-    }
-    function invokeFunc(time) {
-      var args = lastArgs, thisArg = lastThis;
-      lastArgs = lastThis = void 0;
-      lastInvokeTime = time;
-      result = func.apply(thisArg, args);
-      return result;
-    }
-    function leadingEdge(time) {
-      lastInvokeTime = time;
-      timerId = setTimeout(timerExpired, wait);
-      return leading ? invokeFunc(time) : result;
-    }
-    function remainingWait(time) {
-      var timeSinceLastCall = time - lastCallTime, timeSinceLastInvoke = time - lastInvokeTime, timeWaiting = wait - timeSinceLastCall;
-      return maxing ? nativeMin(timeWaiting, maxWait - timeSinceLastInvoke) : timeWaiting;
-    }
-    function shouldInvoke(time) {
-      var timeSinceLastCall = time - lastCallTime, timeSinceLastInvoke = time - lastInvokeTime;
-      return lastCallTime === void 0 || timeSinceLastCall >= wait || timeSinceLastCall < 0 || maxing && timeSinceLastInvoke >= maxWait;
-    }
-    function timerExpired() {
-      var time = now_default();
-      if (shouldInvoke(time)) {
-        return trailingEdge(time);
-      }
-      timerId = setTimeout(timerExpired, remainingWait(time));
-    }
-    function trailingEdge(time) {
-      timerId = void 0;
-      if (trailing && lastArgs) {
-        return invokeFunc(time);
-      }
-      lastArgs = lastThis = void 0;
-      return result;
-    }
-    function cancel() {
-      if (timerId !== void 0) {
-        clearTimeout(timerId);
-      }
-      lastInvokeTime = 0;
-      lastArgs = lastCallTime = lastThis = timerId = void 0;
-    }
-    function flush() {
-      return timerId === void 0 ? result : trailingEdge(now_default());
-    }
-    function debounced() {
-      var time = now_default(), isInvoking = shouldInvoke(time);
-      lastArgs = arguments;
-      lastThis = this;
-      lastCallTime = time;
-      if (isInvoking) {
-        if (timerId === void 0) {
-          return leadingEdge(lastCallTime);
+  // node_modules/lodash/_trimmedEndIndex.js
+  var require_trimmedEndIndex = __commonJS({
+    "node_modules/lodash/_trimmedEndIndex.js"(exports, module) {
+      var reWhitespace = /\s/;
+      function trimmedEndIndex(string) {
+        var index = string.length;
+        while (index-- && reWhitespace.test(string.charAt(index))) {
         }
-        if (maxing) {
-          clearTimeout(timerId);
+        return index;
+      }
+      module.exports = trimmedEndIndex;
+    }
+  });
+
+  // node_modules/lodash/_baseTrim.js
+  var require_baseTrim = __commonJS({
+    "node_modules/lodash/_baseTrim.js"(exports, module) {
+      var trimmedEndIndex = require_trimmedEndIndex();
+      var reTrimStart = /^\s+/;
+      function baseTrim(string) {
+        return string ? string.slice(0, trimmedEndIndex(string) + 1).replace(reTrimStart, "") : string;
+      }
+      module.exports = baseTrim;
+    }
+  });
+
+  // node_modules/lodash/_Symbol.js
+  var require_Symbol = __commonJS({
+    "node_modules/lodash/_Symbol.js"(exports, module) {
+      var root = require_root();
+      var Symbol2 = root.Symbol;
+      module.exports = Symbol2;
+    }
+  });
+
+  // node_modules/lodash/_getRawTag.js
+  var require_getRawTag = __commonJS({
+    "node_modules/lodash/_getRawTag.js"(exports, module) {
+      var Symbol2 = require_Symbol();
+      var objectProto = Object.prototype;
+      var hasOwnProperty = objectProto.hasOwnProperty;
+      var nativeObjectToString = objectProto.toString;
+      var symToStringTag = Symbol2 ? Symbol2.toStringTag : void 0;
+      function getRawTag(value) {
+        var isOwn = hasOwnProperty.call(value, symToStringTag), tag = value[symToStringTag];
+        try {
+          value[symToStringTag] = void 0;
+          var unmasked = true;
+        } catch (e) {
+        }
+        var result = nativeObjectToString.call(value);
+        if (unmasked) {
+          if (isOwn) {
+            value[symToStringTag] = tag;
+          } else {
+            delete value[symToStringTag];
+          }
+        }
+        return result;
+      }
+      module.exports = getRawTag;
+    }
+  });
+
+  // node_modules/lodash/_objectToString.js
+  var require_objectToString = __commonJS({
+    "node_modules/lodash/_objectToString.js"(exports, module) {
+      var objectProto = Object.prototype;
+      var nativeObjectToString = objectProto.toString;
+      function objectToString(value) {
+        return nativeObjectToString.call(value);
+      }
+      module.exports = objectToString;
+    }
+  });
+
+  // node_modules/lodash/_baseGetTag.js
+  var require_baseGetTag = __commonJS({
+    "node_modules/lodash/_baseGetTag.js"(exports, module) {
+      var Symbol2 = require_Symbol();
+      var getRawTag = require_getRawTag();
+      var objectToString = require_objectToString();
+      var nullTag = "[object Null]";
+      var undefinedTag = "[object Undefined]";
+      var symToStringTag = Symbol2 ? Symbol2.toStringTag : void 0;
+      function baseGetTag(value) {
+        if (value == null) {
+          return value === void 0 ? undefinedTag : nullTag;
+        }
+        return symToStringTag && symToStringTag in Object(value) ? getRawTag(value) : objectToString(value);
+      }
+      module.exports = baseGetTag;
+    }
+  });
+
+  // node_modules/lodash/isObjectLike.js
+  var require_isObjectLike = __commonJS({
+    "node_modules/lodash/isObjectLike.js"(exports, module) {
+      function isObjectLike(value) {
+        return value != null && typeof value == "object";
+      }
+      module.exports = isObjectLike;
+    }
+  });
+
+  // node_modules/lodash/isSymbol.js
+  var require_isSymbol = __commonJS({
+    "node_modules/lodash/isSymbol.js"(exports, module) {
+      var baseGetTag = require_baseGetTag();
+      var isObjectLike = require_isObjectLike();
+      var symbolTag = "[object Symbol]";
+      function isSymbol(value) {
+        return typeof value == "symbol" || isObjectLike(value) && baseGetTag(value) == symbolTag;
+      }
+      module.exports = isSymbol;
+    }
+  });
+
+  // node_modules/lodash/toNumber.js
+  var require_toNumber = __commonJS({
+    "node_modules/lodash/toNumber.js"(exports, module) {
+      var baseTrim = require_baseTrim();
+      var isObject = require_isObject();
+      var isSymbol = require_isSymbol();
+      var NAN = 0 / 0;
+      var reIsBadHex = /^[-+]0x[0-9a-f]+$/i;
+      var reIsBinary = /^0b[01]+$/i;
+      var reIsOctal = /^0o[0-7]+$/i;
+      var freeParseInt = parseInt;
+      function toNumber(value) {
+        if (typeof value == "number") {
+          return value;
+        }
+        if (isSymbol(value)) {
+          return NAN;
+        }
+        if (isObject(value)) {
+          var other = typeof value.valueOf == "function" ? value.valueOf() : value;
+          value = isObject(other) ? other + "" : other;
+        }
+        if (typeof value != "string") {
+          return value === 0 ? value : +value;
+        }
+        value = baseTrim(value);
+        var isBinary = reIsBinary.test(value);
+        return isBinary || reIsOctal.test(value) ? freeParseInt(value.slice(2), isBinary ? 2 : 8) : reIsBadHex.test(value) ? NAN : +value;
+      }
+      module.exports = toNumber;
+    }
+  });
+
+  // node_modules/lodash/debounce.js
+  var require_debounce = __commonJS({
+    "node_modules/lodash/debounce.js"(exports, module) {
+      var isObject = require_isObject();
+      var now = require_now();
+      var toNumber = require_toNumber();
+      var FUNC_ERROR_TEXT = "Expected a function";
+      var nativeMax = Math.max;
+      var nativeMin = Math.min;
+      function debounce2(func, wait, options) {
+        var lastArgs, lastThis, maxWait, result, timerId, lastCallTime, lastInvokeTime = 0, leading = false, maxing = false, trailing = true;
+        if (typeof func != "function") {
+          throw new TypeError(FUNC_ERROR_TEXT);
+        }
+        wait = toNumber(wait) || 0;
+        if (isObject(options)) {
+          leading = !!options.leading;
+          maxing = "maxWait" in options;
+          maxWait = maxing ? nativeMax(toNumber(options.maxWait) || 0, wait) : maxWait;
+          trailing = "trailing" in options ? !!options.trailing : trailing;
+        }
+        function invokeFunc(time) {
+          var args = lastArgs, thisArg = lastThis;
+          lastArgs = lastThis = void 0;
+          lastInvokeTime = time;
+          result = func.apply(thisArg, args);
+          return result;
+        }
+        function leadingEdge(time) {
+          lastInvokeTime = time;
           timerId = setTimeout(timerExpired, wait);
-          return invokeFunc(lastCallTime);
+          return leading ? invokeFunc(time) : result;
         }
+        function remainingWait(time) {
+          var timeSinceLastCall = time - lastCallTime, timeSinceLastInvoke = time - lastInvokeTime, timeWaiting = wait - timeSinceLastCall;
+          return maxing ? nativeMin(timeWaiting, maxWait - timeSinceLastInvoke) : timeWaiting;
+        }
+        function shouldInvoke(time) {
+          var timeSinceLastCall = time - lastCallTime, timeSinceLastInvoke = time - lastInvokeTime;
+          return lastCallTime === void 0 || timeSinceLastCall >= wait || timeSinceLastCall < 0 || maxing && timeSinceLastInvoke >= maxWait;
+        }
+        function timerExpired() {
+          var time = now();
+          if (shouldInvoke(time)) {
+            return trailingEdge(time);
+          }
+          timerId = setTimeout(timerExpired, remainingWait(time));
+        }
+        function trailingEdge(time) {
+          timerId = void 0;
+          if (trailing && lastArgs) {
+            return invokeFunc(time);
+          }
+          lastArgs = lastThis = void 0;
+          return result;
+        }
+        function cancel() {
+          if (timerId !== void 0) {
+            clearTimeout(timerId);
+          }
+          lastInvokeTime = 0;
+          lastArgs = lastCallTime = lastThis = timerId = void 0;
+        }
+        function flush() {
+          return timerId === void 0 ? result : trailingEdge(now());
+        }
+        function debounced() {
+          var time = now(), isInvoking = shouldInvoke(time);
+          lastArgs = arguments;
+          lastThis = this;
+          lastCallTime = time;
+          if (isInvoking) {
+            if (timerId === void 0) {
+              return leadingEdge(lastCallTime);
+            }
+            if (maxing) {
+              clearTimeout(timerId);
+              timerId = setTimeout(timerExpired, wait);
+              return invokeFunc(lastCallTime);
+            }
+          }
+          if (timerId === void 0) {
+            timerId = setTimeout(timerExpired, wait);
+          }
+          return result;
+        }
+        debounced.cancel = cancel;
+        debounced.flush = flush;
+        return debounced;
       }
-      if (timerId === void 0) {
-        timerId = setTimeout(timerExpired, wait);
-      }
-      return result;
-    }
-    debounced.cancel = cancel;
-    debounced.flush = flush;
-    return debounced;
-  }
-  var FUNC_ERROR_TEXT, nativeMax, nativeMin, debounce_default;
-  var init_debounce = __esm({
-    "node_modules/lodash-es/debounce.js"() {
-      init_isObject();
-      init_now();
-      init_toNumber();
-      FUNC_ERROR_TEXT = "Expected a function";
-      nativeMax = Math.max;
-      nativeMin = Math.min;
-      debounce_default = debounce;
+      module.exports = debounce2;
     }
   });
 
-  // node_modules/lodash-es/throttle.js
-  function throttle(func, wait, options) {
-    var leading = true, trailing = true;
-    if (typeof func != "function") {
-      throw new TypeError(FUNC_ERROR_TEXT2);
-    }
-    if (isObject_default(options)) {
-      leading = "leading" in options ? !!options.leading : leading;
-      trailing = "trailing" in options ? !!options.trailing : trailing;
-    }
-    return debounce_default(func, wait, {
-      "leading": leading,
-      "maxWait": wait,
-      "trailing": trailing
-    });
-  }
-  var FUNC_ERROR_TEXT2, throttle_default;
-  var init_throttle = __esm({
-    "node_modules/lodash-es/throttle.js"() {
-      init_debounce();
-      init_isObject();
-      FUNC_ERROR_TEXT2 = "Expected a function";
-      throttle_default = throttle;
-    }
-  });
-
-  // node_modules/lodash-es/lodash.js
-  var init_lodash = __esm({
-    "node_modules/lodash-es/lodash.js"() {
-      init_debounce();
-      init_throttle();
+  // node_modules/lodash/throttle.js
+  var require_throttle = __commonJS({
+    "node_modules/lodash/throttle.js"(exports, module) {
+      var debounce2 = require_debounce();
+      var isObject = require_isObject();
+      var FUNC_ERROR_TEXT = "Expected a function";
+      function throttle2(func, wait, options) {
+        var leading = true, trailing = true;
+        if (typeof func != "function") {
+          throw new TypeError(FUNC_ERROR_TEXT);
+        }
+        if (isObject(options)) {
+          leading = "leading" in options ? !!options.leading : leading;
+          trailing = "trailing" in options ? !!options.trailing : trailing;
+        }
+        return debounce2(func, wait, {
+          "leading": leading,
+          "maxWait": wait,
+          "trailing": trailing
+        });
+      }
+      module.exports = throttle2;
     }
   });
 
@@ -7482,10 +7459,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return cachedScrollbarWidth;
   }
-  var __assign, getOptions$1, canUseDOM, helpers, cachedScrollbarWidth, cachedDevicePixelRatio, getElementWindow, getElementDocument, getOptions, addClasses, removeClasses, classNamesToQuery, SimpleBarCore;
+  var import_debounce, import_throttle, __assign, getOptions$1, canUseDOM, helpers, cachedScrollbarWidth, cachedDevicePixelRatio, getElementWindow, getElementDocument, getOptions, addClasses, removeClasses, classNamesToQuery, SimpleBarCore;
   var init_dist = __esm({
     "node_modules/simplebar-core/dist/index.mjs"() {
-      init_lodash();
+      import_debounce = __toESM(require_debounce(), 1);
+      import_throttle = __toESM(require_throttle(), 1);
       __assign = function() {
         __assign = Object.assign || function __assign2(t) {
           for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -7783,10 +7761,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           if (typeof this.el !== "object" || !this.el.nodeName) {
             throw new Error("Argument passed to SimpleBar must be an HTML element instead of ".concat(this.el));
           }
-          this.onMouseMove = throttle_default(this._onMouseMove, 64);
-          this.onWindowResize = debounce_default(this._onWindowResize, 64, { leading: true });
-          this.onStopScrolling = debounce_default(this._onStopScrolling, this.stopScrollDelay);
-          this.onMouseEntered = debounce_default(this._onMouseEntered, this.stopScrollDelay);
+          this.onMouseMove = (0, import_throttle.default)(this._onMouseMove, 64);
+          this.onWindowResize = (0, import_debounce.default)(this._onWindowResize, 64, { leading: true });
+          this.onStopScrolling = (0, import_debounce.default)(this._onStopScrolling, this.stopScrollDelay);
+          this.onMouseEntered = (0, import_debounce.default)(this._onMouseEntered, this.stopScrollDelay);
           this.init();
         }
         SimpleBarCore2.getRtlHelpers = function() {
@@ -9288,8 +9266,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         animate() {
           if (this.isDestroyed || this.startTime === null)
             return;
-          const now2 = performance.now();
-          const elapsed = now2 - this.startTime;
+          const now = performance.now();
+          const elapsed = now - this.startTime;
           const t = Math.min(elapsed / this.duration, 1);
           const startValue = this.reversed ? this.to : this.from;
           const endValue = this.reversed ? this.from : this.to;
@@ -9535,9 +9513,19 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       const MediaImage = document.querySelector(
         "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage"
       );
-      MediaBox_Data.Functions.Eventify(MediaImage);
-      MediaBox.addEventListener("mouseenter", MediaBox_Data.Functions.MouseIn);
-      MediaBox.addEventListener("mouseleave", MediaBox_Data.Functions.MouseOut);
+      if (MediaBox && MediaImage) {
+        MediaBox_Data.Functions.Eventify(MediaImage);
+        MediaBox.removeEventListener(
+          "mouseenter",
+          MediaBox_Data.Functions.MouseIn
+        );
+        MediaBox.removeEventListener(
+          "mouseleave",
+          MediaBox_Data.Functions.MouseOut
+        );
+        MediaBox.addEventListener("mouseenter", MediaBox_Data.Functions.MouseIn);
+        MediaBox.addEventListener("mouseleave", MediaBox_Data.Functions.MouseOut);
+      }
       Global_default.Event.evoke("fullscreen:open", null);
     }
   }
@@ -9551,7 +9539,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       if (document.fullscreenElement) {
         document.exitFullscreen();
       }
-      const NoLyrics = storage_default.get("currentLyricsData")?.includes("NO_LYRICS");
+      const currentLyrics = storage_default.get("currentLyricsData");
+      const NoLyrics = typeof currentLyrics === "string" && currentLyrics.includes("NO_LYRICS");
       if (NoLyrics) {
         OpenNowBar();
         document.querySelector("#SpicyLyricsPage .ContentBox .LyricsContainer").classList.add("Hidden");
@@ -9564,12 +9553,19 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       const MediaImage = document.querySelector(
         "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage"
       );
-      MediaBox.removeEventListener("mouseenter", MediaBox_Data.Functions.MouseIn);
-      MediaBox.removeEventListener(
-        "mouseleave",
-        MediaBox_Data.Functions.MouseOut
-      );
-      MediaBox_Data.Functions.Reset(MediaImage);
+      if (MediaBox) {
+        MediaBox.removeEventListener(
+          "mouseenter",
+          MediaBox_Data.Functions.MouseIn
+        );
+        MediaBox.removeEventListener(
+          "mouseleave",
+          MediaBox_Data.Functions.MouseOut
+        );
+      }
+      if (MediaImage) {
+        MediaBox_Data.Functions.Reset(MediaImage);
+      }
       Global_default.Event.evoke("fullscreen:exit", null);
     }
   }
@@ -9599,6 +9595,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         Toggle,
         IsOpen: false
       };
+      document.addEventListener("fullscreenchange", () => {
+        Fullscreen.IsOpen = !!document.fullscreenElement;
+      });
       MediaBox_Data = {
         Eventified: false,
         Functions: {
@@ -12082,6 +12081,254 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return curatedHistory;
   }
+  function listFilesConfigToMldev(apiClient, fromObject, parentObject) {
+    const toObject = {};
+    const fromPageSize = getValueByPath(fromObject, ["pageSize"]);
+    if (parentObject !== void 0 && fromPageSize != null) {
+      setValueByPath(parentObject, ["_query", "pageSize"], fromPageSize);
+    }
+    const fromPageToken = getValueByPath(fromObject, ["pageToken"]);
+    if (parentObject !== void 0 && fromPageToken != null) {
+      setValueByPath(parentObject, ["_query", "pageToken"], fromPageToken);
+    }
+    return toObject;
+  }
+  function listFilesParametersToMldev(apiClient, fromObject) {
+    const toObject = {};
+    const fromConfig = getValueByPath(fromObject, ["config"]);
+    if (fromConfig != null) {
+      setValueByPath(toObject, ["config"], listFilesConfigToMldev(apiClient, fromConfig, toObject));
+    }
+    return toObject;
+  }
+  function fileStatusToMldev(apiClient, fromObject) {
+    const toObject = {};
+    const fromDetails = getValueByPath(fromObject, ["details"]);
+    if (fromDetails != null) {
+      setValueByPath(toObject, ["details"], fromDetails);
+    }
+    const fromMessage = getValueByPath(fromObject, ["message"]);
+    if (fromMessage != null) {
+      setValueByPath(toObject, ["message"], fromMessage);
+    }
+    const fromCode = getValueByPath(fromObject, ["code"]);
+    if (fromCode != null) {
+      setValueByPath(toObject, ["code"], fromCode);
+    }
+    return toObject;
+  }
+  function fileToMldev(apiClient, fromObject) {
+    const toObject = {};
+    const fromName = getValueByPath(fromObject, ["name"]);
+    if (fromName != null) {
+      setValueByPath(toObject, ["name"], fromName);
+    }
+    const fromDisplayName = getValueByPath(fromObject, ["displayName"]);
+    if (fromDisplayName != null) {
+      setValueByPath(toObject, ["displayName"], fromDisplayName);
+    }
+    const fromMimeType = getValueByPath(fromObject, ["mimeType"]);
+    if (fromMimeType != null) {
+      setValueByPath(toObject, ["mimeType"], fromMimeType);
+    }
+    const fromSizeBytes = getValueByPath(fromObject, ["sizeBytes"]);
+    if (fromSizeBytes != null) {
+      setValueByPath(toObject, ["sizeBytes"], fromSizeBytes);
+    }
+    const fromCreateTime = getValueByPath(fromObject, ["createTime"]);
+    if (fromCreateTime != null) {
+      setValueByPath(toObject, ["createTime"], fromCreateTime);
+    }
+    const fromExpirationTime = getValueByPath(fromObject, [
+      "expirationTime"
+    ]);
+    if (fromExpirationTime != null) {
+      setValueByPath(toObject, ["expirationTime"], fromExpirationTime);
+    }
+    const fromUpdateTime = getValueByPath(fromObject, ["updateTime"]);
+    if (fromUpdateTime != null) {
+      setValueByPath(toObject, ["updateTime"], fromUpdateTime);
+    }
+    const fromSha256Hash = getValueByPath(fromObject, ["sha256Hash"]);
+    if (fromSha256Hash != null) {
+      setValueByPath(toObject, ["sha256Hash"], fromSha256Hash);
+    }
+    const fromUri = getValueByPath(fromObject, ["uri"]);
+    if (fromUri != null) {
+      setValueByPath(toObject, ["uri"], fromUri);
+    }
+    const fromDownloadUri = getValueByPath(fromObject, ["downloadUri"]);
+    if (fromDownloadUri != null) {
+      setValueByPath(toObject, ["downloadUri"], fromDownloadUri);
+    }
+    const fromState = getValueByPath(fromObject, ["state"]);
+    if (fromState != null) {
+      setValueByPath(toObject, ["state"], fromState);
+    }
+    const fromSource = getValueByPath(fromObject, ["source"]);
+    if (fromSource != null) {
+      setValueByPath(toObject, ["source"], fromSource);
+    }
+    const fromVideoMetadata = getValueByPath(fromObject, [
+      "videoMetadata"
+    ]);
+    if (fromVideoMetadata != null) {
+      setValueByPath(toObject, ["videoMetadata"], fromVideoMetadata);
+    }
+    const fromError = getValueByPath(fromObject, ["error"]);
+    if (fromError != null) {
+      setValueByPath(toObject, ["error"], fileStatusToMldev(apiClient, fromError));
+    }
+    return toObject;
+  }
+  function createFileParametersToMldev(apiClient, fromObject) {
+    const toObject = {};
+    const fromFile = getValueByPath(fromObject, ["file"]);
+    if (fromFile != null) {
+      setValueByPath(toObject, ["file"], fileToMldev(apiClient, fromFile));
+    }
+    const fromConfig = getValueByPath(fromObject, ["config"]);
+    if (fromConfig != null) {
+      setValueByPath(toObject, ["config"], fromConfig);
+    }
+    return toObject;
+  }
+  function getFileParametersToMldev(apiClient, fromObject) {
+    const toObject = {};
+    const fromName = getValueByPath(fromObject, ["name"]);
+    if (fromName != null) {
+      setValueByPath(toObject, ["_url", "file"], tFileName(apiClient, fromName));
+    }
+    const fromConfig = getValueByPath(fromObject, ["config"]);
+    if (fromConfig != null) {
+      setValueByPath(toObject, ["config"], fromConfig);
+    }
+    return toObject;
+  }
+  function deleteFileParametersToMldev(apiClient, fromObject) {
+    const toObject = {};
+    const fromName = getValueByPath(fromObject, ["name"]);
+    if (fromName != null) {
+      setValueByPath(toObject, ["_url", "file"], tFileName(apiClient, fromName));
+    }
+    const fromConfig = getValueByPath(fromObject, ["config"]);
+    if (fromConfig != null) {
+      setValueByPath(toObject, ["config"], fromConfig);
+    }
+    return toObject;
+  }
+  function fileStatusFromMldev(apiClient, fromObject) {
+    const toObject = {};
+    const fromDetails = getValueByPath(fromObject, ["details"]);
+    if (fromDetails != null) {
+      setValueByPath(toObject, ["details"], fromDetails);
+    }
+    const fromMessage = getValueByPath(fromObject, ["message"]);
+    if (fromMessage != null) {
+      setValueByPath(toObject, ["message"], fromMessage);
+    }
+    const fromCode = getValueByPath(fromObject, ["code"]);
+    if (fromCode != null) {
+      setValueByPath(toObject, ["code"], fromCode);
+    }
+    return toObject;
+  }
+  function fileFromMldev(apiClient, fromObject) {
+    const toObject = {};
+    const fromName = getValueByPath(fromObject, ["name"]);
+    if (fromName != null) {
+      setValueByPath(toObject, ["name"], fromName);
+    }
+    const fromDisplayName = getValueByPath(fromObject, ["displayName"]);
+    if (fromDisplayName != null) {
+      setValueByPath(toObject, ["displayName"], fromDisplayName);
+    }
+    const fromMimeType = getValueByPath(fromObject, ["mimeType"]);
+    if (fromMimeType != null) {
+      setValueByPath(toObject, ["mimeType"], fromMimeType);
+    }
+    const fromSizeBytes = getValueByPath(fromObject, ["sizeBytes"]);
+    if (fromSizeBytes != null) {
+      setValueByPath(toObject, ["sizeBytes"], fromSizeBytes);
+    }
+    const fromCreateTime = getValueByPath(fromObject, ["createTime"]);
+    if (fromCreateTime != null) {
+      setValueByPath(toObject, ["createTime"], fromCreateTime);
+    }
+    const fromExpirationTime = getValueByPath(fromObject, [
+      "expirationTime"
+    ]);
+    if (fromExpirationTime != null) {
+      setValueByPath(toObject, ["expirationTime"], fromExpirationTime);
+    }
+    const fromUpdateTime = getValueByPath(fromObject, ["updateTime"]);
+    if (fromUpdateTime != null) {
+      setValueByPath(toObject, ["updateTime"], fromUpdateTime);
+    }
+    const fromSha256Hash = getValueByPath(fromObject, ["sha256Hash"]);
+    if (fromSha256Hash != null) {
+      setValueByPath(toObject, ["sha256Hash"], fromSha256Hash);
+    }
+    const fromUri = getValueByPath(fromObject, ["uri"]);
+    if (fromUri != null) {
+      setValueByPath(toObject, ["uri"], fromUri);
+    }
+    const fromDownloadUri = getValueByPath(fromObject, ["downloadUri"]);
+    if (fromDownloadUri != null) {
+      setValueByPath(toObject, ["downloadUri"], fromDownloadUri);
+    }
+    const fromState = getValueByPath(fromObject, ["state"]);
+    if (fromState != null) {
+      setValueByPath(toObject, ["state"], fromState);
+    }
+    const fromSource = getValueByPath(fromObject, ["source"]);
+    if (fromSource != null) {
+      setValueByPath(toObject, ["source"], fromSource);
+    }
+    const fromVideoMetadata = getValueByPath(fromObject, [
+      "videoMetadata"
+    ]);
+    if (fromVideoMetadata != null) {
+      setValueByPath(toObject, ["videoMetadata"], fromVideoMetadata);
+    }
+    const fromError = getValueByPath(fromObject, ["error"]);
+    if (fromError != null) {
+      setValueByPath(toObject, ["error"], fileStatusFromMldev(apiClient, fromError));
+    }
+    return toObject;
+  }
+  function listFilesResponseFromMldev(apiClient, fromObject) {
+    const toObject = {};
+    const fromNextPageToken = getValueByPath(fromObject, [
+      "nextPageToken"
+    ]);
+    if (fromNextPageToken != null) {
+      setValueByPath(toObject, ["nextPageToken"], fromNextPageToken);
+    }
+    const fromFiles = getValueByPath(fromObject, ["files"]);
+    if (fromFiles != null) {
+      if (Array.isArray(fromFiles)) {
+        setValueByPath(toObject, ["files"], fromFiles.map((item) => {
+          return fileFromMldev(apiClient, item);
+        }));
+      } else {
+        setValueByPath(toObject, ["files"], fromFiles);
+      }
+    }
+    return toObject;
+  }
+  function createFileResponseFromMldev(apiClient, fromObject) {
+    const toObject = {};
+    const fromHttpHeaders = getValueByPath(fromObject, ["httpHeaders"]);
+    if (fromHttpHeaders != null) {
+      setValueByPath(toObject, ["httpHeaders"], fromHttpHeaders);
+    }
+    return toObject;
+  }
+  function deleteFileResponseFromMldev() {
+    const toObject = {};
+    return toObject;
+  }
   function partToMldev(apiClient, fromObject) {
     const toObject = {};
     if (getValueByPath(fromObject, ["videoMetadata"]) !== void 0) {
@@ -12387,6 +12634,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (fromIncludeThoughts != null) {
       setValueByPath(toObject, ["includeThoughts"], fromIncludeThoughts);
     }
+    const fromThinkingBudget = getValueByPath(fromObject, [
+      "thinkingBudget"
+    ]);
+    if (fromThinkingBudget != null) {
+      setValueByPath(toObject, ["thinkingBudget"], fromThinkingBudget);
+    }
     return toObject;
   }
   function generateContentConfigToMldev(apiClient, fromObject, parentObject) {
@@ -12687,6 +12940,18 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
+  function getModelParametersToMldev(apiClient, fromObject) {
+    const toObject = {};
+    const fromModel = getValueByPath(fromObject, ["model"]);
+    if (fromModel != null) {
+      setValueByPath(toObject, ["_url", "name"], tModel(apiClient, fromModel));
+    }
+    const fromConfig = getValueByPath(fromObject, ["config"]);
+    if (fromConfig != null) {
+      setValueByPath(toObject, ["config"], fromConfig);
+    }
+    return toObject;
+  }
   function countTokensConfigToMldev(apiClient, fromObject) {
     const toObject = {};
     if (getValueByPath(fromObject, ["systemInstruction"]) !== void 0) {
@@ -12719,6 +12984,91 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const fromConfig = getValueByPath(fromObject, ["config"]);
     if (fromConfig != null) {
       setValueByPath(toObject, ["config"], countTokensConfigToMldev(apiClient, fromConfig));
+    }
+    return toObject;
+  }
+  function imageToMldev(apiClient, fromObject) {
+    const toObject = {};
+    if (getValueByPath(fromObject, ["gcsUri"]) !== void 0) {
+      throw new Error("gcsUri parameter is not supported in Gemini API.");
+    }
+    const fromImageBytes = getValueByPath(fromObject, ["imageBytes"]);
+    if (fromImageBytes != null) {
+      setValueByPath(toObject, ["bytesBase64Encoded"], tBytes(apiClient, fromImageBytes));
+    }
+    const fromMimeType = getValueByPath(fromObject, ["mimeType"]);
+    if (fromMimeType != null) {
+      setValueByPath(toObject, ["mimeType"], fromMimeType);
+    }
+    return toObject;
+  }
+  function generateVideosConfigToMldev(apiClient, fromObject, parentObject) {
+    const toObject = {};
+    const fromNumberOfVideos = getValueByPath(fromObject, [
+      "numberOfVideos"
+    ]);
+    if (parentObject !== void 0 && fromNumberOfVideos != null) {
+      setValueByPath(parentObject, ["parameters", "sampleCount"], fromNumberOfVideos);
+    }
+    if (getValueByPath(fromObject, ["outputGcsUri"]) !== void 0) {
+      throw new Error("outputGcsUri parameter is not supported in Gemini API.");
+    }
+    if (getValueByPath(fromObject, ["fps"]) !== void 0) {
+      throw new Error("fps parameter is not supported in Gemini API.");
+    }
+    const fromDurationSeconds = getValueByPath(fromObject, [
+      "durationSeconds"
+    ]);
+    if (parentObject !== void 0 && fromDurationSeconds != null) {
+      setValueByPath(parentObject, ["parameters", "durationSeconds"], fromDurationSeconds);
+    }
+    if (getValueByPath(fromObject, ["seed"]) !== void 0) {
+      throw new Error("seed parameter is not supported in Gemini API.");
+    }
+    const fromAspectRatio = getValueByPath(fromObject, ["aspectRatio"]);
+    if (parentObject !== void 0 && fromAspectRatio != null) {
+      setValueByPath(parentObject, ["parameters", "aspectRatio"], fromAspectRatio);
+    }
+    if (getValueByPath(fromObject, ["resolution"]) !== void 0) {
+      throw new Error("resolution parameter is not supported in Gemini API.");
+    }
+    const fromPersonGeneration = getValueByPath(fromObject, [
+      "personGeneration"
+    ]);
+    if (parentObject !== void 0 && fromPersonGeneration != null) {
+      setValueByPath(parentObject, ["parameters", "personGeneration"], fromPersonGeneration);
+    }
+    if (getValueByPath(fromObject, ["pubsubTopic"]) !== void 0) {
+      throw new Error("pubsubTopic parameter is not supported in Gemini API.");
+    }
+    const fromNegativePrompt = getValueByPath(fromObject, [
+      "negativePrompt"
+    ]);
+    if (parentObject !== void 0 && fromNegativePrompt != null) {
+      setValueByPath(parentObject, ["parameters", "negativePrompt"], fromNegativePrompt);
+    }
+    if (getValueByPath(fromObject, ["enhancePrompt"]) !== void 0) {
+      throw new Error("enhancePrompt parameter is not supported in Gemini API.");
+    }
+    return toObject;
+  }
+  function generateVideosParametersToMldev(apiClient, fromObject) {
+    const toObject = {};
+    const fromModel = getValueByPath(fromObject, ["model"]);
+    if (fromModel != null) {
+      setValueByPath(toObject, ["_url", "model"], tModel(apiClient, fromModel));
+    }
+    const fromPrompt = getValueByPath(fromObject, ["prompt"]);
+    if (fromPrompt != null) {
+      setValueByPath(toObject, ["instances[0]", "prompt"], fromPrompt);
+    }
+    const fromImage = getValueByPath(fromObject, ["image"]);
+    if (fromImage != null) {
+      setValueByPath(toObject, ["instances[0]", "image"], imageToMldev(apiClient, fromImage));
+    }
+    const fromConfig = getValueByPath(fromObject, ["config"]);
+    if (fromConfig != null) {
+      setValueByPath(toObject, ["config"], generateVideosConfigToMldev(apiClient, fromConfig, toObject));
     }
     return toObject;
   }
@@ -13044,6 +13394,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (fromIncludeThoughts != null) {
       setValueByPath(toObject, ["includeThoughts"], fromIncludeThoughts);
     }
+    const fromThinkingBudget = getValueByPath(fromObject, [
+      "thinkingBudget"
+    ]);
+    if (fromThinkingBudget != null) {
+      setValueByPath(toObject, ["thinkingBudget"], fromThinkingBudget);
+    }
     return toObject;
   }
   function generateContentConfigToVertex(apiClient, fromObject, parentObject) {
@@ -13358,6 +13714,18 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
+  function getModelParametersToVertex(apiClient, fromObject) {
+    const toObject = {};
+    const fromModel = getValueByPath(fromObject, ["model"]);
+    if (fromModel != null) {
+      setValueByPath(toObject, ["_url", "name"], tModel(apiClient, fromModel));
+    }
+    const fromConfig = getValueByPath(fromObject, ["config"]);
+    if (fromConfig != null) {
+      setValueByPath(toObject, ["config"], fromConfig);
+    }
+    return toObject;
+  }
   function countTokensConfigToVertex(apiClient, fromObject, parentObject) {
     const toObject = {};
     const fromSystemInstruction = getValueByPath(fromObject, [
@@ -13425,6 +13793,100 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const fromConfig = getValueByPath(fromObject, ["config"]);
     if (fromConfig != null) {
       setValueByPath(toObject, ["config"], fromConfig);
+    }
+    return toObject;
+  }
+  function imageToVertex(apiClient, fromObject) {
+    const toObject = {};
+    const fromGcsUri = getValueByPath(fromObject, ["gcsUri"]);
+    if (fromGcsUri != null) {
+      setValueByPath(toObject, ["gcsUri"], fromGcsUri);
+    }
+    const fromImageBytes = getValueByPath(fromObject, ["imageBytes"]);
+    if (fromImageBytes != null) {
+      setValueByPath(toObject, ["bytesBase64Encoded"], tBytes(apiClient, fromImageBytes));
+    }
+    const fromMimeType = getValueByPath(fromObject, ["mimeType"]);
+    if (fromMimeType != null) {
+      setValueByPath(toObject, ["mimeType"], fromMimeType);
+    }
+    return toObject;
+  }
+  function generateVideosConfigToVertex(apiClient, fromObject, parentObject) {
+    const toObject = {};
+    const fromNumberOfVideos = getValueByPath(fromObject, [
+      "numberOfVideos"
+    ]);
+    if (parentObject !== void 0 && fromNumberOfVideos != null) {
+      setValueByPath(parentObject, ["parameters", "sampleCount"], fromNumberOfVideos);
+    }
+    const fromOutputGcsUri = getValueByPath(fromObject, ["outputGcsUri"]);
+    if (parentObject !== void 0 && fromOutputGcsUri != null) {
+      setValueByPath(parentObject, ["parameters", "storageUri"], fromOutputGcsUri);
+    }
+    const fromFps = getValueByPath(fromObject, ["fps"]);
+    if (parentObject !== void 0 && fromFps != null) {
+      setValueByPath(parentObject, ["parameters", "fps"], fromFps);
+    }
+    const fromDurationSeconds = getValueByPath(fromObject, [
+      "durationSeconds"
+    ]);
+    if (parentObject !== void 0 && fromDurationSeconds != null) {
+      setValueByPath(parentObject, ["parameters", "durationSeconds"], fromDurationSeconds);
+    }
+    const fromSeed = getValueByPath(fromObject, ["seed"]);
+    if (parentObject !== void 0 && fromSeed != null) {
+      setValueByPath(parentObject, ["parameters", "seed"], fromSeed);
+    }
+    const fromAspectRatio = getValueByPath(fromObject, ["aspectRatio"]);
+    if (parentObject !== void 0 && fromAspectRatio != null) {
+      setValueByPath(parentObject, ["parameters", "aspectRatio"], fromAspectRatio);
+    }
+    const fromResolution = getValueByPath(fromObject, ["resolution"]);
+    if (parentObject !== void 0 && fromResolution != null) {
+      setValueByPath(parentObject, ["parameters", "resolution"], fromResolution);
+    }
+    const fromPersonGeneration = getValueByPath(fromObject, [
+      "personGeneration"
+    ]);
+    if (parentObject !== void 0 && fromPersonGeneration != null) {
+      setValueByPath(parentObject, ["parameters", "personGeneration"], fromPersonGeneration);
+    }
+    const fromPubsubTopic = getValueByPath(fromObject, ["pubsubTopic"]);
+    if (parentObject !== void 0 && fromPubsubTopic != null) {
+      setValueByPath(parentObject, ["parameters", "pubsubTopic"], fromPubsubTopic);
+    }
+    const fromNegativePrompt = getValueByPath(fromObject, [
+      "negativePrompt"
+    ]);
+    if (parentObject !== void 0 && fromNegativePrompt != null) {
+      setValueByPath(parentObject, ["parameters", "negativePrompt"], fromNegativePrompt);
+    }
+    const fromEnhancePrompt = getValueByPath(fromObject, [
+      "enhancePrompt"
+    ]);
+    if (parentObject !== void 0 && fromEnhancePrompt != null) {
+      setValueByPath(parentObject, ["parameters", "enhancePrompt"], fromEnhancePrompt);
+    }
+    return toObject;
+  }
+  function generateVideosParametersToVertex(apiClient, fromObject) {
+    const toObject = {};
+    const fromModel = getValueByPath(fromObject, ["model"]);
+    if (fromModel != null) {
+      setValueByPath(toObject, ["_url", "model"], tModel(apiClient, fromModel));
+    }
+    const fromPrompt = getValueByPath(fromObject, ["prompt"]);
+    if (fromPrompt != null) {
+      setValueByPath(toObject, ["instances[0]", "prompt"], fromPrompt);
+    }
+    const fromImage = getValueByPath(fromObject, ["image"]);
+    if (fromImage != null) {
+      setValueByPath(toObject, ["instances[0]", "image"], imageToVertex(apiClient, fromImage));
+    }
+    const fromConfig = getValueByPath(fromObject, ["config"]);
+    if (fromConfig != null) {
+      setValueByPath(toObject, ["config"], generateVideosConfigToVertex(apiClient, fromConfig, toObject));
     }
     return toObject;
   }
@@ -13680,6 +14142,64 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
+  function tunedModelInfoFromMldev(apiClient, fromObject) {
+    const toObject = {};
+    const fromBaseModel = getValueByPath(fromObject, ["baseModel"]);
+    if (fromBaseModel != null) {
+      setValueByPath(toObject, ["baseModel"], fromBaseModel);
+    }
+    const fromCreateTime = getValueByPath(fromObject, ["createTime"]);
+    if (fromCreateTime != null) {
+      setValueByPath(toObject, ["createTime"], fromCreateTime);
+    }
+    const fromUpdateTime = getValueByPath(fromObject, ["updateTime"]);
+    if (fromUpdateTime != null) {
+      setValueByPath(toObject, ["updateTime"], fromUpdateTime);
+    }
+    return toObject;
+  }
+  function modelFromMldev(apiClient, fromObject) {
+    const toObject = {};
+    const fromName = getValueByPath(fromObject, ["name"]);
+    if (fromName != null) {
+      setValueByPath(toObject, ["name"], fromName);
+    }
+    const fromDisplayName = getValueByPath(fromObject, ["displayName"]);
+    if (fromDisplayName != null) {
+      setValueByPath(toObject, ["displayName"], fromDisplayName);
+    }
+    const fromDescription = getValueByPath(fromObject, ["description"]);
+    if (fromDescription != null) {
+      setValueByPath(toObject, ["description"], fromDescription);
+    }
+    const fromVersion = getValueByPath(fromObject, ["version"]);
+    if (fromVersion != null) {
+      setValueByPath(toObject, ["version"], fromVersion);
+    }
+    const fromTunedModelInfo = getValueByPath(fromObject, ["_self"]);
+    if (fromTunedModelInfo != null) {
+      setValueByPath(toObject, ["tunedModelInfo"], tunedModelInfoFromMldev(apiClient, fromTunedModelInfo));
+    }
+    const fromInputTokenLimit = getValueByPath(fromObject, [
+      "inputTokenLimit"
+    ]);
+    if (fromInputTokenLimit != null) {
+      setValueByPath(toObject, ["inputTokenLimit"], fromInputTokenLimit);
+    }
+    const fromOutputTokenLimit = getValueByPath(fromObject, [
+      "outputTokenLimit"
+    ]);
+    if (fromOutputTokenLimit != null) {
+      setValueByPath(toObject, ["outputTokenLimit"], fromOutputTokenLimit);
+    }
+    const fromSupportedActions = getValueByPath(fromObject, [
+      "supportedGenerationMethods"
+    ]);
+    if (fromSupportedActions != null) {
+      setValueByPath(toObject, ["supportedActions"], fromSupportedActions);
+    }
+    return toObject;
+  }
   function countTokensResponseFromMldev(apiClient, fromObject) {
     const toObject = {};
     const fromTotalTokens = getValueByPath(fromObject, ["totalTokens"]);
@@ -13691,6 +14211,95 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ]);
     if (fromCachedContentTokenCount != null) {
       setValueByPath(toObject, ["cachedContentTokenCount"], fromCachedContentTokenCount);
+    }
+    return toObject;
+  }
+  function videoFromMldev$1(apiClient, fromObject) {
+    const toObject = {};
+    const fromUri = getValueByPath(fromObject, ["video", "uri"]);
+    if (fromUri != null) {
+      setValueByPath(toObject, ["uri"], fromUri);
+    }
+    const fromVideoBytes = getValueByPath(fromObject, [
+      "video",
+      "encodedVideo"
+    ]);
+    if (fromVideoBytes != null) {
+      setValueByPath(toObject, ["videoBytes"], tBytes(apiClient, fromVideoBytes));
+    }
+    const fromMimeType = getValueByPath(fromObject, ["encoding"]);
+    if (fromMimeType != null) {
+      setValueByPath(toObject, ["mimeType"], fromMimeType);
+    }
+    return toObject;
+  }
+  function generatedVideoFromMldev$1(apiClient, fromObject) {
+    const toObject = {};
+    const fromVideo = getValueByPath(fromObject, ["_self"]);
+    if (fromVideo != null) {
+      setValueByPath(toObject, ["video"], videoFromMldev$1(apiClient, fromVideo));
+    }
+    return toObject;
+  }
+  function generateVideosResponseFromMldev$1(apiClient, fromObject) {
+    const toObject = {};
+    const fromGeneratedVideos = getValueByPath(fromObject, [
+      "generatedSamples"
+    ]);
+    if (fromGeneratedVideos != null) {
+      if (Array.isArray(fromGeneratedVideos)) {
+        setValueByPath(toObject, ["generatedVideos"], fromGeneratedVideos.map((item) => {
+          return generatedVideoFromMldev$1(apiClient, item);
+        }));
+      } else {
+        setValueByPath(toObject, ["generatedVideos"], fromGeneratedVideos);
+      }
+    }
+    const fromRaiMediaFilteredCount = getValueByPath(fromObject, [
+      "raiMediaFilteredCount"
+    ]);
+    if (fromRaiMediaFilteredCount != null) {
+      setValueByPath(toObject, ["raiMediaFilteredCount"], fromRaiMediaFilteredCount);
+    }
+    const fromRaiMediaFilteredReasons = getValueByPath(fromObject, [
+      "raiMediaFilteredReasons"
+    ]);
+    if (fromRaiMediaFilteredReasons != null) {
+      setValueByPath(toObject, ["raiMediaFilteredReasons"], fromRaiMediaFilteredReasons);
+    }
+    return toObject;
+  }
+  function generateVideosOperationFromMldev$1(apiClient, fromObject) {
+    const toObject = {};
+    const fromName = getValueByPath(fromObject, ["name"]);
+    if (fromName != null) {
+      setValueByPath(toObject, ["name"], fromName);
+    }
+    const fromMetadata = getValueByPath(fromObject, ["metadata"]);
+    if (fromMetadata != null) {
+      setValueByPath(toObject, ["metadata"], fromMetadata);
+    }
+    const fromDone = getValueByPath(fromObject, ["done"]);
+    if (fromDone != null) {
+      setValueByPath(toObject, ["done"], fromDone);
+    }
+    const fromError = getValueByPath(fromObject, ["error"]);
+    if (fromError != null) {
+      setValueByPath(toObject, ["error"], fromError);
+    }
+    const fromResponse = getValueByPath(fromObject, [
+      "response",
+      "generateVideoResponse"
+    ]);
+    if (fromResponse != null) {
+      setValueByPath(toObject, ["response"], generateVideosResponseFromMldev$1(apiClient, fromResponse));
+    }
+    const fromResult = getValueByPath(fromObject, [
+      "response",
+      "generateVideoResponse"
+    ]);
+    if (fromResult != null) {
+      setValueByPath(toObject, ["result"], generateVideosResponseFromMldev$1(apiClient, fromResult));
     }
     return toObject;
   }
@@ -13995,6 +14604,77 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
+  function endpointFromVertex(apiClient, fromObject) {
+    const toObject = {};
+    const fromName = getValueByPath(fromObject, ["endpoint"]);
+    if (fromName != null) {
+      setValueByPath(toObject, ["name"], fromName);
+    }
+    const fromDeployedModelId = getValueByPath(fromObject, [
+      "deployedModelId"
+    ]);
+    if (fromDeployedModelId != null) {
+      setValueByPath(toObject, ["deployedModelId"], fromDeployedModelId);
+    }
+    return toObject;
+  }
+  function tunedModelInfoFromVertex(apiClient, fromObject) {
+    const toObject = {};
+    const fromBaseModel = getValueByPath(fromObject, [
+      "labels",
+      "google-vertex-llm-tuning-base-model-id"
+    ]);
+    if (fromBaseModel != null) {
+      setValueByPath(toObject, ["baseModel"], fromBaseModel);
+    }
+    const fromCreateTime = getValueByPath(fromObject, ["createTime"]);
+    if (fromCreateTime != null) {
+      setValueByPath(toObject, ["createTime"], fromCreateTime);
+    }
+    const fromUpdateTime = getValueByPath(fromObject, ["updateTime"]);
+    if (fromUpdateTime != null) {
+      setValueByPath(toObject, ["updateTime"], fromUpdateTime);
+    }
+    return toObject;
+  }
+  function modelFromVertex(apiClient, fromObject) {
+    const toObject = {};
+    const fromName = getValueByPath(fromObject, ["name"]);
+    if (fromName != null) {
+      setValueByPath(toObject, ["name"], fromName);
+    }
+    const fromDisplayName = getValueByPath(fromObject, ["displayName"]);
+    if (fromDisplayName != null) {
+      setValueByPath(toObject, ["displayName"], fromDisplayName);
+    }
+    const fromDescription = getValueByPath(fromObject, ["description"]);
+    if (fromDescription != null) {
+      setValueByPath(toObject, ["description"], fromDescription);
+    }
+    const fromVersion = getValueByPath(fromObject, ["versionId"]);
+    if (fromVersion != null) {
+      setValueByPath(toObject, ["version"], fromVersion);
+    }
+    const fromEndpoints = getValueByPath(fromObject, ["deployedModels"]);
+    if (fromEndpoints != null) {
+      if (Array.isArray(fromEndpoints)) {
+        setValueByPath(toObject, ["endpoints"], fromEndpoints.map((item) => {
+          return endpointFromVertex(apiClient, item);
+        }));
+      } else {
+        setValueByPath(toObject, ["endpoints"], fromEndpoints);
+      }
+    }
+    const fromLabels = getValueByPath(fromObject, ["labels"]);
+    if (fromLabels != null) {
+      setValueByPath(toObject, ["labels"], fromLabels);
+    }
+    const fromTunedModelInfo = getValueByPath(fromObject, ["_self"]);
+    if (fromTunedModelInfo != null) {
+      setValueByPath(toObject, ["tunedModelInfo"], tunedModelInfoFromVertex(apiClient, fromTunedModelInfo));
+    }
+    return toObject;
+  }
   function countTokensResponseFromVertex(apiClient, fromObject) {
     const toObject = {};
     const fromTotalTokens = getValueByPath(fromObject, ["totalTokens"]);
@@ -14008,6 +14688,86 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const fromTokensInfo = getValueByPath(fromObject, ["tokensInfo"]);
     if (fromTokensInfo != null) {
       setValueByPath(toObject, ["tokensInfo"], fromTokensInfo);
+    }
+    return toObject;
+  }
+  function videoFromVertex$1(apiClient, fromObject) {
+    const toObject = {};
+    const fromUri = getValueByPath(fromObject, ["gcsUri"]);
+    if (fromUri != null) {
+      setValueByPath(toObject, ["uri"], fromUri);
+    }
+    const fromVideoBytes = getValueByPath(fromObject, [
+      "bytesBase64Encoded"
+    ]);
+    if (fromVideoBytes != null) {
+      setValueByPath(toObject, ["videoBytes"], tBytes(apiClient, fromVideoBytes));
+    }
+    const fromMimeType = getValueByPath(fromObject, ["mimeType"]);
+    if (fromMimeType != null) {
+      setValueByPath(toObject, ["mimeType"], fromMimeType);
+    }
+    return toObject;
+  }
+  function generatedVideoFromVertex$1(apiClient, fromObject) {
+    const toObject = {};
+    const fromVideo = getValueByPath(fromObject, ["_self"]);
+    if (fromVideo != null) {
+      setValueByPath(toObject, ["video"], videoFromVertex$1(apiClient, fromVideo));
+    }
+    return toObject;
+  }
+  function generateVideosResponseFromVertex$1(apiClient, fromObject) {
+    const toObject = {};
+    const fromGeneratedVideos = getValueByPath(fromObject, ["videos"]);
+    if (fromGeneratedVideos != null) {
+      if (Array.isArray(fromGeneratedVideos)) {
+        setValueByPath(toObject, ["generatedVideos"], fromGeneratedVideos.map((item) => {
+          return generatedVideoFromVertex$1(apiClient, item);
+        }));
+      } else {
+        setValueByPath(toObject, ["generatedVideos"], fromGeneratedVideos);
+      }
+    }
+    const fromRaiMediaFilteredCount = getValueByPath(fromObject, [
+      "raiMediaFilteredCount"
+    ]);
+    if (fromRaiMediaFilteredCount != null) {
+      setValueByPath(toObject, ["raiMediaFilteredCount"], fromRaiMediaFilteredCount);
+    }
+    const fromRaiMediaFilteredReasons = getValueByPath(fromObject, [
+      "raiMediaFilteredReasons"
+    ]);
+    if (fromRaiMediaFilteredReasons != null) {
+      setValueByPath(toObject, ["raiMediaFilteredReasons"], fromRaiMediaFilteredReasons);
+    }
+    return toObject;
+  }
+  function generateVideosOperationFromVertex$1(apiClient, fromObject) {
+    const toObject = {};
+    const fromName = getValueByPath(fromObject, ["name"]);
+    if (fromName != null) {
+      setValueByPath(toObject, ["name"], fromName);
+    }
+    const fromMetadata = getValueByPath(fromObject, ["metadata"]);
+    if (fromMetadata != null) {
+      setValueByPath(toObject, ["metadata"], fromMetadata);
+    }
+    const fromDone = getValueByPath(fromObject, ["done"]);
+    if (fromDone != null) {
+      setValueByPath(toObject, ["done"], fromDone);
+    }
+    const fromError = getValueByPath(fromObject, ["error"]);
+    if (fromError != null) {
+      setValueByPath(toObject, ["error"], fromError);
+    }
+    const fromResponse = getValueByPath(fromObject, ["response"]);
+    if (fromResponse != null) {
+      setValueByPath(toObject, ["response"], generateVideosResponseFromVertex$1(apiClient, fromResponse));
+    }
+    const fromResult = getValueByPath(fromObject, ["response"]);
+    if (fromResult != null) {
+      setValueByPath(toObject, ["result"], generateVideosResponseFromVertex$1(apiClient, fromResult));
     }
     return toObject;
   }
@@ -14059,6 +14819,22 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (fromToolCallCancellation !== void 0 && fromToolCallCancellation !== null) {
       setValueByPath(toObject, ["toolCallCancellation"], liveServerToolCallCancellationFromMldev(apiClient, fromToolCallCancellation));
     }
+    const fromUsageMetadata = getValueByPath(fromObject, [
+      "usageMetadata"
+    ]);
+    if (fromUsageMetadata != void 0 && fromUsageMetadata != null) {
+      setValueByPath(toObject, ["usageMetadata"], usageMetadataFromMldev(apiClient, fromUsageMetadata));
+    }
+    const fromGoAway = getValueByPath(fromObject, ["goAway"]);
+    if (fromGoAway !== void 0 && fromGoAway !== null) {
+      setValueByPath(toObject, ["goAway"], liveServerGoAwayFromMldev(fromGoAway));
+    }
+    const fromSessionResumptionUpdate = getValueByPath(fromObject, [
+      "sessionResumptionUpdate"
+    ]);
+    if (fromSessionResumptionUpdate !== void 0 && fromSessionResumptionUpdate !== null) {
+      setValueByPath(toObject, ["sessionResumptionUpdate"], liveServerSessionResumptionUpdateFromMldev(fromSessionResumptionUpdate));
+    }
     return toObject;
   }
   function liveServerMessageFromVertex(apiClient, fromObject) {
@@ -14084,6 +14860,174 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ]);
     if (fromToolCallCancellation !== void 0 && fromToolCallCancellation !== null) {
       setValueByPath(toObject, ["toolCallCancellation"], liveServerToolCallCancellationFromVertex(apiClient, fromToolCallCancellation));
+    }
+    const fromGoAway = getValueByPath(fromObject, ["goAway"]);
+    if (fromGoAway !== void 0 && fromGoAway !== null) {
+      setValueByPath(toObject, ["goAway"], liveServerGoAwayFromVertex(fromGoAway));
+    }
+    const fromSessionResumptionUpdate = getValueByPath(fromObject, [
+      "sessionResumptionUpdate"
+    ]);
+    if (fromSessionResumptionUpdate !== void 0 && fromSessionResumptionUpdate !== null) {
+      setValueByPath(toObject, ["sessionResumptionUpdate"], liveServerSessionResumptionUpdateFromVertex(fromSessionResumptionUpdate));
+    }
+    const fromUsageMetadata = getValueByPath(fromObject, [
+      "usageMetadata"
+    ]);
+    if (fromUsageMetadata != void 0 && fromUsageMetadata != null) {
+      setValueByPath(toObject, ["usageMetadata"], usageMetadataFromVertex(apiClient, fromUsageMetadata));
+    }
+    return toObject;
+  }
+  function slidingWindowToMldev(fromObject) {
+    const toObject = {};
+    const fromTargetTokens = getValueByPath(fromObject, ["targetTokens"]);
+    if (fromTargetTokens !== void 0 && fromTargetTokens !== null) {
+      setValueByPath(toObject, ["targetTokens"], fromTargetTokens);
+    }
+    return toObject;
+  }
+  function slidingWindowToVertex(fromObject) {
+    const toObject = {};
+    const fromTargetTokens = getValueByPath(fromObject, ["targetTokens"]);
+    if (fromTargetTokens !== void 0 && fromTargetTokens !== null) {
+      setValueByPath(toObject, ["targetTokens"], fromTargetTokens);
+    }
+    return toObject;
+  }
+  function contextWindowCompressionToMldev(fromObject) {
+    const toObject = {};
+    const fromTriggerTokens = getValueByPath(fromObject, [
+      "triggerTokens"
+    ]);
+    if (fromTriggerTokens !== void 0 && fromTriggerTokens !== null) {
+      setValueByPath(toObject, ["triggerTokens"], fromTriggerTokens);
+    }
+    const fromSlidingWindow = getValueByPath(fromObject, [
+      "slidingWindow"
+    ]);
+    if (fromSlidingWindow !== void 0 && fromSlidingWindow !== null) {
+      setValueByPath(toObject, ["slidingWindow"], slidingWindowToMldev(fromSlidingWindow));
+    }
+    return toObject;
+  }
+  function contextWindowCompressionToVertex(fromObject) {
+    const toObject = {};
+    const fromTriggerTokens = getValueByPath(fromObject, [
+      "triggerTokens"
+    ]);
+    if (fromTriggerTokens !== void 0 && fromTriggerTokens !== null) {
+      setValueByPath(toObject, ["triggerTokens"], fromTriggerTokens);
+    }
+    const fromSlidingWindow = getValueByPath(fromObject, [
+      "slidingWindow"
+    ]);
+    if (fromSlidingWindow !== void 0 && fromSlidingWindow !== null) {
+      setValueByPath(toObject, ["slidingWindow"], slidingWindowToVertex(fromSlidingWindow));
+    }
+    return toObject;
+  }
+  function automaticActivityDetectionToMldev(fromObject) {
+    const toObject = {};
+    const fromDisabled = getValueByPath(fromObject, ["disabled"]);
+    if (fromDisabled !== void 0 && fromDisabled !== null) {
+      setValueByPath(toObject, ["disabled"], fromDisabled);
+    }
+    const fromStartOfSpeechSensitivity = getValueByPath(fromObject, [
+      "startOfSpeechSensitivity"
+    ]);
+    if (fromStartOfSpeechSensitivity !== void 0 && fromStartOfSpeechSensitivity !== null) {
+      setValueByPath(toObject, ["startOfSpeechSensitivity"], fromStartOfSpeechSensitivity);
+    }
+    const fromEndOfSpeechSensitivity = getValueByPath(fromObject, [
+      "endOfSpeechSensitivity"
+    ]);
+    if (fromEndOfSpeechSensitivity !== void 0 && fromEndOfSpeechSensitivity !== null) {
+      setValueByPath(toObject, ["endOfSpeechSensitivity"], fromEndOfSpeechSensitivity);
+    }
+    const fromPrefixPaddingMs = getValueByPath(fromObject, [
+      "prefixPaddingMs"
+    ]);
+    if (fromPrefixPaddingMs !== void 0 && fromPrefixPaddingMs !== null) {
+      setValueByPath(toObject, ["prefixPaddingMs"], fromPrefixPaddingMs);
+    }
+    const fromSilenceDurationMs = getValueByPath(fromObject, [
+      "silenceDurationMs"
+    ]);
+    if (fromSilenceDurationMs !== void 0 && fromSilenceDurationMs !== null) {
+      setValueByPath(toObject, ["silenceDurationMs"], fromSilenceDurationMs);
+    }
+    return toObject;
+  }
+  function automaticActivityDetectionToVertex(fromObject) {
+    const toObject = {};
+    const fromDisabled = getValueByPath(fromObject, ["disabled"]);
+    if (fromDisabled !== void 0 && fromDisabled !== null) {
+      setValueByPath(toObject, ["disabled"], fromDisabled);
+    }
+    const fromStartOfSpeechSensitivity = getValueByPath(fromObject, [
+      "startOfSpeechSensitivity"
+    ]);
+    if (fromStartOfSpeechSensitivity !== void 0 && fromStartOfSpeechSensitivity !== null) {
+      setValueByPath(toObject, ["startOfSpeechSensitivity"], fromStartOfSpeechSensitivity);
+    }
+    const fromEndOfSpeechSensitivity = getValueByPath(fromObject, [
+      "endOfSpeechSensitivity"
+    ]);
+    if (fromEndOfSpeechSensitivity !== void 0 && fromEndOfSpeechSensitivity !== null) {
+      setValueByPath(toObject, ["endOfSpeechSensitivity"], fromEndOfSpeechSensitivity);
+    }
+    const fromPrefixPaddingMs = getValueByPath(fromObject, [
+      "prefixPaddingMs"
+    ]);
+    if (fromPrefixPaddingMs !== void 0 && fromPrefixPaddingMs !== null) {
+      setValueByPath(toObject, ["prefixPaddingMs"], fromPrefixPaddingMs);
+    }
+    const fromSilenceDurationMs = getValueByPath(fromObject, [
+      "silenceDurationMs"
+    ]);
+    if (fromSilenceDurationMs !== void 0 && fromSilenceDurationMs !== null) {
+      setValueByPath(toObject, ["silenceDurationMs"], fromSilenceDurationMs);
+    }
+    return toObject;
+  }
+  function realtimeInputConfigToMldev(fromObject) {
+    const toObject = {};
+    const fromAutomaticActivityDetection = getValueByPath(fromObject, [
+      "automaticActivityDetection"
+    ]);
+    if (fromAutomaticActivityDetection !== void 0 && fromAutomaticActivityDetection !== null) {
+      setValueByPath(toObject, ["automaticActivityDetection"], automaticActivityDetectionToMldev(fromAutomaticActivityDetection));
+    }
+    const fromActivityHandling = getValueByPath(fromObject, [
+      "activityHandling"
+    ]);
+    if (fromActivityHandling !== void 0 && fromActivityHandling !== null) {
+      setValueByPath(toObject, ["activityHandling"], fromActivityHandling);
+    }
+    const fromTurnCoverage = getValueByPath(fromObject, ["turnCoverage"]);
+    if (fromTurnCoverage !== void 0 && fromTurnCoverage !== null) {
+      setValueByPath(toObject, ["turnCoverage"], fromTurnCoverage);
+    }
+    return toObject;
+  }
+  function realtimeInputConfigToVertex(fromObject) {
+    const toObject = {};
+    const fromAutomaticActivityDetection = getValueByPath(fromObject, [
+      "automaticActivityDetection"
+    ]);
+    if (fromAutomaticActivityDetection !== void 0 && fromAutomaticActivityDetection !== null) {
+      setValueByPath(toObject, ["automaticActivityDetection"], automaticActivityDetectionToVertex(fromAutomaticActivityDetection));
+    }
+    const fromActivityHandling = getValueByPath(fromObject, [
+      "activityHandling"
+    ]);
+    if (fromActivityHandling !== void 0 && fromActivityHandling !== null) {
+      setValueByPath(toObject, ["activityHandling"], fromActivityHandling);
+    }
+    const fromTurnCoverage = getValueByPath(fromObject, ["turnCoverage"]);
+    if (fromTurnCoverage !== void 0 && fromTurnCoverage !== null) {
+      setValueByPath(toObject, ["turnCoverage"], fromTurnCoverage);
     }
     return toObject;
   }
@@ -14116,6 +15060,24 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       setValueByPath(toObject, ["tools"], fromTools.map((item) => {
         return toolToMldev(apiClient, item);
       }));
+    }
+    const fromSessionResumption = getValueByPath(fromObject, [
+      "sessionResumption"
+    ]);
+    if (fromSessionResumption !== void 0 && fromSessionResumption !== null) {
+      setValueByPath(toObject, ["sessionResumption"], liveClientSessionResumptionConfigToMldev(fromSessionResumption));
+    }
+    const fromContextWindowCompression = getValueByPath(fromObject, [
+      "contextWindowCompression"
+    ]);
+    if (fromContextWindowCompression !== void 0 && fromContextWindowCompression !== null) {
+      setValueByPath(toObject, ["contextWindowCompression"], contextWindowCompressionToMldev(fromContextWindowCompression));
+    }
+    const fromRealtimeInputConfig = getValueByPath(fromObject, [
+      "realtimeInputConfig"
+    ]);
+    if (fromRealtimeInputConfig !== void 0 && fromRealtimeInputConfig !== null) {
+      setValueByPath(toObject, ["realtimeInputConfig"], realtimeInputConfigToMldev(fromRealtimeInputConfig));
     }
     return toObject;
   }
@@ -14151,6 +15113,24 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         return toolToVertex(apiClient, item);
       }));
     }
+    const fromSessionResumption = getValueByPath(fromObject, [
+      "sessionResumption"
+    ]);
+    if (fromSessionResumption !== void 0 && fromSessionResumption !== null) {
+      setValueByPath(toObject, ["sessionResumption"], liveClientSessionResumptionConfigToVertex(fromSessionResumption));
+    }
+    const fromContextWindowCompression = getValueByPath(fromObject, [
+      "contextWindowCompression"
+    ]);
+    if (fromContextWindowCompression !== void 0 && fromContextWindowCompression !== null) {
+      setValueByPath(toObject, ["contextWindowCompression"], contextWindowCompressionToVertex(fromContextWindowCompression));
+    }
+    const fromRealtimeInputConfig = getValueByPath(fromObject, [
+      "realtimeInputConfig"
+    ]);
+    if (fromRealtimeInputConfig !== void 0 && fromRealtimeInputConfig !== null) {
+      setValueByPath(toObject, ["realtimeInputConfig"], realtimeInputConfigToVertex(fromRealtimeInputConfig));
+    }
     return toObject;
   }
   function liveServerContentFromMldev(apiClient, fromObject) {
@@ -14167,6 +15147,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (fromInterrupted !== void 0) {
       setValueByPath(toObject, ["interrupted"], fromInterrupted);
     }
+    const fromGenerationComplete = getValueByPath(fromObject, [
+      "generationComplete"
+    ]);
+    if (fromGenerationComplete != null) {
+      setValueByPath(toObject, ["generationComplete"], fromGenerationComplete);
+    }
     return toObject;
   }
   function liveServerContentFromVertex(apiClient, fromObject) {
@@ -14182,6 +15168,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const fromInterrupted = getValueByPath(fromObject, ["interrupted"]);
     if (fromInterrupted !== void 0) {
       setValueByPath(toObject, ["interrupted"], fromInterrupted);
+    }
+    const fromGenerationComplete = getValueByPath(fromObject, [
+      "generationComplete"
+    ]);
+    if (fromGenerationComplete != null) {
+      setValueByPath(toObject, ["generationComplete"], fromGenerationComplete);
     }
     return toObject;
   }
@@ -14253,6 +15245,285 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
+  function liveServerGoAwayFromMldev(fromObject) {
+    const toObject = {};
+    const fromTimeLeft = getValueByPath(fromObject, ["timeLeft"]);
+    if (fromTimeLeft !== void 0) {
+      setValueByPath(toObject, ["timeLeft"], fromTimeLeft);
+    }
+    return toObject;
+  }
+  function liveServerGoAwayFromVertex(fromObject) {
+    const toObject = {};
+    const fromTimeLeft = getValueByPath(fromObject, ["timeLeft"]);
+    if (fromTimeLeft !== void 0) {
+      setValueByPath(toObject, ["timeLeft"], fromTimeLeft);
+    }
+    return toObject;
+  }
+  function liveServerSessionResumptionUpdateFromMldev(fromObject) {
+    const toObject = {};
+    const fromNewHandle = getValueByPath(fromObject, ["newHandle"]);
+    if (fromNewHandle !== void 0) {
+      setValueByPath(toObject, ["newHandle"], fromNewHandle);
+    }
+    const fromResumable = getValueByPath(fromObject, ["resumable"]);
+    if (fromResumable !== void 0) {
+      setValueByPath(toObject, ["resumable"], fromResumable);
+    }
+    const fromLastConsumedClientMessageIndex = getValueByPath(fromObject, [
+      "lastConsumedClientMessageIndex"
+    ]);
+    if (fromLastConsumedClientMessageIndex !== void 0) {
+      setValueByPath(toObject, ["lastConsumedClientMessageIndex"], fromLastConsumedClientMessageIndex);
+    }
+    return toObject;
+  }
+  function liveServerSessionResumptionUpdateFromVertex(fromObject) {
+    const toObject = {};
+    const fromNewHandle = getValueByPath(fromObject, ["newHandle"]);
+    if (fromNewHandle !== void 0) {
+      setValueByPath(toObject, ["newHandle"], fromNewHandle);
+    }
+    const fromResumable = getValueByPath(fromObject, ["resumable"]);
+    if (fromResumable !== void 0) {
+      setValueByPath(toObject, ["resumable"], fromResumable);
+    }
+    const fromLastConsumedClientMessageIndex = getValueByPath(fromObject, [
+      "lastConsumedClientMessageIndex"
+    ]);
+    if (fromLastConsumedClientMessageIndex !== void 0) {
+      setValueByPath(toObject, ["lastConsumedClientMessageIndex"], fromLastConsumedClientMessageIndex);
+    }
+    return toObject;
+  }
+  function liveClientSessionResumptionConfigToMldev(fromObject) {
+    const toObject = {};
+    const fromHandle = getValueByPath(fromObject, ["handle"]);
+    if (fromHandle !== void 0) {
+      setValueByPath(toObject, ["handle"], fromHandle);
+    }
+    if (getValueByPath(fromObject, ["transparent"]) !== void 0) {
+      throw new Error("transparent parameter is not supported in Gemini API.");
+    }
+    return toObject;
+  }
+  function liveClientSessionResumptionConfigToVertex(fromObject) {
+    const toObject = {};
+    const fromHandle = getValueByPath(fromObject, ["handle"]);
+    if (fromHandle !== void 0) {
+      setValueByPath(toObject, ["handle"], fromHandle);
+    }
+    const fromTransparent = getValueByPath(fromObject, ["transparent"]);
+    if (fromTransparent !== void 0) {
+      setValueByPath(toObject, ["transparent"], fromTransparent);
+    }
+    return toObject;
+  }
+  function modalityTokenCountFromMldev(apiClient, fromObject) {
+    const toObject = {};
+    const fromModality = getValueByPath(fromObject, ["modality"]);
+    if (fromModality != null) {
+      setValueByPath(toObject, ["modality"], fromModality);
+    }
+    const fromTokenCount = getValueByPath(fromObject, ["tokenCount"]);
+    if (fromTokenCount != null) {
+      setValueByPath(toObject, ["tokenCount"], fromTokenCount);
+    }
+    return toObject;
+  }
+  function usageMetadataFromMldev(apiClient, fromObject) {
+    const toObject = {};
+    const fromPromptTokenCount = getValueByPath(fromObject, [
+      "promptTokenCount"
+    ]);
+    if (fromPromptTokenCount != null) {
+      setValueByPath(toObject, ["promptTokenCount"], fromPromptTokenCount);
+    }
+    const fromCachedContentTokenCount = getValueByPath(fromObject, [
+      "cachedContentTokenCount"
+    ]);
+    if (fromCachedContentTokenCount != null) {
+      setValueByPath(toObject, ["cachedContentTokenCount"], fromCachedContentTokenCount);
+    }
+    const fromResponseTokenCount = getValueByPath(fromObject, [
+      "responseTokenCount"
+    ]);
+    if (fromResponseTokenCount != null) {
+      setValueByPath(toObject, ["responseTokenCount"], fromResponseTokenCount);
+    }
+    const fromToolUsePromptTokenCount = getValueByPath(fromObject, [
+      "toolUsePromptTokenCount"
+    ]);
+    if (fromToolUsePromptTokenCount != null) {
+      setValueByPath(toObject, ["toolUsePromptTokenCount"], fromToolUsePromptTokenCount);
+    }
+    const fromThoughtsTokenCount = getValueByPath(fromObject, [
+      "thoughtsTokenCount"
+    ]);
+    if (fromThoughtsTokenCount != null) {
+      setValueByPath(toObject, ["thoughtsTokenCount"], fromThoughtsTokenCount);
+    }
+    const fromTotalTokenCount = getValueByPath(fromObject, [
+      "totalTokenCount"
+    ]);
+    if (fromTotalTokenCount != null) {
+      setValueByPath(toObject, ["totalTokenCount"], fromTotalTokenCount);
+    }
+    const fromPromptTokensDetails = getValueByPath(fromObject, [
+      "promptTokensDetails"
+    ]);
+    if (fromPromptTokensDetails != null) {
+      if (Array.isArray(fromPromptTokensDetails)) {
+        setValueByPath(toObject, ["promptTokensDetails"], fromPromptTokensDetails.map((item) => {
+          return modalityTokenCountFromMldev(apiClient, item);
+        }));
+      } else {
+        setValueByPath(toObject, ["promptTokensDetails"], fromPromptTokensDetails);
+      }
+    }
+    const fromCacheTokensDetails = getValueByPath(fromObject, [
+      "cacheTokensDetails"
+    ]);
+    if (fromCacheTokensDetails != null) {
+      if (Array.isArray(fromCacheTokensDetails)) {
+        setValueByPath(toObject, ["cacheTokensDetails"], fromCacheTokensDetails.map((item) => {
+          return modalityTokenCountFromMldev(apiClient, item);
+        }));
+      } else {
+        setValueByPath(toObject, ["cacheTokensDetails"], fromCacheTokensDetails);
+      }
+    }
+    const fromResponseTokensDetails = getValueByPath(fromObject, [
+      "responseTokensDetails"
+    ]);
+    if (fromResponseTokensDetails != null) {
+      if (Array.isArray(fromResponseTokensDetails)) {
+        setValueByPath(toObject, ["responseTokensDetails"], fromResponseTokensDetails.map((item) => {
+          return modalityTokenCountFromMldev(apiClient, item);
+        }));
+      } else {
+        setValueByPath(toObject, ["responseTokensDetails"], fromResponseTokensDetails);
+      }
+    }
+    const fromToolUsePromptTokensDetails = getValueByPath(fromObject, [
+      "toolUsePromptTokensDetails"
+    ]);
+    if (fromToolUsePromptTokensDetails != null) {
+      if (Array.isArray(fromToolUsePromptTokensDetails)) {
+        setValueByPath(toObject, ["toolUsePromptTokensDetails"], fromToolUsePromptTokensDetails.map((item) => {
+          return modalityTokenCountFromMldev(apiClient, item);
+        }));
+      } else {
+        setValueByPath(toObject, ["toolUsePromptTokensDetails"], fromToolUsePromptTokensDetails);
+      }
+    }
+    return toObject;
+  }
+  function modalityTokenCountFromVertex(apiClient, fromObject) {
+    const toObject = {};
+    const fromModality = getValueByPath(fromObject, ["modality"]);
+    if (fromModality != null) {
+      setValueByPath(toObject, ["modality"], fromModality);
+    }
+    const fromTokenCount = getValueByPath(fromObject, ["tokenCount"]);
+    if (fromTokenCount != null) {
+      setValueByPath(toObject, ["tokenCount"], fromTokenCount);
+    }
+    return toObject;
+  }
+  function usageMetadataFromVertex(apiClient, fromObject) {
+    const toObject = {};
+    const fromPromptTokenCount = getValueByPath(fromObject, [
+      "promptTokenCount"
+    ]);
+    if (fromPromptTokenCount != null) {
+      setValueByPath(toObject, ["promptTokenCount"], fromPromptTokenCount);
+    }
+    const fromCachedContentTokenCount = getValueByPath(fromObject, [
+      "cachedContentTokenCount"
+    ]);
+    if (fromCachedContentTokenCount != null) {
+      setValueByPath(toObject, ["cachedContentTokenCount"], fromCachedContentTokenCount);
+    }
+    const fromResponseTokenCount = getValueByPath(fromObject, [
+      "candidatesTokenCount"
+    ]);
+    if (fromResponseTokenCount != null) {
+      setValueByPath(toObject, ["responseTokenCount"], fromResponseTokenCount);
+    }
+    const fromToolUsePromptTokenCount = getValueByPath(fromObject, [
+      "toolUsePromptTokenCount"
+    ]);
+    if (fromToolUsePromptTokenCount != null) {
+      setValueByPath(toObject, ["toolUsePromptTokenCount"], fromToolUsePromptTokenCount);
+    }
+    const fromThoughtsTokenCount = getValueByPath(fromObject, [
+      "thoughtsTokenCount"
+    ]);
+    if (fromThoughtsTokenCount != null) {
+      setValueByPath(toObject, ["thoughtsTokenCount"], fromThoughtsTokenCount);
+    }
+    const fromTotalTokenCount = getValueByPath(fromObject, [
+      "totalTokenCount"
+    ]);
+    if (fromTotalTokenCount != null) {
+      setValueByPath(toObject, ["totalTokenCount"], fromTotalTokenCount);
+    }
+    const fromPromptTokensDetails = getValueByPath(fromObject, [
+      "promptTokensDetails"
+    ]);
+    if (fromPromptTokensDetails != null) {
+      if (Array.isArray(fromPromptTokensDetails)) {
+        setValueByPath(toObject, ["promptTokensDetails"], fromPromptTokensDetails.map((item) => {
+          return modalityTokenCountFromVertex(apiClient, item);
+        }));
+      } else {
+        setValueByPath(toObject, ["promptTokensDetails"], fromPromptTokensDetails);
+      }
+    }
+    const fromCacheTokensDetails = getValueByPath(fromObject, [
+      "cacheTokensDetails"
+    ]);
+    if (fromCacheTokensDetails != null) {
+      if (Array.isArray(fromCacheTokensDetails)) {
+        setValueByPath(toObject, ["cacheTokensDetails"], fromCacheTokensDetails.map((item) => {
+          return modalityTokenCountFromVertex(apiClient, item);
+        }));
+      } else {
+        setValueByPath(toObject, ["cacheTokensDetails"], fromCacheTokensDetails);
+      }
+    }
+    const fromToolUsePromptTokensDetails = getValueByPath(fromObject, [
+      "toolUsePromptTokensDetails"
+    ]);
+    if (fromToolUsePromptTokensDetails != null) {
+      if (Array.isArray(fromToolUsePromptTokensDetails)) {
+        setValueByPath(toObject, ["toolUsePromptTokensDetails"], fromToolUsePromptTokensDetails.map((item) => {
+          return modalityTokenCountFromVertex(apiClient, item);
+        }));
+      } else {
+        setValueByPath(toObject, ["toolUsePromptTokensDetails"], fromToolUsePromptTokensDetails);
+      }
+    }
+    const fromResponseTokensDetails = getValueByPath(fromObject, [
+      "candidatesTokensDetails"
+    ]);
+    if (fromResponseTokensDetails != null) {
+      if (Array.isArray(fromResponseTokensDetails)) {
+        setValueByPath(toObject, ["responseTokensDetails"], fromResponseTokensDetails.map((item) => {
+          return modalityTokenCountFromVertex(apiClient, item);
+        }));
+      } else {
+        setValueByPath(toObject, ["responseTokensDetails"], fromResponseTokensDetails);
+      }
+    }
+    const fromTrafficType = getValueByPath(fromObject, ["trafficType"]);
+    if (fromTrafficType != null) {
+      setValueByPath(toObject, ["trafficType"], fromTrafficType);
+    }
+    return toObject;
+  }
   async function handleWebSocketMessage(apiClient, onmessage, event) {
     let serverMessage;
     let data;
@@ -14281,6 +15552,221 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       headers.append(key, value);
     }
     return headers;
+  }
+  function getOperationParametersToMldev(apiClient, fromObject) {
+    const toObject = {};
+    const fromOperationName = getValueByPath(fromObject, [
+      "operationName"
+    ]);
+    if (fromOperationName != null) {
+      setValueByPath(toObject, ["_url", "operationName"], fromOperationName);
+    }
+    const fromConfig = getValueByPath(fromObject, ["config"]);
+    if (fromConfig != null) {
+      setValueByPath(toObject, ["config"], fromConfig);
+    }
+    return toObject;
+  }
+  function getOperationParametersToVertex(apiClient, fromObject) {
+    const toObject = {};
+    const fromOperationName = getValueByPath(fromObject, [
+      "operationName"
+    ]);
+    if (fromOperationName != null) {
+      setValueByPath(toObject, ["_url", "operationName"], fromOperationName);
+    }
+    const fromConfig = getValueByPath(fromObject, ["config"]);
+    if (fromConfig != null) {
+      setValueByPath(toObject, ["config"], fromConfig);
+    }
+    return toObject;
+  }
+  function fetchPredictOperationParametersToVertex(apiClient, fromObject) {
+    const toObject = {};
+    const fromOperationName = getValueByPath(fromObject, [
+      "operationName"
+    ]);
+    if (fromOperationName != null) {
+      setValueByPath(toObject, ["operationName"], fromOperationName);
+    }
+    const fromResourceName = getValueByPath(fromObject, ["resourceName"]);
+    if (fromResourceName != null) {
+      setValueByPath(toObject, ["_url", "resourceName"], fromResourceName);
+    }
+    const fromConfig = getValueByPath(fromObject, ["config"]);
+    if (fromConfig != null) {
+      setValueByPath(toObject, ["config"], fromConfig);
+    }
+    return toObject;
+  }
+  function videoFromMldev(apiClient, fromObject) {
+    const toObject = {};
+    const fromUri = getValueByPath(fromObject, ["video", "uri"]);
+    if (fromUri != null) {
+      setValueByPath(toObject, ["uri"], fromUri);
+    }
+    const fromVideoBytes = getValueByPath(fromObject, [
+      "video",
+      "encodedVideo"
+    ]);
+    if (fromVideoBytes != null) {
+      setValueByPath(toObject, ["videoBytes"], tBytes(apiClient, fromVideoBytes));
+    }
+    const fromMimeType = getValueByPath(fromObject, ["encoding"]);
+    if (fromMimeType != null) {
+      setValueByPath(toObject, ["mimeType"], fromMimeType);
+    }
+    return toObject;
+  }
+  function generatedVideoFromMldev(apiClient, fromObject) {
+    const toObject = {};
+    const fromVideo = getValueByPath(fromObject, ["_self"]);
+    if (fromVideo != null) {
+      setValueByPath(toObject, ["video"], videoFromMldev(apiClient, fromVideo));
+    }
+    return toObject;
+  }
+  function generateVideosResponseFromMldev(apiClient, fromObject) {
+    const toObject = {};
+    const fromGeneratedVideos = getValueByPath(fromObject, [
+      "generatedSamples"
+    ]);
+    if (fromGeneratedVideos != null) {
+      if (Array.isArray(fromGeneratedVideos)) {
+        setValueByPath(toObject, ["generatedVideos"], fromGeneratedVideos.map((item) => {
+          return generatedVideoFromMldev(apiClient, item);
+        }));
+      } else {
+        setValueByPath(toObject, ["generatedVideos"], fromGeneratedVideos);
+      }
+    }
+    const fromRaiMediaFilteredCount = getValueByPath(fromObject, [
+      "raiMediaFilteredCount"
+    ]);
+    if (fromRaiMediaFilteredCount != null) {
+      setValueByPath(toObject, ["raiMediaFilteredCount"], fromRaiMediaFilteredCount);
+    }
+    const fromRaiMediaFilteredReasons = getValueByPath(fromObject, [
+      "raiMediaFilteredReasons"
+    ]);
+    if (fromRaiMediaFilteredReasons != null) {
+      setValueByPath(toObject, ["raiMediaFilteredReasons"], fromRaiMediaFilteredReasons);
+    }
+    return toObject;
+  }
+  function generateVideosOperationFromMldev(apiClient, fromObject) {
+    const toObject = {};
+    const fromName = getValueByPath(fromObject, ["name"]);
+    if (fromName != null) {
+      setValueByPath(toObject, ["name"], fromName);
+    }
+    const fromMetadata = getValueByPath(fromObject, ["metadata"]);
+    if (fromMetadata != null) {
+      setValueByPath(toObject, ["metadata"], fromMetadata);
+    }
+    const fromDone = getValueByPath(fromObject, ["done"]);
+    if (fromDone != null) {
+      setValueByPath(toObject, ["done"], fromDone);
+    }
+    const fromError = getValueByPath(fromObject, ["error"]);
+    if (fromError != null) {
+      setValueByPath(toObject, ["error"], fromError);
+    }
+    const fromResponse = getValueByPath(fromObject, [
+      "response",
+      "generateVideoResponse"
+    ]);
+    if (fromResponse != null) {
+      setValueByPath(toObject, ["response"], generateVideosResponseFromMldev(apiClient, fromResponse));
+    }
+    const fromResult = getValueByPath(fromObject, [
+      "response",
+      "generateVideoResponse"
+    ]);
+    if (fromResult != null) {
+      setValueByPath(toObject, ["result"], generateVideosResponseFromMldev(apiClient, fromResult));
+    }
+    return toObject;
+  }
+  function videoFromVertex(apiClient, fromObject) {
+    const toObject = {};
+    const fromUri = getValueByPath(fromObject, ["gcsUri"]);
+    if (fromUri != null) {
+      setValueByPath(toObject, ["uri"], fromUri);
+    }
+    const fromVideoBytes = getValueByPath(fromObject, [
+      "bytesBase64Encoded"
+    ]);
+    if (fromVideoBytes != null) {
+      setValueByPath(toObject, ["videoBytes"], tBytes(apiClient, fromVideoBytes));
+    }
+    const fromMimeType = getValueByPath(fromObject, ["mimeType"]);
+    if (fromMimeType != null) {
+      setValueByPath(toObject, ["mimeType"], fromMimeType);
+    }
+    return toObject;
+  }
+  function generatedVideoFromVertex(apiClient, fromObject) {
+    const toObject = {};
+    const fromVideo = getValueByPath(fromObject, ["_self"]);
+    if (fromVideo != null) {
+      setValueByPath(toObject, ["video"], videoFromVertex(apiClient, fromVideo));
+    }
+    return toObject;
+  }
+  function generateVideosResponseFromVertex(apiClient, fromObject) {
+    const toObject = {};
+    const fromGeneratedVideos = getValueByPath(fromObject, ["videos"]);
+    if (fromGeneratedVideos != null) {
+      if (Array.isArray(fromGeneratedVideos)) {
+        setValueByPath(toObject, ["generatedVideos"], fromGeneratedVideos.map((item) => {
+          return generatedVideoFromVertex(apiClient, item);
+        }));
+      } else {
+        setValueByPath(toObject, ["generatedVideos"], fromGeneratedVideos);
+      }
+    }
+    const fromRaiMediaFilteredCount = getValueByPath(fromObject, [
+      "raiMediaFilteredCount"
+    ]);
+    if (fromRaiMediaFilteredCount != null) {
+      setValueByPath(toObject, ["raiMediaFilteredCount"], fromRaiMediaFilteredCount);
+    }
+    const fromRaiMediaFilteredReasons = getValueByPath(fromObject, [
+      "raiMediaFilteredReasons"
+    ]);
+    if (fromRaiMediaFilteredReasons != null) {
+      setValueByPath(toObject, ["raiMediaFilteredReasons"], fromRaiMediaFilteredReasons);
+    }
+    return toObject;
+  }
+  function generateVideosOperationFromVertex(apiClient, fromObject) {
+    const toObject = {};
+    const fromName = getValueByPath(fromObject, ["name"]);
+    if (fromName != null) {
+      setValueByPath(toObject, ["name"], fromName);
+    }
+    const fromMetadata = getValueByPath(fromObject, ["metadata"]);
+    if (fromMetadata != null) {
+      setValueByPath(toObject, ["metadata"], fromMetadata);
+    }
+    const fromDone = getValueByPath(fromObject, ["done"]);
+    if (fromDone != null) {
+      setValueByPath(toObject, ["done"], fromDone);
+    }
+    const fromError = getValueByPath(fromObject, ["error"]);
+    if (fromError != null) {
+      setValueByPath(toObject, ["error"], fromError);
+    }
+    const fromResponse = getValueByPath(fromObject, ["response"]);
+    if (fromResponse != null) {
+      setValueByPath(toObject, ["response"], generateVideosResponseFromVertex(apiClient, fromResponse));
+    }
+    const fromResult = getValueByPath(fromObject, ["response"]);
+    if (fromResult != null) {
+      setValueByPath(toObject, ["result"], generateVideosResponseFromVertex(apiClient, fromResult));
+    }
+    return toObject;
   }
   async function throwErrorIfNotOK(response) {
     var _a2;
@@ -14312,254 +15798,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       }
       throw new Error(errorMessage);
     }
-  }
-  function listFilesConfigToMldev(apiClient, fromObject, parentObject) {
-    const toObject = {};
-    const fromPageSize = getValueByPath(fromObject, ["pageSize"]);
-    if (parentObject !== void 0 && fromPageSize != null) {
-      setValueByPath(parentObject, ["_query", "pageSize"], fromPageSize);
-    }
-    const fromPageToken = getValueByPath(fromObject, ["pageToken"]);
-    if (parentObject !== void 0 && fromPageToken != null) {
-      setValueByPath(parentObject, ["_query", "pageToken"], fromPageToken);
-    }
-    return toObject;
-  }
-  function listFilesParametersToMldev(apiClient, fromObject) {
-    const toObject = {};
-    const fromConfig = getValueByPath(fromObject, ["config"]);
-    if (fromConfig != null) {
-      setValueByPath(toObject, ["config"], listFilesConfigToMldev(apiClient, fromConfig, toObject));
-    }
-    return toObject;
-  }
-  function fileStatusToMldev(apiClient, fromObject) {
-    const toObject = {};
-    const fromDetails = getValueByPath(fromObject, ["details"]);
-    if (fromDetails != null) {
-      setValueByPath(toObject, ["details"], fromDetails);
-    }
-    const fromMessage = getValueByPath(fromObject, ["message"]);
-    if (fromMessage != null) {
-      setValueByPath(toObject, ["message"], fromMessage);
-    }
-    const fromCode = getValueByPath(fromObject, ["code"]);
-    if (fromCode != null) {
-      setValueByPath(toObject, ["code"], fromCode);
-    }
-    return toObject;
-  }
-  function fileToMldev(apiClient, fromObject) {
-    const toObject = {};
-    const fromName = getValueByPath(fromObject, ["name"]);
-    if (fromName != null) {
-      setValueByPath(toObject, ["name"], fromName);
-    }
-    const fromDisplayName = getValueByPath(fromObject, ["displayName"]);
-    if (fromDisplayName != null) {
-      setValueByPath(toObject, ["displayName"], fromDisplayName);
-    }
-    const fromMimeType = getValueByPath(fromObject, ["mimeType"]);
-    if (fromMimeType != null) {
-      setValueByPath(toObject, ["mimeType"], fromMimeType);
-    }
-    const fromSizeBytes = getValueByPath(fromObject, ["sizeBytes"]);
-    if (fromSizeBytes != null) {
-      setValueByPath(toObject, ["sizeBytes"], fromSizeBytes);
-    }
-    const fromCreateTime = getValueByPath(fromObject, ["createTime"]);
-    if (fromCreateTime != null) {
-      setValueByPath(toObject, ["createTime"], fromCreateTime);
-    }
-    const fromExpirationTime = getValueByPath(fromObject, [
-      "expirationTime"
-    ]);
-    if (fromExpirationTime != null) {
-      setValueByPath(toObject, ["expirationTime"], fromExpirationTime);
-    }
-    const fromUpdateTime = getValueByPath(fromObject, ["updateTime"]);
-    if (fromUpdateTime != null) {
-      setValueByPath(toObject, ["updateTime"], fromUpdateTime);
-    }
-    const fromSha256Hash = getValueByPath(fromObject, ["sha256Hash"]);
-    if (fromSha256Hash != null) {
-      setValueByPath(toObject, ["sha256Hash"], fromSha256Hash);
-    }
-    const fromUri = getValueByPath(fromObject, ["uri"]);
-    if (fromUri != null) {
-      setValueByPath(toObject, ["uri"], fromUri);
-    }
-    const fromDownloadUri = getValueByPath(fromObject, ["downloadUri"]);
-    if (fromDownloadUri != null) {
-      setValueByPath(toObject, ["downloadUri"], fromDownloadUri);
-    }
-    const fromState = getValueByPath(fromObject, ["state"]);
-    if (fromState != null) {
-      setValueByPath(toObject, ["state"], fromState);
-    }
-    const fromSource = getValueByPath(fromObject, ["source"]);
-    if (fromSource != null) {
-      setValueByPath(toObject, ["source"], fromSource);
-    }
-    const fromVideoMetadata = getValueByPath(fromObject, [
-      "videoMetadata"
-    ]);
-    if (fromVideoMetadata != null) {
-      setValueByPath(toObject, ["videoMetadata"], fromVideoMetadata);
-    }
-    const fromError = getValueByPath(fromObject, ["error"]);
-    if (fromError != null) {
-      setValueByPath(toObject, ["error"], fileStatusToMldev(apiClient, fromError));
-    }
-    return toObject;
-  }
-  function createFileParametersToMldev(apiClient, fromObject) {
-    const toObject = {};
-    const fromFile = getValueByPath(fromObject, ["file"]);
-    if (fromFile != null) {
-      setValueByPath(toObject, ["file"], fileToMldev(apiClient, fromFile));
-    }
-    const fromConfig = getValueByPath(fromObject, ["config"]);
-    if (fromConfig != null) {
-      setValueByPath(toObject, ["config"], fromConfig);
-    }
-    return toObject;
-  }
-  function getFileParametersToMldev(apiClient, fromObject) {
-    const toObject = {};
-    const fromName = getValueByPath(fromObject, ["name"]);
-    if (fromName != null) {
-      setValueByPath(toObject, ["_url", "file"], tFileName(apiClient, fromName));
-    }
-    const fromConfig = getValueByPath(fromObject, ["config"]);
-    if (fromConfig != null) {
-      setValueByPath(toObject, ["config"], fromConfig);
-    }
-    return toObject;
-  }
-  function deleteFileParametersToMldev(apiClient, fromObject) {
-    const toObject = {};
-    const fromName = getValueByPath(fromObject, ["name"]);
-    if (fromName != null) {
-      setValueByPath(toObject, ["_url", "file"], tFileName(apiClient, fromName));
-    }
-    const fromConfig = getValueByPath(fromObject, ["config"]);
-    if (fromConfig != null) {
-      setValueByPath(toObject, ["config"], fromConfig);
-    }
-    return toObject;
-  }
-  function fileStatusFromMldev(apiClient, fromObject) {
-    const toObject = {};
-    const fromDetails = getValueByPath(fromObject, ["details"]);
-    if (fromDetails != null) {
-      setValueByPath(toObject, ["details"], fromDetails);
-    }
-    const fromMessage = getValueByPath(fromObject, ["message"]);
-    if (fromMessage != null) {
-      setValueByPath(toObject, ["message"], fromMessage);
-    }
-    const fromCode = getValueByPath(fromObject, ["code"]);
-    if (fromCode != null) {
-      setValueByPath(toObject, ["code"], fromCode);
-    }
-    return toObject;
-  }
-  function fileFromMldev(apiClient, fromObject) {
-    const toObject = {};
-    const fromName = getValueByPath(fromObject, ["name"]);
-    if (fromName != null) {
-      setValueByPath(toObject, ["name"], fromName);
-    }
-    const fromDisplayName = getValueByPath(fromObject, ["displayName"]);
-    if (fromDisplayName != null) {
-      setValueByPath(toObject, ["displayName"], fromDisplayName);
-    }
-    const fromMimeType = getValueByPath(fromObject, ["mimeType"]);
-    if (fromMimeType != null) {
-      setValueByPath(toObject, ["mimeType"], fromMimeType);
-    }
-    const fromSizeBytes = getValueByPath(fromObject, ["sizeBytes"]);
-    if (fromSizeBytes != null) {
-      setValueByPath(toObject, ["sizeBytes"], fromSizeBytes);
-    }
-    const fromCreateTime = getValueByPath(fromObject, ["createTime"]);
-    if (fromCreateTime != null) {
-      setValueByPath(toObject, ["createTime"], fromCreateTime);
-    }
-    const fromExpirationTime = getValueByPath(fromObject, [
-      "expirationTime"
-    ]);
-    if (fromExpirationTime != null) {
-      setValueByPath(toObject, ["expirationTime"], fromExpirationTime);
-    }
-    const fromUpdateTime = getValueByPath(fromObject, ["updateTime"]);
-    if (fromUpdateTime != null) {
-      setValueByPath(toObject, ["updateTime"], fromUpdateTime);
-    }
-    const fromSha256Hash = getValueByPath(fromObject, ["sha256Hash"]);
-    if (fromSha256Hash != null) {
-      setValueByPath(toObject, ["sha256Hash"], fromSha256Hash);
-    }
-    const fromUri = getValueByPath(fromObject, ["uri"]);
-    if (fromUri != null) {
-      setValueByPath(toObject, ["uri"], fromUri);
-    }
-    const fromDownloadUri = getValueByPath(fromObject, ["downloadUri"]);
-    if (fromDownloadUri != null) {
-      setValueByPath(toObject, ["downloadUri"], fromDownloadUri);
-    }
-    const fromState = getValueByPath(fromObject, ["state"]);
-    if (fromState != null) {
-      setValueByPath(toObject, ["state"], fromState);
-    }
-    const fromSource = getValueByPath(fromObject, ["source"]);
-    if (fromSource != null) {
-      setValueByPath(toObject, ["source"], fromSource);
-    }
-    const fromVideoMetadata = getValueByPath(fromObject, [
-      "videoMetadata"
-    ]);
-    if (fromVideoMetadata != null) {
-      setValueByPath(toObject, ["videoMetadata"], fromVideoMetadata);
-    }
-    const fromError = getValueByPath(fromObject, ["error"]);
-    if (fromError != null) {
-      setValueByPath(toObject, ["error"], fileStatusFromMldev(apiClient, fromError));
-    }
-    return toObject;
-  }
-  function listFilesResponseFromMldev(apiClient, fromObject) {
-    const toObject = {};
-    const fromNextPageToken = getValueByPath(fromObject, [
-      "nextPageToken"
-    ]);
-    if (fromNextPageToken != null) {
-      setValueByPath(toObject, ["nextPageToken"], fromNextPageToken);
-    }
-    const fromFiles = getValueByPath(fromObject, ["files"]);
-    if (fromFiles != null) {
-      if (Array.isArray(fromFiles)) {
-        setValueByPath(toObject, ["files"], fromFiles.map((item) => {
-          return fileFromMldev(apiClient, item);
-        }));
-      } else {
-        setValueByPath(toObject, ["files"], fromFiles);
-      }
-    }
-    return toObject;
-  }
-  function createFileResponseFromMldev(apiClient, fromObject) {
-    const toObject = {};
-    const fromHttpHeaders = getValueByPath(fromObject, ["httpHeaders"]);
-    if (fromHttpHeaders != null) {
-      setValueByPath(toObject, ["httpHeaders"], fromHttpHeaders);
-    }
-    return toObject;
-  }
-  function deleteFileResponseFromMldev() {
-    const toObject = {};
-    return toObject;
   }
   async function uploadBlob(file, uploadUrl, apiClient) {
     var _a2, _b;
@@ -14606,7 +15844,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const fileStat = { size: file.size, type: file.type };
     return fileStat;
   }
-  var BaseModule, PagedItem, Pager, Outcome, Language, Type, HarmCategory, HarmBlockMethod, HarmBlockThreshold, Mode, FinishReason, HarmProbability, HarmSeverity, BlockedReason, Modality, State, DynamicRetrievalConfigMode, FunctionCallingConfigMode, MediaResolution, SafetyFilterLevel, PersonGeneration, ImagePromptLanguage, FileState, FileSource, MaskReferenceMode, ControlReferenceType, SubjectReferenceType, GenerateContentResponse, EmbedContentResponse, GenerateImagesResponse, CountTokensResponse, ComputeTokensResponse, DeleteCachedContentResponse, ListCachedContentsResponse, ListFilesResponse, HttpResponse, CreateFileResponse, DeleteFileResponse, Caches, Chats, Chat, FUNCTION_RESPONSE_REQUIRES_ID, Live, defaultLiveSendClientContentParamerters, Session2, Models, CONTENT_TYPE_HEADER, USER_AGENT_HEADER, GOOGLE_API_CLIENT_HEADER, SDK_VERSION, LIBRARY_LABEL, VERTEX_AI_API_DEFAULT_VERSION, GOOGLE_AI_API_DEFAULT_VERSION, responseLineRE, ClientError, ServerError, ApiClient, Files, MAX_CHUNK_SIZE, BrowserUploader, BrowserWebSocketFactory, BrowserWebSocket, GOOGLE_API_KEY_HEADER, WebAuth, LANGUAGE_LABEL_PREFIX, GoogleGenAI;
+  var BaseModule, PagedItem, Pager, Outcome, Language, Type, HarmCategory, HarmBlockMethod, HarmBlockThreshold, Mode, FinishReason, HarmProbability, HarmSeverity, BlockedReason, TrafficType, Modality, MediaResolution, DynamicRetrievalConfigMode, FunctionCallingConfigMode, SafetyFilterLevel, PersonGeneration, ImagePromptLanguage, FileState, FileSource, MaskReferenceMode, ControlReferenceType, SubjectReferenceType, MediaModality, StartSensitivity, EndSensitivity, ActivityHandling, TurnCoverage, GenerateContentResponse, EmbedContentResponse, GenerateImagesResponse, CountTokensResponse, ComputeTokensResponse, DeleteCachedContentResponse, ListCachedContentsResponse, ListFilesResponse, HttpResponse, CreateFileResponse, DeleteFileResponse, Caches, Chats, Chat, Files, FUNCTION_RESPONSE_REQUIRES_ID, Live, defaultLiveSendClientContentParamerters, Session2, Models, Operations, CONTENT_TYPE_HEADER, SERVER_TIMEOUT_HEADER, USER_AGENT_HEADER, GOOGLE_API_CLIENT_HEADER, SDK_VERSION, LIBRARY_LABEL, VERTEX_AI_API_DEFAULT_VERSION, GOOGLE_AI_API_DEFAULT_VERSION, responseLineRE, ClientError, ServerError, ApiClient, MAX_CHUNK_SIZE, BrowserUploader, BrowserWebSocketFactory, BrowserWebSocket, GOOGLE_API_KEY_HEADER, WebAuth, LANGUAGE_LABEL_PREFIX, GoogleGenAI;
   var init_web = __esm({
     "node_modules/@google/genai/dist/web/index.mjs"() {
       BaseModule = class {
@@ -14778,17 +16016,23 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         BlockedReason2["BLOCKLIST"] = "BLOCKLIST";
         BlockedReason2["PROHIBITED_CONTENT"] = "PROHIBITED_CONTENT";
       })(BlockedReason || (BlockedReason = {}));
+      (function(TrafficType2) {
+        TrafficType2["TRAFFIC_TYPE_UNSPECIFIED"] = "TRAFFIC_TYPE_UNSPECIFIED";
+        TrafficType2["ON_DEMAND"] = "ON_DEMAND";
+        TrafficType2["PROVISIONED_THROUGHPUT"] = "PROVISIONED_THROUGHPUT";
+      })(TrafficType || (TrafficType = {}));
       (function(Modality2) {
         Modality2["MODALITY_UNSPECIFIED"] = "MODALITY_UNSPECIFIED";
         Modality2["TEXT"] = "TEXT";
         Modality2["IMAGE"] = "IMAGE";
         Modality2["AUDIO"] = "AUDIO";
       })(Modality || (Modality = {}));
-      (function(State2) {
-        State2["STATE_UNSPECIFIED"] = "STATE_UNSPECIFIED";
-        State2["ACTIVE"] = "ACTIVE";
-        State2["ERROR"] = "ERROR";
-      })(State || (State = {}));
+      (function(MediaResolution2) {
+        MediaResolution2["MEDIA_RESOLUTION_UNSPECIFIED"] = "MEDIA_RESOLUTION_UNSPECIFIED";
+        MediaResolution2["MEDIA_RESOLUTION_LOW"] = "MEDIA_RESOLUTION_LOW";
+        MediaResolution2["MEDIA_RESOLUTION_MEDIUM"] = "MEDIA_RESOLUTION_MEDIUM";
+        MediaResolution2["MEDIA_RESOLUTION_HIGH"] = "MEDIA_RESOLUTION_HIGH";
+      })(MediaResolution || (MediaResolution = {}));
       (function(DynamicRetrievalConfigMode2) {
         DynamicRetrievalConfigMode2["MODE_UNSPECIFIED"] = "MODE_UNSPECIFIED";
         DynamicRetrievalConfigMode2["MODE_DYNAMIC"] = "MODE_DYNAMIC";
@@ -14799,12 +16043,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         FunctionCallingConfigMode2["ANY"] = "ANY";
         FunctionCallingConfigMode2["NONE"] = "NONE";
       })(FunctionCallingConfigMode || (FunctionCallingConfigMode = {}));
-      (function(MediaResolution2) {
-        MediaResolution2["MEDIA_RESOLUTION_UNSPECIFIED"] = "MEDIA_RESOLUTION_UNSPECIFIED";
-        MediaResolution2["MEDIA_RESOLUTION_LOW"] = "MEDIA_RESOLUTION_LOW";
-        MediaResolution2["MEDIA_RESOLUTION_MEDIUM"] = "MEDIA_RESOLUTION_MEDIUM";
-        MediaResolution2["MEDIA_RESOLUTION_HIGH"] = "MEDIA_RESOLUTION_HIGH";
-      })(MediaResolution || (MediaResolution = {}));
       (function(SafetyFilterLevel2) {
         SafetyFilterLevel2["BLOCK_LOW_AND_ABOVE"] = "BLOCK_LOW_AND_ABOVE";
         SafetyFilterLevel2["BLOCK_MEDIUM_AND_ABOVE"] = "BLOCK_MEDIUM_AND_ABOVE";
@@ -14853,6 +16091,34 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         SubjectReferenceType2["SUBJECT_TYPE_ANIMAL"] = "SUBJECT_TYPE_ANIMAL";
         SubjectReferenceType2["SUBJECT_TYPE_PRODUCT"] = "SUBJECT_TYPE_PRODUCT";
       })(SubjectReferenceType || (SubjectReferenceType = {}));
+      (function(MediaModality2) {
+        MediaModality2["MODALITY_UNSPECIFIED"] = "MODALITY_UNSPECIFIED";
+        MediaModality2["TEXT"] = "TEXT";
+        MediaModality2["IMAGE"] = "IMAGE";
+        MediaModality2["VIDEO"] = "VIDEO";
+        MediaModality2["AUDIO"] = "AUDIO";
+        MediaModality2["DOCUMENT"] = "DOCUMENT";
+      })(MediaModality || (MediaModality = {}));
+      (function(StartSensitivity2) {
+        StartSensitivity2["START_SENSITIVITY_UNSPECIFIED"] = "START_SENSITIVITY_UNSPECIFIED";
+        StartSensitivity2["START_SENSITIVITY_HIGH"] = "START_SENSITIVITY_HIGH";
+        StartSensitivity2["START_SENSITIVITY_LOW"] = "START_SENSITIVITY_LOW";
+      })(StartSensitivity || (StartSensitivity = {}));
+      (function(EndSensitivity2) {
+        EndSensitivity2["END_SENSITIVITY_UNSPECIFIED"] = "END_SENSITIVITY_UNSPECIFIED";
+        EndSensitivity2["END_SENSITIVITY_HIGH"] = "END_SENSITIVITY_HIGH";
+        EndSensitivity2["END_SENSITIVITY_LOW"] = "END_SENSITIVITY_LOW";
+      })(EndSensitivity || (EndSensitivity = {}));
+      (function(ActivityHandling2) {
+        ActivityHandling2["ACTIVITY_HANDLING_UNSPECIFIED"] = "ACTIVITY_HANDLING_UNSPECIFIED";
+        ActivityHandling2["START_OF_ACTIVITY_INTERRUPTS"] = "START_OF_ACTIVITY_INTERRUPTS";
+        ActivityHandling2["NO_INTERRUPTION"] = "NO_INTERRUPTION";
+      })(ActivityHandling || (ActivityHandling = {}));
+      (function(TurnCoverage2) {
+        TurnCoverage2["TURN_COVERAGE_UNSPECIFIED"] = "TURN_COVERAGE_UNSPECIFIED";
+        TurnCoverage2["TURN_INCLUDES_ONLY_ACTIVITY"] = "TURN_INCLUDES_ONLY_ACTIVITY";
+        TurnCoverage2["TURN_INCLUDES_ALL_INPUT"] = "TURN_INCLUDES_ALL_INPUT";
+      })(TurnCoverage || (TurnCoverage = {}));
       GenerateContentResponse = class {
         get text() {
           var _a2, _b, _c, _d, _e, _f, _g, _h;
@@ -15312,6 +16578,146 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           this.history.push(...outputContents);
         }
       };
+      Files = class extends BaseModule {
+        constructor(apiClient) {
+          super();
+          this.apiClient = apiClient;
+          this.list = async (params = {}) => {
+            return new Pager(PagedItem.PAGED_ITEM_FILES, (x) => this.listInternal(x), await this.listInternal(params), params);
+          };
+        }
+        async upload(params) {
+          if (this.apiClient.isVertexAI()) {
+            throw new Error("Vertex AI does not support uploading files. You can share files through a GCS bucket.");
+          }
+          return this.apiClient.uploadFile(params.file, params.config).then((response) => {
+            const file = fileFromMldev(this.apiClient, response);
+            return file;
+          });
+        }
+        async listInternal(params) {
+          var _a2;
+          let response;
+          let path = "";
+          let queryParams = {};
+          if (this.apiClient.isVertexAI()) {
+            throw new Error("This method is only supported by the Gemini Developer API.");
+          } else {
+            const body = listFilesParametersToMldev(this.apiClient, params);
+            path = formatMap("files", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "GET",
+              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = listFilesResponseFromMldev(this.apiClient, apiResponse);
+              const typedResp = new ListFilesResponse();
+              Object.assign(typedResp, resp);
+              return typedResp;
+            });
+          }
+        }
+        async createInternal(params) {
+          var _a2;
+          let response;
+          let path = "";
+          let queryParams = {};
+          if (this.apiClient.isVertexAI()) {
+            throw new Error("This method is only supported by the Gemini Developer API.");
+          } else {
+            const body = createFileParametersToMldev(this.apiClient, params);
+            path = formatMap("upload/v1beta/files", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "POST",
+              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = createFileResponseFromMldev(this.apiClient, apiResponse);
+              const typedResp = new CreateFileResponse();
+              Object.assign(typedResp, resp);
+              return typedResp;
+            });
+          }
+        }
+        async get(params) {
+          var _a2;
+          let response;
+          let path = "";
+          let queryParams = {};
+          if (this.apiClient.isVertexAI()) {
+            throw new Error("This method is only supported by the Gemini Developer API.");
+          } else {
+            const body = getFileParametersToMldev(this.apiClient, params);
+            path = formatMap("files/{file}", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "GET",
+              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = fileFromMldev(this.apiClient, apiResponse);
+              return resp;
+            });
+          }
+        }
+        async delete(params) {
+          var _a2;
+          let response;
+          let path = "";
+          let queryParams = {};
+          if (this.apiClient.isVertexAI()) {
+            throw new Error("This method is only supported by the Gemini Developer API.");
+          } else {
+            const body = deleteFileParametersToMldev(this.apiClient, params);
+            path = formatMap("files/{file}", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "DELETE",
+              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then(() => {
+              const resp = deleteFileResponseFromMldev();
+              const typedResp = new DeleteFileResponse();
+              Object.assign(typedResp, resp);
+              return typedResp;
+            });
+          }
+        }
+      };
       FUNCTION_RESPONSE_REQUIRES_ID = "FunctionResponse request must have an `id` field from the response of a ToolCall.FunctionalCalls in Google AI.";
       Live = class {
         constructor(apiClient, auth, webSocketFactory) {
@@ -15412,7 +16818,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           if (!("media" in params) || !params.media) {
             throw new Error(`Failed to convert realtime input "media", type: '${typeof params.media}'`);
           }
-          clientMessage = { realtimeInput: { mediaChunks: [params.media] } };
+          clientMessage = {
+            realtimeInput: {
+              mediaChunks: [params.media],
+              activityStart: params.activityStart,
+              activityEnd: params.activityEnd
+            }
+          };
           return clientMessage;
         }
         tLiveClienttToolResponse(apiClient, params) {
@@ -15422,6 +16834,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           }
           if (!Array.isArray(params.functionResponses)) {
             functionResponses = [params.functionResponses];
+          } else {
+            functionResponses = params.functionResponses;
           }
           if (functionResponses.length === 0) {
             throw new Error("functionResponses is required.");
@@ -15743,6 +17157,53 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             });
           }
         }
+        async get(params) {
+          var _a2, _b;
+          let response;
+          let path = "";
+          let queryParams = {};
+          if (this.apiClient.isVertexAI()) {
+            const body = getModelParametersToVertex(this.apiClient, params);
+            path = formatMap("{name}", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "GET",
+              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = modelFromVertex(this.apiClient, apiResponse);
+              return resp;
+            });
+          } else {
+            const body = getModelParametersToMldev(this.apiClient, params);
+            path = formatMap("{name}", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "GET",
+              httpOptions: (_b = params.config) === null || _b === void 0 ? void 0 : _b.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = modelFromMldev(this.apiClient, apiResponse);
+              return resp;
+            });
+          }
+        }
         async countTokens(params) {
           var _a2, _b;
           let response;
@@ -15825,11 +17286,165 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             throw new Error("This method is only supported by the Vertex AI.");
           }
         }
+        async generateVideos(params) {
+          var _a2, _b;
+          let response;
+          let path = "";
+          let queryParams = {};
+          if (this.apiClient.isVertexAI()) {
+            const body = generateVideosParametersToVertex(this.apiClient, params);
+            path = formatMap("{model}:predictLongRunning", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "POST",
+              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = generateVideosOperationFromVertex$1(this.apiClient, apiResponse);
+              return resp;
+            });
+          } else {
+            const body = generateVideosParametersToMldev(this.apiClient, params);
+            path = formatMap("{model}:predictLongRunning", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "POST",
+              httpOptions: (_b = params.config) === null || _b === void 0 ? void 0 : _b.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = generateVideosOperationFromMldev$1(this.apiClient, apiResponse);
+              return resp;
+            });
+          }
+        }
+      };
+      Operations = class extends BaseModule {
+        constructor(apiClient) {
+          super();
+          this.apiClient = apiClient;
+        }
+        async getVideosOperation(parameters) {
+          const operation = parameters.operation;
+          const config = parameters.config;
+          if (operation.name === void 0 || operation.name === "") {
+            throw new Error("Operation name is required.");
+          }
+          if (this.apiClient.isVertexAI()) {
+            const resourceName2 = operation.name.split("/operations/")[0];
+            var httpOptions = void 0;
+            if (config && "httpOptions" in config) {
+              httpOptions = config.httpOptions;
+            }
+            return this.fetchPredictVideosOperationInternal({
+              operationName: operation.name,
+              resourceName: resourceName2,
+              config: { httpOptions }
+            });
+          } else {
+            return this.getVideosOperationInternal({
+              operationName: operation.name,
+              config
+            });
+          }
+        }
+        async getVideosOperationInternal(params) {
+          var _a2, _b;
+          let response;
+          let path = "";
+          let queryParams = {};
+          if (this.apiClient.isVertexAI()) {
+            const body = getOperationParametersToVertex(this.apiClient, params);
+            path = formatMap("{operationName}", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "GET",
+              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = generateVideosOperationFromVertex(this.apiClient, apiResponse);
+              return resp;
+            });
+          } else {
+            const body = getOperationParametersToMldev(this.apiClient, params);
+            path = formatMap("{operationName}", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "GET",
+              httpOptions: (_b = params.config) === null || _b === void 0 ? void 0 : _b.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = generateVideosOperationFromMldev(this.apiClient, apiResponse);
+              return resp;
+            });
+          }
+        }
+        async fetchPredictVideosOperationInternal(params) {
+          var _a2;
+          let response;
+          let path = "";
+          let queryParams = {};
+          if (this.apiClient.isVertexAI()) {
+            const body = fetchPredictOperationParametersToVertex(this.apiClient, params);
+            path = formatMap("{resourceName}:fetchPredictOperation", body["_url"]);
+            queryParams = body["_query"];
+            delete body["config"];
+            delete body["_url"];
+            delete body["_query"];
+            response = this.apiClient.request({
+              path,
+              queryParams,
+              body: JSON.stringify(body),
+              httpMethod: "POST",
+              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
+            }).then((httpResponse) => {
+              return httpResponse.json();
+            });
+            return response.then((apiResponse) => {
+              const resp = generateVideosOperationFromVertex(this.apiClient, apiResponse);
+              return resp;
+            });
+          } else {
+            throw new Error("This method is only supported by the Vertex AI.");
+          }
+        }
       };
       CONTENT_TYPE_HEADER = "Content-Type";
+      SERVER_TIMEOUT_HEADER = "X-Server-Timeout";
       USER_AGENT_HEADER = "User-Agent";
       GOOGLE_API_CLIENT_HEADER = "x-goog-api-client";
-      SDK_VERSION = "0.6.1";
+      SDK_VERSION = "0.8.0";
       LIBRARY_LABEL = `google-genai-sdk/${SDK_VERSION}`;
       VERTEX_AI_API_DEFAULT_VERSION = "v1beta1";
       GOOGLE_AI_API_DEFAULT_VERSION = "v1beta";
@@ -15943,9 +17558,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             throw new Error("HTTP options are not correctly set.");
           }
         }
-        constructUrl(path, httpOptions) {
+        constructUrl(path, httpOptions, prependProjectLocation) {
           const urlElement = [this.getRequestUrlInternal(httpOptions)];
-          if (this.clientOptions.vertexai && !this.clientOptions.apiKey && !path.startsWith("projects/")) {
+          if (prependProjectLocation) {
             urlElement.push(this.getBaseResourcePath());
           }
           if (path !== "") {
@@ -15954,12 +17569,28 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           const url = new URL(`${urlElement.join("/")}`);
           return url;
         }
+        shouldPrependVertexProjectPath(request) {
+          if (this.clientOptions.apiKey) {
+            return false;
+          }
+          if (!this.clientOptions.vertexai) {
+            return false;
+          }
+          if (request.path.startsWith("projects/")) {
+            return false;
+          }
+          if (request.httpMethod === "GET" && request.path.startsWith("publishers/google/models")) {
+            return false;
+          }
+          return true;
+        }
         async request(request) {
           let patchedHttpOptions = this.clientOptions.httpOptions;
           if (request.httpOptions) {
             patchedHttpOptions = this.patchHttpOptions(this.clientOptions.httpOptions, request.httpOptions);
           }
-          const url = this.constructUrl(request.path, patchedHttpOptions);
+          const prependProjectLocation = this.shouldPrependVertexProjectPath(request);
+          const url = this.constructUrl(request.path, patchedHttpOptions, prependProjectLocation);
           if (request.queryParams) {
             for (const [key, value] of Object.entries(request.queryParams)) {
               url.searchParams.append(key, String(value));
@@ -15992,7 +17623,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           if (request.httpOptions) {
             patchedHttpOptions = this.patchHttpOptions(this.clientOptions.httpOptions, request.httpOptions);
           }
-          const url = this.constructUrl(request.path, patchedHttpOptions);
+          const prependProjectLocation = this.shouldPrependVertexProjectPath(request);
+          const url = this.constructUrl(request.path, patchedHttpOptions, prependProjectLocation);
           if (!url.searchParams.has("alt") || url.searchParams.get("alt") !== "sse") {
             url.searchParams.set("alt", "sse");
           }
@@ -16092,6 +17724,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             for (const [key, value] of Object.entries(httpOptions.headers)) {
               headers.append(key, value);
             }
+            if (httpOptions.timeout && httpOptions.timeout > 0) {
+              headers.append(SERVER_TIMEOUT_HEADER, String(Math.ceil(httpOptions.timeout / 1e3)));
+            }
           }
           await this.clientOptions.auth.addAuthHeaders(headers);
           return headers;
@@ -16109,7 +17744,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           }
           const uploader = this.clientOptions.uploader;
           const fileStat = await uploader.stat(file);
-          fileToUpload.sizeBytes = fileStat.size;
+          fileToUpload.sizeBytes = String(fileStat.size);
           const mimeType = (_a2 = config === null || config === void 0 ? void 0 : config.mimeType) !== null && _a2 !== void 0 ? _a2 : fileStat.type;
           if (mimeType === void 0 || mimeType === "") {
             throw new Error("Can not determine mimeType. Please provide mimeType in the config.");
@@ -16152,146 +17787,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             throw new Error("Failed to get upload url. Server did not return the x-google-upload-url in the headers");
           }
           return uploadUrl;
-        }
-      };
-      Files = class extends BaseModule {
-        constructor(apiClient) {
-          super();
-          this.apiClient = apiClient;
-          this.list = async (params = {}) => {
-            return new Pager(PagedItem.PAGED_ITEM_FILES, (x) => this.listInternal(x), await this.listInternal(params), params);
-          };
-        }
-        async upload(params) {
-          if (this.apiClient.isVertexAI()) {
-            throw new Error("Vertex AI does not support uploading files. You can share files through a GCS bucket.");
-          }
-          return this.apiClient.uploadFile(params.file, params.config).then((response) => {
-            const file = fileFromMldev(this.apiClient, response);
-            return file;
-          });
-        }
-        async listInternal(params) {
-          var _a2;
-          let response;
-          let path = "";
-          let queryParams = {};
-          if (this.apiClient.isVertexAI()) {
-            throw new Error("This method is only supported by the Gemini Developer API.");
-          } else {
-            const body = listFilesParametersToMldev(this.apiClient, params);
-            path = formatMap("files", body["_url"]);
-            queryParams = body["_query"];
-            delete body["config"];
-            delete body["_url"];
-            delete body["_query"];
-            response = this.apiClient.request({
-              path,
-              queryParams,
-              body: JSON.stringify(body),
-              httpMethod: "GET",
-              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
-            }).then((httpResponse) => {
-              return httpResponse.json();
-            });
-            return response.then((apiResponse) => {
-              const resp = listFilesResponseFromMldev(this.apiClient, apiResponse);
-              const typedResp = new ListFilesResponse();
-              Object.assign(typedResp, resp);
-              return typedResp;
-            });
-          }
-        }
-        async createInternal(params) {
-          var _a2;
-          let response;
-          let path = "";
-          let queryParams = {};
-          if (this.apiClient.isVertexAI()) {
-            throw new Error("This method is only supported by the Gemini Developer API.");
-          } else {
-            const body = createFileParametersToMldev(this.apiClient, params);
-            path = formatMap("upload/v1beta/files", body["_url"]);
-            queryParams = body["_query"];
-            delete body["config"];
-            delete body["_url"];
-            delete body["_query"];
-            response = this.apiClient.request({
-              path,
-              queryParams,
-              body: JSON.stringify(body),
-              httpMethod: "POST",
-              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
-            }).then((httpResponse) => {
-              return httpResponse.json();
-            });
-            return response.then((apiResponse) => {
-              const resp = createFileResponseFromMldev(this.apiClient, apiResponse);
-              const typedResp = new CreateFileResponse();
-              Object.assign(typedResp, resp);
-              return typedResp;
-            });
-          }
-        }
-        async get(params) {
-          var _a2;
-          let response;
-          let path = "";
-          let queryParams = {};
-          if (this.apiClient.isVertexAI()) {
-            throw new Error("This method is only supported by the Gemini Developer API.");
-          } else {
-            const body = getFileParametersToMldev(this.apiClient, params);
-            path = formatMap("files/{file}", body["_url"]);
-            queryParams = body["_query"];
-            delete body["config"];
-            delete body["_url"];
-            delete body["_query"];
-            response = this.apiClient.request({
-              path,
-              queryParams,
-              body: JSON.stringify(body),
-              httpMethod: "GET",
-              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
-            }).then((httpResponse) => {
-              return httpResponse.json();
-            });
-            return response.then((apiResponse) => {
-              const resp = fileFromMldev(this.apiClient, apiResponse);
-              return resp;
-            });
-          }
-        }
-        async delete(params) {
-          var _a2;
-          let response;
-          let path = "";
-          let queryParams = {};
-          if (this.apiClient.isVertexAI()) {
-            throw new Error("This method is only supported by the Gemini Developer API.");
-          } else {
-            const body = deleteFileParametersToMldev(this.apiClient, params);
-            path = formatMap("files/{file}", body["_url"]);
-            queryParams = body["_query"];
-            delete body["config"];
-            delete body["_url"];
-            delete body["_query"];
-            response = this.apiClient.request({
-              path,
-              queryParams,
-              body: JSON.stringify(body),
-              httpMethod: "DELETE",
-              httpOptions: (_a2 = params.config) === null || _a2 === void 0 ? void 0 : _a2.httpOptions
-            }).then((httpResponse) => {
-              return httpResponse.json();
-            });
-            return response.then(() => {
-              const resp = deleteFileResponseFromMldev();
-              const typedResp = new DeleteFileResponse();
-              Object.assign(typedResp, resp);
-              return typedResp;
-            });
-          }
         }
       };
       MAX_CHUNK_SIZE = 1024 * 1024 * 8;
@@ -16381,6 +17876,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           this.chats = new Chats(this.models, this.apiClient);
           this.caches = new Caches(this.apiClient);
           this.files = new Files(this.apiClient);
+          this.operations = new Operations(this.apiClient);
         }
       };
     }
@@ -17509,21 +19005,12 @@ ${JSON.stringify(
  * Copyright 2025 Google LLC
  * SPDX-License-Identifier: Apache-2.0
  */
-/**
- * @license
- * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" -o ./`
- * Copyright OpenJS Foundation and other contributors <https://openjsf.org/>
- * Released under MIT license <https://lodash.com/license>
- * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
- * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- */
 (async () => {
     if (!document.getElementById(`amaiDlyrics`)) {
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-5796-Dcvc5mnU2DeY/1961e9fb1e87/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-13620-qYu0HnNABbVR/1962596fffe7/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -17549,7 +19036,7 @@ ${JSON.stringify(
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5796-Dcvc5mnU2DeY/1961e9fb18d0/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13620-qYu0HnNABbVR/1962596ff980/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -17606,7 +19093,7 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
 #SpicyLyricsPage .ViewControls .ViewControl {
   --ViewControlHeight: var(--ViewControlSize, 100cqh);
   aspect-ratio: 1;
-  background: rgba(21, 22, 23, .72);
+  background: #ffffff36;
   border: none;
   border-radius: 100rem;
   display: flex;
@@ -17614,11 +19101,14 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
   width: var(--ViewControlHeight);
   -webkit-app-region: no-drag;
   align-items: center;
-  color: hsla(0, 0%, 100%, .7);
+  color: white;
   justify-content: center;
   text-align: center;
   -webkit-box-align: center;
   -webkit-box-pack: center;
+}
+#SpicyLyricsPage .ViewControls .ViewControl:hover {
+  background: rgba(0, 0, 0, .3);
 }
 #SpicyLyricsPage .ViewControls .ViewControl svg {
   fill: currentColor;
@@ -17688,7 +19178,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5796-Dcvc5mnU2DeY/1961e9fb1ba1/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13620-qYu0HnNABbVR/1962596ffc61/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -17896,7 +19386,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5796-Dcvc5mnU2DeY/1961e9fb1c12/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13620-qYu0HnNABbVR/1962596ffcd2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -18371,7 +19861,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5796-Dcvc5mnU2DeY/1961e9fb1cc3/spicy-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13620-qYu0HnNABbVR/1962596ffd83/spicy-dynamic-bg.css */
 .spicy-dynamic-bg {
   filter: saturate(1.5) brightness(.8);
   height: 100%;
@@ -18479,7 +19969,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   filter: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5796-Dcvc5mnU2DeY/1961e9fb1d14/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13620-qYu0HnNABbVR/1962596ffdd4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -18687,7 +20177,7 @@ ruby > rt {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5796-Dcvc5mnU2DeY/1961e9fb1d75/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13620-qYu0HnNABbVR/1962596ffe45/Mixed.css */
 #SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
   --BlurAmount: 0px !important;
   filter: none !important;
@@ -18975,7 +20465,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5796-Dcvc5mnU2DeY/1961e9fb1dd6/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13620-qYu0HnNABbVR/1962596fff16/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
