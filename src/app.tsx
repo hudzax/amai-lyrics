@@ -98,6 +98,9 @@ function updateButtonRegistration(button) {
 
 function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached, lowQModeEnabled) {
   if (lowQModeEnabled) return;
+  
+  // Preload the cover image to improve future LCP
+  preloadCoverImage(coverUrl);
 
   try {
     if (!cached.nowPlayingBar) {
@@ -119,19 +122,66 @@ function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached, lowQModeEnabled
     if (!cached.dynamicBg) {
       const dynamicBackground = document.createElement("div");
       dynamicBackground.classList.add("spicy-dynamic-bg");
-      dynamicBackground.innerHTML = `
-        <img class="Front" src="${coverUrl}" />
-        <img class="Back" src="${coverUrl}" />
-        <img class="BackCenter" src="${coverUrl}" />
-      `;
+      
+      // Create a lightweight placeholder div first
+      const placeholderDiv = document.createElement("div");
+      placeholderDiv.className = "FrontPlaceholder";
+      dynamicBackground.appendChild(placeholderDiv);
+      
+      // Create Front image with optimized loading strategy
+      const frontImg = document.createElement("img");
+      frontImg.className = "Front";
+      frontImg.loading = "eager"; // Use standard loading attribute
+      frontImg.decoding = "async";
+      frontImg.src = coverUrl;
+      
+      // Add to DOM immediately but with opacity 0
+      dynamicBackground.appendChild(frontImg);
+      
+      // When image loads, add the loaded class to trigger transition
+      frontImg.onload = () => {
+        frontImg.classList.add("loaded");
+      };
+      
+      // Create Back image with lazy loading
+      const backImg = document.createElement("img");
+      backImg.className = "Back";
+      backImg.loading = "lazy";
+      backImg.decoding = "async";
+      backImg.src = coverUrl;
+      dynamicBackground.appendChild(backImg);
+      
+      // Create BackCenter image with lazy loading
+      const backCenterImg = document.createElement("img");
+      backCenterImg.className = "BackCenter";
+      backCenterImg.loading = "lazy";
+      backCenterImg.decoding = "async";
+      backCenterImg.src = coverUrl;
+      dynamicBackground.appendChild(backCenterImg);
+      
       nowPlayingBar.classList.add("spicy-dynamic-bg-in-this");
       nowPlayingBar.appendChild(dynamicBackground);
       cached.dynamicBg = dynamicBackground;
     } else {
-      const imgs = cached.dynamicBg.querySelectorAll("img");
-      imgs.forEach((img) => {
-        img.src = coverUrl;
-      });
+      // Simple approach: just update the src of existing images
+      const frontImg = cached.dynamicBg.querySelector(".Front");
+      if (frontImg) {
+        // Remove loaded class temporarily
+        frontImg.classList.remove("loaded");
+        
+        // Update src and re-add loaded class when it loads
+        frontImg.src = coverUrl;
+        frontImg.onload = () => {
+          frontImg.classList.add("loaded");
+        };
+      }
+      
+      // Update other images
+      const backImg = cached.dynamicBg.querySelector(".Back");
+      if (backImg) backImg.src = coverUrl;
+      
+      const backCenterImg = cached.dynamicBg.querySelector(".BackCenter");
+      if (backCenterImg) backCenterImg.src = coverUrl;
     }
 
     cached.lastImgUrl = coverUrl;
@@ -336,6 +386,64 @@ function setupDynamicBackground(button) {
   initializeAmaiLyrics(button);
 }
 
+// Cache for recently used album covers
+const recentCovers = new Set();
+const maxCachedCovers = 5;
+
+/**
+ * Simple image preloading without using link preload
+ * This avoids the browser warnings while still getting most of the performance benefit
+ */
+function preloadCoverImage(coverUrl) {
+  if (!coverUrl || recentCovers.has(coverUrl)) return;
+  
+  // Add to recent covers cache
+  recentCovers.add(coverUrl);
+  
+  // Limit cache size
+  if (recentCovers.size > maxCachedCovers) {
+    const firstItem = recentCovers.values().next().value;
+    recentCovers.delete(firstItem);
+  }
+  
+  // Use Image() constructor for preloading instead of link preload
+  // This is more reliable and doesn't trigger browser warnings
+  const img = new Image();
+  img.src = coverUrl;
+}
+
+/**
+ * Intelligently preloads the next track's image when user behavior suggests
+ * they might change tracks soon (e.g., hovering over next button)
+ */
+function setupSmartPreloading() {
+  // Find next track button and add hover listener
+  const nextTrackSelector = '.player-controls__right button[aria-label="Next"]';
+  
+  // Use MutationObserver to detect when the player controls are added to the DOM
+  const observer = new MutationObserver((mutations) => {
+    const nextButton = document.querySelector(nextTrackSelector);
+    if (nextButton && !nextButton.hasAttribute('data-preload-listener')) {
+      nextButton.setAttribute('data-preload-listener', 'true');
+      
+      // When user hovers over next button, try to find and preload the next track's image
+      nextButton.addEventListener('mouseenter', () => {
+        // Try to find next track in queue
+        const nextTrackElement = document.querySelector('.Root__now-playing-bar .next-track');
+        if (nextTrackElement) {
+          const nextTrackImg = nextTrackElement.querySelector('img');
+          if (nextTrackImg && nextTrackImg.src) {
+            preloadCoverImage(nextTrackImg.src);
+          }
+        }
+      });
+    }
+  });
+  
+  // Start observing the document body for changes
+  observer.observe(document.body, { childList: true, subtree: true });
+}
+
 async function main() {
   // Inject Google Fonts dynamically
   const fontLink = document.createElement("link");
@@ -355,6 +463,27 @@ async function main() {
   const button = setupUI();
   setupEventListeners(button);
   setupDynamicBackground(button);
+  setupSmartPreloading();
+  
+  // Mark dynamic backgrounds as loaded after the page has fully loaded
+  // This helps with LCP by delaying the rendering of non-critical elements
+  window.addEventListener('load', () => {
+    // Use requestIdleCallback to ensure this runs during browser idle time
+    if (window.requestIdleCallback) {
+      requestIdleCallback(() => {
+        document.querySelectorAll('.spicy-dynamic-bg').forEach(bg => {
+          bg.classList.add('spicy-dynamic-bg-loaded');
+        });
+      }, { timeout: 2000 });
+    } else {
+      // Fallback for browsers that don't support requestIdleCallback
+      setTimeout(() => {
+        document.querySelectorAll('.spicy-dynamic-bg').forEach(bg => {
+          bg.classList.add('spicy-dynamic-bg-loaded');
+        });
+      }, 1000);
+    }
+  });
 }
 
 export default main;
