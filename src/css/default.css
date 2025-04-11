@@ -60,7 +60,7 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
 #SpicyLyricsPage .ViewControls .ViewControl {
   --ViewControlHeight: var(--ViewControlSize, 100cqh);
   aspect-ratio: 1;
-  background: rgba(21,22,23,.72);
+  background: #ffffff36;
   border: none;
   border-radius: 100rem;
   display: flex;
@@ -68,11 +68,15 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
   width: var(--ViewControlHeight);
   -webkit-app-region: no-drag;
   align-items: center;
-  color: hsla(0,0%,100%,.7);
+  color: white;
   justify-content: center;
   text-align: center;
   -webkit-box-align: center;
   -webkit-box-pack: center
+}
+
+#SpicyLyricsPage .ViewControls .ViewControl:hover {
+  background:rgba(0,0,0,.3)
 }
 
 #SpicyLyricsPage .ViewControls .ViewControl svg {

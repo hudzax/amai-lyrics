@@ -13,6 +13,11 @@ const Fullscreen = {
   IsOpen: false,
 };
 
+// Keep IsOpen in sync with actual fullscreen state
+document.addEventListener('fullscreenchange', () => {
+  Fullscreen.IsOpen = !!document.fullscreenElement;
+});
+
 const MediaBox_Data = {
   Eventified: false,
   Functions: {
@@ -97,10 +102,22 @@ function Open() {
       '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage',
     );
 
-    MediaBox_Data.Functions.Eventify(MediaImage);
+    if (MediaBox && MediaImage) {
+      MediaBox_Data.Functions.Eventify(MediaImage);
 
-    MediaBox.addEventListener('mouseenter', MediaBox_Data.Functions.MouseIn);
-    MediaBox.addEventListener('mouseleave', MediaBox_Data.Functions.MouseOut);
+      // Remove existing listeners first to prevent duplicates
+      MediaBox.removeEventListener(
+        'mouseenter',
+        MediaBox_Data.Functions.MouseIn,
+      );
+      MediaBox.removeEventListener(
+        'mouseleave',
+        MediaBox_Data.Functions.MouseOut,
+      );
+
+      MediaBox.addEventListener('mouseenter', MediaBox_Data.Functions.MouseIn);
+      MediaBox.addEventListener('mouseleave', MediaBox_Data.Functions.MouseOut);
+    }
 
     Global.Event.evoke('fullscreen:open', null);
   }
@@ -117,7 +134,9 @@ function Close() {
     if (document.fullscreenElement) {
       document.exitFullscreen();
     }
-    const NoLyrics = storage.get('currentLyricsData')?.includes('NO_LYRICS');
+    const currentLyrics = storage.get('currentLyricsData');
+    const NoLyrics =
+      typeof currentLyrics === 'string' && currentLyrics.includes('NO_LYRICS');
     if (NoLyrics) {
       OpenNowBar();
       document
@@ -134,13 +153,20 @@ function Close() {
       '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage',
     );
 
-    MediaBox.removeEventListener('mouseenter', MediaBox_Data.Functions.MouseIn);
-    MediaBox.removeEventListener(
-      'mouseleave',
-      MediaBox_Data.Functions.MouseOut,
-    );
+    if (MediaBox) {
+      MediaBox.removeEventListener(
+        'mouseenter',
+        MediaBox_Data.Functions.MouseIn,
+      );
+      MediaBox.removeEventListener(
+        'mouseleave',
+        MediaBox_Data.Functions.MouseOut,
+      );
+    }
 
-    MediaBox_Data.Functions.Reset(MediaImage);
+    if (MediaImage) {
+      MediaBox_Data.Functions.Reset(MediaImage);
+    }
 
     Global.Event.evoke('fullscreen:exit', null);
   }
