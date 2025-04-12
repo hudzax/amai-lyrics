@@ -33,6 +33,7 @@ const PageView = {
   Open: OpenPage,
   Destroy: DestroyPage,
   AppendViewControls,
+  UpdatePageContent,
   IsOpened: false,
 };
 
@@ -118,64 +119,11 @@ function OpenPage() {
   ) as HTMLImageElement;
 
   if (mediaImage) {
-    // Set up the onload handler first
-    mediaImage.onload = () => {
-      mediaImage.classList.add('loaded');
+    // Set up image loading and high-res switching
+    setupImageLoading(mediaImage);
 
-      // After the initial image loads, load the high-res version
-      const highResUrl = mediaImage.getAttribute('data-high-res');
-      if (highResUrl) {
-        // Preload the high-res image
-        const highResImage = new Image();
-        highResImage.onload = () => {
-          // Only swap to high-res after it's fully loaded
-          requestAnimationFrame(() => {
-            mediaImage.src = highResUrl;
-          });
-        };
-        highResImage.src = highResUrl;
-      }
-    };
-
-    // Load song name
-    SpotifyPlayer.GetSongName().then((songName) => {
-      const songNameElem = document.querySelector(
-        '#SpicyLyricsPage .SongName span',
-      );
-      if (songNameElem) {
-        songNameElem.textContent = songName;
-      }
-    });
-
-    // Load artists
-    SpotifyPlayer.GetArtists().then((artists) => {
-      const artistsElem = document.querySelector(
-        '#SpicyLyricsPage .Artists span',
-      );
-      if (artistsElem) {
-        artistsElem.textContent = SpotifyPlayer.JoinArtists(artists);
-      }
-    });
-
-    // Load artwork images
-    Promise.all([
-      SpotifyPlayer.Artwork.Get('l'),
-      SpotifyPlayer.Artwork.Get('xl'),
-    ])
-      .then(([standardUrl, highResUrl]) => {
-        // Set the standard resolution image
-        if (standardUrl) {
-          mediaImage.src = standardUrl;
-        }
-
-        // Store high-res URL for later loading
-        if (highResUrl) {
-          mediaImage.setAttribute('data-high-res', highResUrl);
-        }
-      })
-      .catch((error) => {
-        console.error('Failed to load artwork:', error);
-      });
+    // Load initial content
+    UpdatePageContent();
   }
 
   addLinesEvListener();
@@ -385,6 +333,87 @@ export function SpicyLyrics_Notification({
       NotificationContainer.classList.add('Visible');
     },
   };
+}
+
+/**
+ * Sets up image loading with high-res switching for an image element
+ */
+function setupImageLoading(imageElement: HTMLImageElement) {
+  // Set up the onload handler
+  imageElement.onload = () => {
+    imageElement.classList.add('loaded');
+
+    // After the initial image loads, load the high-res version
+    const highResUrl = imageElement.getAttribute('data-high-res');
+    if (highResUrl) {
+      // Preload the high-res image
+      const highResImage = new Image();
+      highResImage.onload = () => {
+        // Only swap to high-res after it's fully loaded
+        requestAnimationFrame(() => {
+          imageElement.src = highResUrl;
+        });
+      };
+      highResImage.src = highResUrl;
+    }
+  };
+}
+
+/**
+ * Updates the page content when the track changes
+ * This ensures the artwork and metadata stay in sync with the current track
+ */
+function UpdatePageContent() {
+  if (!PageView.IsOpened) return;
+
+  const mediaImage = document.querySelector(
+    '#SpicyLyricsPage .MediaImage',
+  ) as HTMLImageElement;
+
+  if (mediaImage) {
+    // Reset loaded state
+    mediaImage.classList.remove('loaded');
+
+    // Load song name
+    SpotifyPlayer.GetSongName().then((songName) => {
+      const songNameElem = document.querySelector(
+        '#SpicyLyricsPage .SongName span',
+      );
+      if (songNameElem) {
+        songNameElem.textContent = songName;
+      }
+    });
+
+    // Load artists
+    SpotifyPlayer.GetArtists().then((artists) => {
+      const artistsElem = document.querySelector(
+        '#SpicyLyricsPage .Artists span',
+      );
+      if (artistsElem) {
+        artistsElem.textContent = SpotifyPlayer.JoinArtists(artists);
+      }
+    });
+
+    // Load artwork images
+    Promise.all([
+      SpotifyPlayer.Artwork.Get('l'),
+      SpotifyPlayer.Artwork.Get('xl'),
+    ])
+      .then(([standardUrl, highResUrl]) => {
+        // Set the standard resolution image
+        if (standardUrl) {
+          mediaImage.src = standardUrl;
+        }
+
+        // Store high-res URL for later loading
+        if (highResUrl) {
+          mediaImage.setAttribute('data-high-res', highResUrl);
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to load artwork:', error);
+      });
+  }
 }
 
 export default PageView;

@@ -249,6 +249,11 @@ async function initializeAmaiLyrics(button) {
     );
 
     if (!document.querySelector("#SpicyLyricsPage .LyricsContainer")) return;
+    
+    // Update the page content (artwork, song name, artists)
+    PageView.UpdatePageContent();
+    
+    // Apply dynamic background
     ApplyDynamicBackground(
       document.querySelector("#SpicyLyricsPage .ContentBox")
     );
