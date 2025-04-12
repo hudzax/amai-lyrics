@@ -61,10 +61,8 @@ function OpenPage() {
                             <div class="MediaContent" draggable="true"></div>
                             <div class="MediaImagePlaceholder"></div>
                             <img class="MediaImage" 
-                                 src="${SpotifyPlayer.Artwork.Get('l')}" 
-                                 data-high-res="${SpotifyPlayer.Artwork.Get(
-                                   'xl',
-                                 )}"
+                                 src="" 
+                                 data-high-res=""
                                  fetchpriority="high"
                                  loading="eager"
                                  decoding="sync"
@@ -72,9 +70,7 @@ function OpenPage() {
                         </div>
                         <div class="Metadata">
                             <div class="SongName">
-                                <span>
-                                    ${SpotifyPlayer.GetSongName()}
-                                </span>
+                                <span></span>
                             </div>
                             <div class="Artists">
                                 <span></span>
@@ -116,12 +112,13 @@ function OpenPage() {
     document.querySelector('#SpicyLyricsPage .ContentBox'),
   );
 
-  // Optimize album cover image loading
+  // Load artwork images asynchronously
   const mediaImage = document.querySelector(
     '#SpicyLyricsPage .MediaImage',
   ) as HTMLImageElement;
+
   if (mediaImage) {
-    // Add loaded class when the initial image loads
+    // Set up the onload handler first
     mediaImage.onload = () => {
       mediaImage.classList.add('loaded');
 
@@ -139,6 +136,46 @@ function OpenPage() {
         highResImage.src = highResUrl;
       }
     };
+
+    // Load song name
+    SpotifyPlayer.GetSongName().then((songName) => {
+      const songNameElem = document.querySelector(
+        '#SpicyLyricsPage .SongName span',
+      );
+      if (songNameElem) {
+        songNameElem.textContent = songName;
+      }
+    });
+
+    // Load artists
+    SpotifyPlayer.GetArtists().then((artists) => {
+      const artistsElem = document.querySelector(
+        '#SpicyLyricsPage .Artists span',
+      );
+      if (artistsElem) {
+        artistsElem.textContent = SpotifyPlayer.JoinArtists(artists);
+      }
+    });
+
+    // Load artwork images
+    Promise.all([
+      SpotifyPlayer.Artwork.Get('l'),
+      SpotifyPlayer.Artwork.Get('xl'),
+    ])
+      .then(([standardUrl, highResUrl]) => {
+        // Set the standard resolution image
+        if (standardUrl) {
+          mediaImage.src = standardUrl;
+        }
+
+        // Store high-res URL for later loading
+        if (highResUrl) {
+          mediaImage.setAttribute('data-high-res', highResUrl);
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to load artwork:', error);
+      });
   }
 
   addLinesEvListener();
