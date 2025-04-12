@@ -7,65 +7,34 @@ import { Tooltips } from '../Pages/PageView';
 import { Icons } from '../Styling/Icons';
 import Fullscreen from './Fullscreen';
 
-let ActivePlaybackControlsInstance = null;
-const ActiveSongProgressBarInstance_Map = new Map();
-let ActiveSetupSongProgressBarInstance = null;
-
-/* const ActiveMarquees = new Map();
-
 /**
- * Accurately measures the width of text content
- * @param text The text to measure
- * @param font Optional font specification
- * @returns Width of the text in pixels
- * 
-function measureTextWidth(text: string, font?: string): number {
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    if (!context) return 0;
-    
-    // Use computed font from the document or specified font
-    if (!font) {
-        font = window.getComputedStyle(document.body).font;
-    }
-    
-    context.font = font;
-    const metrics = context.measureText(text);
-    return metrics.width;
+ * NowBar component for displaying and controlling the current playback
+ * Manages playback controls, progress bar, and UI state
+ */
+
+// Define types for better type safety
+interface PlaybackControlsInstance {
+  Apply: () => void;
+  CleanUp: () => void;
+  GetElement: () => HTMLElement;
 }
 
-function ApplyMarquee(baseWidth, elementWidth, name) {
-    const style = document.createElement("style");
-    style.innerHTML = `
-        @keyframes marquee_${name} {
-             0%, 10% {
-                transform: translateX(0);
-            }
-            45%, 55% {
-                transform: translateX(calc(-${baseWidth} - calc(${elementWidth} + calc(${baseWidth} / 1.5))));
-            }
-            90%, 100% {
-                transform: translateX(0);
-            }
-        }
-    `;
-    style.id = `spicy-lyrics-marquee_${name}`;
-    document.head.appendChild(style);
-    ActiveMarquees.set(name, style);
-    return {
-        cleanup: () => {
-            style.remove();
-            ActiveMarquees.delete(name);
-        },
-        getElement: () => style,
-        getName: () => name,
-        getComputedName: () => `marquee_${name}`,
-    };
-} */
+interface SongProgressBarInstance {
+  Apply: () => void;
+  CleanUp: () => void;
+  GetElement: () => HTMLElement;
+}
+
+// Track instances of components for cleanup and state management
+let ActivePlaybackControlsInstance: PlaybackControlsInstance | null = null;
+const ActiveSongProgressBarInstance_Map = new Map<string, any>();
+let ActiveSetupSongProgressBarInstance: SongProgressBarInstance | null = null;
+
+// Note: Marquee functionality has been removed as it's not currently used
+// If text scrolling is needed in the future, consider using CSS animations or a library
 
 function OpenNowBar() {
   const NowBar = document.querySelector('#SpicyLyricsPage .ContentBox .NowBar');
-  // return;
   if (!NowBar) return;
   UpdateNowBar(true);
   NowBar.classList.add('Active');
@@ -75,6 +44,8 @@ function OpenNowBar() {
     const MediaBox = document.querySelector(
       '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent',
     );
+
+    if (!MediaBox) return;
 
     // Clear any existing controls before adding new ones
     const existingAlbumData = MediaBox.querySelector('.AlbumData');
@@ -601,30 +572,6 @@ function OpenNowBar() {
           MediaBox.innerHTML = '';
           if (viewControls) MediaBox.appendChild(viewControls);
           MediaBox.appendChild(fragment);
-
-          /* AppendQueue.forEach((element) => {
-                        if (element.classList.contains("marqueeify")) {
-                            const childMarquee = element.querySelector("span");
-                            if (!childMarquee) return;
-                            
-                            // Use text measurement instead of element width
-                            const textWidth = measureTextWidth(childMarquee.textContent || "");
-                            
-                            // Only apply marquee if text width is greater than 200px
-                            if (textWidth > 200) {
-                                const marquee = ApplyMarquee(
-                                    element.getAttribute("marquee-base-width") ?? "100%", 
-                                    `${textWidth}px`, 
-                                    "albumName"
-                                );
-                                childMarquee.style.animation = `${marquee.getComputedName()} 25s linear infinite`;
-                            } else {
-                                // Center the text if it doesn't need marquee
-                                childMarquee.style.textAlign = "center";
-                                childMarquee.style.width = "100%";
-                            }
-                        }
-                    }); */
         },
       );
     }
@@ -637,6 +584,8 @@ function OpenNowBar() {
     : document.querySelector(
         '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage',
       );
+
+  if (!DragBox) return;
 
   const dropZones = document.querySelectorAll(
     '#SpicyLyricsPage .ContentBox .DropZone',
@@ -787,6 +736,12 @@ function UpdateNowBar(force = false) {
   const MediaBox = NowBar.querySelector('.Header .MediaBox');
   const SongName = NowBar.querySelector('.Header .Metadata .SongName');
 
+  // Add null checks before accessing DOM elements
+  if (!ArtistsDiv || !MediaBox || !SongName) {
+    console.error('Required elements not found in UpdateNowBar');
+    return;
+  }
+
   ArtistsDiv.classList.add('Skeletoned');
   MediaBox.classList.add('Skeletoned');
   SongName.classList.add('Skeletoned');
@@ -794,27 +749,42 @@ function UpdateNowBar(force = false) {
   const IsNowBarOpen = storage.get('IsNowBarOpen');
   if (IsNowBarOpen == 'false' && !force) return;
 
-  SpotifyPlayer.Artwork.Get('xl').then((artwork) => {
-    /* BlobURLMaker(`https://i.scdn.co/image/${artwork.replace("spotify:image:", "")}`).then(
-            (processedArtwork) => {
-                MediaImage.src = processedArtwork ?? artwork;
-                MediaBox.classList.remove("Skeletoned");
-            }
-        ); */
-    MediaImage.src = artwork;
-    MediaBox.classList.remove('Skeletoned');
-  });
+  // Set artwork image
+  if (MediaImage) {
+    SpotifyPlayer.Artwork.Get('xl')
+      .then((artwork) => {
+        MediaImage.src = artwork;
+        MediaBox.classList.remove('Skeletoned');
+      })
+      .catch((err) => {
+        console.error('Failed to load artwork:', err);
+      });
+  }
 
-  SpotifyPlayer.GetSongName().then((title) => {
-    SongNameSpan.textContent = title;
-    SongName.classList.remove('Skeletoned');
-  });
+  // Update song name
+  if (SongNameSpan && SongName) {
+    SpotifyPlayer.GetSongName()
+      .then((title) => {
+        SongNameSpan.textContent = title;
+        SongName.classList.remove('Skeletoned');
+      })
+      .catch((err) => {
+        console.error('Failed to get song name:', err);
+      });
+  }
 
-  SpotifyPlayer.GetArtists().then((artists) => {
-    const JoinedArtists = SpotifyPlayer.JoinArtists(artists);
-    ArtistsSpan.textContent = JoinedArtists;
-    ArtistsDiv.classList.remove('Skeletoned');
-  });
+  // Update artists
+  if (ArtistsSpan && ArtistsDiv) {
+    SpotifyPlayer.GetArtists()
+      .then((artists) => {
+        const JoinedArtists = SpotifyPlayer.JoinArtists(artists);
+        ArtistsSpan.textContent = JoinedArtists;
+        ArtistsDiv.classList.remove('Skeletoned');
+      })
+      .catch((err) => {
+        console.error('Failed to get artists:', err);
+      });
+  }
 
   if (Fullscreen.IsOpen) {
     const NowBarAlbum = NowBar.querySelector<HTMLDivElement>(
@@ -823,30 +793,10 @@ function UpdateNowBar(force = false) {
     if (NowBarAlbum) {
       NowBarAlbum.classList.add('Skeletoned');
       const AlbumSpan = NowBarAlbum.querySelector('span');
-      AlbumSpan.textContent = SpotifyPlayer.GetAlbumName();
+      if (AlbumSpan) {
+        AlbumSpan.textContent = SpotifyPlayer.GetAlbumName();
+      }
       NowBarAlbum.classList.remove('Skeletoned');
-      /* if (!AlbumSpan) return;
-            if (ActiveMarquees.has("albumName")) {
-                ActiveMarquees.get("albumName").cleanup();
-            }
-            
-            // Use text measurement instead of element width
-            const textWidth = measureTextWidth(AlbumSpan.textContent || "");
-            
-            // Only apply marquee if text width is greater than 200px
-            if (textWidth > 200) {
-                const marquee = ApplyMarquee(
-                    NowBarAlbum.getAttribute("marquee-base-width") ?? "100%", 
-                    `${textWidth}px`, 
-                    "albumName"
-                );
-                AlbumSpan.style.animation = `${marquee.getComputedName()} 25s linear infinite`;
-            } else {
-                // Center the text if it doesn't need marquee
-                AlbumSpan.style.animation = "none";
-                AlbumSpan.style.textAlign = "center";
-                AlbumSpan.style.width = "100%";
-            } */
     }
   }
 }
@@ -898,28 +848,44 @@ function DeregisterNowBarBtn() {
   nowBarButton?.remove();
 }
 
+// Combined event listener for playback:playpause that handles both UI updates and interpolation state
 Global.Event.listen('playback:playpause', (e) => {
-  // console.log("PlayPause", e);
-  if (Fullscreen.IsOpen) {
-    // console.log("Fullscreen Opened");
-    if (ActivePlaybackControlsInstance) {
-      // console.log("ActivePlaybackControlsInstance - Exists");
-      const PlaybackControls = ActivePlaybackControlsInstance.GetElement();
-      const PlayPauseButton =
-        PlaybackControls.querySelector('.PlayStateToggle');
-      if (e.data.isPaused) {
-        // console.log("Paused");
+  // Handle UI updates for fullscreen mode
+  if (Fullscreen.IsOpen && ActivePlaybackControlsInstance) {
+    const PlaybackControls = ActivePlaybackControlsInstance.GetElement();
+    const PlayPauseButton = PlaybackControls?.querySelector('.PlayStateToggle');
+
+    if (PlayPauseButton) {
+      const isPaused = e?.data?.isPaused;
+      if (isPaused) {
         PlayPauseButton.classList.remove('Playing');
         PlayPauseButton.classList.add('Paused');
         const SVG = PlayPauseButton.querySelector('svg');
-        SVG.innerHTML = Icons.Play;
+        if (SVG) SVG.innerHTML = Icons.Play;
       } else {
-        // console.log("Playing");
         PlayPauseButton.classList.remove('Paused');
         PlayPauseButton.classList.add('Playing');
         const SVG = PlayPauseButton.querySelector('svg');
-        SVG.innerHTML = Icons.Pause;
+        if (SVG) SVG.innerHTML = Icons.Pause;
       }
+    }
+  }
+
+  // Handle progress bar interpolation state
+  if (ActiveSetupSongProgressBarInstance) {
+    const isPaused = e?.data?.isPaused;
+    const actualPosition = SpotifyPlayer.GetTrackPosition() || 0;
+
+    // Update our tracking variables
+    ActiveSongProgressBarInstance_Map.set('lastKnownPosition', actualPosition);
+    ActiveSongProgressBarInstance_Map.set('lastUpdateTime', performance.now());
+
+    // Update UI if needed
+    const updateTimelineState = ActiveSongProgressBarInstance_Map.get(
+      'updateTimelineState_Function',
+    );
+    if (updateTimelineState) {
+      updateTimelineState(actualPosition);
     }
   }
 });
@@ -981,108 +947,47 @@ Global.Event.listen('playback:shuffle', (e) => {
   }
 });
 
-// Listen for play/pause events to update our interpolation state
-Global.Event.listen('playback:playpause', (e) => {
-  if (ActiveSetupSongProgressBarInstance) {
-    // When playback state changes, we need to reset our interpolation
-    const isPaused = e?.data?.isPaused;
+// The playback:playpause event listener has been combined with the one above
 
-    if (isPaused) {
-      // If paused, get the exact position and update UI once
-      const actualPosition = SpotifyPlayer.GetTrackPosition() || 0;
-      ActiveSongProgressBarInstance_Map.set(
-        'lastKnownPosition',
-        actualPosition,
-      );
-      ActiveSongProgressBarInstance_Map.set(
-        'lastUpdateTime',
-        performance.now(),
-      );
+/**
+ * Helper function to handle position and progress updates
+ * Extracts common code from position and progress event handlers
+ */
+function handlePositionUpdate(e: any) {
+  if (!ActiveSetupSongProgressBarInstance) return;
 
+  // Extract position value from different event formats
+  let position: number | null = null;
+  if (typeof e === 'number') {
+    position = e;
+  } else if (e && e.data && typeof e.data === 'number') {
+    position = e.data;
+  }
+
+  if (position !== null) {
+    // Update our tracking variables
+    ActiveSongProgressBarInstance_Map.set('lastKnownPosition', position);
+    ActiveSongProgressBarInstance_Map.set('lastUpdateTime', performance.now());
+
+    // Only update the UI if we're not in the middle of interpolation
+    const lastInterpolationUpdate =
+      ActiveSongProgressBarInstance_Map.get('lastInterpolationUpdate') || 0;
+    if (performance.now() - lastInterpolationUpdate > 500) {
       const updateTimelineState = ActiveSongProgressBarInstance_Map.get(
         'updateTimelineState_Function',
       );
       if (updateTimelineState) {
-        updateTimelineState(actualPosition);
+        updateTimelineState(position);
       }
-    } else {
-      // If playing, reset our tracking variables
-      const actualPosition = SpotifyPlayer.GetTrackPosition() || 0;
-      ActiveSongProgressBarInstance_Map.set(
-        'lastKnownPosition',
-        actualPosition,
-      );
-      ActiveSongProgressBarInstance_Map.set(
-        'lastUpdateTime',
-        performance.now(),
-      );
     }
   }
-});
+}
 
 // Listen for position updates
-Global.Event.listen('playback:position', (e) => {
-  if (ActiveSetupSongProgressBarInstance) {
-    // Update our last known position for interpolation
-    if (typeof e === 'number') {
-      ActiveSongProgressBarInstance_Map.set('lastKnownPosition', e);
-      ActiveSongProgressBarInstance_Map.set(
-        'lastUpdateTime',
-        performance.now(),
-      );
-    } else if (e && e.data && typeof e.data === 'number') {
-      ActiveSongProgressBarInstance_Map.set('lastKnownPosition', e.data);
-      ActiveSongProgressBarInstance_Map.set(
-        'lastUpdateTime',
-        performance.now(),
-      );
-    }
-
-    // Only update the UI if we're not in the middle of interpolation
-    const lastInterpolationUpdate =
-      ActiveSongProgressBarInstance_Map.get('lastInterpolationUpdate') || 0;
-    if (performance.now() - lastInterpolationUpdate > 500) {
-      const updateTimelineState = ActiveSongProgressBarInstance_Map.get(
-        'updateTimelineState_Function',
-      );
-      if (updateTimelineState) {
-        updateTimelineState(e);
-      }
-    }
-  }
-});
+Global.Event.listen('playback:position', handlePositionUpdate);
 
 // Listen for progress updates from Spicetify
-Global.Event.listen('playback:progress', (e) => {
-  if (ActiveSetupSongProgressBarInstance) {
-    // Update our last known position for interpolation
-    if (typeof e === 'number') {
-      ActiveSongProgressBarInstance_Map.set('lastKnownPosition', e);
-      ActiveSongProgressBarInstance_Map.set(
-        'lastUpdateTime',
-        performance.now(),
-      );
-    } else if (e && e.data && typeof e.data === 'number') {
-      ActiveSongProgressBarInstance_Map.set('lastKnownPosition', e.data);
-      ActiveSongProgressBarInstance_Map.set(
-        'lastUpdateTime',
-        performance.now(),
-      );
-    }
-
-    // Only update the UI if we're not in the middle of interpolation
-    const lastInterpolationUpdate =
-      ActiveSongProgressBarInstance_Map.get('lastInterpolationUpdate') || 0;
-    if (performance.now() - lastInterpolationUpdate > 500) {
-      const updateTimelineState = ActiveSongProgressBarInstance_Map.get(
-        'updateTimelineState_Function',
-      );
-      if (updateTimelineState) {
-        updateTimelineState(e);
-      }
-    }
-  }
-});
+Global.Event.listen('playback:progress', handlePositionUpdate);
 
 Global.Event.listen('fullscreen:exit', () => {
   CleanUpActiveComponents();
