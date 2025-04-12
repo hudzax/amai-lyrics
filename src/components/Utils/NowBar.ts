@@ -403,6 +403,9 @@ function OpenNowBar() {
         };
 
         const sliderBarHandler = (event: MouseEvent) => {
+          // Only process clicks when in fullscreen mode
+          if (!Fullscreen.IsOpen) return;
+
           // Direct use of the SliderBar element for click calculation
           const positionMs = songProgressBar.CalculatePositionFromClick({
             sliderBar: SliderBar,
@@ -871,8 +874,8 @@ Global.Event.listen('playback:playpause', (e) => {
     }
   }
 
-  // Handle progress bar interpolation state
-  if (ActiveSetupSongProgressBarInstance) {
+  // Handle progress bar interpolation state - only update if in fullscreen mode
+  if (Fullscreen.IsOpen && ActiveSetupSongProgressBarInstance) {
     const isPaused = e?.data?.isPaused;
     const actualPosition = SpotifyPlayer.GetTrackPosition() || 0;
 
@@ -952,9 +955,11 @@ Global.Event.listen('playback:shuffle', (e) => {
 /**
  * Helper function to handle position and progress updates
  * Extracts common code from position and progress event handlers
+ * Only processes updates when in fullscreen mode
  */
 function handlePositionUpdate(e: any) {
-  if (!ActiveSetupSongProgressBarInstance) return;
+  // Only process updates if in fullscreen mode and progress bar is active
+  if (!Fullscreen.IsOpen || !ActiveSetupSongProgressBarInstance) return;
 
   // Extract position value from different event formats
   let position: number | null = null;

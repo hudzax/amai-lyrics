@@ -11,12 +11,31 @@ const Fullscreen = {
   Close,
   Toggle,
   IsOpen: false,
+  handleEscapeKey: function (event) {
+    if (event.key === 'Escape' && this.IsOpen) {
+      this.Close();
+    }
+  },
 };
 
 // Keep IsOpen in sync with actual fullscreen state
 document.addEventListener('fullscreenchange', () => {
-  Fullscreen.IsOpen = !!document.fullscreenElement;
+  const wasFullscreen = Fullscreen.IsOpen;
+  const isNowFullscreen = !!document.fullscreenElement;
+
+  Fullscreen.IsOpen = isNowFullscreen;
+
+  // If browser exited fullscreen but our state didn't update, call Close()
+  if (wasFullscreen && !isNowFullscreen) {
+    Fullscreen.Close();
+  }
 });
+
+// Add keyboard shortcut to exit fullscreen mode when Escape key is pressed
+document.addEventListener(
+  'keydown',
+  Fullscreen.handleEscapeKey.bind(Fullscreen),
+);
 
 const MediaBox_Data = {
   Eventified: false,
