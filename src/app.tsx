@@ -442,6 +442,30 @@ function setupSmartPreloading() {
   
   // Start observing the document body for changes
   observer.observe(document.body, { childList: true, subtree: true });
+  
+  // Also preload album covers when track progress is near the end
+  let lastPreloadCheck = 0;
+  new IntervalManager(1, () => {
+    // Only check every 5 seconds to avoid excessive processing
+    const now = Date.now();
+    if (now - lastPreloadCheck < 5000) return;
+    lastPreloadCheck = now;
+    
+    // If we're near the end of the track (last 15 seconds), preload the next track's cover
+    const position = SpotifyPlayer.GetTrackPosition();
+    const duration = SpotifyPlayer.GetTrackDuration();
+    
+    if (duration > 0 && position > 0 && (duration - position) < 15000) {
+      // We're near the end, try to preload the next track's cover
+      const nextTrackElement = document.querySelector('.Root__now-playing-bar .next-track');
+      if (nextTrackElement) {
+        const nextTrackImg = nextTrackElement.querySelector('img');
+        if (nextTrackImg && nextTrackImg.src) {
+          preloadCoverImage(nextTrackImg.src);
+        }
+      }
+    }
+  }).Start();
 }
 
 async function main() {

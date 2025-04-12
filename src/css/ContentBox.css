@@ -75,6 +75,15 @@
     height: 30cqw;
 }
 
+#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImagePlaceholder {
+    position: absolute;
+    border-radius: 1cqh;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(30, 30, 30, 0.3);
+    z-index: 1;
+}
+
 #SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage {
     --ArtworkBrightness: 1;
     --ArtworkBlur: 0px;
@@ -86,6 +95,18 @@
     filter: brightness(var(--ArtworkBrightness)) blur(var(--ArtworkBlur));
     transition: opacity, scale .1s cubic-bezier(.24,.01,.97,1.41);
     cursor: grab;
+    z-index: 2;
+    position: relative;
+    will-change: transform;
+    contain: paint layout;
+    
+    /* Start with simpler rendering until loaded */
+    filter: brightness(var(--ArtworkBrightness));
+}
+
+/* Apply full styling only after image has loaded */
+#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage.loaded {
+    filter: brightness(var(--ArtworkBrightness)) blur(var(--ArtworkBlur));
 }
 
 #SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox .MediaContent {

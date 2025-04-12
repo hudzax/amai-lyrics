@@ -59,9 +59,16 @@ function OpenPage() {
                     <div class="Header">
                         <div class="MediaBox">
                             <div class="MediaContent" draggable="true"></div>
-                            <img class="MediaImage" src="${SpotifyPlayer.Artwork.Get(
-                              'xl',
-                            )}" draggable="true" />
+                            <div class="MediaImagePlaceholder"></div>
+                            <img class="MediaImage" 
+                                 src="${SpotifyPlayer.Artwork.Get('l')}" 
+                                 data-high-res="${SpotifyPlayer.Artwork.Get(
+                                   'xl',
+                                 )}"
+                                 fetchpriority="high"
+                                 loading="eager"
+                                 decoding="sync"
+                                 draggable="true" />
                         </div>
                         <div class="Metadata">
                             <div class="SongName">
@@ -108,6 +115,31 @@ function OpenPage() {
   ApplyDynamicBackground(
     document.querySelector('#SpicyLyricsPage .ContentBox'),
   );
+
+  // Optimize album cover image loading
+  const mediaImage = document.querySelector(
+    '#SpicyLyricsPage .MediaImage',
+  ) as HTMLImageElement;
+  if (mediaImage) {
+    // Add loaded class when the initial image loads
+    mediaImage.onload = () => {
+      mediaImage.classList.add('loaded');
+
+      // After the initial image loads, load the high-res version
+      const highResUrl = mediaImage.getAttribute('data-high-res');
+      if (highResUrl) {
+        // Preload the high-res image
+        const highResImage = new Image();
+        highResImage.onload = () => {
+          // Only swap to high-res after it's fully loaded
+          requestAnimationFrame(() => {
+            mediaImage.src = highResUrl;
+          });
+        };
+        highResImage.src = highResUrl;
+      }
+    };
+  }
 
   addLinesEvListener();
 
