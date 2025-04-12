@@ -183,10 +183,30 @@ function OpenNowBar() {
 
         // Create named handlers for click events
         const playPauseHandler = () => {
+          const playSvg = PlayPauseControl.querySelector('svg');
+
           if (SpotifyPlayer.IsPlaying) {
+            // Update state immediately before API call
+            SpotifyPlayer.IsPlaying = false;
             SpotifyPlayer.Pause();
+
+            // Immediately update UI to reflect the change
+            PlayPauseControl.classList.remove('Playing');
+            PlayPauseControl.classList.add('Paused');
+            if (playSvg) {
+              playSvg.innerHTML = Icons.Play;
+            }
           } else {
+            // Update state immediately before API call
+            SpotifyPlayer.IsPlaying = true;
             SpotifyPlayer.Play();
+
+            // Immediately update UI to reflect the change
+            PlayPauseControl.classList.remove('Paused');
+            PlayPauseControl.classList.add('Playing');
+            if (playSvg) {
+              playSvg.innerHTML = Icons.Pause;
+            }
           }
         };
 
@@ -202,30 +222,59 @@ function OpenNowBar() {
           if (SpotifyPlayer.ShuffleType === 'none') {
             SpotifyPlayer.ShuffleType = 'normal';
             ShuffleControl.classList.add('Enabled');
+            // Add visual feedback with drop shadow
+            const shuffleSvg = ShuffleControl.querySelector('svg');
+            if (shuffleSvg) {
+              shuffleSvg.style.filter = 'drop-shadow(0 0 5px white)';
+            }
             Spicetify.Player.setShuffle(true);
           } else if (SpotifyPlayer.ShuffleType === 'normal') {
             SpotifyPlayer.ShuffleType = 'none';
             ShuffleControl.classList.remove('Enabled');
+            // Remove visual feedback
+            const shuffleSvg = ShuffleControl.querySelector('svg');
+            if (shuffleSvg) {
+              shuffleSvg.style.filter = '';
+            }
             Spicetify.Player.setShuffle(false);
           }
         };
 
         const loopHandler = () => {
-          if (SpotifyPlayer.LoopType === 'none') {
-            LoopControl.classList.add('Enabled');
-          } else {
-            LoopControl.classList.remove('Enabled');
-          }
+          const loopSvg = LoopControl.querySelector('svg');
 
           if (SpotifyPlayer.LoopType === 'none') {
+            // Change to context repeat
             SpotifyPlayer.LoopType = 'context';
             Spicetify.Player.setRepeat(1);
+
+            // Update UI
+            LoopControl.classList.add('Enabled');
+            if (loopSvg) {
+              loopSvg.innerHTML = Icons.Loop;
+              loopSvg.style.filter = 'drop-shadow(0 0 5px white)';
+            }
           } else if (SpotifyPlayer.LoopType === 'context') {
+            // Change to track repeat
             SpotifyPlayer.LoopType = 'track';
             Spicetify.Player.setRepeat(2);
+
+            // Update UI
+            if (loopSvg) {
+              loopSvg.innerHTML = Icons.LoopTrack;
+              loopSvg.style.filter = 'drop-shadow(0 0 5px white)';
+            }
           } else if (SpotifyPlayer.LoopType === 'track') {
+            // Change to no repeat
             SpotifyPlayer.LoopType = 'none';
             Spicetify.Player.setRepeat(0);
+
+            // Update UI
+            LoopControl.classList.remove('Enabled');
+            if (loopSvg) {
+              loopSvg.innerHTML = Icons.Loop;
+              loopSvg.style.filter = '';
+            }
           }
         };
 
