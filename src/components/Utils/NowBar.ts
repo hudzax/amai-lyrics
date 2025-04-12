@@ -396,29 +396,39 @@ function OpenNowBar() {
             return;
           }
 
+          // Get the current position - handle different input types
+          let currentPosition;
+          if (e === null) {
+            // Normal update - get current position
+            currentPosition = SpotifyPlayer.GetTrackPosition();
+          } else if (typeof e === 'number') {
+            // Direct position value passed
+            currentPosition = e;
+          } else if (e && e.data && typeof e.data === 'number') {
+            // Event from Spicetify with position in data
+            currentPosition = e.data;
+          } else {
+            // Fallback
+            currentPosition = SpotifyPlayer.GetTrackPosition();
+          }
+
           // Update the progress bar state
           songProgressBar.Update({
             duration: SpotifyPlayer.GetTrackDuration() ?? 0,
-            position: e ?? SpotifyPlayer.GetTrackPosition() ?? 0,
+            position: currentPosition ?? 0,
           });
 
           const sliderPercentage = songProgressBar.GetProgressPercentage();
           const formattedPosition = songProgressBar.GetFormattedPosition();
           const formattedDuration = songProgressBar.GetFormattedDuration();
 
+          // Update the UI
           SliderBar.style.setProperty(
             '--SliderProgress',
             sliderPercentage.toString(),
           );
           DurationElem.textContent = formattedDuration;
           PositionElem.textContent = formattedPosition;
-
-          /* // console.log("Slider Percentage:", sliderPercentage);
-                    // console.log("Formatted Position:", formattedPosition);
-                    // console.log("Formatted Duration:", formattedDuration);
-
-                    // console.log("Position:", SpotifyPlayer.GetTrackPosition());
-                    // console.log("Duration:", SpotifyPlayer.GetTrackDuration()); */
         };
 
         const sliderBarHandler = (event: MouseEvent) => {
@@ -431,6 +441,37 @@ function OpenNowBar() {
           // Use the calculated position (in milliseconds)
           if (typeof SpotifyPlayer !== 'undefined' && SpotifyPlayer.Seek) {
             SpotifyPlayer.Seek(positionMs);
+
+            // Update our tracking variables for interpolation
+            ActiveSongProgressBarInstance_Map.set(
+              'lastKnownPosition',
+              positionMs,
+            );
+            ActiveSongProgressBarInstance_Map.set(
+              'lastUpdateTime',
+              performance.now(),
+            );
+
+            // Immediately update the UI to reflect the new position
+            songProgressBar.Update({
+              duration: SpotifyPlayer.GetTrackDuration() ?? 0,
+              position: positionMs,
+            });
+
+            // Update the UI elements
+            const sliderPercentage = songProgressBar.GetProgressPercentage();
+            const formattedPosition = songProgressBar.GetFormattedPosition();
+
+            SliderBar.style.setProperty(
+              '--SliderProgress',
+              sliderPercentage.toString(),
+            );
+
+            const PositionElem =
+              TimelineElem.querySelector<HTMLElement>('.Time.Position');
+            if (PositionElem) {
+              PositionElem.textContent = formattedPosition;
+            }
           }
         };
 
@@ -438,15 +479,74 @@ function OpenNowBar() {
 
         // Run initial update
         updateTimelineState();
+
+        // Initialize our tracking variables
+        const initialPosition = SpotifyPlayer.GetTrackPosition() || 0;
+        ActiveSongProgressBarInstance_Map.set(
+          'lastKnownPosition',
+          initialPosition,
+        );
+        ActiveSongProgressBarInstance_Map.set(
+          'lastUpdateTime',
+          performance.now(),
+        );
+
+        // Set up an interval to update the progress bar regularly with interpolation
+        const updateInterval = setInterval(() => {
+          if (SpotifyPlayer.IsPlaying) {
+            // Get the stored values
+            const lastKnownPosition =
+              ActiveSongProgressBarInstance_Map.get('lastKnownPosition') || 0;
+            const lastUpdateTime =
+              ActiveSongProgressBarInstance_Map.get('lastUpdateTime') ||
+              performance.now();
+
+            // Calculate interpolated position based on elapsed time since last update
+            const now = performance.now();
+            const elapsed = now - lastUpdateTime;
+
+            // Only get the actual position from API occasionally to avoid stuttering
+            // Most of the time, calculate it based on elapsed time
+            if (elapsed > 3000) {
+              // Every 3 seconds, get the actual position from the API
+              const actualPosition = SpotifyPlayer.GetTrackPosition() || 0;
+              ActiveSongProgressBarInstance_Map.set(
+                'lastKnownPosition',
+                actualPosition,
+              );
+              ActiveSongProgressBarInstance_Map.set('lastUpdateTime', now);
+              updateTimelineState(actualPosition);
+            } else {
+              // Otherwise, interpolate the position based on elapsed time
+              const interpolatedPosition = lastKnownPosition + elapsed;
+              ActiveSongProgressBarInstance_Map.set(
+                'lastInterpolationUpdate',
+                now,
+              );
+              updateTimelineState(interpolatedPosition);
+            }
+          }
+        }, 100); // Update very frequently for smoother animation
+
         ActiveSongProgressBarInstance_Map.set(
           'updateTimelineState_Function',
           updateTimelineState,
         );
 
+        // Store the interval ID for cleanup
+        ActiveSongProgressBarInstance_Map.set('updateInterval', updateInterval);
+
         const cleanup = () => {
           // Remove event listeners
           if (SliderBar) {
             SliderBar.removeEventListener('click', sliderBarHandler);
+          }
+
+          // Clear the update interval
+          const updateInterval =
+            ActiveSongProgressBarInstance_Map.get('updateInterval');
+          if (updateInterval) {
+            clearInterval(updateInterval);
           }
 
           // Clean up the progress bar instance
@@ -881,14 +981,105 @@ Global.Event.listen('playback:shuffle', (e) => {
   }
 });
 
-Global.Event.listen('playback:position', (e) => {
-  if (Fullscreen.IsOpen) {
-    if (ActiveSetupSongProgressBarInstance) {
+// Listen for play/pause events to update our interpolation state
+Global.Event.listen('playback:playpause', (e) => {
+  if (ActiveSetupSongProgressBarInstance) {
+    // When playback state changes, we need to reset our interpolation
+    const isPaused = e?.data?.isPaused;
+
+    if (isPaused) {
+      // If paused, get the exact position and update UI once
+      const actualPosition = SpotifyPlayer.GetTrackPosition() || 0;
+      ActiveSongProgressBarInstance_Map.set(
+        'lastKnownPosition',
+        actualPosition,
+      );
+      ActiveSongProgressBarInstance_Map.set(
+        'lastUpdateTime',
+        performance.now(),
+      );
+
       const updateTimelineState = ActiveSongProgressBarInstance_Map.get(
         'updateTimelineState_Function',
       );
-      updateTimelineState(e);
-      // console.log("Timeline Updated!");
+      if (updateTimelineState) {
+        updateTimelineState(actualPosition);
+      }
+    } else {
+      // If playing, reset our tracking variables
+      const actualPosition = SpotifyPlayer.GetTrackPosition() || 0;
+      ActiveSongProgressBarInstance_Map.set(
+        'lastKnownPosition',
+        actualPosition,
+      );
+      ActiveSongProgressBarInstance_Map.set(
+        'lastUpdateTime',
+        performance.now(),
+      );
+    }
+  }
+});
+
+// Listen for position updates
+Global.Event.listen('playback:position', (e) => {
+  if (ActiveSetupSongProgressBarInstance) {
+    // Update our last known position for interpolation
+    if (typeof e === 'number') {
+      ActiveSongProgressBarInstance_Map.set('lastKnownPosition', e);
+      ActiveSongProgressBarInstance_Map.set(
+        'lastUpdateTime',
+        performance.now(),
+      );
+    } else if (e && e.data && typeof e.data === 'number') {
+      ActiveSongProgressBarInstance_Map.set('lastKnownPosition', e.data);
+      ActiveSongProgressBarInstance_Map.set(
+        'lastUpdateTime',
+        performance.now(),
+      );
+    }
+
+    // Only update the UI if we're not in the middle of interpolation
+    const lastInterpolationUpdate =
+      ActiveSongProgressBarInstance_Map.get('lastInterpolationUpdate') || 0;
+    if (performance.now() - lastInterpolationUpdate > 500) {
+      const updateTimelineState = ActiveSongProgressBarInstance_Map.get(
+        'updateTimelineState_Function',
+      );
+      if (updateTimelineState) {
+        updateTimelineState(e);
+      }
+    }
+  }
+});
+
+// Listen for progress updates from Spicetify
+Global.Event.listen('playback:progress', (e) => {
+  if (ActiveSetupSongProgressBarInstance) {
+    // Update our last known position for interpolation
+    if (typeof e === 'number') {
+      ActiveSongProgressBarInstance_Map.set('lastKnownPosition', e);
+      ActiveSongProgressBarInstance_Map.set(
+        'lastUpdateTime',
+        performance.now(),
+      );
+    } else if (e && e.data && typeof e.data === 'number') {
+      ActiveSongProgressBarInstance_Map.set('lastKnownPosition', e.data);
+      ActiveSongProgressBarInstance_Map.set(
+        'lastUpdateTime',
+        performance.now(),
+      );
+    }
+
+    // Only update the UI if we're not in the middle of interpolation
+    const lastInterpolationUpdate =
+      ActiveSongProgressBarInstance_Map.get('lastInterpolationUpdate') || 0;
+    if (performance.now() - lastInterpolationUpdate > 500) {
+      const updateTimelineState = ActiveSongProgressBarInstance_Map.get(
+        'updateTimelineState_Function',
+      );
+      if (updateTimelineState) {
+        updateTimelineState(e);
+      }
     }
   }
 });
