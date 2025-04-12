@@ -97,12 +97,16 @@ function updateButtonRegistration(button) {
 }
 
 function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached, lowQModeEnabled) {
-  if (lowQModeEnabled) return;
+  if (lowQModeEnabled || !coverUrl) return;
   
   // Preload the cover image to improve future LCP
   preloadCoverImage(coverUrl);
 
   try {
+    // Quick check for cached values to avoid unnecessary work
+    if (coverUrl === cached.lastImgUrl && cached.dynamicBg) return;
+
+    // Find the now playing bar if not cached
     if (!cached.nowPlayingBar) {
       cached.nowPlayingBar = document.querySelector(
         ".Root__right-sidebar aside.NowPlayingView"
@@ -110,81 +114,90 @@ function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached, lowQModeEnabled
     }
 
     const nowPlayingBar = cached.nowPlayingBar;
-
     if (!nowPlayingBar) {
       cached.lastImgUrl = null;
       cached.dynamicBg = null;
       return;
     }
 
-    if (coverUrl === cached.lastImgUrl && cached.dynamicBg) return;
-
-    if (!cached.dynamicBg) {
-      const dynamicBackground = document.createElement("div");
-      dynamicBackground.classList.add("spicy-dynamic-bg");
-      
-      // Create a lightweight placeholder div first
-      const placeholderDiv = document.createElement("div");
-      placeholderDiv.className = "FrontPlaceholder";
-      dynamicBackground.appendChild(placeholderDiv);
-      
-      // Create Front image with optimized loading strategy
-      const frontImg = document.createElement("img");
-      frontImg.className = "Front";
-      frontImg.loading = "eager"; // Use standard loading attribute
-      frontImg.decoding = "async";
-      frontImg.src = coverUrl;
-      
-      // Add to DOM immediately but with opacity 0
-      dynamicBackground.appendChild(frontImg);
-      
-      // When image loads, add the loaded class to trigger transition
-      frontImg.onload = () => {
-        frontImg.classList.add("loaded");
-      };
-      
-      // Create Back image with lazy loading
-      const backImg = document.createElement("img");
-      backImg.className = "Back";
-      backImg.loading = "lazy";
-      backImg.decoding = "async";
-      backImg.src = coverUrl;
-      dynamicBackground.appendChild(backImg);
-      
-      // Create BackCenter image with lazy loading
-      const backCenterImg = document.createElement("img");
-      backCenterImg.className = "BackCenter";
-      backCenterImg.loading = "lazy";
-      backCenterImg.decoding = "async";
-      backCenterImg.src = coverUrl;
-      dynamicBackground.appendChild(backCenterImg);
-      
-      nowPlayingBar.classList.add("spicy-dynamic-bg-in-this");
-      nowPlayingBar.appendChild(dynamicBackground);
-      cached.dynamicBg = dynamicBackground;
-    } else {
-      // Simple approach: just update the src of existing images
-      const frontImg = cached.dynamicBg.querySelector(".Front");
-      if (frontImg) {
-        // Remove loaded class temporarily
-        frontImg.classList.remove("loaded");
+    // Use requestAnimationFrame for DOM updates to avoid blocking the main thread
+    requestAnimationFrame(() => {
+      if (!cached.dynamicBg) {
+        // Create the dynamic background container
+        const dynamicBackground = document.createElement("div");
+        dynamicBackground.classList.add("spicy-dynamic-bg");
         
-        // Update src and re-add loaded class when it loads
+        // Create a lightweight placeholder div first
+        const placeholderDiv = document.createElement("div");
+        placeholderDiv.className = "FrontPlaceholder";
+        dynamicBackground.appendChild(placeholderDiv);
+        
+        // Create Front image with optimized loading strategy
+        const frontImg = document.createElement("img");
+        frontImg.className = "Front";
+        frontImg.loading = "eager"; // Use standard loading attribute
+        frontImg.decoding = "async";
         frontImg.src = coverUrl;
+        
+        // Add to DOM immediately but with opacity 0
+        dynamicBackground.appendChild(frontImg);
+        
+        // When image loads, add the loaded class to trigger transition
         frontImg.onload = () => {
-          frontImg.classList.add("loaded");
+          // Use another rAF to ensure this happens in a separate frame
+          requestAnimationFrame(() => {
+            frontImg.classList.add("loaded");
+          });
         };
+        
+        // Create Back image with lazy loading
+        const backImg = document.createElement("img");
+        backImg.className = "Back";
+        backImg.loading = "lazy";
+        backImg.decoding = "async";
+        backImg.src = coverUrl;
+        dynamicBackground.appendChild(backImg);
+        
+        // Create BackCenter image with lazy loading
+        const backCenterImg = document.createElement("img");
+        backCenterImg.className = "BackCenter";
+        backCenterImg.loading = "lazy";
+        backCenterImg.decoding = "async";
+        backCenterImg.src = coverUrl;
+        dynamicBackground.appendChild(backCenterImg);
+        
+        nowPlayingBar.classList.add("spicy-dynamic-bg-in-this");
+        nowPlayingBar.appendChild(dynamicBackground);
+        cached.dynamicBg = dynamicBackground;
+      } else {
+        // Update existing images more efficiently
+        const frontImg = cached.dynamicBg.querySelector(".Front");
+        if (frontImg) {
+          // Use image.onload to handle transitions
+          const newImg = new Image();
+          newImg.onload = () => {
+            requestAnimationFrame(() => {
+              frontImg.src = coverUrl;
+              frontImg.classList.add("loaded");
+            });
+          };
+          frontImg.classList.remove("loaded");
+          newImg.src = coverUrl;
+        }
+        
+        // Update other images in the background with a slight delay
+        // to prioritize the front image update
+        setTimeout(() => {
+          const backImg = cached.dynamicBg.querySelector(".Back");
+          if (backImg) backImg.src = coverUrl;
+          
+          const backCenterImg = cached.dynamicBg.querySelector(".BackCenter");
+          if (backCenterImg) backCenterImg.src = coverUrl;
+        }, 50); // Small delay to prioritize main thread work
       }
-      
-      // Update other images
-      const backImg = cached.dynamicBg.querySelector(".Back");
-      if (backImg) backImg.src = coverUrl;
-      
-      const backCenterImg = cached.dynamicBg.querySelector(".BackCenter");
-      if (backCenterImg) backCenterImg.src = coverUrl;
-    }
 
-    cached.lastImgUrl = coverUrl;
+      cached.lastImgUrl = coverUrl;
+    });
   } catch (error) {
     console.error(
       "Error Applying the Dynamic BG to the NowPlayingBar:",
@@ -231,32 +244,44 @@ async function initializeAmaiLyrics(button) {
 
     if (!currentUri) return;
 
-    // Fetch and apply lyrics on song change
+    // Fetch and apply lyrics on song change (already non-blocking)
     fetchLyrics(currentUri).then(ApplyLyrics);
 
+    // Update button registration (synchronous but fast)
     updateButtonRegistration(button);
 
-    if (Spicetify.Player.data.item?.type === "track") {
-      await SpotifyPlayer.Track.GetTrackInfo();
-      if (document.querySelector("#SpicyLyricsPage .ContentBox .NowBar"))
-        UpdateNowBar();
-    }
-
+    // Start track info fetching but don't await it here
+    const trackInfoPromise = Spicetify.Player.data.item?.type === "track" 
+      ? SpotifyPlayer.Track.GetTrackInfo() 
+      : Promise.resolve(null);
+    
+    // Apply background immediately with current data
     applyDynamicBackgroundToNowPlayingBar(
       Spicetify.Player.data?.item?.metadata?.image_url,
       cached,
       lowQModeEnabled
     );
 
-    if (!document.querySelector("#SpicyLyricsPage .LyricsContainer")) return;
-    
-    // Update the page content (artwork, song name, artists)
-    PageView.UpdatePageContent();
-    
-    // Apply dynamic background
-    ApplyDynamicBackground(
-      document.querySelector("#SpicyLyricsPage .ContentBox")
-    );
+    // Handle UI updates that depend on track info in a non-blocking way
+    trackInfoPromise.then(() => {
+      if (Spicetify.Player.data.item?.type === "track") {
+        if (document.querySelector("#SpicyLyricsPage .ContentBox .NowBar")) {
+          UpdateNowBar();
+        }
+      }
+
+      if (document.querySelector("#SpicyLyricsPage .LyricsContainer")) {
+        // Update the page content (artwork, song name, artists)
+        PageView.UpdatePageContent();
+        
+        // Apply dynamic background
+        ApplyDynamicBackground(
+          document.querySelector("#SpicyLyricsPage .ContentBox")
+        );
+      }
+    }).catch(err => {
+      console.error("Error processing track info:", err);
+    });
   }
 
   Spicetify.Player.addEventListener("songchange", onSongChange);
@@ -391,83 +416,168 @@ function setupDynamicBackground(button) {
   initializeAmaiLyrics(button);
 }
 
-// Cache for recently used album covers
-const recentCovers = new Set();
-const maxCachedCovers = 5;
+// Cache for recently used album covers with timestamps
+const imageCache = new Map();
+const maxCachedCovers = 10;
+const cacheExpiryTime = 5 * 60 * 1000; // 5 minutes
 
 /**
- * Simple image preloading without using link preload
- * This avoids the browser warnings while still getting most of the performance benefit
+ * Enhanced image preloading with better caching
+ * - Uses a Map instead of Set for better performance with large caches
+ * - Includes timestamp to expire old entries
+ * - Uses requestIdleCallback when available for non-blocking preloading
  */
 function preloadCoverImage(coverUrl) {
-  if (!coverUrl || recentCovers.has(coverUrl)) return;
+  if (!coverUrl) return;
   
-  // Add to recent covers cache
-  recentCovers.add(coverUrl);
+  const now = Date.now();
   
-  // Limit cache size
-  if (recentCovers.size > maxCachedCovers) {
-    const firstItem = recentCovers.values().next().value;
-    recentCovers.delete(firstItem);
+  // Check if image is already in cache and not expired
+  if (imageCache.has(coverUrl)) {
+    const cacheEntry = imageCache.get(coverUrl);
+    if (now - cacheEntry.timestamp < cacheExpiryTime) {
+      // Update timestamp to keep frequently used images in cache longer
+      imageCache.set(coverUrl, { timestamp: now, loaded: cacheEntry.loaded });
+      return;
+    }
   }
   
-  // Use Image() constructor for preloading instead of link preload
-  // This is more reliable and doesn't trigger browser warnings
-  const img = new Image();
-  img.src = coverUrl;
+  // Schedule preloading during idle time if supported
+  const preloadFunc = () => {
+    // Use Image() constructor for preloading
+    const img = new Image();
+    img.onload = () => {
+      // Mark as successfully loaded in cache
+      if (imageCache.has(coverUrl)) {
+        const entry = imageCache.get(coverUrl);
+        imageCache.set(coverUrl, { ...entry, loaded: true });
+      }
+    };
+    img.src = coverUrl;
+    
+    // Add to cache with current timestamp
+    imageCache.set(coverUrl, { timestamp: now, loaded: false });
+    
+    // Clean up cache if it gets too large
+    if (imageCache.size > maxCachedCovers) {
+      // Find and remove oldest entries
+      const entries = Array.from(imageCache.entries());
+      entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+      
+      // Remove oldest entries until we're back to max size
+      const entriesToRemove = entries.slice(0, entries.length - maxCachedCovers);
+      for (const [key] of entriesToRemove) {
+        imageCache.delete(key);
+      }
+    }
+  };
+  
+  // Use requestIdleCallback if available, otherwise use setTimeout with 0 delay
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(preloadFunc, { timeout: 1000 });
+  } else {
+    setTimeout(preloadFunc, 0);
+  }
 }
 
 /**
  * Intelligently preloads the next track's image when user behavior suggests
  * they might change tracks soon (e.g., hovering over next button)
+ * 
+ * Optimized to:
+ * - Use passive event listeners
+ * - Throttle DOM queries
+ * - Preload images more intelligently
+ * - Reduce observer scope
  */
 function setupSmartPreloading() {
-  // Find next track button and add hover listener
-  const nextTrackSelector = '.player-controls__right button[aria-label="Next"]';
+  // Cache DOM elements to avoid repeated queries
+  let nextButton = null;
+  let nextTrackImg = null;
+  let lastNextTrackSrc = null;
   
-  // Use MutationObserver to detect when the player controls are added to the DOM
-  const observer = new MutationObserver((mutations) => {
-    const nextButton = document.querySelector(nextTrackSelector);
+  // Throttle variables
+  let lastPreloadCheck = 0;
+  const preloadCheckInterval = 5000; // 5 seconds
+  const endOfTrackThreshold = 15000; // 15 seconds
+  
+  // Find and attach listeners to the next button
+  function setupNextButtonListener() {
+    const nextTrackSelector = '.player-controls__right button[aria-label="Next"]';
+    nextButton = document.querySelector(nextTrackSelector);
+    
     if (nextButton && !nextButton.hasAttribute('data-preload-listener')) {
       nextButton.setAttribute('data-preload-listener', 'true');
       
-      // When user hovers over next button, try to find and preload the next track's image
+      // Use passive event listener for better performance
       nextButton.addEventListener('mouseenter', () => {
-        // Try to find next track in queue
-        const nextTrackElement = document.querySelector('.Root__now-playing-bar .next-track');
-        if (nextTrackElement) {
-          const nextTrackImg = nextTrackElement.querySelector('img');
-          if (nextTrackImg && nextTrackImg.src) {
-            preloadCoverImage(nextTrackImg.src);
-          }
-        }
-      });
+        findAndPreloadNextTrack();
+      }, { passive: true });
+    }
+  }
+  
+  // Find and preload the next track image
+  function findAndPreloadNextTrack() {
+    // Use requestIdleCallback to avoid blocking UI
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(() => performNextTrackLookup(), { timeout: 500 });
+    } else {
+      setTimeout(performNextTrackLookup, 0);
+    }
+  }
+  
+  function performNextTrackLookup() {
+    const nextTrackElement = document.querySelector('.Root__now-playing-bar .next-track');
+    if (!nextTrackElement) return;
+    
+    const imgElement = nextTrackElement.querySelector('img');
+    if (!imgElement || !imgElement.src) return;
+    
+    // Only update cache if the image has changed
+    if (imgElement.src !== lastNextTrackSrc) {
+      nextTrackImg = imgElement;
+      lastNextTrackSrc = imgElement.src;
+      preloadCoverImage(imgElement.src);
+    }
+  }
+  
+  // Use a more targeted MutationObserver to reduce overhead
+  const playerControlsObserver = new MutationObserver((mutations) => {
+    if (!nextButton) {
+      setupNextButtonListener();
     }
   });
   
-  // Start observing the document body for changes
-  observer.observe(document.body, { childList: true, subtree: true });
+  // Start observing only the player controls area instead of the entire body
+  const playerControls = document.querySelector('.player-controls__buttons') || document.body;
+  playerControlsObserver.observe(playerControls, { 
+    childList: true, 
+    subtree: true,
+    attributes: false,
+    characterData: false
+  });
   
-  // Also preload album covers when track progress is near the end
-  let lastPreloadCheck = 0;
+  // Initial setup attempt
+  setupNextButtonListener();
+  
+  // Preload next track when approaching the end of the current track
   new IntervalManager(1, () => {
-    // Only check every 5 seconds to avoid excessive processing
     const now = Date.now();
-    if (now - lastPreloadCheck < 5000) return;
+    if (now - lastPreloadCheck < preloadCheckInterval) return;
     lastPreloadCheck = now;
     
-    // If we're near the end of the track (last 15 seconds), preload the next track's cover
+    // Check if we're near the end of the track
     const position = SpotifyPlayer.GetTrackPosition();
     const duration = SpotifyPlayer.GetTrackDuration();
     
-    if (duration > 0 && position > 0 && (duration - position) < 15000) {
-      // We're near the end, try to preload the next track's cover
-      const nextTrackElement = document.querySelector('.Root__now-playing-bar .next-track');
-      if (nextTrackElement) {
-        const nextTrackImg = nextTrackElement.querySelector('img');
-        if (nextTrackImg && nextTrackImg.src) {
-          preloadCoverImage(nextTrackImg.src);
-        }
+    if (duration > 0 && position > 0 && (duration - position) < endOfTrackThreshold) {
+      findAndPreloadNextTrack();
+      
+      // Also try to preload the album art for the current track at higher quality
+      // This helps with the transition to the lyrics page
+      const currentCoverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
+      if (currentCoverUrl) {
+        preloadCoverImage(currentCoverUrl);
       }
     }
   }).Start();
