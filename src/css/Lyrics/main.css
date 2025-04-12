@@ -188,7 +188,7 @@ ruby > rt {
 }
 
 .Button-buttonSecondary-small-useBrowserDefaultFocusStyle {
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.65);
 }
 
 .amai-settings-header {
@@ -221,4 +221,17 @@ ruby > rt {
   -webkit-backdrop-filter: blur(20px); /* Safari support */
   border: 1px solid rgba(255, 255, 255, 0.2); /* Optional: enhances the frosted look */
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Optional shadow */
+}
+
+.main-nowPlayingView-credits .HeaderArea {
+  flex-direction: column;
+  align-items: start;
+}
+
+.main-nowPlayingView-credits > *:not(:first-child)::before {
+  content: "";
+  display: block;
+  height: .5px;
+  background: rgb(255 255 255 / 30%);
+  margin-bottom: .55rem;
 }
