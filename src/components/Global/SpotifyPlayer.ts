@@ -27,9 +27,7 @@ async function getOrFetchTrackData(trackId: string): Promise<any> {
 }
 
 if (typeof Spicetify !== 'undefined' && Spicetify?.Player) {
-  Spicetify.Player.addEventListener('songchange', () => {
-    TrackData_Map.clear();
-  });
+  // TrackData_Map.clear(); // Do not clear cache on every song change; keep recently played tracks cached
 }
 
 export const SpotifyPlayer = {
