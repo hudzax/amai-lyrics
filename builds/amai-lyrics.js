@@ -9,10 +9,17 @@
   var __getOwnPropNames = Object.getOwnPropertyNames;
   var __getProtoOf = Object.getPrototypeOf;
   var __hasOwnProp = Object.prototype.hasOwnProperty;
+  var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+    get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+  }) : x)(function(x) {
+    if (typeof require !== "undefined")
+      return require.apply(this, arguments);
+    throw new Error('Dynamic require of "' + x + '" is not supported');
+  });
   var __esm = (fn, res) => function __init() {
     return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
   };
-  var __commonJS = (cb, mod) => function __require() {
+  var __commonJS = (cb, mod) => function __require2() {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
   };
   var __export = (target, all) => {
@@ -412,7 +419,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.0.49";
+      version = "1.1.0";
     }
   });
 
@@ -428,10 +435,8 @@
             url: "https://amai-worker-production.nandemo.workers.dev/lyrics"
           }
         },
-        lowQualityMode: false,
         CurrentLyricsType: "None",
         LyricsContainerExists: false,
-        ForceCoverImage_InLowQualityMode: false,
         lyrics_spacing: 2,
         enableRomaji: false,
         disableRomajiToggleNotification: false,
@@ -5710,9 +5715,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_GetProgress();
       TrackData_Map = /* @__PURE__ */ new Map();
       if (typeof Spicetify !== "undefined" && Spicetify?.Player) {
-        Spicetify.Player.addEventListener("songchange", () => {
-          TrackData_Map.clear();
-        });
       }
       SpotifyPlayer = {
         IsPlaying: false,
@@ -6948,54 +6950,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-3452-e2h4tuVR0cE6/196280c73557/DotLoader.css
-  var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-3452-e2h4tuVR0cE6/196280c73557/DotLoader.css"() {
-    }
-  });
-
-  // src/components/DynamicBG/dynamicBackground.ts
-  var dynamicBackground_exports = {};
-  __export(dynamicBackground_exports, {
-    default: () => ApplyDynamicBackground
-  });
-  async function ApplyDynamicBackground(element) {
-    if (!element)
-      return;
-    const playerData = Spicetify.Player.data;
-    const isEpisode = playerData.item.type === "episode";
-    const currentImgCover = await SpotifyPlayer.Artwork.Get("d");
-    const prevDiv = element.querySelector(
-      ".spicy-dynamic-bg"
-    );
-    if (prevDiv) {
-      if (prevDiv.getAttribute("current_tag") === currentImgCover) {
-        return;
-      }
-      prevDiv.setAttribute("current_tag", currentImgCover);
-      prevDiv.innerHTML = `
-                <img class="Front" src="${currentImgCover}" />
-                <img class="Back" src="${currentImgCover}" />
-                <img class="BackCenter" src="${currentImgCover}" />
-            `;
-      return;
-    }
-    const dynamicBgDiv = document.createElement("div");
-    dynamicBgDiv.classList.add("spicy-dynamic-bg");
-    dynamicBgDiv.setAttribute("current_tag", currentImgCover);
-    dynamicBgDiv.innerHTML = `
-            <img class="Front" src="${currentImgCover}" />
-            <img class="Back" src="${currentImgCover}" />
-            <img class="BackCenter" src="${currentImgCover}" />
-        `;
-    element.appendChild(dynamicBgDiv);
-  }
-  var init_dynamicBackground = __esm({
-    "src/components/DynamicBG/dynamicBackground.ts"() {
-      init_SpotifyPlayer();
-    }
-  });
-
   // src/components/Styling/Icons.ts
   var TrackSkip, Icons;
   var init_Icons = __esm({
@@ -7101,6 +7055,733 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
 		</svg>
 	`
       };
+    }
+  });
+
+  // src/utils/Animator.ts
+  var Animator;
+  var init_Animator = __esm({
+    "src/utils/Animator.ts"() {
+      init_Maid();
+      Animator = class {
+        constructor(from, to, duration) {
+          this.startTime = null;
+          this.pausedTime = null;
+          this.animationFrameId = null;
+          this.events = {};
+          this.isDestroyed = false;
+          this.reversed = false;
+          this.from = from;
+          this.to = to;
+          this.duration = duration * 1e3;
+          this.currentProgress = from;
+          this.maid = new Maid();
+        }
+        emit(event, progress) {
+          if (this.events[event] && !this.isDestroyed) {
+            const callback = this.events[event];
+            callback?.(progress ?? this.currentProgress, this.from, this.to);
+          }
+        }
+        on(event, callback) {
+          this.events[event] = callback;
+        }
+        Start() {
+          if (this.isDestroyed)
+            return;
+          this.startTime = performance.now();
+          this.animate();
+        }
+        animate() {
+          if (this.isDestroyed || this.startTime === null)
+            return;
+          const now = performance.now();
+          const elapsed = now - this.startTime;
+          const t = Math.min(elapsed / this.duration, 1);
+          const startValue = this.reversed ? this.to : this.from;
+          const endValue = this.reversed ? this.from : this.to;
+          this.currentProgress = startValue + (endValue - startValue) * t;
+          this.emit("progress", this.currentProgress);
+          if (t < 1) {
+            this.animationFrameId = requestAnimationFrame(() => this.animate());
+            this.maid.Give(() => cancelAnimationFrame(this.animationFrameId));
+          } else {
+            this.emit("finish");
+            this.reset();
+          }
+        }
+        Pause() {
+          if (this.isDestroyed || this.animationFrameId === null)
+            return;
+          cancelAnimationFrame(this.animationFrameId);
+          this.pausedTime = performance.now();
+          this.emit("pause", this.currentProgress);
+        }
+        Resume() {
+          if (this.isDestroyed || this.pausedTime === null)
+            return;
+          const pausedDuration = performance.now() - this.pausedTime;
+          if (this.startTime !== null)
+            this.startTime += pausedDuration;
+          this.pausedTime = null;
+          this.emit("resume", this.currentProgress);
+          this.animate();
+        }
+        Restart() {
+          if (this.isDestroyed)
+            return;
+          this.reset();
+          this.emit("restart", this.currentProgress);
+          this.Start();
+        }
+        Reverse() {
+          if (this.isDestroyed)
+            return;
+          this.reversed = !this.reversed;
+          this.emit("reverse", this.currentProgress);
+        }
+        Destroy() {
+          if (this.isDestroyed)
+            return;
+          this.emit("destroy");
+          this.maid.Destroy();
+          this.reset();
+          this.isDestroyed = true;
+        }
+        reset() {
+          this.startTime = null;
+          this.pausedTime = null;
+          this.animationFrameId = null;
+        }
+      };
+    }
+  });
+
+  // src/utils/fastdom.ts
+  function processQueues() {
+    const reads = readQueue.splice(0, readQueue.length);
+    reads.forEach(({ fn, callback }) => {
+      try {
+        const result = fn();
+        callback(result);
+      } catch (error) {
+        console.error("Error in read operation:", error);
+        callback(null);
+      }
+    });
+    const writes = writeQueue.splice(0, writeQueue.length);
+    writes.forEach(({ fn, callback }) => {
+      try {
+        const result = fn();
+        callback(result);
+      } catch (error) {
+        console.error("Error in write operation:", error);
+        callback(null);
+      }
+    });
+    scheduledAnimationFrame = false;
+    if (readQueue.length > 0 || writeQueue.length > 0) {
+      scheduleFrame();
+    }
+  }
+  function scheduleFrame() {
+    if (!scheduledAnimationFrame) {
+      scheduledAnimationFrame = true;
+      requestAnimationFrame(processQueues);
+    }
+  }
+  function measure(callback, fn) {
+    readQueue.push({ fn, callback });
+    scheduleFrame();
+  }
+  function mutate(callback, fn) {
+    writeQueue.push({ fn, callback });
+    scheduleFrame();
+  }
+  function clear() {
+    readQueue.length = 0;
+    writeQueue.length = 0;
+  }
+  var readQueue, writeQueue, scheduledAnimationFrame, fastdom_default;
+  var init_fastdom = __esm({
+    "src/utils/fastdom.ts"() {
+      readQueue = [];
+      writeQueue = [];
+      scheduledAnimationFrame = false;
+      fastdom_default = {
+        read: (fn) => {
+          return new Promise((resolve) => {
+            measure((result) => {
+              resolve(result);
+            }, fn);
+          });
+        },
+        write: (fn) => {
+          return new Promise((resolve) => {
+            mutate((result) => {
+              resolve(result);
+            }, fn);
+          });
+        },
+        readThenWrite: (readFn, writeFn) => {
+          return new Promise((resolve) => {
+            measure((readResult) => {
+              mutate(
+                (writeResult) => {
+                  resolve(writeResult);
+                },
+                () => writeFn(readResult)
+              );
+            }, readFn);
+          });
+        },
+        clear
+      };
+    }
+  });
+
+  // src/utils/ScrollIntoView/index.ts
+  function cubicEaseInOut(progress) {
+    return progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+  }
+  function smoothScrollIntoView(options) {
+    const {
+      container,
+      element,
+      duration = 150,
+      offset = 0,
+      align = "top",
+      axis = "vertical"
+    } = options;
+    let cancelAnimation = () => {
+    };
+    const controller = {
+      cancel: () => cancelAnimation()
+    };
+    fastdom_default.readThenWrite(
+      () => {
+        const containerRect = container.getBoundingClientRect();
+        const elementRect = element.getBoundingClientRect();
+        let targetScroll;
+        let startScroll;
+        if (axis === "vertical") {
+          startScroll = container.scrollTop;
+          if (align === "center") {
+            targetScroll = elementRect.top - containerRect.top + container.scrollTop - (container.clientHeight / 2 - element.clientHeight / 2) - offset;
+          } else {
+            targetScroll = elementRect.top - containerRect.top + container.scrollTop - offset;
+          }
+        } else {
+          startScroll = container.scrollLeft;
+          if (align === "center") {
+            targetScroll = elementRect.left - containerRect.left + container.scrollLeft - (container.clientWidth / 2 - element.clientWidth / 2) - offset;
+          } else {
+            targetScroll = elementRect.left - containerRect.left + container.scrollLeft - offset;
+          }
+        }
+        return {
+          startScroll,
+          targetScroll,
+          distance: targetScroll - startScroll,
+          axis
+        };
+      },
+      ({ startScroll, targetScroll, distance, axis: axis2 }) => {
+        const startTime = performance.now();
+        let animationFrameId;
+        function animate(currentTime) {
+          const elapsed = currentTime - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const easedProgress = cubicEaseInOut(progress);
+          const newScroll = startScroll + distance * easedProgress;
+          fastdom_default.write(() => {
+            if (axis2 === "vertical") {
+              container.scrollTop = newScroll;
+            } else {
+              container.scrollLeft = newScroll;
+            }
+          });
+          if (progress < 1) {
+            animationFrameId = requestAnimationFrame(animate);
+          }
+        }
+        animationFrameId = requestAnimationFrame(animate);
+        cancelAnimation = () => {
+          cancelAnimationFrame(animationFrameId);
+        };
+        return {
+          cancel: cancelAnimation
+        };
+      }
+    );
+    return controller;
+  }
+  function scrollIntoCenterView(container, element, duration = 150, offset = 0, axis = "vertical") {
+    return smoothScrollIntoView({
+      container,
+      element,
+      duration,
+      offset,
+      align: "center",
+      axis
+    });
+  }
+  var init_ScrollIntoView = __esm({
+    "src/utils/ScrollIntoView/index.ts"() {
+      init_fastdom();
+    }
+  });
+
+  // src/utils/Scrolling/ScrollToActiveLine.ts
+  var ScrollToActiveLine_exports = {};
+  __export(ScrollToActiveLine_exports, {
+    ResetLastLine: () => ResetLastLine,
+    ScrollToActiveLine: () => ScrollToActiveLine
+  });
+  function ScrollToActiveLine(ScrollSimplebar2) {
+    if (!SpotifyPlayer.IsPlaying)
+      return;
+    if (!Defaults_default.LyricsContainerExists)
+      return;
+    if (Spicetify.Platform.History.location.pathname === "/AmaiLyrics") {
+      const Lines = LyricsObject.Types[Defaults_default.CurrentLyricsType]?.Lines;
+      const Position = SpotifyPlayer.GetTrackPosition();
+      const PositionOffset = 370;
+      const ProcessedPosition = Position + PositionOffset;
+      if (!Lines)
+        return;
+      let currentLine = null;
+      for (let i = 0; i < Lines.length; i++) {
+        const line = Lines[i];
+        if (line.StartTime <= ProcessedPosition && line.EndTime >= ProcessedPosition) {
+          currentLine = line;
+          break;
+        }
+      }
+      if (currentLine) {
+        fastdom_default.read(() => {
+          const LineElem = currentLine.HTMLElement;
+          const container = ScrollSimplebar2?.getScrollElement();
+          if (!container)
+            return null;
+          if (lastLine && lastLine === LineElem)
+            return null;
+          return { LineElem, container };
+        }).then((result) => {
+          if (!result)
+            return;
+          const { LineElem, container } = result;
+          lastLine = LineElem;
+          fastdom_default.write(() => {
+            setTimeout(() => {
+              fastdom_default.write(() => {
+                LineElem.classList.add("Active", "OverridenByScroller");
+              });
+            }, PositionOffset / 2);
+            scrollIntoCenterView(container, LineElem, 270, -50);
+          });
+        });
+      }
+    }
+  }
+  function ResetLastLine() {
+    lastLine = null;
+  }
+  var lastLine;
+  var init_ScrollToActiveLine = __esm({
+    "src/utils/Scrolling/ScrollToActiveLine.ts"() {
+      init_Defaults();
+      init_SpotifyPlayer();
+      init_lyrics();
+      init_ScrollIntoView();
+      init_fastdom();
+      lastLine = null;
+    }
+  });
+
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-18228-3N7uDRrxoSYA/196301d4f927/DotLoader.css
+  var init_ = __esm({
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-18228-3N7uDRrxoSYA/196301d4f927/DotLoader.css"() {
+    }
+  });
+
+  // src/components/DynamicBG/dynamicBackground.ts
+  var dynamicBackground_exports = {};
+  __export(dynamicBackground_exports, {
+    default: () => ApplyDynamicBackground
+  });
+  function createBlurredCanvas(imageUrl) {
+    return new Promise((resolve) => {
+      const canvas = document.createElement("canvas");
+      canvas.className = "canvas-bg";
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) {
+        resolve(canvas);
+        return;
+      }
+      if (imageUrl.startsWith("spotify:image:")) {
+        const imageId = imageUrl.replace("spotify:image:", "");
+        imageUrl = `https://i.scdn.co/image/${imageId}`;
+      }
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        try {
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          if (typeof Worker !== "undefined") {
+            try {
+              const workerUrl = URL.createObjectURL(
+                new Blob(
+                  [
+                    __require("!!raw-loader!./blurWorker.ts").default
+                  ],
+                  { type: "application/javascript" }
+                )
+              );
+              const worker = new Worker(workerUrl);
+              const imageData = ctx.getImageData(
+                0,
+                0,
+                canvas.width,
+                canvas.height
+              );
+              worker.onmessage = function(e) {
+                try {
+                  const blurred = e.data.imageData;
+                  ctx.putImageData(blurred, 0, 0);
+                  const data = blurred.data;
+                  for (let i = 0; i < data.length; i += 4) {
+                    const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    data[i] = data[i] + (data[i] - avg) * 0.5;
+                    data[i + 1] = data[i + 1] + (data[i + 1] - avg) * 0.5;
+                    data[i + 2] = data[i + 2] + (data[i + 2] - avg) * 0.5;
+                    data[i] = data[i] * 0.8;
+                    data[i + 1] = data[i + 1] * 0.8;
+                    data[i + 2] = data[i + 2] * 0.8;
+                  }
+                  ctx.putImageData(blurred, 0, 0);
+                  requestAnimationFrame(() => {
+                    canvas.classList.add("loaded");
+                    resolve(canvas);
+                  });
+                } catch (err2) {
+                  console.error(
+                    "Error processing blurred image from worker:",
+                    err2
+                  );
+                  resolve(canvas);
+                } finally {
+                  worker.terminate();
+                  URL.revokeObjectURL(workerUrl);
+                }
+              };
+              worker.onerror = function(err2) {
+                console.error("Blur worker error:", err2);
+                for (let i = 0; i < 4; i++) {
+                  boxBlur(ctx, canvas, 15);
+                }
+                const imageData2 = ctx.getImageData(
+                  0,
+                  0,
+                  canvas.width,
+                  canvas.height
+                );
+                const data = imageData2.data;
+                for (let i = 0; i < data.length; i += 4) {
+                  const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                  data[i] = data[i] + (data[i] - avg) * 0.5;
+                  data[i + 1] = data[i + 1] + (data[i + 1] - avg) * 0.5;
+                  data[i + 2] = data[i + 2] + (data[i + 2] - avg) * 0.5;
+                  data[i] = data[i] * 0.8;
+                  data[i + 1] = data[i + 1] * 0.8;
+                  data[i + 2] = data[i + 2] * 0.8;
+                }
+                ctx.putImageData(imageData2, 0, 0);
+                requestAnimationFrame(() => {
+                  canvas.classList.add("loaded");
+                  resolve(canvas);
+                });
+                worker.terminate();
+                URL.revokeObjectURL(workerUrl);
+              };
+              worker.postMessage(
+                {
+                  imageData,
+                  passes: 4,
+                  radius: 15
+                },
+                [imageData.data.buffer]
+              );
+            } catch (err2) {
+              for (let i = 0; i < 4; i++) {
+                boxBlur(ctx, canvas, 15);
+              }
+              const imageData = ctx.getImageData(
+                0,
+                0,
+                canvas.width,
+                canvas.height
+              );
+              const data = imageData.data;
+              for (let i = 0; i < data.length; i += 4) {
+                const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                data[i] = data[i] + (data[i] - avg) * 0.5;
+                data[i + 1] = data[i + 1] + (data[i + 1] - avg) * 0.5;
+                data[i + 2] = data[i + 2] + (data[i + 2] - avg) * 0.5;
+                data[i] = data[i] * 0.8;
+                data[i + 1] = data[i + 1] * 0.8;
+                data[i + 2] = data[i + 2] * 0.8;
+              }
+              ctx.putImageData(imageData, 0, 0);
+              requestAnimationFrame(() => {
+                canvas.classList.add("loaded");
+                resolve(canvas);
+              });
+            }
+          } else {
+            for (let i = 0; i < 4; i++) {
+              boxBlur(ctx, canvas, 15);
+            }
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            for (let i = 0; i < data.length; i += 4) {
+              const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+              data[i] = data[i] + (data[i] - avg) * 0.5;
+              data[i + 1] = data[i + 1] + (data[i + 1] - avg) * 0.5;
+              data[i + 2] = data[i + 2] + (data[i + 2] - avg) * 0.5;
+              data[i] = data[i] * 0.8;
+              data[i + 1] = data[i + 1] * 0.8;
+              data[i + 2] = data[i + 2] * 0.8;
+            }
+            ctx.putImageData(imageData, 0, 0);
+            requestAnimationFrame(() => {
+              canvas.classList.add("loaded");
+              resolve(canvas);
+            });
+          }
+        } catch (error) {
+          console.error("Error processing canvas:", error);
+          resolve(canvas);
+        }
+      };
+      img.onerror = (e) => {
+        console.error("Error loading image for canvas:", e);
+        resolve(canvas);
+      };
+      img.src = imageUrl;
+    });
+  }
+  function boxBlur(ctx, canvas, radius) {
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const pixels = imageData.data;
+    const width = canvas.width;
+    const height = canvas.height;
+    for (let y = 0; y < height; y++) {
+      let runningTotal = [0, 0, 0];
+      for (let x = 0; x < radius; x++) {
+        const idx = (y * width + x) * 4;
+        runningTotal[0] += pixels[idx];
+        runningTotal[1] += pixels[idx + 1];
+        runningTotal[2] += pixels[idx + 2];
+      }
+      for (let x = 0; x < width; x++) {
+        if (x + radius < width) {
+          const idx = (y * width + x + radius) * 4;
+          runningTotal[0] += pixels[idx];
+          runningTotal[1] += pixels[idx + 1];
+          runningTotal[2] += pixels[idx + 2];
+        }
+        if (x - radius - 1 >= 0) {
+          const idx = (y * width + x - radius - 1) * 4;
+          runningTotal[0] -= pixels[idx];
+          runningTotal[1] -= pixels[idx + 1];
+          runningTotal[2] -= pixels[idx + 2];
+        }
+        const currentIdx = (y * width + x) * 4;
+        const count = Math.min(radius + x + 1, width) - Math.max(x - radius, 0);
+        pixels[currentIdx] = runningTotal[0] / count;
+        pixels[currentIdx + 1] = runningTotal[1] / count;
+        pixels[currentIdx + 2] = runningTotal[2] / count;
+      }
+    }
+    for (let x = 0; x < width; x++) {
+      let runningTotal = [0, 0, 0];
+      for (let y = 0; y < radius; y++) {
+        const idx = (y * width + x) * 4;
+        runningTotal[0] += pixels[idx];
+        runningTotal[1] += pixels[idx + 1];
+        runningTotal[2] += pixels[idx + 2];
+      }
+      for (let y = 0; y < height; y++) {
+        if (y + radius < height) {
+          const idx = ((y + radius) * width + x) * 4;
+          runningTotal[0] += pixels[idx];
+          runningTotal[1] += pixels[idx + 1];
+          runningTotal[2] += pixels[idx + 2];
+        }
+        if (y - radius - 1 >= 0) {
+          const idx = ((y - radius - 1) * width + x) * 4;
+          runningTotal[0] -= pixels[idx];
+          runningTotal[1] -= pixels[idx + 1];
+          runningTotal[2] -= pixels[idx + 2];
+        }
+        const currentIdx = (y * width + x) * 4;
+        const count = Math.min(radius + y + 1, height) - Math.max(y - radius, 0);
+        pixels[currentIdx] = runningTotal[0] / count;
+        pixels[currentIdx + 1] = runningTotal[1] / count;
+        pixels[currentIdx + 2] = runningTotal[2] / count;
+      }
+    }
+    ctx.putImageData(imageData, 0, 0);
+  }
+  async function ApplyDynamicBackground(element) {
+    if (!element)
+      return;
+    const reducedMotion = prefersReducedMotion;
+    const rotationPrimary = Math.floor(Math.random() * 360);
+    const rotationSecondary = Math.floor(Math.random() * 360);
+    document.documentElement.style.setProperty(
+      "--bg-rotation-primary",
+      `${rotationPrimary}deg`
+    );
+    document.documentElement.style.setProperty(
+      "--bg-rotation-secondary",
+      `${rotationSecondary}deg`
+    );
+    const scalePrimary = 0.9 + Math.random() * 0.3;
+    const scaleSecondary = 0.9 + Math.random() * 0.3;
+    document.documentElement.style.setProperty(
+      "--bg-scale-primary",
+      `${scalePrimary}`
+    );
+    document.documentElement.style.setProperty(
+      "--bg-scale-secondary",
+      `${scaleSecondary}`
+    );
+    const hueShift = Math.floor(Math.random() * 30);
+    document.documentElement.style.setProperty(
+      "--bg-hue-shift",
+      `${hueShift}deg`
+    );
+    let currentImgCover = await SpotifyPlayer.Artwork.Get("d");
+    if (currentImgCover.startsWith("spotify:image:")) {
+      const imageId = currentImgCover.replace("spotify:image:", "");
+      currentImgCover = `https://i.scdn.co/image/${imageId}`;
+    }
+    return fastdom_default.readThenWrite(
+      () => {
+        const bgContainer = element.querySelector(
+          ".sweet-dynamic-bg"
+        );
+        return {
+          bgContainer,
+          needsUpdate: !bgContainer || bgContainer.getAttribute("current-img") !== currentImgCover,
+          currentImgCover,
+          reducedMotion
+        };
+      },
+      async ({ bgContainer, needsUpdate, currentImgCover: currentImgCover2, reducedMotion: reducedMotion2 }) => {
+        if (!needsUpdate)
+          return;
+        if (bgContainer) {
+          bgContainer.setAttribute("current-img", currentImgCover2);
+          const primaryImg = bgContainer.querySelector(
+            ".primary"
+          );
+          const secondaryImg = bgContainer.querySelector(
+            ".secondary"
+          );
+          const newImg = new Image();
+          newImg.onload = () => {
+            if (primaryImg) {
+              const newPrimaryImg = document.createElement("img");
+              newPrimaryImg.className = "primary";
+              newPrimaryImg.decoding = "async";
+              newPrimaryImg.loading = "eager";
+              newPrimaryImg.src = currentImgCover2;
+              newPrimaryImg.style.opacity = "0";
+              bgContainer.appendChild(newPrimaryImg);
+              newPrimaryImg.onload = () => {
+                setTimeout(() => {
+                  newPrimaryImg.classList.add("loaded");
+                  setTimeout(() => {
+                    primaryImg.remove();
+                  }, 1e3);
+                }, 50);
+              };
+            }
+            if (secondaryImg) {
+              const newSecondaryImg = document.createElement("img");
+              newSecondaryImg.className = "secondary";
+              newSecondaryImg.decoding = "async";
+              newSecondaryImg.loading = "eager";
+              newSecondaryImg.src = currentImgCover2;
+              bgContainer.appendChild(newSecondaryImg);
+              setTimeout(() => {
+                secondaryImg.remove();
+              }, 1200);
+            }
+            if (supportsCanvas && !reducedMotion2) {
+              createBlurredCanvas(currentImgCover2).then((canvas) => {
+                bgContainer.appendChild(canvas);
+                setTimeout(() => {
+                  const oldCanvas = bgContainer.querySelector(
+                    ".canvas-bg:not(.loaded)"
+                  );
+                  if (oldCanvas) {
+                    oldCanvas.remove();
+                  }
+                }, 1e3);
+              });
+            }
+          };
+          newImg.src = currentImgCover2;
+        } else {
+          const container = document.createElement("div");
+          container.className = "sweet-dynamic-bg";
+          container.setAttribute("current-img", currentImgCover2);
+          const placeholder = document.createElement("div");
+          placeholder.className = "placeholder";
+          container.appendChild(placeholder);
+          const primaryImg = document.createElement("img");
+          primaryImg.className = "primary";
+          primaryImg.decoding = "async";
+          primaryImg.loading = "eager";
+          primaryImg.src = currentImgCover2;
+          container.appendChild(primaryImg);
+          primaryImg.onload = () => {
+            requestAnimationFrame(() => {
+              primaryImg.classList.add("loaded");
+            });
+          };
+          const secondaryImg = document.createElement("img");
+          secondaryImg.className = "secondary";
+          secondaryImg.decoding = "async";
+          secondaryImg.loading = "lazy";
+          secondaryImg.src = currentImgCover2;
+          container.appendChild(secondaryImg);
+          if (supportsCanvas && !reducedMotion2) {
+            createBlurredCanvas(currentImgCover2).then((canvas) => {
+              container.appendChild(canvas);
+            });
+          }
+          element.appendChild(container);
+          requestAnimationFrame(() => {
+            container.classList.add("spicy-dynamic-bg-loaded");
+          });
+        }
+      }
+    );
+  }
+  var supportsCanvas, prefersReducedMotion;
+  var init_dynamicBackground = __esm({
+    "src/components/DynamicBG/dynamicBackground.ts"() {
+      init_SpotifyPlayer();
+      init_fastdom();
+      supportsCanvas = typeof document !== "undefined" && !!document.createElement("canvas").getContext;
+      prefersReducedMotion = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     }
   });
 
@@ -9229,234 +9910,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // src/utils/Animator.ts
-  var Animator;
-  var init_Animator = __esm({
-    "src/utils/Animator.ts"() {
-      init_Maid();
-      Animator = class {
-        constructor(from, to, duration) {
-          this.startTime = null;
-          this.pausedTime = null;
-          this.animationFrameId = null;
-          this.events = {};
-          this.isDestroyed = false;
-          this.reversed = false;
-          this.from = from;
-          this.to = to;
-          this.duration = duration * 1e3;
-          this.currentProgress = from;
-          this.maid = new Maid();
-        }
-        emit(event, progress) {
-          if (this.events[event] && !this.isDestroyed) {
-            const callback = this.events[event];
-            callback?.(progress ?? this.currentProgress, this.from, this.to);
-          }
-        }
-        on(event, callback) {
-          this.events[event] = callback;
-        }
-        Start() {
-          if (this.isDestroyed)
-            return;
-          this.startTime = performance.now();
-          this.animate();
-        }
-        animate() {
-          if (this.isDestroyed || this.startTime === null)
-            return;
-          const now = performance.now();
-          const elapsed = now - this.startTime;
-          const t = Math.min(elapsed / this.duration, 1);
-          const startValue = this.reversed ? this.to : this.from;
-          const endValue = this.reversed ? this.from : this.to;
-          this.currentProgress = startValue + (endValue - startValue) * t;
-          this.emit("progress", this.currentProgress);
-          if (t < 1) {
-            this.animationFrameId = requestAnimationFrame(() => this.animate());
-            this.maid.Give(() => cancelAnimationFrame(this.animationFrameId));
-          } else {
-            this.emit("finish");
-            this.reset();
-          }
-        }
-        Pause() {
-          if (this.isDestroyed || this.animationFrameId === null)
-            return;
-          cancelAnimationFrame(this.animationFrameId);
-          this.pausedTime = performance.now();
-          this.emit("pause", this.currentProgress);
-        }
-        Resume() {
-          if (this.isDestroyed || this.pausedTime === null)
-            return;
-          const pausedDuration = performance.now() - this.pausedTime;
-          if (this.startTime !== null)
-            this.startTime += pausedDuration;
-          this.pausedTime = null;
-          this.emit("resume", this.currentProgress);
-          this.animate();
-        }
-        Restart() {
-          if (this.isDestroyed)
-            return;
-          this.reset();
-          this.emit("restart", this.currentProgress);
-          this.Start();
-        }
-        Reverse() {
-          if (this.isDestroyed)
-            return;
-          this.reversed = !this.reversed;
-          this.emit("reverse", this.currentProgress);
-        }
-        Destroy() {
-          if (this.isDestroyed)
-            return;
-          this.emit("destroy");
-          this.maid.Destroy();
-          this.reset();
-          this.isDestroyed = true;
-        }
-        reset() {
-          this.startTime = null;
-          this.pausedTime = null;
-          this.animationFrameId = null;
-        }
-      };
-    }
-  });
-
-  // src/utils/ScrollIntoView/index.ts
-  function cubicEaseInOut(progress) {
-    return progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-  }
-  function smoothScrollIntoView(options) {
-    const {
-      container,
-      element,
-      duration = 150,
-      offset = 0,
-      align = "top",
-      axis = "vertical"
-    } = options;
-    const containerRect = container.getBoundingClientRect();
-    const elementRect = element.getBoundingClientRect();
-    let targetScroll;
-    let startScroll;
-    if (axis === "vertical") {
-      startScroll = container.scrollTop;
-      if (align === "center") {
-        targetScroll = elementRect.top - containerRect.top + container.scrollTop - (container.clientHeight / 2 - element.clientHeight / 2) - offset;
-      } else {
-        targetScroll = elementRect.top - containerRect.top + container.scrollTop - offset;
-      }
-    } else {
-      startScroll = container.scrollLeft;
-      if (align === "center") {
-        targetScroll = elementRect.left - containerRect.left + container.scrollLeft - (container.clientWidth / 2 - element.clientWidth / 2) - offset;
-      } else {
-        targetScroll = elementRect.left - containerRect.left + container.scrollLeft - offset;
-      }
-    }
-    const distance = targetScroll - startScroll;
-    const startTime = performance.now();
-    let animationFrameId;
-    function animate(currentTime) {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const easedProgress = cubicEaseInOut(progress);
-      const newScroll = startScroll + distance * easedProgress;
-      if (axis === "vertical") {
-        container.scrollTop = newScroll;
-      } else {
-        container.scrollLeft = newScroll;
-      }
-      if (progress < 1) {
-        animationFrameId = requestAnimationFrame(animate);
-      }
-    }
-    animationFrameId = requestAnimationFrame(animate);
-    return {
-      cancel: () => {
-        cancelAnimationFrame(animationFrameId);
-      }
-    };
-  }
-  function scrollIntoCenterView(container, element, duration = 150, offset = 0, axis = "vertical") {
-    return smoothScrollIntoView({
-      container,
-      element,
-      duration,
-      offset,
-      align: "center",
-      axis
-    });
-  }
-  var init_ScrollIntoView = __esm({
-    "src/utils/ScrollIntoView/index.ts"() {
-    }
-  });
-
-  // src/utils/Scrolling/ScrollToActiveLine.ts
-  var ScrollToActiveLine_exports = {};
-  __export(ScrollToActiveLine_exports, {
-    ResetLastLine: () => ResetLastLine,
-    ScrollToActiveLine: () => ScrollToActiveLine
-  });
-  function ScrollToActiveLine(ScrollSimplebar2) {
-    if (!SpotifyPlayer.IsPlaying)
-      return;
-    if (!Defaults_default.LyricsContainerExists)
-      return;
-    if (Spicetify.Platform.History.location.pathname === "/AmaiLyrics") {
-      let Continue = function(currentLine) {
-        if (currentLine) {
-          const LineElem = currentLine.HTMLElement;
-          const container = ScrollSimplebar2?.getScrollElement();
-          if (!container)
-            return;
-          if (lastLine && lastLine === LineElem)
-            return;
-          lastLine = LineElem;
-          setTimeout(
-            () => LineElem.classList.add("Active", "OverridenByScroller"),
-            PositionOffset / 2
-          );
-          scrollIntoCenterView(container, LineElem, 270, -50);
-        }
-      };
-      const Lines = LyricsObject.Types[Defaults_default.CurrentLyricsType]?.Lines;
-      const Position = SpotifyPlayer.GetTrackPosition();
-      const PositionOffset = 370;
-      const ProcessedPosition = Position + PositionOffset;
-      if (!Lines)
-        return;
-      for (let i = 0; i < Lines.length; i++) {
-        const line = Lines[i];
-        if (line.StartTime <= ProcessedPosition && line.EndTime >= ProcessedPosition) {
-          const currentLine = line;
-          Continue(currentLine);
-          return;
-        }
-      }
-    }
-  }
-  function ResetLastLine() {
-    lastLine = null;
-  }
-  var lastLine;
-  var init_ScrollToActiveLine = __esm({
-    "src/utils/Scrolling/ScrollToActiveLine.ts"() {
-      init_Defaults();
-      init_SpotifyPlayer();
-      init_lyrics();
-      init_ScrollIntoView();
-      lastLine = null;
-    }
-  });
-
   // src/components/Utils/TransferElement.ts
   function TransferElement(element, targetContainer, index = -1) {
     if (!element || !targetContainer) {
@@ -9478,6 +9931,471 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
+  // src/components/Global/Session.ts
+  var sessionHistory, Session, Session_default;
+  var init_Session = __esm({
+    "src/components/Global/Session.ts"() {
+      init_Global();
+      sessionHistory = [];
+      Session = {
+        Navigate: (data) => {
+          Spicetify.Platform.History.push(data);
+        },
+        GoBack: () => {
+          if (sessionHistory.length > 1) {
+            Session.Navigate(sessionHistory[sessionHistory.length - 2]);
+          } else {
+            Session.Navigate({ pathname: "/" });
+          }
+        },
+        GetPreviousLocation: () => {
+          if (sessionHistory.length > 1) {
+            return sessionHistory[sessionHistory.length - 2];
+          }
+          return null;
+        },
+        RecordNavigation: (data) => {
+          Session.PushToHistory(data);
+          Global_default.Event.evoke("session:navigation", data);
+        },
+        FilterOutTheSameLocation: (data) => {
+          const filtered = sessionHistory.filter(
+            (location) => location.pathname !== data.pathname && location.search !== data?.search && location.hash !== data?.hash
+          );
+          sessionHistory = filtered;
+        },
+        PushToHistory: (data) => {
+          sessionHistory.push(data);
+        }
+      };
+      window._spicy_lyrics_session = Session;
+      Session_default = Session;
+    }
+  });
+
+  // src/components/Pages/PageView.ts
+  var PageView_exports = {};
+  __export(PageView_exports, {
+    PageRoot: () => PageRoot,
+    SpicyLyrics_Notification: () => SpicyLyrics_Notification,
+    Tooltips: () => Tooltips,
+    default: () => PageView_default
+  });
+  async function OpenPage() {
+    if (PageView.IsOpened)
+      return;
+    let elem;
+    await fastdom_default.write(() => {
+      elem = document.createElement("div");
+      elem.id = "SpicyLyricsPage";
+      elem.innerHTML = `
+          <div class="NotificationContainer">
+              <div class="NotificationIcon"></div>
+              <div class="NotificationText">
+                  <div class="NotificationTitle"></div>
+                  <div class="NotificationDescription"></div>
+              </div>
+              <div class="NotificationCloseButton">X</div>
+          </div>
+          <div class="ContentBox">
+              <div class="NowBar">
+                  <div class="CenteredView">
+                      <div class="Header">
+                          <div class="MediaBox">
+                              <div class="MediaContent" draggable="true"></div>
+                              <div class="MediaImagePlaceholder"></div>
+                              <img class="MediaImage" 
+                                   src="" 
+                                   data-high-res=""
+                                   fetchpriority="high"
+                                   loading="eager"
+                                   decoding="sync"
+                                   draggable="true" />
+                          </div>
+                          <div class="Metadata">
+                              <div class="SongName">
+                                  <span></span>
+                              </div>
+                              <div class="Artists">
+                                  <span></span>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+              <div class="LyricsContainer">
+                  <div class="loaderContainer">
+                      <div id="DotLoader"></div>
+                  </div>
+                  <div class="LyricsContent ScrollbarScrollable"></div>
+              </div>
+              <div class="ViewControls"></div>
+              <div class="DropZone LeftSide">
+                  <span>Switch Sides</span>
+              </div>
+              <div class="DropZone RightSide">
+                  <span>Switch Sides</span>
+              </div>
+          </div>
+      `;
+      if (PageRoot)
+        PageRoot.appendChild(elem);
+    });
+    Defaults_default.LyricsContainerExists = true;
+    let contentBox = null;
+    await fastdom_default.read(() => {
+      contentBox = document.querySelector("#SpicyLyricsPage .ContentBox");
+    });
+    ApplyDynamicBackground(contentBox);
+    let mediaImage = null;
+    await fastdom_default.read(() => {
+      mediaImage = document.querySelector(
+        "#SpicyLyricsPage .MediaImage"
+      );
+    });
+    if (mediaImage) {
+      setupImageLoading(mediaImage);
+      UpdatePageContent();
+    }
+    addLinesEvListener();
+    {
+      if (!Spicetify.Player.data?.item?.uri)
+        return;
+      const currentUri = Spicetify.Player.data.item.uri;
+      fetchLyrics(currentUri).then(ApplyLyrics);
+    }
+    Session_OpenNowBar();
+    Session_NowBar_SetSide();
+    AppendViewControls();
+    PageView.IsOpened = true;
+  }
+  async function DestroyPage() {
+    if (!PageView.IsOpened)
+      return;
+    if (Fullscreen_default.IsOpen)
+      Fullscreen_default.Close();
+    let spicyLyricsPage = null;
+    await fastdom_default.read(() => {
+      spicyLyricsPage = document.querySelector("#SpicyLyricsPage");
+    });
+    if (!spicyLyricsPage)
+      return;
+    await fastdom_default.write(() => {
+      spicyLyricsPage?.remove();
+    });
+    Defaults_default.LyricsContainerExists = false;
+    removeLinesEvListener();
+    Object.values(Tooltips).forEach((a) => a?.destroy());
+    ResetLastLine();
+    ScrollSimplebar?.unMount();
+    PageView.IsOpened = false;
+  }
+  async function AppendViewControls(ReAppend = false) {
+    let elem = null;
+    await fastdom_default.read(() => {
+      elem = document.querySelector(
+        "#SpicyLyricsPage .ContentBox .ViewControls"
+      );
+    });
+    if (!elem)
+      return;
+    await fastdom_default.write(() => {
+      if (ReAppend)
+        elem.innerHTML = "";
+      elem.innerHTML = `
+          <button id="Close" class="ViewControl">${Icons.Close}</button>
+          <button id="FullscreenToggle" class="ViewControl">${Fullscreen_default.IsOpen ? Icons.CloseFullscreen : Icons.Fullscreen}</button>
+      `;
+    });
+    if (Fullscreen_default.IsOpen) {
+      let headerElem = null;
+      await fastdom_default.read(() => {
+        headerElem = document.querySelector(
+          "#SpicyLyricsPage .ContentBox .NowBar .Header"
+        );
+      });
+      if (headerElem) {
+        await fastdom_default.write(() => {
+          TransferElement(elem, headerElem, 0);
+        });
+      }
+      Object.values(Tooltips).forEach((a) => a?.destroy());
+      let viewControlsElem = null;
+      await fastdom_default.read(() => {
+        viewControlsElem = document.querySelector(
+          "#SpicyLyricsPage .ContentBox .NowBar .Header .ViewControls"
+        );
+      });
+      SetupTippy(viewControlsElem);
+    } else {
+      let headerViewControlsElem = null;
+      await fastdom_default.read(() => {
+        headerViewControlsElem = document.querySelector(
+          "#SpicyLyricsPage .ContentBox .NowBar .Header .ViewControls"
+        );
+      });
+      if (headerViewControlsElem) {
+        let contentBoxElem = null;
+        await fastdom_default.read(() => {
+          contentBoxElem = document.querySelector(
+            "#SpicyLyricsPage .ContentBox"
+          );
+        });
+        if (contentBoxElem) {
+          await fastdom_default.write(() => {
+            TransferElement(elem, contentBoxElem);
+          });
+        }
+      }
+      Object.values(Tooltips).forEach((a) => a?.destroy());
+      SetupTippy(elem);
+    }
+    function SetupTippy(elem2) {
+      if (!elem2)
+        return;
+      const closeButton = elem2.querySelector("#Close");
+      Tooltips.Close = Spicetify.Tippy(closeButton, {
+        ...Spicetify.TippyProps,
+        content: `Close Page`
+      });
+      closeButton?.addEventListener("click", () => Session_default.GoBack());
+      const fullscreenBtn = elem2.querySelector("#FullscreenToggle");
+      Tooltips.FullscreenToggle = Spicetify.Tippy(fullscreenBtn, {
+        ...Spicetify.TippyProps,
+        content: `Toggle Fullscreen`
+      });
+      fullscreenBtn?.addEventListener("click", () => Fullscreen_default.Toggle());
+    }
+  }
+  async function SpicyLyrics_Notification({
+    icon,
+    metadata: { title, description },
+    type,
+    closeBtn
+  }) {
+    const nonFunctionalReturnObject = {
+      cleanup: () => {
+      },
+      close: () => {
+      },
+      open: () => {
+      }
+    };
+    if (!PageView.IsOpened)
+      return nonFunctionalReturnObject;
+    let NotificationContainer = null;
+    let Title = null;
+    let Description = null;
+    let Icon = null;
+    let CloseButton = null;
+    await fastdom_default.read(() => {
+      NotificationContainer = document.querySelector(
+        "#SpicyLyricsPage .NotificationContainer"
+      );
+      if (!NotificationContainer)
+        return;
+      Title = NotificationContainer.querySelector(
+        ".NotificationText .NotificationTitle"
+      );
+      Description = NotificationContainer.querySelector(
+        ".NotificationText .NotificationDescription"
+      );
+      Icon = NotificationContainer.querySelector(".NotificationIcon");
+      CloseButton = NotificationContainer.querySelector(
+        ".NotificationCloseButton"
+      );
+    });
+    if (!NotificationContainer)
+      return nonFunctionalReturnObject;
+    await fastdom_default.write(() => {
+      if (Title && title) {
+        Title.textContent = title;
+      }
+      if (Description && description) {
+        Description.textContent = description;
+      }
+      if (Icon && icon) {
+        Icon.innerHTML = icon;
+      }
+    });
+    const closeBtnHandler = () => {
+      fastdom_default.write(() => {
+        NotificationContainer.classList.remove("Visible");
+        if (Title) {
+          Title.textContent = "";
+        }
+        if (Description) {
+          Description.textContent = "";
+        }
+        if (Icon) {
+          Icon.innerHTML = "";
+        }
+        if (CloseButton) {
+          CloseButton.classList.remove("Disabled");
+        }
+      });
+    };
+    await fastdom_default.write(() => {
+      NotificationContainer.classList.add(type ?? "Information");
+    });
+    const closeBtnA = closeBtn ?? true;
+    if (CloseButton) {
+      if (!closeBtnA) {
+        await fastdom_default.write(() => {
+          CloseButton.classList.add("Disabled");
+        });
+      } else {
+        CloseButton.addEventListener("click", closeBtnHandler);
+      }
+    }
+    return {
+      cleanup: () => {
+        if (closeBtnA && CloseButton) {
+          CloseButton.removeEventListener("click", closeBtnHandler);
+        }
+        fastdom_default.write(() => {
+          NotificationContainer.classList.remove("Visible");
+          NotificationContainer.classList.remove(type ?? "Information");
+          if (Title) {
+            Title.textContent = "";
+          }
+          if (Description) {
+            Description.textContent = "";
+          }
+          if (Icon) {
+            Icon.innerHTML = "";
+          }
+          if (CloseButton) {
+            CloseButton.classList.remove("Disabled");
+          }
+        });
+      },
+      close: () => {
+        fastdom_default.write(() => {
+          NotificationContainer.classList.remove("Visible");
+        });
+      },
+      open: () => {
+        fastdom_default.write(() => {
+          NotificationContainer.classList.add("Visible");
+        });
+      }
+    };
+  }
+  function setupImageLoading(imageElement) {
+    imageElement.onload = () => {
+      fastdom_default.write(() => {
+        imageElement.classList.add("loaded");
+      });
+      const highResUrl = imageElement.getAttribute("data-high-res");
+      if (highResUrl) {
+        const highResImage = new Image();
+        highResImage.onload = () => {
+          fastdom_default.write(() => {
+            imageElement.src = highResUrl;
+          });
+        };
+        highResImage.src = highResUrl;
+      }
+    };
+  }
+  async function UpdatePageContent() {
+    if (!PageView.IsOpened)
+      return;
+    let mediaImage = null;
+    await fastdom_default.read(() => {
+      mediaImage = document.querySelector(
+        "#SpicyLyricsPage .MediaImage"
+      );
+    });
+    if (mediaImage) {
+      await fastdom_default.write(() => {
+        mediaImage.classList.remove("loaded");
+      });
+      SpotifyPlayer.GetSongName().then(async (songName) => {
+        let songNameElem = null;
+        await fastdom_default.read(() => {
+          songNameElem = document.querySelector(
+            "#SpicyLyricsPage .SongName span"
+          );
+        });
+        if (songNameElem) {
+          await fastdom_default.write(() => {
+            songNameElem.textContent = songName;
+          });
+        }
+      });
+      SpotifyPlayer.GetArtists().then(async (artists) => {
+        let artistsElem = null;
+        await fastdom_default.read(() => {
+          artistsElem = document.querySelector("#SpicyLyricsPage .Artists span");
+        });
+        if (artistsElem) {
+          await fastdom_default.write(() => {
+            artistsElem.textContent = SpotifyPlayer.JoinArtists(artists);
+          });
+        }
+      });
+      Promise.all([
+        SpotifyPlayer.Artwork.Get("l"),
+        SpotifyPlayer.Artwork.Get("xl")
+      ]).then(async ([standardUrl, highResUrl]) => {
+        if (standardUrl) {
+          await fastdom_default.write(() => {
+            mediaImage.src = standardUrl;
+          });
+        }
+        if (highResUrl) {
+          await fastdom_default.write(() => {
+            mediaImage.setAttribute("data-high-res", highResUrl);
+          });
+        }
+      }).catch((error) => {
+        console.error("Failed to load artwork:", error);
+      });
+    }
+  }
+  var Tooltips, PageView, PageRoot, PageView_default;
+  var init_PageView = __esm({
+    "src/components/Pages/PageView.ts"() {
+      init_fetchLyrics();
+      init_();
+      init_lyrics();
+      init_dynamicBackground();
+      init_Defaults();
+      init_Icons();
+      init_ScrollSimplebar();
+      init_Applyer();
+      init_SpotifyPlayer();
+      init_NowBar();
+      init_Fullscreen();
+      init_TransferElement();
+      init_Session();
+      init_ScrollToActiveLine();
+      init_fastdom();
+      Tooltips = {
+        Close: null,
+        Kofi: null,
+        FullscreenToggle: null,
+        LyricsToggle: null
+      };
+      PageView = {
+        Open: OpenPage,
+        Destroy: DestroyPage,
+        AppendViewControls,
+        UpdatePageContent,
+        IsOpened: false
+      };
+      PageRoot = null;
+      fastdom_default.read(() => {
+        PageRoot = document.querySelector(
+          ".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]"
+        );
+      });
+      PageView_default = PageView;
+    }
+  });
+
   // src/components/Utils/Fullscreen.ts
   function Open() {
     const SpicyPage = document.querySelector(
@@ -9489,13 +10407,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       SpicyPage.classList.add("Fullscreen");
       Fullscreen.IsOpen = true;
       PageView_default.AppendViewControls(true);
-      Tooltips.NowBarToggle?.destroy();
-      const NowBarToggle = document.querySelector(
-        "#SpicyLyricsPage .ViewControls #NowBarToggle"
-      );
-      if (NowBarToggle) {
-        NowBarToggle.remove();
-      }
       OpenNowBar();
       if (!document.fullscreenElement) {
         Root.querySelector("#SpicyLyricsPage").requestFullscreen().catch((err2) => {
@@ -9654,402 +10565,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // src/components/Global/Session.ts
-  var sessionHistory, Session, Session_default;
-  var init_Session = __esm({
-    "src/components/Global/Session.ts"() {
-      init_Global();
-      sessionHistory = [];
-      Session = {
-        Navigate: (data) => {
-          Spicetify.Platform.History.push(data);
-        },
-        GoBack: () => {
-          if (sessionHistory.length > 1) {
-            Session.Navigate(sessionHistory[sessionHistory.length - 2]);
-          } else {
-            Session.Navigate({ pathname: "/" });
-          }
-        },
-        GetPreviousLocation: () => {
-          if (sessionHistory.length > 1) {
-            return sessionHistory[sessionHistory.length - 2];
-          }
-          return null;
-        },
-        RecordNavigation: (data) => {
-          Session.PushToHistory(data);
-          Global_default.Event.evoke("session:navigation", data);
-        },
-        FilterOutTheSameLocation: (data) => {
-          const filtered = sessionHistory.filter(
-            (location) => location.pathname !== data.pathname && location.search !== data?.search && location.hash !== data?.hash
-          );
-          sessionHistory = filtered;
-        },
-        PushToHistory: (data) => {
-          sessionHistory.push(data);
-        }
-      };
-      window._spicy_lyrics_session = Session;
-      Session_default = Session;
-    }
-  });
-
-  // src/components/Pages/PageView.ts
-  var PageView_exports = {};
-  __export(PageView_exports, {
-    PageRoot: () => PageRoot,
-    SpicyLyrics_Notification: () => SpicyLyrics_Notification,
-    Tooltips: () => Tooltips,
-    default: () => PageView_default
-  });
-  function OpenPage() {
-    if (PageView.IsOpened)
-      return;
-    const elem = document.createElement("div");
-    elem.id = "SpicyLyricsPage";
-    elem.innerHTML = `
-        <div class="NotificationContainer">
-            <div class="NotificationIcon"></div>
-            <div class="NotificationText">
-                <div class="NotificationTitle"></div>
-                <div class="NotificationDescription"></div>
-            </div>
-            <div class="NotificationCloseButton">X</div>
-        </div>
-        <div class="ContentBox">
-            <div class="NowBar">
-                <div class="CenteredView">
-                    <div class="Header">
-                        <div class="MediaBox">
-                            <div class="MediaContent" draggable="true"></div>
-                            <div class="MediaImagePlaceholder"></div>
-                            <img class="MediaImage" 
-                                 src="" 
-                                 data-high-res=""
-                                 fetchpriority="high"
-                                 loading="eager"
-                                 decoding="sync"
-                                 draggable="true" />
-                        </div>
-                        <div class="Metadata">
-                            <div class="SongName">
-                                <span></span>
-                            </div>
-                            <div class="Artists">
-                                <span></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="LyricsContainer">
-                <div class="loaderContainer">
-                    <div id="DotLoader"></div>
-                </div>
-                <div class="LyricsContent ScrollbarScrollable"></div>
-            </div>
-            <div class="ViewControls"></div>
-            <div class="DropZone LeftSide">
-                <span>Switch Sides</span>
-            </div>
-            <div class="DropZone RightSide">
-                <span>Switch Sides</span>
-            </div>
-        </div>
-    `;
-    PageRoot.appendChild(elem);
-    const lowQMode = storage_default.get("lowQMode");
-    const lowQModeEnabled = lowQMode && lowQMode === "true";
-    if (lowQModeEnabled) {
-      elem.querySelector(".LyricsContainer .LyricsContent").classList.add("lowqmode");
-    }
-    Defaults_default.LyricsContainerExists = true;
-    ApplyDynamicBackground(
-      document.querySelector("#SpicyLyricsPage .ContentBox")
-    );
-    const mediaImage = document.querySelector(
-      "#SpicyLyricsPage .MediaImage"
-    );
-    if (mediaImage) {
-      setupImageLoading(mediaImage);
-      UpdatePageContent();
-    }
-    addLinesEvListener();
-    {
-      if (!Spicetify.Player.data?.item?.uri)
-        return;
-      const currentUri = Spicetify.Player.data.item.uri;
-      fetchLyrics(currentUri).then(ApplyLyrics);
-    }
-    Session_OpenNowBar();
-    Session_NowBar_SetSide();
-    AppendViewControls();
-    PageView.IsOpened = true;
-  }
-  function DestroyPage() {
-    if (!PageView.IsOpened)
-      return;
-    if (Fullscreen_default.IsOpen)
-      Fullscreen_default.Close();
-    if (!document.querySelector("#SpicyLyricsPage"))
-      return;
-    document.querySelector("#SpicyLyricsPage")?.remove();
-    Defaults_default.LyricsContainerExists = false;
-    removeLinesEvListener();
-    Object.values(Tooltips).forEach((a) => a?.destroy());
-    ResetLastLine();
-    ScrollSimplebar?.unMount();
-    PageView.IsOpened = false;
-  }
-  function AppendViewControls(ReAppend = false) {
-    const elem = document.querySelector(
-      "#SpicyLyricsPage .ContentBox .ViewControls"
-    );
-    if (!elem)
-      return;
-    if (ReAppend)
-      elem.innerHTML = "";
-    elem.innerHTML = `
-        <button id="Close" class="ViewControl">${Icons.Close}</button>
-        <button id="NowBarToggle" class="ViewControl">${Icons.NowBar}</button>
-        <button id="FullscreenToggle" class="ViewControl">${Fullscreen_default.IsOpen ? Icons.CloseFullscreen : Icons.Fullscreen}</button>
-    `;
-    if (Fullscreen_default.IsOpen) {
-      TransferElement(
-        elem,
-        document.querySelector(
-          "#SpicyLyricsPage .ContentBox .NowBar .Header"
-        ),
-        0
-      );
-      Object.values(Tooltips).forEach((a) => a?.destroy());
-      SetupTippy(
-        document.querySelector(
-          "#SpicyLyricsPage .ContentBox .NowBar .Header .ViewControls"
-        )
-      );
-    } else {
-      if (document.querySelector(
-        "#SpicyLyricsPage .ContentBox .NowBar .Header .ViewControls"
-      )) {
-        TransferElement(
-          elem,
-          document.querySelector("#SpicyLyricsPage .ContentBox")
-        );
-      }
-      Object.values(Tooltips).forEach((a) => a?.destroy());
-      SetupTippy(elem);
-    }
-    function SetupTippy(elem2) {
-      {
-        const closeButton = elem2.querySelector("#Close");
-        Tooltips.Close = Spicetify.Tippy(closeButton, {
-          ...Spicetify.TippyProps,
-          content: `Close Page`
-        });
-        closeButton.addEventListener("click", () => Session_default.GoBack());
-        const nowBarButton = elem2.querySelector("#NowBarToggle");
-        Tooltips.NowBarToggle = Spicetify.Tippy(nowBarButton, {
-          ...Spicetify.TippyProps,
-          content: `NowBar`
-        });
-        nowBarButton.addEventListener("click", () => ToggleNowBar());
-        const fullscreenBtn = elem2.querySelector("#FullscreenToggle");
-        Tooltips.FullscreenToggle = Spicetify.Tippy(fullscreenBtn, {
-          ...Spicetify.TippyProps,
-          content: `Toggle Fullscreen`
-        });
-        fullscreenBtn.addEventListener("click", () => Fullscreen_default.Toggle());
-      }
-    }
-  }
-  function SpicyLyrics_Notification({
-    icon,
-    metadata: { title, description },
-    type,
-    closeBtn
-  }) {
-    const nonFunctionalReturnObject = {
-      cleanup: () => {
-      },
-      close: () => {
-      },
-      open: () => {
-      }
-    };
-    if (!PageView.IsOpened)
-      return nonFunctionalReturnObject;
-    const NotificationContainer = document.querySelector(
-      "#SpicyLyricsPage .NotificationContainer"
-    );
-    if (!NotificationContainer)
-      return nonFunctionalReturnObject;
-    const Title = NotificationContainer.querySelector(
-      ".NotificationText .NotificationTitle"
-    );
-    const Description = NotificationContainer.querySelector(
-      ".NotificationText .NotificationDescription"
-    );
-    const Icon = NotificationContainer.querySelector(".NotificationIcon");
-    const CloseButton = NotificationContainer.querySelector(
-      ".NotificationCloseButton"
-    );
-    if (Title && title) {
-      Title.textContent = title;
-    }
-    if (Description && description) {
-      Description.textContent = description;
-    }
-    if (Icon && icon) {
-      Icon.innerHTML = icon;
-    }
-    const closeBtnHandler = () => {
-      NotificationContainer.classList.remove("Visible");
-      if (Title) {
-        Title.textContent = "";
-      }
-      if (Description) {
-        Description.textContent = "";
-      }
-      if (Icon) {
-        Icon.innerHTML = "";
-      }
-      if (CloseButton) {
-        CloseButton.classList.remove("Disabled");
-      }
-    };
-    NotificationContainer.classList.add(type ?? "Information");
-    const closeBtnA = closeBtn ?? true;
-    if (CloseButton) {
-      if (!closeBtnA) {
-        CloseButton.classList.add("Disabled");
-      } else {
-        CloseButton.addEventListener("click", closeBtnHandler);
-      }
-    }
-    return {
-      cleanup: () => {
-        if (closeBtnA && CloseButton) {
-          CloseButton.removeEventListener("click", closeBtnHandler);
-        }
-        NotificationContainer.classList.remove("Visible");
-        NotificationContainer.classList.remove(type ?? "Information");
-        if (Title) {
-          Title.textContent = "";
-        }
-        if (Description) {
-          Description.textContent = "";
-        }
-        if (Icon) {
-          Icon.innerHTML = "";
-        }
-        if (CloseButton) {
-          CloseButton.classList.remove("Disabled");
-        }
-      },
-      close: () => {
-        NotificationContainer.classList.remove("Visible");
-      },
-      open: () => {
-        NotificationContainer.classList.add("Visible");
-      }
-    };
-  }
-  function setupImageLoading(imageElement) {
-    imageElement.onload = () => {
-      imageElement.classList.add("loaded");
-      const highResUrl = imageElement.getAttribute("data-high-res");
-      if (highResUrl) {
-        const highResImage = new Image();
-        highResImage.onload = () => {
-          requestAnimationFrame(() => {
-            imageElement.src = highResUrl;
-          });
-        };
-        highResImage.src = highResUrl;
-      }
-    };
-  }
-  function UpdatePageContent() {
-    if (!PageView.IsOpened)
-      return;
-    const mediaImage = document.querySelector(
-      "#SpicyLyricsPage .MediaImage"
-    );
-    if (mediaImage) {
-      mediaImage.classList.remove("loaded");
-      SpotifyPlayer.GetSongName().then((songName) => {
-        const songNameElem = document.querySelector(
-          "#SpicyLyricsPage .SongName span"
-        );
-        if (songNameElem) {
-          songNameElem.textContent = songName;
-        }
-      });
-      SpotifyPlayer.GetArtists().then((artists) => {
-        const artistsElem = document.querySelector(
-          "#SpicyLyricsPage .Artists span"
-        );
-        if (artistsElem) {
-          artistsElem.textContent = SpotifyPlayer.JoinArtists(artists);
-        }
-      });
-      Promise.all([
-        SpotifyPlayer.Artwork.Get("l"),
-        SpotifyPlayer.Artwork.Get("xl")
-      ]).then(([standardUrl, highResUrl]) => {
-        if (standardUrl) {
-          mediaImage.src = standardUrl;
-        }
-        if (highResUrl) {
-          mediaImage.setAttribute("data-high-res", highResUrl);
-        }
-      }).catch((error) => {
-        console.error("Failed to load artwork:", error);
-      });
-    }
-  }
-  var Tooltips, PageView, PageRoot, PageView_default;
-  var init_PageView = __esm({
-    "src/components/Pages/PageView.ts"() {
-      init_fetchLyrics();
-      init_storage();
-      init_();
-      init_lyrics();
-      init_dynamicBackground();
-      init_Defaults();
-      init_Icons();
-      init_ScrollSimplebar();
-      init_Applyer();
-      init_SpotifyPlayer();
-      init_NowBar();
-      init_Fullscreen();
-      init_TransferElement();
-      init_Session();
-      init_ScrollToActiveLine();
-      Tooltips = {
-        Close: null,
-        Kofi: null,
-        NowBarToggle: null,
-        FullscreenToggle: null,
-        LyricsToggle: null
-      };
-      PageView = {
-        Open: OpenPage,
-        Destroy: DestroyPage,
-        AppendViewControls,
-        UpdatePageContent,
-        IsOpened: false
-      };
-      PageRoot = document.querySelector(
-        ".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]"
-      );
-      PageView_default = PageView;
-    }
-  });
-
   // src/components/Utils/NowBar.ts
   var NowBar_exports = {};
   __export(NowBar_exports, {
@@ -10059,7 +10574,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     OpenNowBar: () => OpenNowBar,
     Session_NowBar_SetSide: () => Session_NowBar_SetSide,
     Session_OpenNowBar: () => Session_OpenNowBar,
-    ToggleNowBar: () => ToggleNowBar,
     UpdateNowBar: () => UpdateNowBar
   });
   function OpenNowBar() {
@@ -10588,14 +11102,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     storage_default.set("IsNowBarOpen", "false");
     CleanUpActiveComponents();
   }
-  function ToggleNowBar() {
-    const IsNowBarOpen = storage_default.get("IsNowBarOpen");
-    if (IsNowBarOpen === "true") {
-      CloseNowBar();
-    } else {
-      OpenNowBar();
-    }
-  }
   function Session_OpenNowBar() {
     const IsNowBarOpen = storage_default.get("IsNowBarOpen");
     if (IsNowBarOpen === "true") {
@@ -10704,10 +11210,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   }
   function DeregisterNowBarBtn() {
-    if (Tooltips.NowBarToggle) {
-      Tooltips.NowBarToggle.destroy();
-      Tooltips.NowBarToggle = null;
-    }
     const nowBarButton = document.querySelector(
       "#SpicyLyricsPage .ContentBox .ViewControls #NowBarToggle"
     );
@@ -10819,7 +11321,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_Whentil();
       init_Global();
       init_SpotifyPlayer();
-      init_PageView();
       init_Icons();
       init_Fullscreen();
       ActivePlaybackControlsInstance = null;
@@ -18967,6 +19468,7 @@ ${JSON.stringify(
   init_SpotifyPlayer();
   init_Addons();
   init_ScrollSimplebar();
+  init_fastdom();
   init_Global();
   init_Platform();
   init_Whentil();
@@ -19040,87 +19542,235 @@ ${JSON.stringify(
       }
     }
   }
-  function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached, lowQModeEnabled) {
-    if (lowQModeEnabled || !coverUrl)
+  function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached) {
+    if (!coverUrl)
       return;
+    if (coverUrl.startsWith("spotify:image:")) {
+      const imageId = coverUrl.replace("spotify:image:", "");
+      coverUrl = `https://i.scdn.co/image/${imageId}`;
+    }
     preloadCoverImage(coverUrl);
     try {
       if (coverUrl === cached.lastImgUrl && cached.dynamicBg)
         return;
-      if (!cached.nowPlayingBar) {
-        cached.nowPlayingBar = document.querySelector(
-          ".Root__right-sidebar aside.NowPlayingView"
-        );
-      }
-      const nowPlayingBar = cached.nowPlayingBar;
-      if (!nowPlayingBar) {
-        cached.lastImgUrl = null;
-        cached.dynamicBg = null;
-        return;
-      }
-      requestAnimationFrame(() => {
-        if (!cached.dynamicBg) {
-          const dynamicBackground = document.createElement("div");
-          dynamicBackground.classList.add("spicy-dynamic-bg");
-          const placeholderDiv = document.createElement("div");
-          placeholderDiv.className = "FrontPlaceholder";
-          dynamicBackground.appendChild(placeholderDiv);
-          const frontImg = document.createElement("img");
-          frontImg.className = "Front";
-          frontImg.loading = "eager";
-          frontImg.decoding = "async";
-          frontImg.src = coverUrl;
-          dynamicBackground.appendChild(frontImg);
-          frontImg.onload = () => {
-            requestAnimationFrame(() => {
-              frontImg.classList.add("loaded");
-            });
+      const rotationPrimary = Math.floor(Math.random() * 360);
+      const rotationSecondary = Math.floor(Math.random() * 360);
+      document.documentElement.style.setProperty("--bg-rotation-primary", `${rotationPrimary}deg`);
+      document.documentElement.style.setProperty("--bg-rotation-secondary", `${rotationSecondary}deg`);
+      const scalePrimary = 0.9 + Math.random() * 0.3;
+      const scaleSecondary = 0.9 + Math.random() * 0.3;
+      document.documentElement.style.setProperty("--bg-scale-primary", `${scalePrimary}`);
+      document.documentElement.style.setProperty("--bg-scale-secondary", `${scaleSecondary}`);
+      const hueShift = Math.floor(Math.random() * 30);
+      document.documentElement.style.setProperty("--bg-hue-shift", `${hueShift}deg`);
+      fastdom_default.readThenWrite(
+        () => {
+          if (!cached.nowPlayingBar) {
+            cached.nowPlayingBar = document.querySelector(
+              ".Root__right-sidebar aside.NowPlayingView"
+            );
+          }
+          return {
+            nowPlayingBar: cached.nowPlayingBar,
+            hasDynamicBg: !!cached.dynamicBg,
+            elements: cached.dynamicBg ? {
+              primaryImg: cached.dynamicBg.querySelector(".primary"),
+              secondaryImg: cached.dynamicBg.querySelector(".secondary"),
+              canvasBg: cached.dynamicBg.querySelector(".canvas-bg")
+            } : null
           };
-          const backImg = document.createElement("img");
-          backImg.className = "Back";
-          backImg.loading = "lazy";
-          backImg.decoding = "async";
-          backImg.src = coverUrl;
-          dynamicBackground.appendChild(backImg);
-          const backCenterImg = document.createElement("img");
-          backCenterImg.className = "BackCenter";
-          backCenterImg.loading = "lazy";
-          backCenterImg.decoding = "async";
-          backCenterImg.src = coverUrl;
-          dynamicBackground.appendChild(backCenterImg);
-          nowPlayingBar.classList.add("spicy-dynamic-bg-in-this");
-          nowPlayingBar.appendChild(dynamicBackground);
-          cached.dynamicBg = dynamicBackground;
-        } else {
-          const frontImg = cached.dynamicBg.querySelector(".Front");
-          if (frontImg) {
-            const newImg = new Image();
-            newImg.onload = () => {
+        },
+        async ({ nowPlayingBar, hasDynamicBg, elements }) => {
+          if (!nowPlayingBar) {
+            cached.lastImgUrl = null;
+            cached.dynamicBg = null;
+            return;
+          }
+          const supportsCanvas2 = typeof document !== "undefined" && !!document.createElement("canvas").getContext;
+          if (!hasDynamicBg) {
+            const dynamicBackground = document.createElement("div");
+            dynamicBackground.classList.add("sweet-dynamic-bg");
+            const placeholderDiv = document.createElement("div");
+            placeholderDiv.className = "placeholder";
+            dynamicBackground.appendChild(placeholderDiv);
+            const primaryImg = document.createElement("img");
+            primaryImg.className = "primary";
+            primaryImg.loading = "eager";
+            primaryImg.decoding = "async";
+            primaryImg.src = coverUrl;
+            const secondaryImg = document.createElement("img");
+            secondaryImg.className = "secondary";
+            secondaryImg.loading = "lazy";
+            secondaryImg.decoding = "async";
+            secondaryImg.src = coverUrl;
+            dynamicBackground.appendChild(primaryImg);
+            dynamicBackground.appendChild(secondaryImg);
+            if (supportsCanvas2) {
+              setTimeout(() => {
+                createBlurredCanvas2(coverUrl).then((canvas) => {
+                  if (dynamicBackground.isConnected) {
+                    dynamicBackground.appendChild(canvas);
+                  }
+                });
+              }, 100);
+            }
+            nowPlayingBar.classList.add("sweet-dynamic-bg-in-this");
+            nowPlayingBar.appendChild(dynamicBackground);
+            primaryImg.onload = () => {
               requestAnimationFrame(() => {
-                frontImg.src = coverUrl;
-                frontImg.classList.add("loaded");
+                primaryImg.classList.add("loaded");
               });
             };
-            frontImg.classList.remove("loaded");
-            newImg.src = coverUrl;
+            requestAnimationFrame(() => {
+              dynamicBackground.classList.add("sweet-dynamic-bg-loaded");
+            });
+            cached.dynamicBg = dynamicBackground;
+          } else if (elements) {
+            const { primaryImg, secondaryImg, canvasBg } = elements;
+            if (primaryImg) {
+              const newImg = new Image();
+              newImg.onload = () => {
+                requestAnimationFrame(() => {
+                  primaryImg.classList.remove("loaded");
+                  requestAnimationFrame(() => {
+                    primaryImg.src = coverUrl;
+                    primaryImg.onload = () => {
+                      requestAnimationFrame(() => {
+                        primaryImg.classList.add("loaded");
+                      });
+                    };
+                  });
+                });
+              };
+              newImg.src = coverUrl;
+            }
+            if (secondaryImg) {
+              secondaryImg.src = coverUrl;
+            }
+            if (supportsCanvas2) {
+              if (canvasBg) {
+                canvasBg.remove();
+              }
+              setTimeout(() => {
+                createBlurredCanvas2(coverUrl).then((canvas) => {
+                  if (cached.dynamicBg && cached.dynamicBg.isConnected) {
+                    cached.dynamicBg.appendChild(canvas);
+                  }
+                });
+              }, 100);
+            }
           }
-          setTimeout(() => {
-            const backImg = cached.dynamicBg.querySelector(".Back");
-            if (backImg)
-              backImg.src = coverUrl;
-            const backCenterImg = cached.dynamicBg.querySelector(".BackCenter");
-            if (backCenterImg)
-              backCenterImg.src = coverUrl;
-          }, 50);
+          cached.lastImgUrl = coverUrl;
         }
-        cached.lastImgUrl = coverUrl;
-      });
+      );
     } catch (error) {
       console.error(
         "Error Applying the Dynamic BG to the NowPlayingBar:",
         error
       );
     }
+  }
+  function createBlurredCanvas2(imageUrl) {
+    return new Promise((resolve) => {
+      const canvas = document.createElement("canvas");
+      canvas.className = "canvas-bg";
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) {
+        resolve(canvas);
+        return;
+      }
+      if (imageUrl.startsWith("spotify:image:")) {
+        const imageId = imageUrl.replace("spotify:image:", "");
+        imageUrl = `https://i.scdn.co/image/${imageId}`;
+      }
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        try {
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          for (let i = 0; i < 3; i++) {
+            boxBlur2(ctx, canvas, 15);
+          }
+          requestAnimationFrame(() => {
+            canvas.classList.add("loaded");
+            resolve(canvas);
+          });
+        } catch (error) {
+          console.error("Error processing canvas:", error);
+          resolve(canvas);
+        }
+      };
+      img.onerror = (e) => {
+        console.error("Error loading image for canvas:", e);
+        resolve(canvas);
+      };
+      img.src = imageUrl;
+    });
+  }
+  function boxBlur2(ctx, canvas, radius) {
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const pixels = imageData.data;
+    const width = canvas.width;
+    const height = canvas.height;
+    for (let y = 0; y < height; y++) {
+      let runningTotal = [0, 0, 0];
+      for (let x = 0; x < radius; x++) {
+        const idx = (y * width + x) * 4;
+        runningTotal[0] += pixels[idx];
+        runningTotal[1] += pixels[idx + 1];
+        runningTotal[2] += pixels[idx + 2];
+      }
+      for (let x = 0; x < width; x++) {
+        if (x + radius < width) {
+          const idx = (y * width + x + radius) * 4;
+          runningTotal[0] += pixels[idx];
+          runningTotal[1] += pixels[idx + 1];
+          runningTotal[2] += pixels[idx + 2];
+        }
+        if (x - radius - 1 >= 0) {
+          const idx = (y * width + x - radius - 1) * 4;
+          runningTotal[0] -= pixels[idx];
+          runningTotal[1] -= pixels[idx + 1];
+          runningTotal[2] -= pixels[idx + 2];
+        }
+        const currentIdx = (y * width + x) * 4;
+        const count = Math.min(radius + x + 1, width) - Math.max(x - radius, 0);
+        pixels[currentIdx] = runningTotal[0] / count;
+        pixels[currentIdx + 1] = runningTotal[1] / count;
+        pixels[currentIdx + 2] = runningTotal[2] / count;
+      }
+    }
+    for (let x = 0; x < width; x++) {
+      let runningTotal = [0, 0, 0];
+      for (let y = 0; y < radius; y++) {
+        const idx = (y * width + x) * 4;
+        runningTotal[0] += pixels[idx];
+        runningTotal[1] += pixels[idx + 1];
+        runningTotal[2] += pixels[idx + 2];
+      }
+      for (let y = 0; y < height; y++) {
+        if (y + radius < height) {
+          const idx = ((y + radius) * width + x) * 4;
+          runningTotal[0] += pixels[idx];
+          runningTotal[1] += pixels[idx + 1];
+          runningTotal[2] += pixels[idx + 2];
+        }
+        if (y - radius - 1 >= 0) {
+          const idx = ((y - radius - 1) * width + x) * 4;
+          runningTotal[0] -= pixels[idx];
+          runningTotal[1] -= pixels[idx + 1];
+          runningTotal[2] -= pixels[idx + 2];
+        }
+        const currentIdx = (y * width + x) * 4;
+        const count = Math.min(radius + y + 1, height) - Math.max(y - radius, 0);
+        pixels[currentIdx] = runningTotal[0] / count;
+        pixels[currentIdx + 1] = runningTotal[1] / count;
+        pixels[currentIdx + 2] = runningTotal[2] / count;
+      }
+    }
+    ctx.putImageData(imageData, 0, 0);
   }
   async function initializeAmaiLyrics(button) {
     const [{ requestPositionSync: requestPositionSync2 }] = await Promise.all([Promise.resolve().then(() => (init_GetProgress(), GetProgress_exports))]);
@@ -19133,7 +19783,6 @@ ${JSON.stringify(
     Whentil_default.When(() => Spicetify.Platform.PlaybackAPI, () => {
       requestPositionSync2();
     });
-    const lowQModeEnabled = storage_default.get("lowQMode") === "true";
     const cached = {
       nowPlayingBar: null,
       dynamicBg: null,
@@ -19141,7 +19790,7 @@ ${JSON.stringify(
     };
     new IntervalManager(1, () => {
       const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
-      applyDynamicBackgroundToNowPlayingBar(coverUrl, cached, lowQModeEnabled);
+      applyDynamicBackgroundToNowPlayingBar(coverUrl, cached);
     }).Start();
     async function onSongChange(event) {
       let attempts = 0;
@@ -19159,8 +19808,7 @@ ${JSON.stringify(
       const trackInfoPromise = Spicetify.Player.data.item?.type === "track" ? SpotifyPlayer.Track.GetTrackInfo() : Promise.resolve(null);
       applyDynamicBackgroundToNowPlayingBar(
         Spicetify.Player.data?.item?.metadata?.image_url,
-        cached,
-        lowQModeEnabled
+        cached
       );
       trackInfoPromise.then(() => {
         if (Spicetify.Player.data.item?.type === "track") {
@@ -19301,7 +19949,9 @@ ${JSON.stringify(
       }
     }
     const preloadFunc = () => {
+      imageCache.set(coverUrl, { timestamp: now, loaded: false });
       const img = new Image();
+      img.decoding = "async";
       img.onload = () => {
         if (imageCache.has(coverUrl)) {
           const entry = imageCache.get(coverUrl);
@@ -19309,7 +19959,6 @@ ${JSON.stringify(
         }
       };
       img.src = coverUrl;
-      imageCache.set(coverUrl, { timestamp: now, loaded: false });
       if (imageCache.size > maxCachedCovers) {
         const entries = Array.from(imageCache.entries());
         entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -19322,7 +19971,7 @@ ${JSON.stringify(
     if (typeof window.requestIdleCallback === "function") {
       window.requestIdleCallback(preloadFunc, { timeout: 1e3 });
     } else {
-      setTimeout(preloadFunc, 0);
+      setTimeout(preloadFunc, 1);
     }
   }
   function setupSmartPreloading() {
@@ -19410,14 +20059,14 @@ ${JSON.stringify(
     window.addEventListener("load", () => {
       if (window.requestIdleCallback) {
         requestIdleCallback(() => {
-          document.querySelectorAll(".spicy-dynamic-bg").forEach((bg) => {
-            bg.classList.add("spicy-dynamic-bg-loaded");
+          document.querySelectorAll(".sweet-dynamic-bg").forEach((bg) => {
+            bg.classList.add("sweet-dynamic-bg-loaded");
           });
         }, { timeout: 2e3 });
       } else {
         setTimeout(() => {
-          document.querySelectorAll(".spicy-dynamic-bg").forEach((bg) => {
-            bg.classList.add("spicy-dynamic-bg-loaded");
+          document.querySelectorAll(".sweet-dynamic-bg").forEach((bg) => {
+            bg.classList.add("sweet-dynamic-bg-loaded");
           });
         }, 1e3);
       }
@@ -19441,7 +20090,7 @@ ${JSON.stringify(
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-3452-e2h4tuVR0cE6/196280c73557/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-18228-3N7uDRrxoSYA/196301d4f927/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -19467,7 +20116,7 @@ ${JSON.stringify(
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-3452-e2h4tuVR0cE6/196280c72f50/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18228-3N7uDRrxoSYA/196301d4f190/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -19566,15 +20215,15 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
 .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-contextItemInfo:before {
   display: none;
 }
-.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .spicy-dynamic-bg div[data-overlayscrollbars-viewport],
-.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .spicy-dynamic-bg div[data-overlayscrollbars-viewport] > div {
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .sweet-dynamic-bg div[data-overlayscrollbars-viewport],
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .sweet-dynamic-bg div[data-overlayscrollbars-viewport] > div {
   background: transparent;
 }
-.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .spicy-dynamic-bg .main-nowPlayingView-coverArtContainer div:has(video):after,
-.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .spicy-dynamic-bg .main-nowPlayingView-coverArtContainer div:has(video):before {
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .sweet-dynamic-bg .main-nowPlayingView-coverArtContainer div:has(video):after,
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .sweet-dynamic-bg .main-nowPlayingView-coverArtContainer div:has(video):before {
   display: none;
 }
-.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .spicy-dynamic-bg .main-trackInfo-artists {
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .sweet-dynamic-bg .main-trackInfo-artists {
   filter: brightness(1.15);
   opacity: .75;
 }
@@ -19609,7 +20258,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-3452-e2h4tuVR0cE6/196280c73221/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18228-3N7uDRrxoSYA/196301d4f471/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -19817,7 +20466,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-3452-e2h4tuVR0cE6/196280c73292/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18228-3N7uDRrxoSYA/196301d4f4e2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -20308,9 +20957,15 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-3452-e2h4tuVR0cE6/196280c73343/spicy-dynamic-bg.css */
-.spicy-dynamic-bg {
-  filter: saturate(1.5) brightness(.8);
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18228-3N7uDRrxoSYA/196301d4f593/sweet-dynamic-bg.css */
+.sweet-dynamic-bg {
+  --bg-hue-shift: 0deg;
+  --bg-saturation: 1.5;
+  --bg-brightness: 0.6;
+  --bg-rotation-primary: 0deg;
+  --bg-rotation-secondary: 0deg;
+  --bg-scale-primary: 1;
+  --bg-scale-secondary: 1;
   height: 100%;
   left: 0;
   overflow: hidden;
@@ -20318,95 +20973,101 @@ button:has(#SpicyLyricsPageSvg):after {
   position: absolute;
   top: 0;
   width: 100%;
+  filter: saturate(var(--bg-saturation)) brightness(var(--bg-brightness));
+  isolation: isolate;
+  will-change: transform;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
-.spicy-dynamic-bg .FrontPlaceholder {
+.sweet-dynamic-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.2);
+  z-index: 10;
+  pointer-events: none;
+}
+.sweet-dynamic-bg .placeholder {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(40, 40, 40, 0.7) 0%, rgba(20, 20, 20, 0.3) 70%);
+  z-index: 1;
+  border-radius: 50%;
+  transform: scale(2);
+  opacity: 0.8;
+}
+.sweet-dynamic-bg .canvas-bg {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+  will-change: opacity;
+}
+.sweet-dynamic-bg .canvas-bg.loaded {
+  opacity: 1;
+}
+.sweet-dynamic-bg .primary {
   position: absolute;
   right: 0;
   top: 0;
   width: 200%;
   height: 200%;
-  background: rgba(20, 20, 20, 0.3);
   border-radius: 100em;
-  z-index: 2;
-}
-.spicy-dynamic-bg .Front {
-  --PlaceholderHueShift: 0deg;
-  animation: none;
-  border-radius: 100em;
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 200%;
-  z-index: 2;
+  z-index: 3;
   opacity: 0;
-  transform: rotate(var(--bg-rotation-degree));
-  transition: opacity 0.3s ease-in;
+  transform: rotate(var(--bg-rotation-primary, 0deg)) scale(var(--bg-scale-primary, 1));
+  transition: opacity 1s ease-in-out, filter 1s ease-in-out;
+  will-change: transform, opacity;
   transform-style: flat;
   backface-visibility: hidden;
-  filter: none;
+  -webkit-backface-visibility: hidden;
+  filter: blur(25px) hue-rotate(var(--bg-hue-shift));
 }
-.spicy-dynamic-bg .Front.loaded {
+.sweet-dynamic-bg .primary.loaded {
   opacity: 1;
-  filter: blur(15px) hue-rotate(var(--PlaceholderHueShift));
-  animation: bgAnim 45s linear infinite;
+  animation: bgAnimPrimary 60s linear infinite;
 }
-.spicy-dynamic-bg .Back,
-.spicy-dynamic-bg .BackCenter {
-  --PlaceholderHueShift: 0deg;
-  animation: bgAnim 45s linear infinite;
-  border-radius: 100em;
+.sweet-dynamic-bg .secondary {
   position: absolute;
+  bottom: 0;
+  left: 0;
   width: 200%;
-  filter: blur(15px);
-  content-visibility: auto;
-  contain: paint layout;
+  height: 200%;
+  border-radius: 100em;
+  z-index: 2;
+  opacity: 0;
+  transform: rotate(var(--bg-rotation-secondary, 0deg)) scale(var(--bg-scale-secondary, 1));
+  animation-direction: reverse;
+  transition: opacity 1.2s ease-in-out, filter 1.2s ease-in-out;
+  will-change: transform;
+  transform-style: flat;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  filter: blur(45px) hue-rotate(calc(var(--bg-hue-shift) + 30deg));
 }
-#SpicyLyricsPage.Fullscreen .spicy-dynamic-bg:not(.lowqmode) {
+.sweet-dynamic-bg-loaded .secondary {
+  opacity: 0.8;
+  animation: bgAnimSecondary 75s linear infinite reverse;
+}
+#SpicyLyricsPage.Fullscreen .sweet-dynamic-bg {
   max-height: 60%;
   max-width: 20%;
   scale: 500% 170%;
 }
-.spicy-dynamic-bg .Back:not(.NoEffect),
-.spicy-dynamic-bg .BackCenter:not(.NoEffect) {
-  filter: hue-rotate(var(--PlaceholderHueShift)) blur(40px);
-}
-.spicy-dynamic-bg-in-this:is(aside) .spicy-dynamic-bg .Back:not(.NoEffect),
-.spicy-dynamic-bg-in-this:is(aside) .spicy-dynamic-bg .BackCenter:not(.NoEffect) {
-  filter: hue-rotate(var(--PlaceholderHueShift)) blur(30px);
-}
-.spicy-dynamic-bg-in-this:is(aside) .spicy-dynamic-bg .Front.loaded:not(.NoEffect) {
-  filter: hue-rotate(var(--PlaceholderHueShift)) blur(30px);
-}
-.spicy-dynamic-bg .Back {
-  animation-direction: reverse;
-  bottom: 0;
-  left: 0;
-  z-index: 1;
-  content-visibility: auto;
-  contain: paint layout;
-  opacity: 0;
-  transition: opacity 0.3s ease-in;
-}
-.spicy-dynamic-bg-loaded .Back {
-  opacity: 1;
-}
-.spicy-dynamic-bg .BackCenter {
-  animation-direction: reverse;
-  right: -50%;
-  top: -20%;
-  width: 300%;
-  z-index: 0;
-}
-.spicy-dynamic-bg-in-this {
+.sweet-dynamic-bg-in-this {
   overflow: hidden;
   position: relative;
 }
-.spicy-dynamic-bg-in-this:is(aside) .spicy-dynamic-bg {
-  filter: saturate(2) brightness(0.55);
+.sweet-dynamic-bg-in-this:is(aside) .sweet-dynamic-bg {
+  --bg-saturation: 2;
+  --bg-brightness: 0.45;
   max-height: 100%;
   max-width: 100%;
 }
-.spicy-dynamic-bg-in-this:is(aside) video {
+.sweet-dynamic-bg-in-this:is(aside) video {
   filter: opacity(0.75) brightness(0.5);
   -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 35%, rgba(0, 0, 0, 0) 90%);
   mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 35%, rgba(0, 0, 0, 0) 90%);
@@ -20415,43 +21076,59 @@ button:has(#SpicyLyricsPageSvg):after {
 .main-nowPlayingView-coverArtContainer div:has(video)::after {
   display: none;
 }
-.spicy-dynamic-bg-in-this:is(aside) .AAdBM1nhG73supMfnYX7 {
-  z-index: 1;
+.sweet-dynamic-bg-in-this:is(aside) .AAdBM1nhG73supMfnYX7 {
+  z-index: 10;
   position: relative;
 }
-#SpicyLyricsPage .spicy-dynamic-bg:not(.lowqmode) {
+#SpicyLyricsPage .sweet-dynamic-bg {
+  --bg-saturation: 2.5;
+  --bg-brightness: 0.45;
   max-height: 55%;
   max-width: 35%;
   scale: 290% 185%;
   transform-origin: left top;
 }
-#SpicyLyricsPage .spicy-dynamic-bg {
-  filter: saturate(2.5) brightness(.55);
-}
-#SpicyLyricsPage .spicy-dynamic-bg:is(.lowqmode) {
-  -o-object-fit: cover;
-  object-fit: cover;
-  filter: brightness(.55) blur(9px) saturate(1.05);
-  scale: 1.05;
-}
-@keyframes bgAnim {
+@keyframes bgAnimPrimary {
   0% {
-    transform: rotate(var(--bg-rotation-degree));
+    transform: rotate(var(--bg-rotation-primary, 0deg)) scale(var(--bg-scale-primary, 1));
   }
   to {
-    transform: rotate(calc(var(--bg-rotation-degree) + 1turn));
+    transform: rotate(calc(var(--bg-rotation-primary, 0deg) + 1turn)) scale(var(--bg-scale-primary, 1));
   }
 }
-body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .spicy-dynamic-bg-in-this) .spicy-dynamic-bg,
-body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .spicy-dynamic-bg-in-this) .spicy-dynamic-bg .Front,
-body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .spicy-dynamic-bg-in-this) .spicy-dynamic-bg .Back,
-body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .spicy-dynamic-bg-in-this) .spicy-dynamic-bg .BackCenter {
-  display: none;
-  animation: none;
-  filter: none;
+@keyframes bgAnimSecondary {
+  0% {
+    transform: rotate(var(--bg-rotation-secondary, 0deg)) scale(var(--bg-scale-secondary, 1));
+  }
+  to {
+    transform: rotate(calc(var(--bg-rotation-secondary, 0deg) + 1turn)) scale(var(--bg-scale-secondary, 1));
+  }
+}
+body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .sweet-dynamic-bg-in-this) .sweet-dynamic-bg,
+body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .sweet-dynamic-bg-in-this) .sweet-dynamic-bg * {
+  display: none !important;
+  animation: none !important;
+  filter: none !important;
+}
+@media (prefers-reduced-motion), (max-width: 768px) {
+  .sweet-dynamic-bg {
+    --bg-saturation: 1.2;
+    --bg-brightness: 0.5;
+  }
+  .sweet-dynamic-bg .primary.loaded {
+    animation: bgAnimPrimary 120s linear infinite;
+    filter: blur(20px);
+  }
+  .sweet-dynamic-bg-loaded .secondary {
+    animation: bgAnimSecondary 120s linear infinite reverse;
+    filter: blur(20px);
+  }
+  .sweet-dynamic-bg .canvas-bg {
+    display: none;
+  }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-3452-e2h4tuVR0cE6/196280c733b4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18228-3N7uDRrxoSYA/196301d4f734/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -20627,7 +21304,7 @@ ruby > rt {
   font-size: 55%;
 }
 .Button-buttonSecondary-small-useBrowserDefaultFocusStyle {
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.65);
 }
 .amai-settings-header {
   color: var(--text-base,#ffffff);
@@ -20658,12 +21335,19 @@ ruby > rt {
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
-
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-3452-e2h4tuVR0cE6/196280c73415/Mixed.css */
-#SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
-  --BlurAmount: 0px !important;
-  filter: none !important;
+.main-nowPlayingView-credits .HeaderArea {
+  flex-direction: column;
+  align-items: start;
 }
+.main-nowPlayingView-credits > *:not(:first-child)::before {
+  content: "";
+  display: block;
+  height: .5px;
+  background: rgb(255 255 255 / 30%);
+  margin-bottom: .55rem;
+}
+
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18228-3N7uDRrxoSYA/196301d4f7a5/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -20947,7 +21631,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-3452-e2h4tuVR0cE6/196280c73486/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18228-3N7uDRrxoSYA/196301d4f806/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
