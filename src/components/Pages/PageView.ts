@@ -98,15 +98,6 @@ function OpenPage() {
 
   PageRoot.appendChild(elem);
 
-  const lowQMode = storage.get('lowQMode');
-  const lowQModeEnabled = lowQMode && lowQMode === 'true';
-
-  if (lowQModeEnabled) {
-    elem
-      .querySelector('.LyricsContainer .LyricsContent')
-      .classList.add('lowqmode');
-  }
-
   Defaults.LyricsContainerExists = true;
 
   ApplyDynamicBackground(

@@ -11,15 +11,6 @@ const prefersReducedMotion =
   window.matchMedia &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// Since the extension only runs on desktop, we only check for user preference
-// and accessibility settings for reduced motion
-const isLowPowerDevice = () => {
-  // Default to user preference if set
-  const userPreference = storage.get('lowQMode') === 'true';
-
-  return userPreference || prefersReducedMotion;
-};
-
 /**
  * Creates a canvas-based blurred version of the image for better performance
  * This is more efficient than CSS blur filters on large images
@@ -54,7 +45,7 @@ function createBlurredCanvas(imageUrl: string): Promise<HTMLCanvasElement> {
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
         // Only skip blur if user has explicitly enabled low quality mode or prefers reduced motion
-        if (!isLowPowerDevice() && typeof Worker !== 'undefined') {
+        if (typeof Worker !== 'undefined') {
           // Use a Web Worker for the blur
           try {
             // Dynamically import the worker as a blob
@@ -180,7 +171,7 @@ function createBlurredCanvas(imageUrl: string): Promise<HTMLCanvasElement> {
             });
           }
         } else {
-          // Fallback to synchronous blur for lowQMode or no Worker support
+          // Fallback to synchronous blur when Web Worker is not supported
           for (let i = 0; i < 4; i++) {
             boxBlur(ctx, canvas, 15);
           }
@@ -319,8 +310,8 @@ function boxBlur(
 export default async function ApplyDynamicBackground(element) {
   if (!element) return;
 
-  // Check if user has enabled low quality mode or prefers reduced motion
-  const lowQMode = isLowPowerDevice();
+  // Check if user prefers reduced motion
+  const reducedMotion = prefersReducedMotion;
 
   // Set random rotation degrees for variety
   const rotationPrimary = Math.floor(Math.random() * 360);
@@ -375,11 +366,11 @@ export default async function ApplyDynamicBackground(element) {
           !bgContainer ||
           bgContainer.getAttribute('current-img') !== currentImgCover,
         currentImgCover,
-        lowQMode,
+        reducedMotion,
       };
     },
     // Write phase - create or update the background
-    async ({ bgContainer, needsUpdate, currentImgCover, lowQMode }) => {
+    async ({ bgContainer, needsUpdate, currentImgCover, reducedMotion }) => {
       if (!needsUpdate) return;
 
       if (bgContainer) {
@@ -447,7 +438,7 @@ export default async function ApplyDynamicBackground(element) {
 
           // Update canvas if supported and not in low quality mode
           // (low quality is only enabled if user preference or reduced motion is set)
-          if (supportsCanvas && !lowQMode) {
+          if (supportsCanvas && !reducedMotion) {
             // Create new canvas with blur effect
             createBlurredCanvas(currentImgCover).then((canvas) => {
               // Add the new canvas
@@ -470,7 +461,7 @@ export default async function ApplyDynamicBackground(element) {
         // Create new background container
         const container = document.createElement('div');
         container.className = 'sweet-dynamic-bg';
-        if (lowQMode) container.classList.add('lowqmode');
+
         container.setAttribute('current-img', currentImgCover);
 
         // Create placeholder for immediate visual
@@ -503,7 +494,7 @@ export default async function ApplyDynamicBackground(element) {
 
         // Add canvas-based blur if supported and not in low quality mode
         // (low quality is only enabled if user preference or reduced motion is set)
-        if (supportsCanvas && !lowQMode) {
+        if (supportsCanvas && !reducedMotion) {
           createBlurredCanvas(currentImgCover).then((canvas) => {
             container.appendChild(canvas);
           });

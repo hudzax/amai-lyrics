@@ -1,7 +1,4 @@
-#SpicyLyricsPage .lyricsParent .LyricsContent.lowqmode .line {
-    --BlurAmount: 0px !important;
-    filter: none !important;
-}
+
 
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);

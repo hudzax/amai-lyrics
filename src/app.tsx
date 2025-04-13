@@ -103,7 +103,7 @@ function updateButtonRegistration(button) {
  * - Implements canvas-based blur when supported
  * - Adapts to device capabilities
  */
-function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached, lowQModeEnabled) {
+function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached) {
   if (!coverUrl) return;
   
   // Convert Spotify URI to proper URL if needed
@@ -174,7 +174,7 @@ function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached, lowQModeEnabled
           // Create the dynamic background container
           const dynamicBackground = document.createElement("div");
           dynamicBackground.classList.add("sweet-dynamic-bg");
-          if (lowQModeEnabled) dynamicBackground.classList.add("lowqmode");
+
           
           // Create a lightweight placeholder div first
           const placeholderDiv = document.createElement("div");
@@ -199,8 +199,8 @@ function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached, lowQModeEnabled
           dynamicBackground.appendChild(primaryImg);
           dynamicBackground.appendChild(secondaryImg);
           
-          // Add canvas-based blur if supported and not in low quality mode
-          if (supportsCanvas && !lowQModeEnabled) {
+          // Add canvas-based blur if supported
+          if (supportsCanvas) {
             // Create canvas in a non-blocking way
             setTimeout(() => {
               createBlurredCanvas(coverUrl).then(canvas => {
@@ -263,7 +263,7 @@ function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached, lowQModeEnabled
           }
           
           // Update canvas if supported and not in low quality mode
-          if (supportsCanvas && !lowQModeEnabled) {
+          if (supportsCanvas) {
             // Remove old canvas
             if (canvasBg) {
               canvasBg.remove();
@@ -456,7 +456,6 @@ async function initializeAmaiLyrics(button) {
     requestPositionSync();
   });
 
-  const lowQModeEnabled = storage.get("lowQMode") === "true";
   const cached = {
     nowPlayingBar: null,
     dynamicBg: null,
@@ -465,7 +464,7 @@ async function initializeAmaiLyrics(button) {
 
   new IntervalManager(1, () => {
     const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
-    applyDynamicBackgroundToNowPlayingBar(coverUrl, cached, lowQModeEnabled);
+    applyDynamicBackgroundToNowPlayingBar(coverUrl, cached);
   }).Start();
 
   async function onSongChange(event) {
@@ -495,8 +494,7 @@ async function initializeAmaiLyrics(button) {
     // Apply background immediately with current data
     applyDynamicBackgroundToNowPlayingBar(
       Spicetify.Player.data?.item?.metadata?.image_url,
-      cached,
-      lowQModeEnabled
+      cached
     );
 
     // Handle UI updates that depend on track info in a non-blocking way
