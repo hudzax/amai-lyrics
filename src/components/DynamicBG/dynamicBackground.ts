@@ -53,41 +53,154 @@ function createBlurredCanvas(imageUrl: string): Promise<HTMLCanvasElement> {
         // Draw image to canvas
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-        // Apply a simple box blur - much more efficient than CSS blur
-        // This is a simplified version that works well enough for backgrounds
         // Only skip blur if user has explicitly enabled low quality mode or prefers reduced motion
-        if (!isLowPowerDevice()) {
+        if (!isLowPowerDevice() && typeof Worker !== 'undefined') {
+          // Use a Web Worker for the blur
+          try {
+            // Dynamically import the worker as a blob
+            const workerUrl = URL.createObjectURL(
+              new Blob(
+                [
+                  // @ts-ignore
+                  require('!!raw-loader!./blurWorker.ts').default,
+                ],
+                { type: 'application/javascript' },
+              ),
+            );
+            const worker = new Worker(workerUrl);
+
+            const imageData = ctx.getImageData(
+              0,
+              0,
+              canvas.width,
+              canvas.height,
+            );
+
+            worker.onmessage = function (e) {
+              try {
+                const blurred = e.data.imageData;
+                ctx.putImageData(blurred, 0, 0);
+
+                // Color manipulation as before
+                const data = blurred.data;
+                for (let i = 0; i < data.length; i += 4) {
+                  const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                  data[i] = data[i] + (data[i] - avg) * 0.5;
+                  data[i + 1] = data[i + 1] + (data[i + 1] - avg) * 0.5;
+                  data[i + 2] = data[i + 2] + (data[i + 2] - avg) * 0.5;
+                  data[i] = data[i] * 0.8;
+                  data[i + 1] = data[i + 1] * 0.8;
+                  data[i + 2] = data[i + 2] * 0.8;
+                }
+                ctx.putImageData(blurred, 0, 0);
+
+                // Mark as loaded after a frame to ensure smooth transition
+                requestAnimationFrame(() => {
+                  canvas.classList.add('loaded');
+                  resolve(canvas);
+                });
+              } catch (err) {
+                console.error(
+                  'Error processing blurred image from worker:',
+                  err,
+                );
+                resolve(canvas);
+              } finally {
+                worker.terminate();
+                URL.revokeObjectURL(workerUrl);
+              }
+            };
+
+            worker.onerror = function (err) {
+              console.error('Blur worker error:', err);
+              // Fallback to synchronous blur
+              for (let i = 0; i < 4; i++) {
+                boxBlur(ctx, canvas, 15);
+              }
+              // Color manipulation as before
+              const imageData = ctx.getImageData(
+                0,
+                0,
+                canvas.width,
+                canvas.height,
+              );
+              const data = imageData.data;
+              for (let i = 0; i < data.length; i += 4) {
+                const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                data[i] = data[i] + (data[i] - avg) * 0.5;
+                data[i + 1] = data[i + 1] + (data[i + 1] - avg) * 0.5;
+                data[i + 2] = data[i + 2] + (data[i + 2] - avg) * 0.5;
+                data[i] = data[i] * 0.8;
+                data[i + 1] = data[i + 1] * 0.8;
+                data[i + 2] = data[i + 2] * 0.8;
+              }
+              ctx.putImageData(imageData, 0, 0);
+              requestAnimationFrame(() => {
+                canvas.classList.add('loaded');
+                resolve(canvas);
+              });
+              worker.terminate();
+              URL.revokeObjectURL(workerUrl);
+            };
+
+            // Send image data to worker
+            worker.postMessage(
+              {
+                imageData,
+                passes: 4,
+                radius: 15,
+              },
+              [imageData.data.buffer],
+            );
+          } catch (err) {
+            // Fallback to synchronous blur if worker setup fails
+            for (let i = 0; i < 4; i++) {
+              boxBlur(ctx, canvas, 15);
+            }
+            const imageData = ctx.getImageData(
+              0,
+              0,
+              canvas.width,
+              canvas.height,
+            );
+            const data = imageData.data;
+            for (let i = 0; i < data.length; i += 4) {
+              const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+              data[i] = data[i] + (data[i] - avg) * 0.5;
+              data[i + 1] = data[i + 1] + (data[i + 1] - avg) * 0.5;
+              data[i + 2] = data[i + 2] + (data[i + 2] - avg) * 0.5;
+              data[i] = data[i] * 0.8;
+              data[i + 1] = data[i + 1] * 0.8;
+              data[i + 2] = data[i + 2] * 0.8;
+            }
+            ctx.putImageData(imageData, 0, 0);
+            requestAnimationFrame(() => {
+              canvas.classList.add('loaded');
+              resolve(canvas);
+            });
+          }
+        } else {
+          // Fallback to synchronous blur for lowQMode or no Worker support
           for (let i = 0; i < 4; i++) {
-            // Increased to 4 passes with larger radius for stronger blur
             boxBlur(ctx, canvas, 15);
           }
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imageData.data;
+          for (let i = 0; i < data.length; i += 4) {
+            const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+            data[i] = data[i] + (data[i] - avg) * 0.5;
+            data[i + 1] = data[i + 1] + (data[i + 1] - avg) * 0.5;
+            data[i + 2] = data[i + 2] + (data[i + 2] - avg) * 0.5;
+            data[i] = data[i] * 0.8;
+            data[i + 1] = data[i + 1] * 0.8;
+            data[i + 2] = data[i + 2] * 0.8;
+          }
+          ctx.putImageData(imageData, 0, 0);
+          requestAnimationFrame(() => {
+            canvas.classList.add('loaded');
+            resolve(canvas);
+          });
         }
-
-        // Add some color manipulation similar to CSS filters
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
-
-        // Apply saturation and brightness adjustments
-        for (let i = 0; i < data.length; i += 4) {
-          // Simple saturation increase
-          const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-          data[i] = data[i] + (data[i] - avg) * 0.5;
-          data[i + 1] = data[i + 1] + (data[i + 1] - avg) * 0.5;
-          data[i + 2] = data[i + 2] + (data[i + 2] - avg) * 0.5;
-
-          // Brightness adjustment
-          data[i] = data[i] * 0.8;
-          data[i + 1] = data[i + 1] * 0.8;
-          data[i + 2] = data[i + 2] * 0.8;
-        }
-
-        ctx.putImageData(imageData, 0, 0);
-
-        // Mark as loaded after a frame to ensure smooth transition
-        requestAnimationFrame(() => {
-          canvas.classList.add('loaded');
-          resolve(canvas);
-        });
       } catch (error) {
         console.error('Error processing canvas:', error);
         resolve(canvas); // Return canvas even on error
