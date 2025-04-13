@@ -254,7 +254,7 @@ export default async function ApplyDynamicBackground(element) {
     // Read phase - check if we need to update
     () => {
       const bgContainer = element.querySelector(
-        '.spicy-dynamic-bg',
+        '.sweet-dynamic-bg',
       ) as HTMLDivElement | null;
       return {
         bgContainer,
@@ -324,7 +324,7 @@ export default async function ApplyDynamicBackground(element) {
             bgContainer.appendChild(newSecondaryImg);
 
             // After the container is marked as loaded, the secondary will fade in
-            // due to the .spicy-dynamic-bg-loaded .secondary selector
+            // due to the .sweet-dynamic-bg-loaded .secondary selector
 
             // Remove old secondary after transition
             setTimeout(() => {
@@ -356,7 +356,7 @@ export default async function ApplyDynamicBackground(element) {
       } else {
         // Create new background container
         const container = document.createElement('div');
-        container.className = 'spicy-dynamic-bg';
+        container.className = 'sweet-dynamic-bg';
         if (lowQMode) container.classList.add('lowqmode');
         container.setAttribute('current-img', currentImgCover);
 

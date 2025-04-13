@@ -13,7 +13,7 @@ import fastdom from "./utils/fastdom";
 import "./css/default.css";
 import "./css/Simplebar.css";
 import "./css/ContentBox.css";
-import "./css/DynamicBG/spicy-dynamic-bg.css";
+import "./css/DynamicBG/sweet-dynamic-bg.css";
 import "./css/Lyrics/main.css";
 import "./css/Lyrics/Mixed.css";
 import "./css/Loaders/LoaderContainer.css";
@@ -173,7 +173,7 @@ function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached, lowQModeEnabled
         if (!hasDynamicBg) {
           // Create the dynamic background container
           const dynamicBackground = document.createElement("div");
-          dynamicBackground.classList.add("spicy-dynamic-bg");
+          dynamicBackground.classList.add("sweet-dynamic-bg");
           if (lowQModeEnabled) dynamicBackground.classList.add("lowqmode");
           
           // Create a lightweight placeholder div first
@@ -213,7 +213,7 @@ function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached, lowQModeEnabled
           }
           
           // Add the container to the DOM
-          nowPlayingBar.classList.add("spicy-dynamic-bg-in-this");
+          nowPlayingBar.classList.add("sweet-dynamic-bg-in-this");
           nowPlayingBar.appendChild(dynamicBackground);
           
           // When primary image loads, add the loaded class to trigger transition
@@ -225,7 +225,7 @@ function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached, lowQModeEnabled
           
           // Mark container as loaded after a frame
           requestAnimationFrame(() => {
-            dynamicBackground.classList.add("spicy-dynamic-bg-loaded");
+            dynamicBackground.classList.add("sweet-dynamic-bg-loaded");
           });
           
           cached.dynamicBg = dynamicBackground;
@@ -857,15 +857,15 @@ async function main() {
     // Use requestIdleCallback to ensure this runs during browser idle time
     if (window.requestIdleCallback) {
       requestIdleCallback(() => {
-        document.querySelectorAll('.spicy-dynamic-bg').forEach(bg => {
-          bg.classList.add('spicy-dynamic-bg-loaded');
+        document.querySelectorAll('.sweet-dynamic-bg').forEach(bg => {
+          bg.classList.add('sweet-dynamic-bg-loaded');
         });
       }, { timeout: 2000 });
     } else {
       // Fallback for browsers that don't support requestIdleCallback
       setTimeout(() => {
-        document.querySelectorAll('.spicy-dynamic-bg').forEach(bg => {
-          bg.classList.add('spicy-dynamic-bg-loaded');
+        document.querySelectorAll('.sweet-dynamic-bg').forEach(bg => {
+          bg.classList.add('sweet-dynamic-bg-loaded');
         });
       }, 1000);
     }

@@ -112,16 +112,16 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
   display: none
 }
 
-.Root__right-sidebar:has(.main-nowPlayingView-section,canvas) .spicy-dynamic-bg div[data-overlayscrollbars-viewport],.Root__right-sidebar:has(.main-nowPlayingView-section,canvas) .spicy-dynamic-bg div[data-overlayscrollbars-viewport]>div {
+.Root__right-sidebar:has(.main-nowPlayingView-section,canvas) .sweet-dynamic-bg div[data-overlayscrollbars-viewport],.Root__right-sidebar:has(.main-nowPlayingView-section,canvas) .sweet-dynamic-bg div[data-overlayscrollbars-viewport]>div {
   background: transparent
 }
 
 
-.Root__right-sidebar:has(.main-nowPlayingView-section,canvas) .spicy-dynamic-bg .main-nowPlayingView-coverArtContainer div:has(video):after,.Root__right-sidebar:has(.main-nowPlayingView-section,canvas) .spicy-dynamic-bg .main-nowPlayingView-coverArtContainer div:has(video):before {
+.Root__right-sidebar:has(.main-nowPlayingView-section,canvas) .sweet-dynamic-bg .main-nowPlayingView-coverArtContainer div:has(video):after,.Root__right-sidebar:has(.main-nowPlayingView-section,canvas) .sweet-dynamic-bg .main-nowPlayingView-coverArtContainer div:has(video):before {
   display: none
 }
 
-.Root__right-sidebar:has(.main-nowPlayingView-section,canvas) .spicy-dynamic-bg .main-trackInfo-artists {
+.Root__right-sidebar:has(.main-nowPlayingView-section,canvas) .sweet-dynamic-bg .main-trackInfo-artists {
   filter: brightness(1.15);
   opacity: .75
 }

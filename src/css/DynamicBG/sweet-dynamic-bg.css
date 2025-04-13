@@ -6,7 +6,7 @@
  * - Reduces blur operations which are CPU intensive
  */
 
-.spicy-dynamic-bg {
+.sweet-dynamic-bg {
   /* Base variables */
   --bg-hue-shift: 0deg;
   --bg-saturation: 1.5;
@@ -40,7 +40,7 @@
 }
 
 /* Add a semi-transparent overlay for consistent dimming */
-.spicy-dynamic-bg::after {
+.sweet-dynamic-bg::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -50,7 +50,7 @@
 }
 
 /* Lightweight placeholder that appears instantly */
-.spicy-dynamic-bg .placeholder {
+.sweet-dynamic-bg .placeholder {
   position: absolute;
   inset: 0;
   background: radial-gradient(
@@ -65,7 +65,7 @@
 }
 
 /* Canvas element for efficient blur effects */
-.spicy-dynamic-bg .canvas-bg {
+.sweet-dynamic-bg .canvas-bg {
   position: absolute;
   width: 100%;
   height: 100%;
@@ -75,12 +75,12 @@
   will-change: opacity;
 }
 
-.spicy-dynamic-bg .canvas-bg.loaded {
+.sweet-dynamic-bg .canvas-bg.loaded {
   opacity: 1;
 }
 
 /* Primary background image - optimized for performance */
-.spicy-dynamic-bg .primary {
+.sweet-dynamic-bg .primary {
   position: absolute;
   right: 0;
   top: 0;
@@ -105,13 +105,13 @@
 }
 
 /* Apply styling only after image has loaded */
-.spicy-dynamic-bg .primary.loaded {
+.sweet-dynamic-bg .primary.loaded {
   opacity: 1;
   animation: bgAnimPrimary 60s linear infinite;
 }
 
 /* Secondary background element - provides depth */
-.spicy-dynamic-bg .secondary {
+.sweet-dynamic-bg .secondary {
   position: absolute;
   bottom: 0;
   left: 0;
@@ -137,25 +137,25 @@
 }
 
 /* Only show secondary element after container is loaded */
-.spicy-dynamic-bg-loaded .secondary {
+.sweet-dynamic-bg-loaded .secondary {
   opacity: 0.8;
   animation: bgAnimSecondary 75s linear infinite reverse;
 }
 
 /* Fullscreen mode optimizations */
-#SpicyLyricsPage.Fullscreen .spicy-dynamic-bg:not(.lowqmode) {
+#SpicyLyricsPage.Fullscreen .sweet-dynamic-bg:not(.lowqmode) {
   max-height: 60%;
   max-width: 20%;
   scale: 500% 170%;
 }
 
-.spicy-dynamic-bg-in-this {
+.sweet-dynamic-bg-in-this {
   overflow: hidden;
   position: relative;
 }
 
 /* Specific styling for sidebar */
-.spicy-dynamic-bg-in-this:is(aside) .spicy-dynamic-bg {
+.sweet-dynamic-bg-in-this:is(aside) .sweet-dynamic-bg {
   --bg-saturation: 2;
   --bg-brightness: 0.45; /* Reduced from 0.55 to make it dimmer */
   max-height: 100%;
@@ -163,7 +163,7 @@
 }
 
 /* Video element styling */
-.spicy-dynamic-bg-in-this:is(aside) video {
+.sweet-dynamic-bg-in-this:is(aside) video {
   filter: opacity(0.75) brightness(0.5);
   -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 35%, rgba(0, 0, 0, 0) 90%);
   mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 35%, rgba(0, 0, 0, 0) 90%);
@@ -176,13 +176,13 @@
 }
 
 /* Ensure content stays above background */
-.spicy-dynamic-bg-in-this:is(aside) .AAdBM1nhG73supMfnYX7 {
+.sweet-dynamic-bg-in-this:is(aside) .AAdBM1nhG73supMfnYX7 {
   z-index: 10;
   position: relative;
 }
 
 /* Lyrics page specific styling */
-#SpicyLyricsPage .spicy-dynamic-bg:not(.lowqmode) {
+#SpicyLyricsPage .sweet-dynamic-bg:not(.lowqmode) {
   --bg-saturation: 2.5;
   --bg-brightness: 0.45; /* Reduced from 0.55 to make it dimmer */
   max-height: 55%;
@@ -192,7 +192,7 @@
 }
 
 /* Low quality mode for performance constrained devices */
-#SpicyLyricsPage .spicy-dynamic-bg.lowqmode {
+#SpicyLyricsPage .sweet-dynamic-bg.lowqmode {
   --bg-saturation: 1.05;
   --bg-brightness: 0.45; /* Reduced from 0.55 to make it dimmer */
   object-fit: cover;
@@ -221,8 +221,8 @@
 }
 
 /* Performance optimization for fullscreen mode */
-body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .spicy-dynamic-bg-in-this) .spicy-dynamic-bg,
-body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .spicy-dynamic-bg-in-this) .spicy-dynamic-bg * {
+body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .sweet-dynamic-bg-in-this) .sweet-dynamic-bg,
+body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .sweet-dynamic-bg-in-this) .sweet-dynamic-bg * {
   display: none !important;
   animation: none !important;
   filter: none !important;
@@ -230,23 +230,23 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
 
 /* Media query for lower-end devices */
 @media (prefers-reduced-motion), (max-width: 768px) {
-  .spicy-dynamic-bg {
+  .sweet-dynamic-bg {
     --bg-saturation: 1.2;
     --bg-brightness: 0.5; /* Reduced from 0.7 to make it dimmer */
   }
   
-  .spicy-dynamic-bg .primary.loaded {
+  .sweet-dynamic-bg .primary.loaded {
     animation: bgAnimPrimary 120s linear infinite; /* Slower animation */
     filter: blur(20px); /* Increased blur but still less intensive than full version */
   }
   
-  .spicy-dynamic-bg-loaded .secondary {
+  .sweet-dynamic-bg-loaded .secondary {
     animation: bgAnimSecondary 120s linear infinite reverse; /* Slower animation */
     filter: blur(20px); /* Increased blur but still less intensive than full version */
   }
   
   /* Disable canvas on low-end devices */
-  .spicy-dynamic-bg .canvas-bg {
+  .sweet-dynamic-bg .canvas-bg {
     display: none;
   }
 }
