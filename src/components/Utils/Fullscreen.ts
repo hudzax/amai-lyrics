@@ -88,16 +88,6 @@ function Open() {
     Fullscreen.IsOpen = true;
     PageView.AppendViewControls(true);
 
-    Tooltips.NowBarToggle?.destroy();
-
-    const NowBarToggle = document.querySelector<HTMLElement>(
-      '#SpicyLyricsPage .ViewControls #NowBarToggle',
-    );
-
-    if (NowBarToggle) {
-      NowBarToggle.remove();
-    }
-
     OpenNowBar();
 
     if (!document.fullscreenElement) {

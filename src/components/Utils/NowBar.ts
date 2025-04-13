@@ -893,18 +893,6 @@ function CloseNowBar() {
 }
 
 /**
- * Toggles the NowBar between open and closed states
- */
-function ToggleNowBar() {
-  const IsNowBarOpen = storage.get('IsNowBarOpen');
-  if (IsNowBarOpen === 'true') {
-    CloseNowBar();
-  } else {
-    OpenNowBar();
-  }
-}
-
-/**
  * Restores the NowBar to its previous state (open or closed) from session storage
  */
 function Session_OpenNowBar() {
@@ -1054,12 +1042,6 @@ function Session_NowBar_SetSide() {
  * Removes the NowBar toggle button and its tooltip
  */
 function DeregisterNowBarBtn() {
-  // Destroy tooltip if it exists
-  if (Tooltips.NowBarToggle) {
-    Tooltips.NowBarToggle.destroy();
-    Tooltips.NowBarToggle = null;
-  }
-
   // Remove the button from DOM
   const nowBarButton = document.querySelector(
     '#SpicyLyricsPage .ContentBox .ViewControls #NowBarToggle',
@@ -1244,7 +1226,6 @@ function handlePositionUpdate(e: any): void {
 export {
   OpenNowBar,
   CloseNowBar,
-  ToggleNowBar,
   UpdateNowBar,
   Session_OpenNowBar,
   NowBar_SwapSides,
