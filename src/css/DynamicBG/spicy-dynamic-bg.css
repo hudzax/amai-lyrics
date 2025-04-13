@@ -1,115 +1,152 @@
+/* 
+ * Optimized Dynamic Background
+ * - Uses fewer DOM elements
+ * - Leverages CSS gradients for better performance
+ * - Optimizes GPU usage with proper transform properties
+ * - Reduces blur operations which are CPU intensive
+ */
+
 .spicy-dynamic-bg {
-  filter: saturate(1.5) brightness(.8);
+  /* Base variables */
+  --bg-hue-shift: 0deg;
+  --bg-saturation: 1.5;
+  --bg-brightness: 0.6; /* Reduced from 0.8 to make it dimmer */
+  
+  /* Rotation variables for different elements */
+  --bg-rotation-primary: 0deg;
+  --bg-rotation-secondary: 0deg;
+  --bg-scale-primary: 1;
+  --bg-scale-secondary: 1;
+  
   height: 100%;
   left: 0;
   overflow: hidden;
   pointer-events: none;
   position: absolute;
   top: 0;
-  width: 100%
+  width: 100%;
+  
+  /* Apply container-level filters instead of per-element */
+  filter: saturate(var(--bg-saturation)) brightness(var(--bg-brightness));
+  
+  /* Create stacking context for better compositing */
+  isolation: isolate;
+  
+  /* Optimize for animation */
+  will-change: transform;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
-/* Placeholder for Front image - lightweight div that takes space while image loads */
-.spicy-dynamic-bg .FrontPlaceholder {
+/* Add a semi-transparent overlay for consistent dimming */
+.spicy-dynamic-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.2); /* Black overlay with 20% opacity */
+  z-index: 10; /* Above all other elements in the dynamic bg */
+  pointer-events: none;
+}
+
+/* Lightweight placeholder that appears instantly */
+.spicy-dynamic-bg .placeholder {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at center,
+    rgba(40, 40, 40, 0.7) 0%,
+    rgba(20, 20, 20, 0.3) 70%
+  );
+  z-index: 1;
+  border-radius: 50%;
+  transform: scale(2);
+  opacity: 0.8;
+}
+
+/* Canvas element for efficient blur effects */
+.spicy-dynamic-bg .canvas-bg {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+  will-change: opacity;
+}
+
+.spicy-dynamic-bg .canvas-bg.loaded {
+  opacity: 1;
+}
+
+/* Primary background image - optimized for performance */
+.spicy-dynamic-bg .primary {
   position: absolute;
   right: 0;
   top: 0;
   width: 200%;
   height: 200%;
-  background: rgba(20, 20, 20, 0.3);
   border-radius: 100em;
-  z-index: 2;
-}
-
-/* Optimized Front image styling */
-.spicy-dynamic-bg .Front {
-  --PlaceholderHueShift: 0deg;
-  animation: none; /* Start with no animation */
-  border-radius: 100em;
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 200%;
-  z-index: 2;
-  opacity: 0; /* Start invisible */
-  transform: rotate(var(--bg-rotation-degree)); /* Initial transform state */
-  transition: opacity 0.3s ease-in; /* Smooth fade in */
+  z-index: 3;
+  opacity: 0;
+  transform: rotate(var(--bg-rotation-primary, 0deg)) scale(var(--bg-scale-primary, 1));
   
-  /* Use hardware acceleration but in a more targeted way */
+  /* Longer, smoother transition to prevent flickering */
+  transition: opacity 1s ease-in-out, filter 1s ease-in-out;
+  
+  /* Optimize for GPU acceleration */
+  will-change: transform, opacity;
   transform-style: flat;
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   
-  /* Reduce initial rendering cost */
-  filter: none; /* Apply blur only after loaded */
+  /* Apply blur from the start but with 0 opacity - increased blur for less recognizable images */
+  filter: blur(25px) hue-rotate(var(--bg-hue-shift));
 }
 
-/* Apply full styling only after image has loaded */
-.spicy-dynamic-bg .Front.loaded {
+/* Apply styling only after image has loaded */
+.spicy-dynamic-bg .primary.loaded {
   opacity: 1;
-  filter: blur(15px) hue-rotate(var(--PlaceholderHueShift));
-  animation: bgAnim 45s linear infinite;
+  animation: bgAnimPrimary 60s linear infinite;
 }
 
-.spicy-dynamic-bg .Back, .spicy-dynamic-bg .BackCenter {
-  --PlaceholderHueShift: 0deg;
-  animation: bgAnim 45s linear infinite;
-  border-radius: 100em;
+/* Secondary background element - provides depth */
+.spicy-dynamic-bg .secondary {
   position: absolute;
+  bottom: 0;
+  left: 0;
   width: 200%;
-  filter: blur(15px);
-  /* Reduce initial rendering impact */
-  content-visibility: auto;
-  contain: paint layout;
+  height: 200%;
+  border-radius: 100em;
+  z-index: 2;
+  opacity: 0;
+  transform: rotate(var(--bg-rotation-secondary, 0deg)) scale(var(--bg-scale-secondary, 1));
+  animation-direction: reverse;
+  
+  /* Longer, smoother transition to prevent flickering */
+  transition: opacity 1.2s ease-in-out, filter 1.2s ease-in-out;
+  
+  /* Optimize for GPU */
+  will-change: transform;
+  transform-style: flat;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  
+  /* Apply blur from the start but with 0 opacity - increased blur for less recognizable images */
+  filter: blur(45px) hue-rotate(calc(var(--bg-hue-shift) + 30deg));
 }
 
+/* Only show secondary element after container is loaded */
+.spicy-dynamic-bg-loaded .secondary {
+  opacity: 0.8;
+  animation: bgAnimSecondary 75s linear infinite reverse;
+}
+
+/* Fullscreen mode optimizations */
 #SpicyLyricsPage.Fullscreen .spicy-dynamic-bg:not(.lowqmode) {
   max-height: 60%;
   max-width: 20%;
-  scale: 500% 170%
-}
-
-.spicy-dynamic-bg .Back:not(.NoEffect), .spicy-dynamic-bg .BackCenter:not(.NoEffect) {
-  filter: hue-rotate(var(--PlaceholderHueShift)) blur(40px);
-}
-
-/* Front filter is now applied in the .Front.loaded class for better performance */
-
-.spicy-dynamic-bg-in-this:is(aside) .spicy-dynamic-bg .Back:not(.NoEffect), 
-.spicy-dynamic-bg-in-this:is(aside) .spicy-dynamic-bg .BackCenter:not(.NoEffect) {
-  filter: hue-rotate(var(--PlaceholderHueShift)) blur(30px);
-}
-
-/* Special case for Front in aside */
-.spicy-dynamic-bg-in-this:is(aside) .spicy-dynamic-bg .Front.loaded:not(.NoEffect) {
-  filter: hue-rotate(var(--PlaceholderHueShift)) blur(30px);
-}
-
-/* Front positioning is now handled in the main Front class definition */
-
-.spicy-dynamic-bg .Back {
-  animation-direction: reverse;
-  bottom: 0;
-  left: 0;
-  z-index: 1;
-  /* Optimize rendering performance */
-  content-visibility: auto;
-  contain: paint layout;
-  /* Reduce initial impact on LCP */
-  opacity: 0;
-  transition: opacity 0.3s ease-in;
-}
-
-/* Only show Back image after page has loaded */
-.spicy-dynamic-bg-loaded .Back {
-  opacity: 1;
-}
-
-.spicy-dynamic-bg .BackCenter {
-  animation-direction: reverse;
-  right: -50%;
-  top: -20%;
-  width: 300%;
-  z-index: 0
+  scale: 500% 170%;
 }
 
 .spicy-dynamic-bg-in-this {
@@ -117,61 +154,99 @@
   position: relative;
 }
 
+/* Specific styling for sidebar */
 .spicy-dynamic-bg-in-this:is(aside) .spicy-dynamic-bg {
-  filter: saturate(2) brightness(0.55);
+  --bg-saturation: 2;
+  --bg-brightness: 0.45; /* Reduced from 0.55 to make it dimmer */
   max-height: 100%;
   max-width: 100%;
 }
 
+/* Video element styling */
 .spicy-dynamic-bg-in-this:is(aside) video {
   filter: opacity(0.75) brightness(0.5);
   -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 35%, rgba(0, 0, 0, 0) 90%);
   mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 35%, rgba(0, 0, 0, 0) 90%);
 }
 
+/* Remove default styling from video containers */
 .main-nowPlayingView-coverArtContainer div:has(video)::before,
 .main-nowPlayingView-coverArtContainer div:has(video)::after {
-    display: none;
+  display: none;
 }
 
+/* Ensure content stays above background */
 .spicy-dynamic-bg-in-this:is(aside) .AAdBM1nhG73supMfnYX7 {
-  z-index: 1;
+  z-index: 10;
   position: relative;
 }
 
-
+/* Lyrics page specific styling */
 #SpicyLyricsPage .spicy-dynamic-bg:not(.lowqmode) {
+  --bg-saturation: 2.5;
+  --bg-brightness: 0.45; /* Reduced from 0.55 to make it dimmer */
   max-height: 55%;
   max-width: 35%;
   scale: 290% 185%;
-  transform-origin: left top
+  transform-origin: left top;
 }
 
-#SpicyLyricsPage .spicy-dynamic-bg {
-  filter: saturate(2.5) brightness(.55);
-}
-
-#SpicyLyricsPage .spicy-dynamic-bg:is(.lowqmode) {
+/* Low quality mode for performance constrained devices */
+#SpicyLyricsPage .spicy-dynamic-bg.lowqmode {
+  --bg-saturation: 1.05;
+  --bg-brightness: 0.45; /* Reduced from 0.55 to make it dimmer */
   object-fit: cover;
-  filter: brightness(.55) blur(9px) saturate(1.05);
+  filter: brightness(var(--bg-brightness)) blur(15px) saturate(var(--bg-saturation));
   scale: 1.05;
 }
 
-@keyframes bgAnim {
+/* Optimized animation keyframes for primary element */
+@keyframes bgAnimPrimary {
   0% {
-      transform: rotate(var(--bg-rotation-degree))
+    transform: rotate(var(--bg-rotation-primary, 0deg)) scale(var(--bg-scale-primary, 1));
   }
-
   to {
-      transform: rotate(calc(var(--bg-rotation-degree) + 1turn))
+    transform: rotate(calc(var(--bg-rotation-primary, 0deg) + 1turn)) scale(var(--bg-scale-primary, 1));
   }
 }
 
+/* Optimized animation keyframes for secondary element */
+@keyframes bgAnimSecondary {
+  0% {
+    transform: rotate(var(--bg-rotation-secondary, 0deg)) scale(var(--bg-scale-secondary, 1));
+  }
+  to {
+    transform: rotate(calc(var(--bg-rotation-secondary, 0deg) + 1turn)) scale(var(--bg-scale-secondary, 1));
+  }
+}
+
+/* Performance optimization for fullscreen mode */
 body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .spicy-dynamic-bg-in-this) .spicy-dynamic-bg,
-body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .spicy-dynamic-bg-in-this) .spicy-dynamic-bg .Front,
-body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .spicy-dynamic-bg-in-this) .spicy-dynamic-bg .Back,
-body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .spicy-dynamic-bg-in-this) .spicy-dynamic-bg .BackCenter {
-  display: none;
-  animation: none;
-  filter: none;
+body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .spicy-dynamic-bg-in-this) .spicy-dynamic-bg * {
+  display: none !important;
+  animation: none !important;
+  filter: none !important;
+}
+
+/* Media query for lower-end devices */
+@media (prefers-reduced-motion), (max-width: 768px) {
+  .spicy-dynamic-bg {
+    --bg-saturation: 1.2;
+    --bg-brightness: 0.5; /* Reduced from 0.7 to make it dimmer */
+  }
+  
+  .spicy-dynamic-bg .primary.loaded {
+    animation: bgAnimPrimary 120s linear infinite; /* Slower animation */
+    filter: blur(20px); /* Increased blur but still less intensive than full version */
+  }
+  
+  .spicy-dynamic-bg-loaded .secondary {
+    animation: bgAnimSecondary 120s linear infinite reverse; /* Slower animation */
+    filter: blur(20px); /* Increased blur but still less intensive than full version */
+  }
+  
+  /* Disable canvas on low-end devices */
+  .spicy-dynamic-bg .canvas-bg {
+    display: none;
+  }
 }

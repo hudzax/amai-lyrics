@@ -7,6 +7,7 @@ import { IntervalManager } from "./utils/IntervalManager";
 import { SpotifyPlayer } from "./components/Global/SpotifyPlayer";
 import { IsPlaying } from "./utils/Addons";
 import { ScrollSimplebar } from "./utils/Scrolling/Simplebar/ScrollSimplebar";
+import fastdom from "./utils/fastdom";
 
 // CSS Imports
 import "./css/default.css";
@@ -96,8 +97,20 @@ function updateButtonRegistration(button) {
   }
 }
 
+/**
+ * Apply optimized dynamic background to the now playing bar
+ * - Uses fewer DOM elements for better performance
+ * - Implements canvas-based blur when supported
+ * - Adapts to device capabilities
+ */
 function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached, lowQModeEnabled) {
-  if (lowQModeEnabled || !coverUrl) return;
+  if (!coverUrl) return;
+  
+  // Convert Spotify URI to proper URL if needed
+  if (coverUrl.startsWith('spotify:image:')) {
+    const imageId = coverUrl.replace('spotify:image:', '');
+    coverUrl = `https://i.scdn.co/image/${imageId}`;
+  }
   
   // Preload the cover image to improve future LCP
   preloadCoverImage(coverUrl);
@@ -106,104 +119,328 @@ function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached, lowQModeEnabled
     // Quick check for cached values to avoid unnecessary work
     if (coverUrl === cached.lastImgUrl && cached.dynamicBg) return;
 
-    // Find the now playing bar if not cached
-    if (!cached.nowPlayingBar) {
-      cached.nowPlayingBar = document.querySelector(
-        ".Root__right-sidebar aside.NowPlayingView"
-      );
-    }
+    // Set random rotation degrees for variety
+    const rotationPrimary = Math.floor(Math.random() * 360);
+    const rotationSecondary = Math.floor(Math.random() * 360);
+    document.documentElement.style.setProperty('--bg-rotation-primary', `${rotationPrimary}deg`);
+    document.documentElement.style.setProperty('--bg-rotation-secondary', `${rotationSecondary}deg`);
+    
+    // Set random scale variations for more dynamic effect
+    const scalePrimary = 0.9 + Math.random() * 0.3; // Between 0.9 and 1.2
+    const scaleSecondary = 0.9 + Math.random() * 0.3; // Between 0.9 and 1.2
+    document.documentElement.style.setProperty('--bg-scale-primary', `${scalePrimary}`);
+    document.documentElement.style.setProperty('--bg-scale-secondary', `${scaleSecondary}`);
+    
+    // Set a random hue shift for variety
+    const hueShift = Math.floor(Math.random() * 30);
+    document.documentElement.style.setProperty('--bg-hue-shift', `${hueShift}deg`);
 
-    const nowPlayingBar = cached.nowPlayingBar;
-    if (!nowPlayingBar) {
-      cached.lastImgUrl = null;
-      cached.dynamicBg = null;
-      return;
-    }
-
-    // Use requestAnimationFrame for DOM updates to avoid blocking the main thread
-    requestAnimationFrame(() => {
-      if (!cached.dynamicBg) {
-        // Create the dynamic background container
-        const dynamicBackground = document.createElement("div");
-        dynamicBackground.classList.add("spicy-dynamic-bg");
-        
-        // Create a lightweight placeholder div first
-        const placeholderDiv = document.createElement("div");
-        placeholderDiv.className = "FrontPlaceholder";
-        dynamicBackground.appendChild(placeholderDiv);
-        
-        // Create Front image with optimized loading strategy
-        const frontImg = document.createElement("img");
-        frontImg.className = "Front";
-        frontImg.loading = "eager"; // Use standard loading attribute
-        frontImg.decoding = "async";
-        frontImg.src = coverUrl;
-        
-        // Add to DOM immediately but with opacity 0
-        dynamicBackground.appendChild(frontImg);
-        
-        // When image loads, add the loaded class to trigger transition
-        frontImg.onload = () => {
-          // Use another rAF to ensure this happens in a separate frame
-          requestAnimationFrame(() => {
-            frontImg.classList.add("loaded");
-          });
-        };
-        
-        // Create Back image with lazy loading
-        const backImg = document.createElement("img");
-        backImg.className = "Back";
-        backImg.loading = "lazy";
-        backImg.decoding = "async";
-        backImg.src = coverUrl;
-        dynamicBackground.appendChild(backImg);
-        
-        // Create BackCenter image with lazy loading
-        const backCenterImg = document.createElement("img");
-        backCenterImg.className = "BackCenter";
-        backCenterImg.loading = "lazy";
-        backCenterImg.decoding = "async";
-        backCenterImg.src = coverUrl;
-        dynamicBackground.appendChild(backCenterImg);
-        
-        nowPlayingBar.classList.add("spicy-dynamic-bg-in-this");
-        nowPlayingBar.appendChild(dynamicBackground);
-        cached.dynamicBg = dynamicBackground;
-      } else {
-        // Update existing images more efficiently
-        const frontImg = cached.dynamicBg.querySelector(".Front");
-        if (frontImg) {
-          // Use image.onload to handle transitions
-          const newImg = new Image();
-          newImg.onload = () => {
-            requestAnimationFrame(() => {
-              frontImg.src = coverUrl;
-              frontImg.classList.add("loaded");
-            });
-          };
-          frontImg.classList.remove("loaded");
-          newImg.src = coverUrl;
+    // Use a single read-then-write pattern to avoid nesting and race conditions
+    fastdom.readThenWrite(
+      // Read phase - get all the elements we need
+      () => {
+        // Find the now playing bar if not cached
+        if (!cached.nowPlayingBar) {
+          cached.nowPlayingBar = document.querySelector(
+            ".Root__right-sidebar aside.NowPlayingView"
+          );
         }
         
-        // Update other images in the background with a slight delay
-        // to prioritize the front image update
-        setTimeout(() => {
-          const backImg = cached.dynamicBg.querySelector(".Back");
-          if (backImg) backImg.src = coverUrl;
-          
-          const backCenterImg = cached.dynamicBg.querySelector(".BackCenter");
-          if (backCenterImg) backCenterImg.src = coverUrl;
-        }, 50); // Small delay to prioritize main thread work
-      }
+        // Return everything we need for the write phase
+        return {
+          nowPlayingBar: cached.nowPlayingBar,
+          hasDynamicBg: !!cached.dynamicBg,
+          // If we already have a dynamic background, get the elements we need to update
+          elements: cached.dynamicBg ? {
+            primaryImg: cached.dynamicBg.querySelector(".primary"),
+            secondaryImg: cached.dynamicBg.querySelector(".secondary"),
+            canvasBg: cached.dynamicBg.querySelector(".canvas-bg")
+          } : null
+        };
+      },
+      // Write phase - create or update the dynamic background
+      async ({ nowPlayingBar, hasDynamicBg, elements }) => {
+        if (!nowPlayingBar) {
+          cached.lastImgUrl = null;
+          cached.dynamicBg = null;
+          return;
+        }
 
-      cached.lastImgUrl = coverUrl;
-    });
+        // Check if we should use canvas for blur effects
+        const supportsCanvas = typeof document !== 'undefined' && 
+          !!document.createElement('canvas').getContext;
+        
+        if (!hasDynamicBg) {
+          // Create the dynamic background container
+          const dynamicBackground = document.createElement("div");
+          dynamicBackground.classList.add("spicy-dynamic-bg");
+          if (lowQModeEnabled) dynamicBackground.classList.add("lowqmode");
+          
+          // Create a lightweight placeholder div first
+          const placeholderDiv = document.createElement("div");
+          placeholderDiv.className = "placeholder";
+          dynamicBackground.appendChild(placeholderDiv);
+          
+          // Create primary image (formerly Front)
+          const primaryImg = document.createElement("img");
+          primaryImg.className = "primary";
+          primaryImg.loading = "eager";
+          primaryImg.decoding = "async";
+          primaryImg.src = coverUrl;
+          
+          // Create secondary image (formerly Back)
+          const secondaryImg = document.createElement("img");
+          secondaryImg.className = "secondary";
+          secondaryImg.loading = "lazy";
+          secondaryImg.decoding = "async";
+          secondaryImg.src = coverUrl;
+          
+          // Add images to container
+          dynamicBackground.appendChild(primaryImg);
+          dynamicBackground.appendChild(secondaryImg);
+          
+          // Add canvas-based blur if supported and not in low quality mode
+          if (supportsCanvas && !lowQModeEnabled) {
+            // Create canvas in a non-blocking way
+            setTimeout(() => {
+              createBlurredCanvas(coverUrl).then(canvas => {
+                // Only append if the container is still in the DOM
+                if (dynamicBackground.isConnected) {
+                  dynamicBackground.appendChild(canvas);
+                }
+              });
+            }, 100);
+          }
+          
+          // Add the container to the DOM
+          nowPlayingBar.classList.add("spicy-dynamic-bg-in-this");
+          nowPlayingBar.appendChild(dynamicBackground);
+          
+          // When primary image loads, add the loaded class to trigger transition
+          primaryImg.onload = () => {
+            requestAnimationFrame(() => {
+              primaryImg.classList.add("loaded");
+            });
+          };
+          
+          // Mark container as loaded after a frame
+          requestAnimationFrame(() => {
+            dynamicBackground.classList.add("spicy-dynamic-bg-loaded");
+          });
+          
+          cached.dynamicBg = dynamicBackground;
+        } else if (elements) {
+          // Update existing images with a more efficient approach
+          const { primaryImg, secondaryImg, canvasBg } = elements;
+          
+          if (primaryImg) {
+            // Preload the image to prevent flickering
+            const newImg = new Image();
+            newImg.onload = () => {
+              requestAnimationFrame(() => {
+                // Remove loaded class to start transition
+                primaryImg.classList.remove("loaded");
+                
+                // Update src in the next frame
+                requestAnimationFrame(() => {
+                  primaryImg.src = coverUrl;
+                  
+                  // Add loaded class after image has loaded
+                  primaryImg.onload = () => {
+                    requestAnimationFrame(() => {
+                      primaryImg.classList.add("loaded");
+                    });
+                  };
+                });
+              });
+            };
+            newImg.src = coverUrl;
+          }
+          
+          // Update secondary image
+          if (secondaryImg) {
+            secondaryImg.src = coverUrl;
+          }
+          
+          // Update canvas if supported and not in low quality mode
+          if (supportsCanvas && !lowQModeEnabled) {
+            // Remove old canvas
+            if (canvasBg) {
+              canvasBg.remove();
+            }
+            
+            // Create new canvas in a non-blocking way
+            setTimeout(() => {
+              createBlurredCanvas(coverUrl).then(canvas => {
+                // Only append if the container is still in the DOM
+                if (cached.dynamicBg && cached.dynamicBg.isConnected) {
+                  cached.dynamicBg.appendChild(canvas);
+                }
+              });
+            }, 100);
+          }
+        }
+        
+        cached.lastImgUrl = coverUrl;
+      }
+    );
   } catch (error) {
     console.error(
       "Error Applying the Dynamic BG to the NowPlayingBar:",
       error
     );
   }
+}
+
+/**
+ * Creates a canvas-based blurred version of the image for better performance
+ * This is more efficient than CSS blur filters on large images
+ */
+function createBlurredCanvas(imageUrl: string): Promise<HTMLCanvasElement> {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    canvas.className = 'canvas-bg';
+    
+    // Use a smaller canvas size for better performance
+    canvas.width = 256;
+    canvas.height = 256;
+    
+    // Set willReadFrequently to true for better performance with getImageData
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) {
+      resolve(canvas); // Return empty canvas if context not available
+      return;
+    }
+    
+    // Convert Spotify URI to proper URL if needed
+    if (imageUrl.startsWith('spotify:image:')) {
+      const imageId = imageUrl.replace('spotify:image:', '');
+      imageUrl = `https://i.scdn.co/image/${imageId}`;
+    }
+    
+    const img = new Image();
+    img.crossOrigin = 'anonymous'; // Important for CORS
+    
+    img.onload = () => {
+      try {
+        // Draw image to canvas
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        // Apply a simple box blur - much more efficient than CSS blur
+        for (let i = 0; i < 3; i++) { // Increased to 3 passes for stronger blur
+          boxBlur(ctx, canvas, 15); // Increased blur radius for less recognizable images
+        }
+        
+        // Mark as loaded after a frame to ensure smooth transition
+        requestAnimationFrame(() => {
+          canvas.classList.add('loaded');
+          resolve(canvas);
+        });
+      } catch (error) {
+        console.error('Error processing canvas:', error);
+        resolve(canvas); // Return canvas even on error
+      }
+    };
+    
+    img.onerror = (e) => {
+      console.error('Error loading image for canvas:', e);
+      resolve(canvas); // Return empty canvas on error
+    };
+    
+    // Set src after setting up event handlers
+    img.src = imageUrl;
+  });
+}
+
+/**
+ * Simple and efficient box blur implementation
+ * Much more performant than Gaussian blur for our purposes
+ */
+function boxBlur(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, radius: number) {
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const pixels = imageData.data;
+  const width = canvas.width;
+  const height = canvas.height;
+  
+  // Horizontal pass
+  for (let y = 0; y < height; y++) {
+    let runningTotal = [0, 0, 0];
+    
+    // Initial sum for the first radius pixels
+    for (let x = 0; x < radius; x++) {
+      const idx = (y * width + x) * 4;
+      runningTotal[0] += pixels[idx];
+      runningTotal[1] += pixels[idx + 1];
+      runningTotal[2] += pixels[idx + 2];
+    }
+    
+    // Blur horizontally
+    for (let x = 0; x < width; x++) {
+      // Add the next pixel to the sum
+      if (x + radius < width) {
+        const idx = (y * width + x + radius) * 4;
+        runningTotal[0] += pixels[idx];
+        runningTotal[1] += pixels[idx + 1];
+        runningTotal[2] += pixels[idx + 2];
+      }
+      
+      // Remove the trailing pixel from the sum
+      if (x - radius - 1 >= 0) {
+        const idx = (y * width + x - radius - 1) * 4;
+        runningTotal[0] -= pixels[idx];
+        runningTotal[1] -= pixels[idx + 1];
+        runningTotal[2] -= pixels[idx + 2];
+      }
+      
+      // Set the blurred value
+      const currentIdx = (y * width + x) * 4;
+      const count = Math.min(radius + x + 1, width) - Math.max(x - radius, 0);
+      pixels[currentIdx] = runningTotal[0] / count;
+      pixels[currentIdx + 1] = runningTotal[1] / count;
+      pixels[currentIdx + 2] = runningTotal[2] / count;
+    }
+  }
+  
+  // Vertical pass
+  for (let x = 0; x < width; x++) {
+    let runningTotal = [0, 0, 0];
+    
+    // Initial sum for the first radius pixels
+    for (let y = 0; y < radius; y++) {
+      const idx = (y * width + x) * 4;
+      runningTotal[0] += pixels[idx];
+      runningTotal[1] += pixels[idx + 1];
+      runningTotal[2] += pixels[idx + 2];
+    }
+    
+    // Blur vertically
+    for (let y = 0; y < height; y++) {
+      // Add the next pixel to the sum
+      if (y + radius < height) {
+        const idx = ((y + radius) * width + x) * 4;
+        runningTotal[0] += pixels[idx];
+        runningTotal[1] += pixels[idx + 1];
+        runningTotal[2] += pixels[idx + 2];
+      }
+      
+      // Remove the trailing pixel from the sum
+      if (y - radius - 1 >= 0) {
+        const idx = ((y - radius - 1) * width + x) * 4;
+        runningTotal[0] -= pixels[idx];
+        runningTotal[1] -= pixels[idx + 1];
+        runningTotal[2] -= pixels[idx + 2];
+      }
+      
+      // Set the blurred value
+      const currentIdx = (y * width + x) * 4;
+      const count = Math.min(radius + y + 1, height) - Math.max(y - radius, 0);
+      pixels[currentIdx] = runningTotal[0] / count;
+      pixels[currentIdx + 1] = runningTotal[1] / count;
+      pixels[currentIdx + 2] = runningTotal[2] / count;
+    }
+  }
+  
+  ctx.putImageData(imageData, 0, 0);
 }
 
 async function initializeAmaiLyrics(button) {
@@ -426,13 +663,14 @@ const cacheExpiryTime = 5 * 60 * 1000; // 5 minutes
  * - Uses a Map instead of Set for better performance with large caches
  * - Includes timestamp to expire old entries
  * - Uses requestIdleCallback when available for non-blocking preloading
+ * - Avoids unnecessary DOM operations that could cause flickering
  */
 function preloadCoverImage(coverUrl) {
   if (!coverUrl) return;
   
   const now = Date.now();
   
-  // Check if image is already in cache and not expired
+  // Check if image is already in cache and not expired - this is a memory operation, not DOM
   if (imageCache.has(coverUrl)) {
     const cacheEntry = imageCache.get(coverUrl);
     if (now - cacheEntry.timestamp < cacheExpiryTime) {
@@ -444,23 +682,30 @@ function preloadCoverImage(coverUrl) {
   
   // Schedule preloading during idle time if supported
   const preloadFunc = () => {
+    // Add to cache with current timestamp - pure memory operation, no DOM
+    imageCache.set(coverUrl, { timestamp: now, loaded: false });
+    
     // Use Image() constructor for preloading
     const img = new Image();
+    
+    // Set decode="async" to hint to the browser that it can decode the image asynchronously
+    img.decoding = "async";
+    
     img.onload = () => {
-      // Mark as successfully loaded in cache
+      // Mark as successfully loaded in cache - pure memory operation, no DOM
       if (imageCache.has(coverUrl)) {
         const entry = imageCache.get(coverUrl);
         imageCache.set(coverUrl, { ...entry, loaded: true });
       }
     };
+    
+    // Set src after setting up onload handler
     img.src = coverUrl;
     
-    // Add to cache with current timestamp
-    imageCache.set(coverUrl, { timestamp: now, loaded: false });
-    
-    // Clean up cache if it gets too large
+    // Clean up cache if it gets too large - pure memory operation, no DOM
     if (imageCache.size > maxCachedCovers) {
-      // Find and remove oldest entries
+      // Don't use fastdom for this since it's just memory operations
+      // This avoids unnecessary scheduling and potential race conditions
       const entries = Array.from(imageCache.entries());
       entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
       
@@ -472,11 +717,13 @@ function preloadCoverImage(coverUrl) {
     }
   };
   
-  // Use requestIdleCallback if available, otherwise use setTimeout with 0 delay
+  // Use requestIdleCallback if available, otherwise use setTimeout with a small delay
+  // The small delay helps prevent immediate execution that could cause flickering
   if (typeof window.requestIdleCallback === 'function') {
     window.requestIdleCallback(preloadFunc, { timeout: 1000 });
   } else {
-    setTimeout(preloadFunc, 0);
+    // Use a 1ms timeout instead of 0 to give the browser a chance to batch operations
+    setTimeout(preloadFunc, 1);
   }
 }
 
