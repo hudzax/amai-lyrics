@@ -64,23 +64,22 @@
   opacity: 0.8;
 }
 
-/* Canvas element for efficient blur effects */
-.sweet-dynamic-bg .canvas-bg {
+/* Base style for background images */
+.sweet-dynamic-bg > img.bg-image {
   position: absolute;
-  width: 100%;
-  height: 100%;
-  z-index: 2;
-  opacity: 0;
-  transition: opacity 1s ease-in-out;
-  will-change: opacity;
+  width: 200%;
+  height: 200%;
+  border-radius: 100em;
+  opacity: 0; /* Start hidden */
+  transition: opacity 1s ease-in-out; /* Transition for crossfade */
+  will-change: transform, opacity;
+  transform-style: flat;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
-.sweet-dynamic-bg .canvas-bg.loaded {
-  opacity: 1;
-}
-
-/* Primary background image - optimized for performance */
-.sweet-dynamic-bg .primary {
+/* Primary background image styling */
+.sweet-dynamic-bg > img.primary {
   position: absolute;
   right: 0;
   top: 0;
@@ -88,30 +87,13 @@
   height: 200%;
   border-radius: 100em;
   z-index: 3;
-  opacity: 0;
   transform: rotate(var(--bg-rotation-primary, 0deg)) scale(var(--bg-scale-primary, 1));
-  
-  /* Longer, smoother transition to prevent flickering */
-  transition: opacity 1s ease-in-out, filter 1s ease-in-out;
-  
-  /* Optimize for GPU acceleration */
-  will-change: transform, opacity;
-  transform-style: flat;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  
-  /* Apply blur from the start but with 0 opacity - increased blur for less recognizable images */
   filter: blur(25px) hue-rotate(var(--bg-hue-shift));
-}
-
-/* Apply styling only after image has loaded */
-.sweet-dynamic-bg .primary.loaded {
-  opacity: 1;
   animation: bgAnimPrimary 60s linear infinite;
 }
 
-/* Secondary background element - provides depth */
-.sweet-dynamic-bg .secondary {
+/* Secondary background image styling */
+.sweet-dynamic-bg > img.secondary {
   position: absolute;
   bottom: 0;
   left: 0;
@@ -119,79 +101,66 @@
   height: 200%;
   border-radius: 100em;
   z-index: 2;
-  opacity: 0;
   transform: rotate(var(--bg-rotation-secondary, 0deg)) scale(var(--bg-scale-secondary, 1));
-  animation-direction: reverse;
-  
-  /* Longer, smoother transition to prevent flickering */
-  transition: opacity 1.2s ease-in-out, filter 1.2s ease-in-out;
-  
-  /* Optimize for GPU */
-  will-change: transform;
-  transform-style: flat;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  
-  /* Apply blur from the start but with 0 opacity - increased blur for less recognizable images */
   filter: blur(45px) hue-rotate(calc(var(--bg-hue-shift) + 30deg));
-}
-
-/* Only show secondary element after container is loaded */
-.sweet-dynamic-bg-loaded .secondary {
-  opacity: 0.8;
   animation: bgAnimSecondary 75s linear infinite reverse;
 }
+
+/* Active state for crossfade */
+.sweet-dynamic-bg > img.primary.active {
+  opacity: 1; /* Primary is fully opaque when active */
+}
+
+.sweet-dynamic-bg > img.secondary.active {
+  opacity: 0.8; /* Secondary is slightly transparent when active */
+}
+
 
 /* Fullscreen mode optimizations */
 #SpicyLyricsPage.Fullscreen .sweet-dynamic-bg {
   max-height: 60%;
   max-width: 20%;
-  scale: 500% 170%;
+  scale: 500% 170%; /* Keep existing scaling */
 }
 
 .sweet-dynamic-bg-in-this {
   overflow: hidden;
   position: relative;
 }
-
 /* Specific styling for sidebar */
 .sweet-dynamic-bg-in-this:is(aside) .sweet-dynamic-bg {
   --bg-saturation: 2;
-  --bg-brightness: 0.45; /* Reduced from 0.55 to make it dimmer */
+  --bg-brightness: 0.45;
   max-height: 100%;
   max-width: 100%;
 }
-
-/* Video element styling */
+/* Video element styling (Keep as is) */
 .sweet-dynamic-bg-in-this:is(aside) video {
   filter: opacity(0.75) brightness(0.5);
   -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 35%, rgba(0, 0, 0, 0) 90%);
   mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 35%, rgba(0, 0, 0, 0) 90%);
 }
-
-/* Remove default styling from video containers */
+/* Remove default styling from video containers (Keep as is) */
 .main-nowPlayingView-coverArtContainer div:has(video)::before,
 .main-nowPlayingView-coverArtContainer div:has(video)::after {
   display: none;
 }
-
-/* Ensure content stays above background */
+/* Ensure content stays above background (Keep as is) */
 .sweet-dynamic-bg-in-this:is(aside) .AAdBM1nhG73supMfnYX7 {
   z-index: 10;
   position: relative;
 }
-
 /* Lyrics page specific styling */
 #SpicyLyricsPage .sweet-dynamic-bg {
   --bg-saturation: 2.5;
-  --bg-brightness: 0.45; /* Reduced from 0.55 to make it dimmer */
+  --bg-brightness: 0.45;
   max-height: 55%;
   max-width: 35%;
   scale: 290% 185%;
-  transform-origin: left top;
+  transform-origin: left top; /* Keep existing transform origin */
 }
 
-/* Optimized animation keyframes for primary element */
+/* Optimized animation keyframes for primary element (Keep as is) */
 @keyframes bgAnimPrimary {
   0% {
     transform: rotate(var(--bg-rotation-primary, 0deg)) scale(var(--bg-scale-primary, 1));
@@ -200,8 +169,7 @@
     transform: rotate(calc(var(--bg-rotation-primary, 0deg) + 1turn)) scale(var(--bg-scale-primary, 1));
   }
 }
-
-/* Optimized animation keyframes for secondary element */
+/* Optimized animation keyframes for secondary element (Keep as is) */
 @keyframes bgAnimSecondary {
   0% {
     transform: rotate(var(--bg-rotation-secondary, 0deg)) scale(var(--bg-scale-secondary, 1));
@@ -210,34 +178,30 @@
     transform: rotate(calc(var(--bg-rotation-secondary, 0deg) + 1turn)) scale(var(--bg-scale-secondary, 1));
   }
 }
-
-/* Performance optimization for fullscreen mode */
+/* Performance optimization for fullscreen mode (Keep as is) */
 body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .sweet-dynamic-bg-in-this) .sweet-dynamic-bg,
 body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .sweet-dynamic-bg-in-this) .sweet-dynamic-bg * {
   display: none !important;
   animation: none !important;
   filter: none !important;
 }
-
 /* Media query for lower-end devices */
 @media (prefers-reduced-motion), (max-width: 768px) {
   .sweet-dynamic-bg {
     --bg-saturation: 1.2;
-    --bg-brightness: 0.5; /* Reduced from 0.7 to make it dimmer */
+    --bg-brightness: 0.5;
   }
-  
-  .sweet-dynamic-bg .primary.loaded {
-    animation: bgAnimPrimary 120s linear infinite; /* Slower animation */
-    filter: blur(20px); /* Increased blur but still less intensive than full version */
+
+  /* Adjust animation/filter directly on the image elements */
+  .sweet-dynamic-bg > img.primary {
+    animation-duration: 120s; /* Slower animation */
+    filter: blur(20px) hue-rotate(var(--bg-hue-shift)); /* Adjusted blur */
   }
-  
-  .sweet-dynamic-bg-loaded .secondary {
-    animation: bgAnimSecondary 120s linear infinite reverse; /* Slower animation */
-    filter: blur(20px); /* Increased blur but still less intensive than full version */
+
+  .sweet-dynamic-bg > img.secondary {
+    animation-duration: 120s; /* Slower animation */
+    filter: blur(20px) hue-rotate(calc(var(--bg-hue-shift) + 30deg)); /* Adjusted blur */
   }
-  
-  /* Disable canvas on low-end devices */
-  .sweet-dynamic-bg .canvas-bg {
-    display: none;
-  }
+
+  /* No need to disable canvas as it's removed */
 }
