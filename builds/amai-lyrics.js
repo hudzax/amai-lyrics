@@ -9,17 +9,10 @@
   var __getOwnPropNames = Object.getOwnPropertyNames;
   var __getProtoOf = Object.getPrototypeOf;
   var __hasOwnProp = Object.prototype.hasOwnProperty;
-  var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
-    get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
-  }) : x)(function(x) {
-    if (typeof require !== "undefined")
-      return require.apply(this, arguments);
-    throw new Error('Dynamic require of "' + x + '" is not supported');
-  });
   var __esm = (fn, res) => function __init() {
     return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
   };
-  var __commonJS = (cb, mod) => function __require2() {
+  var __commonJS = (cb, mod) => function __require() {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
   };
   var __export = (target, all) => {
@@ -419,7 +412,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.1.0";
+      version = "1.1.1";
     }
   });
 
@@ -7399,9 +7392,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-18228-3N7uDRrxoSYA/196301d4f927/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-9680-CIUkP9qymmaj/19636a9ab767/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-18228-3N7uDRrxoSYA/196301d4f927/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-9680-CIUkP9qymmaj/19636a9ab767/DotLoader.css"() {
     }
   });
 
@@ -7410,377 +7403,121 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   __export(dynamicBackground_exports, {
     default: () => ApplyDynamicBackground
   });
-  function createBlurredCanvas(imageUrl) {
-    return new Promise((resolve) => {
-      const canvas = document.createElement("canvas");
-      canvas.className = "canvas-bg";
-      canvas.width = 256;
-      canvas.height = 256;
-      const ctx = canvas.getContext("2d", { willReadFrequently: true });
-      if (!ctx) {
-        resolve(canvas);
-        return;
-      }
-      if (imageUrl.startsWith("spotify:image:")) {
-        const imageId = imageUrl.replace("spotify:image:", "");
-        imageUrl = `https://i.scdn.co/image/${imageId}`;
-      }
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => {
-        try {
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          if (typeof Worker !== "undefined") {
-            try {
-              const workerUrl = URL.createObjectURL(
-                new Blob(
-                  [
-                    __require("!!raw-loader!./blurWorker.ts").default
-                  ],
-                  { type: "application/javascript" }
-                )
-              );
-              const worker = new Worker(workerUrl);
-              const imageData = ctx.getImageData(
-                0,
-                0,
-                canvas.width,
-                canvas.height
-              );
-              worker.onmessage = function(e) {
-                try {
-                  const blurred = e.data.imageData;
-                  ctx.putImageData(blurred, 0, 0);
-                  const data = blurred.data;
-                  for (let i = 0; i < data.length; i += 4) {
-                    const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-                    data[i] = data[i] + (data[i] - avg) * 0.5;
-                    data[i + 1] = data[i + 1] + (data[i + 1] - avg) * 0.5;
-                    data[i + 2] = data[i + 2] + (data[i + 2] - avg) * 0.5;
-                    data[i] = data[i] * 0.8;
-                    data[i + 1] = data[i + 1] * 0.8;
-                    data[i + 2] = data[i + 2] * 0.8;
-                  }
-                  ctx.putImageData(blurred, 0, 0);
-                  requestAnimationFrame(() => {
-                    canvas.classList.add("loaded");
-                    resolve(canvas);
-                  });
-                } catch (err2) {
-                  console.error(
-                    "Error processing blurred image from worker:",
-                    err2
-                  );
-                  resolve(canvas);
-                } finally {
-                  worker.terminate();
-                  URL.revokeObjectURL(workerUrl);
-                }
-              };
-              worker.onerror = function(err2) {
-                console.error("Blur worker error:", err2);
-                for (let i = 0; i < 4; i++) {
-                  boxBlur(ctx, canvas, 15);
-                }
-                const imageData2 = ctx.getImageData(
-                  0,
-                  0,
-                  canvas.width,
-                  canvas.height
-                );
-                const data = imageData2.data;
-                for (let i = 0; i < data.length; i += 4) {
-                  const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-                  data[i] = data[i] + (data[i] - avg) * 0.5;
-                  data[i + 1] = data[i + 1] + (data[i + 1] - avg) * 0.5;
-                  data[i + 2] = data[i + 2] + (data[i + 2] - avg) * 0.5;
-                  data[i] = data[i] * 0.8;
-                  data[i + 1] = data[i + 1] * 0.8;
-                  data[i + 2] = data[i + 2] * 0.8;
-                }
-                ctx.putImageData(imageData2, 0, 0);
-                requestAnimationFrame(() => {
-                  canvas.classList.add("loaded");
-                  resolve(canvas);
-                });
-                worker.terminate();
-                URL.revokeObjectURL(workerUrl);
-              };
-              worker.postMessage(
-                {
-                  imageData,
-                  passes: 4,
-                  radius: 15
-                },
-                [imageData.data.buffer]
-              );
-            } catch (err2) {
-              for (let i = 0; i < 4; i++) {
-                boxBlur(ctx, canvas, 15);
-              }
-              const imageData = ctx.getImageData(
-                0,
-                0,
-                canvas.width,
-                canvas.height
-              );
-              const data = imageData.data;
-              for (let i = 0; i < data.length; i += 4) {
-                const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-                data[i] = data[i] + (data[i] - avg) * 0.5;
-                data[i + 1] = data[i + 1] + (data[i + 1] - avg) * 0.5;
-                data[i + 2] = data[i + 2] + (data[i + 2] - avg) * 0.5;
-                data[i] = data[i] * 0.8;
-                data[i + 1] = data[i + 1] * 0.8;
-                data[i + 2] = data[i + 2] * 0.8;
-              }
-              ctx.putImageData(imageData, 0, 0);
-              requestAnimationFrame(() => {
-                canvas.classList.add("loaded");
-                resolve(canvas);
-              });
-            }
-          } else {
-            for (let i = 0; i < 4; i++) {
-              boxBlur(ctx, canvas, 15);
-            }
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const data = imageData.data;
-            for (let i = 0; i < data.length; i += 4) {
-              const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-              data[i] = data[i] + (data[i] - avg) * 0.5;
-              data[i + 1] = data[i + 1] + (data[i + 1] - avg) * 0.5;
-              data[i + 2] = data[i + 2] + (data[i + 2] - avg) * 0.5;
-              data[i] = data[i] * 0.8;
-              data[i + 1] = data[i + 1] * 0.8;
-              data[i + 2] = data[i + 2] * 0.8;
-            }
-            ctx.putImageData(imageData, 0, 0);
-            requestAnimationFrame(() => {
-              canvas.classList.add("loaded");
-              resolve(canvas);
-            });
-          }
-        } catch (error) {
-          console.error("Error processing canvas:", error);
-          resolve(canvas);
-        }
-      };
-      img.onerror = (e) => {
-        console.error("Error loading image for canvas:", e);
-        resolve(canvas);
-      };
-      img.src = imageUrl;
-    });
+  async function setupDynamicBackground(element, imageUrl) {
+    let bgContainer = element.querySelector(
+      ".sweet-dynamic-bg"
+    );
+    if (!bgContainer) {
+      bgContainer = document.createElement("div");
+      bgContainer.className = "sweet-dynamic-bg";
+      bgContainer.setAttribute("current-img", imageUrl);
+      const placeholder = document.createElement("div");
+      placeholder.className = "placeholder";
+      bgContainer.appendChild(placeholder);
+      const imgA = document.createElement("img");
+      imgA.id = "bg-img-a";
+      imgA.className = "bg-image primary active";
+      imgA.decoding = "async";
+      imgA.loading = "eager";
+      imgA.src = imageUrl;
+      bgContainer.appendChild(imgA);
+      const imgB = document.createElement("img");
+      imgB.id = "bg-img-b";
+      imgB.className = "bg-image secondary";
+      imgB.decoding = "async";
+      imgB.loading = "lazy";
+      bgContainer.appendChild(imgB);
+      element.appendChild(bgContainer);
+      const rotationPrimary = Math.floor(Math.random() * 360);
+      const rotationSecondary = Math.floor(Math.random() * 360);
+      document.documentElement.style.setProperty(
+        "--bg-rotation-primary",
+        `${rotationPrimary}deg`
+      );
+      document.documentElement.style.setProperty(
+        "--bg-rotation-secondary",
+        `${rotationSecondary}deg`
+      );
+      const scalePrimary = 0.9 + Math.random() * 0.3;
+      const scaleSecondary = 0.9 + Math.random() * 0.3;
+      document.documentElement.style.setProperty(
+        "--bg-scale-primary",
+        `${scalePrimary}`
+      );
+      document.documentElement.style.setProperty(
+        "--bg-scale-secondary",
+        `${scaleSecondary}`
+      );
+      const hueShift = Math.floor(Math.random() * 30);
+      document.documentElement.style.setProperty(
+        "--bg-hue-shift",
+        `${hueShift}deg`
+      );
+    }
+    return bgContainer;
   }
-  function boxBlur(ctx, canvas, radius) {
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const pixels = imageData.data;
-    const width = canvas.width;
-    const height = canvas.height;
-    for (let y = 0; y < height; y++) {
-      let runningTotal = [0, 0, 0];
-      for (let x = 0; x < radius; x++) {
-        const idx = (y * width + x) * 4;
-        runningTotal[0] += pixels[idx];
-        runningTotal[1] += pixels[idx + 1];
-        runningTotal[2] += pixels[idx + 2];
-      }
-      for (let x = 0; x < width; x++) {
-        if (x + radius < width) {
-          const idx = (y * width + x + radius) * 4;
-          runningTotal[0] += pixels[idx];
-          runningTotal[1] += pixels[idx + 1];
-          runningTotal[2] += pixels[idx + 2];
-        }
-        if (x - radius - 1 >= 0) {
-          const idx = (y * width + x - radius - 1) * 4;
-          runningTotal[0] -= pixels[idx];
-          runningTotal[1] -= pixels[idx + 1];
-          runningTotal[2] -= pixels[idx + 2];
-        }
-        const currentIdx = (y * width + x) * 4;
-        const count = Math.min(radius + x + 1, width) - Math.max(x - radius, 0);
-        pixels[currentIdx] = runningTotal[0] / count;
-        pixels[currentIdx + 1] = runningTotal[1] / count;
-        pixels[currentIdx + 2] = runningTotal[2] / count;
-      }
+  function updateDynamicBackground(bgContainer, newImageUrl) {
+    const imgA = bgContainer.querySelector("#bg-img-a");
+    const imgB = bgContainer.querySelector("#bg-img-b");
+    if (!imgA || !imgB) {
+      console.error("Dynamic background image elements not found!");
+      return;
     }
-    for (let x = 0; x < width; x++) {
-      let runningTotal = [0, 0, 0];
-      for (let y = 0; y < radius; y++) {
-        const idx = (y * width + x) * 4;
-        runningTotal[0] += pixels[idx];
-        runningTotal[1] += pixels[idx + 1];
-        runningTotal[2] += pixels[idx + 2];
-      }
-      for (let y = 0; y < height; y++) {
-        if (y + radius < height) {
-          const idx = ((y + radius) * width + x) * 4;
-          runningTotal[0] += pixels[idx];
-          runningTotal[1] += pixels[idx + 1];
-          runningTotal[2] += pixels[idx + 2];
-        }
-        if (y - radius - 1 >= 0) {
-          const idx = ((y - radius - 1) * width + x) * 4;
-          runningTotal[0] -= pixels[idx];
-          runningTotal[1] -= pixels[idx + 1];
-          runningTotal[2] -= pixels[idx + 2];
-        }
-        const currentIdx = (y * width + x) * 4;
-        const count = Math.min(radius + y + 1, height) - Math.max(y - radius, 0);
-        pixels[currentIdx] = runningTotal[0] / count;
-        pixels[currentIdx + 1] = runningTotal[1] / count;
-        pixels[currentIdx + 2] = runningTotal[2] / count;
-      }
-    }
-    ctx.putImageData(imageData, 0, 0);
+    const activeImg = imgA.classList.contains("active") ? imgA : imgB;
+    const inactiveImg = activeImg === imgA ? imgB : imgA;
+    inactiveImg.src = newImageUrl;
+    inactiveImg.onload = () => {
+      activeImg.classList.remove("active");
+      inactiveImg.classList.add("active");
+      const rotationPrimary = Math.floor(Math.random() * 360);
+      const rotationSecondary = Math.floor(Math.random() * 360);
+      document.documentElement.style.setProperty(
+        "--bg-rotation-primary",
+        `${rotationPrimary}deg`
+      );
+      document.documentElement.style.setProperty(
+        "--bg-rotation-secondary",
+        `${rotationSecondary}deg`
+      );
+      const scalePrimary = 0.9 + Math.random() * 0.3;
+      const scaleSecondary = 0.9 + Math.random() * 0.3;
+      document.documentElement.style.setProperty(
+        "--bg-scale-primary",
+        `${scalePrimary}`
+      );
+      document.documentElement.style.setProperty(
+        "--bg-scale-secondary",
+        `${scaleSecondary}`
+      );
+      const hueShift = Math.floor(Math.random() * 30);
+      document.documentElement.style.setProperty(
+        "--bg-hue-shift",
+        `${hueShift}deg`
+      );
+    };
+    inactiveImg.onerror = () => {
+      console.error("Error loading new background image:", newImageUrl);
+    };
+    bgContainer.setAttribute("current-img", newImageUrl);
   }
   async function ApplyDynamicBackground(element) {
     if (!element)
       return;
-    const reducedMotion = prefersReducedMotion;
-    const rotationPrimary = Math.floor(Math.random() * 360);
-    const rotationSecondary = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty(
-      "--bg-rotation-primary",
-      `${rotationPrimary}deg`
-    );
-    document.documentElement.style.setProperty(
-      "--bg-rotation-secondary",
-      `${rotationSecondary}deg`
-    );
-    const scalePrimary = 0.9 + Math.random() * 0.3;
-    const scaleSecondary = 0.9 + Math.random() * 0.3;
-    document.documentElement.style.setProperty(
-      "--bg-scale-primary",
-      `${scalePrimary}`
-    );
-    document.documentElement.style.setProperty(
-      "--bg-scale-secondary",
-      `${scaleSecondary}`
-    );
-    const hueShift = Math.floor(Math.random() * 30);
-    document.documentElement.style.setProperty(
-      "--bg-hue-shift",
-      `${hueShift}deg`
-    );
     let currentImgCover = await SpotifyPlayer.Artwork.Get("d");
     if (currentImgCover.startsWith("spotify:image:")) {
       const imageId = currentImgCover.replace("spotify:image:", "");
       currentImgCover = `https://i.scdn.co/image/${imageId}`;
     }
-    return fastdom_default.readThenWrite(
-      () => {
-        const bgContainer = element.querySelector(
-          ".sweet-dynamic-bg"
-        );
-        return {
-          bgContainer,
-          needsUpdate: !bgContainer || bgContainer.getAttribute("current-img") !== currentImgCover,
-          currentImgCover,
-          reducedMotion
-        };
-      },
-      async ({ bgContainer, needsUpdate, currentImgCover: currentImgCover2, reducedMotion: reducedMotion2 }) => {
-        if (!needsUpdate)
-          return;
-        if (bgContainer) {
-          bgContainer.setAttribute("current-img", currentImgCover2);
-          const primaryImg = bgContainer.querySelector(
-            ".primary"
-          );
-          const secondaryImg = bgContainer.querySelector(
-            ".secondary"
-          );
-          const newImg = new Image();
-          newImg.onload = () => {
-            if (primaryImg) {
-              const newPrimaryImg = document.createElement("img");
-              newPrimaryImg.className = "primary";
-              newPrimaryImg.decoding = "async";
-              newPrimaryImg.loading = "eager";
-              newPrimaryImg.src = currentImgCover2;
-              newPrimaryImg.style.opacity = "0";
-              bgContainer.appendChild(newPrimaryImg);
-              newPrimaryImg.onload = () => {
-                setTimeout(() => {
-                  newPrimaryImg.classList.add("loaded");
-                  setTimeout(() => {
-                    primaryImg.remove();
-                  }, 1e3);
-                }, 50);
-              };
-            }
-            if (secondaryImg) {
-              const newSecondaryImg = document.createElement("img");
-              newSecondaryImg.className = "secondary";
-              newSecondaryImg.decoding = "async";
-              newSecondaryImg.loading = "eager";
-              newSecondaryImg.src = currentImgCover2;
-              bgContainer.appendChild(newSecondaryImg);
-              setTimeout(() => {
-                secondaryImg.remove();
-              }, 1200);
-            }
-            if (supportsCanvas && !reducedMotion2) {
-              createBlurredCanvas(currentImgCover2).then((canvas) => {
-                bgContainer.appendChild(canvas);
-                setTimeout(() => {
-                  const oldCanvas = bgContainer.querySelector(
-                    ".canvas-bg:not(.loaded)"
-                  );
-                  if (oldCanvas) {
-                    oldCanvas.remove();
-                  }
-                }, 1e3);
-              });
-            }
-          };
-          newImg.src = currentImgCover2;
-        } else {
-          const container = document.createElement("div");
-          container.className = "sweet-dynamic-bg";
-          container.setAttribute("current-img", currentImgCover2);
-          const placeholder = document.createElement("div");
-          placeholder.className = "placeholder";
-          container.appendChild(placeholder);
-          const primaryImg = document.createElement("img");
-          primaryImg.className = "primary";
-          primaryImg.decoding = "async";
-          primaryImg.loading = "eager";
-          primaryImg.src = currentImgCover2;
-          container.appendChild(primaryImg);
-          primaryImg.onload = () => {
-            requestAnimationFrame(() => {
-              primaryImg.classList.add("loaded");
-            });
-          };
-          const secondaryImg = document.createElement("img");
-          secondaryImg.className = "secondary";
-          secondaryImg.decoding = "async";
-          secondaryImg.loading = "lazy";
-          secondaryImg.src = currentImgCover2;
-          container.appendChild(secondaryImg);
-          if (supportsCanvas && !reducedMotion2) {
-            createBlurredCanvas(currentImgCover2).then((canvas) => {
-              container.appendChild(canvas);
-            });
-          }
-          element.appendChild(container);
-          requestAnimationFrame(() => {
-            container.classList.add("spicy-dynamic-bg-loaded");
-          });
-        }
-      }
-    );
+    const bgContainer = await setupDynamicBackground(element, currentImgCover);
+    const displayedImg = bgContainer.getAttribute("current-img");
+    if (displayedImg !== currentImgCover) {
+      updateDynamicBackground(bgContainer, currentImgCover);
+    }
   }
-  var supportsCanvas, prefersReducedMotion;
+  var prefersReducedMotion;
   var init_dynamicBackground = __esm({
     "src/components/DynamicBG/dynamicBackground.ts"() {
       init_SpotifyPlayer();
-      init_fastdom();
-      supportsCanvas = typeof document !== "undefined" && !!document.createElement("canvas").getContext;
       prefersReducedMotion = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     }
   });
@@ -19586,7 +19323,7 @@ ${JSON.stringify(
             cached.dynamicBg = null;
             return;
           }
-          const supportsCanvas2 = typeof document !== "undefined" && !!document.createElement("canvas").getContext;
+          const supportsCanvas = typeof document !== "undefined" && !!document.createElement("canvas").getContext;
           if (!hasDynamicBg) {
             const dynamicBackground = document.createElement("div");
             dynamicBackground.classList.add("sweet-dynamic-bg");
@@ -19605,9 +19342,9 @@ ${JSON.stringify(
             secondaryImg.src = coverUrl;
             dynamicBackground.appendChild(primaryImg);
             dynamicBackground.appendChild(secondaryImg);
-            if (supportsCanvas2) {
+            if (supportsCanvas) {
               setTimeout(() => {
-                createBlurredCanvas2(coverUrl).then((canvas) => {
+                createBlurredCanvas(coverUrl).then((canvas) => {
                   if (dynamicBackground.isConnected) {
                     dynamicBackground.appendChild(canvas);
                   }
@@ -19647,12 +19384,12 @@ ${JSON.stringify(
             if (secondaryImg) {
               secondaryImg.src = coverUrl;
             }
-            if (supportsCanvas2) {
+            if (supportsCanvas) {
               if (canvasBg) {
                 canvasBg.remove();
               }
               setTimeout(() => {
-                createBlurredCanvas2(coverUrl).then((canvas) => {
+                createBlurredCanvas(coverUrl).then((canvas) => {
                   if (cached.dynamicBg && cached.dynamicBg.isConnected) {
                     cached.dynamicBg.appendChild(canvas);
                   }
@@ -19670,7 +19407,7 @@ ${JSON.stringify(
       );
     }
   }
-  function createBlurredCanvas2(imageUrl) {
+  function createBlurredCanvas(imageUrl) {
     return new Promise((resolve) => {
       const canvas = document.createElement("canvas");
       canvas.className = "canvas-bg";
@@ -19691,7 +19428,7 @@ ${JSON.stringify(
         try {
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           for (let i = 0; i < 3; i++) {
-            boxBlur2(ctx, canvas, 15);
+            boxBlur(ctx, canvas, 15);
           }
           requestAnimationFrame(() => {
             canvas.classList.add("loaded");
@@ -19709,7 +19446,7 @@ ${JSON.stringify(
       img.src = imageUrl;
     });
   }
-  function boxBlur2(ctx, canvas, radius) {
+  function boxBlur(ctx, canvas, radius) {
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const pixels = imageData.data;
     const width = canvas.width;
@@ -19931,7 +19668,7 @@ ${JSON.stringify(
       Session_default.RecordNavigation(Spicetify.Platform.History.location);
     }
   }
-  function setupDynamicBackground(button) {
+  function setupDynamicBackground2(button) {
     initializeAmaiLyrics(button);
   }
   var imageCache = /* @__PURE__ */ new Map();
@@ -20054,7 +19791,7 @@ ${JSON.stringify(
     ]);
     const button = setupUI();
     setupEventListeners(button);
-    setupDynamicBackground(button);
+    setupDynamicBackground2(button);
     setupSmartPreloading();
     window.addEventListener("load", () => {
       if (window.requestIdleCallback) {
@@ -20090,7 +19827,7 @@ ${JSON.stringify(
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-18228-3N7uDRrxoSYA/196301d4f927/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-9680-CIUkP9qymmaj/19636a9ab767/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -20116,7 +19853,7 @@ ${JSON.stringify(
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18228-3N7uDRrxoSYA/196301d4f190/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9680-CIUkP9qymmaj/19636a9ab160/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -20258,7 +19995,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18228-3N7uDRrxoSYA/196301d4f471/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9680-CIUkP9qymmaj/19636a9ab441/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -20466,7 +20203,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18228-3N7uDRrxoSYA/196301d4f4e2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9680-CIUkP9qymmaj/19636a9ab4b2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -20957,7 +20694,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18228-3N7uDRrxoSYA/196301d4f593/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9680-CIUkP9qymmaj/19636a9ab563/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 1.5;
@@ -20997,19 +20734,19 @@ button:has(#SpicyLyricsPageSvg):after {
   transform: scale(2);
   opacity: 0.8;
 }
-.sweet-dynamic-bg .canvas-bg {
+.sweet-dynamic-bg > img.bg-image {
   position: absolute;
-  width: 100%;
-  height: 100%;
-  z-index: 2;
+  width: 200%;
+  height: 200%;
+  border-radius: 100em;
   opacity: 0;
   transition: opacity 1s ease-in-out;
-  will-change: opacity;
+  will-change: transform, opacity;
+  transform-style: flat;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
-.sweet-dynamic-bg .canvas-bg.loaded {
-  opacity: 1;
-}
-.sweet-dynamic-bg .primary {
+.sweet-dynamic-bg > img.primary {
   position: absolute;
   right: 0;
   top: 0;
@@ -21017,20 +20754,11 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 200%;
   border-radius: 100em;
   z-index: 3;
-  opacity: 0;
   transform: rotate(var(--bg-rotation-primary, 0deg)) scale(var(--bg-scale-primary, 1));
-  transition: opacity 1s ease-in-out, filter 1s ease-in-out;
-  will-change: transform, opacity;
-  transform-style: flat;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
   filter: blur(25px) hue-rotate(var(--bg-hue-shift));
-}
-.sweet-dynamic-bg .primary.loaded {
-  opacity: 1;
   animation: bgAnimPrimary 60s linear infinite;
 }
-.sweet-dynamic-bg .secondary {
+.sweet-dynamic-bg > img.secondary {
   position: absolute;
   bottom: 0;
   left: 0;
@@ -21038,19 +20766,15 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 200%;
   border-radius: 100em;
   z-index: 2;
-  opacity: 0;
   transform: rotate(var(--bg-rotation-secondary, 0deg)) scale(var(--bg-scale-secondary, 1));
-  animation-direction: reverse;
-  transition: opacity 1.2s ease-in-out, filter 1.2s ease-in-out;
-  will-change: transform;
-  transform-style: flat;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
   filter: blur(45px) hue-rotate(calc(var(--bg-hue-shift) + 30deg));
-}
-.sweet-dynamic-bg-loaded .secondary {
-  opacity: 0.8;
   animation: bgAnimSecondary 75s linear infinite reverse;
+}
+.sweet-dynamic-bg > img.primary.active {
+  opacity: 1;
+}
+.sweet-dynamic-bg > img.secondary.active {
+  opacity: 0.8;
 }
 #SpicyLyricsPage.Fullscreen .sweet-dynamic-bg {
   max-height: 60%;
@@ -21115,20 +20839,17 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
     --bg-saturation: 1.2;
     --bg-brightness: 0.5;
   }
-  .sweet-dynamic-bg .primary.loaded {
-    animation: bgAnimPrimary 120s linear infinite;
-    filter: blur(20px);
+  .sweet-dynamic-bg > img.primary {
+    animation-duration: 120s;
+    filter: blur(20px) hue-rotate(var(--bg-hue-shift));
   }
-  .sweet-dynamic-bg-loaded .secondary {
-    animation: bgAnimSecondary 120s linear infinite reverse;
-    filter: blur(20px);
-  }
-  .sweet-dynamic-bg .canvas-bg {
-    display: none;
+  .sweet-dynamic-bg > img.secondary {
+    animation-duration: 120s;
+    filter: blur(20px) hue-rotate(calc(var(--bg-hue-shift) + 30deg));
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18228-3N7uDRrxoSYA/196301d4f734/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9680-CIUkP9qymmaj/19636a9ab5c4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -21347,7 +21068,7 @@ ruby > rt {
   margin-bottom: .55rem;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18228-3N7uDRrxoSYA/196301d4f7a5/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9680-CIUkP9qymmaj/19636a9ab635/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -21631,7 +21352,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18228-3N7uDRrxoSYA/196301d4f806/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9680-CIUkP9qymmaj/19636a9ab696/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
