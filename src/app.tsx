@@ -99,9 +99,7 @@ function updateButtonRegistration(button) {
 
 /**
  * Apply optimized dynamic background to the now playing bar
- * - Uses fewer DOM elements for better performance
- * - Implements canvas-based blur when supported
- * - Adapts to device capabilities
+ * Uses dual-image crossfade approach for smooth transitions
  */
 function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached) {
   if (!coverUrl) return;
@@ -111,33 +109,13 @@ function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached) {
     const imageId = coverUrl.replace('spotify:image:', '');
     coverUrl = `https://i.scdn.co/image/${imageId}`;
   }
-  
-  // Preload the cover image to improve future LCP
-  preloadCoverImage(coverUrl);
 
   try {
     // Quick check for cached values to avoid unnecessary work
     if (coverUrl === cached.lastImgUrl && cached.dynamicBg) return;
 
-    // Set random rotation degrees for variety
-    const rotationPrimary = Math.floor(Math.random() * 360);
-    const rotationSecondary = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty('--bg-rotation-primary', `${rotationPrimary}deg`);
-    document.documentElement.style.setProperty('--bg-rotation-secondary', `${rotationSecondary}deg`);
-    
-    // Set random scale variations for more dynamic effect
-    const scalePrimary = 0.9 + Math.random() * 0.3; // Between 0.9 and 1.2
-    const scaleSecondary = 0.9 + Math.random() * 0.3; // Between 0.9 and 1.2
-    document.documentElement.style.setProperty('--bg-scale-primary', `${scalePrimary}`);
-    document.documentElement.style.setProperty('--bg-scale-secondary', `${scaleSecondary}`);
-    
-    // Set a random hue shift for variety
-    const hueShift = Math.floor(Math.random() * 30);
-    document.documentElement.style.setProperty('--bg-hue-shift', `${hueShift}deg`);
-
-    // Use a single read-then-write pattern to avoid nesting and race conditions
     fastdom.readThenWrite(
-      // Read phase - get all the elements we need
+      // Read phase
       () => {
         // Find the now playing bar if not cached
         if (!cached.nowPlayingBar) {
@@ -146,149 +124,105 @@ function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached) {
           );
         }
         
-        // Return everything we need for the write phase
         return {
           nowPlayingBar: cached.nowPlayingBar,
           hasDynamicBg: !!cached.dynamicBg,
-          // If we already have a dynamic background, get the elements we need to update
-          elements: cached.dynamicBg ? {
-            primaryImg: cached.dynamicBg.querySelector(".primary"),
-            secondaryImg: cached.dynamicBg.querySelector(".secondary"),
-            canvasBg: cached.dynamicBg.querySelector(".canvas-bg")
+          // If we already have a dynamic background, get the image elements
+          images: cached.dynamicBg ? {
+            imgA: cached.dynamicBg.querySelector('#bg-img-a'),
+            imgB: cached.dynamicBg.querySelector('#bg-img-b')
           } : null
         };
       },
-      // Write phase - create or update the dynamic background
-      async ({ nowPlayingBar, hasDynamicBg, elements }) => {
+      // Write phase
+      ({ nowPlayingBar, hasDynamicBg, images }) => {
         if (!nowPlayingBar) {
           cached.lastImgUrl = null;
           cached.dynamicBg = null;
           return;
         }
 
-        // Check if we should use canvas for blur effects
-        const supportsCanvas = typeof document !== 'undefined' && 
-          !!document.createElement('canvas').getContext;
+        // Set random CSS variables for variety
+        const rotationPrimary = Math.floor(Math.random() * 360);
+        const rotationSecondary = Math.floor(Math.random() * 360);
+        document.documentElement.style.setProperty('--bg-rotation-primary', `${rotationPrimary}deg`);
+        document.documentElement.style.setProperty('--bg-rotation-secondary', `${rotationSecondary}deg`);
         
-        if (!hasDynamicBg) {
-          // Create the dynamic background container
-          const dynamicBackground = document.createElement("div");
-          dynamicBackground.classList.add("sweet-dynamic-bg");
+        const scalePrimary = 0.9 + Math.random() * 0.3;
+        const scaleSecondary = 0.9 + Math.random() * 0.3;
+        document.documentElement.style.setProperty('--bg-scale-primary', `${scalePrimary}`);
+        document.documentElement.style.setProperty('--bg-scale-secondary', `${scaleSecondary}`);
+        
+        const hueShift = Math.floor(Math.random() * 30);
+        document.documentElement.style.setProperty('--bg-hue-shift', `${hueShift}deg`);
 
-          
-          // Create a lightweight placeholder div first
-          const placeholderDiv = document.createElement("div");
-          placeholderDiv.className = "placeholder";
-          dynamicBackground.appendChild(placeholderDiv);
-          
-          // Create primary image (formerly Front)
-          const primaryImg = document.createElement("img");
-          primaryImg.className = "primary";
-          primaryImg.loading = "eager";
-          primaryImg.decoding = "async";
-          primaryImg.src = coverUrl;
-          
-          // Create secondary image (formerly Back)
-          const secondaryImg = document.createElement("img");
-          secondaryImg.className = "secondary";
-          secondaryImg.loading = "lazy";
-          secondaryImg.decoding = "async";
-          secondaryImg.src = coverUrl;
-          
-          // Add images to container
-          dynamicBackground.appendChild(primaryImg);
-          dynamicBackground.appendChild(secondaryImg);
-          
-          // Add canvas-based blur if supported
-          if (supportsCanvas) {
-            // Create canvas in a non-blocking way
-            setTimeout(() => {
-              createBlurredCanvas(coverUrl).then(canvas => {
-                // Only append if the container is still in the DOM
-                if (dynamicBackground.isConnected) {
-                  dynamicBackground.appendChild(canvas);
-                }
-              });
-            }, 100);
-          }
-          
-          // Add the container to the DOM
+        if (!hasDynamicBg) {
+          // Create new dynamic background container
+          const dynamicBackground = document.createElement("div");
+          dynamicBackground.className = "sweet-dynamic-bg";
+          dynamicBackground.setAttribute('current-img', coverUrl);
+
+          // Create placeholder
+          const placeholder = document.createElement("div");
+          placeholder.className = "placeholder";
+          dynamicBackground.appendChild(placeholder);
+
+          // Create image A (active)
+          const imgA = document.createElement("img");
+          imgA.id = "bg-img-a";
+          imgA.className = "bg-image primary active";
+          imgA.decoding = "async";
+          imgA.loading = "eager";
+          imgA.src = coverUrl;
+          dynamicBackground.appendChild(imgA);
+
+          // Create image B (inactive)
+          const imgB = document.createElement("img");
+          imgB.id = "bg-img-b";
+          imgB.className = "bg-image secondary";
+          imgB.decoding = "async";
+          imgB.loading = "lazy";
+          dynamicBackground.appendChild(imgB);
+
+          // Add container to DOM
           nowPlayingBar.classList.add("sweet-dynamic-bg-in-this");
           nowPlayingBar.appendChild(dynamicBackground);
-          
-          // When primary image loads, add the loaded class to trigger transition
-          primaryImg.onload = () => {
+
+          // Mark as loaded after image loads
+          imgA.onload = () => {
             requestAnimationFrame(() => {
-              primaryImg.classList.add("loaded");
+              dynamicBackground.classList.add("sweet-dynamic-bg-loaded");
             });
           };
-          
-          // Mark container as loaded after a frame
-          requestAnimationFrame(() => {
-            dynamicBackground.classList.add("sweet-dynamic-bg-loaded");
-          });
-          
+
           cached.dynamicBg = dynamicBackground;
-        } else if (elements) {
-          // Update existing images with a more efficient approach
-          const { primaryImg, secondaryImg, canvasBg } = elements;
-          
-          if (primaryImg) {
-            // Preload the image to prevent flickering
-            const newImg = new Image();
-            newImg.onload = () => {
-              requestAnimationFrame(() => {
-                // Remove loaded class to start transition
-                primaryImg.classList.remove("loaded");
-                
-                // Update src in the next frame
-                requestAnimationFrame(() => {
-                  primaryImg.src = coverUrl;
-                  
-                  // Add loaded class after image has loaded
-                  primaryImg.onload = () => {
-                    requestAnimationFrame(() => {
-                      primaryImg.classList.add("loaded");
-                    });
-                  };
-                });
-              });
-            };
-            newImg.src = coverUrl;
-          }
-          
-          // Update secondary image
-          if (secondaryImg) {
-            secondaryImg.src = coverUrl;
-          }
-          
-          // Update canvas if supported and not in low quality mode
-          if (supportsCanvas) {
-            // Remove old canvas
-            if (canvasBg) {
-              canvasBg.remove();
-            }
-            
-            // Create new canvas in a non-blocking way
-            setTimeout(() => {
-              createBlurredCanvas(coverUrl).then(canvas => {
-                // Only append if the container is still in the DOM
-                if (cached.dynamicBg && cached.dynamicBg.isConnected) {
-                  cached.dynamicBg.appendChild(canvas);
-                }
-              });
-            }, 100);
-          }
+        } else if (images) {
+          // Update existing background
+          const { imgA, imgB } = images;
+          const activeImg = imgA.classList.contains('active') ? imgA : imgB;
+          const inactiveImg = activeImg === imgA ? imgB : imgA;
+
+          // Update the inactive image source
+          inactiveImg.src = coverUrl;
+
+          // Once inactive image loads, start crossfade
+          inactiveImg.onload = () => {
+            requestAnimationFrame(() => {
+              // Swap active classes
+              activeImg.classList.remove('active');
+              inactiveImg.classList.add('active');
+              
+              // Update container attribute
+              cached.dynamicBg.setAttribute('current-img', coverUrl);
+            });
+          };
         }
-        
+
         cached.lastImgUrl = coverUrl;
       }
     );
   } catch (error) {
-    console.error(
-      "Error Applying the Dynamic BG to the NowPlayingBar:",
-      error
-    );
+    console.error("Error Applying the Dynamic BG to the NowPlayingBar:", error);
   }
 }
 
@@ -649,80 +583,6 @@ async function initializeAmaiLyrics(button) {
 
 function setupDynamicBackground(button) {
   initializeAmaiLyrics(button);
-}
-
-// Cache for recently used album covers with timestamps
-const imageCache = new Map();
-const maxCachedCovers = 10;
-const cacheExpiryTime = 5 * 60 * 1000; // 5 minutes
-
-/**
- * Enhanced image preloading with better caching
- * - Uses a Map instead of Set for better performance with large caches
- * - Includes timestamp to expire old entries
- * - Uses requestIdleCallback when available for non-blocking preloading
- * - Avoids unnecessary DOM operations that could cause flickering
- */
-function preloadCoverImage(coverUrl) {
-  if (!coverUrl) return;
-  
-  const now = Date.now();
-  
-  // Check if image is already in cache and not expired - this is a memory operation, not DOM
-  if (imageCache.has(coverUrl)) {
-    const cacheEntry = imageCache.get(coverUrl);
-    if (now - cacheEntry.timestamp < cacheExpiryTime) {
-      // Update timestamp to keep frequently used images in cache longer
-      imageCache.set(coverUrl, { timestamp: now, loaded: cacheEntry.loaded });
-      return;
-    }
-  }
-  
-  // Schedule preloading during idle time if supported
-  const preloadFunc = () => {
-    // Add to cache with current timestamp - pure memory operation, no DOM
-    imageCache.set(coverUrl, { timestamp: now, loaded: false });
-    
-    // Use Image() constructor for preloading
-    const img = new Image();
-    
-    // Set decode="async" to hint to the browser that it can decode the image asynchronously
-    img.decoding = "async";
-    
-    img.onload = () => {
-      // Mark as successfully loaded in cache - pure memory operation, no DOM
-      if (imageCache.has(coverUrl)) {
-        const entry = imageCache.get(coverUrl);
-        imageCache.set(coverUrl, { ...entry, loaded: true });
-      }
-    };
-    
-    // Set src after setting up onload handler
-    img.src = coverUrl;
-    
-    // Clean up cache if it gets too large - pure memory operation, no DOM
-    if (imageCache.size > maxCachedCovers) {
-      // Don't use fastdom for this since it's just memory operations
-      // This avoids unnecessary scheduling and potential race conditions
-      const entries = Array.from(imageCache.entries());
-      entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
-      
-      // Remove oldest entries until we're back to max size
-      const entriesToRemove = entries.slice(0, entries.length - maxCachedCovers);
-      for (const [key] of entriesToRemove) {
-        imageCache.delete(key);
-      }
-    }
-  };
-  
-  // Use requestIdleCallback if available, otherwise use setTimeout with a small delay
-  // The small delay helps prevent immediate execution that could cause flickering
-  if (typeof window.requestIdleCallback === 'function') {
-    window.requestIdleCallback(preloadFunc, { timeout: 1000 });
-  } else {
-    // Use a 1ms timeout instead of 0 to give the browser a chance to batch operations
-    setTimeout(preloadFunc, 1);
-  }
 }
 
 // setupSmartPreloading function has been removed
