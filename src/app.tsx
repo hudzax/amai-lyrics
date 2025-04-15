@@ -725,108 +725,7 @@ function preloadCoverImage(coverUrl) {
   }
 }
 
-/**
- * Intelligently preloads the next track's image when user behavior suggests
- * they might change tracks soon (e.g., hovering over next button)
- * 
- * Optimized to:
- * - Use passive event listeners
- * - Throttle DOM queries
- * - Preload images more intelligently
- * - Reduce observer scope
- */
-function setupSmartPreloading() {
-  // Cache DOM elements to avoid repeated queries
-  let nextButton = null;
-  let nextTrackImg = null;
-  let lastNextTrackSrc = null;
-  
-  // Throttle variables
-  let lastPreloadCheck = 0;
-  const preloadCheckInterval = 5000; // 5 seconds
-  const endOfTrackThreshold = 15000; // 15 seconds
-  
-  // Find and attach listeners to the next button
-  function setupNextButtonListener() {
-    const nextTrackSelector = '.player-controls__right button[aria-label="Next"]';
-    nextButton = document.querySelector(nextTrackSelector);
-    
-    if (nextButton && !nextButton.hasAttribute('data-preload-listener')) {
-      nextButton.setAttribute('data-preload-listener', 'true');
-      
-      // Use passive event listener for better performance
-      nextButton.addEventListener('mouseenter', () => {
-        findAndPreloadNextTrack();
-      }, { passive: true });
-    }
-  }
-  
-  // Find and preload the next track image
-  function findAndPreloadNextTrack() {
-    // Use requestIdleCallback to avoid blocking UI
-    if (typeof window.requestIdleCallback === 'function') {
-      window.requestIdleCallback(() => performNextTrackLookup(), { timeout: 500 });
-    } else {
-      setTimeout(performNextTrackLookup, 0);
-    }
-  }
-  
-  function performNextTrackLookup() {
-    const nextTrackElement = document.querySelector('.Root__now-playing-bar .next-track');
-    if (!nextTrackElement) return;
-    
-    const imgElement = nextTrackElement.querySelector('img');
-    if (!imgElement || !imgElement.src) return;
-    
-    // Only update cache if the image has changed
-    if (imgElement.src !== lastNextTrackSrc) {
-      nextTrackImg = imgElement;
-      lastNextTrackSrc = imgElement.src;
-      preloadCoverImage(imgElement.src);
-    }
-  }
-  
-  // Use a more targeted MutationObserver to reduce overhead
-  const playerControlsObserver = new MutationObserver((mutations) => {
-    if (!nextButton) {
-      setupNextButtonListener();
-    }
-  });
-  
-  // Start observing only the player controls area instead of the entire body
-  const playerControls = document.querySelector('.player-controls__buttons') || document.body;
-  playerControlsObserver.observe(playerControls, { 
-    childList: true, 
-    subtree: true,
-    attributes: false,
-    characterData: false
-  });
-  
-  // Initial setup attempt
-  setupNextButtonListener();
-  
-  // Preload next track when approaching the end of the current track
-  new IntervalManager(1, () => {
-    const now = Date.now();
-    if (now - lastPreloadCheck < preloadCheckInterval) return;
-    lastPreloadCheck = now;
-    
-    // Check if we're near the end of the track
-    const position = SpotifyPlayer.GetTrackPosition();
-    const duration = SpotifyPlayer.GetTrackDuration();
-    
-    if (duration > 0 && position > 0 && (duration - position) < endOfTrackThreshold) {
-      findAndPreloadNextTrack();
-      
-      // Also try to preload the album art for the current track at higher quality
-      // This helps with the transition to the lyrics page
-      const currentCoverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
-      if (currentCoverUrl) {
-        preloadCoverImage(currentCoverUrl);
-      }
-    }
-  }).Start();
-}
+// setupSmartPreloading function has been removed
 
 async function main() {
   // Inject Google Fonts dynamically
@@ -847,7 +746,6 @@ async function main() {
   const button = setupUI();
   setupEventListeners(button);
   setupDynamicBackground(button);
-  setupSmartPreloading();
   
   // Mark dynamic backgrounds as loaded after the page has fully loaded
   // This helps with LCP by delaying the rendering of non-critical elements
