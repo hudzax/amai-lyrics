@@ -231,7 +231,7 @@ ruby > rt {
 .main-nowPlayingView-credits > *:not(:first-child)::before {
   content: "";
   display: block;
-  height: .5px;
-  background: rgb(255 255 255 / 30%);
+  height: .25px;
+  background: rgb(255 255 255 / 25%);
   margin-bottom: .55rem;
 }
