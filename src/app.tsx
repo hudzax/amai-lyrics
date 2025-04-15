@@ -63,26 +63,6 @@ function setupUI() {
   return button;
 }
 
-function setupEventListeners(button) {
-  Whentil.When(
-    () => Spicetify.Player.data.item?.type,
-    () => {
-      const IsSomethingElseThanTrack =
-        Spicetify.Player.data.item?.type !== "track";
-
-      if (IsSomethingElseThanTrack) {
-        button.deregister();
-        buttonRegistered = false;
-      } else {
-        if (!buttonRegistered) {
-          button.register();
-          buttonRegistered = true;
-        }
-      }
-    }
-  );
-}
-
 // Helper to register/deregister the button based on track type
 function updateButtonRegistration(button) {
   const IsSomethingElseThanTrack = Spicetify.Player.data.item?.type !== "track";
@@ -95,6 +75,14 @@ function updateButtonRegistration(button) {
       buttonRegistered = true;
     }
   }
+}
+
+function setupEventListeners(button) {
+  // Set up listener to automatically update button registration when track type changes
+  Whentil.When(
+    () => Spicetify.Player.data.item?.type,
+    () => updateButtonRegistration(button)
+  );
 }
 
 /**
@@ -226,156 +214,7 @@ function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached) {
   }
 }
 
-/**
- * Creates a canvas-based blurred version of the image for better performance
- * This is more efficient than CSS blur filters on large images
- */
-function createBlurredCanvas(imageUrl: string): Promise<HTMLCanvasElement> {
-  return new Promise((resolve) => {
-    const canvas = document.createElement('canvas');
-    canvas.className = 'canvas-bg';
-    
-    // Use a smaller canvas size for better performance
-    canvas.width = 256;
-    canvas.height = 256;
-    
-    // Set willReadFrequently to true for better performance with getImageData
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) {
-      resolve(canvas); // Return empty canvas if context not available
-      return;
-    }
-    
-    // Convert Spotify URI to proper URL if needed
-    if (imageUrl.startsWith('spotify:image:')) {
-      const imageId = imageUrl.replace('spotify:image:', '');
-      imageUrl = `https://i.scdn.co/image/${imageId}`;
-    }
-    
-    const img = new Image();
-    img.crossOrigin = 'anonymous'; // Important for CORS
-    
-    img.onload = () => {
-      try {
-        // Draw image to canvas
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        
-        // Apply a simple box blur - much more efficient than CSS blur
-        for (let i = 0; i < 3; i++) { // Increased to 3 passes for stronger blur
-          boxBlur(ctx, canvas, 15); // Increased blur radius for less recognizable images
-        }
-        
-        // Mark as loaded after a frame to ensure smooth transition
-        requestAnimationFrame(() => {
-          canvas.classList.add('loaded');
-          resolve(canvas);
-        });
-      } catch (error) {
-        console.error('Error processing canvas:', error);
-        resolve(canvas); // Return canvas even on error
-      }
-    };
-    
-    img.onerror = (e) => {
-      console.error('Error loading image for canvas:', e);
-      resolve(canvas); // Return empty canvas on error
-    };
-    
-    // Set src after setting up event handlers
-    img.src = imageUrl;
-  });
-}
 
-/**
- * Simple and efficient box blur implementation
- * Much more performant than Gaussian blur for our purposes
- */
-function boxBlur(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, radius: number) {
-  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const pixels = imageData.data;
-  const width = canvas.width;
-  const height = canvas.height;
-  
-  // Horizontal pass
-  for (let y = 0; y < height; y++) {
-    let runningTotal = [0, 0, 0];
-    
-    // Initial sum for the first radius pixels
-    for (let x = 0; x < radius; x++) {
-      const idx = (y * width + x) * 4;
-      runningTotal[0] += pixels[idx];
-      runningTotal[1] += pixels[idx + 1];
-      runningTotal[2] += pixels[idx + 2];
-    }
-    
-    // Blur horizontally
-    for (let x = 0; x < width; x++) {
-      // Add the next pixel to the sum
-      if (x + radius < width) {
-        const idx = (y * width + x + radius) * 4;
-        runningTotal[0] += pixels[idx];
-        runningTotal[1] += pixels[idx + 1];
-        runningTotal[2] += pixels[idx + 2];
-      }
-      
-      // Remove the trailing pixel from the sum
-      if (x - radius - 1 >= 0) {
-        const idx = (y * width + x - radius - 1) * 4;
-        runningTotal[0] -= pixels[idx];
-        runningTotal[1] -= pixels[idx + 1];
-        runningTotal[2] -= pixels[idx + 2];
-      }
-      
-      // Set the blurred value
-      const currentIdx = (y * width + x) * 4;
-      const count = Math.min(radius + x + 1, width) - Math.max(x - radius, 0);
-      pixels[currentIdx] = runningTotal[0] / count;
-      pixels[currentIdx + 1] = runningTotal[1] / count;
-      pixels[currentIdx + 2] = runningTotal[2] / count;
-    }
-  }
-  
-  // Vertical pass
-  for (let x = 0; x < width; x++) {
-    let runningTotal = [0, 0, 0];
-    
-    // Initial sum for the first radius pixels
-    for (let y = 0; y < radius; y++) {
-      const idx = (y * width + x) * 4;
-      runningTotal[0] += pixels[idx];
-      runningTotal[1] += pixels[idx + 1];
-      runningTotal[2] += pixels[idx + 2];
-    }
-    
-    // Blur vertically
-    for (let y = 0; y < height; y++) {
-      // Add the next pixel to the sum
-      if (y + radius < height) {
-        const idx = ((y + radius) * width + x) * 4;
-        runningTotal[0] += pixels[idx];
-        runningTotal[1] += pixels[idx + 1];
-        runningTotal[2] += pixels[idx + 2];
-      }
-      
-      // Remove the trailing pixel from the sum
-      if (y - radius - 1 >= 0) {
-        const idx = ((y - radius - 1) * width + x) * 4;
-        runningTotal[0] -= pixels[idx];
-        runningTotal[1] -= pixels[idx + 1];
-        runningTotal[2] -= pixels[idx + 2];
-      }
-      
-      // Set the blurred value
-      const currentIdx = (y * width + x) * 4;
-      const count = Math.min(radius + y + 1, height) - Math.max(y - radius, 0);
-      pixels[currentIdx] = runningTotal[0] / count;
-      pixels[currentIdx + 1] = runningTotal[1] / count;
-      pixels[currentIdx + 2] = runningTotal[2] / count;
-    }
-  }
-  
-  ctx.putImageData(imageData, 0, 0);
-}
 
 async function initializeAmaiLyrics(button) {
   const [{ requestPositionSync }] = await Promise.all([import("./utils/Gets/GetProgress")]);
@@ -498,11 +337,6 @@ async function initializeAmaiLyrics(button) {
 
   button.tippy.setContent("Amai Lyrics");
 
-  Spicetify.Player.addEventListener("onplaypause", (e) => {
-    SpotifyPlayer.IsPlaying = !e?.data?.isPaused;
-    Global.Event.evoke("playback:playpause", e);
-  });
-
   {
     let lastLoopType = null;
     new IntervalManager(0.2, () => {
@@ -551,9 +385,11 @@ async function initializeAmaiLyrics(button) {
   SpotifyPlayer.IsPlaying = IsPlaying();
 
   {
-    Spicetify.Player.addEventListener("onplaypause", (e) =>
-      Global.Event.evoke("playback:playpause", e)
-    );
+    // Set up event listener for play/pause that updates the IsPlaying state and broadcasts the event
+    Spicetify.Player.addEventListener("onplaypause", (e) => {
+      SpotifyPlayer.IsPlaying = !e?.data?.isPaused;
+      Global.Event.evoke("playback:playpause", e);
+    });
     Spicetify.Player.addEventListener("onprogress", (e) =>
       Global.Event.evoke("playback:progress", e)
     );
