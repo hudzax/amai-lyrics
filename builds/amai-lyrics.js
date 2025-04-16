@@ -412,7 +412,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.1.1";
+      version = "1.1.2";
     }
   });
 
@@ -5751,6 +5751,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         },
         Artwork: {
           Get: async (size) => {
+            if (Spicetify.Player.data?.item?.metadata?.image_url) {
+              return Spicetify.Player.data.item.metadata.image_url;
+            }
             const psize = size === "d" ? null : size?.toLowerCase() ?? null;
             const Data = await SpotifyPlayer.Track.GetTrackInfo();
             if (!Data || !Data.album?.cover_group?.image)
@@ -5771,8 +5774,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           }
         },
         GetSongName: async () => {
+          if (Spicetify.Player.data?.item?.metadata?.title) {
+            return Spicetify.Player.data.item.metadata.title;
+          }
           const Data = await SpotifyPlayer.Track.GetTrackInfo();
-          return Data.name;
+          return Data?.name || "";
         },
         GetAlbumName: () => {
           return Spicetify.Player.data.item.metadata.album_title;
@@ -5781,6 +5787,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           return Spicetify.Player.data.item.uri?.split(":")[2] ?? null;
         },
         GetArtists: async () => {
+          if (Spicetify.Player.data?.item?.metadata?.artist_name) {
+            return Spicetify.Player.data.item.metadata.artist_name.split(",").map((artist) => artist.trim());
+          }
           const data = await SpotifyPlayer.Track.GetTrackInfo();
           return data?.artist?.map((a) => a.name) ?? [];
         },
@@ -7392,9 +7401,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-9680-CIUkP9qymmaj/19636a9ab767/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-17016-bAcVTN6XYHvM/1963dc0e1268/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-9680-CIUkP9qymmaj/19636a9ab767/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-17016-bAcVTN6XYHvM/1963dc0e1268/DotLoader.css"() {
     }
   });
 
@@ -9714,7 +9723,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var PageView_exports = {};
   __export(PageView_exports, {
     PageRoot: () => PageRoot,
-    SpicyLyrics_Notification: () => SpicyLyrics_Notification,
     Tooltips: () => Tooltips,
     default: () => PageView_default
   });
@@ -9904,121 +9912,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       fullscreenBtn?.addEventListener("click", () => Fullscreen_default.Toggle());
     }
   }
-  async function SpicyLyrics_Notification({
-    icon,
-    metadata: { title, description },
-    type,
-    closeBtn
-  }) {
-    const nonFunctionalReturnObject = {
-      cleanup: () => {
-      },
-      close: () => {
-      },
-      open: () => {
-      }
-    };
-    if (!PageView.IsOpened)
-      return nonFunctionalReturnObject;
-    let NotificationContainer = null;
-    let Title = null;
-    let Description = null;
-    let Icon = null;
-    let CloseButton = null;
-    await fastdom_default.read(() => {
-      NotificationContainer = document.querySelector(
-        "#SpicyLyricsPage .NotificationContainer"
-      );
-      if (!NotificationContainer)
-        return;
-      Title = NotificationContainer.querySelector(
-        ".NotificationText .NotificationTitle"
-      );
-      Description = NotificationContainer.querySelector(
-        ".NotificationText .NotificationDescription"
-      );
-      Icon = NotificationContainer.querySelector(".NotificationIcon");
-      CloseButton = NotificationContainer.querySelector(
-        ".NotificationCloseButton"
-      );
-    });
-    if (!NotificationContainer)
-      return nonFunctionalReturnObject;
-    await fastdom_default.write(() => {
-      if (Title && title) {
-        Title.textContent = title;
-      }
-      if (Description && description) {
-        Description.textContent = description;
-      }
-      if (Icon && icon) {
-        Icon.innerHTML = icon;
-      }
-    });
-    const closeBtnHandler = () => {
-      fastdom_default.write(() => {
-        NotificationContainer.classList.remove("Visible");
-        if (Title) {
-          Title.textContent = "";
-        }
-        if (Description) {
-          Description.textContent = "";
-        }
-        if (Icon) {
-          Icon.innerHTML = "";
-        }
-        if (CloseButton) {
-          CloseButton.classList.remove("Disabled");
-        }
-      });
-    };
-    await fastdom_default.write(() => {
-      NotificationContainer.classList.add(type ?? "Information");
-    });
-    const closeBtnA = closeBtn ?? true;
-    if (CloseButton) {
-      if (!closeBtnA) {
-        await fastdom_default.write(() => {
-          CloseButton.classList.add("Disabled");
-        });
-      } else {
-        CloseButton.addEventListener("click", closeBtnHandler);
-      }
-    }
-    return {
-      cleanup: () => {
-        if (closeBtnA && CloseButton) {
-          CloseButton.removeEventListener("click", closeBtnHandler);
-        }
-        fastdom_default.write(() => {
-          NotificationContainer.classList.remove("Visible");
-          NotificationContainer.classList.remove(type ?? "Information");
-          if (Title) {
-            Title.textContent = "";
-          }
-          if (Description) {
-            Description.textContent = "";
-          }
-          if (Icon) {
-            Icon.innerHTML = "";
-          }
-          if (CloseButton) {
-            CloseButton.classList.remove("Disabled");
-          }
-        });
-      },
-      close: () => {
-        fastdom_default.write(() => {
-          NotificationContainer.classList.remove("Visible");
-        });
-      },
-      open: () => {
-        fastdom_default.write(() => {
-          NotificationContainer.classList.add("Visible");
-        });
-      }
-    };
-  }
   function setupImageLoading(imageElement) {
     imageElement.onload = () => {
       fastdom_default.write(() => {
@@ -10140,91 +10033,123 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     );
     const Root = document.body;
     if (SpicyPage) {
+      let setupFullscreenUI = function() {
+        PageView_default.AppendViewControls(true);
+        OpenNowBar();
+        ResetLastLine();
+        const MediaBox = document.querySelector(
+          "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox"
+        );
+        const MediaImage = document.querySelector(
+          "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage"
+        );
+        if (MediaBox && MediaImage) {
+          MediaBox_Data.Functions.Eventify(MediaImage);
+          MediaBox.removeEventListener(
+            "mouseenter",
+            MediaBox_Data.Functions.MouseIn
+          );
+          MediaBox.removeEventListener(
+            "mouseleave",
+            MediaBox_Data.Functions.MouseOut
+          );
+          MediaBox.addEventListener(
+            "mouseenter",
+            MediaBox_Data.Functions.MouseIn
+          );
+          MediaBox.addEventListener(
+            "mouseleave",
+            MediaBox_Data.Functions.MouseOut
+          );
+        }
+        Global_default.Event.evoke("fullscreen:open", null);
+      };
       TransferElement(SpicyPage, Root);
       SpicyPage.classList.add("Fullscreen");
       Fullscreen.IsOpen = true;
-      PageView_default.AppendViewControls(true);
-      OpenNowBar();
       if (!document.fullscreenElement) {
-        Root.querySelector("#SpicyLyricsPage").requestFullscreen().catch((err2) => {
+        Root.querySelector("#SpicyLyricsPage").requestFullscreen().then(() => {
+          setupFullscreenUI();
+        }).catch((err2) => {
+          setupFullscreenUI();
           alert(
             `Error attempting to enable fullscreen mode: ${err2.message} (${err2.name})`
           );
         });
       } else {
-        document.exitFullscreen();
+        setupFullscreenUI();
       }
-      ResetLastLine();
-      const MediaBox = document.querySelector(
-        "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox"
-      );
-      const MediaImage = document.querySelector(
-        "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage"
-      );
-      if (MediaBox && MediaImage) {
-        MediaBox_Data.Functions.Eventify(MediaImage);
-        MediaBox.removeEventListener(
-          "mouseenter",
-          MediaBox_Data.Functions.MouseIn
-        );
-        MediaBox.removeEventListener(
-          "mouseleave",
-          MediaBox_Data.Functions.MouseOut
-        );
-        MediaBox.addEventListener("mouseenter", MediaBox_Data.Functions.MouseIn);
-        MediaBox.addEventListener("mouseleave", MediaBox_Data.Functions.MouseOut);
-      }
-      Global_default.Event.evoke("fullscreen:open", null);
     }
   }
   function Close() {
     const SpicyPage = document.querySelector("#SpicyLyricsPage");
     if (SpicyPage) {
-      TransferElement(SpicyPage, PageRoot);
-      SpicyPage.classList.remove("Fullscreen");
-      Fullscreen.IsOpen = false;
-      PageView_default.AppendViewControls(true);
+      let restoreUI = function() {
+        TransferElement(SpicyPage, PageRoot);
+        SpicyPage.classList.remove("Fullscreen");
+        Fullscreen.IsOpen = false;
+        PageView_default.AppendViewControls(true);
+        const currentLyrics = storage_default.get("currentLyricsData");
+        const NoLyrics = typeof currentLyrics === "string" && currentLyrics.includes("NO_LYRICS");
+        if (NoLyrics) {
+          OpenNowBar();
+          const lyricsContainer = document.querySelector(
+            "#SpicyLyricsPage .ContentBox .LyricsContainer"
+          );
+          if (lyricsContainer) {
+            lyricsContainer.classList.add("Hidden");
+          }
+          DeregisterNowBarBtn();
+        }
+        ResetLastLine();
+        const MediaBox = document.querySelector(
+          "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox"
+        );
+        const MediaImage = document.querySelector(
+          "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage"
+        );
+        if (MediaBox) {
+          MediaBox.removeEventListener(
+            "mouseenter",
+            MediaBox_Data.Functions.MouseIn
+          );
+          MediaBox.removeEventListener(
+            "mouseleave",
+            MediaBox_Data.Functions.MouseOut
+          );
+        }
+        if (MediaImage) {
+          MediaBox_Data.Functions.Reset(MediaImage);
+        }
+        Global_default.Event.evoke("fullscreen:exit", null);
+      };
       if (document.fullscreenElement) {
-        document.exitFullscreen();
+        document.exitFullscreen().then(() => {
+          restoreUI();
+        }).catch((err2) => {
+          console.error("Error exiting fullscreen:", err2);
+          restoreUI();
+        });
+      } else {
+        restoreUI();
       }
-      const currentLyrics = storage_default.get("currentLyricsData");
-      const NoLyrics = typeof currentLyrics === "string" && currentLyrics.includes("NO_LYRICS");
-      if (NoLyrics) {
-        OpenNowBar();
-        document.querySelector("#SpicyLyricsPage .ContentBox .LyricsContainer").classList.add("Hidden");
-        DeregisterNowBarBtn();
-      }
-      ResetLastLine();
-      const MediaBox = document.querySelector(
-        "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox"
-      );
-      const MediaImage = document.querySelector(
-        "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage"
-      );
-      if (MediaBox) {
-        MediaBox.removeEventListener(
-          "mouseenter",
-          MediaBox_Data.Functions.MouseIn
-        );
-        MediaBox.removeEventListener(
-          "mouseleave",
-          MediaBox_Data.Functions.MouseOut
-        );
-      }
-      if (MediaImage) {
-        MediaBox_Data.Functions.Reset(MediaImage);
-      }
-      Global_default.Event.evoke("fullscreen:exit", null);
     }
   }
   function Toggle() {
     const SpicyPage = document.querySelector("#SpicyLyricsPage");
     if (SpicyPage) {
+      if (SpicyPage.classList.contains("fullscreen-transition")) {
+        return;
+      }
+      SpicyPage.classList.add("fullscreen-transition");
       if (Fullscreen.IsOpen) {
         Close();
       } else {
         Open();
       }
+      setTimeout(() => {
+        SpicyPage.classList.remove("fullscreen-transition");
+      }, 1e3);
     }
   }
   var Fullscreen, MediaBox_Data, Fullscreen_default;
@@ -19250,23 +19175,6 @@ ${JSON.stringify(
     );
     return button;
   }
-  function setupEventListeners(button) {
-    Whentil_default.When(
-      () => Spicetify.Player.data.item?.type,
-      () => {
-        const IsSomethingElseThanTrack = Spicetify.Player.data.item?.type !== "track";
-        if (IsSomethingElseThanTrack) {
-          button.deregister();
-          buttonRegistered = false;
-        } else {
-          if (!buttonRegistered) {
-            button.register();
-            buttonRegistered = true;
-          }
-        }
-      }
-    );
-  }
   function updateButtonRegistration(button) {
     const IsSomethingElseThanTrack = Spicetify.Player.data.item?.type !== "track";
     if (IsSomethingElseThanTrack) {
@@ -19279,6 +19187,12 @@ ${JSON.stringify(
       }
     }
   }
+  function setupEventListeners(button) {
+    Whentil_default.When(
+      () => Spicetify.Player.data.item?.type,
+      () => updateButtonRegistration(button)
+    );
+  }
   function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached) {
     if (!coverUrl)
       return;
@@ -19286,20 +19200,9 @@ ${JSON.stringify(
       const imageId = coverUrl.replace("spotify:image:", "");
       coverUrl = `https://i.scdn.co/image/${imageId}`;
     }
-    preloadCoverImage(coverUrl);
     try {
       if (coverUrl === cached.lastImgUrl && cached.dynamicBg)
         return;
-      const rotationPrimary = Math.floor(Math.random() * 360);
-      const rotationSecondary = Math.floor(Math.random() * 360);
-      document.documentElement.style.setProperty("--bg-rotation-primary", `${rotationPrimary}deg`);
-      document.documentElement.style.setProperty("--bg-rotation-secondary", `${rotationSecondary}deg`);
-      const scalePrimary = 0.9 + Math.random() * 0.3;
-      const scaleSecondary = 0.9 + Math.random() * 0.3;
-      document.documentElement.style.setProperty("--bg-scale-primary", `${scalePrimary}`);
-      document.documentElement.style.setProperty("--bg-scale-secondary", `${scaleSecondary}`);
-      const hueShift = Math.floor(Math.random() * 30);
-      document.documentElement.style.setProperty("--bg-hue-shift", `${hueShift}deg`);
       fastdom_default.readThenWrite(
         () => {
           if (!cached.nowPlayingBar) {
@@ -19310,204 +19213,75 @@ ${JSON.stringify(
           return {
             nowPlayingBar: cached.nowPlayingBar,
             hasDynamicBg: !!cached.dynamicBg,
-            elements: cached.dynamicBg ? {
-              primaryImg: cached.dynamicBg.querySelector(".primary"),
-              secondaryImg: cached.dynamicBg.querySelector(".secondary"),
-              canvasBg: cached.dynamicBg.querySelector(".canvas-bg")
+            images: cached.dynamicBg ? {
+              imgA: cached.dynamicBg.querySelector("#bg-img-a"),
+              imgB: cached.dynamicBg.querySelector("#bg-img-b")
             } : null
           };
         },
-        async ({ nowPlayingBar, hasDynamicBg, elements }) => {
+        ({ nowPlayingBar, hasDynamicBg, images }) => {
           if (!nowPlayingBar) {
             cached.lastImgUrl = null;
             cached.dynamicBg = null;
             return;
           }
-          const supportsCanvas = typeof document !== "undefined" && !!document.createElement("canvas").getContext;
+          const rotationPrimary = Math.floor(Math.random() * 360);
+          const rotationSecondary = Math.floor(Math.random() * 360);
+          document.documentElement.style.setProperty("--bg-rotation-primary", `${rotationPrimary}deg`);
+          document.documentElement.style.setProperty("--bg-rotation-secondary", `${rotationSecondary}deg`);
+          const scalePrimary = 0.9 + Math.random() * 0.3;
+          const scaleSecondary = 0.9 + Math.random() * 0.3;
+          document.documentElement.style.setProperty("--bg-scale-primary", `${scalePrimary}`);
+          document.documentElement.style.setProperty("--bg-scale-secondary", `${scaleSecondary}`);
+          const hueShift = Math.floor(Math.random() * 30);
+          document.documentElement.style.setProperty("--bg-hue-shift", `${hueShift}deg`);
           if (!hasDynamicBg) {
             const dynamicBackground = document.createElement("div");
-            dynamicBackground.classList.add("sweet-dynamic-bg");
-            const placeholderDiv = document.createElement("div");
-            placeholderDiv.className = "placeholder";
-            dynamicBackground.appendChild(placeholderDiv);
-            const primaryImg = document.createElement("img");
-            primaryImg.className = "primary";
-            primaryImg.loading = "eager";
-            primaryImg.decoding = "async";
-            primaryImg.src = coverUrl;
-            const secondaryImg = document.createElement("img");
-            secondaryImg.className = "secondary";
-            secondaryImg.loading = "lazy";
-            secondaryImg.decoding = "async";
-            secondaryImg.src = coverUrl;
-            dynamicBackground.appendChild(primaryImg);
-            dynamicBackground.appendChild(secondaryImg);
-            if (supportsCanvas) {
-              setTimeout(() => {
-                createBlurredCanvas(coverUrl).then((canvas) => {
-                  if (dynamicBackground.isConnected) {
-                    dynamicBackground.appendChild(canvas);
-                  }
-                });
-              }, 100);
-            }
+            dynamicBackground.className = "sweet-dynamic-bg";
+            dynamicBackground.setAttribute("current-img", coverUrl);
+            const placeholder = document.createElement("div");
+            placeholder.className = "placeholder";
+            dynamicBackground.appendChild(placeholder);
+            const imgA = document.createElement("img");
+            imgA.id = "bg-img-a";
+            imgA.className = "bg-image primary active";
+            imgA.decoding = "async";
+            imgA.loading = "eager";
+            imgA.src = coverUrl;
+            dynamicBackground.appendChild(imgA);
+            const imgB = document.createElement("img");
+            imgB.id = "bg-img-b";
+            imgB.className = "bg-image secondary";
+            imgB.decoding = "async";
+            imgB.loading = "lazy";
+            dynamicBackground.appendChild(imgB);
             nowPlayingBar.classList.add("sweet-dynamic-bg-in-this");
             nowPlayingBar.appendChild(dynamicBackground);
-            primaryImg.onload = () => {
+            imgA.onload = () => {
               requestAnimationFrame(() => {
-                primaryImg.classList.add("loaded");
+                dynamicBackground.classList.add("sweet-dynamic-bg-loaded");
               });
             };
-            requestAnimationFrame(() => {
-              dynamicBackground.classList.add("sweet-dynamic-bg-loaded");
-            });
             cached.dynamicBg = dynamicBackground;
-          } else if (elements) {
-            const { primaryImg, secondaryImg, canvasBg } = elements;
-            if (primaryImg) {
-              const newImg = new Image();
-              newImg.onload = () => {
-                requestAnimationFrame(() => {
-                  primaryImg.classList.remove("loaded");
-                  requestAnimationFrame(() => {
-                    primaryImg.src = coverUrl;
-                    primaryImg.onload = () => {
-                      requestAnimationFrame(() => {
-                        primaryImg.classList.add("loaded");
-                      });
-                    };
-                  });
-                });
-              };
-              newImg.src = coverUrl;
-            }
-            if (secondaryImg) {
-              secondaryImg.src = coverUrl;
-            }
-            if (supportsCanvas) {
-              if (canvasBg) {
-                canvasBg.remove();
-              }
-              setTimeout(() => {
-                createBlurredCanvas(coverUrl).then((canvas) => {
-                  if (cached.dynamicBg && cached.dynamicBg.isConnected) {
-                    cached.dynamicBg.appendChild(canvas);
-                  }
-                });
-              }, 100);
-            }
+          } else if (images) {
+            const { imgA, imgB } = images;
+            const activeImg = imgA.classList.contains("active") ? imgA : imgB;
+            const inactiveImg = activeImg === imgA ? imgB : imgA;
+            inactiveImg.src = coverUrl;
+            inactiveImg.onload = () => {
+              requestAnimationFrame(() => {
+                activeImg.classList.remove("active");
+                inactiveImg.classList.add("active");
+                cached.dynamicBg.setAttribute("current-img", coverUrl);
+              });
+            };
           }
           cached.lastImgUrl = coverUrl;
         }
       );
     } catch (error) {
-      console.error(
-        "Error Applying the Dynamic BG to the NowPlayingBar:",
-        error
-      );
+      console.error("Error Applying the Dynamic BG to the NowPlayingBar:", error);
     }
-  }
-  function createBlurredCanvas(imageUrl) {
-    return new Promise((resolve) => {
-      const canvas = document.createElement("canvas");
-      canvas.className = "canvas-bg";
-      canvas.width = 256;
-      canvas.height = 256;
-      const ctx = canvas.getContext("2d", { willReadFrequently: true });
-      if (!ctx) {
-        resolve(canvas);
-        return;
-      }
-      if (imageUrl.startsWith("spotify:image:")) {
-        const imageId = imageUrl.replace("spotify:image:", "");
-        imageUrl = `https://i.scdn.co/image/${imageId}`;
-      }
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => {
-        try {
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          for (let i = 0; i < 3; i++) {
-            boxBlur(ctx, canvas, 15);
-          }
-          requestAnimationFrame(() => {
-            canvas.classList.add("loaded");
-            resolve(canvas);
-          });
-        } catch (error) {
-          console.error("Error processing canvas:", error);
-          resolve(canvas);
-        }
-      };
-      img.onerror = (e) => {
-        console.error("Error loading image for canvas:", e);
-        resolve(canvas);
-      };
-      img.src = imageUrl;
-    });
-  }
-  function boxBlur(ctx, canvas, radius) {
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const pixels = imageData.data;
-    const width = canvas.width;
-    const height = canvas.height;
-    for (let y = 0; y < height; y++) {
-      let runningTotal = [0, 0, 0];
-      for (let x = 0; x < radius; x++) {
-        const idx = (y * width + x) * 4;
-        runningTotal[0] += pixels[idx];
-        runningTotal[1] += pixels[idx + 1];
-        runningTotal[2] += pixels[idx + 2];
-      }
-      for (let x = 0; x < width; x++) {
-        if (x + radius < width) {
-          const idx = (y * width + x + radius) * 4;
-          runningTotal[0] += pixels[idx];
-          runningTotal[1] += pixels[idx + 1];
-          runningTotal[2] += pixels[idx + 2];
-        }
-        if (x - radius - 1 >= 0) {
-          const idx = (y * width + x - radius - 1) * 4;
-          runningTotal[0] -= pixels[idx];
-          runningTotal[1] -= pixels[idx + 1];
-          runningTotal[2] -= pixels[idx + 2];
-        }
-        const currentIdx = (y * width + x) * 4;
-        const count = Math.min(radius + x + 1, width) - Math.max(x - radius, 0);
-        pixels[currentIdx] = runningTotal[0] / count;
-        pixels[currentIdx + 1] = runningTotal[1] / count;
-        pixels[currentIdx + 2] = runningTotal[2] / count;
-      }
-    }
-    for (let x = 0; x < width; x++) {
-      let runningTotal = [0, 0, 0];
-      for (let y = 0; y < radius; y++) {
-        const idx = (y * width + x) * 4;
-        runningTotal[0] += pixels[idx];
-        runningTotal[1] += pixels[idx + 1];
-        runningTotal[2] += pixels[idx + 2];
-      }
-      for (let y = 0; y < height; y++) {
-        if (y + radius < height) {
-          const idx = ((y + radius) * width + x) * 4;
-          runningTotal[0] += pixels[idx];
-          runningTotal[1] += pixels[idx + 1];
-          runningTotal[2] += pixels[idx + 2];
-        }
-        if (y - radius - 1 >= 0) {
-          const idx = ((y - radius - 1) * width + x) * 4;
-          runningTotal[0] -= pixels[idx];
-          runningTotal[1] -= pixels[idx + 1];
-          runningTotal[2] -= pixels[idx + 2];
-        }
-        const currentIdx = (y * width + x) * 4;
-        const count = Math.min(radius + y + 1, height) - Math.max(y - radius, 0);
-        pixels[currentIdx] = runningTotal[0] / count;
-        pixels[currentIdx + 1] = runningTotal[1] / count;
-        pixels[currentIdx + 2] = runningTotal[2] / count;
-      }
-    }
-    ctx.putImageData(imageData, 0, 0);
   }
   async function initializeAmaiLyrics(button) {
     const [{ requestPositionSync: requestPositionSync2 }] = await Promise.all([Promise.resolve().then(() => (init_GetProgress(), GetProgress_exports))]);
@@ -19542,26 +19316,21 @@ ${JSON.stringify(
         return;
       fetchLyrics2(currentUri2).then(ApplyLyrics2);
       updateButtonRegistration(button);
-      const trackInfoPromise = Spicetify.Player.data.item?.type === "track" ? SpotifyPlayer.Track.GetTrackInfo() : Promise.resolve(null);
       applyDynamicBackgroundToNowPlayingBar(
         Spicetify.Player.data?.item?.metadata?.image_url,
         cached
       );
-      trackInfoPromise.then(() => {
-        if (Spicetify.Player.data.item?.type === "track") {
-          if (document.querySelector("#SpicyLyricsPage .ContentBox .NowBar")) {
-            UpdateNowBar2();
-          }
+      if (Spicetify.Player.data.item?.type === "track") {
+        if (document.querySelector("#SpicyLyricsPage .ContentBox .NowBar")) {
+          UpdateNowBar2();
         }
-        if (document.querySelector("#SpicyLyricsPage .LyricsContainer")) {
-          PageView2.UpdatePageContent();
-          ApplyDynamicBackground2(
-            document.querySelector("#SpicyLyricsPage .ContentBox")
-          );
-        }
-      }).catch((err2) => {
-        console.error("Error processing track info:", err2);
-      });
+      }
+      if (document.querySelector("#SpicyLyricsPage .LyricsContainer")) {
+        PageView2.UpdatePageContent();
+        ApplyDynamicBackground2(
+          document.querySelector("#SpicyLyricsPage .ContentBox")
+        );
+      }
     }
     Spicetify.Player.addEventListener("songchange", onSongChange);
     const currentUri = Spicetify.Player.data?.item?.uri;
@@ -19600,10 +19369,6 @@ ${JSON.stringify(
       });
     }
     button.tippy.setContent("Amai Lyrics");
-    Spicetify.Player.addEventListener("onplaypause", (e) => {
-      SpotifyPlayer.IsPlaying = !e?.data?.isPaused;
-      Global_default.Event.evoke("playback:playpause", e);
-    });
     {
       let lastLoopType = null;
       new IntervalManager(0.2, () => {
@@ -19639,10 +19404,10 @@ ${JSON.stringify(
     }
     SpotifyPlayer.IsPlaying = IsPlaying();
     {
-      Spicetify.Player.addEventListener(
-        "onplaypause",
-        (e) => Global_default.Event.evoke("playback:playpause", e)
-      );
+      Spicetify.Player.addEventListener("onplaypause", (e) => {
+        SpotifyPlayer.IsPlaying = !e?.data?.isPaused;
+        Global_default.Event.evoke("playback:playpause", e);
+      });
       Spicetify.Player.addEventListener(
         "onprogress",
         (e) => Global_default.Event.evoke("playback:progress", e)
@@ -19671,112 +19436,6 @@ ${JSON.stringify(
   function setupDynamicBackground2(button) {
     initializeAmaiLyrics(button);
   }
-  var imageCache = /* @__PURE__ */ new Map();
-  var maxCachedCovers = 10;
-  var cacheExpiryTime = 5 * 60 * 1e3;
-  function preloadCoverImage(coverUrl) {
-    if (!coverUrl)
-      return;
-    const now = Date.now();
-    if (imageCache.has(coverUrl)) {
-      const cacheEntry = imageCache.get(coverUrl);
-      if (now - cacheEntry.timestamp < cacheExpiryTime) {
-        imageCache.set(coverUrl, { timestamp: now, loaded: cacheEntry.loaded });
-        return;
-      }
-    }
-    const preloadFunc = () => {
-      imageCache.set(coverUrl, { timestamp: now, loaded: false });
-      const img = new Image();
-      img.decoding = "async";
-      img.onload = () => {
-        if (imageCache.has(coverUrl)) {
-          const entry = imageCache.get(coverUrl);
-          imageCache.set(coverUrl, { ...entry, loaded: true });
-        }
-      };
-      img.src = coverUrl;
-      if (imageCache.size > maxCachedCovers) {
-        const entries = Array.from(imageCache.entries());
-        entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
-        const entriesToRemove = entries.slice(0, entries.length - maxCachedCovers);
-        for (const [key] of entriesToRemove) {
-          imageCache.delete(key);
-        }
-      }
-    };
-    if (typeof window.requestIdleCallback === "function") {
-      window.requestIdleCallback(preloadFunc, { timeout: 1e3 });
-    } else {
-      setTimeout(preloadFunc, 1);
-    }
-  }
-  function setupSmartPreloading() {
-    let nextButton = null;
-    let nextTrackImg = null;
-    let lastNextTrackSrc = null;
-    let lastPreloadCheck = 0;
-    const preloadCheckInterval = 5e3;
-    const endOfTrackThreshold = 15e3;
-    function setupNextButtonListener() {
-      const nextTrackSelector = '.player-controls__right button[aria-label="Next"]';
-      nextButton = document.querySelector(nextTrackSelector);
-      if (nextButton && !nextButton.hasAttribute("data-preload-listener")) {
-        nextButton.setAttribute("data-preload-listener", "true");
-        nextButton.addEventListener("mouseenter", () => {
-          findAndPreloadNextTrack();
-        }, { passive: true });
-      }
-    }
-    function findAndPreloadNextTrack() {
-      if (typeof window.requestIdleCallback === "function") {
-        window.requestIdleCallback(() => performNextTrackLookup(), { timeout: 500 });
-      } else {
-        setTimeout(performNextTrackLookup, 0);
-      }
-    }
-    function performNextTrackLookup() {
-      const nextTrackElement = document.querySelector(".Root__now-playing-bar .next-track");
-      if (!nextTrackElement)
-        return;
-      const imgElement = nextTrackElement.querySelector("img");
-      if (!imgElement || !imgElement.src)
-        return;
-      if (imgElement.src !== lastNextTrackSrc) {
-        nextTrackImg = imgElement;
-        lastNextTrackSrc = imgElement.src;
-        preloadCoverImage(imgElement.src);
-      }
-    }
-    const playerControlsObserver = new MutationObserver((mutations) => {
-      if (!nextButton) {
-        setupNextButtonListener();
-      }
-    });
-    const playerControls = document.querySelector(".player-controls__buttons") || document.body;
-    playerControlsObserver.observe(playerControls, {
-      childList: true,
-      subtree: true,
-      attributes: false,
-      characterData: false
-    });
-    setupNextButtonListener();
-    new IntervalManager(1, () => {
-      const now = Date.now();
-      if (now - lastPreloadCheck < preloadCheckInterval)
-        return;
-      lastPreloadCheck = now;
-      const position = SpotifyPlayer.GetTrackPosition();
-      const duration = SpotifyPlayer.GetTrackDuration();
-      if (duration > 0 && position > 0 && duration - position < endOfTrackThreshold) {
-        findAndPreloadNextTrack();
-        const currentCoverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
-        if (currentCoverUrl) {
-          preloadCoverImage(currentCoverUrl);
-        }
-      }
-    }).Start();
-  }
   async function main() {
     const fontLink = document.createElement("link");
     fontLink.rel = "preload";
@@ -19792,7 +19451,6 @@ ${JSON.stringify(
     const button = setupUI();
     setupEventListeners(button);
     setupDynamicBackground2(button);
-    setupSmartPreloading();
     window.addEventListener("load", () => {
       if (window.requestIdleCallback) {
         requestIdleCallback(() => {
@@ -19827,7 +19485,7 @@ ${JSON.stringify(
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-9680-CIUkP9qymmaj/19636a9ab767/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-17016-bAcVTN6XYHvM/1963dc0e1268/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -19853,7 +19511,7 @@ ${JSON.stringify(
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9680-CIUkP9qymmaj/19636a9ab160/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17016-bAcVTN6XYHvM/1963dc0e09f0/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -19995,7 +19653,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9680-CIUkP9qymmaj/19636a9ab441/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17016-bAcVTN6XYHvM/1963dc0e0d51/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -20203,7 +19861,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9680-CIUkP9qymmaj/19636a9ab4b2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17016-bAcVTN6XYHvM/1963dc0e0dd2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -20694,7 +20352,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9680-CIUkP9qymmaj/19636a9ab563/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17016-bAcVTN6XYHvM/1963dc0e0ec3/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 1.5;
@@ -20849,7 +20507,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9680-CIUkP9qymmaj/19636a9ab5c4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17016-bAcVTN6XYHvM/1963dc0e0f44/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -21063,12 +20721,12 @@ ruby > rt {
 .main-nowPlayingView-credits > *:not(:first-child)::before {
   content: "";
   display: block;
-  height: .5px;
-  background: rgb(255 255 255 / 30%);
+  height: .25px;
+  background: rgb(255 255 255 / 25%);
   margin-bottom: .55rem;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9680-CIUkP9qymmaj/19636a9ab635/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17016-bAcVTN6XYHvM/1963dc0e0ff5/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -21352,7 +21010,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9680-CIUkP9qymmaj/19636a9ab696/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17016-bAcVTN6XYHvM/1963dc0e1076/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -21373,6 +21031,33 @@ ruby > rt {
 }
 #SpicyLyricsPage .LyricsContainer .loaderContainer:is(.active) + .LyricsContent {
   display: none;
+}
+
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17016-bAcVTN6XYHvM/1963dc0e10c7/FullscreenTransition.css */
+#SpicyLyricsPage.fullscreen-transition {
+  pointer-events: none;
+}
+#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .ViewControls,
+#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+#SpicyLyricsPage.fullscreen-transition.Fullscreen .ContentBox .NowBar .CenteredView .Header .ViewControls,
+#SpicyLyricsPage.fullscreen-transition.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls {
+  opacity: 1 !important;
+  visibility: visible !important;
+  z-index: 9999;
+}
+#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox .MediaContent {
+  display: flex !important;
+}
+#SpicyLyricsPage.Fullscreen .ContentBox .ViewControls,
+#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .ViewControls {
+  z-index: 1000;
+}
+#SpicyLyricsPage .ViewControls #FullscreenToggle {
+  opacity: 1 !important;
 }
 
       `).trim();
