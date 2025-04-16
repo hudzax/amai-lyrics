@@ -78,6 +78,12 @@ export const SpotifyPlayer = {
   },
   Artwork: {
     Get: async (size: ArtworkSize): Promise<string> => {
+      // Use metadata image_url directly if available
+      if (Spicetify.Player.data?.item?.metadata?.image_url) {
+        return Spicetify.Player.data.item.metadata.image_url;
+      }
+
+      // Fall back to API call if metadata is not available
       const psize = size === 'd' ? null : size?.toLowerCase() ?? null;
       const Data = await SpotifyPlayer.Track.GetTrackInfo();
       if (!Data || !Data.album?.cover_group?.image) return '';
@@ -97,8 +103,13 @@ export const SpotifyPlayer = {
     },
   },
   GetSongName: async (): Promise<string> => {
+    // Use metadata directly if available, avoiding the API call
+    if (Spicetify.Player.data?.item?.metadata?.title) {
+      return Spicetify.Player.data.item.metadata.title;
+    }
+    // Fall back to API call if metadata is not available
     const Data = await SpotifyPlayer.Track.GetTrackInfo();
-    return Data.name;
+    return Data?.name || '';
   },
   GetAlbumName: (): string => {
     return Spicetify.Player.data.item.metadata.album_title;
@@ -107,7 +118,15 @@ export const SpotifyPlayer = {
     return Spicetify.Player.data.item.uri?.split(':')[2] ?? null;
   },
   GetArtists: async (): Promise<string[]> => {
-    const data = await SpotifyPlayer.Track.GetTrackInfo(); //await SpicyFetch(`https://api.spotify.com/v1/tracks/${SpotifyPlayer.GetSongId()}`, true, true, true)//await Spicetify.CosmosAsync.get(`https://api.spotify.com/v1/tracks/${SpotifyPlayer.GetSongId()}`);
+    // Use metadata directly if available, avoiding the API call
+    if (Spicetify.Player.data?.item?.metadata?.artist_name) {
+      // Split the artist string by commas and trim whitespace
+      return Spicetify.Player.data.item.metadata.artist_name
+        .split(',')
+        .map((artist) => artist.trim());
+    }
+    // Fall back to API call if metadata is not available
+    const data = await SpotifyPlayer.Track.GetTrackInfo();
     return data?.artist?.map((a) => a.name) ?? [];
   },
   JoinArtists: (artists: string[]): string => {

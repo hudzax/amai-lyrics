@@ -260,37 +260,28 @@ async function initializeAmaiLyrics(button) {
     // Update button registration (synchronous but fast)
     updateButtonRegistration(button);
 
-    // Start track info fetching but don't await it here
-    const trackInfoPromise = Spicetify.Player.data.item?.type === "track" 
-      ? SpotifyPlayer.Track.GetTrackInfo() 
-      : Promise.resolve(null);
-    
     // Apply background immediately with current data
     applyDynamicBackgroundToNowPlayingBar(
       Spicetify.Player.data?.item?.metadata?.image_url,
       cached
     );
 
-    // Handle UI updates that depend on track info in a non-blocking way
-    trackInfoPromise.then(() => {
-      if (Spicetify.Player.data.item?.type === "track") {
-        if (document.querySelector("#SpicyLyricsPage .ContentBox .NowBar")) {
-          UpdateNowBar();
-        }
+    // Update UI elements directly without waiting for track info
+    if (Spicetify.Player.data.item?.type === "track") {
+      if (document.querySelector("#SpicyLyricsPage .ContentBox .NowBar")) {
+        UpdateNowBar();
       }
+    }
 
-      if (document.querySelector("#SpicyLyricsPage .LyricsContainer")) {
-        // Update the page content (artwork, song name, artists)
-        PageView.UpdatePageContent();
-        
-        // Apply dynamic background
-        ApplyDynamicBackground(
-          document.querySelector("#SpicyLyricsPage .ContentBox")
-        );
-      }
-    }).catch(err => {
-      console.error("Error processing track info:", err);
-    });
+    if (document.querySelector("#SpicyLyricsPage .LyricsContainer")) {
+      // Update the page content (artwork, song name, artists)
+      PageView.UpdatePageContent();
+      
+      // Apply dynamic background
+      ApplyDynamicBackground(
+        document.querySelector("#SpicyLyricsPage .ContentBox")
+      );
+    }
   }
 
   Spicetify.Player.addEventListener("songchange", onSongChange);
