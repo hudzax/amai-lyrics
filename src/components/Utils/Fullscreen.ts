@@ -83,52 +83,75 @@ function Open() {
   const Root = document.body as HTMLElement;
 
   if (SpicyPage) {
+    // First, transfer the element and set up initial state
     TransferElement(SpicyPage, Root);
     SpicyPage.classList.add('Fullscreen');
     Fullscreen.IsOpen = true;
-    PageView.AppendViewControls(true);
 
-    OpenNowBar();
-
+    // Request fullscreen first, then set up UI elements after transition
     if (!document.fullscreenElement) {
       Root.querySelector('#SpicyLyricsPage')
         .requestFullscreen()
+        .then(() => {
+          // Set up UI controls after fullscreen transition completes
+          setupFullscreenUI();
+        })
         .catch((err) => {
+          // If fullscreen fails, still set up UI (fallback)
+          setupFullscreenUI();
           alert(
             `Error attempting to enable fullscreen mode: ${err.message} (${err.name})`,
           );
         });
     } else {
-      document.exitFullscreen();
+      // Already in fullscreen, just set up UI
+      setupFullscreenUI();
     }
 
-    ResetLastLine();
+    // Function to set up UI elements after fullscreen transition
+    function setupFullscreenUI() {
+      // Ensure controls are properly added
+      PageView.AppendViewControls(true);
 
-    const MediaBox = document.querySelector<HTMLElement>(
-      '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox',
-    );
-    const MediaImage = document.querySelector<HTMLElement>(
-      '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage',
-    );
+      // Open the now bar with playback controls
+      OpenNowBar();
 
-    if (MediaBox && MediaImage) {
-      MediaBox_Data.Functions.Eventify(MediaImage);
+      ResetLastLine();
 
-      // Remove existing listeners first to prevent duplicates
-      MediaBox.removeEventListener(
-        'mouseenter',
-        MediaBox_Data.Functions.MouseIn,
+      // Set up media box hover effects
+      const MediaBox = document.querySelector<HTMLElement>(
+        '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox',
       );
-      MediaBox.removeEventListener(
-        'mouseleave',
-        MediaBox_Data.Functions.MouseOut,
+      const MediaImage = document.querySelector<HTMLElement>(
+        '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage',
       );
 
-      MediaBox.addEventListener('mouseenter', MediaBox_Data.Functions.MouseIn);
-      MediaBox.addEventListener('mouseleave', MediaBox_Data.Functions.MouseOut);
+      if (MediaBox && MediaImage) {
+        MediaBox_Data.Functions.Eventify(MediaImage);
+
+        // Remove existing listeners first to prevent duplicates
+        MediaBox.removeEventListener(
+          'mouseenter',
+          MediaBox_Data.Functions.MouseIn,
+        );
+        MediaBox.removeEventListener(
+          'mouseleave',
+          MediaBox_Data.Functions.MouseOut,
+        );
+
+        MediaBox.addEventListener(
+          'mouseenter',
+          MediaBox_Data.Functions.MouseIn,
+        );
+        MediaBox.addEventListener(
+          'mouseleave',
+          MediaBox_Data.Functions.MouseOut,
+        );
+      }
+
+      // Notify other components
+      Global.Event.evoke('fullscreen:open', null);
     }
-
-    Global.Event.evoke('fullscreen:open', null);
   }
 }
 
@@ -136,48 +159,78 @@ function Close() {
   const SpicyPage = document.querySelector<HTMLElement>('#SpicyLyricsPage');
 
   if (SpicyPage) {
-    TransferElement(SpicyPage, PageRoot);
-    SpicyPage.classList.remove('Fullscreen');
-    Fullscreen.IsOpen = false;
-    PageView.AppendViewControls(true);
+    // First exit browser fullscreen if active
     if (document.fullscreenElement) {
-      document.exitFullscreen();
-    }
-    const currentLyrics = storage.get('currentLyricsData');
-    const NoLyrics =
-      typeof currentLyrics === 'string' && currentLyrics.includes('NO_LYRICS');
-    if (NoLyrics) {
-      OpenNowBar();
       document
-        .querySelector('#SpicyLyricsPage .ContentBox .LyricsContainer')
-        .classList.add('Hidden');
-      DeregisterNowBarBtn();
+        .exitFullscreen()
+        .then(() => {
+          // Complete UI restoration after fullscreen exit
+          restoreUI();
+        })
+        .catch((err) => {
+          // If exiting fullscreen fails, still restore UI
+          console.error('Error exiting fullscreen:', err);
+          restoreUI();
+        });
+    } else {
+      // Not in browser fullscreen, just restore UI
+      restoreUI();
     }
-    ResetLastLine();
 
-    const MediaBox = document.querySelector<HTMLElement>(
-      '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox',
-    );
-    const MediaImage = document.querySelector<HTMLElement>(
-      '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage',
-    );
+    // Function to restore UI after exiting fullscreen
+    function restoreUI() {
+      // Transfer element back to original container
+      TransferElement(SpicyPage, PageRoot);
+      SpicyPage.classList.remove('Fullscreen');
+      Fullscreen.IsOpen = false;
 
-    if (MediaBox) {
-      MediaBox.removeEventListener(
-        'mouseenter',
-        MediaBox_Data.Functions.MouseIn,
+      // Update controls for non-fullscreen mode
+      PageView.AppendViewControls(true);
+
+      // Handle no lyrics case
+      const currentLyrics = storage.get('currentLyricsData');
+      const NoLyrics =
+        typeof currentLyrics === 'string' &&
+        currentLyrics.includes('NO_LYRICS');
+      if (NoLyrics) {
+        OpenNowBar();
+        const lyricsContainer = document.querySelector(
+          '#SpicyLyricsPage .ContentBox .LyricsContainer',
+        );
+        if (lyricsContainer) {
+          lyricsContainer.classList.add('Hidden');
+        }
+        DeregisterNowBarBtn();
+      }
+
+      ResetLastLine();
+
+      // Clean up media box event listeners
+      const MediaBox = document.querySelector<HTMLElement>(
+        '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox',
       );
-      MediaBox.removeEventListener(
-        'mouseleave',
-        MediaBox_Data.Functions.MouseOut,
+      const MediaImage = document.querySelector<HTMLElement>(
+        '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage',
       );
-    }
 
-    if (MediaImage) {
-      MediaBox_Data.Functions.Reset(MediaImage);
-    }
+      if (MediaBox) {
+        MediaBox.removeEventListener(
+          'mouseenter',
+          MediaBox_Data.Functions.MouseIn,
+        );
+        MediaBox.removeEventListener(
+          'mouseleave',
+          MediaBox_Data.Functions.MouseOut,
+        );
+      }
 
-    Global.Event.evoke('fullscreen:exit', null);
+      if (MediaImage) {
+        MediaBox_Data.Functions.Reset(MediaImage);
+      }
+
+      // Notify other components
+      Global.Event.evoke('fullscreen:exit', null);
+    }
   }
 }
 
@@ -185,11 +238,24 @@ function Toggle() {
   const SpicyPage = document.querySelector<HTMLElement>('#SpicyLyricsPage');
 
   if (SpicyPage) {
+    // Prevent multiple rapid toggles by checking if a transition is in progress
+    if (SpicyPage.classList.contains('fullscreen-transition')) {
+      return;
+    }
+
+    // Add transition class to prevent multiple toggles
+    SpicyPage.classList.add('fullscreen-transition');
+
     if (Fullscreen.IsOpen) {
       Close();
     } else {
       Open();
     }
+
+    // Remove the transition class after a delay
+    setTimeout(() => {
+      SpicyPage.classList.remove('fullscreen-transition');
+    }, 1000); // 1 second should be enough for most transitions
   }
 }
 

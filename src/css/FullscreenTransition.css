@@ -1,0 +1,41 @@
+/* 
+ * Fullscreen transition styles
+ * Ensures smooth transitions and proper display of controls during fullscreen mode changes
+ */
+
+/* Transition state class to prevent multiple rapid toggles */
+#SpicyLyricsPage.fullscreen-transition {
+  pointer-events: none; /* Prevent clicks during transition */
+}
+
+/* Ensure controls are visible during fullscreen transition */
+#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .ViewControls,
+#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+/* Fix for controls during transition */
+#SpicyLyricsPage.fullscreen-transition.Fullscreen .ContentBox .NowBar .CenteredView .Header .ViewControls,
+#SpicyLyricsPage.fullscreen-transition.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls {
+  opacity: 1 !important;
+  visibility: visible !important;
+  z-index: 9999;
+}
+
+/* Ensure media content is visible in fullscreen mode */
+#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox .MediaContent {
+  display: flex !important;
+}
+
+/* Ensure proper z-index for controls */
+#SpicyLyricsPage.Fullscreen .ContentBox .ViewControls,
+#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .ViewControls {
+  z-index: 1000;
+}
+
+/* Ensure fullscreen toggle button is visible */
+#SpicyLyricsPage .ViewControls #FullscreenToggle {
+  opacity: 1 !important;
+}

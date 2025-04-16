@@ -17,6 +17,7 @@ import "./css/DynamicBG/sweet-dynamic-bg.css";
 import "./css/Lyrics/main.css";
 import "./css/Lyrics/Mixed.css";
 import "./css/Loaders/LoaderContainer.css";
+import "./css/FullscreenTransition.css";
 
 import Global from "./components/Global/Global";
 import Platform from "./components/Global/Platform";
