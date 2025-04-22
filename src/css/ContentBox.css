@@ -71,8 +71,8 @@
 }
 
 #SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox {
-    width: 30cqw;
-    height: 30cqw;
+    width: 25cqw;
+    height: 25cqw;
 }
 
 #SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImagePlaceholder {
@@ -126,7 +126,7 @@
     color: white;
     margin-top: 15.5cqh;
     overflow: hidden;
-    width: 22cqw;
+    width: 20cqw;
     box-sizing: border-box;
 }
 
@@ -371,7 +371,7 @@
     justify-content: space-between;
     width: 100%;
     height: 5cqh;
-    padding: 0 10cqh 0;
+    padding: 0 5cqh 0;
     /* margin-bottom: 3.8cqh; */
     position: absolute;
     bottom: 7.2cqh;
