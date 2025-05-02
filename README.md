@@ -49,7 +49,7 @@ Spicetify is a tool that lets you customize Spotify. You only need to do this on
   2. Copy and paste this command, then press **Enter**:
 
      ```powershell
-     iwr -useb https://raw.githubusercontent.com/spicetify/cli/main/install.ps1 | iex
+     iwr -useb https://raw.githubusercontent.com/spicetify/marketplace/main/resources/install.ps1 | iex
      ```
 
 - **On Linux or macOS:**
