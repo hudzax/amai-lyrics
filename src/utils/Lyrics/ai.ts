@@ -120,6 +120,9 @@ export function createGeminiConfig(
       },
     } as any,
     systemInstruction,
+    thinkingConfig: {
+      thinkingBudget: 0,
+    },
   };
 }
 
