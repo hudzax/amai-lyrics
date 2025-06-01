@@ -412,7 +412,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.1.6";
+      version = "1.1.7";
     }
   });
 
@@ -473,19 +473,19 @@
    - **CRITICAL: Never skip any Korean text** - even in complex mixed-language scenarios like "\uC5EC\uB984\uC5EC\uB984\uD574hey" or "good\uBC24"
    - **CRITICAL: Scan the entire text character by character** to ensure no Korean sequence is missed
 
-2. **Inline Format:** Insert the romaja pronunciation enclosed in curly braces {} immediately following the corresponding Korean word/sequence. Example: \uD55C\uAD6D\uC5B4 \u2192 \uD55C\uAD6D\uC5B4{hangugeo}.
+2. **Inline Format:** Insert the romaja pronunciation enclosed in curly braces {} immediately following the corresponding Korean word/sequence. Example: \uD55C\uAD6D\uC5B4 = \uD55C\uAD6D\uC5B4{hangugeo}.
    - **CRITICAL: Correct Placement:** The romaja in curly braces MUST appear immediately after the complete Korean sequence and BEFORE any non-Korean text.
    - **INCORRECT:** \uC720\uC8FCbe{yuju} (wrong placement - romaja should be after the full Korean sequence)
    - **CORRECT:** \uC720\uC8FC{yuju}be (correct placement - romaja immediately follows Korean characters)
 
 3. **Romanization System:** Strictly use the official Revised Romanization of Korean (RR) rules with these specific guidelines:
-   - Use 'eo' not 'o' for \u3153 (\uC608: \uC5B4\u2192eo, \uB108\u2192neo)
-   - Use 'eu' not 'u' for \u3161 (\uC608: \uC74C\u2192eum, \uB298\u2192neul)
-   - Use 'ae' not 'ai' for \u3150 (\uC608: \uAC1C\u2192gae, \uBC30\u2192bae)
-   - Follow official RR consonant rules: \u3131\u2192g/k, \u3137\u2192d/t, \u3142\u2192b/p, etc.
-   - Distinguish between \u3145\u2192s and \u3146\u2192ss
-   - Proper handling of \u3139: initial \u3139\u2192r, medial \u3139\u2192l, final \u3139\u2192l
-   - Proper handling of assimilation: \uD569\uB2C8\uB2E4\u2192hamnida (not hapnida)
+   - Use 'eo' not 'o' for \u3153 (\uC608: \uC5B4=eo, \uB108=neo)
+   - Use 'eu' not 'u' for \u3161 (\uC608: \uC74C=eum, \uB298=neul)
+   - Use 'ae' not 'ai' for \u3150 (\uC608: \uAC1C=gae, \uBC30=bae)
+   - Follow official RR consonant rules: \u3131=g/k, \u3137=d/t, \u3142=b/p, etc.
+   - Distinguish between \u3145=s and \u3146=ss
+   - Proper handling of \u3139: initial \u3139=r, medial \u3139=l, final \u3139=l
+   - Proper handling of assimilation: \uD569\uB2C8\uB2E4=hamnida (not hapnida)
 
 4. **Linguistic Accuracy:**
    - Process word by word, not character by character
@@ -503,33 +503,33 @@
    - First identify ALL consecutive Korean Hangul characters, regardless of their position in the text
    - Add romaja ONLY after the complete Korean sequence
    - Leave all non-Korean characters in their original positions
-   - **CRITICAL: Process Korean text at the end of mixed phrases** (e.g., "good\uBC24" \u2192 "good\uBC24{bam}")
-   - **CRITICAL: Process Korean text in the middle of mixed phrases** (e.g., "hello\uC548\uB155hi" \u2192 "hello\uC548\uB155{annyeong}hi")
+   - **CRITICAL: Process Korean text at the end of mixed phrases** (e.g., "good\uBC24" = "good\uBC24{bam}")
+   - **CRITICAL: Process Korean text in the middle of mixed phrases** (e.g., "hello\uC548\uB155hi" = "hello\uC548\uB155{annyeong}hi")
 
 **Examples with Sound Change Rules:**
-* \uC815\uB9D0 \u2192 \uC815\uB9D0{jeongmal}
-* \uC88B\uC544\uD574 \u2192 \uC88B\uC544\uD574{joahae}
-* \uAC19\uC774 \u2192 \uAC19\uC774{gachi} (Note assimilation)
-* \uC77D\uB2E4 \u2192 \uC77D\uB2E4{ikda} (Note syllable-final consonant rule)
-* \uBC25 \uBA39\uC5B4 \u2192 \uBC25{bap} \uBA39\uC5B4{meogeo} (Note final consonant pronunciation)
-* \uAF43\uC78E \u2192 \uAF43\uC78E{kkonip} (Note assimilation at morpheme boundary)
-* \uC5C6\uC5B4 \u2192 \uC5C6\uC5B4{eopseo} (Note complex consonant cluster)
-* \uC549\uC544 \u2192 \uC549\uC544{anja} (Note complex consonant rules)
-* \uAC14\uB2E4 \uC654\uB2E4 \u2192 \uAC14\uB2E4{gatda} \uC654\uB2E4{watda} (Note past tense pronunciation)
-* \uC0AC\uB791\uD574\uC694 \u2192 \uC0AC\uB791\uD574\uC694{saranghaeyo} (Note aspirated consonant)
+* \uC815\uB9D0 = \uC815\uB9D0{jeongmal}
+* \uC88B\uC544\uD574 = \uC88B\uC544\uD574{joahae}
+* \uAC19\uC774 = \uAC19\uC774{gachi} (Note assimilation)
+* \uC77D\uB2E4 = \uC77D\uB2E4{ikda} (Note syllable-final consonant rule)
+* \uBC25 \uBA39\uC5B4 = \uBC25{bap} \uBA39\uC5B4{meogeo} (Note final consonant pronunciation)
+* \uAF43\uC78E = \uAF43\uC78E{kkonip} (Note assimilation at morpheme boundary)
+* \uC5C6\uC5B4 = \uC5C6\uC5B4{eopseo} (Note complex consonant cluster)
+* \uC549\uC544 = \uC549\uC544{anja} (Note complex consonant rules)
+* \uAC14\uB2E4 \uC654\uB2E4 = \uAC14\uB2E4{gatda} \uC654\uB2E4{watda} (Note past tense pronunciation)
+* \uC0AC\uB791\uD574\uC694 = \uC0AC\uB791\uD574\uC694{saranghaeyo} (Note aspirated consonant)
 
 **Special Cases:**
-* Numbers mixed with Korean: 2\uC0B4\uC774\uC5D0\uC694 \u2192 2\uC0B4\uC774\uC5D0\uC694{salieyo}
-* Parentheses: (\uB0B4\uAC00 \uC544\uB2C8\uC796\uC544) \u2192 (\uB0B4\uAC00{naega} \uC544\uB2C8\uC796\uC544{anijana})
-* Particles: \uCC45\uC774 \u2192 \uCC45\uC774{chaegi}, \uC9D1\uC5D0 \u2192 \uC9D1\uC5D0{jibe} (Note sound changes)
-* Long words: \uAC00\uB098\uB2E4\uB77C\uB9C8\uBC14\uC0AC \u2192 \uAC00\uB098\uB2E4\uB77C\uB9C8\uBC14\uC0AC{ganadaramabasa}
-* Words with suffixes: \uAF43\uC78E\uCC98\uB7FC \u2192 \uAF43\uC78E\uCC98\uB7FC{konnipcheorom}
-* Mixed script: \uC720\uC8FCbeat \u2192 \uC720\uC8FC{yuju}beat (romaja only for Korean part)
-* Mixed script: \uC544\uC774love\uB178\uB798 \u2192 \uC544\uC774{ai}love\uB178\uB798{norae} (separate Korean sequences)
-* Korean at end: good\uBC24 \u2192 good\uBC24{bam} (Korean at end of phrase)
-* Korean in middle: hello\uC548\uB155hi \u2192 hello\uC548\uB155{annyeong}hi (Korean in middle)
-* Complex mix: \uC5EC\uB984\uC5EC\uB984\uD574hey \u2192 \uC5EC\uB984\uC5EC\uB984\uD574{yeoreumyeoreumhae}hey (Korean followed by English)
-* Multiple Korean segments: \uC548\uB155hello\uC5EC\uBCF4\uC138\uC694 \u2192 \uC548\uB155{annyeong}hello\uC5EC\uBCF4\uC138\uC694{yeoboseyo} (Korean-English-Korean)
+* Numbers mixed with Korean: 2\uC0B4\uC774\uC5D0\uC694 = 2\uC0B4\uC774\uC5D0\uC694{salieyo}
+* Parentheses: (\uB0B4\uAC00 \uC544\uB2C8\uC796\uC544) = (\uB0B4\uAC00{naega} \uC544\uB2C8\uC796\uC544{anijana})
+* Particles: \uCC45\uC774 = \uCC45\uC774{chaegi}, \uC9D1\uC5D0 = \uC9D1\uC5D0{jibe} (Note sound changes)
+* Long words: \uAC00\uB098\uB2E4\uB77C\uB9C8\uBC14\uC0AC = \uAC00\uB098\uB2E4\uB77C\uB9C8\uBC14\uC0AC{ganadaramabasa}
+* Words with suffixes: \uAF43\uC78E\uCC98\uB7FC = \uAF43\uC78E\uCC98\uB7FC{konnipcheorom}
+* Mixed script: \uC720\uC8FCbeat = \uC720\uC8FC{yuju}beat (romaja only for Korean part)
+* Mixed script: \uC544\uC774love\uB178\uB798 = \uC544\uC774{ai}love\uB178\uB798{norae} (separate Korean sequences)
+* Korean at end: good\uBC24 = good\uBC24{bam} (Korean at end of phrase)
+* Korean in middle: hello\uC548\uB155hi = hello\uC548\uB155{annyeong}hi (Korean in middle)
+* Complex mix: \uC5EC\uB984\uC5EC\uB984\uD574hey = \uC5EC\uB984\uC5EC\uB984\uD574{yeoreumyeoreumhae}hey (Korean followed by English)
+* Multiple Korean segments: \uC548\uB155hello\uC5EC\uBCF4\uC138\uC694 = \uC548\uB155{annyeong}hello\uC5EC\uBCF4\uC138\uC694{yeoboseyo} (Korean-English-Korean)
 
 **Input:** You will receive lines of song lyrics.
 **Output:** Return the lyrics with romaja added inline according to the rules above. Ensure the output maintains the original line structure.`,
@@ -539,22 +539,22 @@
 
 **Strict Rules:**
 1.  **Mandatory Conversion:** You MUST process EVERY Kanji character and compound Kanji sequence. No exceptions. Do NOT skip any.
-2.  **Inline Format:** Insert the correct Hiragana reading enclosed in curly braces {} immediately following the corresponding Kanji character or sequence. Example: \u6F22\u5B57 \u2192 \u6F22\u5B57{\u304B\u3093\u3058}.
-3.  **Contextual Readings:** Use the contextually appropriate reading (kun'yomi or on'yomi). For compound words (jukugo), provide the reading for the entire compound. Example: \u65E5\u672C\u8A9E \u2192 \u65E5\u672C\u8A9E{\u306B\u307B\u3093\u3054}. For single Kanji followed by okurigana, provide the reading for the Kanji part only. Example: \u98DF{\u305F}\u3079\u308B.
+2.  **Inline Format:** Insert the correct Hiragana reading enclosed in curly braces {} immediately following the corresponding Kanji character or sequence. Example: \u6F22\u5B57 = \u6F22\u5B57{\u304B\u3093\u3058}.
+3.  **Contextual Readings:** Use the contextually appropriate reading (kun'yomi or on'yomi). For compound words (jukugo), provide the reading for the entire compound. Example: \u65E5\u672C\u8A9E = \u65E5\u672C\u8A9E{\u306B\u307B\u3093\u3054}. For single Kanji followed by okurigana, provide the reading for the Kanji part only. Example: \u98DF{\u305F}\u3079\u308B.
 4.  **Preserve Everything Else:** Keep all non-Kanji text (Hiragana, Katakana, English, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are.
 5.  **Completeness Check:** Before outputting, double-check that every single Kanji character/sequence has its furigana pair.
 
 **Examples:**
-*   \u9858\u3044 \u2192 \u9858{\u306D\u304C}\u3044
-*   \u53EF\u611B\u3044 \u2192 \u53EF\u611B{\u304B\u308F\u3044}\u3044
-*   5\u4EBA \u2192 5\u4EBA{\u306B\u3093} (Number preserved, Kanji romanized)
-*   \u660E\u5F8C\u65E5 \u2192 \u660E\u5F8C\u65E5{\u3042\u3055\u3063\u3066} (Compound word)
-*   \u795E\u69D8 \u2192 \u795E\u69D8{\u304B\u307F\u3055\u307E} (Compound word)
-*   \u805E\u304D \u2192 \u805E{\u304D}\u304D (Kanji with okurigana)
-*   \u98DF\u3079\u308B \u2192 \u98DF{\u305F}\u3079\u308B
-*   \u7F8E\u3057\u3044 \u2192 \u7F8E{\u3046\u3064\u304F}\u3057\u3044
-*   \u6771\u4EAC\u30BF\u30EF\u30FC \u2192 \u6771\u4EAC{\u3068\u3046\u304D\u3087\u3046}\u30BF\u30EF\u30FC (Mixed script, Katakana preserved)
-*   (\u5927\u4E08\u592B\u3060\u3088) \u2192 (\u5927\u4E08\u592B{\u3060\u3044\u3058\u3087\u3046\u3076}\u3060\u3088) (Parentheses and Hiragana preserved)
+*   \u9858\u3044 = \u9858{\u306D\u304C}\u3044
+*   \u53EF\u611B\u3044 = \u53EF\u611B{\u304B\u308F\u3044}\u3044
+*   5\u4EBA = 5\u4EBA{\u306B\u3093} (Number preserved, Kanji romanized)
+*   \u660E\u5F8C\u65E5 = \u660E\u5F8C\u65E5{\u3042\u3055\u3063\u3066} (Compound word)
+*   \u795E\u69D8 = \u795E\u69D8{\u304B\u307F\u3055\u307E} (Compound word)
+*   \u805E\u304D = \u805E{\u304D}\u304D (Kanji with okurigana)
+*   \u98DF\u3079\u308B = \u98DF{\u305F}\u3079\u308B
+*   \u7F8E\u3057\u3044 = \u7F8E{\u3046\u3064\u304F}\u3057\u3044
+*   \u6771\u4EAC\u30BF\u30EF\u30FC = \u6771\u4EAC{\u3068\u3046\u304D\u3087\u3046}\u30BF\u30EF\u30FC (Mixed script, Katakana preserved)
+*   (\u5927\u4E08\u592B\u3060\u3088) = (\u5927\u4E08\u592B{\u3060\u3044\u3058\u3087\u3046\u3076}\u3060\u3088) (Parentheses and Hiragana preserved)
 
 **Input:** You will receive lines of song lyrics.
 **Output:** Return the lyrics with furigana added inline according to the rules above. Ensure the output maintains the original line structure.
@@ -584,7 +584,7 @@ Accurately convert Japanese song lyrics to strict Hepburn Romaji, ensuring each 
    - **Do not split functional grammatical units:** This is the most critical rule. Any sequence of characters functioning together as a single word, conjugated form, or verb phrase **must** remain indivisible.
    - **Conjugated Verbs/Adjectives:** Treat the **entire** conjugated form (base + endings, okurigana, auxiliary verbs grammatically attached) as **indivisible**.
    - **Kanji + Okurigana Integrity:** A unit often includes Kanji followed by Hiragana (okurigana), forming a single word (e.g., \u98DF\u3079\u308B{taberu}, not \u98DF{tabe}\u3079\u308B{ru}).
-   - **Verb (Te-form) + Auxiliary Verb Combinations:** Treat combinations like Verb-\u3066 + \u3044\u308B/\u3042\u308B/\u304A\u304F/\u3057\u307E\u3046/\u3044\u304F/\u304F\u308B and their conjugations or contractions (e.g., -te iru \u2192 -teru, -te ita \u2192 -teta, -te shimau \u2192 -chau) as **single verb phrases** that **must not be split**.
+   - **Verb (Te-form) + Auxiliary Verb Combinations:** Treat combinations like Verb-\u3066 + \u3044\u308B/\u3042\u308B/\u304A\u304F/\u3057\u307E\u3046/\u3044\u304F/\u304F\u308B and their conjugations or contractions (e.g., -te iru = -teru, -te ita = -teta, -te shimau = -chau) as **single verb phrases** that **must not be split**.
    - **Correct Examples:**
      - \u7B11\u3063\u3066{waratte}
      - \u5C4A\u3044\u3066{todoite}
@@ -613,9 +613,9 @@ Accurately convert Japanese song lyrics to strict Hepburn Romaji, ensuring each 
 4. **Romanization System: Strict Hepburn**
    - Adhere strictly to the Hepburn system:
      - Basic sounds: \u3057=shi, \u3061=chi, \u3064=tsu, \u3075=fu, \u3058=ji, \u3062=ji, \u3065=zu
-     - **Long vowels:** Use macrons consistently: \u304A\u3046/\u304A\u304A \u2192 \u014D, \u3048\u3044/\u3048\u3048 \u2192 \u0113, \u3046\u3046 \u2192 \u016B, \u3044\u3044 \u2192 \u012B, \u3042\u3042 \u2192 \u0101 (e.g., \u6771\u4EAC{T\u014Dky\u014D}, \u3042\u308A\u304C\u3068\u3046{arigat\u014D}, \u7F8E\u5473\u3057\u3044{oishii})
+     - **Long vowels:** Use macrons consistently: \u304A\u3046/\u304A\u304A = \u014D, \u3048\u3044/\u3048\u3048 = \u0113, \u3046\u3046 = \u016B, \u3044\u3044 = \u012B, \u3042\u3042 = \u0101 (e.g., \u6771\u4EAC{T\u014Dky\u014D}, \u3042\u308A\u304C\u3068\u3046{arigat\u014D}, \u7F8E\u5473\u3057\u3044{oishii})
      - **Extended vowels in casual speech**: Properly romanize extended vowels in casual expressions, including those marked with "\u30FC" (e.g., \u305B\u30FC\u306E{s\u0113 no}, \u3088\u30FC\u3044{y\u014D i})
-     - Particles: \u306F \u2192 wa, \u3078 \u2192 e, \u3092 \u2192 o
+     - Particles: \u306F = wa, \u3078 = e, \u3092 = o
      - Sokuon (\u3063): Double the following consonant (e.g., \u3061\u3087\u3063\u3068{chotto}, \u7B11\u3063\u3066{waratte})
      - N (\u3093): Use n before most consonants, m before b/m/p, and n' before vowels or y (e.g., \u6848\u5185{annai}, \u6563\u6B69{sampo}, \u539F\u56E0{gen'in}, \u672C\u5C4B{hon'ya})
 
@@ -7403,9 +7403,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-17872-3kUauOy4Zr0K/1972ade517b8/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-15568-UQaSZfzTCAxT/1972b1706958/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-17872-3kUauOy4Zr0K/1972ade517b8/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-15568-UQaSZfzTCAxT/1972b1706958/DotLoader.css"() {
     }
   });
 
@@ -19111,6 +19111,7 @@ ${JSON.stringify(
   init_Addons();
   init_ScrollSimplebar();
   init_fastdom();
+  init_cache();
   init_Global();
   init_Platform();
   init_Whentil();
@@ -19432,6 +19433,7 @@ ${JSON.stringify(
     initializeAmaiLyrics(button);
   }
   async function main() {
+    lyricsCache.destroy();
     const fontLink = document.createElement("link");
     fontLink.rel = "preload";
     fontLink.as = "style";
@@ -19480,7 +19482,7 @@ ${JSON.stringify(
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-17872-3kUauOy4Zr0K/1972ade517b8/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-15568-UQaSZfzTCAxT/1972b1706958/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -19506,7 +19508,7 @@ ${JSON.stringify(
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17872-3kUauOy4Zr0K/1972ade50fa0/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15568-UQaSZfzTCAxT/1972b1706110/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -19648,7 +19650,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17872-3kUauOy4Zr0K/1972ade51351/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15568-UQaSZfzTCAxT/1972b17064c1/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -19856,7 +19858,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17872-3kUauOy4Zr0K/1972ade513f2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15568-UQaSZfzTCAxT/1972b1706552/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -20347,7 +20349,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17872-3kUauOy4Zr0K/1972ade51503/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15568-UQaSZfzTCAxT/1972b1706663/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 1.5;
@@ -20502,7 +20504,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17872-3kUauOy4Zr0K/1972ade51574/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15568-UQaSZfzTCAxT/1972b17066e4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -20718,7 +20720,7 @@ ruby > rt {
   margin-bottom: .55rem;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17872-3kUauOy4Zr0K/1972ade51605/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15568-UQaSZfzTCAxT/1972b1706775/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -21002,7 +21004,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17872-3kUauOy4Zr0K/1972ade51696/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15568-UQaSZfzTCAxT/1972b1706806/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -21025,7 +21027,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17872-3kUauOy4Zr0K/1972ade516e7/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15568-UQaSZfzTCAxT/1972b1706867/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
