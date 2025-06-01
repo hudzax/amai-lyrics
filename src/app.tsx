@@ -8,6 +8,7 @@ import { SpotifyPlayer } from "./components/Global/SpotifyPlayer";
 import { IsPlaying } from "./utils/Addons";
 import { ScrollSimplebar } from "./utils/Scrolling/Simplebar/ScrollSimplebar";
 import fastdom from "./utils/fastdom";
+import { lyricsCache } from "./utils/Lyrics/cache";
 
 // CSS Imports
 import "./css/default.css";
@@ -479,6 +480,9 @@ function setupDynamicBackground(button) {
 // setupSmartPreloading function has been removed
 
 async function main() {
+  // For now, clear lyrics cache on startup
+  lyricsCache.destroy();
+
   // Inject Google Fonts dynamically
   const fontLink = document.createElement("link");
   fontLink.rel = "preload";
