@@ -111,33 +111,7 @@ function updateDynamicBackground(
     activeImg.classList.remove('active');
     inactiveImg.classList.add('active');
 
-    // Optional: Update CSS variables less frequently if desired
-    // For now, we update them on every change like before
-    const rotationPrimary = Math.floor(Math.random() * 360);
-    const rotationSecondary = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty(
-      '--bg-rotation-primary',
-      `${rotationPrimary}deg`,
-    );
-    document.documentElement.style.setProperty(
-      '--bg-rotation-secondary',
-      `${rotationSecondary}deg`,
-    );
-    const scalePrimary = 0.9 + Math.random() * 0.3;
-    const scaleSecondary = 0.9 + Math.random() * 0.3;
-    document.documentElement.style.setProperty(
-      '--bg-scale-primary',
-      `${scalePrimary}`,
-    );
-    document.documentElement.style.setProperty(
-      '--bg-scale-secondary',
-      `${scaleSecondary}`,
-    );
-    const hueShift = Math.floor(Math.random() * 30);
-    document.documentElement.style.setProperty(
-      '--bg-hue-shift',
-      `${hueShift}deg`,
-    );
+    // CSS variables are now only set on creation in setupDynamicBackground
   };
 
   inactiveImg.onerror = () => {

@@ -106,16 +106,14 @@ function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached) {
     fastdom.readThenWrite(
       // Read phase
       () => {
-        // Find the now playing bar if not cached
-        if (!cached.nowPlayingBar) {
-          cached.nowPlayingBar = document.querySelector(
-            ".Root__right-sidebar aside.NowPlayingView"
-          );
-        }
+        // Always query for the nowPlayingBar element in the read phase
+        const nowPlayingBar = document.querySelector(
+          ".Root__right-sidebar aside.NowPlayingView"
+        );
         
         return {
-          nowPlayingBar: cached.nowPlayingBar,
-          hasDynamicBg: !!cached.dynamicBg,
+          nowPlayingBar: nowPlayingBar, // Use the queried element
+          hasDynamicBg: !!cached.dynamicBg, // Still use cached.dynamicBg for the check
           // If we already have a dynamic background, get the image elements
           images: cached.dynamicBg ? {
             imgA: cached.dynamicBg.querySelector('#bg-img-a'),
@@ -126,26 +124,34 @@ function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached) {
       // Write phase
       ({ nowPlayingBar, hasDynamicBg, images }) => {
         if (!nowPlayingBar) {
+          // If nowPlayingBar is not found, clear cache related to it
           cached.lastImgUrl = null;
           cached.dynamicBg = null;
+          // also clear cached.nowPlayingBar as it's no longer valid
+          cached.nowPlayingBar = null;
           return;
         }
+        // Update the cached nowPlayingBar element if it's different or not set
+        if (cached.nowPlayingBar !== nowPlayingBar) {
+            cached.nowPlayingBar = nowPlayingBar;
+        }
 
-        // Set random CSS variables for variety
-        const rotationPrimary = Math.floor(Math.random() * 360);
-        const rotationSecondary = Math.floor(Math.random() * 360);
-        document.documentElement.style.setProperty('--bg-rotation-primary', `${rotationPrimary}deg`);
-        document.documentElement.style.setProperty('--bg-rotation-secondary', `${rotationSecondary}deg`);
-        
-        const scalePrimary = 0.9 + Math.random() * 0.3;
-        const scaleSecondary = 0.9 + Math.random() * 0.3;
-        document.documentElement.style.setProperty('--bg-scale-primary', `${scalePrimary}`);
-        document.documentElement.style.setProperty('--bg-scale-secondary', `${scaleSecondary}`);
-        
-        const hueShift = Math.floor(Math.random() * 30);
-        document.documentElement.style.setProperty('--bg-hue-shift', `${hueShift}deg`);
 
         if (!hasDynamicBg) {
+          // Set random CSS variables for variety only when creating a new background
+          const rotationPrimary = Math.floor(Math.random() * 360);
+          const rotationSecondary = Math.floor(Math.random() * 360);
+          document.documentElement.style.setProperty('--bg-rotation-primary', `${rotationPrimary}deg`);
+          document.documentElement.style.setProperty('--bg-rotation-secondary', `${rotationSecondary}deg`);
+
+          const scalePrimary = 0.9 + Math.random() * 0.3;
+          const scaleSecondary = 0.9 + Math.random() * 0.3;
+          document.documentElement.style.setProperty('--bg-scale-primary', `${scalePrimary}`);
+          document.documentElement.style.setProperty('--bg-scale-secondary', `${scaleSecondary}`);
+
+          const hueShift = Math.floor(Math.random() * 30);
+          document.documentElement.style.setProperty('--bg-hue-shift', `${hueShift}deg`);
+
           // Create new dynamic background container
           const dynamicBackground = document.createElement("div");
           dynamicBackground.className = "sweet-dynamic-bg";
@@ -329,39 +335,17 @@ async function initializeAmaiLyrics(button) {
 
   button.tippy.setContent("Amai Lyrics");
 
-  {
-    let lastLoopType = null;
-    new IntervalManager(0.2, () => {
-      const LoopState = Spicetify.Player.getRepeat();
-      const LoopType =
-        LoopState === 1
-          ? "context"
-          : LoopState === 2
-          ? "track"
-          : "none";
-      SpotifyPlayer.LoopType = LoopType;
-      if (lastLoopType !== LoopType) {
-        Global.Event.evoke("playback:loop", LoopType);
-      }
-      lastLoopType = LoopType;
-    }).Start();
-  }
+  // Initialize LoopType and ShuffleType once at the start
+  // For LoopType
+  const initialLoopState = Spicetify.Player.getRepeat();
+  SpotifyPlayer.LoopType = initialLoopState === 1 ? "context" : initialLoopState === 2 ? "track" : "none";
+  Global.Event.evoke("playback:loop", SpotifyPlayer.LoopType); // Evoke once at start
 
-  {
-    let lastShuffleType = null;
-    new IntervalManager(0.2, () => {
-      const ShuffleType = Spicetify.Player.origin._state.smartShuffle
-        ? "smart"
-        : Spicetify.Player.origin._state.shuffle
-        ? "normal"
-        : "none";
-      SpotifyPlayer.ShuffleType = ShuffleType;
-      if (lastShuffleType !== ShuffleType) {
-        Global.Event.evoke("playback:shuffle", ShuffleType);
-      }
-      lastShuffleType = ShuffleType;
-    }).Start();
-  }
+  // For ShuffleType
+  const initialShuffleState = Spicetify.Player.origin._state.shuffle;
+  const initialSmartShuffleState = Spicetify.Player.origin._state.smartShuffle;
+  SpotifyPlayer.ShuffleType = initialSmartShuffleState ? "smart" : initialShuffleState ? "normal" : "none";
+  Global.Event.evoke("playback:shuffle", SpotifyPlayer.ShuffleType); // Evoke once at start
 
   {
     let lastPosition = 0;
@@ -385,9 +369,88 @@ async function initializeAmaiLyrics(button) {
     Spicetify.Player.addEventListener("onprogress", (e) =>
       Global.Event.evoke("playback:progress", e)
     );
-    Spicetify.Player.addEventListener("songchange", (e) =>
-      Global.Event.evoke("playback:songchange", e)
-    );
+    Spicetify.Player.addEventListener("songchange", (e) => {
+      Global.Event.evoke("playback:songchange", e);
+      // Also update loop and shuffle states on song change as they can be part of context
+      const currentLoopState = Spicetify.Player.getRepeat();
+      const newLoopType = currentLoopState === 1 ? "context" : currentLoopState === 2 ? "track" : "none";
+      if (SpotifyPlayer.LoopType !== newLoopType) {
+        SpotifyPlayer.LoopType = newLoopType;
+        Global.Event.evoke("playback:loop", newLoopType);
+      }
+
+      const currentShuffleState = Spicetify.Player.origin._state.shuffle;
+      const currentSmartShuffleState = Spicetify.Player.origin._state.smartShuffle;
+      const newShuffleType = currentSmartShuffleState ? "smart" : currentShuffleState ? "normal" : "none";
+      if (SpotifyPlayer.ShuffleType !== newShuffleType) {
+        SpotifyPlayer.ShuffleType = newShuffleType;
+        Global.Event.evoke("playback:shuffle", newShuffleType);
+      }
+    });
+
+    // Attempt to listen for specific repeat and shuffle events
+    // Note: The exact event names for Spicetify Player can vary or might not be publicly documented.
+    // These are common patterns. If these events don't fire, the fallback is that
+    // songchange and initial state will handle most updates.
+    // Ideally, one would confirm these event names from Spicetify documentation.
+
+    Spicetify.Player.addEventListener("repeat_mode_changed", (e) => {
+      // Assuming 'e.data' might hold the new state, or we fetch it.
+      // For safety, always fetch the current state.
+      const LoopState = Spicetify.Player.getRepeat();
+      const LoopType = LoopState === 1 ? "context" : LoopState === 2 ? "track" : "none";
+      if (SpotifyPlayer.LoopType !== LoopType) {
+        SpotifyPlayer.LoopType = LoopType;
+        Global.Event.evoke("playback:loop", LoopType);
+      }
+    });
+
+    Spicetify.Player.addEventListener("shuffle_changed", (e) => {
+      // Assuming 'e.data' might hold the new state, or we fetch it.
+      // For safety, always fetch the current state.
+      const shuffleState = Spicetify.Player.origin._state.shuffle;
+      const smartShuffleState = Spicetify.Player.origin._state.smartShuffle;
+      const ShuffleType = smartShuffleState ? "smart" : shuffleState ? "normal" : "none";
+      if (SpotifyPlayer.ShuffleType !== ShuffleType) {
+        SpotifyPlayer.ShuffleType = ShuffleType;
+        Global.Event.evoke("playback:shuffle", ShuffleType);
+      }
+    });
+
+    // Fallback Polling: If specific events for repeat/shuffle are not available or unreliable,
+    // the following IntervalManagers would be used.
+    // As per the task, these are removed in favor of attempting event-driven updates.
+    // If events prove unreliable, these intervals should be reinstated with comments.
+    /*
+    // Polling for LoopType (if 'repeat_mode_changed' event is not available/reliable)
+    {
+      let lastLoopType = SpotifyPlayer.LoopType;
+      new IntervalManager(0.5, () => { // Reduced frequency from 0.2 to 0.5
+        const LoopState = Spicetify.Player.getRepeat();
+        const LoopType = LoopState === 1 ? "context" : LoopState === 2 ? "track" : "none";
+        if (lastLoopType !== LoopType) {
+          SpotifyPlayer.LoopType = LoopType;
+          Global.Event.evoke("playback:loop", LoopType);
+          lastLoopType = LoopType;
+        }
+      }).Start();
+    }
+
+    // Polling for ShuffleType (if 'shuffle_changed' event is not available/reliable)
+    {
+      let lastShuffleType = SpotifyPlayer.ShuffleType;
+      new IntervalManager(0.5, () => { // Reduced frequency from 0.2 to 0.5
+        const shuffleState = Spicetify.Player.origin._state.shuffle;
+        const smartShuffleState = Spicetify.Player.origin._state.smartShuffle;
+        const ShuffleType = smartShuffleState ? "smart" : shuffleState ? "normal" : "none";
+        if (lastShuffleType !== ShuffleType) {
+          SpotifyPlayer.ShuffleType = ShuffleType;
+          Global.Event.evoke("playback:shuffle", ShuffleType);
+          lastShuffleType = ShuffleType;
+        }
+      }).Start();
+    }
+    */
 
     Whentil.When(
       () =>
