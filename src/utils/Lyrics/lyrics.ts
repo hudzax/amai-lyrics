@@ -22,6 +22,10 @@ export let LyricsObject = {
   },
 };
 
+// Maps for optimizing LinesEvListener lookups
+export const lineElementToStartTimeMap = new Map<HTMLElement, number>();
+export const syllableElementToStartTimeMap = new Map<HTMLElement, number>();
+
 export let CurrentLineLyricsObject =
   LyricsObject.Types.Syllable.Lines.length - 1;
 export let LINE_SYNCED_CurrentLineLyricsObject =
@@ -57,9 +61,12 @@ export function ClearLyricsContentArrays() {
   LyricsObject.Types.Syllable.Lines = [];
   LyricsObject.Types.Line.Lines = [];
   LyricsObject.Types.Static.Lines = [];
+  // Clear the maps as well
+  lineElementToStartTimeMap.clear();
+  syllableElementToStartTimeMap.clear();
 }
 
-const THROTTLE_TIME = 0;
+const THROTTLE_TIME = 0.05;
 
 const LyricsInterval = new IntervalManager(THROTTLE_TIME, () => {
   if (!Defaults.LyricsContainerExists) return;
@@ -71,76 +78,86 @@ const LyricsInterval = new IntervalManager(THROTTLE_TIME, () => {
 let LinesEvListenerMaid;
 let LinesEvListenerExists;
 
-function LinesEvListener(e) {
-  if (e.target.classList.contains('line')) {
-    let startTime;
+/**
+ * Populates the lookup maps from HTMLElement to start time.
+ * This should be called after lyrics HTML elements are created and associated
+ * with their data objects.
+ */
+export function populateElementTimeMaps() {
+  lineElementToStartTimeMap.clear();
+  syllableElementToStartTimeMap.clear();
 
-    LyricsObject.Types.Line.Lines.forEach((line) => {
-      if (line.HTMLElement === e.target) {
-        startTime = line.StartTime;
+  LyricsObject.Types.Line.Lines.forEach((line) => {
+    if (line.HTMLElement && typeof line.StartTime === 'number') {
+      lineElementToStartTimeMap.set(line.HTMLElement, line.StartTime);
+    }
+  });
+
+  LyricsObject.Types.Syllable.Lines.forEach((line) => {
+    const lineStartTime = line.StartTime;
+    if (typeof lineStartTime !== 'number') return;
+
+    line.Syllables.Lead.forEach((word) => {
+      if (word.HTMLElement) {
+        syllableElementToStartTimeMap.set(word.HTMLElement, lineStartTime);
+      }
+      if (word?.Letters) {
+        word.Letters.forEach((letter) => {
+          if (letter.HTMLElement) {
+            syllableElementToStartTimeMap.set(letter.HTMLElement, lineStartTime);
+          }
+        });
       }
     });
+  });
+}
 
-    if (startTime) {
-      Spicetify.Player.seek(startTime);
-    }
-  } else if (e.target.classList.contains('word')) {
-    let startTime; //e.target.parentNode.getAttribute("start") ?? e.target.parentNode.parentNode.getAttribute("start");
 
-    LyricsObject.Types.Syllable.Lines.forEach((line) => {
-      line.Syllables.Lead.forEach((word) => {
-        if (word.HTMLElement === e.target) {
-          startTime = line.StartTime;
-        }
-      });
-    });
+function LinesEvListener(e: Event) {
+  const target = e.target as HTMLElement;
+  let startTime: number | undefined;
 
-    if (startTime) {
-      Spicetify.Player.seek(startTime);
-    }
-  } else if (e.target.classList.contains('Emphasis')) {
-    let startTime;
+  if (target.classList.contains('line')) {
+    startTime = lineElementToStartTimeMap.get(target);
+  } else if (target.classList.contains('word')) {
+    startTime = syllableElementToStartTimeMap.get(target);
+  } else if (target.classList.contains('Emphasis')) {
+    startTime = syllableElementToStartTimeMap.get(target);
+  }
 
-    LyricsObject.Types.Syllable.Lines.forEach((line) => {
-      line.Syllables.Lead.forEach((word) => {
-        if (word?.Letters) {
-          word.Letters.forEach((letter) => {
-            if (letter.HTMLElement === e.target) {
-              startTime = line.StartTime;
-            }
-          });
-        }
-      });
-    });
-
-    if (startTime) {
-      Spicetify.Player.seek(startTime);
-    }
+  if (typeof startTime === 'number') {
+    Spicetify.Player.seek(startTime);
   }
 }
 
 export function addLinesEvListener() {
   if (LinesEvListenerExists) return;
-  LinesEvListenerExists = true;
 
+  // Populate the maps before adding the listener
+  populateElementTimeMaps();
+
+  LinesEvListenerExists = true;
   LinesEvListenerMaid = new Maid();
 
   const el = document.querySelector<HTMLElement>(
     '#SpicyLyricsPage .LyricsContainer .LyricsContent',
   );
-  if (!el) return;
+  if (!el) {
+    LinesEvListenerExists = false; // Ensure we can retry if element not found initially
+    return;
+  }
   const evl = el.addEventListener('click', LinesEvListener);
-  LinesEvListenerMaid.Give(evl);
+  LinesEvListenerMaid.Give(() => el.removeEventListener('click', LinesEvListener as EventListener)); // Ensure type compatibility for Maid
 }
 
 export function removeLinesEvListener() {
   if (!LinesEvListenerExists) return;
   LinesEvListenerExists = false;
 
-  const el = document.querySelector<HTMLElement>(
-    '#SpicyLyricsPage .LyricsContainer .LyricsContent',
-  );
-  if (!el) return;
-  el.removeEventListener('click', LinesEvListener);
-  LinesEvListenerMaid.Destroy();
+  // Maid will handle removing the event listener if it was successfully added
+  if (LinesEvListenerMaid) {
+    LinesEvListenerMaid.Destroy();
+  }
+  // Optionally, clear maps here if they are not cleared elsewhere on lyric removal,
+  // but ClearLyricsContentArrays should handle it.
 }
