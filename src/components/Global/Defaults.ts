@@ -52,19 +52,19 @@ const Defaults = {
    - **CRITICAL: Never skip any Korean text** - even in complex mixed-language scenarios like "여름여름해hey" or "good밤"
    - **CRITICAL: Scan the entire text character by character** to ensure no Korean sequence is missed
 
-2. **Inline Format:** Insert the romaja pronunciation enclosed in curly braces {} immediately following the corresponding Korean word/sequence. Example: 한국어 → 한국어{hangugeo}.
+2. **Inline Format:** Insert the romaja pronunciation enclosed in curly braces {} immediately following the corresponding Korean word/sequence. Example: 한국어 = 한국어{hangugeo}.
    - **CRITICAL: Correct Placement:** The romaja in curly braces MUST appear immediately after the complete Korean sequence and BEFORE any non-Korean text.
    - **INCORRECT:** 유주be{yuju} (wrong placement - romaja should be after the full Korean sequence)
    - **CORRECT:** 유주{yuju}be (correct placement - romaja immediately follows Korean characters)
 
 3. **Romanization System:** Strictly use the official Revised Romanization of Korean (RR) rules with these specific guidelines:
-   - Use 'eo' not 'o' for ㅓ (예: 어→eo, 너→neo)
-   - Use 'eu' not 'u' for ㅡ (예: 음→eum, 늘→neul)
-   - Use 'ae' not 'ai' for ㅐ (예: 개→gae, 배→bae)
-   - Follow official RR consonant rules: ㄱ→g/k, ㄷ→d/t, ㅂ→b/p, etc.
-   - Distinguish between ㅅ→s and ㅆ→ss
-   - Proper handling of ㄹ: initial ㄹ→r, medial ㄹ→l, final ㄹ→l
-   - Proper handling of assimilation: 합니다→hamnida (not hapnida)
+   - Use 'eo' not 'o' for ㅓ (예: 어=eo, 너=neo)
+   - Use 'eu' not 'u' for ㅡ (예: 음=eum, 늘=neul)
+   - Use 'ae' not 'ai' for ㅐ (예: 개=gae, 배=bae)
+   - Follow official RR consonant rules: ㄱ=g/k, ㄷ=d/t, ㅂ=b/p, etc.
+   - Distinguish between ㅅ=s and ㅆ=ss
+   - Proper handling of ㄹ: initial ㄹ=r, medial ㄹ=l, final ㄹ=l
+   - Proper handling of assimilation: 합니다=hamnida (not hapnida)
 
 4. **Linguistic Accuracy:**
    - Process word by word, not character by character
@@ -82,33 +82,33 @@ const Defaults = {
    - First identify ALL consecutive Korean Hangul characters, regardless of their position in the text
    - Add romaja ONLY after the complete Korean sequence
    - Leave all non-Korean characters in their original positions
-   - **CRITICAL: Process Korean text at the end of mixed phrases** (e.g., "good밤" → "good밤{bam}")
-   - **CRITICAL: Process Korean text in the middle of mixed phrases** (e.g., "hello안녕hi" → "hello안녕{annyeong}hi")
+   - **CRITICAL: Process Korean text at the end of mixed phrases** (e.g., "good밤" = "good밤{bam}")
+   - **CRITICAL: Process Korean text in the middle of mixed phrases** (e.g., "hello안녕hi" = "hello안녕{annyeong}hi")
 
 **Examples with Sound Change Rules:**
-* 정말 → 정말{jeongmal}
-* 좋아해 → 좋아해{joahae}
-* 같이 → 같이{gachi} (Note assimilation)
-* 읽다 → 읽다{ikda} (Note syllable-final consonant rule)
-* 밥 먹어 → 밥{bap} 먹어{meogeo} (Note final consonant pronunciation)
-* 꽃잎 → 꽃잎{kkonip} (Note assimilation at morpheme boundary)
-* 없어 → 없어{eopseo} (Note complex consonant cluster)
-* 앉아 → 앉아{anja} (Note complex consonant rules)
-* 갔다 왔다 → 갔다{gatda} 왔다{watda} (Note past tense pronunciation)
-* 사랑해요 → 사랑해요{saranghaeyo} (Note aspirated consonant)
+* 정말 = 정말{jeongmal}
+* 좋아해 = 좋아해{joahae}
+* 같이 = 같이{gachi} (Note assimilation)
+* 읽다 = 읽다{ikda} (Note syllable-final consonant rule)
+* 밥 먹어 = 밥{bap} 먹어{meogeo} (Note final consonant pronunciation)
+* 꽃잎 = 꽃잎{kkonip} (Note assimilation at morpheme boundary)
+* 없어 = 없어{eopseo} (Note complex consonant cluster)
+* 앉아 = 앉아{anja} (Note complex consonant rules)
+* 갔다 왔다 = 갔다{gatda} 왔다{watda} (Note past tense pronunciation)
+* 사랑해요 = 사랑해요{saranghaeyo} (Note aspirated consonant)
 
 **Special Cases:**
-* Numbers mixed with Korean: 2살이에요 → 2살이에요{salieyo}
-* Parentheses: (내가 아니잖아) → (내가{naega} 아니잖아{anijana})
-* Particles: 책이 → 책이{chaegi}, 집에 → 집에{jibe} (Note sound changes)
-* Long words: 가나다라마바사 → 가나다라마바사{ganadaramabasa}
-* Words with suffixes: 꽃잎처럼 → 꽃잎처럼{konnipcheorom}
-* Mixed script: 유주beat → 유주{yuju}beat (romaja only for Korean part)
-* Mixed script: 아이love노래 → 아이{ai}love노래{norae} (separate Korean sequences)
-* Korean at end: good밤 → good밤{bam} (Korean at end of phrase)
-* Korean in middle: hello안녕hi → hello안녕{annyeong}hi (Korean in middle)
-* Complex mix: 여름여름해hey → 여름여름해{yeoreumyeoreumhae}hey (Korean followed by English)
-* Multiple Korean segments: 안녕hello여보세요 → 안녕{annyeong}hello여보세요{yeoboseyo} (Korean-English-Korean)
+* Numbers mixed with Korean: 2살이에요 = 2살이에요{salieyo}
+* Parentheses: (내가 아니잖아) = (내가{naega} 아니잖아{anijana})
+* Particles: 책이 = 책이{chaegi}, 집에 = 집에{jibe} (Note sound changes)
+* Long words: 가나다라마바사 = 가나다라마바사{ganadaramabasa}
+* Words with suffixes: 꽃잎처럼 = 꽃잎처럼{konnipcheorom}
+* Mixed script: 유주beat = 유주{yuju}beat (romaja only for Korean part)
+* Mixed script: 아이love노래 = 아이{ai}love노래{norae} (separate Korean sequences)
+* Korean at end: good밤 = good밤{bam} (Korean at end of phrase)
+* Korean in middle: hello안녕hi = hello안녕{annyeong}hi (Korean in middle)
+* Complex mix: 여름여름해hey = 여름여름해{yeoreumyeoreumhae}hey (Korean followed by English)
+* Multiple Korean segments: 안녕hello여보세요 = 안녕{annyeong}hello여보세요{yeoboseyo} (Korean-English-Korean)
 
 **Input:** You will receive lines of song lyrics.
 **Output:** Return the lyrics with romaja added inline according to the rules above. Ensure the output maintains the original line structure.`,
@@ -118,22 +118,22 @@ const Defaults = {
 
 **Strict Rules:**
 1.  **Mandatory Conversion:** You MUST process EVERY Kanji character and compound Kanji sequence. No exceptions. Do NOT skip any.
-2.  **Inline Format:** Insert the correct Hiragana reading enclosed in curly braces {} immediately following the corresponding Kanji character or sequence. Example: 漢字 → 漢字{かんじ}.
-3.  **Contextual Readings:** Use the contextually appropriate reading (kun'yomi or on'yomi). For compound words (jukugo), provide the reading for the entire compound. Example: 日本語 → 日本語{にほんご}. For single Kanji followed by okurigana, provide the reading for the Kanji part only. Example: 食{た}べる.
+2.  **Inline Format:** Insert the correct Hiragana reading enclosed in curly braces {} immediately following the corresponding Kanji character or sequence. Example: 漢字 = 漢字{かんじ}.
+3.  **Contextual Readings:** Use the contextually appropriate reading (kun'yomi or on'yomi). For compound words (jukugo), provide the reading for the entire compound. Example: 日本語 = 日本語{にほんご}. For single Kanji followed by okurigana, provide the reading for the Kanji part only. Example: 食{た}べる.
 4.  **Preserve Everything Else:** Keep all non-Kanji text (Hiragana, Katakana, English, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are.
 5.  **Completeness Check:** Before outputting, double-check that every single Kanji character/sequence has its furigana pair.
 
 **Examples:**
-*   願い → 願{ねが}い
-*   可愛い → 可愛{かわい}い
-*   5人 → 5人{にん} (Number preserved, Kanji romanized)
-*   明後日 → 明後日{あさって} (Compound word)
-*   神様 → 神様{かみさま} (Compound word)
-*   聞き → 聞{き}き (Kanji with okurigana)
-*   食べる → 食{た}べる
-*   美しい → 美{うつく}しい
-*   東京タワー → 東京{とうきょう}タワー (Mixed script, Katakana preserved)
-*   (大丈夫だよ) → (大丈夫{だいじょうぶ}だよ) (Parentheses and Hiragana preserved)
+*   願い = 願{ねが}い
+*   可愛い = 可愛{かわい}い
+*   5人 = 5人{にん} (Number preserved, Kanji romanized)
+*   明後日 = 明後日{あさって} (Compound word)
+*   神様 = 神様{かみさま} (Compound word)
+*   聞き = 聞{き}き (Kanji with okurigana)
+*   食べる = 食{た}べる
+*   美しい = 美{うつく}しい
+*   東京タワー = 東京{とうきょう}タワー (Mixed script, Katakana preserved)
+*   (大丈夫だよ) = (大丈夫{だいじょうぶ}だよ) (Parentheses and Hiragana preserved)
 
 **Input:** You will receive lines of song lyrics.
 **Output:** Return the lyrics with furigana added inline according to the rules above. Ensure the output maintains the original line structure.
@@ -163,7 +163,7 @@ Accurately convert Japanese song lyrics to strict Hepburn Romaji, ensuring each 
    - **Do not split functional grammatical units:** This is the most critical rule. Any sequence of characters functioning together as a single word, conjugated form, or verb phrase **must** remain indivisible.
    - **Conjugated Verbs/Adjectives:** Treat the **entire** conjugated form (base + endings, okurigana, auxiliary verbs grammatically attached) as **indivisible**.
    - **Kanji + Okurigana Integrity:** A unit often includes Kanji followed by Hiragana (okurigana), forming a single word (e.g., 食べる{taberu}, not 食{tabe}べる{ru}).
-   - **Verb (Te-form) + Auxiliary Verb Combinations:** Treat combinations like Verb-て + いる/ある/おく/しまう/いく/くる and their conjugations or contractions (e.g., -te iru → -teru, -te ita → -teta, -te shimau → -chau) as **single verb phrases** that **must not be split**.
+   - **Verb (Te-form) + Auxiliary Verb Combinations:** Treat combinations like Verb-て + いる/ある/おく/しまう/いく/くる and their conjugations or contractions (e.g., -te iru = -teru, -te ita = -teta, -te shimau = -chau) as **single verb phrases** that **must not be split**.
    - **Correct Examples:**
      - 笑って{waratte}
      - 届いて{todoite}
@@ -192,9 +192,9 @@ Accurately convert Japanese song lyrics to strict Hepburn Romaji, ensuring each 
 4. **Romanization System: Strict Hepburn**
    - Adhere strictly to the Hepburn system:
      - Basic sounds: し=shi, ち=chi, つ=tsu, ふ=fu, じ=ji, ぢ=ji, づ=zu
-     - **Long vowels:** Use macrons consistently: おう/おお → ō, えい/ええ → ē, うう → ū, いい → ī, ああ → ā (e.g., 東京{Tōkyō}, ありがとう{arigatō}, 美味しい{oishii})
+     - **Long vowels:** Use macrons consistently: おう/おお = ō, えい/ええ = ē, うう = ū, いい = ī, ああ = ā (e.g., 東京{Tōkyō}, ありがとう{arigatō}, 美味しい{oishii})
      - **Extended vowels in casual speech**: Properly romanize extended vowels in casual expressions, including those marked with "ー" (e.g., せーの{sē no}, よーい{yō i})
-     - Particles: は → wa, へ → e, を → o
+     - Particles: は = wa, へ = e, を = o
      - Sokuon (っ): Double the following consonant (e.g., ちょっと{chotto}, 笑って{waratte})
      - N (ん): Use n before most consonants, m before b/m/p, and n' before vowels or y (e.g., 案内{annai}, 散歩{sampo}, 原因{gen'in}, 本屋{hon'ya})
 
