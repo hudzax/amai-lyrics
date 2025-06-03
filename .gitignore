@@ -154,3 +154,4 @@ release-flow.sh
 spicetify-watch.sh
 amai.sh
 .vscode/
+.idea/
