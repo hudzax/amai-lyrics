@@ -35,7 +35,7 @@ async function initializePlatformAndSettings() {
 
 let buttonRegistered = false;
 
-function setupUI() {
+function setupUI(): Spicetify.Playbar.Button {
   const skeletonStyle = document.createElement("style");
   skeletonStyle.innerHTML = `
         <style>
@@ -66,7 +66,7 @@ function setupUI() {
 }
 
 // Helper to register/deregister the button based on track type
-function updateButtonRegistration(button) {
+function updateButtonRegistration(button: Spicetify.Playbar.Button) {
   const IsSomethingElseThanTrack = Spicetify.Player.data.item?.type !== "track";
   if (IsSomethingElseThanTrack) {
     button.deregister();
@@ -79,7 +79,7 @@ function updateButtonRegistration(button) {
   }
 }
 
-function setupEventListeners(button) {
+function setupEventListeners(button: Spicetify.Playbar.Button) {
   // Set up listener to automatically update button registration when track type changes
   Whentil.When(
     () => Spicetify.Player.data.item?.type,
@@ -91,7 +91,7 @@ function setupEventListeners(button) {
  * Apply optimized dynamic background to the now playing bar
  * Uses dual-image crossfade approach for smooth transitions
  */
-function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached) {
+function applyDynamicBackgroundToNowPlayingBar(coverUrl: string | undefined, cached: { nowPlayingBar: Element | null; dynamicBg: HTMLElement | null; lastImgUrl: string | null }) {
   if (!coverUrl) return;
   
   // Convert Spotify URI to proper URL if needed
@@ -117,8 +117,8 @@ function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached) {
           hasDynamicBg: !!cached.dynamicBg, // Still use cached.dynamicBg for the check
           // If we already have a dynamic background, get the image elements
           images: cached.dynamicBg ? {
-            imgA: cached.dynamicBg.querySelector('#bg-img-a'),
-            imgB: cached.dynamicBg.querySelector('#bg-img-b')
+            imgA: cached.dynamicBg.querySelector('#bg-img-a') as HTMLImageElement,
+            imgB: cached.dynamicBg.querySelector('#bg-img-b') as HTMLImageElement
           } : null
         };
       },
@@ -224,7 +224,7 @@ function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached) {
 
 
 
-async function initializeAmaiLyrics(button) {
+async function initializeAmaiLyrics(button: Spicetify.Playbar.Button) {
   const [{ requestPositionSync }] = await Promise.all([import("./utils/Gets/GetProgress")]);
   const { default: fetchLyrics } = await import("./utils/Lyrics/fetchLyrics");
   const { default: ApplyLyrics } = await import("./utils/Lyrics/Global/Applyer");
@@ -248,7 +248,7 @@ async function initializeAmaiLyrics(button) {
     applyDynamicBackgroundToNowPlayingBar(coverUrl, cached);
   }).Start();
 
-  async function onSongChange(event) {
+  async function onSongChange(event: { data?: { item?: { uri?: string } } }) {
     let attempts = 0;
     const maxAttempts = 5;
     let currentUri = event?.data?.item?.uri;
@@ -312,7 +312,7 @@ async function initializeAmaiLyrics(button) {
 
   let lastLocation = null;
 
-  function loadPage(location) {
+  function loadPage(location: { pathname: string }) {
     if (location.pathname === "/AmaiLyrics") {
       PageView.Open();
       button.active = true;
@@ -395,7 +395,7 @@ async function initializeAmaiLyrics(button) {
     // songchange and initial state will handle most updates.
     // Ideally, one would confirm these event names from Spicetify documentation.
 
-    Spicetify.Player.addEventListener("repeat_mode_changed", (e) => {
+    Spicetify.Player.addEventListener("repeat_mode_changed", () => {
       // Assuming 'e.data' might hold the new state, or we fetch it.
       // For safety, always fetch the current state.
       const LoopState = Spicetify.Player.getRepeat();
@@ -406,7 +406,7 @@ async function initializeAmaiLyrics(button) {
       }
     });
 
-    Spicetify.Player.addEventListener("shuffle_changed", (e) => {
+    Spicetify.Player.addEventListener("shuffle_changed", () => {
       // Assuming 'e.data' might hold the new state, or we fetch it.
       // For safety, always fetch the current state.
       const shuffleState = Spicetify.Player.origin._state.shuffle;
@@ -473,7 +473,7 @@ async function initializeAmaiLyrics(button) {
   }
 }
 
-function setupDynamicBackground(button) {
+function setupDynamicBackground(button: Spicetify.Playbar.Button) {
   initializeAmaiLyrics(button);
 }
 
