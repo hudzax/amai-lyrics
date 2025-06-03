@@ -231,3 +231,8 @@ ruby > rt {
   background: rgb(255 255 255 / 25%);
   margin-bottom: .55rem;
 }
+
+/* Hide ads placeholder element*/
+#main-view > div > div[data-testid=test-ref-div] {
+  display: none;
+}
