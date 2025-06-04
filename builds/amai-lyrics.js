@@ -412,7 +412,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.1.9";
+      version = "1.1.10";
     }
   });
 
@@ -5363,36 +5363,30 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
 
   // src/utils/API/SpicyFetch.ts
   async function SpicyFetch(path, IsExternal = false, cache = false, cosmos = false) {
-    return new Promise(async (resolve, reject) => {
-      const url = path;
+    const url = path;
+    try {
       const CachedContent = await GetCachedContent(url);
       if (CachedContent) {
         if (Array.isArray(CachedContent)) {
           const content = typeof CachedContent[0] === "string" ? JSON.parse(CachedContent[0]) : CachedContent[0];
-          resolve([content, CachedContent[1]]);
-          return;
+          return [content, CachedContent[1]];
         }
-        resolve([CachedContent, 200]);
-        return;
+        return [CachedContent, 200];
       }
       const SpotifyAccessToken = await Platform_default.GetSpotifyAccessToken();
       if (cosmos) {
-        Spicetify.CosmosAsync.get(url).then(async (res) => {
-          let data;
-          try {
-            data = await res.json();
-          } catch (error) {
-            data = {};
-          }
-          const sentData = [data, res.status];
-          resolve(sentData);
-          if (cache) {
-            await CacheContent(url, sentData, 6048e5);
-          }
-        }).catch((err2) => {
-          console.error("CosmosAsync Error:", err2);
-          reject(err2);
-        });
+        const res = await Spicetify.CosmosAsync.get(url);
+        let data;
+        try {
+          data = await res.json();
+        } catch {
+          data = {};
+        }
+        const sentData = [data, res.status];
+        if (cache) {
+          await CacheContent(url, sentData, 6048e5);
+        }
+        return sentData;
       } else {
         const SpicyLyricsAPI_Headers = IsExternal ? null : {};
         const SpotifyAPI_Headers = IsExternal ? {
@@ -5406,31 +5400,29 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           ...SpotifyAPI_Headers,
           ...SpicyLyricsAPI_Headers
         };
-        fetch(url, {
+        const res = await fetch(url, {
           method: "GET",
           headers
-        }).then(async (res) => {
-          if (res === null) {
-            resolve([null, 500]);
-            return;
-          }
-          let data;
-          try {
-            data = await res.json();
-          } catch (error) {
-            data = {};
-          }
-          const sentData = [data, res.status];
-          resolve(sentData);
-          if (cache) {
-            await CacheContent(url, sentData, 6048e5);
-          }
-        }).catch((err2) => {
-          console.error("Fetch Error:", err2);
-          reject(err2);
         });
+        if (res === null) {
+          return [null, 500];
+        }
+        let data;
+        try {
+          data = await res.json();
+        } catch {
+          data = {};
+        }
+        const sentData = [data, res.status];
+        if (cache) {
+          await CacheContent(url, sentData, 6048e5);
+        }
+        return sentData;
       }
-    });
+    } catch (err2) {
+      console.error("SpicyFetch Error:", err2);
+      throw err2;
+    }
   }
   async function CacheContent(key, data, expirationTtl = 6048e5) {
     try {
@@ -5476,6 +5468,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return null;
     } catch (error) {
       console.error("ERR CC", error);
+      return null;
     }
   }
   var SpicyFetchCache;
@@ -5499,7 +5492,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       nextId = 1;
       listen = (eventName, callback) => {
         if (!eventRegistry.has(eventName)) {
-          eventRegistry.set(eventName, /* @__PURE__ */ new Map());
+          eventRegistry.set(
+            eventName,
+            /* @__PURE__ */ new Map()
+          );
         }
         const id = nextId++;
         eventRegistry.get(eventName).set(id, callback);
@@ -5565,7 +5561,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             }
           }
         },
-        GetScope: (key, fallback = void 0) => {
+        GetScope: (key, fallback) => {
           const keys = key.split(".");
           let current = SCOPE_ROOT;
           for (const part of keys) {
@@ -5750,10 +5746,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             }
             const psize = size === "d" ? null : size?.toLowerCase() ?? null;
             const Data = await SpotifyPlayer.Track.GetTrackInfo();
-            if (!Data || !Data.album?.cover_group?.image)
+            const trackData = Data;
+            if (!trackData || !trackData.album?.cover_group?.image)
               return "";
             const Images = SpotifyPlayer.Track.SortImages(
-              Data.album.cover_group.image
+              trackData.album.cover_group.image
             );
             switch (psize) {
               case "s":
@@ -5772,7 +5769,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             return Spicetify.Player.data.item.metadata.title;
           }
           const Data = await SpotifyPlayer.Track.GetTrackInfo();
-          return Data?.name || "";
+          const trackData = Data;
+          return trackData?.name || "";
         },
         GetAlbumName: () => {
           return Spicetify.Player.data.item.metadata.album_title;
@@ -5785,7 +5783,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             return Spicetify.Player.data.item.metadata.artist_name.split(",").map((artist) => artist.trim());
           }
           const data = await SpotifyPlayer.Track.GetTrackInfo();
-          return data?.artist?.map((a) => a.name) ?? [];
+          const trackData = data;
+          return trackData?.artist?.map((a) => a.name) ?? [];
         },
         JoinArtists: (artists) => {
           return artists?.join(", ") ?? null;
@@ -6687,7 +6686,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         if (word?.Letters) {
           word.Letters.forEach((letter) => {
             if (letter.HTMLElement) {
-              syllableElementToStartTimeMap.set(letter.HTMLElement, lineStartTime);
+              syllableElementToStartTimeMap.set(
+                letter.HTMLElement,
+                lineStartTime
+              );
             }
           });
         }
@@ -6722,7 +6724,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return;
     }
     el.addEventListener("click", LinesEvListener);
-    LinesEvListenerMaid.Give(() => el.removeEventListener("click", LinesEvListener));
+    LinesEvListenerMaid.Give(
+      () => el.removeEventListener("click", LinesEvListener)
+    );
   }
   function removeLinesEvListener() {
     if (!LinesEvListenerExists)
@@ -6914,7 +6918,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         } else {
           setTimeout(runner, delay);
         }
-      } catch (error) {
+      } catch {
         setTimeout(runner, delay);
       }
     };
@@ -7392,9 +7396,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-16528-VVfOTcPw2Quc/1973855f9c88/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-560-AsN0uz0APXR9/1973b04e44a8/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-16528-VVfOTcPw2Quc/1973855f9c88/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-560-AsN0uz0APXR9/1973b04e44a8/DotLoader.css"() {
     }
   });
 
@@ -7492,7 +7496,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var init_dynamicBackground = __esm({
     "src/components/DynamicBG/dynamicBackground.ts"() {
       init_SpotifyPlayer();
-      typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     }
   });
 
@@ -8737,7 +8740,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   function GetElementHeight(element) {
     const beforeStyles = getComputedStyle(element, "::before");
     const afterStyles = getComputedStyle(element, "::after");
-    return element.offsetHeight + beforeStyles.height + afterStyles.height;
+    return element.offsetHeight + parseFloat(beforeStyles.height) + parseFloat(afterStyles.height);
   }
   var init_GetElementHeight = __esm({
     "src/utils/Gets/GetElementHeight.ts"() {
@@ -8858,7 +8861,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     try {
       for (const key in styles) {
         if (Object.prototype.hasOwnProperty.call(styles, key)) {
-          element.style[key] = styles[key];
+          element.style.setProperty(key, String(styles[key]));
         }
       }
       return true;
@@ -8950,7 +8953,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const rtlRegex = /[\u0590-\u05FF\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB1D-\uFB4F\uFB50-\uFDFF\uFE70-\uFEFF]/;
     for (let i = 0; i < text.length; i++) {
       const char = text[i];
-      if (/[\d\s,.;:?!()[\]{}"'\\/<>@#$%^&*_=+\-]/.test(char)) {
+      if (/[\d\s,.;:?!()[\]{}"'\\/<>@#$%^&*_=+-]/.test(char)) {
         continue;
       }
       return rtlRegex.test(char);
@@ -10660,7 +10663,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const dropZones = document.querySelectorAll(
       "#SpicyLyricsPage .ContentBox .DropZone"
     );
-    DragBox.addEventListener("dragstart", (e) => {
+    DragBox.addEventListener("dragstart", () => {
       setTimeout(() => {
         document.querySelector("#SpicyLyricsPage").classList.add("SomethingDragging");
         if (NowBar.classList.contains("LeftSide")) {
@@ -18407,12 +18410,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       responseModalities: [],
       responseMimeType: "application/json",
       responseSchema: {
-        type: "object",
+        type: Type.OBJECT,
         properties: {
           lines: {
-            type: "array",
+            type: Type.ARRAY,
             items: {
-              type: "string"
+              type: Type.STRING
             }
           }
         }
@@ -18497,15 +18500,19 @@ ${JSON.stringify(
   }
   function updateLyricsText(lyricsJson, lines) {
     if (lyricsJson.Type === "Line" && lyricsJson.Content) {
-      lyricsJson.Content = lyricsJson.Content.map((item, index) => ({
-        ...item,
-        Text: lines[index] || item.Text
-      }));
+      lyricsJson.Content = lyricsJson.Content.map(
+        (item, index) => ({
+          ...item,
+          Text: lines[index] || item.Text
+        })
+      );
     } else if (lyricsJson.Type === "Static" && lyricsJson.Lines) {
-      lyricsJson.Lines = lyricsJson.Lines.map((item, index) => ({
-        ...item,
-        Text: lines[index] || item.Text
-      }));
+      lyricsJson.Lines = lyricsJson.Lines.map(
+        (item, index) => ({
+          ...item,
+          Text: lines[index] || item.Text
+        })
+      );
     }
   }
   var init_ai = __esm({
@@ -18594,15 +18601,43 @@ ${JSON.stringify(
 
   // src/utils/Lyrics/processing.ts
   async function processAndEnhanceLyrics(trackId, lyricsJson) {
-    const { lyricsJson: preparedLyricsJson, lyricsOnly } = await prepareLyricsForGemini(lyricsJson);
+    const id = lyricsJson.id || trackId;
+    const type = lyricsJson.Type || "Static";
+    let initialLyricsData;
+    if (type === "Syllable") {
+      initialLyricsData = {
+        id,
+        Type: type,
+        Content: lyricsJson.Content || [],
+        Raw: lyricsJson.Raw || []
+      };
+    } else if (type === "Line") {
+      initialLyricsData = {
+        id,
+        Type: type,
+        Content: lyricsJson.Content || [],
+        Lines: lyricsJson.Lines || [],
+        Raw: lyricsJson.Raw || []
+      };
+    } else {
+      initialLyricsData = {
+        id,
+        Type: type,
+        Lines: lyricsJson.Lines || [],
+        Raw: lyricsJson.Raw || []
+      };
+    }
+    const { lyricsJson: preparedLyricsJson, lyricsOnly } = await prepareLyricsForGemini(initialLyricsData);
     const { hasKanji, hasKorean } = detectLanguages(preparedLyricsJson);
-    const phoneticLyricsJson = JSON.parse(JSON.stringify(preparedLyricsJson));
+    const phoneticLyricsJson = JSON.parse(
+      JSON.stringify(preparedLyricsJson)
+    );
     const [processedLyricsJson, translations] = await Promise.all([
       getPhoneticLyrics(phoneticLyricsJson, hasKanji, hasKorean, lyricsOnly),
-      fetchTranslationsWithGemini(preparedLyricsJson)
+      fetchTranslationsWithGemini(lyricsOnly)
     ]);
     attachTranslations(processedLyricsJson, translations);
-    await cacheLyrics(trackId, processedLyricsJson);
+    await cacheLyrics(trackId, { ...processedLyricsJson, id });
     storage_default.set("currentlyFetching", "false");
     if (Spicetify.Player.data.item.uri?.split(":")[2] === trackId) {
       Spicetify.showNotification("Completed", false, 1e3);
@@ -18611,15 +18646,35 @@ ${JSON.stringify(
       HideLoaderContainer();
       ClearLyricsPageContainer();
     }
-    return { ...processedLyricsJson, fromCache: false };
+    return {
+      ...processedLyricsJson,
+      id: lyricsJson.id,
+      fromCache: false
+    };
   }
   function detectLanguages(lyricsJson) {
-    const hasKanji = lyricsJson.Content?.some(
-      (item) => item.Lead?.Syllables?.some((syl) => JAPANESE_REGEX2.test(syl.Text))
-    ) || lyricsJson.Content?.some((item) => JAPANESE_REGEX2.test(item.Text)) || lyricsJson.Lines?.some((item) => JAPANESE_REGEX2.test(item.Text)) || false;
-    const hasKorean = lyricsJson.Content?.some(
-      (item) => item.Lead?.Syllables?.some((syl) => KOREAN_REGEX.test(syl.Text))
-    ) || lyricsJson.Content?.some((item) => KOREAN_REGEX.test(item.Text)) || lyricsJson.Lines?.some((item) => KOREAN_REGEX.test(item.Text)) || false;
+    let hasKanji = false;
+    let hasKorean = false;
+    if (lyricsJson.Type === "Syllable" && lyricsJson.Content) {
+      hasKanji = lyricsJson.Content.some(
+        (item) => item.Lead?.Syllables?.some(
+          (syl) => JAPANESE_REGEX2.test(syl.Text)
+        )
+      );
+      hasKorean = lyricsJson.Content.some(
+        (item) => item.Lead?.Syllables?.some(
+          (syl) => KOREAN_REGEX.test(syl.Text)
+        )
+      );
+    } else if (lyricsJson.Type === "Line" && lyricsJson.Content) {
+      hasKanji = lyricsJson.Content.some(
+        (item) => JAPANESE_REGEX2.test(item.Text)
+      );
+      hasKorean = lyricsJson.Content.some((item) => KOREAN_REGEX.test(item.Text));
+    } else if (lyricsJson.Type === "Static" && lyricsJson.Lines) {
+      hasKanji = lyricsJson.Lines.some((item) => JAPANESE_REGEX2.test(item.Text));
+      hasKorean = lyricsJson.Lines.some((item) => KOREAN_REGEX.test(item.Text));
+    }
     return { hasKanji, hasKorean };
   }
   function attachTranslations(lyricsJson, translations) {
@@ -18635,8 +18690,15 @@ ${JSON.stringify(
   }
   async function prepareLyricsForGemini(lyricsJson) {
     if (lyricsJson.Type === "Syllable") {
-      lyricsJson.Type = "Line";
-      lyricsJson.Content = convertLyrics(lyricsJson.Content);
+      const syllableData = lyricsJson;
+      const convertedContent = convertLyrics(
+        syllableData.Content || []
+      );
+      lyricsJson = {
+        ...lyricsJson,
+        Type: "Line",
+        Content: convertedContent
+      };
     }
     const lyricsOnly = await extractLyrics(lyricsJson);
     if (lyricsOnly.length > 0) {
@@ -18657,16 +18719,22 @@ ${JSON.stringify(
       return items;
     };
     if (lyricsJson.Type === "Line" && lyricsJson.Content) {
-      lyricsJson.Content = lyricsJson.Content.map((item) => ({
+      const lineData = lyricsJson;
+      lineData.Content = removeEmptyLinesAndCharacters(
+        lineData.Content || []
+      );
+      lineData.Content = lineData.Content.map((item) => ({
         ...item,
         StartTime: Math.max(0, (item.StartTime || 0) - LYRICS_TIMING_OFFSET)
       }));
-      lyricsJson.Content = removeEmptyLinesAndCharacters(lyricsJson.Content);
-      return lyricsJson.Content.map((item) => item.Text);
+      return lineData.Content.map((item) => item.Text);
     }
     if (lyricsJson.Type === "Static" && lyricsJson.Lines) {
-      lyricsJson.Lines = removeEmptyLinesAndCharacters(lyricsJson.Lines);
-      return lyricsJson.Lines.map((item) => item.Text);
+      const staticData = lyricsJson;
+      staticData.Lines = removeEmptyLinesAndCharacters(
+        staticData.Lines || []
+      );
+      return staticData.Lines.map((item) => item.Text);
     }
     return [];
   }
@@ -18723,7 +18791,11 @@ ${JSON.stringify(
         Spicetify.showNotification("Lyrics not found", false, 2e3);
         break;
       case 429:
-        Spicetify.showNotification("Rate limited, please try again later", false, 2e3);
+        Spicetify.showNotification(
+          "Rate limited, please try again later",
+          false,
+          2e3
+        );
         break;
       case 500:
       case 502:
@@ -18732,19 +18804,35 @@ ${JSON.stringify(
         Spicetify.showNotification("Lyrics service unavailable", false, 2e3);
         break;
       default:
-        Spicetify.showNotification(`Error fetching lyrics (${status})`, false, 2e3);
+        Spicetify.showNotification(
+          `Error fetching lyrics (${status})`,
+          false,
+          2e3
+        );
     }
     return await noLyricsMessage();
   }
   function isValidLyricsResponse(lyricsJson) {
-    if (lyricsJson === null || lyricsJson === "") {
+    if (lyricsJson === null || lyricsJson === void 0) {
       return false;
     }
     if (typeof lyricsJson === "object") {
       if (!("id" in lyricsJson)) {
         return false;
       }
-      return !(lyricsJson.Type === "Syllable" && (!lyricsJson.Content || lyricsJson.Content.length === 0) || lyricsJson.Type === "Line" && (!lyricsJson.Content || lyricsJson.Content.length === 0) || lyricsJson.Type === "Static" && (!lyricsJson.Lines || lyricsJson.Lines.length === 0));
+      const type = lyricsJson.Type;
+      if (type === "Syllable" || type === "Line") {
+        const content = lyricsJson.Content;
+        if (!Array.isArray(content) || content.length === 0) {
+          return false;
+        }
+      } else if (type === "Static") {
+        const lines = lyricsJson.Lines;
+        if (!Array.isArray(lines) || lines.length === 0) {
+          return false;
+        }
+      }
+      return true;
     }
     return false;
   }
@@ -19239,8 +19327,12 @@ ${JSON.stringify(
             nowPlayingBar,
             hasDynamicBg: !!cached.dynamicBg,
             images: cached.dynamicBg ? {
-              imgA: cached.dynamicBg.querySelector("#bg-img-a"),
-              imgB: cached.dynamicBg.querySelector("#bg-img-b")
+              imgA: cached.dynamicBg.querySelector(
+                "#bg-img-a"
+              ),
+              imgB: cached.dynamicBg.querySelector(
+                "#bg-img-b"
+              )
             } : null
           };
         },
@@ -19257,14 +19349,29 @@ ${JSON.stringify(
           if (!hasDynamicBg) {
             const rotationPrimary = Math.floor(Math.random() * 360);
             const rotationSecondary = Math.floor(Math.random() * 360);
-            document.documentElement.style.setProperty("--bg-rotation-primary", `${rotationPrimary}deg`);
-            document.documentElement.style.setProperty("--bg-rotation-secondary", `${rotationSecondary}deg`);
+            document.documentElement.style.setProperty(
+              "--bg-rotation-primary",
+              `${rotationPrimary}deg`
+            );
+            document.documentElement.style.setProperty(
+              "--bg-rotation-secondary",
+              `${rotationSecondary}deg`
+            );
             const scalePrimary = 0.9 + Math.random() * 0.3;
             const scaleSecondary = 0.9 + Math.random() * 0.3;
-            document.documentElement.style.setProperty("--bg-scale-primary", `${scalePrimary}`);
-            document.documentElement.style.setProperty("--bg-scale-secondary", `${scaleSecondary}`);
+            document.documentElement.style.setProperty(
+              "--bg-scale-primary",
+              `${scalePrimary}`
+            );
+            document.documentElement.style.setProperty(
+              "--bg-scale-secondary",
+              `${scaleSecondary}`
+            );
             const hueShift = Math.floor(Math.random() * 30);
-            document.documentElement.style.setProperty("--bg-hue-shift", `${hueShift}deg`);
+            document.documentElement.style.setProperty(
+              "--bg-hue-shift",
+              `${hueShift}deg`
+            );
             const dynamicBackground = document.createElement("div");
             dynamicBackground.className = "sweet-dynamic-bg";
             dynamicBackground.setAttribute("current-img", coverUrl);
@@ -19313,16 +19420,21 @@ ${JSON.stringify(
     }
   }
   async function initializeAmaiLyrics(button) {
-    const [{ requestPositionSync: requestPositionSync2 }] = await Promise.all([Promise.resolve().then(() => (init_GetProgress(), GetProgress_exports))]);
+    const [{ requestPositionSync: requestPositionSync2 }] = await Promise.all([
+      Promise.resolve().then(() => (init_GetProgress(), GetProgress_exports))
+    ]);
     const { default: fetchLyrics2 } = await Promise.resolve().then(() => (init_fetchLyrics(), fetchLyrics_exports));
     const { default: ApplyLyrics2 } = await Promise.resolve().then(() => (init_Applyer(), Applyer_exports));
     const { default: ApplyDynamicBackground2 } = await Promise.resolve().then(() => (init_dynamicBackground(), dynamicBackground_exports));
     const { UpdateNowBar: UpdateNowBar2 } = await Promise.resolve().then(() => (init_NowBar(), NowBar_exports));
     const { ScrollToActiveLine: ScrollToActiveLine2 } = await Promise.resolve().then(() => (init_ScrollToActiveLine(), ScrollToActiveLine_exports));
     const { default: PageView2 } = await Promise.resolve().then(() => (init_PageView(), PageView_exports));
-    Whentil_default.When(() => Spicetify.Platform.PlaybackAPI, () => {
-      requestPositionSync2();
-    });
+    Whentil_default.When(
+      () => Spicetify.Platform.PlaybackAPI,
+      () => {
+        requestPositionSync2();
+      }
+    );
     const cached = {
       nowPlayingBar: null,
       dynamicBg: null,
@@ -19488,19 +19600,20 @@ ${JSON.stringify(
     fontLink.onload = () => {
       fontLink.rel = "stylesheet";
     };
-    await Promise.all([
-      initializePlatformAndSettings()
-    ]);
+    await Promise.all([initializePlatformAndSettings()]);
     const button = setupUI();
     setupEventListeners(button);
     setupDynamicBackground2(button);
     window.addEventListener("load", () => {
       if (window.requestIdleCallback) {
-        requestIdleCallback(() => {
-          document.querySelectorAll(".sweet-dynamic-bg").forEach((bg) => {
-            bg.classList.add("sweet-dynamic-bg-loaded");
-          });
-        }, { timeout: 2e3 });
+        requestIdleCallback(
+          () => {
+            document.querySelectorAll(".sweet-dynamic-bg").forEach((bg) => {
+              bg.classList.add("sweet-dynamic-bg-loaded");
+            });
+          },
+          { timeout: 2e3 }
+        );
       } else {
         setTimeout(() => {
           document.querySelectorAll(".sweet-dynamic-bg").forEach((bg) => {
@@ -19528,7 +19641,7 @@ ${JSON.stringify(
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-16528-VVfOTcPw2Quc/1973855f9c88/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-560-AsN0uz0APXR9/1973b04e44a8/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -19554,7 +19667,7 @@ ${JSON.stringify(
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16528-VVfOTcPw2Quc/1973855f9430/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-560-AsN0uz0APXR9/1973b04e3c70/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -19696,7 +19809,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16528-VVfOTcPw2Quc/1973855f97f1/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-560-AsN0uz0APXR9/1973b04e4011/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -19904,7 +20017,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16528-VVfOTcPw2Quc/1973855f9882/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-560-AsN0uz0APXR9/1973b04e40b2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -20394,7 +20507,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16528-VVfOTcPw2Quc/1973855f99a3/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-560-AsN0uz0APXR9/1973b04e41c3/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 1.5;
@@ -20549,7 +20662,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16528-VVfOTcPw2Quc/1973855f9a24/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-560-AsN0uz0APXR9/1973b04e4244/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -20768,7 +20881,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16528-VVfOTcPw2Quc/1973855f9ac5/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-560-AsN0uz0APXR9/1973b04e42d5/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -21052,7 +21165,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16528-VVfOTcPw2Quc/1973855f9b46/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-560-AsN0uz0APXR9/1973b04e4366/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -21075,7 +21188,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16528-VVfOTcPw2Quc/1973855f9ba7/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-560-AsN0uz0APXR9/1973b04e43b7/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
