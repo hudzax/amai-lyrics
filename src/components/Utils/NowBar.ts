@@ -530,7 +530,7 @@ function OpenNowBar() {
         timelineElement: HTMLElement,
         sliderBar: HTMLElement,
       ) {
-        return (e: any = null) => {
+        return (e: number | { data?: number } | null = null) => {
           const positionElement =
             timelineElement.querySelector<HTMLElement>('.Time.Position');
           const durationElement =
@@ -632,7 +632,8 @@ function OpenNowBar() {
        * Initializes tracking variables for position interpolation
        */
       function initializeTrackingVariables() {
-        progressBarState.lastKnownPosition = SpotifyPlayer.GetTrackPosition() || 0;
+        progressBarState.lastKnownPosition =
+          SpotifyPlayer.GetTrackPosition() || 0;
         progressBarState.lastUpdateTime = performance.now();
       }
 
@@ -759,7 +760,7 @@ function OpenNowBar() {
     '#SpicyLyricsPage .ContentBox .DropZone',
   );
 
-  DragBox.addEventListener('dragstart', (e) => {
+  DragBox.addEventListener('dragstart', () => {
     setTimeout(() => {
       document
         .querySelector('#SpicyLyricsPage')
@@ -1079,7 +1080,7 @@ Global.Event.listen('fullscreen:exit', () => {
 /**
  * Handles play/pause events by updating UI and progress tracking
  */
-function handlePlayPauseEvent(e: any): void {
+function handlePlayPauseEvent(e: PlaybackPlayPauseEvent): void {
   // Only process in fullscreen mode
   if (!Fullscreen.IsOpen) return;
 
@@ -1093,7 +1094,13 @@ function handlePlayPauseEvent(e: any): void {
 /**
  * Updates the play/pause button UI based on playback state
  */
-function updatePlayPauseUI(e: any): void {
+interface PlaybackPlayPauseEvent {
+  data?: {
+    isPaused?: boolean;
+  };
+}
+
+function updatePlayPauseUI(e: PlaybackPlayPauseEvent): void {
   if (!ActivePlaybackControlsInstance) return;
 
   const playbackControls = ActivePlaybackControlsInstance.GetElement();
@@ -1137,7 +1144,7 @@ function updateProgressBarState(): void {
 /**
  * Handles loop state changes by updating UI
  */
-function handleLoopEvent(e: any): void {
+function handleLoopEvent(e: 'none' | 'context' | 'track'): void {
   if (!Fullscreen.IsOpen || !ActivePlaybackControlsInstance) return;
 
   const playbackControls = ActivePlaybackControlsInstance.GetElement();
@@ -1165,7 +1172,7 @@ function handleLoopEvent(e: any): void {
 /**
  * Handles shuffle state changes by updating UI
  */
-function handleShuffleEvent(e: any): void {
+function handleShuffleEvent(e: 'none' | 'normal'): void {
   if (!Fullscreen.IsOpen || !ActivePlaybackControlsInstance) return;
 
   const playbackControls = ActivePlaybackControlsInstance.GetElement();
@@ -1191,7 +1198,7 @@ function handleShuffleEvent(e: any): void {
  * Handles position and progress updates
  * Only processes updates when in fullscreen mode
  */
-function handlePositionUpdate(e: any): void {
+function handlePositionUpdate(e: number | { data?: number }): void {
   // Only process updates if in fullscreen mode and progress bar is active
   if (!Fullscreen.IsOpen || !ActiveSetupSongProgressBarInstance) return;
 
