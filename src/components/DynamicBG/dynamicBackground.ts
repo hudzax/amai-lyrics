@@ -1,11 +1,6 @@
 import { SpotifyPlayer } from '../Global/SpotifyPlayer';
 // import storage from '../../utils/storage'; // No longer needed?
 
-// Check if user prefers reduced motion (can be used to disable animations later if needed)
-typeof window !== 'undefined' &&
-window.matchMedia &&
-window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
 /**
  * Creates or updates the dynamic background elements.
  * Uses two image elements for cross-fading.
