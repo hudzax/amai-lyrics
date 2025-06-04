@@ -97,7 +97,7 @@ export default {
    */
   read: <T>(fn: () => T): Promise<T> => {
     return new Promise((resolve) => {
-      measure((result) => {
+      measure((result: T) => {
         resolve(result as T);
       }, fn);
     });
@@ -112,7 +112,7 @@ export default {
    */
   write: <T>(fn: () => T): Promise<T> => {
     return new Promise((resolve) => {
-      mutate((result) => {
+      mutate((result: T) => {
         resolve(result as T);
       }, fn);
     });
@@ -131,9 +131,9 @@ export default {
     writeFn: (readResult: R) => W,
   ): Promise<W> => {
     return new Promise((resolve) => {
-      measure((readResult) => {
+      measure((readResult: R) => {
         mutate(
-          (writeResult) => {
+          (writeResult: W) => {
             resolve(writeResult as W);
           },
           () => writeFn(readResult as R),
@@ -144,7 +144,7 @@ export default {
 
   /**
    * Clear all scheduled tasks
-   * Useful when component is unmounting or when you need to cancel pending operations
+   * Useful when a component is unmounting or when you need to cancel pending operations
    */
   clear,
 };

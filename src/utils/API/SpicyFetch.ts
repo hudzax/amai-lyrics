@@ -38,7 +38,7 @@ export default async function SpicyFetch(
     if (cosmos) {
       Spicetify.CosmosAsync.get(url)
         .then(async (res) => {
-          let data;
+          let data: {};
           try {
             data = await res.json();
           } catch (error) {
@@ -83,7 +83,7 @@ export default async function SpicyFetch(
             return;
           }
 
-          let data;
+          let data: {};
           try {
             data = await res.json();
           } catch (error) {
@@ -105,8 +105,8 @@ export default async function SpicyFetch(
 }
 
 async function CacheContent(
-  key,
-  data,
+  key: string,
+  data: any[],
   expirationTtl: number = 604800000,
 ): Promise<void> {
   try {
@@ -133,7 +133,7 @@ async function CacheContent(
   }
 }
 
-async function GetCachedContent(key): Promise<object | null> {
+async function GetCachedContent(key: string): Promise<object | null> {
   try {
     const processedKey = md5(key);
     const content = await SpicyFetchCache.get(processedKey);
@@ -150,9 +150,7 @@ async function GetCachedContent(key): Promise<object | null> {
         );
         const decompressedData = pako.inflate(compressedData, { to: 'string' });
 
-        const data = JSON.parse(decompressedData);
-
-        return data;
+        return JSON.parse(decompressedData);
       } else {
         await SpicyFetchCache.remove(key);
         return null;
@@ -163,8 +161,3 @@ async function GetCachedContent(key): Promise<object | null> {
     console.error('ERR CC', error);
   }
 }
-
-export const _FETCH_CACHE = {
-  GetCachedContent,
-  CacheContent,
-};

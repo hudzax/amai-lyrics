@@ -1,4 +1,4 @@
-import { SpotifyPlayer } from './../../../../components/Global/SpotifyPlayer';
+import { SpotifyPlayer } from '../../../../components/Global/SpotifyPlayer';
 import {
   ArabicPersianRegex,
   BOTTOM_ApplyLyricsSpacer,

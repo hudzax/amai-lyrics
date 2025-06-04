@@ -1,9 +1,8 @@
-import { SongProgressBar } from './../../utils/Lyrics/SongProgressBar';
+import { SongProgressBar } from '../../utils/Lyrics/SongProgressBar';
 import storage from '../../utils/storage';
 import Whentil from '../../utils/Whentil';
 import Global from '../Global/Global';
 import { SpotifyPlayer } from '../Global/SpotifyPlayer';
-import { Tooltips } from '../Pages/PageView';
 import { Icons } from '../Styling/Icons';
 import Fullscreen from './Fullscreen';
 
@@ -633,8 +632,7 @@ function OpenNowBar() {
        * Initializes tracking variables for position interpolation
        */
       function initializeTrackingVariables() {
-        const initialPosition = SpotifyPlayer.GetTrackPosition() || 0;
-        progressBarState.lastKnownPosition = initialPosition;
+        progressBarState.lastKnownPosition = SpotifyPlayer.GetTrackPosition() || 0;
         progressBarState.lastUpdateTime = performance.now();
       }
 
@@ -962,8 +960,7 @@ function UpdateNowBar(force = false) {
   if (ArtistsSpan && ArtistsDiv) {
     SpotifyPlayer.GetArtists()
       .then((artists) => {
-        const JoinedArtists = SpotifyPlayer.JoinArtists(artists);
-        ArtistsSpan.textContent = JoinedArtists;
+        ArtistsSpan.textContent = SpotifyPlayer.JoinArtists(artists);
         ArtistsDiv.classList.remove('Skeletoned');
       })
       .catch((err) => {

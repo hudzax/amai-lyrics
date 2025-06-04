@@ -1,8 +1,6 @@
 import SpicyFetch from '../../utils/API/SpicyFetch';
 import { spotifyHex } from '../../utils/Hasher';
-import GetProgress, {
-  _DEPRECATED___GetProgress,
-} from '../../utils/Gets/GetProgress';
+import GetProgress, { _DEPRECATED___GetProgress } from '../../utils/Gets/GetProgress';
 
 type ArtworkSize = 's' | 'l' | 'xl' | 'd';
 
@@ -53,7 +51,7 @@ export const SpotifyPlayer = {
       };
 
       // Sort the images into categories based on their size
-      const sortedImages = images.reduce(
+      return images.reduce(
         (acc, image) => {
           const { size } = image;
 
@@ -69,8 +67,6 @@ export const SpotifyPlayer = {
         },
         { s: [], l: [], xl: [] },
       );
-
-      return sortedImages;
     },
   },
   Seek: (position: number) => {

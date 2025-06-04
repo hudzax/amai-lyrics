@@ -32,7 +32,6 @@ export async function getPhoneticLyrics(
  * Fetches translations using Gemini AI
  */
 export async function fetchTranslationsWithGemini(
-  lyricsJson: any,
   lyricsOnly: string[],
 ): Promise<string[]> {
   if (storage.get('disable_translation') === 'true') {

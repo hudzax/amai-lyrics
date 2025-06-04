@@ -1,4 +1,4 @@
-export function ApplyLyricsCredits(data) {
+	export function ApplyLyricsCredits(data: { SongWriters?: any[]; }) {
 	const LyricsContainer = document.querySelector(
 		"#SpicyLyricsPage .LyricsContainer .LyricsContent"
 	);

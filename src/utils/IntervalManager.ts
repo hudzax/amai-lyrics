@@ -2,8 +2,8 @@ import { Maid, Giveable } from '@hudzax/web-modules/Maid';
 
 class IntervalManager implements Giveable {
   private maid: Maid;
-  private callback: () => void;
-  private duration: number; // Duration in milliseconds
+  private readonly callback: () => void;
+  private readonly duration: number; // Duration in milliseconds
   private lastTimestamp: number | null;
   private animationFrameId: number | null;
   public Running: boolean;

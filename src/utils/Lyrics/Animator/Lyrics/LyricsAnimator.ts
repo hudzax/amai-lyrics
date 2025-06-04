@@ -1,12 +1,7 @@
 import Defaults from '../../../../components/Global/Defaults';
 import { SpotifyPlayer } from '../../../../components/Global/SpotifyPlayer';
 import { LyricsObject } from '../../lyrics';
-import {
-  BlurMultiplier,
-  IdleEmphasisLyricsScale,
-  IdleLyricsScale,
-  timeOffset,
-} from '../Shared';
+import { BlurMultiplier, IdleEmphasisLyricsScale, IdleLyricsScale, timeOffset } from '../Shared';
 
 export let Blurring_LastLine = null;
 
@@ -137,7 +132,7 @@ export function Animate(position) {
                   let translateY;
                   if (percentage <= 0.5) {
                     // Phase 1: -0.2 to -0.3
-                    translateY = 0 + (-0.1 - 0) * (percentage / 0.5);
+                    translateY = (-0.1) * (percentage / 0.5);
                   } else {
                     // Phase 2: -0.3 to 0
                     translateY = -0.1 + (0 - -0.1) * ((percentage - 0.5) / 0.5);
@@ -345,7 +340,7 @@ export function Animate(position) {
 
                 let translateY;
                 if (percentage <= 0) {
-                  translateY = 0 + (-0.07 - 0) * percentage;
+                  translateY = (-0.07) * percentage;
                 } else if (percentage <= 0.88) {
                   translateY =
                     -0.07 + (0.2 - -0.07) * ((percentage - 0.88) / 0.88);
@@ -742,10 +737,8 @@ export function Animate(position) {
               }
               // Get current styles
               const element = word.HTMLElement;
-              const transform = word.translateY;
-
               // Extract current translateY value from transform
-              const currentTranslateY = transform;
+              const currentTranslateY = word.translateY;
 
               // Extract current scale from the `scale` property
               const currentScale = word.scale;
@@ -909,9 +902,7 @@ export function Animate(position) {
         }
 
         // Calculate percentage of progress through the word
-        const totalDuration = line.EndTime - line.StartTime;
-        const elapsedDuration = edtrackpos - line.StartTime;
-        // const percentage = Math.max(0, Math.min(elapsedDuration / totalDuration, 1)); // Clamp percentage between 0 and 1
+// const percentage = Math.max(0, Math.min(elapsedDuration / totalDuration, 1)); // Clamp percentage between 0 and 1
         const percentage = 1;
 
         if (line.DotLine) {
@@ -935,7 +926,7 @@ export function Animate(position) {
               let translateY;
               if (percentage <= 0) {
                 // Phase 1: -0.01 to -0.3
-                translateY = 0 + (-0.07 - 0) * percentage;
+                translateY = (-0.07) * percentage;
               } else if (percentage <= 0.88) {
                 // Phase 2: -0.3 to 0.15
                 translateY =

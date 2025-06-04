@@ -30,14 +30,6 @@ export let CurrentLineLyricsObject =
   LyricsObject.Types.Syllable.Lines.length - 1;
 export let LINE_SYNCED_CurrentLineLyricsObject =
   LyricsObject.Types.Line.Lines.length - 1;
-
-export function SetWordArrayInAllLines() {
-  LyricsObject.Types.Syllable.Lines.forEach((_, i) => {
-    LyricsObject.Types.Syllable.Lines[i].Syllables = {};
-    LyricsObject.Types.Syllable.Lines[i].Syllables.Lead = [];
-  });
-}
-
 export function SetWordArrayInCurentLine() {
   CurrentLineLyricsObject = LyricsObject.Types.Syllable.Lines.length - 1;
 
@@ -67,16 +59,14 @@ export function ClearLyricsContentArrays() {
 }
 
 const THROTTLE_TIME = 0.05;
-
-const LyricsInterval = new IntervalManager(THROTTLE_TIME, () => {
+new IntervalManager(THROTTLE_TIME, () => {
   if (!Defaults.LyricsContainerExists) return;
   const progress = SpotifyPlayer.GetTrackPosition();
   Lyrics.TimeSetter(progress);
   Lyrics.Animate(progress);
 }).Start();
-
-let LinesEvListenerMaid;
-let LinesEvListenerExists;
+let LinesEvListenerMaid: Maid;
+let LinesEvListenerExists: boolean;
 
 /**
  * Populates the lookup maps from HTMLElement to start time.
@@ -97,7 +87,7 @@ export function populateElementTimeMaps() {
     const lineStartTime = line.StartTime;
     if (typeof lineStartTime !== 'number') return;
 
-    line.Syllables.Lead.forEach((word) => {
+    line.Syllables.Lead.forEach((word: { HTMLElement: HTMLElement; Letters: any[]; }) => {
       if (word.HTMLElement) {
         syllableElementToStartTimeMap.set(word.HTMLElement, lineStartTime);
       }
@@ -146,7 +136,7 @@ export function addLinesEvListener() {
     LinesEvListenerExists = false; // Ensure we can retry if element not found initially
     return;
   }
-  const evl = el.addEventListener('click', LinesEvListener);
+  el.addEventListener('click', LinesEvListener);
   LinesEvListenerMaid.Give(() => el.removeEventListener('click', LinesEvListener as EventListener)); // Ensure type compatibility for Maid
 }
 

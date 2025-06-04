@@ -4,7 +4,7 @@ const eventRegistry = new Map();
 
 let nextId = 1;
 
-const listen = (eventName, callback) => {
+const listen = (eventName: any, callback: any) => {
   if (!eventRegistry.has(eventName)) {
     eventRegistry.set(eventName, new Map());
   }
@@ -14,7 +14,7 @@ const listen = (eventName, callback) => {
   return id;
 };
 
-const unListen = (id) => {
+const unListen = (id: any) => {
   for (const [eventName, listeners] of eventRegistry) {
     if (listeners.has(id)) {
       listeners.delete(id);
@@ -27,7 +27,7 @@ const unListen = (id) => {
   return false; // Listener not found
 };
 
-const evoke = (eventName, ...args) => {
+const evoke = (eventName: any, ...args: any[]) => {
   const listeners = eventRegistry.get(eventName);
   if (listeners) {
     for (const callback of listeners.values()) {

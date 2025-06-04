@@ -48,9 +48,7 @@ export class SongProgressBar {
     const percentage = Math.max(0, Math.min(1, clickX / rect.width));
     
     // Calculate position in milliseconds directly
-    const positionMs = Math.floor(percentage * this.duration);
-    
-    return positionMs;
+    return Math.floor(percentage * this.duration);
   }
 
   // Format milliseconds to MM:SS or HH:MM:SS

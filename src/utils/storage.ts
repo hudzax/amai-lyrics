@@ -14,8 +14,7 @@ function get(key: string) {
     if (key === "currentlyFetching") {
         return currentlyFetching;
     }
-    const data = Spicetify.LocalStorage.get(`${prefix}${key}`);
-    return data
+    return Spicetify.LocalStorage.get(`${prefix}${key}`)
 }
 
 export default {

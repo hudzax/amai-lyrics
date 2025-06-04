@@ -24,30 +24,65 @@ import { ApplyInfo } from '../Info/ApplyInfo';
 import isRtl from '../../isRtl';
 import storage from '../../../storage';
 
-export function ApplyLineLyrics(data) {
+// Type definitions for better type safety
+interface LyricLine {
+  Text: string;
+  Translation?: string;
+  StartTime: number;
+  EndTime: number;
+  OppositeAligned?: boolean;
+}
+
+interface LyricsData {
+  Content: LyricLine[];
+  StartTime: number;
+  Raw?: string[];
+  Info?: string;
+  SongWriters?: string[];
+  styles?: Record<string, string>;
+  classes?: string;
+}
+
+  /**
+   * Applies line-synced lyrics to the lyrics container
+   * @param data Lyrics data with content, timing and styling information
+   */
+  export function ApplyLineLyrics(data: LyricsData): void {
   if (!Defaults.LyricsContainerExists) return;
 
   const LyricsContainer = document.querySelector<HTMLElement>(
     '#SpicyLyricsPage .LyricsContainer .LyricsContent',
   );
+
+  if (!LyricsContainer) {
+    console.error('Lyrics container not found');
+    return;
+  }
+
   LyricsContainer.setAttribute('data-lyrics-type', 'Line');
 
+  // Clear previous content
   ClearLyricsContentArrays();
   ClearScrollSimplebar();
   TOP_ApplyLyricsSpacer(LyricsContainer);
 
   const fragment = document.createDocumentFragment();
-
   const convertStartTime = ConvertTime(data.StartTime);
 
-  function createDotGroup(startTime, endTime) {
+  /**
+   * Creates a group of dots to display during musical breaks
+   * @param startTime The start time of the dot group in milliseconds
+   * @param endTime The end time of the dot group in milliseconds
+   * @returns HTMLElement containing the dot group
+   */
+  function createDotGroup(startTime: number, endTime: number): HTMLElement {
     const dotGroup = document.createElement('div');
     dotGroup.classList.add('dotGroup');
 
     const totalTime = endTime - startTime;
     const dotTime = totalTime / 3;
 
-    const dots = [];
+    const dots: HTMLElement[] = [];
     for (let i = 0; i < 3; i++) {
       const dot = document.createElement('span');
       dot.classList.add('word', 'dot');
@@ -70,6 +105,7 @@ export function ApplyLineLyrics(data) {
     return dotGroup;
   }
 
+  // Add initial dot group if there's a sufficient gap before the first line
   if (data.StartTime >= lyricsBetweenShow) {
     const musicalLine = document.createElement('div');
     musicalLine.classList.add('line', 'musical-line');
@@ -84,7 +120,7 @@ export function ApplyLineLyrics(data) {
 
     SetWordArrayInCurentLine_LINE_SYNCED();
 
-    if (data.Content[0].OppositeAligned) {
+    if (data.Content[0]?.OppositeAligned) {
       musicalLine.classList.add('OppositeAligned');
     }
 
@@ -127,34 +163,42 @@ export function ApplyLineLyrics(data) {
       );
     }
 
+    // Create main text container
     const mainTextContainer = document.createElement('span');
     mainTextContainer.classList.add('main-lyrics-text');
     mainTextContainer.innerHTML = line.Text;
     lineElem.appendChild(mainTextContainer);
     lineElem.classList.add('line');
 
-    if (
-      line.Translation &&
-      line.Translation.trim() !== '' &&
-      line.Translation.trim() !== data.Raw[index].trim()
-    ) {
+    // Add translation if available and different from original
+    const hasDistinctTranslation = (
+      line.Translation && 
+      line.Translation.trim() !== '' && 
+      (!data.Raw || line.Translation.trim() !== data.Raw[index]?.trim())
+    );
+
+    if (hasDistinctTranslation) {
       const translationElem = document.createElement('div');
       translationElem.classList.add('translation');
       translationElem.textContent = line.Translation;
       lineElem.appendChild(translationElem);
     }
 
+    // Handle right-to-left text
     if (isRtl(line.Text) && !lineElem.classList.contains('rtl')) {
       lineElem.classList.add('rtl');
     }
 
+    // Apply special font for Arabic/Persian text
     if (ArabicPersianRegex.test(line.Text)) {
       lineElem.setAttribute('font', 'Vazirmatn');
     }
 
+    // Convert times to milliseconds
     const startTime = ConvertTime(line.StartTime);
     const endTime = ConvertTime(line.EndTime);
 
+    // Add line to the lyrics object
     LyricsObject.Types.Line.Lines.push({
       HTMLElement: lineElem,
       StartTime: startTime,
@@ -162,20 +206,26 @@ export function ApplyLineLyrics(data) {
       TotalTime: endTime - startTime,
     });
 
+    // Handle alignment
     if (line.OppositeAligned) {
       lineElem.classList.add('OppositeAligned');
     }
 
     fragment.appendChild(lineElem);
 
+    // Check for musical break between this line and the next one
     const nextLine = arr[index + 1];
-    if (nextLine && nextLine.StartTime - line.EndTime >= lyricsBetweenShow) {
+    const hasMusicalBreak = nextLine && (nextLine.StartTime - line.EndTime >= lyricsBetweenShow);
+
+    if (hasMusicalBreak) {
+      // Create a musical break line with dots
       const musicalLine = document.createElement('div');
       musicalLine.classList.add('line', 'musical-line');
 
       const nextStartTime = ConvertTime(nextLine.StartTime);
       const curEndTime = endTime;
 
+      // Register the musical line in the lyrics object
       LyricsObject.Types.Line.Lines.push({
         HTMLElement: musicalLine,
         StartTime: curEndTime,
@@ -186,35 +236,50 @@ export function ApplyLineLyrics(data) {
 
       SetWordArrayInCurentLine_LINE_SYNCED();
 
+      // Apply alignment if needed
       if (nextLine.OppositeAligned) {
         musicalLine.classList.add('OppositeAligned');
       }
 
+      // Add dot group to represent the musical break
       const dotGroup = createDotGroup(curEndTime, nextStartTime);
       musicalLine.appendChild(dotGroup);
       fragment.appendChild(musicalLine);
     }
   });
 
+  // Add the fragment to the container
   LyricsContainer.appendChild(fragment);
 
+  // Apply additional information and credits
   ApplyInfo(data);
   ApplyLyricsCredits(data);
   BOTTOM_ApplyLyricsSpacer(LyricsContainer);
 
-  if (ScrollSimplebar) RecalculateScrollSimplebar();
-  else MountScrollSimplebar();
+  // Setup scrolling
+  if (ScrollSimplebar) {
+    RecalculateScrollSimplebar();
+  } else {
+    MountScrollSimplebar();
+  }
 
+  // Apply custom styles if provided
   const LyricsStylingContainer = document.querySelector<HTMLElement>(
     '#SpicyLyricsPage .LyricsContainer .LyricsContent .simplebar-content',
   );
-  removeAllStyles(LyricsStylingContainer);
 
-  if (data.classes) {
-    LyricsStylingContainer.className = data.classes;
-  }
+  if (LyricsStylingContainer) {
+    // Reset existing styles
+    removeAllStyles(LyricsStylingContainer);
 
-  if (data.styles) {
-    applyStyles(LyricsStylingContainer, data.styles);
+    // Apply custom classes if provided
+    if (data.classes) {
+      LyricsStylingContainer.className = data.classes;
+    }
+
+    // Apply custom styles if provided
+    if (data.styles) {
+      applyStyles(LyricsStylingContainer, data.styles);
+    }
   }
 }

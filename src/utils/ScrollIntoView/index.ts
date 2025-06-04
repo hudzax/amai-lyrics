@@ -91,7 +91,7 @@ export function smoothScrollIntoView(
       };
     },
     // Write phase - start the animation
-    ({ startScroll, targetScroll, distance, axis }) => {
+    ({ startScroll, distance, axis }) => {
       const startTime = performance.now();
       let animationFrameId: number;
 
@@ -147,23 +147,6 @@ export function scrollIntoCenterView(
     duration,
     offset,
     align: 'center',
-    axis,
-  });
-}
-
-export function scrollIntoTopView(
-  container: HTMLElement,
-  element: HTMLElement,
-  duration = 150,
-  offset = 0,
-  axis: 'vertical' | 'horizontal' = 'vertical',
-): ScrollController {
-  return smoothScrollIntoView({
-    container,
-    element,
-    duration,
-    offset,
-    align: 'top',
     axis,
   });
 }

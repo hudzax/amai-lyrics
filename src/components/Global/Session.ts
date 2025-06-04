@@ -32,13 +32,12 @@ const Session = {
     Global.Event.evoke('session:navigation', data);
   },
   FilterOutTheSameLocation: (data: Location) => {
-    const filtered = sessionHistory.filter(
+    sessionHistory = sessionHistory.filter(
       (location) =>
         location.pathname !== data.pathname &&
         location.search !== data?.search &&
         location.hash !== data?.hash,
     );
-    sessionHistory = filtered;
   },
   PushToHistory: (data: Location) => {
     sessionHistory.push(data);

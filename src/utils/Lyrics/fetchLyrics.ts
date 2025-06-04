@@ -53,32 +53,6 @@ export interface LyricsData {
   fromCache?: boolean;
 }
 
-export interface GeminiConfig {
-  temperature: number;
-  topP: number;
-  topK: number;
-  maxOutputTokens: number;
-  responseModalities: any[];
-  responseMimeType: string;
-  responseSchema: any;
-  systemInstruction: string;
-}
-
-export interface LyricsResponse {
-  response: any;
-  status: number;
-}
-
-// ==============================
-// Constants
-// ==============================
-
-// Regular expressions for language detection
-export const JAPANESE_REGEX =
-  /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
-export const KOREAN_REGEX = /[\uAC00-\uD7AF]/;
-
-// ==============================
 // Main Export Function
 // ==============================
 

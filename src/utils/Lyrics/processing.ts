@@ -36,7 +36,7 @@ export async function processAndEnhanceLyrics(
 
   const [processedLyricsJson, translations] = await Promise.all([
     getPhoneticLyrics(phoneticLyricsJson, hasKanji, hasKorean, lyricsOnly),
-    fetchTranslationsWithGemini(preparedLyricsJson, lyricsOnly),
+    fetchTranslationsWithGemini(preparedLyricsJson),
   ]);
 
   attachTranslations(processedLyricsJson, translations);
@@ -117,7 +117,7 @@ export async function prepareLyricsForGemini(
 ): Promise<{ lyricsJson: any; lyricsOnly: string[] }> {
   if (lyricsJson.Type === 'Syllable') {
     lyricsJson.Type = 'Line';
-    lyricsJson.Content = await convertLyrics(lyricsJson.Content);
+    lyricsJson.Content = convertLyrics(lyricsJson.Content);
   }
 
   const lyricsOnly = await extractLyrics(lyricsJson);

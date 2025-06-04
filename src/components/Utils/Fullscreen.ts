@@ -2,7 +2,7 @@ import Animator from '../../utils/Animator';
 import { ResetLastLine } from '../../utils/Scrolling/ScrollToActiveLine';
 import storage from '../../utils/storage';
 import Global from '../Global/Global';
-import PageView, { PageRoot, Tooltips } from '../Pages/PageView';
+import PageView, { PageRoot } from '../Pages/PageView';
 import { DeregisterNowBarBtn, OpenNowBar } from './NowBar';
 import TransferElement from './TransferElement';
 

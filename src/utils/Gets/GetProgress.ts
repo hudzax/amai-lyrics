@@ -51,7 +51,7 @@ export async function requestPositionSync(): Promise<void> {
         ? 1 / 60
         : syncTimings[syncTimings.length - canSyncNonLocalTimestamp];
 
-    let pos;
+    let pos: { StartedSyncAt: any; Position: any; };
     if (isLocallyPlaying) {
       pos = await getLocalPosition(startedAt, SpotifyPlatform);
     } else {
@@ -73,8 +73,7 @@ export default function GetProgress() {
   // Fast path: no sync data, fallback
   if (!syncedPosition.StartedSyncAt && !syncedPosition.Position) {
     if (SpotifyPlayer?._DEPRECATED_?.GetTrackPosition) {
-      const fallback = SpotifyPlayer._DEPRECATED_.GetTrackPosition();
-      return fallback;
+      return SpotifyPlayer._DEPRECATED_.GetTrackPosition();
     }
     console.warn('[GetProgress] Synced Position: Skip, Returning 0');
     return 0;
@@ -89,15 +88,13 @@ export default function GetProgress() {
   const delta = performance.now() - startedAt;
 
   if (!isPlaying) {
-    const pausedPos = platform.PlayerAPI._state.positionAsOfTimestamp;
-    return pausedPos;
+    return platform.PlayerAPI._state.positionAsOfTimestamp;
   }
 
   const calculated = basePosition + delta;
-  const finalPos = isLocal
+  return isLocal
     ? calculated
     : calculated + Global.NonLocalTimeOffset;
-  return finalPos;
 }
 
 // DEPRECATED
@@ -119,7 +116,6 @@ export function _DEPRECATED___GetProgress() {
   if (isPaused) {
     return positionAsOfTimestamp;
   } else {
-    const calc = positionAsOfTimestamp + (now - timestamp);
-    return calc;
+    return positionAsOfTimestamp + (now - timestamp);
   }
 }

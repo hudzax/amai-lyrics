@@ -1,5 +1,4 @@
 import fetchLyrics from '../../utils/Lyrics/fetchLyrics';
-import storage from '../../utils/storage';
 import '../../css/Loaders/DotLoader.css';
 import {
   addLinesEvListener,
@@ -68,7 +67,7 @@ async function OpenPage() {
                                    fetchpriority="high"
                                    loading="eager"
                                    decoding="sync"
-                                   draggable="true" />
+                                   draggable="true"  alt=""/>
                           </div>
                           <div class="Metadata">
                               <div class="SongName">
@@ -105,7 +104,7 @@ async function OpenPage() {
   await fastdom.read(() => {
     contentBox = document.querySelector('#SpicyLyricsPage .ContentBox');
   });
-  ApplyDynamicBackground(contentBox);
+  await ApplyDynamicBackground(contentBox);
 
   // Load artwork images asynchronously
   let mediaImage: HTMLImageElement | null = null;
@@ -120,7 +119,7 @@ async function OpenPage() {
     setupImageLoading(mediaImage);
 
     // Load initial content
-    UpdatePageContent();
+    await UpdatePageContent();
   }
 
   addLinesEvListener();
@@ -136,7 +135,7 @@ async function OpenPage() {
 
   Session_NowBar_SetSide();
 
-  AppendViewControls();
+  await AppendViewControls();
   PageView.IsOpened = true;
 }
 
