@@ -248,7 +248,7 @@
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.bg-line .letterGroup .letter {
   --font-size: calc(var(--DefaultLyricsSize)*0.75);
   font-size: var(--font-size);
-  font-family: SpicyLyrics;
+  font-family: SpicyLyrics, sans-serif;
   font-weight: 500;
 }
 

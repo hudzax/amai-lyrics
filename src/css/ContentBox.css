@@ -92,7 +92,6 @@
     height: 100%;
     box-shadow: 0 9px 20px 0 rgba(0, 0, 0, .271);
     opacity: .95;
-    filter: brightness(var(--ArtworkBrightness)) blur(var(--ArtworkBlur));
     transition: opacity, scale .1s cubic-bezier(.24,.01,.97,1.41);
     cursor: grab;
     z-index: 2;

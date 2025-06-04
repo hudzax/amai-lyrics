@@ -36,7 +36,8 @@
 }
 
 @keyframes l7-1 {
- 20%  {left:0px}
+ 20%  {left:0
+ }
  40%  {left:calc(50%  - 4px)}
  60%  {left:calc(100% - 8px)}
  80%,
