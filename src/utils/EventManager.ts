@@ -1,20 +1,29 @@
 // eventManager.js
 
-const eventRegistry = new Map();
+const eventRegistry = new Map<
+  string,
+  Map<number, (...args: unknown[]) => void>
+>();
 
 let nextId = 1;
 
-const listen = (eventName: any, callback: any) => {
+const listen = (
+  eventName: string,
+  callback: (...args: unknown[]) => void,
+): number => {
   if (!eventRegistry.has(eventName)) {
-    eventRegistry.set(eventName, new Map());
+    eventRegistry.set(
+      eventName,
+      new Map<number, (...args: unknown[]) => void>(),
+    );
   }
 
   const id = nextId++;
-  eventRegistry.get(eventName).set(id, callback);
+  eventRegistry.get(eventName)!.set(id, callback);
   return id;
 };
 
-const unListen = (id: any) => {
+const unListen = (id: number): boolean => {
   for (const [eventName, listeners] of eventRegistry) {
     if (listeners.has(id)) {
       listeners.delete(id);
@@ -27,7 +36,7 @@ const unListen = (id: any) => {
   return false; // Listener not found
 };
 
-const evoke = (eventName: any, ...args: any[]) => {
+const evoke = (eventName: string, ...args: unknown[]) => {
   const listeners = eventRegistry.get(eventName);
   if (listeners) {
     for (const callback of listeners.values()) {
@@ -36,11 +45,10 @@ const evoke = (eventName: any, ...args: any[]) => {
   }
 };
 
-
 const Event = {
-    listen,
-    unListen,
-    evoke
-}
+  listen,
+  unListen,
+  evoke,
+};
 
 export default Event;

@@ -9,8 +9,14 @@
  */
 
 // Queues for batching operations
-const readQueue: Array<{ fn: Function; callback: Function }> = [];
-const writeQueue: Array<{ fn: Function; callback: Function }> = [];
+const readQueue: Array<{
+  fn: () => unknown;
+  callback: (result: unknown) => void;
+}> = [];
+const writeQueue: Array<{
+  fn: () => unknown;
+  callback: (result: unknown) => void;
+}> = [];
 
 // Frame tracking
 let scheduledAnimationFrame = false;
@@ -65,7 +71,7 @@ function scheduleFrame() {
 /**
  * Queue a read operation
  */
-function measure(callback: Function, fn: Function) {
+function measure<T>(callback: (result: T) => void, fn: () => T) {
   readQueue.push({ fn, callback });
   scheduleFrame();
 }
@@ -73,7 +79,7 @@ function measure(callback: Function, fn: Function) {
 /**
  * Queue a write operation
  */
-function mutate(callback: Function, fn: Function) {
+function mutate<T>(callback: (result: T) => void, fn: () => T) {
   writeQueue.push({ fn, callback });
   scheduleFrame();
 }

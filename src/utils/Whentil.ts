@@ -66,7 +66,7 @@ function When<T>(
       } else {
         setTimeout(runner, delay);
       }
-    } catch (error) {
+    } catch {
       setTimeout(runner, delay);
     }
   };

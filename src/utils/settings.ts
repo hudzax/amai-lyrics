@@ -121,7 +121,7 @@ function generalSettings() {
     lyricsCache.destroy();
     storage.set('currentLyricsData', null);
     // Refetch lyrics for the current song
-    const playerData = Spicetify.Player.data as any;
+    const playerData = Spicetify.Player.data as Spicetify.PlayerState;
     if (!playerData?.item?.uri) return; // Exit if `uri` is not available
     const currentUri = playerData.item.uri;
     fetchLyrics(currentUri).then(ApplyLyrics);

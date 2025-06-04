@@ -1059,12 +1059,12 @@ Global.Event.listen('playback:playpause', (e) => {
 });
 
 // Handle loop state changes
-Global.Event.listen('playback:loop', (e) => {
+Global.Event.listen('playback:loop', (e: 'none' | 'context' | 'track') => {
   handleLoopEvent(e);
 });
 
 // Handle shuffle state changes
-Global.Event.listen('playback:shuffle', (e) => {
+Global.Event.listen('playback:shuffle', (e: 'none' | 'normal') => {
   handleShuffleEvent(e);
 });
 
