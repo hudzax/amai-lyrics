@@ -11,6 +11,12 @@ import {
   noLyricsMessage,
 } from './ui';
 
+import { LyricsData } from './processing';
+
+type CachedLyricsData = LyricsData & {
+  expiresAt: number;
+};
+
 // Cache expiration time: 7 days in milliseconds
 const CACHE_EXPIRATION_TIME = 1000 * 60 * 60 * 24 * 7;
 
@@ -26,7 +32,7 @@ export const lyricsCache = new SpikyCache({
  */
 export async function cacheLyrics(
   trackId: string,
-  lyricsJson: any,
+  lyricsJson: LyricsData,
 ): Promise<void> {
   if (!lyricsCache) return;
 
@@ -49,7 +55,7 @@ export async function cacheLyrics(
  */
 export async function getLyricsFromCache(
   trackId: string,
-): Promise<any | string | null> {
+): Promise<(CachedLyricsData & { fromCache: boolean }) | string | null> {
   if (!lyricsCache) return null;
 
   try {
@@ -86,7 +92,7 @@ export async function getLyricsFromCache(
  */
 export async function getLyricsFromLocalStorage(
   trackId: string,
-): Promise<any | string | null> {
+): Promise<LyricsData | string | null> {
   const savedLyricsData = storage.get('currentLyricsData')?.toString();
   if (!savedLyricsData) return null;
 

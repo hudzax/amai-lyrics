@@ -3,7 +3,7 @@ import Platform from '../../components/Global/Platform';
 import pako from 'pako';
 import { md5 } from '../Hasher';
 
-export let SpicyFetchCache = new SpikyCache({
+export const SpicyFetchCache = new SpikyCache({
   name: 'SpicyFetch__Cache',
 });
 
@@ -12,10 +12,10 @@ export default async function SpicyFetch(
   IsExternal: boolean = false,
   cache: boolean = false,
   cosmos: boolean = false,
-): Promise<Response | any> {
-  return new Promise(async (resolve, reject) => {
-    const url = path;
+): Promise<[object | null, number]> {
+  const url = path;
 
+  try {
     const CachedContent = await GetCachedContent(url);
     if (CachedContent) {
       // Here for backwards compatibility
@@ -25,36 +25,28 @@ export default async function SpicyFetch(
           typeof CachedContent[0] === 'string'
             ? JSON.parse(CachedContent[0])
             : CachedContent[0];
-        resolve([content, CachedContent[1]]);
-        return;
+        return [content, CachedContent[1]];
       }
       // console.log('CachedContent:', CachedContent);
-      resolve([CachedContent, 200]);
-      return;
+      return [CachedContent, 200];
     }
 
     const SpotifyAccessToken = await Platform.GetSpotifyAccessToken();
 
     if (cosmos) {
-      Spicetify.CosmosAsync.get(url)
-        .then(async (res) => {
-          let data: {};
-          try {
-            data = await res.json();
-          } catch (error) {
-            data = {};
-          }
-          const sentData = [data, res.status];
-          // console.log('CosmosAsync:', sentData);
-          resolve(sentData);
-          if (cache) {
-            await CacheContent(url, sentData, 604800000);
-          }
-        })
-        .catch((err) => {
-          console.error('CosmosAsync Error:', err);
-          reject(err);
-        });
+      const res = await Spicetify.CosmosAsync.get(url);
+      let data: object;
+      try {
+        data = (await res.json()) as object;
+      } catch {
+        data = {} as object;
+      }
+      const sentData: [object, number] = [data, res.status];
+      // console.log('CosmosAsync:', sentData);
+      if (cache) {
+        await CacheContent(url, sentData, 604800000);
+      }
+      return sentData;
     } else {
       const SpicyLyricsAPI_Headers = IsExternal ? null : {};
 
@@ -73,40 +65,37 @@ export default async function SpicyFetch(
         ...SpicyLyricsAPI_Headers,
       };
 
-      fetch(url, {
+      const res = await fetch(url, {
         method: 'GET',
         headers: headers,
-      })
-        .then(async (res) => {
-          if (res === null) {
-            resolve([null, 500]);
-            return;
-          }
+      });
 
-          let data: {};
-          try {
-            data = await res.json();
-          } catch (error) {
-            data = {};
-          }
-          const sentData = [data, res.status];
-          // console.log('SpotifyAPI:', sentData);
-          resolve(sentData);
-          if (cache) {
-            await CacheContent(url, sentData, 604800000);
-          }
-        })
-        .catch((err) => {
-          console.error('Fetch Error:', err);
-          reject(err);
-        });
+      if (res === null) {
+        return [null, 500];
+      }
+
+      let data: object;
+      try {
+        data = (await res.json()) as object;
+      } catch {
+        data = {} as object;
+      }
+      const sentData: [object, number] = [data, res.status];
+      // console.log('SpotifyAPI:', sentData);
+      if (cache) {
+        await CacheContent(url, sentData, 604800000);
+      }
+      return sentData;
     }
-  });
+  } catch (err) {
+    console.error('SpicyFetch Error:', err);
+    throw err; // Re-throw the error so the caller can handle it
+  }
 }
 
 async function CacheContent(
   key: string,
-  data: any[],
+  data: [object, number],
   expirationTtl: number = 604800000,
 ): Promise<void> {
   try {
@@ -133,7 +122,7 @@ async function CacheContent(
   }
 }
 
-async function GetCachedContent(key: string): Promise<object | null> {
+async function GetCachedContent(key: string): Promise<[object, number] | null> {
   try {
     const processedKey = md5(key);
     const content = await SpicyFetchCache.get(processedKey);
@@ -142,15 +131,15 @@ async function GetCachedContent(key: string): Promise<object | null> {
         // Here for backwards compatibility
         if (typeof content.Content !== 'string') {
           await SpicyFetchCache.remove(key);
-          return content.Content;
+          return content.Content as [object, number];
         }
 
-        const compressedData = Uint8Array.from(content.Content, (c: any) =>
+        const compressedData = Uint8Array.from(content.Content, (c: string) =>
           c.charCodeAt(0),
         );
         const decompressedData = pako.inflate(compressedData, { to: 'string' });
 
-        return JSON.parse(decompressedData);
+        return JSON.parse(decompressedData) as [object, number];
       } else {
         await SpicyFetchCache.remove(key);
         return null;
@@ -159,5 +148,6 @@ async function GetCachedContent(key: string): Promise<object | null> {
     return null;
   } catch (error) {
     console.error('ERR CC', error);
+    return null;
   }
 }

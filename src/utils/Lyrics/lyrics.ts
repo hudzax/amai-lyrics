@@ -8,7 +8,7 @@ export const ScrollingIntervalTime = 0.1;
 
 export const lyricsBetweenShow = 3;
 
-export let LyricsObject = {
+export const LyricsObject = {
   Types: {
     Syllable: {
       Lines: [],
@@ -21,6 +21,15 @@ export let LyricsObject = {
     },
   },
 };
+
+interface Letter {
+  HTMLElement: HTMLElement;
+}
+
+interface Word {
+  HTMLElement: HTMLElement;
+  Letters?: Letter[];
+}
 
 // Maps for optimizing LinesEvListener lookups
 export const lineElementToStartTimeMap = new Map<HTMLElement, number>();
@@ -87,21 +96,23 @@ export function populateElementTimeMaps() {
     const lineStartTime = line.StartTime;
     if (typeof lineStartTime !== 'number') return;
 
-    line.Syllables.Lead.forEach((word: { HTMLElement: HTMLElement; Letters: any[]; }) => {
+    line.Syllables.Lead.forEach((word: Word) => {
       if (word.HTMLElement) {
         syllableElementToStartTimeMap.set(word.HTMLElement, lineStartTime);
       }
       if (word?.Letters) {
         word.Letters.forEach((letter) => {
           if (letter.HTMLElement) {
-            syllableElementToStartTimeMap.set(letter.HTMLElement, lineStartTime);
+            syllableElementToStartTimeMap.set(
+              letter.HTMLElement,
+              lineStartTime,
+            );
           }
         });
       }
     });
   });
 }
-
 
 function LinesEvListener(e: Event) {
   const target = e.target as HTMLElement;
@@ -137,7 +148,9 @@ export function addLinesEvListener() {
     return;
   }
   el.addEventListener('click', LinesEvListener);
-  LinesEvListenerMaid.Give(() => el.removeEventListener('click', LinesEvListener as EventListener)); // Ensure type compatibility for Maid
+  LinesEvListenerMaid.Give(() =>
+    el.removeEventListener('click', LinesEvListener as EventListener),
+  ); // Ensure type compatibility for Maid
 }
 
 export function removeLinesEvListener() {

@@ -17,42 +17,9 @@ import {
 } from './cache';
 import { fetchLyricsFromAPI } from './api';
 
+import { LyricsData } from './processing';
+
 // ==============================
-// Types
-// ==============================
-
-export interface Syllable {
-  Text: string;
-  StartTime?: number;
-  EndTime?: number;
-}
-
-export interface LyricsLine {
-  Type?: string;
-  OppositeAligned?: boolean;
-  Text: string;
-  StartTime?: number;
-  EndTime?: number;
-  Translation?: string;
-  Lead?: {
-    StartTime: number;
-    EndTime: number;
-    Syllables: Syllable[];
-  };
-}
-
-export interface LyricsData {
-  id?: string;
-  Type: string;
-  Content?: LyricsLine[];
-  Lines?: LyricsLine[];
-  Raw?: string[];
-  Info?: string;
-  status?: string;
-  expiresAt?: number;
-  fromCache?: boolean;
-}
-
 // Main Export Function
 // ==============================
 

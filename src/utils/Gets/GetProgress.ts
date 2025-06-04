@@ -1,6 +1,24 @@
 import Global from '../../components/Global/Global';
 import { SpotifyPlayer } from '../../components/Global/SpotifyPlayer';
 
+interface SpotifyPlatformType {
+  PlayerAPI: {
+    _contextPlayer: {
+      getPositionState: (
+        args: Record<string, never>,
+      ) => Promise<{ position: number }>;
+      resume: (args: Record<string, never>) => Promise<void>;
+    };
+    _state: {
+      positionAsOfTimestamp: number;
+      timestamp: number;
+    };
+  };
+  PlaybackAPI: {
+    _isLocal: boolean;
+  };
+}
+
 const syncTimings = [0.05, 0.1, 0.15, 0.75];
 let canSyncNonLocalTimestamp = Spicetify.Player.isPlaying()
   ? syncTimings.length
@@ -15,7 +33,10 @@ const syncedPosition: {
   Position: 0,
 };
 
-async function getLocalPosition(startedAt: number, SpotifyPlatform: any) {
+async function getLocalPosition(
+  startedAt: number,
+  SpotifyPlatform: SpotifyPlatformType,
+) {
   const { position } =
     await SpotifyPlatform.PlayerAPI._contextPlayer.getPositionState({});
   return {
@@ -24,7 +45,10 @@ async function getLocalPosition(startedAt: number, SpotifyPlatform: any) {
   };
 }
 
-async function getNonLocalPosition(startedAt: number, SpotifyPlatform: any) {
+async function getNonLocalPosition(
+  startedAt: number,
+  SpotifyPlatform: SpotifyPlatformType,
+) {
   if (canSyncNonLocalTimestamp > 0) {
     await SpotifyPlatform.PlayerAPI._contextPlayer.resume({});
   }
@@ -51,7 +75,7 @@ export async function requestPositionSync(): Promise<void> {
         ? 1 / 60
         : syncTimings[syncTimings.length - canSyncNonLocalTimestamp];
 
-    let pos: { StartedSyncAt: any; Position: any; };
+    let pos: { StartedSyncAt: number; Position: number };
     if (isLocallyPlaying) {
       pos = await getLocalPosition(startedAt, SpotifyPlatform);
     } else {
@@ -92,9 +116,7 @@ export default function GetProgress() {
   }
 
   const calculated = basePosition + delta;
-  return isLocal
-    ? calculated
-    : calculated + Global.NonLocalTimeOffset;
+  return isLocal ? calculated : calculated + Global.NonLocalTimeOffset;
 }
 
 // DEPRECATED

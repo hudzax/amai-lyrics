@@ -1,3 +1,3 @@
-export function ConvertTime(time: any): any { 
-    return time * 1000;
+export function ConvertTime(time: number): number {
+  return time * 1000;
 }

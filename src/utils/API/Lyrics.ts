@@ -1,5 +1,10 @@
 import Defaults from '../../components/Global/Defaults';
 import SpicyFetch from './SpicyFetch';
+import {
+  SyllableBasedLyricItem,
+  LineBasedLyricItem,
+  LyricsLine, // Import LyricsLine
+} from '../Lyrics/conversion';
 
 const API_URL = Defaults.lyrics.api.url;
 
@@ -9,13 +14,28 @@ interface UserData {
   display_name?: string;
   country?: string;
   product?: string;
-  images?: any[];
+  images?: ImageObject[];
+}
+
+interface ImageObject {
+  url: string;
+  height: number | null;
+  width: number | null;
+}
+
+export interface LyricsResult {
+  lyrics?: string;
+  Type?: 'Syllable' | 'Line' | 'Static';
+  Content?: SyllableBasedLyricItem[] | LineBasedLyricItem[]; // Can be either syllable or line based
+  Lines?: LyricsLine[]; // For Line or Static types after processing
+  id?: string;
+  Raw?: string[];
 }
 
 export async function getLyrics(
   id: string,
   headers: Record<string, string> = {},
-): Promise<{ response: any; status: number }> {
+): Promise<{ response: LyricsResult; status: number }> {
   // Fetch user data
   const userData = await fetchUserData();
 
@@ -51,7 +71,7 @@ async function fetchLyricsData(
   id: string,
   userData: UserData,
   headers: Record<string, string>,
-): Promise<{ data: any; status: number }> {
+): Promise<{ data: LyricsResult; status: number }> {
   try {
     const res = await fetch(`${API_URL}/${id}`, {
       method: 'POST',

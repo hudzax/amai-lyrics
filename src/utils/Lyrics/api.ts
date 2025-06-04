@@ -4,9 +4,9 @@
 
 import storage from '../storage';
 import Platform from '../../components/Global/Platform';
-import { getLyrics } from '../API/Lyrics';
+import { getLyrics, LyricsResult } from '../API/Lyrics';
 import { ClearLyricsPageContainer, noLyricsMessage } from './ui';
-import { processAndEnhanceLyrics } from './processing';
+import { processAndEnhanceLyrics, LyricsData } from './processing';
 
 /**
  * Fetches lyrics from Spotify API and processes them
@@ -16,7 +16,7 @@ import { processAndEnhanceLyrics } from './processing';
  */
 export async function fetchLyricsFromAPI(
   trackId: string,
-): Promise<any | string> {
+): Promise<LyricsData | string> {
   try {
     Spicetify.showNotification('Fetching lyrics..', false, 1000);
 
@@ -43,7 +43,9 @@ export async function fetchLyricsFromAPI(
     // Log error with detailed information
     console.error(
       'Error fetching lyrics:',
-      error instanceof Error ? { message: error.message, stack: error.stack } : error
+      error instanceof Error
+        ? { message: error.message, stack: error.stack }
+        : error,
     );
 
     storage.set('currentlyFetching', 'false');
@@ -76,7 +78,11 @@ export async function handleErrorStatus(status: number): Promise<string> {
       Spicetify.showNotification('Lyrics not found', false, 2000);
       break;
     case 429:
-      Spicetify.showNotification('Rate limited, please try again later', false, 2000);
+      Spicetify.showNotification(
+        'Rate limited, please try again later',
+        false,
+        2000,
+      );
       break;
     case 500:
     case 502:
@@ -86,7 +92,11 @@ export async function handleErrorStatus(status: number): Promise<string> {
       break;
     default:
       // Generic error for other status codes
-      Spicetify.showNotification(`Error fetching lyrics (${status})`, false, 2000);
+      Spicetify.showNotification(
+        `Error fetching lyrics (${status})`,
+        false,
+        2000,
+      );
   }
 
   return await noLyricsMessage();
@@ -94,13 +104,13 @@ export async function handleErrorStatus(status: number): Promise<string> {
 
 /**
  * Validates if the lyrics response contains usable data
- * 
+ *
  * @param lyricsJson - Response from lyrics API
  * @returns boolean indicating if response contains valid lyrics
  */
-function isValidLyricsResponse(lyricsJson: any): boolean {
-  // Check for null or empty response
-  if (lyricsJson === null || lyricsJson === '') {
+function isValidLyricsResponse(lyricsJson: LyricsResult): boolean {
+  // Check for null or undefined response
+  if (lyricsJson === null || lyricsJson === undefined) {
     return false;
   }
 
@@ -112,11 +122,21 @@ function isValidLyricsResponse(lyricsJson: any): boolean {
     }
 
     // Check for content based on lyrics type
-    return !((lyricsJson.Type === 'Syllable' && (!lyricsJson.Content || lyricsJson.Content.length === 0)) ||
-      (lyricsJson.Type === 'Line' && (!lyricsJson.Content || lyricsJson.Content.length === 0)) ||
-      (lyricsJson.Type === 'Static' && (!lyricsJson.Lines || lyricsJson.Lines.length === 0)));
+    const type = lyricsJson.Type as string;
 
-
+    if (type === 'Syllable' || type === 'Line') {
+      const content = lyricsJson.Content;
+      if (!Array.isArray(content) || content.length === 0) {
+        return false;
+      }
+    } else if (type === 'Static') {
+      const lines = lyricsJson.Lines;
+      if (!Array.isArray(lines) || lines.length === 0) {
+        return false;
+      }
+    }
+    // If type is not Syllable, Line, or Static, or if content/lines are valid, return true
+    return true;
   }
 
   return false;

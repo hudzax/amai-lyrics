@@ -16,7 +16,7 @@ function isRtl(text: string): boolean {
     const char = text[i];
 
     // Skip digits, spaces and common punctuation
-    if (/[\d\s,.;:?!()[\]{}"'\\/<>@#$%^&*_=+\-]/.test(char)) {
+    if (/[\d\s,.;:?!()[\]{}"'\\/<>@#$%^&*_=+-]/.test(char)) {
       continue;
     }
 

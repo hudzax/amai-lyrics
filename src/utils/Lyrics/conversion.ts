@@ -5,13 +5,61 @@
 // Japanese character detection regex
 const JAPANESE_REGEX = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
 
+export interface Syllable {
+  Text: string;
+  // Add other properties if they exist and are used, e.g., Time: number;
+}
+
+export interface LeadData {
+  Syllables: Syllable[];
+  StartTime: number;
+  EndTime: number;
+}
+
+export interface BackgroundData {
+  Syllables: Syllable[];
+  StartTime?: number;
+  EndTime?: number;
+}
+
+export interface SyllableBasedLyricItem {
+  Type: string; // Assuming Type is a string, adjust if needed
+  OppositeAligned: boolean; // Assuming OppositeAligned is a boolean, adjust if needed
+  Lead: LeadData;
+  Background?: BackgroundData[];
+}
+
+export interface LyricsLine {
+  Type?: string;
+  OppositeAligned?: boolean;
+  Text: string;
+  StartTime?: number;
+  EndTime?: number;
+  Translation?: string;
+  Lead?: {
+    StartTime: number;
+    EndTime: number;
+    Syllables: Syllable[];
+  };
+}
+
+export interface LineBasedLyricItem {
+  Type: string; // Assuming Type is a string, adjust if needed
+  OppositeAligned: boolean; // Assuming OppositeAligned is a boolean, adjust if needed
+  Text: string;
+  StartTime: number;
+  EndTime: number;
+}
+
 /**
  * Converts syllable-based lyrics to line-based format
  *
  * @param data - Syllable-based lyrics data
  * @returns Line-based lyrics data
  */
-export function convertLyrics(data: any[]): any[] {
+export function convertLyrics(
+  data: SyllableBasedLyricItem[],
+): LineBasedLyricItem[] {
   console.log('Converting Syllable to Line type');
 
   return data.map((item) => {
@@ -33,7 +81,7 @@ export function convertLyrics(data: any[]): any[] {
       };
     }
 
-    item.Lead.Syllables.forEach((syl: any) => {
+    item.Lead.Syllables.forEach((syl: Syllable) => {
       const currentIsJapanese = JAPANESE_REGEX.test(syl.Text);
 
       if (currentIsJapanese) {
@@ -53,7 +101,7 @@ export function convertLyrics(data: any[]): any[] {
     let fullText = leadText;
 
     if (item.Background && Array.isArray(item.Background)) {
-      const bgTexts = item.Background.map((bg: any) => {
+      const bgTexts = item.Background.map((bg: BackgroundData) => {
         if (typeof bg.StartTime === 'number') {
           startTime = Math.min(startTime, bg.StartTime);
         }
@@ -68,7 +116,7 @@ export function convertLyrics(data: any[]): any[] {
           return '';
         }
 
-        bg.Syllables.forEach((syl: any) => {
+        bg.Syllables.forEach((syl: Syllable) => {
           const currentIsJapanese = JAPANESE_REGEX.test(syl.Text);
 
           if (currentIsJapanese) {
