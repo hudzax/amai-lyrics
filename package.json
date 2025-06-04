@@ -11,12 +11,16 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@eslint/js": "^9.28.0",
     "@types/node": "^22.14.0",
     "@types/pako": "^2.0.3",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@types/spark-md5": "^3.0.5",
-    "spicetify-creator": "^1.0.17"
+    "eslint": "^9.28.0",
+    "globals": "^16.2.0",
+    "spicetify-creator": "^1.0.17",
+    "typescript-eslint": "^8.33.1"
   },
   "dependencies": {
     "@google/genai": "^0.8.0",
