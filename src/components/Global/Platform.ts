@@ -8,7 +8,9 @@ type TokenProviderResponse = {
 };
 
 // Store all our Spotify Services
-const Spotify: typeof Spicetify = (globalThis as any).Spicetify;
+const Spotify: typeof Spicetify = (
+  globalThis as unknown as { Spicetify: typeof Spicetify }
+).Spicetify;
 let SpotifyPlatform: typeof Spicetify.Platform;
 let SpotifyInternalFetch: typeof Spicetify.CosmosAsync;
 

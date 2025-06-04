@@ -4,7 +4,7 @@ interface Location {
   pathname: string;
   search?: string;
   hash?: string;
-  state?: Record<string, any>;
+  state?: Record<string, unknown>;
 }
 
 let sessionHistory: Location[] = [];

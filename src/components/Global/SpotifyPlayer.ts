@@ -1,12 +1,14 @@
 import SpicyFetch from '../../utils/API/SpicyFetch';
 import { spotifyHex } from '../../utils/Hasher';
-import GetProgress, { _DEPRECATED___GetProgress } from '../../utils/Gets/GetProgress';
+import GetProgress, {
+  _DEPRECATED___GetProgress,
+} from '../../utils/Gets/GetProgress';
 
 type ArtworkSize = 's' | 'l' | 'xl' | 'd';
 
 const TrackData_Map = new Map();
 
-async function getOrFetchTrackData(trackId: string): Promise<any> {
+async function getOrFetchTrackData(trackId: string): Promise<unknown> {
   if (TrackData_Map.has(trackId)) {
     const cached = TrackData_Map.get(trackId);
     if (cached instanceof Promise || (cached && typeof cached === 'object')) {
@@ -42,7 +44,7 @@ export const SpotifyPlayer = {
       const spotifyHexString = spotifyHex(SpotifyPlayer.GetSongId());
       return getOrFetchTrackData(spotifyHexString);
     },
-    SortImages: (images: any[]) => {
+    SortImages: (images: { size: string; file_id: string }[]) => {
       // Define size thresholds
       const sizeMap = {
         s: 'SMALL',
@@ -82,9 +84,14 @@ export const SpotifyPlayer = {
       // Fall back to API call if metadata is not available
       const psize = size === 'd' ? null : size?.toLowerCase() ?? null;
       const Data = await SpotifyPlayer.Track.GetTrackInfo();
-      if (!Data || !Data.album?.cover_group?.image) return '';
+      const trackData = Data as {
+        album?: {
+          cover_group?: { image?: { size: string; file_id: string }[] };
+        };
+      };
+      if (!trackData || !trackData.album?.cover_group?.image) return '';
       const Images = SpotifyPlayer.Track.SortImages(
-        Data.album.cover_group.image,
+        trackData.album.cover_group.image,
       );
       switch (psize) {
         case 's':
@@ -105,7 +112,8 @@ export const SpotifyPlayer = {
     }
     // Fall back to API call if metadata is not available
     const Data = await SpotifyPlayer.Track.GetTrackInfo();
-    return Data?.name || '';
+    const trackData = Data as { name?: string };
+    return trackData?.name || '';
   },
   GetAlbumName: (): string => {
     return Spicetify.Player.data.item.metadata.album_title;
@@ -123,7 +131,8 @@ export const SpotifyPlayer = {
     }
     // Fall back to API call if metadata is not available
     const data = await SpotifyPlayer.Track.GetTrackInfo();
-    return data?.artist?.map((a) => a.name) ?? [];
+    const trackData = data as { artist?: { name: string }[] };
+    return trackData?.artist?.map((a) => a.name) ?? [];
   },
   JoinArtists: (artists: string[]): string => {
     return artists?.join(', ') ?? null;
