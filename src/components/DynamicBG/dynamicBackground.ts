@@ -10,9 +10,7 @@ async function setupDynamicBackground(
   element: HTMLElement,
   imageUrl: string,
 ): Promise<HTMLDivElement> {
-  let bgContainer = element.querySelector(
-    '.sweet-dynamic-bg',
-  ) as HTMLDivElement | null;
+  let bgContainer = element.querySelector('.sweet-dynamic-bg') as HTMLDivElement | null;
 
   if (!bgContainer) {
     // --- Create container and images on first run ---
@@ -32,6 +30,14 @@ async function setupDynamicBackground(
     imgA.decoding = 'async';
     imgA.loading = 'eager'; // Load the first image eagerly
     imgA.src = imageUrl;
+    imgA.addEventListener(
+      'load',
+      () => {
+        // Remove placeholder after first image loads
+        if (placeholder.parentNode) placeholder.parentNode.removeChild(placeholder);
+      },
+      { once: true, passive: true },
+    );
     bgContainer.appendChild(imgA);
 
     const imgB = document.createElement('img');
@@ -49,73 +55,85 @@ async function setupDynamicBackground(
     // For now, set them on creation
     const rotationPrimary = Math.floor(Math.random() * 360);
     const rotationSecondary = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty(
-      '--bg-rotation-primary',
-      `${rotationPrimary}deg`,
-    );
+    document.documentElement.style.setProperty('--bg-rotation-primary', `${rotationPrimary}deg`);
     document.documentElement.style.setProperty(
       '--bg-rotation-secondary',
       `${rotationSecondary}deg`,
     );
     const scalePrimary = 0.9 + Math.random() * 0.3; // Between 0.9 and 1.2
     const scaleSecondary = 0.9 + Math.random() * 0.3; // Between 0.9 and 1.2
-    document.documentElement.style.setProperty(
-      '--bg-scale-primary',
-      `${scalePrimary}`,
-    );
-    document.documentElement.style.setProperty(
-      '--bg-scale-secondary',
-      `${scaleSecondary}`,
-    );
+    document.documentElement.style.setProperty('--bg-scale-primary', `${scalePrimary}`);
+    document.documentElement.style.setProperty('--bg-scale-secondary', `${scaleSecondary}`);
     const hueShift = Math.floor(Math.random() * 30);
-    document.documentElement.style.setProperty(
-      '--bg-hue-shift',
-      `${hueShift}deg`,
-    );
+    document.documentElement.style.setProperty('--bg-hue-shift', `${hueShift}deg`);
   }
 
   return bgContainer;
 }
 
+// Debounce utility to avoid redundant updates
+function debounce<T extends (...args: unknown[]) => void>(fn: T, delay: number) {
+  let timer: number | undefined;
+  return (...args: Parameters<T>) => {
+    if (timer) clearTimeout(timer);
+    timer = window.setTimeout(() => fn(...args), delay);
+  };
+}
+
 /**
  * Updates the dynamic background with a new image using crossfade.
  */
-function updateDynamicBackground(
-  bgContainer: HTMLDivElement,
-  newImageUrl: string,
-) {
-  // Find the active and inactive images
-  const imgA = bgContainer.querySelector('#bg-img-a') as HTMLImageElement;
-  const imgB = bgContainer.querySelector('#bg-img-b') as HTMLImageElement;
+const updateDynamicBackground = debounce(
+  (bgContainer: HTMLDivElement, newImageUrl: string) => {
+    // Find the active and inactive images
+    const imgA = bgContainer.querySelector('#bg-img-a') as HTMLImageElement;
+    const imgB = bgContainer.querySelector('#bg-img-b') as HTMLImageElement;
 
-  if (!imgA || !imgB) {
-    console.error('Dynamic background image elements not found!');
-    return;
-  }
+    if (!imgA || !imgB) {
+      console.error('Dynamic background image elements not found!');
+      return;
+    }
 
-  const activeImg = imgA.classList.contains('active') ? imgA : imgB;
-  const inactiveImg = activeImg === imgA ? imgB : imgA;
+    const activeImg = imgA.classList.contains('active') ? imgA : imgB;
+    const inactiveImg = activeImg === imgA ? imgB : imgA;
 
-  // Update the inactive image source
-  inactiveImg.src = newImageUrl;
+    // Prevent redundant loads
+    if (inactiveImg.src === newImageUrl) return;
 
-  // Once the inactive image loads, start the crossfade
-  inactiveImg.onload = () => {
-    // Swap active classes
-    activeImg.classList.remove('active');
-    inactiveImg.classList.add('active');
+    // Update the inactive image source
+    inactiveImg.src = newImageUrl;
 
-    // CSS variables are now only set on creation in setupDynamicBackground
-  };
+    // Once the inactive image loads, start the crossfade
+    inactiveImg.onload = () => {
+      // Swap active classes
+      activeImg.classList.remove('active');
+      inactiveImg.classList.add('active');
+      // Set new random CSS variables for each transition for more variety
+      const rotationPrimary = Math.floor(Math.random() * 360);
+      const rotationSecondary = Math.floor(Math.random() * 360);
+      document.documentElement.style.setProperty('--bg-rotation-primary', `${rotationPrimary}deg`);
+      document.documentElement.style.setProperty(
+        '--bg-rotation-secondary',
+        `${rotationSecondary}deg`,
+      );
+      const scalePrimary = 0.9 + Math.random() * 0.3;
+      const scaleSecondary = 0.9 + Math.random() * 0.3;
+      document.documentElement.style.setProperty('--bg-scale-primary', `${scalePrimary}`);
+      document.documentElement.style.setProperty('--bg-scale-secondary', `${scaleSecondary}`);
+      const hueShift = Math.floor(Math.random() * 30);
+      document.documentElement.style.setProperty('--bg-hue-shift', `${hueShift}deg`);
+    };
 
-  inactiveImg.onerror = () => {
-    console.error('Error loading new background image:', newImageUrl);
-    // Optional: Handle error, e.g., hide the failed image or revert
-  };
+    inactiveImg.onerror = () => {
+      console.error('Error loading new background image:', newImageUrl);
+      // Optional: Handle error, e.g., hide the failed image or revert
+    };
 
-  // Update the current image attribute on the container
-  bgContainer.setAttribute('current-img', newImageUrl);
-}
+    // Update the current image attribute on the container
+    bgContainer.setAttribute('current-img', newImageUrl);
+  },
+  100, // Debounce delay in ms
+);
 
 /**
  * Main function to apply the dynamic background to a given element.
