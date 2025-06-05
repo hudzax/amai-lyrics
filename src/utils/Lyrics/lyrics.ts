@@ -26,36 +26,41 @@ interface Letter {
   HTMLElement: HTMLElement;
 }
 
-interface Word {
+export interface Word {
   HTMLElement: HTMLElement;
   Letters?: Letter[];
+  BGWord?: boolean;
+  Dot?: boolean;
+  LetterGroup?: boolean;
+  EndTime?: number;
+  StartTime?: number;
+  Status?: string;
+  translateY?: number;
+  scale?: number;
+  glow?: number;
+  AnimatorStoreTime_glow?: number;
+  AnimatorStoreTime_translateY?: number;
+  AnimatorStoreTime_scale?: number;
 }
 
 // Maps for optimizing LinesEvListener lookups
 export const lineElementToStartTimeMap = new Map<HTMLElement, number>();
 export const syllableElementToStartTimeMap = new Map<HTMLElement, number>();
 
-export let CurrentLineLyricsObject =
-  LyricsObject.Types.Syllable.Lines.length - 1;
-export let LINE_SYNCED_CurrentLineLyricsObject =
-  LyricsObject.Types.Line.Lines.length - 1;
+export let CurrentLineLyricsObject = LyricsObject.Types.Syllable.Lines.length - 1;
+export let LINE_SYNCED_CurrentLineLyricsObject = LyricsObject.Types.Line.Lines.length - 1;
 export function SetWordArrayInCurentLine() {
   CurrentLineLyricsObject = LyricsObject.Types.Syllable.Lines.length - 1;
 
   LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables = {};
-  LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables.Lead =
-    [];
+  LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables.Lead = [];
 }
 
 export function SetWordArrayInCurentLine_LINE_SYNCED() {
-  LINE_SYNCED_CurrentLineLyricsObject =
-    LyricsObject.Types.Line.Lines.length - 1;
+  LINE_SYNCED_CurrentLineLyricsObject = LyricsObject.Types.Line.Lines.length - 1;
 
-  LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables =
-    {};
-  LyricsObject.Types.Line.Lines[
-    LINE_SYNCED_CurrentLineLyricsObject
-  ].Syllables.Lead = [];
+  LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables = {};
+  LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables.Lead = [];
 }
 
 export function ClearLyricsContentArrays() {
@@ -103,10 +108,7 @@ export function populateElementTimeMaps() {
       if (word?.Letters) {
         word.Letters.forEach((letter) => {
           if (letter.HTMLElement) {
-            syllableElementToStartTimeMap.set(
-              letter.HTMLElement,
-              lineStartTime,
-            );
+            syllableElementToStartTimeMap.set(letter.HTMLElement, lineStartTime);
           }
         });
       }
@@ -148,9 +150,7 @@ export function addLinesEvListener() {
     return;
   }
   el.addEventListener('click', LinesEvListener);
-  LinesEvListenerMaid.Give(() =>
-    el.removeEventListener('click', LinesEvListener as EventListener),
-  ); // Ensure type compatibility for Maid
+  LinesEvListenerMaid.Give(() => el.removeEventListener('click', LinesEvListener as EventListener)); // Ensure type compatibility for Maid
 }
 
 export function removeLinesEvListener() {

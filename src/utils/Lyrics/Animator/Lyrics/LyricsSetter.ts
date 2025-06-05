@@ -2,11 +2,7 @@ import Defaults from '../../../../components/Global/Defaults';
 import { LyricsObject } from '../../lyrics';
 import { timeOffset } from '../Shared';
 
-function getStatus(
-  start: number,
-  end: number,
-  current: number,
-): 'Active' | 'NotSung' | 'Sung' {
+function getStatus(start: number, end: number, current: number): 'Active' | 'NotSung' | 'Sung' {
   if (start <= current && current <= end) {
     return 'Active';
   } else if (start >= current) {
@@ -16,8 +12,22 @@ function getStatus(
   }
 }
 
+interface Letter {
+  StartTime: number;
+  EndTime: number;
+  Status?: 'Active' | 'NotSung' | 'Sung';
+}
+
+interface WordOrSyllable {
+  StartTime: number;
+  EndTime: number;
+  Status?: 'Active' | 'NotSung' | 'Sung';
+  LetterGroup?: boolean;
+  Letters?: Letter[];
+}
+
 function updateCollectionStatus(
-  collection: any[],
+  collection: WordOrSyllable[],
   current: number,
   deep: boolean = false,
 ) {
