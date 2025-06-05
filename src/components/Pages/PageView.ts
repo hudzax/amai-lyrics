@@ -1,9 +1,6 @@
 import fetchLyrics from '../../utils/Lyrics/fetchLyrics';
 import '../../css/Loaders/DotLoader.css';
-import {
-  addLinesEvListener,
-  removeLinesEvListener,
-} from '../../utils/Lyrics/lyrics';
+import { addLinesEvListener, removeLinesEvListener } from '../../utils/Lyrics/lyrics';
 import ApplyDynamicBackground from '../DynamicBG/dynamicBackground';
 import Defaults from '../Global/Defaults';
 import { Icons } from '../Styling/Icons';
@@ -16,6 +13,10 @@ import TransferElement from '../Utils/TransferElement';
 import Session from '../Global/Session';
 import { ResetLastLine } from '../../utils/Scrolling/ScrollToActiveLine';
 import fastdom from '../../utils/fastdom';
+
+interface ImageElementWithSetup extends HTMLImageElement {
+  _setupImageLoading?: boolean;
+}
 
 export const Tooltips = {
   Close: null,
@@ -100,39 +101,36 @@ async function OpenPage() {
 
   Defaults.LyricsContainerExists = true;
 
+  // Cache selectors for reuse
   let contentBox: HTMLElement | null = null;
-  await fastdom.read(() => {
-    contentBox = document.querySelector('#SpicyLyricsPage .ContentBox');
-  });
-  await ApplyDynamicBackground(contentBox);
-
-  // Load artwork images asynchronously
   let mediaImage: HTMLImageElement | null = null;
   await fastdom.read(() => {
-    mediaImage = document.querySelector(
-      '#SpicyLyricsPage .MediaImage',
-    ) as HTMLImageElement;
+    contentBox = document.querySelector('#SpicyLyricsPage .ContentBox');
+    mediaImage = document.querySelector('#SpicyLyricsPage .MediaImage') as HTMLImageElement;
   });
 
-  if (mediaImage) {
-    // Set up image loading and high-res switching
-    setupImageLoading(mediaImage);
-
-    // Load initial content
-    await UpdatePageContent();
+  // Only apply dynamic background if contentBox exists
+  if (contentBox) {
+    await ApplyDynamicBackground(contentBox);
   }
+
+  // Set up image loading and high-res switching only once
+  if (mediaImage) {
+    setupImageLoading(mediaImage);
+  }
+
+  // Load initial content after DOM is ready
+  await UpdatePageContent();
 
   addLinesEvListener();
 
-  {
-    if (!Spicetify.Player.data?.item?.uri) return; // Exit if `uri` is not available
-    const currentUri = Spicetify.Player.data.item.uri;
-
+  // Only fetch lyrics if URI is available, and defer until after DOM is ready
+  const currentUri = Spicetify.Player.data?.item?.uri;
+  if (currentUri) {
     fetchLyrics(currentUri).then(ApplyLyrics);
   }
 
   Session_OpenNowBar();
-
   Session_NowBar_SetSide();
 
   await AppendViewControls();
@@ -161,9 +159,7 @@ async function DestroyPage() {
 async function AppendViewControls(ReAppend: boolean = false) {
   let elem: HTMLElement | null = null;
   await fastdom.read(() => {
-    elem = document.querySelector<HTMLElement>(
-      '#SpicyLyricsPage .ContentBox .ViewControls',
-    );
+    elem = document.querySelector<HTMLElement>('#SpicyLyricsPage .ContentBox .ViewControls');
   });
   if (!elem) return;
   await fastdom.write(() => {
@@ -206,9 +202,7 @@ async function AppendViewControls(ReAppend: boolean = false) {
     if (headerViewControlsElem) {
       let contentBoxElem: HTMLElement | null = null;
       await fastdom.read(() => {
-        contentBoxElem = document.querySelector<HTMLElement>(
-          '#SpicyLyricsPage .ContentBox',
-        );
+        contentBoxElem = document.querySelector<HTMLElement>('#SpicyLyricsPage .ContentBox');
       });
       if (contentBoxElem) {
         await fastdom.write(() => {
@@ -246,7 +240,11 @@ async function AppendViewControls(ReAppend: boolean = false) {
 /**
  * Sets up image loading with high-res switching for an image element
  */
-function setupImageLoading(imageElement: HTMLImageElement) {
+function setupImageLoading(imageElement: ImageElementWithSetup) {
+  // Prevent multiple event bindings
+  if (imageElement._setupImageLoading) return;
+  imageElement._setupImageLoading = true;
+
   // Set up the onload handler
   imageElement.onload = () => {
     fastdom.write(() => {
@@ -259,9 +257,10 @@ function setupImageLoading(imageElement: HTMLImageElement) {
       // Preload the high-res image
       const highResImage = new Image();
       highResImage.onload = () => {
-        // Only swap to high-res after it's fully loaded
         fastdom.write(() => {
-          imageElement.src = highResUrl;
+          if (imageElement.src !== highResUrl) {
+            imageElement.src = highResUrl;
+          }
         });
       };
       highResImage.src = highResUrl;
@@ -278,60 +277,53 @@ async function UpdatePageContent() {
 
   let mediaImage: HTMLImageElement | null = null;
   await fastdom.read(() => {
-    mediaImage = document.querySelector(
-      '#SpicyLyricsPage .MediaImage',
-    ) as HTMLImageElement;
+    mediaImage = document.querySelector('#SpicyLyricsPage .MediaImage') as HTMLImageElement;
   });
 
   if (mediaImage) {
-    // Reset loaded state
+    // Only remove 'loaded' if present
     await fastdom.write(() => {
-      mediaImage!.classList.remove('loaded');
+      if (mediaImage!.classList.contains('loaded')) {
+        mediaImage!.classList.remove('loaded');
+      }
     });
 
-    // Load song name
+    // Load song name and update only if changed
     SpotifyPlayer.GetSongName().then(async (songName) => {
       let songNameElem: HTMLElement | null = null;
       await fastdom.read(() => {
-        songNameElem = document.querySelector(
-          '#SpicyLyricsPage .SongName span',
-        );
+        songNameElem = document.querySelector('#SpicyLyricsPage .SongName span');
       });
-      if (songNameElem) {
+      if (songNameElem && songNameElem.textContent !== songName) {
         await fastdom.write(() => {
           songNameElem!.textContent = songName;
         });
       }
     });
 
-    // Load artists
+    // Load artists and update only if changed
     SpotifyPlayer.GetArtists().then(async (artists) => {
       let artistsElem: HTMLElement | null = null;
       await fastdom.read(() => {
         artistsElem = document.querySelector('#SpicyLyricsPage .Artists span');
       });
-      if (artistsElem) {
+      const joined = SpotifyPlayer.JoinArtists(artists);
+      if (artistsElem && artistsElem.textContent !== joined) {
         await fastdom.write(() => {
-          artistsElem!.textContent = SpotifyPlayer.JoinArtists(artists);
+          artistsElem!.textContent = joined;
         });
       }
     });
 
-    // Load artwork images
-    Promise.all([
-      SpotifyPlayer.Artwork.Get('l'),
-      SpotifyPlayer.Artwork.Get('xl'),
-    ])
+    // Load artwork images, only update if URLs differ
+    Promise.all([SpotifyPlayer.Artwork.Get('l'), SpotifyPlayer.Artwork.Get('xl')])
       .then(async ([standardUrl, highResUrl]) => {
-        // Set the standard resolution image
-        if (standardUrl) {
+        if (standardUrl && mediaImage!.src !== standardUrl) {
           await fastdom.write(() => {
             mediaImage!.src = standardUrl;
           });
         }
-
-        // Store high-res URL for later loading
-        if (highResUrl) {
+        if (highResUrl && mediaImage!.getAttribute('data-high-res') !== highResUrl) {
           await fastdom.write(() => {
             mediaImage!.setAttribute('data-high-res', highResUrl);
           });
