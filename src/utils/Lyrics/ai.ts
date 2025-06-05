@@ -4,12 +4,7 @@
 
 import storage from '../storage';
 import Defaults from '../../components/Global/Defaults';
-import {
-  GoogleGenAI,
-  GenerateContentConfig,
-  Schema,
-  Type,
-} from '@google/genai';
+import { GoogleGenAI, GenerateContentConfig, Schema, Type } from '@google/genai';
 import { LyricsData } from './processing'; // Import LyricsData
 import { LineBasedLyricItem, LyricsLine } from './conversion'; // Import LineBasedLyricItem and LyricsLine
 
@@ -57,9 +52,7 @@ export async function getPhoneticLyrics(
 /**
  * Fetches translations using Gemini AI
  */
-export async function fetchTranslationsWithGemini(
-  lyricsOnly: string[],
-): Promise<string[]> {
+export async function fetchTranslationsWithGemini(lyricsOnly: string[]): Promise<string[]> {
   if (storage.get('disable_translation') === 'true') {
     console.log('Amai Lyrics: Translation disabled');
     return lyricsOnly.map(() => '');
@@ -76,14 +69,10 @@ export async function fetchTranslationsWithGemini(
 
     const ai = new GoogleGenAI({ apiKey: geminiApiKey });
 
-    const generationConfig = createGeminiConfig(
-      Defaults.systemInstruction,
-      0.85,
-    );
+    const generationConfig = createGeminiConfig(Defaults.systemInstruction, 0.85);
 
     const targetLang =
-      storage.get('translation_language')?.toString() ||
-      Defaults.translationLanguage;
+      storage.get('translation_language')?.toString() || Defaults.translationLanguage;
 
     const prompt = createTranslationPrompt(targetLang);
 
@@ -97,10 +86,7 @@ export async function fetchTranslationsWithGemini(
       const translations = JSON.parse(response.text.replace(/\\n/g, ''));
       return translations.lines || lyricsOnly.map(() => '');
     } catch (parseError) {
-      console.error(
-        'Amai Lyrics: Error parsing translation response',
-        parseError,
-      );
+      console.error('Amai Lyrics: Error parsing translation response', parseError);
       return lyricsOnly.map(() => '');
     }
   } catch (error) {
@@ -158,11 +144,7 @@ export async function generateFurigana(
   lyricsJson: LyricsData,
   lyricsOnly: string[],
 ): Promise<LyricsData> {
-  return await generateLyricsWithPrompt(
-    lyricsJson,
-    lyricsOnly,
-    Defaults.furiganaPrompt,
-  );
+  return await generateLyricsWithPrompt(lyricsJson, lyricsOnly, Defaults.furiganaPrompt);
 }
 
 /**
@@ -172,11 +154,7 @@ export async function generateRomaja(
   lyricsJson: LyricsData,
   lyricsOnly: string[],
 ): Promise<LyricsData> {
-  return await generateLyricsWithPrompt(
-    lyricsJson,
-    lyricsOnly,
-    Defaults.romajaPrompt,
-  );
+  return await generateLyricsWithPrompt(lyricsJson, lyricsOnly, Defaults.romajaPrompt);
 }
 
 /**
@@ -186,11 +164,7 @@ export async function generateRomaji(
   lyricsJson: LyricsData,
   lyricsOnly: string[],
 ): Promise<LyricsData> {
-  return await generateLyricsWithPrompt(
-    lyricsJson,
-    lyricsOnly,
-    Defaults.romajiPrompt,
-  );
+  return await generateLyricsWithPrompt(lyricsJson, lyricsOnly, Defaults.romajiPrompt);
 }
 
 /**
@@ -205,25 +179,17 @@ export async function generateLyricsWithPrompt(
     return lyricsJson;
   }
 
-  return await processLyricsWithGemini(
-    lyricsJson,
-    lyricsOnly,
-    Defaults.systemInstruction,
-    prompt,
-  );
+  return await processLyricsWithGemini(lyricsJson, lyricsOnly, Defaults.systemInstruction, prompt);
 }
 
 /**
  * Checks if Gemini API key is available
  */
-export async function checkGeminiAPIKey(
-  lyricsJson: LyricsData,
-): Promise<boolean> {
+export async function checkGeminiAPIKey(lyricsJson: LyricsData): Promise<boolean> {
   const geminiApiKey = storage.get('GEMINI_API_KEY')?.toString();
   if (!geminiApiKey || geminiApiKey === '') {
     console.error('Amai Lyrics: Gemini API Key missing');
-    lyricsJson.Info =
-      'Amai Lyrics: Gemini API Key missing. Click here to add your own API key.';
+    lyricsJson.Info = 'Amai Lyrics: Gemini API Key missing. Click here to add your own API key.';
     return false;
   }
   return true;
@@ -245,26 +211,42 @@ export async function processLyricsWithGemini(
 
     const generationConfig = createGeminiConfig(systemInstruction, 0.258);
 
-    if (lyricsOnly.length > 0) {
+    if (lyricsOnly.length === 0) return lyricsJson;
+
+    const makeRequest = async () => {
       const response = await ai.models.generateContent({
         config: generationConfig,
         model: 'gemini-2.5-flash-preview-05-20',
-        contents: `${prompt} Here are the lyrics:\n${JSON.stringify(
-          lyricsOnly,
-        )}`,
+        contents: `${prompt} Here are the lyrics:\n${JSON.stringify(lyricsOnly)}`,
       });
+      return response.text;
+    };
 
+    let retries = 2;
+    let lines: string[] | undefined;
+
+    while (retries >= 0) {
       try {
-        const lyrics = JSON.parse(response.text.replace(/\\n/g, ''));
-
-        if (lyrics && lyrics.lines && Array.isArray(lyrics.lines)) {
-          updateLyricsText(lyricsJson, lyrics.lines);
+        const responseText = await makeRequest();
+        const parsed = JSON.parse(responseText.replace(/\\n/g, ''));
+        if (parsed && Array.isArray(parsed.lines)) {
+          lines = parsed.lines;
+          break;
         } else {
-          console.error('Amai Lyrics: Invalid response format', lyrics);
+          if (retries === 0) {
+            console.error('Amai Lyrics: Invalid response format', parsed);
+          }
         }
-      } catch (parseError) {
-        console.error('Amai Lyrics: Error parsing response', parseError);
+      } catch (err) {
+        if (retries === 0) {
+          console.error('Amai Lyrics: Error parsing response', err);
+        }
       }
+      retries--;
+    }
+
+    if (lines) {
+      updateLyricsText(lyricsJson, lines);
     }
   } catch (error) {
     console.error('Amai Lyrics:', error);
@@ -277,23 +259,16 @@ export async function processLyricsWithGemini(
 /**
  * Updates lyrics text with processed text
  */
-export function updateLyricsText(
-  lyricsJson: LyricsData,
-  lines: string[],
-): void {
+export function updateLyricsText(lyricsJson: LyricsData, lines: string[]): void {
   if (lyricsJson.Type === 'Line' && lyricsJson.Content) {
-    lyricsJson.Content = lyricsJson.Content.map(
-      (item: LineBasedLyricItem, index: number) => ({
-        ...item,
-        Text: lines[index] || item.Text,
-      }),
-    );
+    lyricsJson.Content = lyricsJson.Content.map((item: LineBasedLyricItem, index: number) => ({
+      ...item,
+      Text: lines[index] || item.Text,
+    }));
   } else if (lyricsJson.Type === 'Static' && lyricsJson.Lines) {
-    lyricsJson.Lines = lyricsJson.Lines.map(
-      (item: LyricsLine, index: number) => ({
-        ...item,
-        Text: lines[index] || item.Text,
-      }),
-    );
+    lyricsJson.Lines = lyricsJson.Lines.map((item: LyricsLine, index: number) => ({
+      ...item,
+      Text: lines[index] || item.Text,
+    }));
   }
 }
