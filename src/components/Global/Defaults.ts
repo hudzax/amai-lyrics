@@ -214,6 +214,7 @@ Accurately convert Japanese song lyrics to strict Hepburn Romaji, ensuring each 
      - "今日は{kyō wa}, 晴れ{hare}" (correct)
      - "今日は{kyō wa}、晴れ{hare}" (correct)
      - "今日は、{kyō wa,}晴れ{hare}" (incorrect - comma included in Romaji)
+   - **Special Delimiters (「」, （）):** For Japanese text enclosed within full-width quotation marks (「」) or full-width parentheses （）, the Romaji should be inserted *inside* these delimiters. Example: 「運命」 = 「運命{unmei}」.
 
 #### Input
 Song lyrics containing Japanese text.
