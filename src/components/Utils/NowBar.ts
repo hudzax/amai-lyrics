@@ -18,6 +18,15 @@ interface ComponentInstance {
   GetElement: () => HTMLElement;
 }
 
+// Define custom types for elements with added properties
+interface DraggableElement extends HTMLElement {
+  _dragEventsAdded?: boolean;
+}
+
+interface DroppableElement extends Element {
+  _dropEventsAdded?: boolean;
+}
+
 // Define types for event handlers
 interface EventHandlerMap {
   pressHandlers: Map<Element, EventListener>;
@@ -55,27 +64,22 @@ function OpenNowBar() {
   const NowBar = document.querySelector('#SpicyLyricsPage .ContentBox .NowBar');
   if (!NowBar) return;
   UpdateNowBar(true);
-  NowBar.classList.add('Active');
+  if (!NowBar.classList.contains('Active')) NowBar.classList.add('Active');
   storage.set('IsNowBarOpen', 'true');
 
   if (Fullscreen.IsOpen) {
+    // Cache MediaBox for repeated use
     const MediaBox = document.querySelector(
       '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent',
     );
-
     if (!MediaBox) return;
 
-    // Clear any existing controls before adding new ones
+    // Remove only if present, avoid unnecessary DOM ops
     const existingAlbumData = MediaBox.querySelector('.AlbumData');
-    if (existingAlbumData) {
-      MediaBox.removeChild(existingAlbumData);
-    }
+    if (existingAlbumData) MediaBox.removeChild(existingAlbumData);
 
-    const existingPlaybackControls =
-      MediaBox.querySelector('.PlaybackControls');
-    if (existingPlaybackControls) {
-      MediaBox.removeChild(existingPlaybackControls);
-    }
+    const existingPlaybackControls = MediaBox.querySelector('.PlaybackControls');
+    if (existingPlaybackControls) MediaBox.removeChild(existingPlaybackControls);
 
     // Let's Apply more data into the fullscreen mode.
     {
@@ -152,12 +156,10 @@ function OpenNowBar() {
         // Set up shuffle state
         if (SpotifyPlayer.ShuffleType !== 'none') {
           const shuffleToggle = element.querySelector('.ShuffleToggle');
-          const shuffleSvg =
-            element.querySelector<HTMLElement>('.ShuffleToggle svg');
+          const shuffleSvg = element.querySelector<HTMLElement>('.ShuffleToggle svg');
 
           if (shuffleToggle) shuffleToggle.classList.add('Enabled');
-          if (shuffleSvg)
-            shuffleSvg.style.filter = 'drop-shadow(0 0 5px white)';
+          if (shuffleSvg) shuffleSvg.style.filter = 'drop-shadow(0 0 5px white)';
         }
       }
 
@@ -216,10 +218,7 @@ function OpenNowBar() {
       /**
        * Sets up click handlers for specific playback controls
        */
-      function setupClickHandlers(
-        element: HTMLElement,
-        eventHandlers: EventHandlerMap,
-      ): void {
+      function setupClickHandlers(element: HTMLElement, eventHandlers: EventHandlerMap): void {
         // Get control elements
         const PlayPauseControl = element.querySelector('.PlayStateToggle');
         const PrevTrackControl = element.querySelector('.PrevTrack');
@@ -367,10 +366,7 @@ function OpenNowBar() {
       /**
        * Cleans up all event handlers and removes the element from DOM if needed
        */
-      function cleanupEventHandlers(
-        element: HTMLElement,
-        eventHandlers: EventHandlerMap,
-      ): void {
+      function cleanupEventHandlers(element: HTMLElement, eventHandlers: EventHandlerMap): void {
         const playbackControls = element.querySelectorAll('.PlaybackControl');
         const PlayPauseControl = element.querySelector('.PlayStateToggle');
         const PrevTrackControl = element.querySelector('.PrevTrack');
@@ -438,8 +434,7 @@ function OpenNowBar() {
        */
       const SetupSongProgressBar = (): ComponentInstance => {
         // Create and initialize the progress bar
-        const { songProgressBar, timelineElement, sliderBar } =
-          createProgressBarElements();
+        const { songProgressBar, timelineElement, sliderBar } = createProgressBarElements();
 
         if (!sliderBar) {
           console.error('Could not find SliderBar element');
@@ -502,22 +497,17 @@ function OpenNowBar() {
         const timelineElement = document.createElement('div');
         timelineElement.classList.add('Timeline');
         timelineElement.innerHTML = `
-          <span class="Time Position">${
-            songProgressBar.GetFormattedPosition() ?? '0:00'
-          }</span>
+          <span class="Time Position">${songProgressBar.GetFormattedPosition() ?? '0:00'}</span>
           <div class="SliderBar" style="--SliderProgress: ${
             songProgressBar.GetProgressPercentage() ?? 0
           }">
             <div class="Handle"></div>
           </div>
-          <span class="Time Duration">${
-            songProgressBar.GetFormattedDuration() ?? '0:00'
-          }</span>
+          <span class="Time Duration">${songProgressBar.GetFormattedDuration() ?? '0:00'}</span>
         `;
 
         // Get the slider bar element
-        const sliderBar =
-          timelineElement.querySelector<HTMLElement>('.SliderBar');
+        const sliderBar = timelineElement.querySelector<HTMLElement>('.SliderBar');
 
         return { songProgressBar, timelineElement, sliderBar };
       }
@@ -531,10 +521,8 @@ function OpenNowBar() {
         sliderBar: HTMLElement,
       ) {
         return (e: number | { data?: number } | null = null) => {
-          const positionElement =
-            timelineElement.querySelector<HTMLElement>('.Time.Position');
-          const durationElement =
-            timelineElement.querySelector<HTMLElement>('.Time.Duration');
+          const positionElement = timelineElement.querySelector<HTMLElement>('.Time.Position');
+          const durationElement = timelineElement.querySelector<HTMLElement>('.Time.Duration');
 
           if (!positionElement || !durationElement || !sliderBar) {
             console.error('Missing required elements for timeline update');
@@ -569,10 +557,7 @@ function OpenNowBar() {
           const formattedDuration = songProgressBar.GetFormattedDuration();
 
           // Update the UI
-          sliderBar.style.setProperty(
-            '--SliderProgress',
-            sliderPercentage.toString(),
-          );
+          sliderBar.style.setProperty('--SliderProgress', sliderPercentage.toString());
           durationElement.textContent = formattedDuration;
           positionElement.textContent = formattedPosition;
         };
@@ -614,13 +599,9 @@ function OpenNowBar() {
             const sliderPercentage = songProgressBar.GetProgressPercentage();
             const formattedPosition = songProgressBar.GetFormattedPosition();
 
-            sliderBar.style.setProperty(
-              '--SliderProgress',
-              sliderPercentage.toString(),
-            );
+            sliderBar.style.setProperty('--SliderProgress', sliderPercentage.toString());
 
-            const positionElement =
-              timelineElement.querySelector<HTMLElement>('.Time.Position');
+            const positionElement = timelineElement.querySelector<HTMLElement>('.Time.Position');
             if (positionElement) {
               positionElement.textContent = formattedPosition;
             }
@@ -632,17 +613,14 @@ function OpenNowBar() {
        * Initializes tracking variables for position interpolation
        */
       function initializeTrackingVariables() {
-        progressBarState.lastKnownPosition =
-          SpotifyPlayer.GetTrackPosition() || 0;
+        progressBarState.lastKnownPosition = SpotifyPlayer.GetTrackPosition() || 0;
         progressBarState.lastUpdateTime = performance.now();
       }
 
       /**
        * Sets up the update interval for smooth progress bar updates
        */
-      function setupUpdateInterval(
-        updateTimelineState: (position?: number) => void,
-      ) {
+      function setupUpdateInterval(updateTimelineState: (position?: number) => void) {
         return setInterval(() => {
           if (SpotifyPlayer.IsPlaying) {
             // Get stored values
@@ -672,21 +650,14 @@ function OpenNowBar() {
       /**
        * Cleans up the progress bar resources
        */
-      function cleanupProgressBar(
-        sliderBar: HTMLElement,
-        sliderBarHandler: EventListener,
-      ) {
+      function cleanupProgressBar(sliderBar: HTMLElement, sliderBarHandler: EventListener) {
         // Remove event listeners
         if (sliderBar) {
           sliderBar.removeEventListener('click', sliderBarHandler);
         }
 
         // Clear the update interval
-        const {
-          updateInterval,
-          SongProgressBar_ClassInstance,
-          TimeLineElement,
-        } = progressBarState;
+        const { updateInterval, SongProgressBar_ClassInstance, TimeLineElement } = progressBarState;
         if (updateInterval) {
           clearInterval(updateInterval);
         }
@@ -723,10 +694,7 @@ function OpenNowBar() {
 
       // Use a more reliable approach to add elements
       Whentil.When(
-        () =>
-          document.querySelector(
-            '#SpicyLyricsPage .ContentBox .NowBar .Header .ViewControls',
-          ),
+        () => document.querySelector('#SpicyLyricsPage .ContentBox .NowBar .Header .ViewControls'),
         () => {
           // Ensure there's no duplicate elements before appending
           const viewControls = MediaBox.querySelector('.ViewControls');
@@ -737,92 +705,92 @@ function OpenNowBar() {
             fragment.appendChild(element);
           });
 
-          // Ensure proper order - first view controls, then our custom elements
-          MediaBox.innerHTML = '';
-          if (viewControls) MediaBox.appendChild(viewControls);
-          MediaBox.appendChild(fragment);
+          // Only update DOM if fragment has children
+          if (fragment.childNodes.length > 0) {
+            MediaBox.innerHTML = '';
+            if (viewControls) MediaBox.appendChild(viewControls);
+            MediaBox.appendChild(fragment);
+          }
         },
       );
     }
   }
 
+  // Cache DragBox and dropZones for reuse
   const DragBox = Fullscreen.IsOpen
-    ? document.querySelector(
-        '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent',
-      )
-    : document.querySelector(
-        '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage',
-      );
-
+    ? document.querySelector('#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent')
+    : document.querySelector('#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage');
   if (!DragBox) return;
 
-  const dropZones = document.querySelectorAll(
+  const dropZones = document.querySelectorAll<DroppableElement>(
     '#SpicyLyricsPage .ContentBox .DropZone',
   );
 
-  DragBox.addEventListener('dragstart', () => {
-    setTimeout(() => {
-      document
-        .querySelector('#SpicyLyricsPage')
-        .classList.add('SomethingDragging');
-      if (NowBar.classList.contains('LeftSide')) {
-        dropZones.forEach((zone) => {
-          if (zone.classList.contains('LeftSide')) {
-            zone.classList.add('Hidden');
-          } else {
-            zone.classList.remove('Hidden');
-          }
-        });
-      } else if (NowBar.classList.contains('RightSide')) {
-        dropZones.forEach((zone) => {
-          if (zone.classList.contains('RightSide')) {
-            zone.classList.add('Hidden');
-          } else {
-            zone.classList.remove('Hidden');
-          }
-        });
-      }
-      DragBox.classList.add('Dragging');
-    }, 0);
-  });
+  // Use a flag to prevent duplicate event listeners
+  if (!(DragBox as DraggableElement)._dragEventsAdded) {
+    DragBox.addEventListener('dragstart', () => {
+      setTimeout(() => {
+        document.querySelector('#SpicyLyricsPage').classList.add('SomethingDragging');
+        if (NowBar.classList.contains('LeftSide')) {
+          dropZones.forEach((zone) => {
+            if (zone.classList.contains('LeftSide')) {
+              zone.classList.add('Hidden');
+            } else {
+              zone.classList.remove('Hidden');
+            }
+          });
+        } else if (NowBar.classList.contains('RightSide')) {
+          dropZones.forEach((zone) => {
+            if (zone.classList.contains('RightSide')) {
+              zone.classList.add('Hidden');
+            } else {
+              zone.classList.remove('Hidden');
+            }
+          });
+        }
+        DragBox.classList.add('Dragging');
+      }, 0);
+    });
 
-  DragBox.addEventListener('dragend', () => {
-    document
-      .querySelector('#SpicyLyricsPage')
-      .classList.remove('SomethingDragging');
-    dropZones.forEach((zone) => zone.classList.remove('Hidden'));
-    DragBox.classList.remove('Dragging');
-  });
+    DragBox.addEventListener('dragend', () => {
+      document.querySelector('#SpicyLyricsPage').classList.remove('SomethingDragging');
+      dropZones.forEach((zone) => zone.classList.remove('Hidden'));
+      DragBox.classList.remove('Dragging');
+    });
+
+    (DragBox as DraggableElement)._dragEventsAdded = true;
+  }
 
   dropZones.forEach((zone) => {
-    zone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      zone.classList.add('DraggingOver');
-    });
+    // Prevent duplicate listeners
+    if (!(zone as DroppableElement)._dropEventsAdded) {
+      zone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        zone.classList.add('DraggingOver');
+      });
 
-    zone.addEventListener('dragleave', () => {
-      zone.classList.remove('DraggingOver');
-    });
+      zone.addEventListener('dragleave', () => {
+        zone.classList.remove('DraggingOver');
+      });
 
-    zone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      zone.classList.remove('DraggingOver');
+      zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('DraggingOver');
 
-      const currentClass = NowBar.classList.contains('LeftSide')
-        ? 'LeftSide'
-        : 'RightSide';
+        const currentClass = NowBar.classList.contains('LeftSide') ? 'LeftSide' : 'RightSide';
 
-      const newClass = zone.classList.contains('RightSide')
-        ? 'RightSide'
-        : 'LeftSide';
+        const newClass = zone.classList.contains('RightSide') ? 'RightSide' : 'LeftSide';
 
-      NowBar.classList.remove(currentClass);
-      NowBar.classList.add(newClass);
+        if (currentClass !== newClass) {
+          NowBar.classList.remove(currentClass);
+          NowBar.classList.add(newClass);
+          const side = zone.classList.contains('RightSide') ? 'right' : 'left';
+          storage.set('NowBarSide', side);
+        }
+      });
 
-      const side = zone.classList.contains('RightSide') ? 'right' : 'left';
-
-      storage.set('NowBarSide', side);
-    });
+      (zone as DroppableElement)._dropEventsAdded = true;
+    }
   });
 }
 
@@ -911,11 +879,10 @@ function UpdateNowBar(force = false) {
   const NowBar = document.querySelector('#SpicyLyricsPage .ContentBox .NowBar');
   if (!NowBar) return;
 
+  // Cache elements for repeated use
   const ArtistsDiv = NowBar.querySelector('.Header .Metadata .Artists');
   const ArtistsSpan = NowBar.querySelector('.Header .Metadata .Artists span');
-  const MediaImage = NowBar.querySelector<HTMLImageElement>(
-    '.Header .MediaBox .MediaImage',
-  );
+  const MediaImage = NowBar.querySelector<HTMLImageElement>('.Header .MediaBox .MediaImage');
   const SongNameSpan = NowBar.querySelector('.Header .Metadata .SongName span');
   const MediaBox = NowBar.querySelector('.Header .MediaBox');
   const SongName = NowBar.querySelector('.Header .Metadata .SongName');
@@ -937,7 +904,9 @@ function UpdateNowBar(force = false) {
   if (MediaImage) {
     SpotifyPlayer.Artwork.Get('xl')
       .then((artwork) => {
-        MediaImage.src = artwork;
+        if (MediaImage.src !== artwork) {
+          MediaImage.src = artwork;
+        }
         MediaBox.classList.remove('Skeletoned');
       })
       .catch((err) => {
@@ -945,11 +914,13 @@ function UpdateNowBar(force = false) {
       });
   }
 
-  // Update song name
+  // Only update text if changed
   if (SongNameSpan && SongName) {
     SpotifyPlayer.GetSongName()
       .then((title) => {
-        SongNameSpan.textContent = title;
+        if (SongNameSpan.textContent !== title) {
+          SongNameSpan.textContent = title;
+        }
         SongName.classList.remove('Skeletoned');
       })
       .catch((err) => {
@@ -957,11 +928,13 @@ function UpdateNowBar(force = false) {
       });
   }
 
-  // Update artists
   if (ArtistsSpan && ArtistsDiv) {
     SpotifyPlayer.GetArtists()
       .then((artists) => {
-        ArtistsSpan.textContent = SpotifyPlayer.JoinArtists(artists);
+        const joined = SpotifyPlayer.JoinArtists(artists);
+        if (ArtistsSpan.textContent !== joined) {
+          ArtistsSpan.textContent = joined;
+        }
         ArtistsDiv.classList.remove('Skeletoned');
       })
       .catch((err) => {
@@ -970,9 +943,7 @@ function UpdateNowBar(force = false) {
   }
 
   if (Fullscreen.IsOpen) {
-    const NowBarAlbum = NowBar.querySelector<HTMLDivElement>(
-      '.Header .MediaBox .AlbumData',
-    );
+    const NowBarAlbum = NowBar.querySelector<HTMLDivElement>('.Header .MediaBox .AlbumData');
     if (NowBarAlbum) {
       NowBarAlbum.classList.add('Skeletoned');
       const AlbumSpan = NowBarAlbum.querySelector('span');
@@ -1211,17 +1182,18 @@ function handlePositionUpdate(e: number | { data?: number }): void {
   }
 
   if (position !== null) {
-    // Update tracking variables
-    progressBarState.lastKnownPosition = position;
-    progressBarState.lastUpdateTime = performance.now();
+    // Only update if position actually changed
+    if (progressBarState.lastKnownPosition !== position) {
+      progressBarState.lastKnownPosition = position;
+      progressBarState.lastUpdateTime = performance.now();
 
-    // Only update UI if not in the middle of interpolation
-    const lastInterpolationUpdate =
-      progressBarState.lastInterpolationUpdate || 0;
-    if (performance.now() - lastInterpolationUpdate > 500) {
-      const updateTimelineState = progressBarState.updateTimelineState_Function;
-      if (updateTimelineState) {
-        updateTimelineState(position);
+      // Only update UI if not in the middle of interpolation
+      const lastInterpolationUpdate = progressBarState.lastInterpolationUpdate || 0;
+      if (performance.now() - lastInterpolationUpdate > 500) {
+        const updateTimelineState = progressBarState.updateTimelineState_Function;
+        if (updateTimelineState) {
+          updateTimelineState(position);
+        }
       }
     }
   }
