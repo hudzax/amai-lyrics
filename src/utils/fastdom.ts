@@ -26,8 +26,8 @@ let scheduledAnimationFrame = false;
  */
 function processQueues() {
   // Process all read operations first
-  const reads = readQueue.splice(0, readQueue.length);
-  reads.forEach(({ fn, callback }) => {
+  while (readQueue.length) {
+    const { fn, callback } = readQueue.shift()!;
     try {
       const result = fn();
       callback(result);
@@ -35,26 +35,32 @@ function processQueues() {
       console.error('Error in read operation:', error);
       callback(null);
     }
-  });
+  }
 
   // Then process all write operations
-  const writes = writeQueue.splice(0, writeQueue.length);
-  writes.forEach(({ fn, callback }) => {
-    try {
-      const result = fn();
-      callback(result);
-    } catch (error) {
-      console.error('Error in write operation:', error);
-      callback(null);
+  // Use queueMicrotask to avoid blocking the main thread if writes are heavy
+  if (writeQueue.length) {
+    queueMicrotask(() => {
+      while (writeQueue.length) {
+        const { fn, callback } = writeQueue.shift()!;
+        try {
+          const result = fn();
+          callback(result);
+        } catch (error) {
+          console.error('Error in write operation:', error);
+          callback(null);
+        }
+      }
+      scheduledAnimationFrame = false;
+      if (readQueue.length > 0 || writeQueue.length > 0) {
+        scheduleFrame();
+      }
+    });
+  } else {
+    scheduledAnimationFrame = false;
+    if (readQueue.length > 0) {
+      scheduleFrame();
     }
-  });
-
-  // Reset the frame flag
-  scheduledAnimationFrame = false;
-
-  // If new operations were added during processing, schedule another frame
-  if (readQueue.length > 0 || writeQueue.length > 0) {
-    scheduleFrame();
   }
 }
 
@@ -62,7 +68,7 @@ function processQueues() {
  * Schedule a frame to process queues if not already scheduled
  */
 function scheduleFrame() {
-  if (!scheduledAnimationFrame) {
+  if (!scheduledAnimationFrame && (readQueue.length > 0 || writeQueue.length > 0)) {
     scheduledAnimationFrame = true;
     requestAnimationFrame(processQueues);
   }
@@ -103,9 +109,7 @@ export default {
    */
   read: <T>(fn: () => T): Promise<T> => {
     return new Promise((resolve) => {
-      measure((result: T) => {
-        resolve(result as T);
-      }, fn);
+      measure(resolve, fn);
     });
   },
 
@@ -118,9 +122,7 @@ export default {
    */
   write: <T>(fn: () => T): Promise<T> => {
     return new Promise((resolve) => {
-      mutate((result: T) => {
-        resolve(result as T);
-      }, fn);
+      mutate(resolve, fn);
     });
   },
 
@@ -132,18 +134,10 @@ export default {
    * @param writeFn Function that performs DOM write operations using read results
    * @returns Promise that resolves when both operations are complete
    */
-  readThenWrite: <R, W>(
-    readFn: () => R,
-    writeFn: (readResult: R) => W,
-  ): Promise<W> => {
+  readThenWrite: <R, W>(readFn: () => R, writeFn: (readResult: R) => W): Promise<W> => {
     return new Promise((resolve) => {
       measure((readResult: R) => {
-        mutate(
-          (writeResult: W) => {
-            resolve(writeResult as W);
-          },
-          () => writeFn(readResult as R),
-        );
+        mutate(resolve, () => writeFn(readResult as R));
       }, readFn);
     });
   },
