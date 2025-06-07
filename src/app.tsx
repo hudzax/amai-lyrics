@@ -114,9 +114,7 @@ function applyDynamicBackgroundToNowPlayingBar(
       // Read phase
       () => {
         // Always query for the nowPlayingBar element in the read phase
-        const nowPlayingBar = document.querySelector(
-          '.Root__right-sidebar aside.NowPlayingView',
-        );
+        const nowPlayingBar = document.querySelector('.Root__right-sidebar aside.NowPlayingView');
 
         return {
           nowPlayingBar: nowPlayingBar, // Use the queried element
@@ -124,12 +122,8 @@ function applyDynamicBackgroundToNowPlayingBar(
           // If we already have a dynamic background, get the image elements
           images: cached.dynamicBg
             ? {
-                imgA: cached.dynamicBg.querySelector(
-                  '#bg-img-a',
-                ) as HTMLImageElement,
-                imgB: cached.dynamicBg.querySelector(
-                  '#bg-img-b',
-                ) as HTMLImageElement,
+                imgA: cached.dynamicBg.querySelector('#bg-img-a') as HTMLImageElement,
+                imgB: cached.dynamicBg.querySelector('#bg-img-b') as HTMLImageElement,
               }
             : null,
         };
@@ -164,20 +158,11 @@ function applyDynamicBackgroundToNowPlayingBar(
 
           const scalePrimary = 0.9 + Math.random() * 0.3;
           const scaleSecondary = 0.9 + Math.random() * 0.3;
-          document.documentElement.style.setProperty(
-            '--bg-scale-primary',
-            `${scalePrimary}`,
-          );
-          document.documentElement.style.setProperty(
-            '--bg-scale-secondary',
-            `${scaleSecondary}`,
-          );
+          document.documentElement.style.setProperty('--bg-scale-primary', `${scalePrimary}`);
+          document.documentElement.style.setProperty('--bg-scale-secondary', `${scaleSecondary}`);
 
           const hueShift = Math.floor(Math.random() * 30);
-          document.documentElement.style.setProperty(
-            '--bg-hue-shift',
-            `${hueShift}deg`,
-          );
+          document.documentElement.style.setProperty('--bg-hue-shift', `${hueShift}deg`);
 
           // Create new dynamic background container
           const dynamicBackground = document.createElement('div');
@@ -249,20 +234,14 @@ function applyDynamicBackgroundToNowPlayingBar(
 }
 
 async function initializeAmaiLyrics(button: Spicetify.Playbar.Button) {
-  const [{ requestPositionSync }] = await Promise.all([
-    import('./utils/Gets/GetProgress'),
-  ]);
+  const [{ requestPositionSync }] = await Promise.all([import('./utils/Gets/GetProgress')]);
   const { default: fetchLyrics } = await import('./utils/Lyrics/fetchLyrics');
-  const { default: ApplyLyrics } = await import(
-    './utils/Lyrics/Global/Applyer'
-  );
+  const { default: ApplyLyrics } = await import('./utils/Lyrics/Global/Applyer');
   const { default: ApplyDynamicBackground } = await import(
     './components/DynamicBG/dynamicBackground'
   );
   const { UpdateNowBar } = await import('./components/Utils/NowBar');
-  const { ScrollToActiveLine } = await import(
-    './utils/Scrolling/ScrollToActiveLine'
-  );
+  const { ScrollToActiveLine } = await import('./utils/Scrolling/ScrollToActiveLine');
   const { default: PageView } = await import('./components/Pages/PageView');
 
   Whentil.When(
@@ -303,10 +282,7 @@ async function initializeAmaiLyrics(button: Spicetify.Playbar.Button) {
     updateButtonRegistration(button);
 
     // Apply background immediately with current data
-    applyDynamicBackgroundToNowPlayingBar(
-      Spicetify.Player.data?.item?.metadata?.image_url,
-      cached,
-    );
+    applyDynamicBackgroundToNowPlayingBar(Spicetify.Player.data?.item?.metadata?.image_url, cached);
 
     // Update UI elements directly without waiting for track info
     if (Spicetify.Player.data.item?.type === 'track') {
@@ -320,9 +296,7 @@ async function initializeAmaiLyrics(button: Spicetify.Playbar.Button) {
       PageView.UpdatePageContent();
 
       // Apply dynamic background
-      ApplyDynamicBackground(
-        document.querySelector('#SpicyLyricsPage .ContentBox'),
-      );
+      ApplyDynamicBackground(document.querySelector('#SpicyLyricsPage .ContentBox'));
     }
   }
 
@@ -341,9 +315,7 @@ async function initializeAmaiLyrics(button: Spicetify.Playbar.Button) {
     }
   });
 
-  new IntervalManager(ScrollingIntervalTime, () =>
-    ScrollToActiveLine(ScrollSimplebar),
-  ).Start();
+  new IntervalManager(ScrollingIntervalTime, () => ScrollToActiveLine(ScrollSimplebar)).Start();
 
   let lastLocation = null;
 
@@ -375,11 +347,7 @@ async function initializeAmaiLyrics(button: Spicetify.Playbar.Button) {
   // For LoopType
   const initialLoopState = Spicetify.Player.getRepeat();
   SpotifyPlayer.LoopType =
-    initialLoopState === 1
-      ? 'context'
-      : initialLoopState === 2
-      ? 'track'
-      : 'none';
+    initialLoopState === 1 ? 'context' : initialLoopState === 2 ? 'track' : 'none';
   Global.Event.evoke('playback:loop', SpotifyPlayer.LoopType); // Evoke once at start
 
   // For ShuffleType
@@ -419,19 +387,14 @@ async function initializeAmaiLyrics(button: Spicetify.Playbar.Button) {
       // Also update loop and shuffle states on song change as they can be part of context
       const currentLoopState = Spicetify.Player.getRepeat();
       const newLoopType =
-        currentLoopState === 1
-          ? 'context'
-          : currentLoopState === 2
-          ? 'track'
-          : 'none';
+        currentLoopState === 1 ? 'context' : currentLoopState === 2 ? 'track' : 'none';
       if (SpotifyPlayer.LoopType !== newLoopType) {
         SpotifyPlayer.LoopType = newLoopType;
         Global.Event.evoke('playback:loop', newLoopType);
       }
 
       const currentShuffleState = Spicetify.Player.origin._state.shuffle;
-      const currentSmartShuffleState =
-        Spicetify.Player.origin._state.smartShuffle;
+      const currentSmartShuffleState = Spicetify.Player.origin._state.smartShuffle;
       const newShuffleType = currentSmartShuffleState
         ? 'smart'
         : currentShuffleState
@@ -453,8 +416,7 @@ async function initializeAmaiLyrics(button: Spicetify.Playbar.Button) {
       // Assuming 'e.data' might hold the new state, or we fetch it.
       // For safety, always fetch the current state.
       const LoopState = Spicetify.Player.getRepeat();
-      const LoopType =
-        LoopState === 1 ? 'context' : LoopState === 2 ? 'track' : 'none';
+      const LoopType = LoopState === 1 ? 'context' : LoopState === 2 ? 'track' : 'none';
       if (SpotifyPlayer.LoopType !== LoopType) {
         SpotifyPlayer.LoopType = LoopType;
         Global.Event.evoke('playback:loop', LoopType);
@@ -466,11 +428,7 @@ async function initializeAmaiLyrics(button: Spicetify.Playbar.Button) {
       // For safety, always fetch the current state.
       const shuffleState = Spicetify.Player.origin._state.shuffle;
       const smartShuffleState = Spicetify.Player.origin._state.smartShuffle;
-      const ShuffleType = smartShuffleState
-        ? 'smart'
-        : shuffleState
-        ? 'normal'
-        : 'none';
+      const ShuffleType = smartShuffleState ? 'smart' : shuffleState ? 'normal' : 'none';
       if (SpotifyPlayer.ShuffleType !== ShuffleType) {
         SpotifyPlayer.ShuffleType = ShuffleType;
         Global.Event.evoke('playback:shuffle', ShuffleType);
