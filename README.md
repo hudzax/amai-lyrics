@@ -23,6 +23,22 @@ Using Google's Gemini AI, it automatically generates:
 - **Better Visuals:** Clean and easy-to-read design.
 - **Easy Setup:** Just get an API key from [Google AI Studio](https://aistudio.google.com/app/apikey) and add it in Spotify settings (explained below).
 
+### 🌍 Supported Translation Languages
+
+Amai Lyrics supports translations into the following languages:
+
+- **English**
+- **Spanish**
+- **French**
+- **German**
+- **Portuguese**
+- **Chinese (Simplified)**
+- **Thai**
+- **Indonesian**
+- **Malay**
+
+You can change the translation language in Spotify's settings after installing the extension.
+
 ---
 
 ## 👀 Preview
