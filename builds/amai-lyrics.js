@@ -412,7 +412,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.1.13";
+      version = "1.1.14";
     }
   });
 
@@ -440,11 +440,11 @@
 - **Use Your Full Capabilities:** Leverage your extensive knowledge and skills to provide well-researched and precise answers.
 - **Follow Instructions Rigorously:** Abide by every detail specified in the prompt, ensuring your output meets all requirements.
 - **Review Before Output:** Carefully review your output to ensure accuracy, completeness, and adherence to the prompt's instructions.**`,
-        translationPrompt: `You are an expert translator specializing in song lyrics. I will give you multilingual song lyrics, your task is to translate them into natural, fluent {language} that preserves both meaning and emotional impact.
+        translationPrompt: `You are an expert translator specializing in song lyrics with deep cultural and linguistic knowledge. I will give you multilingual song lyrics, your task is to translate them into natural, fluent {language} that preserves both meaning and emotional impact.
 
 **Strict Line-by-Line Instructions:**
 
-- **IMPORTANT:** Treat each line as a completely separate unit.  
+- **IMPORTANT:** Treat each line as a completely separate unit.
   **Absolutely do not merge multiple lines into one translation.**
 - **Each original line must produce exactly one translated line**, even if it is short, repetitive, or fragmentary.
 - **Maintain the exact line count and line breaks** as in the original lyrics \u2014 every input line should have a one-to-one correspondence in the output.
@@ -462,7 +462,17 @@
 - Prioritize intended meaning and poetic nuance over literal word-for-word translation.
 - Preserve poetic and cultural elements (metaphor, imagery, slang, idioms, etc.).
 - Maintain consistent use of pronouns, tense, and tone.
-- Use culturally appropriate and natural {language} equivalents where direct translation would lose meaning.`,
+- Use culturally appropriate and natural {language} equivalents where direct translation would lose meaning.
+
+**Language-Specific Guidelines:**
+
+- **Spanish**: Use appropriate regional variations (neutral Latin American Spanish preferred), maintain poetic meter when possible, preserve emotional intensity typical in Spanish music.
+- **French**: Maintain elegance and flow characteristic of French lyrics, use appropriate formal/informal registers, preserve romantic and poetic nuances.
+- **German**: Respect compound word structures when creating natural translations, maintain the directness or philosophical depth often found in German lyrics.
+- **Portuguese**: Distinguish between Brazilian and European Portuguese contexts when relevant, preserve the musicality and rhythm important in Portuguese lyrics.
+- **Chinese (Simplified)**: Use contemporary Mandarin expressions, maintain cultural sensitivity, preserve metaphorical and poetic elements common in Chinese lyrics.
+- **Thai**: Use appropriate formal/informal language levels, preserve cultural references and emotional expressions typical in Thai music.
+- **Indonesian/Malay**: Maintain the melodic quality of the language, use contemporary expressions while preserving cultural context.`,
         romajaPrompt: `You are an expert Korean linguist specializing in accurate romaja transcription for song lyrics. Your primary goal is to add Revised Romanization in curly braces {} after EVERY sequence of Korean Hangul characters in the provided lyrics.
 
 **Core Task:** Convert Korean lyrics to include inline romaja with perfect accuracy.
@@ -7098,9 +7108,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-10136-jz7aMHeI8Ujv/1974aef45b68/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-19468-OdXTXR38iMgN/1974b1876678/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-10136-jz7aMHeI8Ujv/1974aef45b68/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-19468-OdXTXR38iMgN/1974b1876678/DotLoader.css"() {
     }
   });
 
@@ -18164,7 +18174,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   }
   function createTranslationPrompt(targetLang) {
-    return Defaults_default.translationPrompt.replace(/{language}/g, targetLang) + ` Translate the following lyrics into ${targetLang}:
+    const escapedLang = targetLang.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return Defaults_default.translationPrompt.replace(/{language}/g, escapedLang) + ` Translate the following lyrics into ${targetLang}:
 `;
   }
   function createGeminiConfig(systemInstruction, temperature) {
@@ -18908,20 +18919,12 @@ ${JSON.stringify(lyricsOnly)}`
     infos();
   }
   function devSettings() {
-    const settings = new SettingsSection(
-      "Amai - Dev Settings",
-      "amai-dev-settings"
-    );
-    settings.addButton(
-      "remove-cached-lyrics",
-      "Remove Cached Lyrics",
-      "Remove Cached Lyrics",
-      () => {
-        lyricsCache.destroy();
-        storage_default.set("currentLyricsData", null);
-        Spicetify.showNotification("Cache Destroyed Successfully!", false, 2e3);
-      }
-    );
+    const settings = new SettingsSection("Amai - Dev Settings", "amai-dev-settings");
+    settings.addButton("remove-cached-lyrics", "Remove Cached Lyrics", "Remove Cached Lyrics", () => {
+      lyricsCache.destroy();
+      storage_default.set("currentLyricsData", null);
+      Spicetify.showNotification("Cache Destroyed Successfully!", false, 2e3);
+    });
     settings.addButton("reload", "Reload UI", "Reload", () => {
       window.location.reload();
     });
@@ -18930,10 +18933,7 @@ ${JSON.stringify(lyricsOnly)}`
   function generalSettings() {
     const settings = new SettingsSection("Amai - Settings", "amai-settings");
     settings.addInput("gemini-api-key", "Gemini API Key", "", () => {
-      storage_default.set(
-        "GEMINI_API_KEY",
-        settings.getFieldValue("gemini-api-key")
-      );
+      storage_default.set("GEMINI_API_KEY", settings.getFieldValue("gemini-api-key"));
       lyricsCache.destroy();
       storage_default.set("currentLyricsData", null);
       const playerData = Spicetify.Player.data;
@@ -18942,14 +18942,9 @@ ${JSON.stringify(lyricsOnly)}`
       const currentUri = playerData.item.uri;
       fetchLyrics(currentUri).then(ApplyLyrics);
     });
-    settings.addButton(
-      "get-gemini-api",
-      "Get your own Gemini API here",
-      "get API Key",
-      () => {
-        window.location.href = "https://aistudio.google.com/app/apikey/";
-      }
-    );
+    settings.addButton("get-gemini-api", "Get your own Gemini API here", "get API Key", () => {
+      window.location.href = "https://aistudio.google.com/app/apikey/";
+    });
     settings.addToggle(
       "enableRomaji",
       "Enable Romaji for Japanese Lyrics",
@@ -18957,10 +18952,7 @@ ${JSON.stringify(lyricsOnly)}`
       () => {
         lyricsCache.destroy();
         storage_default.set("currentLyricsData", null);
-        storage_default.set(
-          "enable_romaji",
-          settings.getFieldValue("enableRomaji")
-        );
+        storage_default.set("enable_romaji", settings.getFieldValue("enableRomaji"));
       }
     );
     settings.addToggle(
@@ -18977,7 +18969,17 @@ ${JSON.stringify(lyricsOnly)}`
     settings.addDropDown(
       "translation-language",
       "Translation Language",
-      ["English", "Indonesian", "Malay"],
+      [
+        "English",
+        "Spanish",
+        "French",
+        "German",
+        "Portuguese",
+        "Chinese (Simplified)",
+        "Thai",
+        "Indonesian",
+        "Malay"
+      ],
       0,
       () => {
         const selected = settings.getFieldValue("translation-language");
@@ -18993,10 +18995,7 @@ ${JSON.stringify(lyricsOnly)}`
       () => {
         lyricsCache.destroy();
         storage_default.set("currentLyricsData", null);
-        storage_default.set(
-          "disable_translation",
-          settings.getFieldValue("disableTranslation")
-        );
+        storage_default.set("disable_translation", settings.getFieldValue("disableTranslation"));
       }
     );
     settings.pushSettings();
@@ -19400,7 +19399,7 @@ ${JSON.stringify(lyricsOnly)}`
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-10136-jz7aMHeI8Ujv/1974aef45b68/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-19468-OdXTXR38iMgN/1974b1876678/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -19426,7 +19425,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10136-jz7aMHeI8Ujv/1974aef45350/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19468-OdXTXR38iMgN/1974b1875e20/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -19568,7 +19567,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10136-jz7aMHeI8Ujv/1974aef456f1/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19468-OdXTXR38iMgN/1974b18761e1/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -19776,7 +19775,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10136-jz7aMHeI8Ujv/1974aef45792/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19468-OdXTXR38iMgN/1974b1876272/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -20266,7 +20265,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10136-jz7aMHeI8Ujv/1974aef458a3/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19468-OdXTXR38iMgN/1974b1876383/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 1.5;
@@ -20421,7 +20420,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10136-jz7aMHeI8Ujv/1974aef45924/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19468-OdXTXR38iMgN/1974b1876404/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -20681,7 +20680,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10136-jz7aMHeI8Ujv/1974aef459b5/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19468-OdXTXR38iMgN/1974b18764b5/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -20965,7 +20964,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10136-jz7aMHeI8Ujv/1974aef45a46/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19468-OdXTXR38iMgN/1974b1876546/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -20988,7 +20987,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10136-jz7aMHeI8Ujv/1974aef45a97/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19468-OdXTXR38iMgN/1974b1876597/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
