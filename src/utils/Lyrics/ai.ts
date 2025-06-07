@@ -99,8 +99,11 @@ export async function fetchTranslationsWithGemini(lyricsOnly: string[]): Promise
  * Creates a translation prompt for Gemini
  */
 export function createTranslationPrompt(targetLang: string): string {
+  // Escape special regex characters in the target language
+  const escapedLang = targetLang.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
   return (
-    Defaults.translationPrompt.replace(/{language}/g, targetLang) +
+    Defaults.translationPrompt.replace(/{language}/g, escapedLang) +
     ` Translate the following lyrics into ${targetLang}:\n`
   );
 }

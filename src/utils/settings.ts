@@ -12,10 +12,7 @@ export function setSettingsMenu() {
 }
 
 function devSettings() {
-  const settings = new SettingsSection(
-    'Amai - Dev Settings',
-    'amai-dev-settings',
-  );
+  const settings = new SettingsSection('Amai - Dev Settings', 'amai-dev-settings');
 
   /*     settings.addInput("custom-lyrics-api", "Custom Lyrics API", Defaults.lyrics.api.url, () => {
         storage.set("customLyricsApi", settings.getFieldValue("custom-lyrics-api") as string)
@@ -39,16 +36,11 @@ function devSettings() {
         Spicetify.showNotification("Custom APIs Reset Successfully!", false, 3000);
     }); */
 
-  settings.addButton(
-    'remove-cached-lyrics',
-    'Remove Cached Lyrics',
-    'Remove Cached Lyrics',
-    () => {
-      lyricsCache.destroy();
-      storage.set('currentLyricsData', null);
-      Spicetify.showNotification('Cache Destroyed Successfully!', false, 2000);
-    },
-  );
+  settings.addButton('remove-cached-lyrics', 'Remove Cached Lyrics', 'Remove Cached Lyrics', () => {
+    lyricsCache.destroy();
+    storage.set('currentLyricsData', null);
+    Spicetify.showNotification('Cache Destroyed Successfully!', false, 2000);
+  });
 
   // settings.addButton(
   //   'remove-current-song-lyrics-from-localStorage',
@@ -112,10 +104,7 @@ function generalSettings() {
   // );
 
   settings.addInput('gemini-api-key', 'Gemini API Key', '', () => {
-    storage.set(
-      'GEMINI_API_KEY',
-      settings.getFieldValue('gemini-api-key') as string,
-    );
+    storage.set('GEMINI_API_KEY', settings.getFieldValue('gemini-api-key') as string);
 
     // clear cache and current lyrics data
     lyricsCache.destroy();
@@ -127,14 +116,9 @@ function generalSettings() {
     fetchLyrics(currentUri).then(ApplyLyrics);
   });
 
-  settings.addButton(
-    'get-gemini-api',
-    'Get your own Gemini API here',
-    'get API Key',
-    () => {
-      window.location.href = 'https://aistudio.google.com/app/apikey/';
-    },
-  );
+  settings.addButton('get-gemini-api', 'Get your own Gemini API here', 'get API Key', () => {
+    window.location.href = 'https://aistudio.google.com/app/apikey/';
+  });
 
   settings.addToggle(
     'enableRomaji',
@@ -144,10 +128,7 @@ function generalSettings() {
       // clear cache and current lyrics data
       lyricsCache.destroy();
       storage.set('currentLyricsData', null);
-      storage.set(
-        'enable_romaji',
-        settings.getFieldValue('enableRomaji') as string,
-      );
+      storage.set('enable_romaji', settings.getFieldValue('enableRomaji') as string);
     },
   );
 
@@ -166,7 +147,17 @@ function generalSettings() {
   settings.addDropDown(
     'translation-language',
     'Translation Language',
-    ['English', 'Indonesian', 'Malay'],
+    [
+      'English',
+      'Spanish',
+      'French',
+      'German',
+      'Portuguese',
+      'Chinese (Simplified)',
+      'Thai',
+      'Indonesian',
+      'Malay',
+    ],
     0,
     () => {
       const selected = settings.getFieldValue('translation-language') as string;
@@ -186,10 +177,7 @@ function generalSettings() {
       // clear cache and current lyrics data
       lyricsCache.destroy();
       storage.set('currentLyricsData', null);
-      storage.set(
-        'disable_translation',
-        settings.getFieldValue('disableTranslation') as string,
-      );
+      storage.set('disable_translation', settings.getFieldValue('disableTranslation') as string);
     },
   );
 
