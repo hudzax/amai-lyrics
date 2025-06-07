@@ -5,11 +5,7 @@
 import { SpikyCache } from '@hudzax/web-modules/SpikyCache';
 import storage from '../storage';
 import Defaults from '../../components/Global/Defaults';
-import {
-  HideLoaderContainer,
-  ClearLyricsPageContainer,
-  noLyricsMessage,
-} from './ui';
+import { HideLoaderContainer, ClearLyricsPageContainer, noLyricsMessage } from './ui';
 
 import { LyricsData } from './processing';
 
@@ -30,10 +26,7 @@ export const lyricsCache = new SpikyCache({
  * @param trackId - Spotify track ID
  * @param lyricsJson - Processed lyrics data
  */
-export async function cacheLyrics(
-  trackId: string,
-  lyricsJson: LyricsData,
-): Promise<void> {
+export async function cacheLyrics(trackId: string, lyricsJson: LyricsData): Promise<void> {
   if (!lyricsCache) return;
 
   const expiresAt = new Date().getTime() + CACHE_EXPIRATION_TIME;
@@ -119,4 +112,15 @@ export async function getLyricsFromLocalStorage(
   }
 
   return null;
+}
+
+// Remove lyrics from cache
+export async function removeLyricsFromCache(trackId: string): Promise<void> {
+  if (!lyricsCache) return;
+
+  try {
+    await lyricsCache.remove(trackId);
+  } catch (error) {
+    console.error('Error removing lyrics from cache:', error);
+  }
 }
