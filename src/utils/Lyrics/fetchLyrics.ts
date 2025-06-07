@@ -5,17 +5,10 @@
  */
 
 import storage from '../storage';
-import {
-  resetLyricsUI,
-  ClearLyricsPageContainer,
-  ShowLoaderContainer,
-} from './ui';
-import {
-  getLyricsFromLocalStorage,
-  getLyricsFromCache,
-  lyricsCache,
-} from './cache';
+import { resetLyricsUI, ClearLyricsPageContainer, ShowLoaderContainer } from './ui';
+import { getLyricsFromLocalStorage, getLyricsFromCache, lyricsCache } from './cache';
 import { fetchLyricsFromAPI } from './api';
+import { hideRefreshButton } from '../../components/Pages/PageView';
 
 import { LyricsData } from './processing';
 
@@ -29,9 +22,7 @@ import { LyricsData } from './processing';
  * @param uri - Spotify track URI
  * @returns Processed lyrics data or error message
  */
-export default async function fetchLyrics(
-  uri: string,
-): Promise<LyricsData | string> {
+export default async function fetchLyrics(uri: string): Promise<LyricsData | string> {
   resetLyricsUI();
   ClearLyricsPageContainer();
   document
@@ -45,6 +36,9 @@ export default async function fetchLyrics(
 
   const cachedLyrics = await getLyricsFromCache(trackId);
   if (cachedLyrics) return cachedLyrics;
+
+  // Hide refresh button during fetch
+  hideRefreshButton();
 
   const currFetching = storage.get('currentlyFetching');
   if (currFetching === 'true') {

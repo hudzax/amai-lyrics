@@ -3,6 +3,7 @@ import { ApplyStaticLyrics } from '../Applyer/Static';
 import { ApplyLineLyrics } from '../Applyer/Synced/Line';
 import { ApplySyllableLyrics } from '../Applyer/Synced/Syllable';
 import fetchLyrics from '../fetchLyrics';
+import { showRefreshButton } from '../../../components/Pages/PageView';
 
 /**
  * Applies lyrics to the UI based on the lyrics type
@@ -35,5 +36,7 @@ export default function ApplyLyrics(lyrics) {
   const applyHandler = lyricsHandlers[lyrics.Type];
   if (applyHandler) {
     applyHandler(lyrics);
+    // Show refresh button after lyrics are applied
+    showRefreshButton();
   }
 }

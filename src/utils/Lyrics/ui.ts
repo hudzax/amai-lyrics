@@ -7,6 +7,7 @@ import Defaults from '../../components/Global/Defaults';
 import { OpenNowBar, DeregisterNowBarBtn } from '../../components/Utils/NowBar';
 import PageView from '../../components/Pages/PageView';
 import Fullscreen from '../../components/Utils/Fullscreen';
+import { showRefreshButton } from '../../components/Pages/PageView';
 
 let ContainerShowLoaderTimeout: number | null = null;
 
@@ -14,9 +15,7 @@ let ContainerShowLoaderTimeout: number | null = null;
  * Resets the lyrics UI
  */
 export function resetLyricsUI(): void {
-  const lyricsContent = document.querySelector(
-    '#SpicyLyricsPage .LyricsContainer .LyricsContent',
-  );
+  const lyricsContent = document.querySelector('#SpicyLyricsPage .LyricsContainer .LyricsContent');
   if (lyricsContent?.classList.contains('offline')) {
     lyricsContent.classList.remove('offline');
   }
@@ -42,15 +41,15 @@ export async function noLyricsMessage(trackId?: string): Promise<string> {
       HideLoaderContainer();
       Defaults.CurrentLyricsType = 'None';
       document
-        .querySelector<HTMLElement>(
-          '#SpicyLyricsPage .ContentBox .LyricsContainer',
-        )
+        .querySelector<HTMLElement>('#SpicyLyricsPage .ContentBox .LyricsContainer')
         ?.classList.add('Hidden');
       document
         .querySelector<HTMLElement>('#SpicyLyricsPage .ContentBox')
         ?.classList.add('LyricsHidden');
       OpenNowBar();
       DeregisterNowBarBtn();
+      // Show refresh button so user can try again
+      showRefreshButton();
     }
   } catch (error) {
     console.error('Amai Lyrics: Error showing no lyrics message', error);
@@ -95,9 +94,7 @@ export function HideLoaderContainer(): void {
  * Clears the lyrics container content
  */
 export function ClearLyricsPageContainer(): void {
-  const lyricsContent = document.querySelector(
-    '#SpicyLyricsPage .LyricsContainer .LyricsContent',
-  );
+  const lyricsContent = document.querySelector('#SpicyLyricsPage .LyricsContainer .LyricsContent');
   if (lyricsContent) {
     lyricsContent.innerHTML = '';
   }

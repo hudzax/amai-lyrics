@@ -13,6 +13,8 @@ import TransferElement from '../Utils/TransferElement';
 import Session from '../Global/Session';
 import { ResetLastLine } from '../../utils/Scrolling/ScrollToActiveLine';
 import fastdom from '../../utils/fastdom';
+import storage from '../../utils/storage';
+import { removeLyricsFromCache } from '../../utils/Lyrics/cache';
 
 interface ImageElementWithSetup extends HTMLImageElement {
   _setupImageLoading?: boolean;
@@ -79,6 +81,11 @@ async function OpenPage() {
                               </div>
                           </div>
                       </div>
+                      <div class="RefreshContainer">
+                        <button id="RefreshLyrics" class="RefreshButton">
+                            Refresh Lyrics
+                        </button>
+                      </div>
                   </div>
               </div>
               <div class="LyricsContainer">
@@ -134,6 +141,10 @@ async function OpenPage() {
   Session_NowBar_SetSide();
 
   await AppendViewControls();
+
+  // Set up refresh button functionality
+  setupRefreshButton();
+
   PageView.IsOpened = true;
 }
 
@@ -332,6 +343,64 @@ async function UpdatePageContent() {
       .catch((error) => {
         console.error('Failed to load artwork:', error);
       });
+  }
+}
+
+/**
+ * Sets up the refresh button functionality
+ */
+function setupRefreshButton() {
+  const refreshButton = document.querySelector('#RefreshLyrics');
+  if (!refreshButton) return;
+
+  refreshButton.addEventListener('click', async () => {
+    const currentUri = Spicetify.Player.data?.item?.uri;
+    if (!currentUri) {
+      Spicetify.showNotification('No track playing', false, 1000);
+      return;
+    }
+
+    // Hide refresh button during fetch
+    await fastdom.write(() => {
+      refreshButton.classList.add('hidden');
+    });
+
+    try {
+      // Clear current lyrics cache
+      const trackId = currentUri.split(':')[2];
+      removeLyricsFromCache(trackId);
+      storage.set('currentLyricsData', null);
+      // Fetch and apply lyrics
+      const lyrics = await fetchLyrics(currentUri);
+      ApplyLyrics(lyrics);
+    } catch (error) {
+      console.error('Error refreshing lyrics:', error);
+      Spicetify.showNotification('Error refreshing lyrics', false, 2000);
+    }
+  });
+}
+
+/**
+ * Shows the refresh button
+ */
+export function showRefreshButton() {
+  const refreshButton = document.querySelector('#RefreshLyrics');
+  if (refreshButton) {
+    fastdom.write(() => {
+      refreshButton.classList.remove('hidden');
+    });
+  }
+}
+
+/**
+ * Hides the refresh button
+ */
+export function hideRefreshButton() {
+  const refreshButton = document.querySelector('#RefreshLyrics');
+  if (refreshButton) {
+    fastdom.write(() => {
+      refreshButton.classList.add('hidden');
+    });
   }
 }
 

@@ -67,6 +67,58 @@
   padding: 0 3.5cqw 0 5cqw !important;
 }
 
+/* Refresh Button Styles */
+
+#SpicyLyricsPage .RefreshContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px 0;
+  margin-top: 8px;
+}
+
+#SpicyLyricsPage .RefreshButton {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+#SpicyLyricsPage .RefreshButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 1);
+  transform: scale(1.05);
+}
+
+#SpicyLyricsPage .RefreshButton:active {
+  transform: scale(0.95);
+}
+
+#SpicyLyricsPage .RefreshButton.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.8);
+}
+
+/* Hide refresh button when lyrics container is hidden */
+#SpicyLyricsPage .ContentBox.LyricsHidden .RefreshContainer {
+  display: none;
+}
+
+/* Hide refresh button when in fullscreen mode */
+#SpicyLyricsPage.Fullscreen .RefreshContainer {
+  display: none;
+}
+
 header.main-topBar-container .amai-info {
   position: fixed;
   top: 0;
