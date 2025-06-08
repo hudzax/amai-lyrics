@@ -82,8 +82,11 @@ async function OpenPage() {
                           </div>
                       </div>
                       <div class="RefreshContainer">
+                        <button id="ReleaseLogsButton" class="RefreshButton">
+                            View Release Notes
+                        </button>
                         <button id="RefreshLyrics" class="RefreshButton">
-                            Refresh Lyrics
+                            Reload Current Song Lyrics
                         </button>
                       </div>
                   </div>
@@ -144,6 +147,9 @@ async function OpenPage() {
 
   // Set up refresh button functionality
   setupRefreshButton();
+
+  // Set up release logs button functionality
+  setupReleaseLogsButton();
 
   PageView.IsOpened = true;
 }
@@ -231,7 +237,7 @@ async function AppendViewControls(ReAppend: boolean = false) {
 
     Tooltips.Close = Spicetify.Tippy(closeButton, {
       ...Spicetify.TippyProps,
-      content: `Close Page`,
+      content: `Exit Lyrics Page`,
     });
 
     closeButton?.addEventListener('click', () => Session.GoBack());
@@ -241,7 +247,7 @@ async function AppendViewControls(ReAppend: boolean = false) {
 
     Tooltips.FullscreenToggle = Spicetify.Tippy(fullscreenBtn, {
       ...Spicetify.TippyProps,
-      content: `Toggle Fullscreen`,
+      content: `Toggle Fullscreen View`,
     });
 
     fullscreenBtn?.addEventListener('click', () => Fullscreen.Toggle());
@@ -377,6 +383,18 @@ function setupRefreshButton() {
       console.error('Error refreshing lyrics:', error);
       Spicetify.showNotification('Error refreshing lyrics', false, 2000);
     }
+  });
+}
+
+/**
+ * Sets up the release logs button functionality
+ */
+function setupReleaseLogsButton() {
+  const releaseLogsButton = document.querySelector('#ReleaseLogsButton');
+  if (!releaseLogsButton) return;
+
+  releaseLogsButton.addEventListener('click', () => {
+    window.open('https://github.com/hudzax/amai-lyrics/releases', '_blank');
   });
 }
 

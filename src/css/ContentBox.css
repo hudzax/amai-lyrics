@@ -84,6 +84,16 @@
     z-index: 1;
 }
 
+#SpicyLyricsPage .ContentBox .NowBar .RefreshContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* Adjust this value as needed for desired spacing */
+}
+
+#SpicyLyricsPage .ContentBox .NowBar .RefreshContainer .RefreshButton {
+    width: 85%;
+}
+
 #SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage {
     --ArtworkBrightness: 1;
     --ArtworkBlur: 0px;
