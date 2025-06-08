@@ -157,6 +157,8 @@ function generalSettings() {
       'Thai',
       'Indonesian',
       'Malay',
+      'Japanese',
+      'Korean',
     ],
     0,
     () => {

@@ -36,6 +36,8 @@ Amai Lyrics supports translations into the following languages:
 - **Thai**
 - **Indonesian**
 - **Malay**
+- **Japanese**
+- **Korean**
 
 You can change the translation language in Spotify's settings after installing the extension.
 
