@@ -88,71 +88,38 @@ let LinesEvListenerExists: boolean;
  * with their data objects.
  */
 export function populateElementTimeMaps() {
-  console.log('populateElementTimeMaps: Clearing existing maps.');
   lineElementToStartTimeMap.clear();
   syllableElementToStartTimeMap.clear();
 
-  LyricsObject.Types.Line.Lines.forEach((line, index) => {
+  LyricsObject.Types.Line.Lines.forEach((line) => {
     if (line.HTMLElement && typeof line.StartTime === 'number') {
       lineElementToStartTimeMap.set(line.HTMLElement, line.StartTime);
-      console.log(
-        `populateElementTimeMaps: Added line ${index} to lineElementToStartTimeMap. StartTime: ${line.StartTime}`,
-      );
-    } else {
-      console.log(
-        `populateElementTimeMaps: Skipped line ${index} (missing HTMLElement or StartTime).`,
-      );
     }
   });
-  console.log(
-    `populateElementTimeMaps: lineElementToStartTimeMap size: ${lineElementToStartTimeMap.size}`,
-    lineElementToStartTimeMap,
-  );
 
-  LyricsObject.Types.Syllable.Lines.forEach((line, lineIndex) => {
+  LyricsObject.Types.Syllable.Lines.forEach((line) => {
     const lineStartTime = line.StartTime;
     if (typeof lineStartTime !== 'number') {
-      console.log(
-        `populateElementTimeMaps: Skipped syllable line ${lineIndex} (missing StartTime).`,
-      );
       return;
     }
 
-    line.Syllables.Lead.forEach((word: Word, wordIndex) => {
+    line.Syllables.Lead.forEach((word: Word) => {
       if (word.HTMLElement) {
         syllableElementToStartTimeMap.set(word.HTMLElement, lineStartTime);
-        console.log(
-          `populateElementTimeMaps: Added syllable word ${lineIndex}-${wordIndex} to syllableElementToStartTimeMap. StartTime: ${lineStartTime}`,
-        );
-      } else {
-        console.log(
-          `populateElementTimeMaps: Skipped syllable word ${lineIndex}-${wordIndex} (missing HTMLElement).`,
-        );
       }
       if (word?.Letters) {
-        word.Letters.forEach((letter, letterIndex) => {
+        word.Letters.forEach((letter) => {
           if (letter.HTMLElement) {
             syllableElementToStartTimeMap.set(letter.HTMLElement, lineStartTime);
-            console.log(
-              `populateElementTimeMaps: Added syllable letter ${lineIndex}-${wordIndex}-${letterIndex} to syllableElementToStartTimeMap. StartTime: ${lineStartTime}`,
-            );
-          } else {
-            console.log(
-              `populateElementTimeMaps: Skipped syllable letter ${lineIndex}-${wordIndex}-${letterIndex} (missing HTMLElement).`,
-            );
           }
         });
       }
     });
   });
-  console.log(
-    `populateElementTimeMaps: syllableElementToStartTimeMap size: ${syllableElementToStartTimeMap.size}`,
-  );
 }
 
 function LinesEvListener(e: Event) {
   let target = e.target as HTMLElement;
-  console.log('LinesEvListener: Click event detected. Target:', target);
   let startTime: number | undefined;
 
   // If rt tag is clicked, use its parent
@@ -171,38 +138,24 @@ function LinesEvListener(e: Event) {
 
   if (target.classList.contains('line')) {
     startTime = lineElementToStartTimeMap.get(target);
-    console.log('LinesEvListener: Target is a line. Retrieved startTime:', startTime);
   } else if (target.classList.contains('word')) {
     startTime = syllableElementToStartTimeMap.get(target);
-    console.log('LinesEvListener: Target is a word. Retrieved startTime:', startTime);
   } else if (target.classList.contains('Emphasis')) {
     startTime = syllableElementToStartTimeMap.get(target);
-    console.log('LinesEvListener: Target is an Emphasis. Retrieved startTime:', startTime);
-  } else {
-    console.log(
-      'LinesEvListener: Target is not a recognized lyric element (line, word, Emphasis).',
-    );
   }
 
   if (typeof startTime === 'number') {
-    console.log(`LinesEvListener: Seeking Spicetify.Player to ${startTime}.`);
     Spicetify.Player.seek(startTime);
-  } else {
-    console.log('LinesEvListener: startTime is not a number, cannot seek player.');
   }
 }
 
 export function addLinesEvListener() {
-  console.log('addLinesEvListener: Function called.');
   if (LinesEvListenerExists) {
-    console.log('addLinesEvListener: Listener already exists, reinitializing...');
     removeLinesEvListener();
   }
 
   // Populate the maps before adding the listener
-  console.log('addLinesEvListener: Populating element time maps...');
   populateElementTimeMaps();
-  console.log('addLinesEvListener: Maps populated.');
 
   LinesEvListenerExists = true;
   LinesEvListenerMaid = new Maid();
@@ -211,19 +164,13 @@ export function addLinesEvListener() {
     '#SpicyLyricsPage .LyricsContainer .LyricsContent',
   );
   if (!el) {
-    console.log(
-      'addLinesEvListener: Element #SpicyLyricsPage .LyricsContainer .LyricsContent not found. Retrying later.',
-    );
     LinesEvListenerExists = false; // Ensure we can retry if element not found initially
     return;
   }
-  console.log('addLinesEvListener: Element found, adding event listener.');
   el.addEventListener('click', LinesEvListener);
   LinesEvListenerMaid.Give(() => {
-    console.log('addLinesEvListener: Removing event listener.');
     el.removeEventListener('click', LinesEvListener as EventListener);
   }); // Ensure type compatibility for Maid
-  console.log('addLinesEvListener: Event listener added successfully.');
 }
 
 export function removeLinesEvListener() {
