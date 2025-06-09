@@ -505,7 +505,7 @@ async function main() {
   fontLink.rel = 'preload';
   fontLink.as = 'style';
   fontLink.href =
-    'https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Vazirmatn&display=swap';
+    'https://fonts.googleapis.com/css2?family=Noto+Sans+Display:ital,wght@0,100..900;1,100..900&display=swap';
   document.head.appendChild(fontLink);
 
   fontLink.onload = () => {
