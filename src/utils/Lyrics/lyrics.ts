@@ -195,8 +195,8 @@ function LinesEvListener(e: Event) {
 export function addLinesEvListener() {
   console.log('addLinesEvListener: Function called.');
   if (LinesEvListenerExists) {
-    console.log('addLinesEvListener: Listener already exists, returning.');
-    return;
+    console.log('addLinesEvListener: Listener already exists, reinitializing...');
+    removeLinesEvListener();
   }
 
   // Populate the maps before adding the listener
