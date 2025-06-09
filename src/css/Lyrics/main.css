@@ -67,9 +67,9 @@
   padding: 0 3.5cqw 0 5cqw !important;
 }
 
-/* Refresh Button Styles */
+/* Amai Page Button Styles */
 
-#SpicyLyricsPage .RefreshContainer {
+#SpicyLyricsPage .AmaiPageButtonContainer {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -77,7 +77,7 @@
   margin-top: 8px;
 }
 
-#SpicyLyricsPage .RefreshButton {
+#SpicyLyricsPage .AmaiPageButton {
   padding: 8px 16px;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -92,30 +92,30 @@
   -webkit-backdrop-filter: blur(10px);
 }
 
-#SpicyLyricsPage .RefreshButton:hover {
+#SpicyLyricsPage .AmaiPageButton:hover {
   background: rgba(255, 255, 255, 0.2);
   border-color: rgba(255, 255, 255, 0.4);
   color: rgba(255, 255, 255, 1);
   transform: scale(1.05);
 }
 
-#SpicyLyricsPage .RefreshButton:active {
+#SpicyLyricsPage .AmaiPageButton:active {
   transform: scale(0.95);
 }
 
-#SpicyLyricsPage .RefreshButton.hidden {
+#SpicyLyricsPage .AmaiPageButton.hidden {
   opacity: 0;
   pointer-events: none;
   transform: scale(0.8);
 }
 
 /* Hide refresh button when lyrics container is hidden */
-#SpicyLyricsPage .ContentBox.LyricsHidden .RefreshContainer {
+#SpicyLyricsPage .ContentBox.LyricsHidden .AmaiPageButtonContainer {
   display: none;
 }
 
 /* Hide refresh button when in fullscreen mode */
-#SpicyLyricsPage.Fullscreen .RefreshContainer {
+#SpicyLyricsPage.Fullscreen .AmaiPageButtonContainer {
   display: none;
 }
 

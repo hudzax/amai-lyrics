@@ -84,13 +84,13 @@
     z-index: 1;
 }
 
-#SpicyLyricsPage .ContentBox .NowBar .RefreshContainer {
+#SpicyLyricsPage .ContentBox .NowBar .AmaiPageButtonContainer {
     display: flex;
     flex-direction: column;
     gap: 8px; /* Adjust this value as needed for desired spacing */
 }
 
-#SpicyLyricsPage .ContentBox .NowBar .RefreshContainer .RefreshButton {
+#SpicyLyricsPage .ContentBox .NowBar .AmaiPageButtonContainer .AmaiPageButton {
     width: 85%;
 }
 

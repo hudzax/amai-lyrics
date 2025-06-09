@@ -81,12 +81,15 @@ async function OpenPage() {
                               </div>
                           </div>
                       </div>
-                      <div class="RefreshContainer">
-                        <button id="ReleaseLogsButton" class="RefreshButton">
-                            View Release Notes
+                      <div class="AmaiPageButtonContainer">
+                        <button id="RefreshLyrics" class="AmaiPageButton">
+                            Reload Current Lyrics
+                        </button>  
+                        <button id="WatchMusicVideoButton" class="AmaiPageButton">
+                            Watch Music Video
                         </button>
-                        <button id="RefreshLyrics" class="RefreshButton">
-                            Reload Current Song Lyrics
+                        <button id="ReleaseLogsButton" class="AmaiPageButton">
+                            Open Release Notes
                         </button>
                       </div>
                   </div>
@@ -148,6 +151,9 @@ async function OpenPage() {
 
   // Set up release logs button functionality
   setupReleaseLogsButton();
+
+  // Set up watch music video button functionality
+  setupWatchMusicVideoButton();
 
   PageView.IsOpened = true;
 }
@@ -381,6 +387,30 @@ function setupRefreshButton() {
       console.error('Error refreshing lyrics:', error);
       Spicetify.showNotification('Error refreshing lyrics', false, 2000);
     }
+  });
+}
+
+/**
+ * Sets up the watch music video button functionality
+ */
+function setupWatchMusicVideoButton() {
+  const watchMusicVideoButton = document.querySelector('#WatchMusicVideoButton');
+  if (!watchMusicVideoButton) return;
+
+  watchMusicVideoButton.addEventListener('click', async () => {
+    const songName = await SpotifyPlayer.GetSongName();
+    const artists = await SpotifyPlayer.GetArtists();
+
+    if (!songName || !artists || artists.length === 0) {
+      Spicetify.showNotification('No track playing or artist information available', false, 1000);
+      return;
+    }
+
+    const artistNames = SpotifyPlayer.JoinArtists(artists);
+    const searchQuery = encodeURIComponent(`${songName} ${artistNames} music video`);
+    const youtubeUrl = `https://www.youtube.com/results?search_query=${searchQuery}`;
+
+    window.open(youtubeUrl, '_blank');
   });
 }
 
