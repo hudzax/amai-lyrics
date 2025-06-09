@@ -407,7 +407,7 @@ function setupWatchMusicVideoButton() {
     }
 
     const artistNames = SpotifyPlayer.JoinArtists(artists);
-    const searchQuery = encodeURIComponent(`${songName} ${artistNames} music video`);
+    const searchQuery = encodeURIComponent(`${artistNames} ${songName} music video`);
     const youtubeUrl = `https://www.youtube.com/results?search_query=${searchQuery}`;
 
     window.open(youtubeUrl, '_blank');
