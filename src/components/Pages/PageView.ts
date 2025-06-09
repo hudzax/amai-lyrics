@@ -1,6 +1,6 @@
 import fetchLyrics from '../../utils/Lyrics/fetchLyrics';
 import '../../css/Loaders/DotLoader.css';
-import { addLinesEvListener, removeLinesEvListener } from '../../utils/Lyrics/lyrics';
+import { removeLinesEvListener } from '../../utils/Lyrics/lyrics';
 import ApplyDynamicBackground from '../DynamicBG/dynamicBackground';
 import Defaults from '../Global/Defaults';
 import { Icons } from '../Styling/Icons';
@@ -131,8 +131,6 @@ async function OpenPage() {
 
   // Load initial content after DOM is ready
   await UpdatePageContent();
-
-  addLinesEvListener();
 
   // Only fetch lyrics if URI is available, and defer until after DOM is ready
   const currentUri = Spicetify.Player.data?.item?.uri;

@@ -4,6 +4,7 @@ import { ApplyLineLyrics } from '../Applyer/Synced/Line';
 import { ApplySyllableLyrics } from '../Applyer/Synced/Syllable';
 import fetchLyrics from '../fetchLyrics';
 import { showRefreshButton } from '../../../components/Pages/PageView';
+import { addLinesEvListener } from '../lyrics';
 
 /**
  * Applies lyrics to the UI based on the lyrics type
@@ -38,5 +39,6 @@ export default function ApplyLyrics(lyrics) {
     applyHandler(lyrics);
     // Show refresh button after lyrics are applied
     showRefreshButton();
+    addLinesEvListener(); // Attach event listener after lyrics are rendered
   }
 }

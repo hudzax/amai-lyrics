@@ -43,11 +43,11 @@ interface LyricsData {
   classes?: string;
 }
 
-  /**
-   * Applies line-synced lyrics to the lyrics container
-   * @param data Lyrics data with content, timing and styling information
-   */
-  export function ApplyLineLyrics(data: LyricsData): void {
+/**
+ * Applies line-synced lyrics to the lyrics container
+ * @param data Lyrics data with content, timing and styling information
+ */
+export function ApplyLineLyrics(data: LyricsData): void {
   if (!Defaults.LyricsContainerExists) return;
 
   const LyricsContainer = document.querySelector<HTMLElement>(
@@ -88,9 +88,7 @@ interface LyricsData {
       dot.classList.add('word', 'dot');
       dot.textContent = '•';
 
-      LyricsObject.Types.Line.Lines[
-        LINE_SYNCED_CurrentLineLyricsObject
-      ].Syllables.Lead.push({
+      LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables.Lead.push({
         HTMLElement: dot,
         StartTime: startTime + dotTime * i,
         EndTime: i === 2 ? endTime - 400 : startTime + dotTime * (i + 1),
@@ -166,22 +164,22 @@ interface LyricsData {
     // Create main text container
     const mainTextContainer = document.createElement('span');
     mainTextContainer.classList.add('main-lyrics-text');
+    mainTextContainer.classList.add('line');
     mainTextContainer.innerHTML = line.Text;
     lineElem.appendChild(mainTextContainer);
-    lineElem.classList.add('line');
+    // Removed lineElem.classList.add('line'); as the span is the actual line element
 
     // Add translation if available and different from original
-    const hasDistinctTranslation = (
-      line.Translation && 
-      line.Translation.trim() !== '' && 
-      (!data.Raw || line.Translation.trim() !== data.Raw[index]?.trim())
-    );
+    const hasDistinctTranslation =
+      line.Translation &&
+      line.Translation.trim() !== '' &&
+      (!data.Raw || line.Translation.trim() !== data.Raw[index]?.trim());
 
     if (hasDistinctTranslation) {
       const translationElem = document.createElement('div');
       translationElem.classList.add('translation');
       translationElem.textContent = line.Translation;
-      lineElem.appendChild(translationElem);
+      mainTextContainer.appendChild(translationElem);
     }
 
     // Handle right-to-left text
@@ -198,9 +196,9 @@ interface LyricsData {
     const startTime = ConvertTime(line.StartTime);
     const endTime = ConvertTime(line.EndTime);
 
-    // Add line to the lyrics object
+    // Add line to the lyrics object, using mainTextContainer (the span) as the HTMLElement
     LyricsObject.Types.Line.Lines.push({
-      HTMLElement: lineElem,
+      HTMLElement: mainTextContainer, // Changed to mainTextContainer
       StartTime: startTime,
       EndTime: endTime,
       TotalTime: endTime - startTime,
@@ -215,7 +213,7 @@ interface LyricsData {
 
     // Check for musical break between this line and the next one
     const nextLine = arr[index + 1];
-    const hasMusicalBreak = nextLine && (nextLine.StartTime - line.EndTime >= lyricsBetweenShow);
+    const hasMusicalBreak = nextLine && nextLine.StartTime - line.EndTime >= lyricsBetweenShow;
 
     if (hasMusicalBreak) {
       // Create a musical break line with dots
