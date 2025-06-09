@@ -248,7 +248,7 @@ ruby > rt {
 .translation {
   display: block;
   font-size: 1.25rem;
-  color: #ccc;
+  /* color: #ccc; */
   line-height: 1.35rem;
   font-weight: 600;
 }
