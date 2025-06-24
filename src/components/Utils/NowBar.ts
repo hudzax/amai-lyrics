@@ -863,12 +863,13 @@ function CloseNowBar() {
  * Restores the NowBar to its previous state (open or closed) from session storage
  */
 function Session_OpenNowBar() {
-  const IsNowBarOpen = storage.get('IsNowBarOpen');
-  if (IsNowBarOpen === 'true') {
-    OpenNowBar();
-  } else {
-    CloseNowBar();
-  }
+  OpenNowBar();
+  // const IsNowBarOpen = storage.get('IsNowBarOpen');
+  // if (IsNowBarOpen === 'true') {
+  //   OpenNowBar();
+  // } else {
+  //   CloseNowBar();
+  // }
 }
 
 /**

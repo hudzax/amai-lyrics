@@ -78,7 +78,7 @@ export async function fetchTranslationsWithGemini(lyricsOnly: string[]): Promise
 
     const response = await ai.models.generateContent({
       config: generationConfig,
-      model: 'gemini-2.5-flash-preview-04-17',
+      model: 'gemini-2.5-flash-lite-preview-06-17',
       contents: `${prompt}${JSON.stringify(lyricsOnly)}`,
     });
 
@@ -219,7 +219,7 @@ export async function processLyricsWithGemini(
     const makeRequest = async () => {
       const response = await ai.models.generateContent({
         config: generationConfig,
-        model: 'gemini-2.5-flash-preview-05-20',
+        model: 'gemini-2.5-flash',
         contents: `${prompt} Here are the lyrics:\n${JSON.stringify(lyricsOnly)}`,
       });
       return response.text;
