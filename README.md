@@ -47,11 +47,11 @@ You can change the translation language in Spotify's settings after installing t
 
 Here’s what it looks like:
 
-![Romaji Preview](./previews/preview-romaji.jpg)
+![Romaji Preview](./previews/preview-romaji.png)
 
-![Furigana Preview](./previews/preview-furigana.jpg)
+![Furigana Preview](./previews/preview-furigana.png)
 
-![Korean Romanization Preview](./previews/preview-romaja.jpg)
+![Korean Romanization Preview](./previews/preview-romaja.png)
 
 ---
 
