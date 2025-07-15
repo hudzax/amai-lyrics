@@ -8,6 +8,14 @@ import { GoogleGenAI, GenerateContentConfig, Schema, Type } from '@google/genai'
 import { LyricsData } from './processing'; // Import LyricsData
 import { LineBasedLyricItem, LyricsLine } from './conversion'; // Import LineBasedLyricItem and LyricsLine
 
+/**
+ * AI Model Constants
+ */
+const AI_MODELS = {
+  TRANSLATION: 'gemini-2.5-flash-lite-preview-06-17',
+  PHONETIC: 'gemini-2.5-flash',
+} as const;
+
 interface GeminiGenerationConfig extends GenerateContentConfig {
   temperature: number;
   topP: number;
@@ -78,7 +86,7 @@ export async function fetchTranslationsWithGemini(lyricsOnly: string[]): Promise
 
     const response = await ai.models.generateContent({
       config: generationConfig,
-      model: 'gemini-2.5-flash-lite-preview-06-17',
+      model: AI_MODELS.TRANSLATION,
       contents: `${prompt}${JSON.stringify(lyricsOnly)}`,
     });
 
@@ -219,7 +227,7 @@ export async function processLyricsWithGemini(
     const makeRequest = async () => {
       const response = await ai.models.generateContent({
         config: generationConfig,
-        model: 'gemini-2.5-flash',
+        model: AI_MODELS.PHONETIC,
         contents: `${prompt} Here are the lyrics:\n${JSON.stringify(lyricsOnly)}`,
       });
       return response.text;
