@@ -96,7 +96,7 @@
   background: rgba(255, 255, 255, 0.2);
   border-color: rgba(255, 255, 255, 0.4);
   color: rgba(255, 255, 255, 1);
-  transform: scale(1.05);
+  /* transform: scale(1.025); */
 }
 
 #SpicyLyricsPage .AmaiPageButton:active {
@@ -196,7 +196,11 @@ header.main-topBar-container .amai-info {
   color: white;
 }
 
-#SpicyLyricsPage .ContentBox .NowBar .Header, #SpicyLyricsPage .ContentBox .NowBar.Active + .LyricsContainer .LyricsContent .simplebar-content-wrapper .simplebar-content {
+#SpicyLyricsPage .ContentBox .NowBar .Header {
+  padding: 0 2cqh;
+}
+
+#SpicyLyricsPage .ContentBox .NowBar.Active + .LyricsContainer .LyricsContent .simplebar-content-wrapper .simplebar-content {
   padding: 3cqh 3cqh 1.8cqh 3cqh;
   background-color: rgba(255, 255, 255, 0.1); /* Lowered opacity for stronger acrylic effect */
   border-radius: 1cqh;
