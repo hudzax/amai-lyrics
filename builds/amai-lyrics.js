@@ -412,7 +412,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.2.0";
+      version = "1.2.1";
     }
   });
 
@@ -7122,9 +7122,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-20088-o4GYxHzIV1lj/1980cf112e08/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-10352-b7XG659n35mp/198343e06b78/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-20088-o4GYxHzIV1lj/1980cf112e08/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-10352-b7XG659n35mp/198343e06b78/DotLoader.css"() {
     }
   });
 
@@ -18336,7 +18336,7 @@ ${JSON.stringify(lyricsOnly)}`
       init_Defaults();
       init_web();
       AI_MODELS = {
-        TRANSLATION: "gemini-2.5-flash-lite-preview-06-17",
+        TRANSLATION: "gemini-2.5-flash-lite",
         PHONETIC: "gemini-2.5-flash"
       };
     }
@@ -19449,7 +19449,7 @@ ${JSON.stringify(lyricsOnly)}`
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-20088-o4GYxHzIV1lj/1980cf112e08/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-10352-b7XG659n35mp/198343e06b78/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -19475,7 +19475,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20088-o4GYxHzIV1lj/1980cf1125a0/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10352-b7XG659n35mp/198343e06150/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -19617,7 +19617,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20088-o4GYxHzIV1lj/1980cf112961/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10352-b7XG659n35mp/198343e06511/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -19825,7 +19825,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20088-o4GYxHzIV1lj/1980cf1129f2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10352-b7XG659n35mp/198343e065a2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -20365,7 +20365,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20088-o4GYxHzIV1lj/1980cf112b33/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10352-b7XG659n35mp/198343e066b3/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 1.5;
@@ -20520,7 +20520,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20088-o4GYxHzIV1lj/1980cf112bb4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10352-b7XG659n35mp/198343e06734/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -20781,7 +20781,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20088-o4GYxHzIV1lj/1980cf112c45/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10352-b7XG659n35mp/198343e067d5/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -21066,7 +21066,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20088-o4GYxHzIV1lj/1980cf112cd6/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10352-b7XG659n35mp/198343e06866/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -21089,7 +21089,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20088-o4GYxHzIV1lj/1980cf112d37/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10352-b7XG659n35mp/198343e068b7/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
