@@ -412,7 +412,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.2.1";
+      version = "1.2.2";
     }
   });
 
@@ -5662,11 +5662,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       console.error("Playback state is incomplete.");
       return null;
     }
-    const now = Date.now();
+    const now2 = Date.now();
     if (isPaused) {
       return positionAsOfTimestamp;
     } else {
-      return positionAsOfTimestamp + (now - timestamp);
+      return positionAsOfTimestamp + (now2 - timestamp);
     }
   }
   var syncTimings, canSyncNonLocalTimestamp, syncedPosition;
@@ -6098,10 +6098,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                   word.AnimatorStoreTime_scale = performance.now();
                 if (!word.AnimatorStoreTime_glow)
                   word.AnimatorStoreTime_glow = performance.now();
-                const now = performance.now();
-                const elapsed_translateY = now - word.AnimatorStoreTime_translateY;
-                const elapsed_scale = now - word.AnimatorStoreTime_scale;
-                const elapsed_glow = now - word.AnimatorStoreTime_glow;
+                const now2 = performance.now();
+                const elapsed_translateY = now2 - word.AnimatorStoreTime_translateY;
+                const elapsed_scale = now2 - word.AnimatorStoreTime_scale;
+                const elapsed_glow = now2 - word.AnimatorStoreTime_glow;
                 const duration_translateY = 550;
                 const progress_translateY = Math.min(elapsed_translateY / duration_translateY, 1);
                 const duration_scale = 1100;
@@ -6818,8 +6818,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         animate() {
           if (this.isDestroyed || this.startTime === null)
             return;
-          const now = performance.now();
-          const elapsed = now - this.startTime;
+          const now2 = performance.now();
+          const elapsed = now2 - this.startTime;
           const t = Math.min(elapsed / this.duration, 1);
           const startValue = this.reversed ? this.to : this.from;
           const endValue = this.reversed ? this.from : this.to;
@@ -6881,84 +6881,210 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   });
 
   // src/utils/fastdom.ts
+  function addToQueue(queue, item) {
+    if (queue.length >= MAX_QUEUE_SIZE) {
+      console.warn("FastDOM queue size limit reached, dropping oldest operations");
+      queue.shift();
+    }
+    queue.push(item);
+  }
+  function cleanup() {
+    const currentTime = now();
+    if (currentTime - lastCleanup > CLEANUP_INTERVAL) {
+      lastCleanup = currentTime;
+    }
+  }
   function processQueues() {
-    while (readQueue.length) {
-      const { fn, callback } = readQueue.shift();
+    isProcessing = true;
+    const startTime = now();
+    while (readQueue.length > 0) {
+      const item = readQueue.shift();
+      if (!item || item.cancelled)
+        continue;
+      const { fn, resolve, reject } = item;
       try {
         const result = fn();
-        callback(result);
+        resolve(result);
       } catch (error) {
         console.error("Error in read operation:", error);
-        callback(null);
+        reject(error instanceof Error ? error : new Error(String(error)));
       }
     }
-    if (writeQueue.length) {
-      queueMicrotask(() => {
-        while (writeQueue.length) {
-          const { fn, callback } = writeQueue.shift();
-          try {
-            const result = fn();
-            callback(result);
-          } catch (error) {
-            console.error("Error in write operation:", error);
-            callback(null);
-          }
-        }
+    const writeStartTime = now();
+    while (writeQueue.length > 0) {
+      if (now() - writeStartTime > MAX_PROCESS_TIME) {
         scheduledAnimationFrame = false;
-        if (readQueue.length > 0 || writeQueue.length > 0) {
-          scheduleFrame();
-        }
-      });
-    } else {
-      scheduledAnimationFrame = false;
-      if (readQueue.length > 0) {
+        isProcessing = false;
         scheduleFrame();
+        return;
+      }
+      const item = writeQueue.shift();
+      if (!item || item.cancelled)
+        continue;
+      const { fn, resolve, reject } = item;
+      try {
+        const result = fn();
+        resolve(result);
+      } catch (error) {
+        console.error("Error in write operation:", error);
+        reject(error instanceof Error ? error : new Error(String(error)));
       }
     }
+    scheduledAnimationFrame = false;
+    isProcessing = false;
+    if (readQueue.length > 0 || writeQueue.length > 0) {
+      scheduleFrame();
+    }
+    lastProcessTime = now() - startTime;
+    cleanup();
   }
   function scheduleFrame() {
     if (!scheduledAnimationFrame && (readQueue.length > 0 || writeQueue.length > 0)) {
       scheduledAnimationFrame = true;
-      requestAnimationFrame(processQueues);
+      raf(processQueues);
     }
   }
-  function measure(callback, fn) {
-    readQueue.push({ fn, callback });
-    scheduleFrame();
-  }
-  function mutate(callback, fn) {
-    writeQueue.push({ fn, callback });
-    scheduleFrame();
+  function createCancellablePromise(queue, fn) {
+    const id = currentQueueId++;
+    let cancelled = false;
+    const promise = new Promise((resolve, reject) => {
+      if (cancelled) {
+        reject(new Error("Operation cancelled"));
+        return;
+      }
+      const item = {
+        fn,
+        resolve: (result) => {
+          if (!cancelled)
+            resolve(result);
+        },
+        reject: (error) => {
+          if (!cancelled)
+            reject(error);
+        },
+        id,
+        cancelled: false
+      };
+      addToQueue(queue, item);
+      scheduleFrame();
+    });
+    promise.cancel = () => {
+      cancelled = true;
+      return cancel(id);
+    };
+    return promise;
   }
   function clear() {
-    readQueue.length = 0;
-    writeQueue.length = 0;
+    readQueue.clear();
+    writeQueue.clear();
   }
-  var readQueue, writeQueue, scheduledAnimationFrame, fastdom_default;
+  function cancel(id) {
+    const readIndex = readQueue.findIndex((op) => op.id === id);
+    if (readIndex !== -1) {
+      return readQueue.removeAt(readIndex);
+    }
+    const writeIndex = writeQueue.findIndex((op) => op.id === id);
+    if (writeIndex !== -1) {
+      return writeQueue.removeAt(writeIndex);
+    }
+    return false;
+  }
+  var now, raf, FastQueue, readQueue, writeQueue, scheduledAnimationFrame, currentQueueId, isProcessing, lastProcessTime, lastCleanup, MAX_PROCESS_TIME, MAX_QUEUE_SIZE, CLEANUP_INTERVAL, fastdom_default;
   var init_fastdom = __esm({
     "src/utils/fastdom.ts"() {
-      readQueue = [];
-      writeQueue = [];
+      now = (() => {
+        if (typeof performance !== "undefined" && performance.now) {
+          return () => performance.now();
+        }
+        return () => Date.now();
+      })();
+      raf = (() => {
+        if (typeof requestAnimationFrame !== "undefined") {
+          return requestAnimationFrame;
+        }
+        return (callback) => setTimeout(callback, 16);
+      })();
+      FastQueue = class {
+        constructor() {
+          this.items = [];
+          this.head = 0;
+        }
+        push(item) {
+          this.items.push(item);
+        }
+        shift() {
+          if (this.head >= this.items.length)
+            return void 0;
+          const item = this.items[this.head];
+          delete this.items[this.head];
+          this.head++;
+          if (this.head >= this.items.length) {
+            this.items.length = 0;
+            this.head = 0;
+          }
+          return item;
+        }
+        get length() {
+          return this.items.length - this.head;
+        }
+        findIndex(predicate) {
+          for (let i = this.head; i < this.items.length; i++) {
+            if (this.items[i] && predicate(this.items[i])) {
+              return i - this.head;
+            }
+          }
+          return -1;
+        }
+        removeAt(index) {
+          const actualIndex = this.head + index;
+          if (actualIndex >= this.head && actualIndex < this.items.length && this.items[actualIndex]) {
+            delete this.items[actualIndex];
+            return true;
+          }
+          return false;
+        }
+        clear() {
+          this.items.length = 0;
+          this.head = 0;
+        }
+      };
+      readQueue = new FastQueue();
+      writeQueue = new FastQueue();
       scheduledAnimationFrame = false;
+      currentQueueId = 0;
+      isProcessing = false;
+      lastProcessTime = 0;
+      lastCleanup = 0;
+      MAX_PROCESS_TIME = 8;
+      MAX_QUEUE_SIZE = 1e3;
+      CLEANUP_INTERVAL = 5e3;
       fastdom_default = {
         read: (fn) => {
-          return new Promise((resolve) => {
-            measure(resolve, fn);
-          });
+          return createCancellablePromise(readQueue, fn);
         },
         write: (fn) => {
-          return new Promise((resolve) => {
-            mutate(resolve, fn);
-          });
+          return createCancellablePromise(writeQueue, fn);
         },
         readThenWrite: (readFn, writeFn) => {
-          return new Promise((resolve) => {
-            measure((readResult) => {
-              mutate(resolve, () => writeFn(readResult));
-            }, readFn);
+          return new Promise((resolve, reject) => {
+            const readPromise = createCancellablePromise(readQueue, readFn);
+            readPromise.then((readResult) => {
+              const writePromise = createCancellablePromise(
+                writeQueue,
+                () => writeFn(readResult)
+              );
+              return writePromise;
+            }).then(resolve).catch(reject);
           });
         },
-        clear
+        clear,
+        getMetrics: () => ({
+          readQueueLength: readQueue.length,
+          writeQueueLength: writeQueue.length,
+          lastProcessTime,
+          isProcessing,
+          scheduledAnimationFrame
+        })
       };
     }
   });
@@ -7122,9 +7248,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-10352-b7XG659n35mp/198343e06b78/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-25896-cpNuj37VMn52/1983ce6e5098/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-10352-b7XG659n35mp/198343e06b78/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-25896-cpNuj37VMn52/1983ce6e5098/DotLoader.css"() {
     }
   });
 
@@ -7279,10 +7405,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var require_now = __commonJS({
     "node_modules/lodash/now.js"(exports, module) {
       var root = require_root();
-      var now = function() {
+      var now2 = function() {
         return root.Date.now();
       };
-      module.exports = now;
+      module.exports = now2;
     }
   });
 
@@ -7441,7 +7567,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var require_debounce = __commonJS({
     "node_modules/lodash/debounce.js"(exports, module) {
       var isObject = require_isObject();
-      var now = require_now();
+      var now2 = require_now();
       var toNumber = require_toNumber();
       var FUNC_ERROR_TEXT = "Expected a function";
       var nativeMax = Math.max;
@@ -7479,7 +7605,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           return lastCallTime === void 0 || timeSinceLastCall >= wait || timeSinceLastCall < 0 || maxing && timeSinceLastInvoke >= maxWait;
         }
         function timerExpired() {
-          var time = now();
+          var time = now2();
           if (shouldInvoke(time)) {
             return trailingEdge(time);
           }
@@ -7493,7 +7619,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           lastArgs = lastThis = void 0;
           return result;
         }
-        function cancel() {
+        function cancel2() {
           if (timerId !== void 0) {
             clearTimeout(timerId);
           }
@@ -7501,10 +7627,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           lastArgs = lastCallTime = lastThis = timerId = void 0;
         }
         function flush() {
-          return timerId === void 0 ? result : trailingEdge(now());
+          return timerId === void 0 ? result : trailingEdge(now2());
         }
         function debounced() {
-          var time = now(), isInvoking = shouldInvoke(time);
+          var time = now2(), isInvoking = shouldInvoke(time);
           lastArgs = arguments;
           lastThis = this;
           lastCallTime = time;
@@ -7523,7 +7649,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           }
           return result;
         }
-        debounced.cancel = cancel;
+        debounced.cancel = cancel2;
         debounced.flush = flush;
         return debounced;
       }
@@ -10449,16 +10575,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           return setInterval(() => {
             if (SpotifyPlayer.IsPlaying) {
               const { lastKnownPosition, lastUpdateTime } = progressBarState;
-              const now = performance.now();
-              const elapsed = now - (lastUpdateTime || now);
+              const now2 = performance.now();
+              const elapsed = now2 - (lastUpdateTime || now2);
               if (elapsed > 3e3) {
                 const actualPosition = SpotifyPlayer.GetTrackPosition() || 0;
                 progressBarState.lastKnownPosition = actualPosition;
-                progressBarState.lastUpdateTime = now;
+                progressBarState.lastUpdateTime = now2;
                 updateTimelineState(actualPosition);
               } else {
                 const interpolatedPosition = (lastKnownPosition || 0) + elapsed;
-                progressBarState.lastInterpolationUpdate = now;
+                progressBarState.lastInterpolationUpdate = now2;
                 updateTimelineState(interpolatedPosition);
               }
             }
@@ -19449,7 +19575,7 @@ ${JSON.stringify(lyricsOnly)}`
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-10352-b7XG659n35mp/198343e06b78/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-25896-cpNuj37VMn52/1983ce6e5098/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -19475,7 +19601,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10352-b7XG659n35mp/198343e06150/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25896-cpNuj37VMn52/1983ce6e4330/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -19617,7 +19743,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10352-b7XG659n35mp/198343e06511/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25896-cpNuj37VMn52/1983ce6e4751/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -19825,7 +19951,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10352-b7XG659n35mp/198343e065a2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25896-cpNuj37VMn52/1983ce6e48a2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -20365,7 +20491,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10352-b7XG659n35mp/198343e066b3/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25896-cpNuj37VMn52/1983ce6e4a73/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 1.5;
@@ -20520,7 +20646,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10352-b7XG659n35mp/198343e06734/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25896-cpNuj37VMn52/1983ce6e4bc4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -20781,7 +20907,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10352-b7XG659n35mp/198343e067d5/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25896-cpNuj37VMn52/1983ce6e4d55/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -21066,7 +21192,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10352-b7XG659n35mp/198343e06866/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25896-cpNuj37VMn52/1983ce6e4eb6/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -21089,7 +21215,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10352-b7XG659n35mp/198343e068b7/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25896-cpNuj37VMn52/1983ce6e4f17/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
