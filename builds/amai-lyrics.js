@@ -412,7 +412,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.2.2";
+      version = "1.2.3";
     }
   });
 
@@ -6500,875 +6500,25 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // src/utils/storage.ts
-  function set(key, value) {
-    if (key === "currentlyFetching") {
-      currentlyFetching = value;
-      return;
-    }
-    Spicetify.LocalStorage.set(`${prefix}${key}`, value);
+  // src/utils/Addons.ts
+  function IsPlaying() {
+    const state = Spicetify?.Player?.data?.isPaused;
+    return !state;
   }
-  function get(key) {
-    if (key === "currentlyFetching") {
-      return currentlyFetching;
-    }
-    return Spicetify.LocalStorage.get(`${prefix}${key}`);
+  function TOP_ApplyLyricsSpacer(Container) {
+    const div = document.createElement("div");
+    div.classList.add("TopSpacer");
+    Container.appendChild(div);
   }
-  var prefix, currentlyFetching, storage_default;
-  var init_storage = __esm({
-    "src/utils/storage.ts"() {
-      prefix = "SpicyLyrics-";
-      currentlyFetching = false;
-      storage_default = {
-        set,
-        get
-      };
-    }
-  });
-
-  // external-global-plugin:react
-  var require_react = __commonJS({
-    "external-global-plugin:react"(exports, module) {
-      module.exports = Spicetify.React;
-    }
-  });
-
-  // external-global-plugin:react-dom
-  var require_react_dom = __commonJS({
-    "external-global-plugin:react-dom"(exports, module) {
-      module.exports = Spicetify.ReactDOM;
-    }
-  });
-
-  // src/utils/Lyrics/SongProgressBar.ts
-  var SongProgressBar;
-  var init_SongProgressBar = __esm({
-    "src/utils/Lyrics/SongProgressBar.ts"() {
-      SongProgressBar = class {
-        constructor() {
-          this.destroyed = false;
-          this.duration = 0;
-          this.position = 0;
-        }
-        Update(params) {
-          if (this.destroyed) {
-            console.warn("This progress bar has been destroyed and cannot be used");
-            return;
-          }
-          this.duration = params.duration;
-          this.position = Math.min(params.position, this.duration);
-        }
-        Destroy() {
-          if (this.destroyed)
-            return;
-          this.destroyed = true;
-        }
-        GetFormattedDuration() {
-          return this.formatTime(this.duration);
-        }
-        GetFormattedPosition() {
-          return this.formatTime(this.position);
-        }
-        GetProgressPercentage() {
-          if (this.duration <= 0)
-            return 0;
-          return this.position / this.duration;
-        }
-        CalculatePositionFromClick(params) {
-          const { sliderBar, event } = params;
-          if (this.duration <= 0)
-            return 0;
-          const rect = sliderBar.getBoundingClientRect();
-          const clickX = event.clientX - rect.left;
-          const percentage = Math.max(0, Math.min(1, clickX / rect.width));
-          return Math.floor(percentage * this.duration);
-        }
-        formatTime(timeInMs) {
-          if (isNaN(timeInMs) || timeInMs < 0) {
-            return "0:00";
-          }
-          const totalSeconds = Math.floor(timeInMs / 1e3);
-          const minutes = Math.floor(totalSeconds / 60);
-          const seconds = totalSeconds % 60;
-          return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-        }
-      };
-    }
-  });
-
-  // src/utils/Whentil.ts
-  function Until(statement, callback, maxRepeats = Infinity) {
-    const delay = 10;
-    let isCancelled = false;
-    let executedCount = 0;
-    const resolveStatement = () => typeof statement === "function" ? statement() : statement;
-    const runner = () => {
-      if (isCancelled || executedCount >= maxRepeats)
-        return;
-      const conditionMet = resolveStatement();
-      if (!conditionMet) {
-        callback();
-        executedCount++;
-        setTimeout(runner, delay);
-      }
-    };
-    setTimeout(runner, delay);
-    return {
-      Cancel() {
-        isCancelled = true;
-      },
-      Reset() {
-        if (executedCount >= maxRepeats || isCancelled) {
-          isCancelled = false;
-          executedCount = 0;
-          runner();
-        }
-      }
-    };
+  function BOTTOM_ApplyLyricsSpacer(Container) {
+    const div = document.createElement("div");
+    div.classList.add("BottomSpacer");
+    Container.appendChild(div);
   }
-  function When(statement, callback, repeater = 1) {
-    const delay = 10;
-    let isCancelled = false;
-    let executionsRemaining = repeater;
-    const resolveStatement = () => typeof statement === "function" ? statement() : statement;
-    const runner = () => {
-      if (isCancelled || executionsRemaining <= 0)
-        return;
-      try {
-        const resolved = resolveStatement();
-        if (resolved) {
-          callback(resolved);
-          executionsRemaining--;
-          if (executionsRemaining > 0)
-            setTimeout(runner, delay);
-        } else {
-          setTimeout(runner, delay);
-        }
-      } catch {
-        setTimeout(runner, delay);
-      }
-    };
-    setTimeout(runner, delay);
-    return {
-      Cancel() {
-        isCancelled = true;
-      },
-      Reset() {
-        if (executionsRemaining <= 0 || isCancelled) {
-          isCancelled = false;
-          executionsRemaining = repeater;
-          runner();
-        }
-      }
-    };
-  }
-  var Whentil, Whentil_default;
-  var init_Whentil = __esm({
-    "src/utils/Whentil.ts"() {
-      Whentil = {
-        When,
-        Until
-      };
-      Whentil_default = Whentil;
-    }
-  });
-
-  // src/components/Styling/Icons.ts
-  var TrackSkip, Icons;
-  var init_Icons = __esm({
-    "src/components/Styling/Icons.ts"() {
-      TrackSkip = `
-	<div class="PlaybackControl TrackSkip REPLACEME">
-		<svg viewBox="0 0 35 20" xmlns="http://www.w3.org/2000/svg">
-			<path d="M 19.467 19.905 C 20.008 19.905 20.463 19.746 21.005 19.426 L 33.61 12.023 C 34.533 11.482 35 10.817 35 9.993 C 35 9.158 34.545 8.53 33.61 7.977 L 21.005 0.574 C 20.463 0.254 19.998 0.094 19.456 0.094 C 18.374 0.094 17.475 0.917 17.475 2.418 L 17.475 9.49 C 17.315 8.898 16.873 8.408 16.135 7.977 L 3.529 0.574 C 3 0.254 2.533 0.094 1.993 0.094 C 0.911 0.094 0 0.917 0 2.418 L 0 17.582 C 0 19.083 0.91 19.906 1.993 19.906 C 2.533 19.906 3 19.746 3.529 19.426 L 16.135 12.023 C 16.861 11.593 17.315 11.088 17.475 10.485 L 17.475 17.582 C 17.475 19.083 18.386 19.906 19.467 19.906 L 19.467 19.905 Z" fill-rule="nonzero"/>
-		</svg>
-	</div>
-`;
-      Icons = {
-        LyricsPage: `
-        <svg class="Svg-sc-ytk21e-0 Svg-img-16-icon" id="SpicyLyricsPageSvg" version="1.0" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet">
-            <g clip-path="url(#clip0_1_2)">
-                <g clip-path="url(#clip1_1_2)">
-                    <path d="M167.664 32.175C163.033 27.5654 157.213 24.3179 150.845 22.7905C144.477 21.2632 137.809 21.5155 131.576 23.5194C125.343 25.5234 119.788 29.2012 115.522 34.1473C111.256 39.0935 108.446 45.1157 107.402 51.55L148.192 92.1375C154.659 91.0982 160.711 88.3022 165.682 84.0577C170.653 79.8132 174.349 74.2852 176.363 68.0832C178.377 61.8813 178.63 55.2464 177.096 48.9102C175.561 42.5741 172.297 36.7828 167.664 32.175ZM130.906 101.475L98.0051 68.725C84.8516 83.6287 71.6986 98.5328 58.5462 113.438L24.9416 151.5C22.243 154.572 20.8182 158.549 20.9557 162.627C21.0932 166.705 22.7827 170.578 25.6821 173.463C28.5815 176.348 32.4743 178.029 36.5724 178.166C40.6705 178.303 44.6678 176.885 47.7551 174.2L86.1963 140.6L130.919 101.488L130.906 101.475ZM88.445 51.175C89.5849 41.0445 93.5761 31.44 99.9594 23.4668C106.343 15.4936 114.859 9.47565 124.527 6.10546C134.196 2.73527 144.625 2.14979 154.613 4.41638C164.601 6.68297 173.744 11.7095 180.988 18.9177C188.232 26.1258 193.284 35.2226 195.562 45.1612C197.839 55.0999 197.251 65.4765 193.864 75.0971C190.477 84.7177 184.429 93.1913 176.416 99.5429C168.403 105.894 158.75 109.866 148.569 111L98.6458 154.663L60.2045 188.275C53.5213 194.108 44.8584 197.193 35.9733 196.904C27.0881 196.615 18.6462 192.974 12.3601 186.719C6.07397 180.464 2.41449 172.064 2.12407 163.223C1.83364 154.382 4.93401 145.762 10.7962 139.113L44.4134 101.05L88.445 51.175Z" />
-                    <path d="M14.4253 71.9866L24.7716 82.7005L38.1583 76.1714L31.166 89.3221L41.5123 100.036L26.8445 97.4497L19.8521 110.6L17.7792 95.8513L3.11139 93.2649L16.4981 86.7358L14.4253 71.9866Z" />
-                    <path d="M116.417 140.835L133.497 158.522L155.597 147.744L144.053 169.454L161.134 187.141L136.919 182.871L125.376 204.581L121.954 180.232L97.7398 175.963L119.839 165.184L116.417 140.835Z" />
-                    <path d="M81.5977 24.9164L63.3254 41.3689L73.3262 63.831L52.0325 51.5371L33.7602 67.9896L38.8723 43.939L17.5786 31.6451L42.0317 29.075L47.1438 5.02446L57.1446 27.4866L81.5977 24.9164Z" />
-                    <path d="M169.688 110.558L166.338 125.071L179.105 132.742L164.267 134.04L160.917 148.552L155.097 134.842L140.26 136.14L151.501 126.369L145.681 112.659L158.448 120.33L169.688 110.558Z" />
-                </g>
-            </g>
-            <defs>
-                <clipPath id="clip0_1_2">
-                    <rect width="200" height="200" />
-                </clipPath>
-                <clipPath id="clip1_1_2">
-                    <rect width="201" height="200" transform="translate(-1)"/>
-                </clipPath>
-            </defs>
-        </svg>
-    `,
-        LyricsLargeIcon: `
-        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 200 200" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon" id="SpicyLyricsPageSvg">
-            <g clip-path="url(#clip0_1_2)">
-                <g clip-path="url(#clip1_1_2)">
-                    <path d="M167.664 32.175C163.033 27.5654 157.213 24.3179 150.845 22.7905C144.477 21.2632 137.809 21.5155 131.576 23.5194C125.343 25.5234 119.788 29.2012 115.522 34.1473C111.256 39.0935 108.446 45.1157 107.402 51.55L148.192 92.1375C154.659 91.0982 160.711 88.3022 165.682 84.0577C170.653 79.8132 174.349 74.2852 176.363 68.0832C178.377 61.8813 178.63 55.2464 177.096 48.9102C175.561 42.5741 172.297 36.7828 167.664 32.175ZM130.906 101.475L98.0051 68.725C84.8516 83.6287 71.6986 98.5328 58.5462 113.438L24.9416 151.5C22.243 154.572 20.8182 158.549 20.9557 162.627C21.0932 166.705 22.7827 170.578 25.6821 173.463C28.5815 176.348 32.4743 178.029 36.5724 178.166C40.6705 178.303 44.6678 176.885 47.7551 174.2L86.1963 140.6L130.919 101.488L130.906 101.475ZM88.445 51.175C89.5849 41.0445 93.5761 31.44 99.9594 23.4668C106.343 15.4936 114.859 9.47565 124.527 6.10546C134.196 2.73527 144.625 2.14979 154.613 4.41638C164.601 6.68297 173.744 11.7095 180.988 18.9177C188.232 26.1258 193.284 35.2226 195.562 45.1612C197.839 55.0999 197.251 65.4765 193.864 75.0971C190.477 84.7177 184.429 93.1913 176.416 99.5429C168.403 105.894 158.75 109.866 148.569 111L98.6458 154.663L60.2045 188.275C53.5213 194.108 44.8584 197.193 35.9733 196.904C27.0881 196.615 18.6462 192.974 12.3601 186.719C6.07397 180.464 2.41449 172.064 2.12407 163.223C1.83364 154.382 4.93401 145.762 10.7962 139.113L44.4134 101.05L88.445 51.175Z" />
-                    <path d="M14.4253 71.9866L24.7716 82.7005L38.1583 76.1714L31.166 89.3221L41.5123 100.036L26.8445 97.4497L19.8521 110.6L17.7792 95.8513L3.11139 93.2649L16.4981 86.7358L14.4253 71.9866Z" />
-                    <path d="M116.417 140.835L133.497 158.522L155.597 147.744L144.053 169.454L161.134 187.141L136.919 182.871L125.376 204.581L121.954 180.232L97.7398 175.963L119.839 165.184L116.417 140.835Z" />
-                    <path d="M81.5977 24.9164L63.3254 41.3689L73.3262 63.831L52.0325 51.5371L33.7602 67.9896L38.8723 43.939L17.5786 31.6451L42.0317 29.075L47.1438 5.02446L57.1446 27.4866L81.5977 24.9164Z" />
-                    <path d="M169.688 110.558L166.338 125.071L179.105 132.742L164.267 134.04L160.917 148.552L155.097 134.842L140.26 136.14L151.501 126.369L145.681 112.659L158.448 120.33L169.688 110.558Z" />
-                </g>
-            </g>
-            <defs>
-                <clipPath id="clip0_1_2">
-                    <rect width="200" height="200" />
-                </clipPath>
-                <clipPath id="clip1_1_2">
-                    <rect width="201" height="200" transform="translate(-1)"/>
-                </clipPath>
-            </defs>
-        </svg>
-    `,
-        Close: `
-        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 16 16" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon">
-            <path d="M1.47 1.47a.75.75 0 0 1 1.06 0L8 6.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L9.06 8l5.47 5.47a.75.75 0 1 1-1.06 1.06L8 9.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L6.94 8 1.47 2.53a.75.75 0 0 1 0-1.06z"></path>
-        </svg>
-    `,
-        Kofi: `
-        <img height="16" loading="eager" src="data:image/png;base64,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" />
-    `,
-        NowBar: `
-        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 16 16" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon">
-            <path d="M11.5 9.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/><path d="M1.75 3A1.75 1.75 0 000 4.75v6.5C0 12.216.784 13 1.75 13H2v1.25a.75.75 0 001.5 0V13h9v1.25a.75.75 0 001.5 0V13h.25A1.75 1.75 0 0016 11.25v-6.5A1.75 1.75 0 0014.25 3H1.75zM1.5 4.75a.25.25 0 01.25-.25h12.5a.25.25 0 01.25.25v6.5a.25.25 0 01-.25.25H1.75a.25.25 0 01-.25-.25v-6.5z"/>
-        </svg>
-    `,
-        Fullscreen: `
-        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 16 16" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon">
-            <path d="M6.064 10.229l-2.418 2.418L2 11v4h4l-1.647-1.646 2.418-2.418-.707-.707zM11 2l1.647 1.647-2.418 2.418.707.707 2.418-2.418L15 6V2h-4z"/>
-        </svg>
-    `,
-        CloseFullscreen: `
-        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 24 24" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon">
-            <path d="M21.707 2.293a1 1 0 0 1 0 1.414L17.414 8h1.829a1 1 0 0 1 0 2H14V4.757a1 1 0 1 1 2 0v1.829l4.293-4.293a1 1 0 0 1 1.414 0zM2.293 21.707a1 1 0 0 1 0-1.414L6.586 16H4.757a1 1 0 0 1 0-2H10v5.243a1 1 0 0 1-2 0v-1.829l-4.293 4.293a1 1 0 0 1-1.414 0z" />
-        </svg>
-    `,
-        PrevTrack: TrackSkip.replace("REPLACEME", "PrevTrack"),
-        Play: `
-		<svg viewBox="0 0 18 20" xmlns="http://www.w3.org/2000/svg" class="Play">
-			<path d="M 1.558 20 C 2.006 20 2.381 19.838 2.874 19.561 L 16.622 11.572 C 17.527 11.053 17.894 10.65 17.894 9.997 C 17.894 9.35 17.527 8.948 16.622 8.419 L 2.874 0.439 C 2.381 0.153 2.006 0 1.558 0 C 0.706 0 0.106 0.654 0.106 1.694 L 0.106 18.298 C 0.106 19.346 0.706 20 1.558 20 L 1.558 20 Z" fill-rule="nonzero" transform="matrix(1, 0, 0, 1, 0, 8.881784197001252e-16)"/>
-		</svg>
-	`,
-        Pause: `
-		<svg viewBox="0 0 15 20" xmlns="http://www.w3.org/2000/svg" class="Pause">
-			<path d="M 4.427 19.963 C 5.513 19.963 6.06 19.416 6.06 18.33 L 6.06 1.66 C 6.06 0.545 5.513 0.037 4.427 0.037 L 1.633 0.037 C 0.548 0.037 0 0.575 0 1.66 L 0 18.331 C -0.009 19.416 0.538 19.963 1.633 19.963 L 4.427 19.963 Z M 13.377 19.963 C 14.462 19.963 15 19.416 15 18.33 L 15 1.66 C 15 0.545 14.462 0.037 13.376 0.037 L 10.573 0.037 C 9.487 0.037 8.949 0.575 8.949 1.66 L 8.949 18.331 C 8.949 19.416 9.487 19.963 10.573 19.963 L 13.376 19.963 L 13.377 19.963 Z" fill-rule="nonzero"/>
-		</svg>
-	`,
-        NextTrack: TrackSkip.replace("REPLACEME", "NextTrack"),
-        Shuffle: `
-        <svg viewBox="0 0 25 20" xmlns="http://www.w3.org/2000/svg">
-            <path d="M 19.857 19.948 C 20.135 19.94 20.403 19.841 20.62 19.663 L 24.632 16.281 C 25.123 15.868 25.123 15.223 24.632 14.797 L 20.62 11.402 C 20.403 11.224 20.135 11.125 19.857 11.117 C 19.212 11.117 18.81 11.518 18.81 12.164 L 18.81 14.1 L 17.003 14.1 C 15.853 14.1 15.144 13.738 14.33 12.782 L 11.956 9.981 L 14.33 7.167 C 15.17 6.186 15.802 5.849 16.939 5.849 L 18.81 5.849 L 18.81 7.838 C 18.81 8.471 19.212 8.871 19.857 8.871 C 20.133 8.868 20.403 8.773 20.62 8.6 L 24.632 5.216 C 25.123 4.803 25.123 4.145 24.632 3.732 L 20.62 0.337 C 20.406 0.154 20.136 0.053 19.857 0.052 C 19.212 0.052 18.81 0.453 18.81 1.087 L 18.81 3.241 L 16.925 3.241 C 15.015 3.241 13.827 3.771 12.472 5.398 L 10.277 7.992 L 7.992 5.269 C 6.738 3.798 5.55 3.241 3.719 3.241 L 1.393 3.241 C 0.569 3.241 0 3.784 0 4.546 C 0 5.308 0.567 5.849 1.393 5.849 L 3.628 5.849 C 4.712 5.849 5.436 6.199 6.249 7.167 L 8.611 9.967 L 6.247 12.782 C 5.423 13.752 4.763 14.1 3.691 14.1 L 1.393 14.1 C 0.569 14.1 0 14.641 0 15.403 C 0 16.165 0.567 16.707 1.393 16.707 L 3.783 16.707 C 5.617 16.707 6.738 16.153 7.992 14.68 L 10.29 11.956 L 12.537 14.629 C 13.815 16.153 15.066 16.707 16.925 16.707 L 18.81 16.707 L 18.81 18.902 C 18.81 19.548 19.212 19.948 19.857 19.948 Z"/>
-        </svg>
-	`,
-        Loop: `
-		<svg viewBox="0 0 20 17" xmlns="http://www.w3.org/2000/svg" class="Loop">
-			<path d="M 1.148 8.951 C 1.786 8.956 2.307 8.441 2.307 7.803 L 2.307 7.201 C 2.307 5.853 3.255 4.949 4.705 4.949 L 11.426 4.949 L 11.426 6.778 C 11.426 7.325 11.773 7.67 12.33 7.67 C 12.572 7.67 12.806 7.583 12.988 7.424 L 16.454 4.515 C 16.879 4.158 16.879 3.589 16.454 3.233 L 12.988 0.301 C 12.806 0.142 12.572 0.055 12.33 0.055 C 11.773 0.055 11.428 0.402 11.428 0.948 L 11.428 2.686 L 4.872 2.686 C 1.895 2.686 0 4.37 0 7.001 L 0 7.803 C 0 8.44 0.513 8.951 1.148 8.951 L 1.148 8.951 Z M 7.681 16.945 C 8.227 16.945 8.572 16.6 8.572 16.053 L 8.572 14.303 L 15.128 14.303 C 18.116 14.303 20 12.619 20 9.988 L 20 9.186 C 20 8.302 19.043 7.75 18.278 8.192 C 17.922 8.397 17.703 8.776 17.703 9.186 L 17.703 9.788 C 17.703 11.136 16.745 12.04 15.295 12.04 L 8.572 12.04 L 8.572 10.223 C 8.572 9.676 8.227 9.331 7.681 9.331 C 7.436 9.331 7.199 9.417 7.012 9.576 L 3.556 12.497 C 3.121 12.842 3.133 13.41 3.556 13.767 L 7.012 16.711 C 7.202 16.862 7.438 16.944 7.681 16.945 L 7.681 16.945 Z" fill-rule="nonzero"/>
-		</svg>
-	`,
-        LoopTrack: `
-		<svg viewBox="0 0 20 17" xmlns="http://www.w3.org/2000/svg" class="LoopTrack">
-			<path d="M 18.885 6.353 C 19.52 6.353 19.888 6.008 19.888 5.318 L 19.888 1.236 C 19.888 0.511 19.409 0.022 18.696 0.022 C 18.105 0.022 17.758 0.21 17.302 0.556 L 16.176 1.437 C 15.907 1.639 15.819 1.839 15.819 2.073 C 15.819 2.418 16.074 2.697 16.488 2.697 C 16.666 2.697 16.81 2.641 16.956 2.529 L 17.781 1.839 L 17.859 1.839 L 17.859 5.318 C 17.859 6.008 18.227 6.353 18.885 6.353 L 18.885 6.353 Z M 1.147 8.986 C 1.791 9.003 2.319 8.48 2.306 7.836 L 2.306 7.234 C 2.306 5.886 3.254 4.982 4.703 4.982 L 9.274 4.982 L 9.274 6.811 C 9.274 7.358 9.62 7.703 10.178 7.703 C 10.42 7.703 10.653 7.616 10.836 7.457 L 14.302 4.548 C 14.727 4.191 14.727 3.621 14.302 3.265 L 10.837 0.333 C 10.655 0.175 10.421 0.087 10.179 0.088 C 9.622 0.088 9.275 0.434 9.275 0.981 L 9.275 2.719 L 4.873 2.719 C 1.895 2.719 0 4.403 0 7.034 L 0 7.836 C 0 8.494 0.502 8.984 1.148 8.984 L 1.147 8.986 Z M 7.68 16.978 C 8.226 16.978 8.572 16.633 8.572 16.086 L 8.572 14.336 L 15.127 14.336 C 18.115 14.336 20 12.652 20 10.021 L 20 9.219 C 20.013 8.58 19.491 8.058 18.851 8.071 C 18.21 8.054 17.686 8.578 17.703 9.219 L 17.703 9.821 C 17.703 11.169 16.744 12.073 15.295 12.073 L 8.572 12.073 L 8.572 10.256 C 8.572 9.709 8.226 9.364 7.68 9.364 C 7.435 9.364 7.198 9.45 7.011 9.609 L 3.555 12.53 C 3.12 12.875 3.132 13.443 3.555 13.8 L 7.011 16.744 C 7.201 16.895 7.437 16.977 7.68 16.978 L 7.68 16.978 Z" fill-rule="nonzero" transform="matrix(1, 0, 0, 1, 0, -8.881784197001252e-16)"/>
-		</svg>
-	`
-      };
-    }
-  });
-
-  // src/utils/Animator.ts
-  var Animator;
-  var init_Animator = __esm({
-    "src/utils/Animator.ts"() {
-      init_Maid();
-      Animator = class {
-        constructor(from, to, duration) {
-          this.startTime = null;
-          this.pausedTime = null;
-          this.animationFrameId = null;
-          this.events = {};
-          this.isDestroyed = false;
-          this.reversed = false;
-          this.from = from;
-          this.to = to;
-          this.duration = duration * 1e3;
-          this.currentProgress = from;
-          this.maid = new Maid();
-        }
-        emit(event, progress) {
-          if (this.events[event] && !this.isDestroyed) {
-            const callback = this.events[event];
-            callback?.(progress ?? this.currentProgress, this.from, this.to);
-          }
-        }
-        on(event, callback) {
-          this.events[event] = callback;
-        }
-        Start() {
-          if (this.isDestroyed)
-            return;
-          this.startTime = performance.now();
-          this.animate();
-        }
-        animate() {
-          if (this.isDestroyed || this.startTime === null)
-            return;
-          const now2 = performance.now();
-          const elapsed = now2 - this.startTime;
-          const t = Math.min(elapsed / this.duration, 1);
-          const startValue = this.reversed ? this.to : this.from;
-          const endValue = this.reversed ? this.from : this.to;
-          this.currentProgress = startValue + (endValue - startValue) * t;
-          this.emit("progress", this.currentProgress);
-          if (t < 1) {
-            this.animationFrameId = requestAnimationFrame(() => this.animate());
-            this.maid.Give(() => cancelAnimationFrame(this.animationFrameId));
-          } else {
-            this.emit("finish");
-            this.reset();
-          }
-        }
-        Pause() {
-          if (this.isDestroyed || this.animationFrameId === null)
-            return;
-          cancelAnimationFrame(this.animationFrameId);
-          this.pausedTime = performance.now();
-          this.emit("pause", this.currentProgress);
-        }
-        Resume() {
-          if (this.isDestroyed || this.pausedTime === null)
-            return;
-          const pausedDuration = performance.now() - this.pausedTime;
-          if (this.startTime !== null)
-            this.startTime += pausedDuration;
-          this.pausedTime = null;
-          this.emit("resume", this.currentProgress);
-          this.animate();
-        }
-        Restart() {
-          if (this.isDestroyed)
-            return;
-          this.reset();
-          this.emit("restart", this.currentProgress);
-          this.Start();
-        }
-        Reverse() {
-          if (this.isDestroyed)
-            return;
-          this.reversed = !this.reversed;
-          this.emit("reverse", this.currentProgress);
-        }
-        Destroy() {
-          if (this.isDestroyed)
-            return;
-          this.emit("destroy");
-          this.maid.Destroy();
-          this.reset();
-          this.isDestroyed = true;
-        }
-        reset() {
-          this.startTime = null;
-          this.pausedTime = null;
-          this.animationFrameId = null;
-        }
-      };
-    }
-  });
-
-  // src/utils/fastdom.ts
-  function addToQueue(queue, item) {
-    if (queue.length >= MAX_QUEUE_SIZE) {
-      console.warn("FastDOM queue size limit reached, dropping oldest operations");
-      queue.shift();
-    }
-    queue.push(item);
-  }
-  function cleanup() {
-    const currentTime = now();
-    if (currentTime - lastCleanup > CLEANUP_INTERVAL) {
-      lastCleanup = currentTime;
-    }
-  }
-  function processQueues() {
-    isProcessing = true;
-    const startTime = now();
-    while (readQueue.length > 0) {
-      const item = readQueue.shift();
-      if (!item || item.cancelled)
-        continue;
-      const { fn, resolve, reject } = item;
-      try {
-        const result = fn();
-        resolve(result);
-      } catch (error) {
-        console.error("Error in read operation:", error);
-        reject(error instanceof Error ? error : new Error(String(error)));
-      }
-    }
-    const writeStartTime = now();
-    while (writeQueue.length > 0) {
-      if (now() - writeStartTime > MAX_PROCESS_TIME) {
-        scheduledAnimationFrame = false;
-        isProcessing = false;
-        scheduleFrame();
-        return;
-      }
-      const item = writeQueue.shift();
-      if (!item || item.cancelled)
-        continue;
-      const { fn, resolve, reject } = item;
-      try {
-        const result = fn();
-        resolve(result);
-      } catch (error) {
-        console.error("Error in write operation:", error);
-        reject(error instanceof Error ? error : new Error(String(error)));
-      }
-    }
-    scheduledAnimationFrame = false;
-    isProcessing = false;
-    if (readQueue.length > 0 || writeQueue.length > 0) {
-      scheduleFrame();
-    }
-    lastProcessTime = now() - startTime;
-    cleanup();
-  }
-  function scheduleFrame() {
-    if (!scheduledAnimationFrame && (readQueue.length > 0 || writeQueue.length > 0)) {
-      scheduledAnimationFrame = true;
-      raf(processQueues);
-    }
-  }
-  function createCancellablePromise(queue, fn) {
-    const id = currentQueueId++;
-    let cancelled = false;
-    const promise = new Promise((resolve, reject) => {
-      if (cancelled) {
-        reject(new Error("Operation cancelled"));
-        return;
-      }
-      const item = {
-        fn,
-        resolve: (result) => {
-          if (!cancelled)
-            resolve(result);
-        },
-        reject: (error) => {
-          if (!cancelled)
-            reject(error);
-        },
-        id,
-        cancelled: false
-      };
-      addToQueue(queue, item);
-      scheduleFrame();
-    });
-    promise.cancel = () => {
-      cancelled = true;
-      return cancel(id);
-    };
-    return promise;
-  }
-  function clear() {
-    readQueue.clear();
-    writeQueue.clear();
-  }
-  function cancel(id) {
-    const readIndex = readQueue.findIndex((op) => op.id === id);
-    if (readIndex !== -1) {
-      return readQueue.removeAt(readIndex);
-    }
-    const writeIndex = writeQueue.findIndex((op) => op.id === id);
-    if (writeIndex !== -1) {
-      return writeQueue.removeAt(writeIndex);
-    }
-    return false;
-  }
-  var now, raf, FastQueue, readQueue, writeQueue, scheduledAnimationFrame, currentQueueId, isProcessing, lastProcessTime, lastCleanup, MAX_PROCESS_TIME, MAX_QUEUE_SIZE, CLEANUP_INTERVAL, fastdom_default;
-  var init_fastdom = __esm({
-    "src/utils/fastdom.ts"() {
-      now = (() => {
-        if (typeof performance !== "undefined" && performance.now) {
-          return () => performance.now();
-        }
-        return () => Date.now();
-      })();
-      raf = (() => {
-        if (typeof requestAnimationFrame !== "undefined") {
-          return requestAnimationFrame;
-        }
-        return (callback) => setTimeout(callback, 16);
-      })();
-      FastQueue = class {
-        constructor() {
-          this.items = [];
-          this.head = 0;
-        }
-        push(item) {
-          this.items.push(item);
-        }
-        shift() {
-          if (this.head >= this.items.length)
-            return void 0;
-          const item = this.items[this.head];
-          delete this.items[this.head];
-          this.head++;
-          if (this.head >= this.items.length) {
-            this.items.length = 0;
-            this.head = 0;
-          }
-          return item;
-        }
-        get length() {
-          return this.items.length - this.head;
-        }
-        findIndex(predicate) {
-          for (let i = this.head; i < this.items.length; i++) {
-            if (this.items[i] && predicate(this.items[i])) {
-              return i - this.head;
-            }
-          }
-          return -1;
-        }
-        removeAt(index) {
-          const actualIndex = this.head + index;
-          if (actualIndex >= this.head && actualIndex < this.items.length && this.items[actualIndex]) {
-            delete this.items[actualIndex];
-            return true;
-          }
-          return false;
-        }
-        clear() {
-          this.items.length = 0;
-          this.head = 0;
-        }
-      };
-      readQueue = new FastQueue();
-      writeQueue = new FastQueue();
-      scheduledAnimationFrame = false;
-      currentQueueId = 0;
-      isProcessing = false;
-      lastProcessTime = 0;
-      lastCleanup = 0;
-      MAX_PROCESS_TIME = 8;
-      MAX_QUEUE_SIZE = 1e3;
-      CLEANUP_INTERVAL = 5e3;
-      fastdom_default = {
-        read: (fn) => {
-          return createCancellablePromise(readQueue, fn);
-        },
-        write: (fn) => {
-          return createCancellablePromise(writeQueue, fn);
-        },
-        readThenWrite: (readFn, writeFn) => {
-          return new Promise((resolve, reject) => {
-            const readPromise = createCancellablePromise(readQueue, readFn);
-            readPromise.then((readResult) => {
-              const writePromise = createCancellablePromise(
-                writeQueue,
-                () => writeFn(readResult)
-              );
-              return writePromise;
-            }).then(resolve).catch(reject);
-          });
-        },
-        clear,
-        getMetrics: () => ({
-          readQueueLength: readQueue.length,
-          writeQueueLength: writeQueue.length,
-          lastProcessTime,
-          isProcessing,
-          scheduledAnimationFrame
-        })
-      };
-    }
-  });
-
-  // src/utils/ScrollIntoView/index.ts
-  function cubicEaseInOut(progress) {
-    return progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-  }
-  function smoothScrollIntoView(options) {
-    const {
-      container,
-      element,
-      duration = 150,
-      offset = 0,
-      align = "top",
-      axis = "vertical"
-    } = options;
-    let cancelAnimation = () => {
-    };
-    const controller = {
-      cancel: () => cancelAnimation()
-    };
-    fastdom_default.readThenWrite(
-      () => {
-        const containerRect = container.getBoundingClientRect();
-        const elementRect = element.getBoundingClientRect();
-        let targetScroll;
-        let startScroll;
-        if (axis === "vertical") {
-          startScroll = container.scrollTop;
-          if (align === "center") {
-            targetScroll = elementRect.top - containerRect.top + container.scrollTop - (container.clientHeight / 2 - element.clientHeight / 2) - offset;
-          } else {
-            targetScroll = elementRect.top - containerRect.top + container.scrollTop - offset;
-          }
-        } else {
-          startScroll = container.scrollLeft;
-          if (align === "center") {
-            targetScroll = elementRect.left - containerRect.left + container.scrollLeft - (container.clientWidth / 2 - element.clientWidth / 2) - offset;
-          } else {
-            targetScroll = elementRect.left - containerRect.left + container.scrollLeft - offset;
-          }
-        }
-        return {
-          startScroll,
-          targetScroll,
-          distance: targetScroll - startScroll,
-          axis
-        };
-      },
-      ({ startScroll, distance, axis: axis2 }) => {
-        const startTime = performance.now();
-        let animationFrameId;
-        function animate(currentTime) {
-          const elapsed = currentTime - startTime;
-          const progress = Math.min(elapsed / duration, 1);
-          const easedProgress = cubicEaseInOut(progress);
-          const newScroll = startScroll + distance * easedProgress;
-          fastdom_default.write(() => {
-            if (axis2 === "vertical") {
-              container.scrollTop = newScroll;
-            } else {
-              container.scrollLeft = newScroll;
-            }
-          });
-          if (progress < 1) {
-            animationFrameId = requestAnimationFrame(animate);
-          }
-        }
-        animationFrameId = requestAnimationFrame(animate);
-        cancelAnimation = () => {
-          cancelAnimationFrame(animationFrameId);
-        };
-        return {
-          cancel: cancelAnimation
-        };
-      }
-    );
-    return controller;
-  }
-  function scrollIntoCenterView(container, element, duration = 150, offset = 0, axis = "vertical") {
-    return smoothScrollIntoView({
-      container,
-      element,
-      duration,
-      offset,
-      align: "center",
-      axis
-    });
-  }
-  var init_ScrollIntoView = __esm({
-    "src/utils/ScrollIntoView/index.ts"() {
-      init_fastdom();
-    }
-  });
-
-  // src/utils/Scrolling/ScrollToActiveLine.ts
-  var ScrollToActiveLine_exports = {};
-  __export(ScrollToActiveLine_exports, {
-    ResetLastLine: () => ResetLastLine,
-    ScrollToActiveLine: () => ScrollToActiveLine
-  });
-  function ScrollToActiveLine(ScrollSimplebar2) {
-    if (!SpotifyPlayer.IsPlaying)
-      return;
-    if (!Defaults_default.LyricsContainerExists)
-      return;
-    if (Spicetify.Platform.History.location.pathname === "/AmaiLyrics") {
-      const Lines = LyricsObject.Types[Defaults_default.CurrentLyricsType]?.Lines;
-      const Position = SpotifyPlayer.GetTrackPosition();
-      const PositionOffset = 370;
-      const ProcessedPosition = Position + PositionOffset;
-      if (!Lines)
-        return;
-      let currentLine = null;
-      for (let i = 0; i < Lines.length; i++) {
-        const line = Lines[i];
-        if (line.StartTime <= ProcessedPosition && line.EndTime >= ProcessedPosition) {
-          currentLine = line;
-          break;
-        }
-      }
-      if (currentLine) {
-        fastdom_default.read(() => {
-          const LineElem = currentLine.HTMLElement;
-          const container = ScrollSimplebar2?.getScrollElement();
-          if (!container)
-            return null;
-          if (lastLine && lastLine === LineElem)
-            return null;
-          return { LineElem, container };
-        }).then((result) => {
-          if (!result)
-            return;
-          const { LineElem, container } = result;
-          lastLine = LineElem;
-          fastdom_default.write(() => {
-            setTimeout(() => {
-              fastdom_default.write(() => {
-                LineElem.classList.add("Active", "OverridenByScroller");
-              });
-            }, PositionOffset / 2);
-            scrollIntoCenterView(container, LineElem, 270, -50);
-          });
-        });
-      }
-    }
-  }
-  function ResetLastLine() {
-    lastLine = null;
-  }
-  var lastLine;
-  var init_ScrollToActiveLine = __esm({
-    "src/utils/Scrolling/ScrollToActiveLine.ts"() {
-      init_Defaults();
-      init_SpotifyPlayer();
-      init_lyrics();
-      init_ScrollIntoView();
-      init_fastdom();
-      lastLine = null;
-    }
-  });
-
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-25896-cpNuj37VMn52/1983ce6e5098/DotLoader.css
-  var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-25896-cpNuj37VMn52/1983ce6e5098/DotLoader.css"() {
-    }
-  });
-
-  // src/components/DynamicBG/dynamicBackground.ts
-  var dynamicBackground_exports = {};
-  __export(dynamicBackground_exports, {
-    default: () => ApplyDynamicBackground
-  });
-  async function setupDynamicBackground(element, imageUrl) {
-    let bgContainer = element.querySelector(".sweet-dynamic-bg");
-    if (!bgContainer) {
-      bgContainer = document.createElement("div");
-      bgContainer.className = "sweet-dynamic-bg";
-      bgContainer.setAttribute("current-img", imageUrl);
-      const placeholder = document.createElement("div");
-      placeholder.className = "placeholder";
-      bgContainer.appendChild(placeholder);
-      const imgA = document.createElement("img");
-      imgA.id = "bg-img-a";
-      imgA.className = "bg-image primary active";
-      imgA.decoding = "async";
-      imgA.loading = "eager";
-      imgA.src = imageUrl;
-      imgA.addEventListener(
-        "load",
-        () => {
-          if (placeholder.parentNode)
-            placeholder.parentNode.removeChild(placeholder);
-        },
-        { once: true, passive: true }
-      );
-      bgContainer.appendChild(imgA);
-      const imgB = document.createElement("img");
-      imgB.id = "bg-img-b";
-      imgB.className = "bg-image secondary";
-      imgB.decoding = "async";
-      imgB.loading = "lazy";
-      bgContainer.appendChild(imgB);
-      element.appendChild(bgContainer);
-      const rotationPrimary = Math.floor(Math.random() * 360);
-      const rotationSecondary = Math.floor(Math.random() * 360);
-      document.documentElement.style.setProperty("--bg-rotation-primary", `${rotationPrimary}deg`);
-      document.documentElement.style.setProperty(
-        "--bg-rotation-secondary",
-        `${rotationSecondary}deg`
-      );
-      const scalePrimary = 0.9 + Math.random() * 0.3;
-      const scaleSecondary = 0.9 + Math.random() * 0.3;
-      document.documentElement.style.setProperty("--bg-scale-primary", `${scalePrimary}`);
-      document.documentElement.style.setProperty("--bg-scale-secondary", `${scaleSecondary}`);
-      const hueShift = Math.floor(Math.random() * 30);
-      document.documentElement.style.setProperty("--bg-hue-shift", `${hueShift}deg`);
-    }
-    return bgContainer;
-  }
-  function debounce(fn, delay) {
-    let timer;
-    return (...args) => {
-      if (timer)
-        clearTimeout(timer);
-      timer = window.setTimeout(() => fn(...args), delay);
-    };
-  }
-  async function ApplyDynamicBackground(element) {
-    if (!element)
-      return;
-    let currentImgCover = await SpotifyPlayer.Artwork.Get("d");
-    if (currentImgCover.startsWith("spotify:image:")) {
-      const imageId = currentImgCover.replace("spotify:image:", "");
-      currentImgCover = `https://i.scdn.co/image/${imageId}`;
-    }
-    const bgContainer = await setupDynamicBackground(element, currentImgCover);
-    const displayedImg = bgContainer.getAttribute("current-img");
-    if (displayedImg !== currentImgCover) {
-      updateDynamicBackground(bgContainer, currentImgCover);
-    }
-  }
-  var updateDynamicBackground;
-  var init_dynamicBackground = __esm({
-    "src/components/DynamicBG/dynamicBackground.ts"() {
-      init_SpotifyPlayer();
-      updateDynamicBackground = debounce(
-        (bgContainer, newImageUrl) => {
-          const imgA = bgContainer.querySelector("#bg-img-a");
-          const imgB = bgContainer.querySelector("#bg-img-b");
-          if (!imgA || !imgB) {
-            console.error("Dynamic background image elements not found!");
-            return;
-          }
-          const activeImg = imgA.classList.contains("active") ? imgA : imgB;
-          const inactiveImg = activeImg === imgA ? imgB : imgA;
-          if (inactiveImg.src === newImageUrl)
-            return;
-          inactiveImg.src = newImageUrl;
-          inactiveImg.onload = () => {
-            activeImg.classList.remove("active");
-            inactiveImg.classList.add("active");
-            const rotationPrimary = Math.floor(Math.random() * 360);
-            const rotationSecondary = Math.floor(Math.random() * 360);
-            document.documentElement.style.setProperty("--bg-rotation-primary", `${rotationPrimary}deg`);
-            document.documentElement.style.setProperty(
-              "--bg-rotation-secondary",
-              `${rotationSecondary}deg`
-            );
-            const scalePrimary = 0.9 + Math.random() * 0.3;
-            const scaleSecondary = 0.9 + Math.random() * 0.3;
-            document.documentElement.style.setProperty("--bg-scale-primary", `${scalePrimary}`);
-            document.documentElement.style.setProperty("--bg-scale-secondary", `${scaleSecondary}`);
-            const hueShift = Math.floor(Math.random() * 30);
-            document.documentElement.style.setProperty("--bg-hue-shift", `${hueShift}deg`);
-          };
-          inactiveImg.onerror = () => {
-            console.error("Error loading new background image:", newImageUrl);
-          };
-          bgContainer.setAttribute("current-img", newImageUrl);
-        },
-        100
-      );
+  var ArabicPersianRegex;
+  var init_Addons = __esm({
+    "src/utils/Addons.ts"() {
+      ArabicPersianRegex = /[\u0600-\u06FF]/;
     }
   });
 
@@ -8703,25 +7853,875 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // src/utils/Addons.ts
-  function IsPlaying() {
-    const state = Spicetify?.Player?.data?.isPaused;
-    return !state;
+  // src/utils/storage.ts
+  function set(key, value) {
+    if (key === "currentlyFetching") {
+      currentlyFetching = value;
+      return;
+    }
+    Spicetify.LocalStorage.set(`${prefix}${key}`, value);
   }
-  function TOP_ApplyLyricsSpacer(Container) {
-    const div = document.createElement("div");
-    div.classList.add("TopSpacer");
-    Container.appendChild(div);
+  function get(key) {
+    if (key === "currentlyFetching") {
+      return currentlyFetching;
+    }
+    return Spicetify.LocalStorage.get(`${prefix}${key}`);
   }
-  function BOTTOM_ApplyLyricsSpacer(Container) {
-    const div = document.createElement("div");
-    div.classList.add("BottomSpacer");
-    Container.appendChild(div);
+  var prefix, currentlyFetching, storage_default;
+  var init_storage = __esm({
+    "src/utils/storage.ts"() {
+      prefix = "SpicyLyrics-";
+      currentlyFetching = false;
+      storage_default = {
+        set,
+        get
+      };
+    }
+  });
+
+  // src/utils/Whentil.ts
+  function Until(statement, callback, maxRepeats = Infinity) {
+    const delay = 10;
+    let isCancelled = false;
+    let executedCount = 0;
+    const resolveStatement = () => typeof statement === "function" ? statement() : statement;
+    const runner = () => {
+      if (isCancelled || executedCount >= maxRepeats)
+        return;
+      const conditionMet = resolveStatement();
+      if (!conditionMet) {
+        callback();
+        executedCount++;
+        setTimeout(runner, delay);
+      }
+    };
+    setTimeout(runner, delay);
+    return {
+      Cancel() {
+        isCancelled = true;
+      },
+      Reset() {
+        if (executedCount >= maxRepeats || isCancelled) {
+          isCancelled = false;
+          executedCount = 0;
+          runner();
+        }
+      }
+    };
   }
-  var ArabicPersianRegex;
-  var init_Addons = __esm({
-    "src/utils/Addons.ts"() {
-      ArabicPersianRegex = /[\u0600-\u06FF]/;
+  function When(statement, callback, repeater = 1) {
+    const delay = 10;
+    let isCancelled = false;
+    let executionsRemaining = repeater;
+    const resolveStatement = () => typeof statement === "function" ? statement() : statement;
+    const runner = () => {
+      if (isCancelled || executionsRemaining <= 0)
+        return;
+      try {
+        const resolved = resolveStatement();
+        if (resolved) {
+          callback(resolved);
+          executionsRemaining--;
+          if (executionsRemaining > 0)
+            setTimeout(runner, delay);
+        } else {
+          setTimeout(runner, delay);
+        }
+      } catch {
+        setTimeout(runner, delay);
+      }
+    };
+    setTimeout(runner, delay);
+    return {
+      Cancel() {
+        isCancelled = true;
+      },
+      Reset() {
+        if (executionsRemaining <= 0 || isCancelled) {
+          isCancelled = false;
+          executionsRemaining = repeater;
+          runner();
+        }
+      }
+    };
+  }
+  var Whentil, Whentil_default;
+  var init_Whentil = __esm({
+    "src/utils/Whentil.ts"() {
+      Whentil = {
+        When,
+        Until
+      };
+      Whentil_default = Whentil;
+    }
+  });
+
+  // external-global-plugin:react
+  var require_react = __commonJS({
+    "external-global-plugin:react"(exports, module) {
+      module.exports = Spicetify.React;
+    }
+  });
+
+  // external-global-plugin:react-dom
+  var require_react_dom = __commonJS({
+    "external-global-plugin:react-dom"(exports, module) {
+      module.exports = Spicetify.ReactDOM;
+    }
+  });
+
+  // src/utils/Lyrics/SongProgressBar.ts
+  var SongProgressBar;
+  var init_SongProgressBar = __esm({
+    "src/utils/Lyrics/SongProgressBar.ts"() {
+      SongProgressBar = class {
+        constructor() {
+          this.destroyed = false;
+          this.duration = 0;
+          this.position = 0;
+        }
+        Update(params) {
+          if (this.destroyed) {
+            console.warn("This progress bar has been destroyed and cannot be used");
+            return;
+          }
+          this.duration = params.duration;
+          this.position = Math.min(params.position, this.duration);
+        }
+        Destroy() {
+          if (this.destroyed)
+            return;
+          this.destroyed = true;
+        }
+        GetFormattedDuration() {
+          return this.formatTime(this.duration);
+        }
+        GetFormattedPosition() {
+          return this.formatTime(this.position);
+        }
+        GetProgressPercentage() {
+          if (this.duration <= 0)
+            return 0;
+          return this.position / this.duration;
+        }
+        CalculatePositionFromClick(params) {
+          const { sliderBar, event } = params;
+          if (this.duration <= 0)
+            return 0;
+          const rect = sliderBar.getBoundingClientRect();
+          const clickX = event.clientX - rect.left;
+          const percentage = Math.max(0, Math.min(1, clickX / rect.width));
+          return Math.floor(percentage * this.duration);
+        }
+        formatTime(timeInMs) {
+          if (isNaN(timeInMs) || timeInMs < 0) {
+            return "0:00";
+          }
+          const totalSeconds = Math.floor(timeInMs / 1e3);
+          const minutes = Math.floor(totalSeconds / 60);
+          const seconds = totalSeconds % 60;
+          return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+        }
+      };
+    }
+  });
+
+  // src/components/Styling/Icons.ts
+  var TrackSkip, Icons;
+  var init_Icons = __esm({
+    "src/components/Styling/Icons.ts"() {
+      TrackSkip = `
+	<div class="PlaybackControl TrackSkip REPLACEME">
+		<svg viewBox="0 0 35 20" xmlns="http://www.w3.org/2000/svg">
+			<path d="M 19.467 19.905 C 20.008 19.905 20.463 19.746 21.005 19.426 L 33.61 12.023 C 34.533 11.482 35 10.817 35 9.993 C 35 9.158 34.545 8.53 33.61 7.977 L 21.005 0.574 C 20.463 0.254 19.998 0.094 19.456 0.094 C 18.374 0.094 17.475 0.917 17.475 2.418 L 17.475 9.49 C 17.315 8.898 16.873 8.408 16.135 7.977 L 3.529 0.574 C 3 0.254 2.533 0.094 1.993 0.094 C 0.911 0.094 0 0.917 0 2.418 L 0 17.582 C 0 19.083 0.91 19.906 1.993 19.906 C 2.533 19.906 3 19.746 3.529 19.426 L 16.135 12.023 C 16.861 11.593 17.315 11.088 17.475 10.485 L 17.475 17.582 C 17.475 19.083 18.386 19.906 19.467 19.906 L 19.467 19.905 Z" fill-rule="nonzero"/>
+		</svg>
+	</div>
+`;
+      Icons = {
+        LyricsPage: `
+        <svg class="Svg-sc-ytk21e-0 Svg-img-16-icon" id="SpicyLyricsPageSvg" version="1.0" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet">
+            <g clip-path="url(#clip0_1_2)">
+                <g clip-path="url(#clip1_1_2)">
+                    <path d="M167.664 32.175C163.033 27.5654 157.213 24.3179 150.845 22.7905C144.477 21.2632 137.809 21.5155 131.576 23.5194C125.343 25.5234 119.788 29.2012 115.522 34.1473C111.256 39.0935 108.446 45.1157 107.402 51.55L148.192 92.1375C154.659 91.0982 160.711 88.3022 165.682 84.0577C170.653 79.8132 174.349 74.2852 176.363 68.0832C178.377 61.8813 178.63 55.2464 177.096 48.9102C175.561 42.5741 172.297 36.7828 167.664 32.175ZM130.906 101.475L98.0051 68.725C84.8516 83.6287 71.6986 98.5328 58.5462 113.438L24.9416 151.5C22.243 154.572 20.8182 158.549 20.9557 162.627C21.0932 166.705 22.7827 170.578 25.6821 173.463C28.5815 176.348 32.4743 178.029 36.5724 178.166C40.6705 178.303 44.6678 176.885 47.7551 174.2L86.1963 140.6L130.919 101.488L130.906 101.475ZM88.445 51.175C89.5849 41.0445 93.5761 31.44 99.9594 23.4668C106.343 15.4936 114.859 9.47565 124.527 6.10546C134.196 2.73527 144.625 2.14979 154.613 4.41638C164.601 6.68297 173.744 11.7095 180.988 18.9177C188.232 26.1258 193.284 35.2226 195.562 45.1612C197.839 55.0999 197.251 65.4765 193.864 75.0971C190.477 84.7177 184.429 93.1913 176.416 99.5429C168.403 105.894 158.75 109.866 148.569 111L98.6458 154.663L60.2045 188.275C53.5213 194.108 44.8584 197.193 35.9733 196.904C27.0881 196.615 18.6462 192.974 12.3601 186.719C6.07397 180.464 2.41449 172.064 2.12407 163.223C1.83364 154.382 4.93401 145.762 10.7962 139.113L44.4134 101.05L88.445 51.175Z" />
+                    <path d="M14.4253 71.9866L24.7716 82.7005L38.1583 76.1714L31.166 89.3221L41.5123 100.036L26.8445 97.4497L19.8521 110.6L17.7792 95.8513L3.11139 93.2649L16.4981 86.7358L14.4253 71.9866Z" />
+                    <path d="M116.417 140.835L133.497 158.522L155.597 147.744L144.053 169.454L161.134 187.141L136.919 182.871L125.376 204.581L121.954 180.232L97.7398 175.963L119.839 165.184L116.417 140.835Z" />
+                    <path d="M81.5977 24.9164L63.3254 41.3689L73.3262 63.831L52.0325 51.5371L33.7602 67.9896L38.8723 43.939L17.5786 31.6451L42.0317 29.075L47.1438 5.02446L57.1446 27.4866L81.5977 24.9164Z" />
+                    <path d="M169.688 110.558L166.338 125.071L179.105 132.742L164.267 134.04L160.917 148.552L155.097 134.842L140.26 136.14L151.501 126.369L145.681 112.659L158.448 120.33L169.688 110.558Z" />
+                </g>
+            </g>
+            <defs>
+                <clipPath id="clip0_1_2">
+                    <rect width="200" height="200" />
+                </clipPath>
+                <clipPath id="clip1_1_2">
+                    <rect width="201" height="200" transform="translate(-1)"/>
+                </clipPath>
+            </defs>
+        </svg>
+    `,
+        LyricsLargeIcon: `
+        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 200 200" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon" id="SpicyLyricsPageSvg">
+            <g clip-path="url(#clip0_1_2)">
+                <g clip-path="url(#clip1_1_2)">
+                    <path d="M167.664 32.175C163.033 27.5654 157.213 24.3179 150.845 22.7905C144.477 21.2632 137.809 21.5155 131.576 23.5194C125.343 25.5234 119.788 29.2012 115.522 34.1473C111.256 39.0935 108.446 45.1157 107.402 51.55L148.192 92.1375C154.659 91.0982 160.711 88.3022 165.682 84.0577C170.653 79.8132 174.349 74.2852 176.363 68.0832C178.377 61.8813 178.63 55.2464 177.096 48.9102C175.561 42.5741 172.297 36.7828 167.664 32.175ZM130.906 101.475L98.0051 68.725C84.8516 83.6287 71.6986 98.5328 58.5462 113.438L24.9416 151.5C22.243 154.572 20.8182 158.549 20.9557 162.627C21.0932 166.705 22.7827 170.578 25.6821 173.463C28.5815 176.348 32.4743 178.029 36.5724 178.166C40.6705 178.303 44.6678 176.885 47.7551 174.2L86.1963 140.6L130.919 101.488L130.906 101.475ZM88.445 51.175C89.5849 41.0445 93.5761 31.44 99.9594 23.4668C106.343 15.4936 114.859 9.47565 124.527 6.10546C134.196 2.73527 144.625 2.14979 154.613 4.41638C164.601 6.68297 173.744 11.7095 180.988 18.9177C188.232 26.1258 193.284 35.2226 195.562 45.1612C197.839 55.0999 197.251 65.4765 193.864 75.0971C190.477 84.7177 184.429 93.1913 176.416 99.5429C168.403 105.894 158.75 109.866 148.569 111L98.6458 154.663L60.2045 188.275C53.5213 194.108 44.8584 197.193 35.9733 196.904C27.0881 196.615 18.6462 192.974 12.3601 186.719C6.07397 180.464 2.41449 172.064 2.12407 163.223C1.83364 154.382 4.93401 145.762 10.7962 139.113L44.4134 101.05L88.445 51.175Z" />
+                    <path d="M14.4253 71.9866L24.7716 82.7005L38.1583 76.1714L31.166 89.3221L41.5123 100.036L26.8445 97.4497L19.8521 110.6L17.7792 95.8513L3.11139 93.2649L16.4981 86.7358L14.4253 71.9866Z" />
+                    <path d="M116.417 140.835L133.497 158.522L155.597 147.744L144.053 169.454L161.134 187.141L136.919 182.871L125.376 204.581L121.954 180.232L97.7398 175.963L119.839 165.184L116.417 140.835Z" />
+                    <path d="M81.5977 24.9164L63.3254 41.3689L73.3262 63.831L52.0325 51.5371L33.7602 67.9896L38.8723 43.939L17.5786 31.6451L42.0317 29.075L47.1438 5.02446L57.1446 27.4866L81.5977 24.9164Z" />
+                    <path d="M169.688 110.558L166.338 125.071L179.105 132.742L164.267 134.04L160.917 148.552L155.097 134.842L140.26 136.14L151.501 126.369L145.681 112.659L158.448 120.33L169.688 110.558Z" />
+                </g>
+            </g>
+            <defs>
+                <clipPath id="clip0_1_2">
+                    <rect width="200" height="200" />
+                </clipPath>
+                <clipPath id="clip1_1_2">
+                    <rect width="201" height="200" transform="translate(-1)"/>
+                </clipPath>
+            </defs>
+        </svg>
+    `,
+        Close: `
+        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 16 16" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon">
+            <path d="M1.47 1.47a.75.75 0 0 1 1.06 0L8 6.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L9.06 8l5.47 5.47a.75.75 0 1 1-1.06 1.06L8 9.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L6.94 8 1.47 2.53a.75.75 0 0 1 0-1.06z"></path>
+        </svg>
+    `,
+        Kofi: `
+        <img height="16" loading="eager" src="data:image/png;base64,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" />
+    `,
+        NowBar: `
+        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 16 16" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon">
+            <path d="M11.5 9.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/><path d="M1.75 3A1.75 1.75 0 000 4.75v6.5C0 12.216.784 13 1.75 13H2v1.25a.75.75 0 001.5 0V13h9v1.25a.75.75 0 001.5 0V13h.25A1.75 1.75 0 0016 11.25v-6.5A1.75 1.75 0 0014.25 3H1.75zM1.5 4.75a.25.25 0 01.25-.25h12.5a.25.25 0 01.25.25v6.5a.25.25 0 01-.25.25H1.75a.25.25 0 01-.25-.25v-6.5z"/>
+        </svg>
+    `,
+        Fullscreen: `
+        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 16 16" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon">
+            <path d="M6.064 10.229l-2.418 2.418L2 11v4h4l-1.647-1.646 2.418-2.418-.707-.707zM11 2l1.647 1.647-2.418 2.418.707.707 2.418-2.418L15 6V2h-4z"/>
+        </svg>
+    `,
+        CloseFullscreen: `
+        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 24 24" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon">
+            <path d="M21.707 2.293a1 1 0 0 1 0 1.414L17.414 8h1.829a1 1 0 0 1 0 2H14V4.757a1 1 0 1 1 2 0v1.829l4.293-4.293a1 1 0 0 1 1.414 0zM2.293 21.707a1 1 0 0 1 0-1.414L6.586 16H4.757a1 1 0 0 1 0-2H10v5.243a1 1 0 0 1-2 0v-1.829l-4.293 4.293a1 1 0 0 1-1.414 0z" />
+        </svg>
+    `,
+        PrevTrack: TrackSkip.replace("REPLACEME", "PrevTrack"),
+        Play: `
+		<svg viewBox="0 0 18 20" xmlns="http://www.w3.org/2000/svg" class="Play">
+			<path d="M 1.558 20 C 2.006 20 2.381 19.838 2.874 19.561 L 16.622 11.572 C 17.527 11.053 17.894 10.65 17.894 9.997 C 17.894 9.35 17.527 8.948 16.622 8.419 L 2.874 0.439 C 2.381 0.153 2.006 0 1.558 0 C 0.706 0 0.106 0.654 0.106 1.694 L 0.106 18.298 C 0.106 19.346 0.706 20 1.558 20 L 1.558 20 Z" fill-rule="nonzero" transform="matrix(1, 0, 0, 1, 0, 8.881784197001252e-16)"/>
+		</svg>
+	`,
+        Pause: `
+		<svg viewBox="0 0 15 20" xmlns="http://www.w3.org/2000/svg" class="Pause">
+			<path d="M 4.427 19.963 C 5.513 19.963 6.06 19.416 6.06 18.33 L 6.06 1.66 C 6.06 0.545 5.513 0.037 4.427 0.037 L 1.633 0.037 C 0.548 0.037 0 0.575 0 1.66 L 0 18.331 C -0.009 19.416 0.538 19.963 1.633 19.963 L 4.427 19.963 Z M 13.377 19.963 C 14.462 19.963 15 19.416 15 18.33 L 15 1.66 C 15 0.545 14.462 0.037 13.376 0.037 L 10.573 0.037 C 9.487 0.037 8.949 0.575 8.949 1.66 L 8.949 18.331 C 8.949 19.416 9.487 19.963 10.573 19.963 L 13.376 19.963 L 13.377 19.963 Z" fill-rule="nonzero"/>
+		</svg>
+	`,
+        NextTrack: TrackSkip.replace("REPLACEME", "NextTrack"),
+        Shuffle: `
+        <svg viewBox="0 0 25 20" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 19.857 19.948 C 20.135 19.94 20.403 19.841 20.62 19.663 L 24.632 16.281 C 25.123 15.868 25.123 15.223 24.632 14.797 L 20.62 11.402 C 20.403 11.224 20.135 11.125 19.857 11.117 C 19.212 11.117 18.81 11.518 18.81 12.164 L 18.81 14.1 L 17.003 14.1 C 15.853 14.1 15.144 13.738 14.33 12.782 L 11.956 9.981 L 14.33 7.167 C 15.17 6.186 15.802 5.849 16.939 5.849 L 18.81 5.849 L 18.81 7.838 C 18.81 8.471 19.212 8.871 19.857 8.871 C 20.133 8.868 20.403 8.773 20.62 8.6 L 24.632 5.216 C 25.123 4.803 25.123 4.145 24.632 3.732 L 20.62 0.337 C 20.406 0.154 20.136 0.053 19.857 0.052 C 19.212 0.052 18.81 0.453 18.81 1.087 L 18.81 3.241 L 16.925 3.241 C 15.015 3.241 13.827 3.771 12.472 5.398 L 10.277 7.992 L 7.992 5.269 C 6.738 3.798 5.55 3.241 3.719 3.241 L 1.393 3.241 C 0.569 3.241 0 3.784 0 4.546 C 0 5.308 0.567 5.849 1.393 5.849 L 3.628 5.849 C 4.712 5.849 5.436 6.199 6.249 7.167 L 8.611 9.967 L 6.247 12.782 C 5.423 13.752 4.763 14.1 3.691 14.1 L 1.393 14.1 C 0.569 14.1 0 14.641 0 15.403 C 0 16.165 0.567 16.707 1.393 16.707 L 3.783 16.707 C 5.617 16.707 6.738 16.153 7.992 14.68 L 10.29 11.956 L 12.537 14.629 C 13.815 16.153 15.066 16.707 16.925 16.707 L 18.81 16.707 L 18.81 18.902 C 18.81 19.548 19.212 19.948 19.857 19.948 Z"/>
+        </svg>
+	`,
+        Loop: `
+		<svg viewBox="0 0 20 17" xmlns="http://www.w3.org/2000/svg" class="Loop">
+			<path d="M 1.148 8.951 C 1.786 8.956 2.307 8.441 2.307 7.803 L 2.307 7.201 C 2.307 5.853 3.255 4.949 4.705 4.949 L 11.426 4.949 L 11.426 6.778 C 11.426 7.325 11.773 7.67 12.33 7.67 C 12.572 7.67 12.806 7.583 12.988 7.424 L 16.454 4.515 C 16.879 4.158 16.879 3.589 16.454 3.233 L 12.988 0.301 C 12.806 0.142 12.572 0.055 12.33 0.055 C 11.773 0.055 11.428 0.402 11.428 0.948 L 11.428 2.686 L 4.872 2.686 C 1.895 2.686 0 4.37 0 7.001 L 0 7.803 C 0 8.44 0.513 8.951 1.148 8.951 L 1.148 8.951 Z M 7.681 16.945 C 8.227 16.945 8.572 16.6 8.572 16.053 L 8.572 14.303 L 15.128 14.303 C 18.116 14.303 20 12.619 20 9.988 L 20 9.186 C 20 8.302 19.043 7.75 18.278 8.192 C 17.922 8.397 17.703 8.776 17.703 9.186 L 17.703 9.788 C 17.703 11.136 16.745 12.04 15.295 12.04 L 8.572 12.04 L 8.572 10.223 C 8.572 9.676 8.227 9.331 7.681 9.331 C 7.436 9.331 7.199 9.417 7.012 9.576 L 3.556 12.497 C 3.121 12.842 3.133 13.41 3.556 13.767 L 7.012 16.711 C 7.202 16.862 7.438 16.944 7.681 16.945 L 7.681 16.945 Z" fill-rule="nonzero"/>
+		</svg>
+	`,
+        LoopTrack: `
+		<svg viewBox="0 0 20 17" xmlns="http://www.w3.org/2000/svg" class="LoopTrack">
+			<path d="M 18.885 6.353 C 19.52 6.353 19.888 6.008 19.888 5.318 L 19.888 1.236 C 19.888 0.511 19.409 0.022 18.696 0.022 C 18.105 0.022 17.758 0.21 17.302 0.556 L 16.176 1.437 C 15.907 1.639 15.819 1.839 15.819 2.073 C 15.819 2.418 16.074 2.697 16.488 2.697 C 16.666 2.697 16.81 2.641 16.956 2.529 L 17.781 1.839 L 17.859 1.839 L 17.859 5.318 C 17.859 6.008 18.227 6.353 18.885 6.353 L 18.885 6.353 Z M 1.147 8.986 C 1.791 9.003 2.319 8.48 2.306 7.836 L 2.306 7.234 C 2.306 5.886 3.254 4.982 4.703 4.982 L 9.274 4.982 L 9.274 6.811 C 9.274 7.358 9.62 7.703 10.178 7.703 C 10.42 7.703 10.653 7.616 10.836 7.457 L 14.302 4.548 C 14.727 4.191 14.727 3.621 14.302 3.265 L 10.837 0.333 C 10.655 0.175 10.421 0.087 10.179 0.088 C 9.622 0.088 9.275 0.434 9.275 0.981 L 9.275 2.719 L 4.873 2.719 C 1.895 2.719 0 4.403 0 7.034 L 0 7.836 C 0 8.494 0.502 8.984 1.148 8.984 L 1.147 8.986 Z M 7.68 16.978 C 8.226 16.978 8.572 16.633 8.572 16.086 L 8.572 14.336 L 15.127 14.336 C 18.115 14.336 20 12.652 20 10.021 L 20 9.219 C 20.013 8.58 19.491 8.058 18.851 8.071 C 18.21 8.054 17.686 8.578 17.703 9.219 L 17.703 9.821 C 17.703 11.169 16.744 12.073 15.295 12.073 L 8.572 12.073 L 8.572 10.256 C 8.572 9.709 8.226 9.364 7.68 9.364 C 7.435 9.364 7.198 9.45 7.011 9.609 L 3.555 12.53 C 3.12 12.875 3.132 13.443 3.555 13.8 L 7.011 16.744 C 7.201 16.895 7.437 16.977 7.68 16.978 L 7.68 16.978 Z" fill-rule="nonzero" transform="matrix(1, 0, 0, 1, 0, -8.881784197001252e-16)"/>
+		</svg>
+	`
+      };
+    }
+  });
+
+  // src/utils/Animator.ts
+  var Animator;
+  var init_Animator = __esm({
+    "src/utils/Animator.ts"() {
+      init_Maid();
+      Animator = class {
+        constructor(from, to, duration) {
+          this.startTime = null;
+          this.pausedTime = null;
+          this.animationFrameId = null;
+          this.events = {};
+          this.isDestroyed = false;
+          this.reversed = false;
+          this.from = from;
+          this.to = to;
+          this.duration = duration * 1e3;
+          this.currentProgress = from;
+          this.maid = new Maid();
+        }
+        emit(event, progress) {
+          if (this.events[event] && !this.isDestroyed) {
+            const callback = this.events[event];
+            callback?.(progress ?? this.currentProgress, this.from, this.to);
+          }
+        }
+        on(event, callback) {
+          this.events[event] = callback;
+        }
+        Start() {
+          if (this.isDestroyed)
+            return;
+          this.startTime = performance.now();
+          this.animate();
+        }
+        animate() {
+          if (this.isDestroyed || this.startTime === null)
+            return;
+          const now2 = performance.now();
+          const elapsed = now2 - this.startTime;
+          const t = Math.min(elapsed / this.duration, 1);
+          const startValue = this.reversed ? this.to : this.from;
+          const endValue = this.reversed ? this.from : this.to;
+          this.currentProgress = startValue + (endValue - startValue) * t;
+          this.emit("progress", this.currentProgress);
+          if (t < 1) {
+            this.animationFrameId = requestAnimationFrame(() => this.animate());
+            this.maid.Give(() => cancelAnimationFrame(this.animationFrameId));
+          } else {
+            this.emit("finish");
+            this.reset();
+          }
+        }
+        Pause() {
+          if (this.isDestroyed || this.animationFrameId === null)
+            return;
+          cancelAnimationFrame(this.animationFrameId);
+          this.pausedTime = performance.now();
+          this.emit("pause", this.currentProgress);
+        }
+        Resume() {
+          if (this.isDestroyed || this.pausedTime === null)
+            return;
+          const pausedDuration = performance.now() - this.pausedTime;
+          if (this.startTime !== null)
+            this.startTime += pausedDuration;
+          this.pausedTime = null;
+          this.emit("resume", this.currentProgress);
+          this.animate();
+        }
+        Restart() {
+          if (this.isDestroyed)
+            return;
+          this.reset();
+          this.emit("restart", this.currentProgress);
+          this.Start();
+        }
+        Reverse() {
+          if (this.isDestroyed)
+            return;
+          this.reversed = !this.reversed;
+          this.emit("reverse", this.currentProgress);
+        }
+        Destroy() {
+          if (this.isDestroyed)
+            return;
+          this.emit("destroy");
+          this.maid.Destroy();
+          this.reset();
+          this.isDestroyed = true;
+        }
+        reset() {
+          this.startTime = null;
+          this.pausedTime = null;
+          this.animationFrameId = null;
+        }
+      };
+    }
+  });
+
+  // src/utils/fastdom.ts
+  function addToQueue(queue, item) {
+    if (queue.length >= MAX_QUEUE_SIZE) {
+      console.warn("FastDOM queue size limit reached, dropping oldest operations");
+      queue.shift();
+    }
+    queue.push(item);
+  }
+  function cleanup() {
+    const currentTime = now();
+    if (currentTime - lastCleanup > CLEANUP_INTERVAL) {
+      lastCleanup = currentTime;
+    }
+  }
+  function processQueues() {
+    isProcessing = true;
+    const startTime = now();
+    while (readQueue.length > 0) {
+      const item = readQueue.shift();
+      if (!item || item.cancelled)
+        continue;
+      const { fn, resolve, reject } = item;
+      try {
+        const result = fn();
+        resolve(result);
+      } catch (error) {
+        console.error("Error in read operation:", error);
+        reject(error instanceof Error ? error : new Error(String(error)));
+      }
+    }
+    const writeStartTime = now();
+    while (writeQueue.length > 0) {
+      if (now() - writeStartTime > MAX_PROCESS_TIME) {
+        scheduledAnimationFrame = false;
+        isProcessing = false;
+        scheduleFrame();
+        return;
+      }
+      const item = writeQueue.shift();
+      if (!item || item.cancelled)
+        continue;
+      const { fn, resolve, reject } = item;
+      try {
+        const result = fn();
+        resolve(result);
+      } catch (error) {
+        console.error("Error in write operation:", error);
+        reject(error instanceof Error ? error : new Error(String(error)));
+      }
+    }
+    scheduledAnimationFrame = false;
+    isProcessing = false;
+    if (readQueue.length > 0 || writeQueue.length > 0) {
+      scheduleFrame();
+    }
+    lastProcessTime = now() - startTime;
+    cleanup();
+  }
+  function scheduleFrame() {
+    if (!scheduledAnimationFrame && (readQueue.length > 0 || writeQueue.length > 0)) {
+      scheduledAnimationFrame = true;
+      raf(processQueues);
+    }
+  }
+  function createCancellablePromise(queue, fn) {
+    const id = currentQueueId++;
+    let cancelled = false;
+    const promise = new Promise((resolve, reject) => {
+      if (cancelled) {
+        reject(new Error("Operation cancelled"));
+        return;
+      }
+      const item = {
+        fn,
+        resolve: (result) => {
+          if (!cancelled)
+            resolve(result);
+        },
+        reject: (error) => {
+          if (!cancelled)
+            reject(error);
+        },
+        id,
+        cancelled: false
+      };
+      addToQueue(queue, item);
+      scheduleFrame();
+    });
+    promise.cancel = () => {
+      cancelled = true;
+      return cancel(id);
+    };
+    return promise;
+  }
+  function clear() {
+    readQueue.clear();
+    writeQueue.clear();
+  }
+  function cancel(id) {
+    const readIndex = readQueue.findIndex((op) => op.id === id);
+    if (readIndex !== -1) {
+      return readQueue.removeAt(readIndex);
+    }
+    const writeIndex = writeQueue.findIndex((op) => op.id === id);
+    if (writeIndex !== -1) {
+      return writeQueue.removeAt(writeIndex);
+    }
+    return false;
+  }
+  var now, raf, FastQueue, readQueue, writeQueue, scheduledAnimationFrame, currentQueueId, isProcessing, lastProcessTime, lastCleanup, MAX_PROCESS_TIME, MAX_QUEUE_SIZE, CLEANUP_INTERVAL, fastdom_default;
+  var init_fastdom = __esm({
+    "src/utils/fastdom.ts"() {
+      now = (() => {
+        if (typeof performance !== "undefined" && performance.now) {
+          return () => performance.now();
+        }
+        return () => Date.now();
+      })();
+      raf = (() => {
+        if (typeof requestAnimationFrame !== "undefined") {
+          return requestAnimationFrame;
+        }
+        return (callback) => setTimeout(callback, 16);
+      })();
+      FastQueue = class {
+        constructor() {
+          this.items = [];
+          this.head = 0;
+        }
+        push(item) {
+          this.items.push(item);
+        }
+        shift() {
+          if (this.head >= this.items.length)
+            return void 0;
+          const item = this.items[this.head];
+          delete this.items[this.head];
+          this.head++;
+          if (this.head >= this.items.length) {
+            this.items.length = 0;
+            this.head = 0;
+          }
+          return item;
+        }
+        get length() {
+          return this.items.length - this.head;
+        }
+        findIndex(predicate) {
+          for (let i = this.head; i < this.items.length; i++) {
+            if (this.items[i] && predicate(this.items[i])) {
+              return i - this.head;
+            }
+          }
+          return -1;
+        }
+        removeAt(index) {
+          const actualIndex = this.head + index;
+          if (actualIndex >= this.head && actualIndex < this.items.length && this.items[actualIndex]) {
+            delete this.items[actualIndex];
+            return true;
+          }
+          return false;
+        }
+        clear() {
+          this.items.length = 0;
+          this.head = 0;
+        }
+      };
+      readQueue = new FastQueue();
+      writeQueue = new FastQueue();
+      scheduledAnimationFrame = false;
+      currentQueueId = 0;
+      isProcessing = false;
+      lastProcessTime = 0;
+      lastCleanup = 0;
+      MAX_PROCESS_TIME = 8;
+      MAX_QUEUE_SIZE = 1e3;
+      CLEANUP_INTERVAL = 5e3;
+      fastdom_default = {
+        read: (fn) => {
+          return createCancellablePromise(readQueue, fn);
+        },
+        write: (fn) => {
+          return createCancellablePromise(writeQueue, fn);
+        },
+        readThenWrite: (readFn, writeFn) => {
+          return new Promise((resolve, reject) => {
+            const readPromise = createCancellablePromise(readQueue, readFn);
+            readPromise.then((readResult) => {
+              const writePromise = createCancellablePromise(
+                writeQueue,
+                () => writeFn(readResult)
+              );
+              return writePromise;
+            }).then(resolve).catch(reject);
+          });
+        },
+        clear,
+        getMetrics: () => ({
+          readQueueLength: readQueue.length,
+          writeQueueLength: writeQueue.length,
+          lastProcessTime,
+          isProcessing,
+          scheduledAnimationFrame
+        })
+      };
+    }
+  });
+
+  // src/utils/ScrollIntoView/index.ts
+  function cubicEaseInOut(progress) {
+    return progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+  }
+  function smoothScrollIntoView(options) {
+    const {
+      container,
+      element,
+      duration = 150,
+      offset = 0,
+      align = "top",
+      axis = "vertical"
+    } = options;
+    let cancelAnimation = () => {
+    };
+    const controller = {
+      cancel: () => cancelAnimation()
+    };
+    fastdom_default.readThenWrite(
+      () => {
+        const containerRect = container.getBoundingClientRect();
+        const elementRect = element.getBoundingClientRect();
+        let targetScroll;
+        let startScroll;
+        if (axis === "vertical") {
+          startScroll = container.scrollTop;
+          if (align === "center") {
+            targetScroll = elementRect.top - containerRect.top + container.scrollTop - (container.clientHeight / 2 - element.clientHeight / 2) - offset;
+          } else {
+            targetScroll = elementRect.top - containerRect.top + container.scrollTop - offset;
+          }
+        } else {
+          startScroll = container.scrollLeft;
+          if (align === "center") {
+            targetScroll = elementRect.left - containerRect.left + container.scrollLeft - (container.clientWidth / 2 - element.clientWidth / 2) - offset;
+          } else {
+            targetScroll = elementRect.left - containerRect.left + container.scrollLeft - offset;
+          }
+        }
+        return {
+          startScroll,
+          targetScroll,
+          distance: targetScroll - startScroll,
+          axis
+        };
+      },
+      ({ startScroll, distance, axis: axis2 }) => {
+        const startTime = performance.now();
+        let animationFrameId;
+        function animate(currentTime) {
+          const elapsed = currentTime - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const easedProgress = cubicEaseInOut(progress);
+          const newScroll = startScroll + distance * easedProgress;
+          fastdom_default.write(() => {
+            if (axis2 === "vertical") {
+              container.scrollTop = newScroll;
+            } else {
+              container.scrollLeft = newScroll;
+            }
+          });
+          if (progress < 1) {
+            animationFrameId = requestAnimationFrame(animate);
+          }
+        }
+        animationFrameId = requestAnimationFrame(animate);
+        cancelAnimation = () => {
+          cancelAnimationFrame(animationFrameId);
+        };
+        return {
+          cancel: cancelAnimation
+        };
+      }
+    );
+    return controller;
+  }
+  function scrollIntoCenterView(container, element, duration = 150, offset = 0, axis = "vertical") {
+    return smoothScrollIntoView({
+      container,
+      element,
+      duration,
+      offset,
+      align: "center",
+      axis
+    });
+  }
+  var init_ScrollIntoView = __esm({
+    "src/utils/ScrollIntoView/index.ts"() {
+      init_fastdom();
+    }
+  });
+
+  // src/utils/Scrolling/ScrollToActiveLine.ts
+  var ScrollToActiveLine_exports = {};
+  __export(ScrollToActiveLine_exports, {
+    ResetLastLine: () => ResetLastLine,
+    ScrollToActiveLine: () => ScrollToActiveLine
+  });
+  function ScrollToActiveLine(ScrollSimplebar2) {
+    if (!SpotifyPlayer.IsPlaying)
+      return;
+    if (!Defaults_default.LyricsContainerExists)
+      return;
+    if (Spicetify.Platform.History.location.pathname === "/AmaiLyrics") {
+      const Lines = LyricsObject.Types[Defaults_default.CurrentLyricsType]?.Lines;
+      const Position = SpotifyPlayer.GetTrackPosition();
+      const PositionOffset = 370;
+      const ProcessedPosition = Position + PositionOffset;
+      if (!Lines)
+        return;
+      let currentLine = null;
+      for (let i = 0; i < Lines.length; i++) {
+        const line = Lines[i];
+        if (line.StartTime <= ProcessedPosition && line.EndTime >= ProcessedPosition) {
+          currentLine = line;
+          break;
+        }
+      }
+      if (currentLine) {
+        fastdom_default.read(() => {
+          const LineElem = currentLine.HTMLElement;
+          const container = ScrollSimplebar2?.getScrollElement();
+          if (!container)
+            return null;
+          if (lastLine && lastLine === LineElem)
+            return null;
+          return { LineElem, container };
+        }).then((result) => {
+          if (!result)
+            return;
+          const { LineElem, container } = result;
+          lastLine = LineElem;
+          fastdom_default.write(() => {
+            setTimeout(() => {
+              fastdom_default.write(() => {
+                LineElem.classList.add("Active", "OverridenByScroller");
+              });
+            }, PositionOffset / 2);
+            scrollIntoCenterView(container, LineElem, 270, -50);
+          });
+        });
+      }
+    }
+  }
+  function ResetLastLine() {
+    lastLine = null;
+  }
+  var lastLine;
+  var init_ScrollToActiveLine = __esm({
+    "src/utils/Scrolling/ScrollToActiveLine.ts"() {
+      init_Defaults();
+      init_SpotifyPlayer();
+      init_lyrics();
+      init_ScrollIntoView();
+      init_fastdom();
+      lastLine = null;
+    }
+  });
+
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-16908-jc2hCk4RLLT1/1983ea2a9608/DotLoader.css
+  var init_ = __esm({
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-16908-jc2hCk4RLLT1/1983ea2a9608/DotLoader.css"() {
+    }
+  });
+
+  // src/components/DynamicBG/dynamicBackground.ts
+  var dynamicBackground_exports = {};
+  __export(dynamicBackground_exports, {
+    default: () => ApplyDynamicBackground
+  });
+  async function setupDynamicBackground(element, imageUrl) {
+    let bgContainer = element.querySelector(".sweet-dynamic-bg");
+    if (!bgContainer) {
+      bgContainer = document.createElement("div");
+      bgContainer.className = "sweet-dynamic-bg";
+      bgContainer.setAttribute("current-img", imageUrl);
+      const placeholder = document.createElement("div");
+      placeholder.className = "placeholder";
+      bgContainer.appendChild(placeholder);
+      const imgA = document.createElement("img");
+      imgA.id = "bg-img-a";
+      imgA.className = "bg-image primary active";
+      imgA.decoding = "async";
+      imgA.loading = "eager";
+      imgA.src = imageUrl;
+      imgA.addEventListener(
+        "load",
+        () => {
+          if (placeholder.parentNode)
+            placeholder.parentNode.removeChild(placeholder);
+        },
+        { once: true, passive: true }
+      );
+      bgContainer.appendChild(imgA);
+      const imgB = document.createElement("img");
+      imgB.id = "bg-img-b";
+      imgB.className = "bg-image secondary";
+      imgB.decoding = "async";
+      imgB.loading = "lazy";
+      bgContainer.appendChild(imgB);
+      element.appendChild(bgContainer);
+      const rotationPrimary = Math.floor(Math.random() * 360);
+      const rotationSecondary = Math.floor(Math.random() * 360);
+      document.documentElement.style.setProperty("--bg-rotation-primary", `${rotationPrimary}deg`);
+      document.documentElement.style.setProperty(
+        "--bg-rotation-secondary",
+        `${rotationSecondary}deg`
+      );
+      const scalePrimary = 0.9 + Math.random() * 0.3;
+      const scaleSecondary = 0.9 + Math.random() * 0.3;
+      document.documentElement.style.setProperty("--bg-scale-primary", `${scalePrimary}`);
+      document.documentElement.style.setProperty("--bg-scale-secondary", `${scaleSecondary}`);
+      const hueShift = Math.floor(Math.random() * 30);
+      document.documentElement.style.setProperty("--bg-hue-shift", `${hueShift}deg`);
+    }
+    return bgContainer;
+  }
+  function debounce2(fn, delay) {
+    let timer;
+    return (...args) => {
+      if (timer)
+        clearTimeout(timer);
+      timer = window.setTimeout(() => fn(...args), delay);
+    };
+  }
+  async function ApplyDynamicBackground(element) {
+    if (!element)
+      return;
+    let currentImgCover = await SpotifyPlayer.Artwork.Get("d");
+    if (currentImgCover.startsWith("spotify:image:")) {
+      const imageId = currentImgCover.replace("spotify:image:", "");
+      currentImgCover = `https://i.scdn.co/image/${imageId}`;
+    }
+    const bgContainer = await setupDynamicBackground(element, currentImgCover);
+    const displayedImg = bgContainer.getAttribute("current-img");
+    if (displayedImg !== currentImgCover) {
+      updateDynamicBackground(bgContainer, currentImgCover);
+    }
+  }
+  var updateDynamicBackground;
+  var init_dynamicBackground = __esm({
+    "src/components/DynamicBG/dynamicBackground.ts"() {
+      init_SpotifyPlayer();
+      updateDynamicBackground = debounce2(
+        (bgContainer, newImageUrl) => {
+          const imgA = bgContainer.querySelector("#bg-img-a");
+          const imgB = bgContainer.querySelector("#bg-img-b");
+          if (!imgA || !imgB) {
+            console.error("Dynamic background image elements not found!");
+            return;
+          }
+          const activeImg = imgA.classList.contains("active") ? imgA : imgB;
+          const inactiveImg = activeImg === imgA ? imgB : imgA;
+          if (inactiveImg.src === newImageUrl)
+            return;
+          inactiveImg.src = newImageUrl;
+          inactiveImg.onload = () => {
+            activeImg.classList.remove("active");
+            inactiveImg.classList.add("active");
+            const rotationPrimary = Math.floor(Math.random() * 360);
+            const rotationSecondary = Math.floor(Math.random() * 360);
+            document.documentElement.style.setProperty("--bg-rotation-primary", `${rotationPrimary}deg`);
+            document.documentElement.style.setProperty(
+              "--bg-rotation-secondary",
+              `${rotationSecondary}deg`
+            );
+            const scalePrimary = 0.9 + Math.random() * 0.3;
+            const scaleSecondary = 0.9 + Math.random() * 0.3;
+            document.documentElement.style.setProperty("--bg-scale-primary", `${scalePrimary}`);
+            document.documentElement.style.setProperty("--bg-scale-secondary", `${scaleSecondary}`);
+            const hueShift = Math.floor(Math.random() * 30);
+            document.documentElement.style.setProperty("--bg-hue-shift", `${hueShift}deg`);
+          };
+          inactiveImg.onerror = () => {
+            console.error("Error loading new background image:", newImageUrl);
+          };
+          bgContainer.setAttribute("current-img", newImageUrl);
+        },
+        100
+      );
     }
   });
 
@@ -18852,7 +18852,12 @@ ${JSON.stringify(lyricsOnly)}`
 
   // src/app.tsx
   init_lyrics();
+  init_IntervalManager();
+  init_SpotifyPlayer();
+  init_Addons();
+  init_ScrollSimplebar();
   init_storage();
+  init_Whentil();
 
   // src/edited_packages/spcr-settings/settingsSection.tsx
   var import_react = __toESM(require_react());
@@ -19197,261 +19202,138 @@ ${JSON.stringify(lyricsOnly)}`
     settings.pushSettings();
   }
 
-  // src/app.tsx
-  init_Icons();
-  init_IntervalManager();
-  init_SpotifyPlayer();
-  init_Addons();
-  init_ScrollSimplebar();
-  init_fastdom();
-  init_cache();
-  init_Global();
+  // src/managers/AppInitializer.ts
   init_Platform();
-  init_Whentil();
-  init_Session();
-
-  // src/utils/sleep.ts
-  async function sleep(seconds) {
-    return new Promise((resolve) => setTimeout(resolve, seconds * 1e3));
-  }
-  var sleep_default = sleep;
-
-  // src/app.tsx
-  async function initializePlatformAndSettings() {
-    await Platform_default.OnSpotifyReady;
-    setSettingsMenu();
-  }
-  var buttonRegistered = false;
-  function setupUI() {
-    const skeletonStyle = document.createElement("style");
-    skeletonStyle.innerHTML = `
-        <style>
-            @keyframes skeleton {
-                to {
-                    background-position-x: 0
-                }
-            }
-        </style>
-  `;
-    document.head.appendChild(skeletonStyle);
-    const button = new Spicetify.Playbar.Button(
-      "Amai Lyrics",
-      Icons.LyricsPage,
-      (self2) => {
-        if (!self2.active) {
-          Session_default.Navigate({ pathname: "/AmaiLyrics" });
+  init_cache();
+  var AppInitializer = class {
+    static async initializeCore() {
+      lyricsCache.destroy();
+      await this.injectGoogleFonts();
+      await this.initializePlatformAndSettings();
+    }
+    static async injectGoogleFonts() {
+      const fontLink = document.createElement("link");
+      fontLink.rel = "preload";
+      fontLink.as = "style";
+      fontLink.href = "https://fonts.googleapis.com/css2?family=Noto+Sans+Display:ital,wght@0,100..900;1,100..900&display=swap";
+      document.head.appendChild(fontLink);
+      fontLink.onload = () => {
+        fontLink.rel = "stylesheet";
+      };
+    }
+    static async initializePlatformAndSettings() {
+      await Platform_default.OnSpotifyReady;
+      setSettingsMenu();
+    }
+    static setupPostLoadOptimizations() {
+      window.addEventListener("load", () => {
+        if (window.requestIdleCallback) {
+          requestIdleCallback(
+            () => {
+              document.querySelectorAll(".sweet-dynamic-bg").forEach((bg) => {
+                bg.classList.add("sweet-dynamic-bg-loaded");
+              });
+            },
+            { timeout: 2e3 }
+          );
         } else {
-          Session_default.GoBack();
+          setTimeout(() => {
+            document.querySelectorAll(".sweet-dynamic-bg").forEach((bg) => {
+              bg.classList.add("sweet-dynamic-bg-loaded");
+            });
+          }, 1e3);
         }
-      },
-      false,
-      false
-    );
-    return button;
-  }
-  function updateButtonRegistration(button) {
-    const IsSomethingElseThanTrack = Spicetify.Player.data.item?.type !== "track";
-    if (IsSomethingElseThanTrack) {
-      button.deregister();
-      buttonRegistered = false;
-    } else {
-      if (!buttonRegistered) {
-        button.register();
-        buttonRegistered = true;
-      }
-    }
-  }
-  function setupEventListeners(button) {
-    Whentil_default.When(
-      () => Spicetify.Player.data.item?.type,
-      () => updateButtonRegistration(button)
-    );
-  }
-  function applyDynamicBackgroundToNowPlayingBar(coverUrl, cached) {
-    if (!coverUrl)
-      return;
-    if (coverUrl.startsWith("spotify:image:")) {
-      const imageId = coverUrl.replace("spotify:image:", "");
-      coverUrl = `https://i.scdn.co/image/${imageId}`;
-    }
-    try {
-      if (coverUrl === cached.lastImgUrl && cached.dynamicBg)
-        return;
-      fastdom_default.readThenWrite(
-        () => {
-          const nowPlayingBar = document.querySelector(".Root__right-sidebar aside.NowPlayingView");
-          return {
-            nowPlayingBar,
-            hasDynamicBg: !!cached.dynamicBg,
-            images: cached.dynamicBg ? {
-              imgA: cached.dynamicBg.querySelector("#bg-img-a"),
-              imgB: cached.dynamicBg.querySelector("#bg-img-b")
-            } : null
-          };
-        },
-        ({ nowPlayingBar, hasDynamicBg, images }) => {
-          if (!nowPlayingBar) {
-            cached.lastImgUrl = null;
-            cached.dynamicBg = null;
-            cached.nowPlayingBar = null;
-            return;
-          }
-          if (cached.nowPlayingBar !== nowPlayingBar) {
-            cached.nowPlayingBar = nowPlayingBar;
-          }
-          if (!hasDynamicBg) {
-            const rotationPrimary = Math.floor(Math.random() * 360);
-            const rotationSecondary = Math.floor(Math.random() * 360);
-            document.documentElement.style.setProperty(
-              "--bg-rotation-primary",
-              `${rotationPrimary}deg`
-            );
-            document.documentElement.style.setProperty(
-              "--bg-rotation-secondary",
-              `${rotationSecondary}deg`
-            );
-            const scalePrimary = 0.9 + Math.random() * 0.3;
-            const scaleSecondary = 0.9 + Math.random() * 0.3;
-            document.documentElement.style.setProperty("--bg-scale-primary", `${scalePrimary}`);
-            document.documentElement.style.setProperty("--bg-scale-secondary", `${scaleSecondary}`);
-            const hueShift = Math.floor(Math.random() * 30);
-            document.documentElement.style.setProperty("--bg-hue-shift", `${hueShift}deg`);
-            const dynamicBackground = document.createElement("div");
-            dynamicBackground.className = "sweet-dynamic-bg";
-            dynamicBackground.setAttribute("current-img", coverUrl);
-            const placeholder = document.createElement("div");
-            placeholder.className = "placeholder";
-            dynamicBackground.appendChild(placeholder);
-            const imgA = document.createElement("img");
-            imgA.id = "bg-img-a";
-            imgA.className = "bg-image primary active";
-            imgA.decoding = "async";
-            imgA.loading = "eager";
-            imgA.src = coverUrl;
-            dynamicBackground.appendChild(imgA);
-            const imgB = document.createElement("img");
-            imgB.id = "bg-img-b";
-            imgB.className = "bg-image secondary";
-            imgB.decoding = "async";
-            imgB.loading = "lazy";
-            dynamicBackground.appendChild(imgB);
-            nowPlayingBar.classList.add("sweet-dynamic-bg-in-this");
-            nowPlayingBar.appendChild(dynamicBackground);
-            imgA.onload = () => {
-              requestAnimationFrame(() => {
-                dynamicBackground.classList.add("sweet-dynamic-bg-loaded");
-              });
-            };
-            cached.dynamicBg = dynamicBackground;
-          } else if (images) {
-            const { imgA, imgB } = images;
-            const activeImg = imgA.classList.contains("active") ? imgA : imgB;
-            const inactiveImg = activeImg === imgA ? imgB : imgA;
-            inactiveImg.src = coverUrl;
-            inactiveImg.onload = () => {
-              requestAnimationFrame(() => {
-                activeImg.classList.remove("active");
-                inactiveImg.classList.add("active");
-                cached.dynamicBg.setAttribute("current-img", coverUrl);
-              });
-            };
-          }
-          cached.lastImgUrl = coverUrl;
-        }
-      );
-    } catch (error) {
-      console.error("Error Applying the Dynamic BG to the NowPlayingBar:", error);
-    }
-  }
-  async function initializeAmaiLyrics(button) {
-    const [{ requestPositionSync: requestPositionSync2 }] = await Promise.all([Promise.resolve().then(() => (init_GetProgress(), GetProgress_exports))]);
-    const { default: fetchLyrics2 } = await Promise.resolve().then(() => (init_fetchLyrics(), fetchLyrics_exports));
-    const { default: ApplyLyrics2 } = await Promise.resolve().then(() => (init_Applyer(), Applyer_exports));
-    const { default: ApplyDynamicBackground2 } = await Promise.resolve().then(() => (init_dynamicBackground(), dynamicBackground_exports));
-    const { UpdateNowBar: UpdateNowBar2 } = await Promise.resolve().then(() => (init_NowBar(), NowBar_exports));
-    const { ScrollToActiveLine: ScrollToActiveLine2 } = await Promise.resolve().then(() => (init_ScrollToActiveLine(), ScrollToActiveLine_exports));
-    const { default: PageView2 } = await Promise.resolve().then(() => (init_PageView(), PageView_exports));
-    Whentil_default.When(
-      () => Spicetify.Platform.PlaybackAPI,
-      () => {
-        requestPositionSync2();
-      }
-    );
-    const cached = {
-      nowPlayingBar: null,
-      dynamicBg: null,
-      lastImgUrl: null
-    };
-    new IntervalManager(1, () => {
-      const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
-      applyDynamicBackgroundToNowPlayingBar(coverUrl, cached);
-    }).Start();
-    async function onSongChange(event) {
-      let attempts = 0;
-      const maxAttempts = 5;
-      let currentUri2 = event?.data?.item?.uri;
-      while (!currentUri2 && attempts < maxAttempts) {
-        await sleep_default(0.1);
-        currentUri2 = Spicetify.Player.data?.item?.uri;
-        attempts++;
-      }
-      if (!currentUri2)
-        return;
-      fetchLyrics2(currentUri2).then(ApplyLyrics2);
-      updateButtonRegistration(button);
-      applyDynamicBackgroundToNowPlayingBar(Spicetify.Player.data?.item?.metadata?.image_url, cached);
-      if (Spicetify.Player.data.item?.type === "track") {
-        if (document.querySelector("#SpicyLyricsPage .ContentBox .NowBar")) {
-          UpdateNowBar2();
-        }
-      }
-      if (document.querySelector("#SpicyLyricsPage .LyricsContainer")) {
-        PageView2.UpdatePageContent();
-        ApplyDynamicBackground2(document.querySelector("#SpicyLyricsPage .ContentBox"));
-      }
-    }
-    Spicetify.Player.addEventListener("songchange", onSongChange);
-    const currentUri = Spicetify.Player.data?.item?.uri;
-    if (currentUri) {
-      fetchLyrics2(currentUri).then(ApplyLyrics2);
-    }
-    window.addEventListener("online", async () => {
-      storage_default.set("lastFetchedUri", null);
-      const currentUri2 = Spicetify.Player.data?.item?.uri;
-      if (currentUri2) {
-        fetchLyrics2(currentUri2).then(ApplyLyrics2);
-      }
-    });
-    new IntervalManager(ScrollingIntervalTime, () => ScrollToActiveLine2(ScrollSimplebar)).Start();
-    let lastLocation = null;
-    function loadPage(location) {
-      if (location.pathname === "/AmaiLyrics") {
-        PageView2.Open();
-        button.active = true;
-      } else {
-        if (lastLocation?.pathname === "/AmaiLyrics") {
-          PageView2.Destroy();
-          button.active = false;
-        }
-      }
-      lastLocation = location;
-    }
-    Spicetify.Platform.History.listen(loadPage);
-    if (Spicetify.Platform.History.location.pathname === "/AmaiLyrics") {
-      Global_default.Event.listen("pagecontainer:available", () => {
-        loadPage(Spicetify.Platform.History.location);
-        button.active = true;
       });
     }
-    button.tippy.setContent("Amai Lyrics");
-    const initialLoopState = Spicetify.Player.getRepeat();
-    SpotifyPlayer.LoopType = initialLoopState === 1 ? "context" : initialLoopState === 2 ? "track" : "none";
-    Global_default.Event.evoke("playback:loop", SpotifyPlayer.LoopType);
-    const initialShuffleState = Spicetify.Player.origin._state.shuffle;
-    const initialSmartShuffleState = Spicetify.Player.origin._state.smartShuffle;
-    SpotifyPlayer.ShuffleType = initialSmartShuffleState ? "smart" : initialShuffleState ? "normal" : "none";
-    Global_default.Event.evoke("playback:shuffle", SpotifyPlayer.ShuffleType);
-    {
+    static setupSkeletonStyles() {
+      const skeletonStyle = document.createElement("style");
+      skeletonStyle.innerHTML = `
+      <style>
+        @keyframes skeleton {
+          to {
+            background-position-x: 0
+          }
+        }
+      </style>
+    `;
+      document.head.appendChild(skeletonStyle);
+    }
+  };
+
+  // src/managers/ButtonManager.ts
+  init_Icons();
+  init_Session();
+  init_Whentil();
+  var ButtonManager = class {
+    constructor() {
+      this.buttonRegistered = false;
+      this.button = this.createButton();
+      this.setupEventListeners();
+    }
+    createButton() {
+      const button = new Spicetify.Playbar.Button(
+        "Amai Lyrics",
+        Icons.LyricsPage,
+        (self2) => {
+          if (!self2.active) {
+            Session_default.Navigate({ pathname: "/AmaiLyrics" });
+          } else {
+            Session_default.GoBack();
+          }
+        },
+        false,
+        false
+      );
+      button.tippy.setContent("Amai Lyrics");
+      return button;
+    }
+    setupEventListeners() {
+      Whentil_default.When(
+        () => Spicetify.Player.data.item?.type,
+        () => this.updateRegistration()
+      );
+    }
+    updateRegistration() {
+      const IsSomethingElseThanTrack = Spicetify.Player.data.item?.type !== "track";
+      if (IsSomethingElseThanTrack) {
+        this.button.deregister();
+        this.buttonRegistered = false;
+      } else {
+        if (!this.buttonRegistered) {
+          this.button.register();
+          this.buttonRegistered = true;
+        }
+      }
+    }
+    getButton() {
+      return this.button;
+    }
+    setActive(active) {
+      this.button.active = active;
+    }
+  };
+
+  // src/managers/EventManager.ts
+  init_SpotifyPlayer();
+  init_IntervalManager();
+  init_Global();
+  init_Session();
+  init_Whentil();
+  var EventManager = class {
+    static initialize(button) {
+      this.button = button;
+      this.setupPlayerStateEvents();
+      this.setupNavigationEvents();
+      this.setupPlayerEvents();
+    }
+    static setupPlayerStateEvents() {
+      const initialLoopState = Spicetify.Player.getRepeat();
+      SpotifyPlayer.LoopType = initialLoopState === 1 ? "context" : initialLoopState === 2 ? "track" : "none";
+      Global_default.Event.evoke("playback:loop", SpotifyPlayer.LoopType);
+      const initialShuffleState = Spicetify.Player.origin._state.shuffle;
+      const initialSmartShuffleState = Spicetify.Player.origin._state.smartShuffle;
+      SpotifyPlayer.ShuffleType = initialSmartShuffleState ? "smart" : initialShuffleState ? "normal" : "none";
+      Global_default.Event.evoke("playback:shuffle", SpotifyPlayer.ShuffleType);
       let lastPosition = 0;
       new IntervalManager(0.5, () => {
         const pos = SpotifyPlayer.GetTrackPosition();
@@ -19461,8 +19343,7 @@ ${JSON.stringify(lyricsOnly)}`
         lastPosition = pos;
       }).Start();
     }
-    SpotifyPlayer.IsPlaying = IsPlaying();
-    {
+    static setupPlayerEvents() {
       Spicetify.Player.addEventListener("onplaypause", (e) => {
         SpotifyPlayer.IsPlaying = !e?.data?.isPaused;
         Global_default.Event.evoke("playback:playpause", e);
@@ -19473,19 +19354,7 @@ ${JSON.stringify(lyricsOnly)}`
       );
       Spicetify.Player.addEventListener("songchange", (e) => {
         Global_default.Event.evoke("playback:songchange", e);
-        const currentLoopState = Spicetify.Player.getRepeat();
-        const newLoopType = currentLoopState === 1 ? "context" : currentLoopState === 2 ? "track" : "none";
-        if (SpotifyPlayer.LoopType !== newLoopType) {
-          SpotifyPlayer.LoopType = newLoopType;
-          Global_default.Event.evoke("playback:loop", newLoopType);
-        }
-        const currentShuffleState = Spicetify.Player.origin._state.shuffle;
-        const currentSmartShuffleState = Spicetify.Player.origin._state.smartShuffle;
-        const newShuffleType = currentSmartShuffleState ? "smart" : currentShuffleState ? "normal" : "none";
-        if (SpotifyPlayer.ShuffleType !== newShuffleType) {
-          SpotifyPlayer.ShuffleType = newShuffleType;
-          Global_default.Event.evoke("playback:shuffle", newShuffleType);
-        }
+        this.updatePlayerStatesOnSongChange();
       });
       Spicetify.Player.addEventListener("repeat_mode_changed", () => {
         const LoopState = Spicetify.Player.getRepeat();
@@ -19504,6 +19373,23 @@ ${JSON.stringify(lyricsOnly)}`
           Global_default.Event.evoke("playback:shuffle", ShuffleType);
         }
       });
+    }
+    static updatePlayerStatesOnSongChange() {
+      const currentLoopState = Spicetify.Player.getRepeat();
+      const newLoopType = currentLoopState === 1 ? "context" : currentLoopState === 2 ? "track" : "none";
+      if (SpotifyPlayer.LoopType !== newLoopType) {
+        SpotifyPlayer.LoopType = newLoopType;
+        Global_default.Event.evoke("playback:loop", newLoopType);
+      }
+      const currentShuffleState = Spicetify.Player.origin._state.shuffle;
+      const currentSmartShuffleState = Spicetify.Player.origin._state.smartShuffle;
+      const newShuffleType = currentSmartShuffleState ? "smart" : currentShuffleState ? "normal" : "none";
+      if (SpotifyPlayer.ShuffleType !== newShuffleType) {
+        SpotifyPlayer.ShuffleType = newShuffleType;
+        Global_default.Event.evoke("playback:shuffle", newShuffleType);
+      }
+    }
+    static setupNavigationEvents() {
       Whentil_default.When(
         () => document.querySelector(
           ".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]"
@@ -19520,42 +19406,263 @@ ${JSON.stringify(lyricsOnly)}`
       Spicetify.Platform.History.listen(Session_default.RecordNavigation);
       Session_default.RecordNavigation(Spicetify.Platform.History.location);
     }
-  }
-  function setupDynamicBackground2(button) {
-    initializeAmaiLyrics(button);
-  }
-  async function main() {
-    lyricsCache.destroy();
-    const fontLink = document.createElement("link");
-    fontLink.rel = "preload";
-    fontLink.as = "style";
-    fontLink.href = "https://fonts.googleapis.com/css2?family=Noto+Sans+Display:ital,wght@0,100..900;1,100..900&display=swap";
-    document.head.appendChild(fontLink);
-    fontLink.onload = () => {
-      fontLink.rel = "stylesheet";
-    };
-    await Promise.all([initializePlatformAndSettings()]);
-    const button = setupUI();
-    setupEventListeners(button);
-    setupDynamicBackground2(button);
-    window.addEventListener("load", () => {
-      if (window.requestIdleCallback) {
-        requestIdleCallback(
-          () => {
-            document.querySelectorAll(".sweet-dynamic-bg").forEach((bg) => {
-              bg.classList.add("sweet-dynamic-bg-loaded");
-            });
-          },
-          { timeout: 2e3 }
-        );
+  };
+
+  // src/managers/PageManager.ts
+  init_Global();
+  var PageManager = class {
+    constructor(buttonManager) {
+      this.lastLocation = null;
+      this.buttonManager = buttonManager;
+      this.setupPageNavigation();
+    }
+    setupPageNavigation() {
+      Spicetify.Platform.History.listen((location) => {
+        this.loadPage(location);
+      });
+      if (Spicetify.Platform.History.location.pathname === "/AmaiLyrics") {
+        Global_default.Event.listen("pagecontainer:available", () => {
+          this.loadPage(Spicetify.Platform.History.location);
+          this.buttonManager.setActive(true);
+        });
+      }
+    }
+    async loadPage(location) {
+      const { default: PageView2 } = await Promise.resolve().then(() => (init_PageView(), PageView_exports));
+      if (location.pathname === "/AmaiLyrics") {
+        PageView2.Open();
+        this.buttonManager.setActive(true);
       } else {
-        setTimeout(() => {
-          document.querySelectorAll(".sweet-dynamic-bg").forEach((bg) => {
-            bg.classList.add("sweet-dynamic-bg-loaded");
-          });
-        }, 1e3);
+        if (this.lastLocation?.pathname === "/AmaiLyrics") {
+          PageView2.Destroy();
+          this.buttonManager.setActive(false);
+        }
+      }
+      this.lastLocation = location;
+    }
+  };
+
+  // src/utils/sleep.ts
+  async function sleep(seconds) {
+    return new Promise((resolve) => setTimeout(resolve, seconds * 1e3));
+  }
+  var sleep_default = sleep;
+
+  // src/managers/SongChangeManager.ts
+  var SongChangeManager = class {
+    constructor(buttonManager, backgroundManager) {
+      this.buttonManager = buttonManager;
+      this.backgroundManager = backgroundManager;
+    }
+    async handleSongChange(event) {
+      let attempts = 0;
+      const maxAttempts = 5;
+      let currentUri = event?.data?.item?.uri;
+      while (!currentUri && attempts < maxAttempts) {
+        await sleep_default(0.1);
+        currentUri = Spicetify.Player.data?.item?.uri;
+        attempts++;
+      }
+      if (!currentUri)
+        return;
+      const { default: fetchLyrics2 } = await Promise.resolve().then(() => (init_fetchLyrics(), fetchLyrics_exports));
+      const { default: ApplyLyrics2 } = await Promise.resolve().then(() => (init_Applyer(), Applyer_exports));
+      fetchLyrics2(currentUri).then(ApplyLyrics2);
+      this.buttonManager.updateRegistration();
+      this.backgroundManager.apply(Spicetify.Player.data?.item?.metadata?.image_url);
+      if (Spicetify.Player.data.item?.type === "track") {
+        if (document.querySelector("#SpicyLyricsPage .ContentBox .NowBar")) {
+          const { UpdateNowBar: UpdateNowBar2 } = await Promise.resolve().then(() => (init_NowBar(), NowBar_exports));
+          UpdateNowBar2();
+        }
+      }
+      if (document.querySelector("#SpicyLyricsPage .LyricsContainer")) {
+        const { default: PageView2 } = await Promise.resolve().then(() => (init_PageView(), PageView_exports));
+        PageView2.UpdatePageContent();
+        const { default: ApplyDynamicBackground2 } = await Promise.resolve().then(() => (init_dynamicBackground(), dynamicBackground_exports));
+        ApplyDynamicBackground2(document.querySelector("#SpicyLyricsPage .ContentBox"));
+      }
+    }
+  };
+
+  // src/components/DynamicBG/NowPlayingBarBackground.ts
+  init_fastdom();
+  var NowPlayingBarBackground = class {
+    constructor() {
+      this.cached = {
+        nowPlayingBar: null,
+        dynamicBg: null,
+        lastImgUrl: null
+      };
+    }
+    apply(coverUrl) {
+      if (!coverUrl)
+        return;
+      if (coverUrl.startsWith("spotify:image:")) {
+        const imageId = coverUrl.replace("spotify:image:", "");
+        coverUrl = `https://i.scdn.co/image/${imageId}`;
+      }
+      try {
+        if (coverUrl === this.cached.lastImgUrl && this.cached.dynamicBg)
+          return;
+        fastdom_default.readThenWrite(
+          () => {
+            const nowPlayingBar = document.querySelector(".Root__right-sidebar aside.NowPlayingView");
+            return {
+              nowPlayingBar,
+              hasDynamicBg: !!this.cached.dynamicBg,
+              images: this.cached.dynamicBg ? {
+                imgA: this.cached.dynamicBg.querySelector("#bg-img-a"),
+                imgB: this.cached.dynamicBg.querySelector("#bg-img-b")
+              } : null
+            };
+          },
+          ({ nowPlayingBar, hasDynamicBg, images }) => {
+            if (!nowPlayingBar) {
+              this.clearCache();
+              return;
+            }
+            if (this.cached.nowPlayingBar !== nowPlayingBar) {
+              this.cached.nowPlayingBar = nowPlayingBar;
+            }
+            if (!hasDynamicBg) {
+              this.createNewBackground(nowPlayingBar, coverUrl);
+            } else if (images) {
+              this.updateExistingBackground(images, coverUrl);
+            }
+            this.cached.lastImgUrl = coverUrl;
+          }
+        );
+      } catch (error) {
+        console.error("Error Applying the Dynamic BG to the NowPlayingBar:", error);
+      }
+    }
+    clearCache() {
+      this.cached.lastImgUrl = null;
+      this.cached.dynamicBg = null;
+      this.cached.nowPlayingBar = null;
+    }
+    createNewBackground(nowPlayingBar, coverUrl) {
+      this.setRandomCSSVariables();
+      const dynamicBackground = document.createElement("div");
+      dynamicBackground.className = "sweet-dynamic-bg";
+      dynamicBackground.setAttribute("current-img", coverUrl);
+      const placeholder = document.createElement("div");
+      placeholder.className = "placeholder";
+      dynamicBackground.appendChild(placeholder);
+      const imgA = this.createBackgroundImage(
+        "bg-img-a",
+        "bg-image primary active",
+        coverUrl,
+        "eager"
+      );
+      dynamicBackground.appendChild(imgA);
+      const imgB = this.createBackgroundImage("bg-img-b", "bg-image secondary", "", "lazy");
+      dynamicBackground.appendChild(imgB);
+      nowPlayingBar.classList.add("sweet-dynamic-bg-in-this");
+      nowPlayingBar.appendChild(dynamicBackground);
+      imgA.onload = () => {
+        requestAnimationFrame(() => {
+          dynamicBackground.classList.add("sweet-dynamic-bg-loaded");
+        });
+      };
+      this.cached.dynamicBg = dynamicBackground;
+    }
+    updateExistingBackground(images, coverUrl) {
+      const { imgA, imgB } = images;
+      const activeImg = imgA.classList.contains("active") ? imgA : imgB;
+      const inactiveImg = activeImg === imgA ? imgB : imgA;
+      inactiveImg.src = coverUrl;
+      inactiveImg.onload = () => {
+        requestAnimationFrame(() => {
+          activeImg.classList.remove("active");
+          inactiveImg.classList.add("active");
+          this.cached.dynamicBg?.setAttribute("current-img", coverUrl);
+        });
+      };
+    }
+    createBackgroundImage(id, className, src, loading) {
+      const img = document.createElement("img");
+      img.id = id;
+      img.className = className;
+      img.decoding = "async";
+      img.loading = loading;
+      if (src)
+        img.src = src;
+      return img;
+    }
+    setRandomCSSVariables() {
+      const rotationPrimary = Math.floor(Math.random() * 360);
+      const rotationSecondary = Math.floor(Math.random() * 360);
+      document.documentElement.style.setProperty("--bg-rotation-primary", `${rotationPrimary}deg`);
+      document.documentElement.style.setProperty(
+        "--bg-rotation-secondary",
+        `${rotationSecondary}deg`
+      );
+      const scalePrimary = 0.9 + Math.random() * 0.3;
+      const scaleSecondary = 0.9 + Math.random() * 0.3;
+      document.documentElement.style.setProperty("--bg-scale-primary", `${scalePrimary}`);
+      document.documentElement.style.setProperty("--bg-scale-secondary", `${scaleSecondary}`);
+      const hueShift = Math.floor(Math.random() * 30);
+      document.documentElement.style.setProperty("--bg-hue-shift", `${hueShift}deg`);
+    }
+  };
+
+  // src/constants/intervals.ts
+  var INTERVALS = {
+    POSITION_SYNC: 0.5,
+    DYNAMIC_BG_UPDATE: 1,
+    SLEEP_RETRY: 0.1
+  };
+
+  // src/app.tsx
+  function setupUI() {
+    AppInitializer.setupSkeletonStyles();
+    return new ButtonManager();
+  }
+  async function initializeAmaiLyrics(buttonManager) {
+    const [{ requestPositionSync: requestPositionSync2 }] = await Promise.all([Promise.resolve().then(() => (init_GetProgress(), GetProgress_exports))]);
+    const { ScrollToActiveLine: ScrollToActiveLine2 } = await Promise.resolve().then(() => (init_ScrollToActiveLine(), ScrollToActiveLine_exports));
+    Whentil_default.When(
+      () => Spicetify.Platform.PlaybackAPI,
+      () => {
+        requestPositionSync2();
+      }
+    );
+    const backgroundManager = new NowPlayingBarBackground();
+    const songChangeManager = new SongChangeManager(buttonManager, backgroundManager);
+    new PageManager(buttonManager);
+    new IntervalManager(INTERVALS.DYNAMIC_BG_UPDATE, () => {
+      const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
+      backgroundManager.apply(coverUrl);
+    }).Start();
+    Spicetify.Player.addEventListener("songchange", (event) => {
+      songChangeManager.handleSongChange(event);
+    });
+    const currentUri = Spicetify.Player.data?.item?.uri;
+    if (currentUri) {
+      const { default: fetchLyrics2 } = await Promise.resolve().then(() => (init_fetchLyrics(), fetchLyrics_exports));
+      const { default: ApplyLyrics2 } = await Promise.resolve().then(() => (init_Applyer(), Applyer_exports));
+      fetchLyrics2(currentUri).then(ApplyLyrics2);
+    }
+    window.addEventListener("online", async () => {
+      storage_default.set("lastFetchedUri", null);
+      const currentUri2 = Spicetify.Player.data?.item?.uri;
+      if (currentUri2) {
+        const { default: fetchLyrics2 } = await Promise.resolve().then(() => (init_fetchLyrics(), fetchLyrics_exports));
+        const { default: ApplyLyrics2 } = await Promise.resolve().then(() => (init_Applyer(), Applyer_exports));
+        fetchLyrics2(currentUri2).then(ApplyLyrics2);
       }
     });
+    new IntervalManager(ScrollingIntervalTime, () => ScrollToActiveLine2(ScrollSimplebar)).Start();
+    SpotifyPlayer.IsPlaying = IsPlaying();
+    EventManager.initialize(buttonManager.getButton());
+  }
+  async function main() {
+    await AppInitializer.initializeCore();
+    const buttonManager = setupUI();
+    await initializeAmaiLyrics(buttonManager);
+    AppInitializer.setupPostLoadOptimizations();
   }
   var app_default = main;
 
@@ -19575,7 +19682,7 @@ ${JSON.stringify(lyricsOnly)}`
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-25896-cpNuj37VMn52/1983ce6e5098/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-16908-jc2hCk4RLLT1/1983ea2a9608/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -19601,7 +19708,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25896-cpNuj37VMn52/1983ce6e4330/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16908-jc2hCk4RLLT1/1983ea2a8960/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -19743,7 +19850,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25896-cpNuj37VMn52/1983ce6e4751/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16908-jc2hCk4RLLT1/1983ea2a8ec1/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -19951,7 +20058,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25896-cpNuj37VMn52/1983ce6e48a2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16908-jc2hCk4RLLT1/1983ea2a8f82/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -20491,7 +20598,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25896-cpNuj37VMn52/1983ce6e4a73/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16908-jc2hCk4RLLT1/1983ea2a9123/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 1.5;
@@ -20646,7 +20753,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25896-cpNuj37VMn52/1983ce6e4bc4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16908-jc2hCk4RLLT1/1983ea2a91d4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -20907,7 +21014,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25896-cpNuj37VMn52/1983ce6e4d55/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16908-jc2hCk4RLLT1/1983ea2a92a5/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -21192,7 +21299,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25896-cpNuj37VMn52/1983ce6e4eb6/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16908-jc2hCk4RLLT1/1983ea2a9356/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -21215,7 +21322,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25896-cpNuj37VMn52/1983ce6e4f17/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16908-jc2hCk4RLLT1/1983ea2a93b7/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
