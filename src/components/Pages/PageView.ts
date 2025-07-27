@@ -15,6 +15,7 @@ import { ResetLastLine } from '../../utils/Scrolling/ScrollToActiveLine';
 import fastdom from '../../utils/fastdom';
 import storage from '../../utils/storage';
 import { removeLyricsFromCache } from '../../utils/Lyrics/cache';
+import { Maid } from '@hudzax/web-modules/Maid';
 
 interface ImageElementWithSetup extends HTMLImageElement {
   _setupImageLoading?: boolean;
@@ -26,6 +27,9 @@ export const Tooltips = {
   FullscreenToggle: null,
   LyricsToggle: null,
 };
+
+// Maid for managing event listeners and cleanup
+let maid: Maid | null = null;
 
 const PageView = {
   Open: OpenPage,
@@ -44,6 +48,10 @@ fastdom.read(() => {
 
 async function OpenPage() {
   if (PageView.IsOpened) return;
+
+  // Create fresh maid instance for this page session
+  maid = new Maid();
+
   let elem: HTMLDivElement;
   await fastdom.write(() => {
     elem = document.createElement('div');
@@ -174,6 +182,9 @@ async function DestroyPage() {
   Object.values(Tooltips).forEach((a) => a?.destroy());
   ResetLastLine();
   ScrollSimplebar?.unMount();
+  // Clean up all event listeners managed by the maid
+  maid?.CleanUp();
+  maid = null;
   PageView.IsOpened = false;
 }
 
@@ -244,7 +255,10 @@ async function AppendViewControls(ReAppend: boolean = false) {
       content: `Exit Lyrics Page`,
     });
 
-    closeButton?.addEventListener('click', () => Session.GoBack());
+    const closeClickHandler = () => Session.GoBack();
+    closeButton?.addEventListener('click', closeClickHandler);
+    // Add the event listener cleanup to the maid
+    maid?.Give(() => closeButton?.removeEventListener('click', closeClickHandler));
 
     // Fullscreen Button
     const fullscreenBtn = elem.querySelector('#FullscreenToggle');
@@ -254,7 +268,10 @@ async function AppendViewControls(ReAppend: boolean = false) {
       content: `Toggle Fullscreen View`,
     });
 
-    fullscreenBtn?.addEventListener('click', () => Fullscreen.Toggle());
+    const fullscreenClickHandler = () => Fullscreen.Toggle();
+    fullscreenBtn?.addEventListener('click', fullscreenClickHandler);
+    // Add the event listener cleanup to the maid
+    maid?.Give(() => fullscreenBtn?.removeEventListener('click', fullscreenClickHandler));
   }
 }
 
@@ -267,7 +284,7 @@ function setupImageLoading(imageElement: ImageElementWithSetup) {
   imageElement._setupImageLoading = true;
 
   // Set up the onload handler
-  imageElement.onload = () => {
+  const onloadHandler = () => {
     fastdom.write(() => {
       imageElement.classList.add('loaded');
     });
@@ -287,6 +304,12 @@ function setupImageLoading(imageElement: ImageElementWithSetup) {
       highResImage.src = highResUrl;
     }
   };
+
+  imageElement.onload = onloadHandler;
+  // Register cleanup with maid to prevent memory leaks
+  maid?.Give(() => {
+    imageElement.onload = null;
+  });
 }
 
 /**
@@ -363,7 +386,7 @@ function setupRefreshButton() {
   const refreshButton = document.querySelector('#RefreshLyrics');
   if (!refreshButton) return;
 
-  refreshButton.addEventListener('click', async () => {
+  const clickHandler = async () => {
     const currentUri = Spicetify.Player.data?.item?.uri;
     if (!currentUri) {
       Spicetify.showNotification('No track playing', false, 1000);
@@ -387,7 +410,11 @@ function setupRefreshButton() {
       console.error('Error refreshing lyrics:', error);
       Spicetify.showNotification('Error refreshing lyrics', false, 2000);
     }
-  });
+  };
+
+  refreshButton.addEventListener('click', clickHandler);
+  // Add the event listener cleanup to the maid
+  maid?.Give(() => refreshButton.removeEventListener('click', clickHandler));
 }
 
 /**
@@ -397,7 +424,7 @@ function setupWatchMusicVideoButton() {
   const watchMusicVideoButton = document.querySelector('#WatchMusicVideoButton');
   if (!watchMusicVideoButton) return;
 
-  watchMusicVideoButton.addEventListener('click', async () => {
+  const clickHandler = async () => {
     const songName = await SpotifyPlayer.GetSongName();
     const artists = await SpotifyPlayer.GetArtists();
 
@@ -411,7 +438,11 @@ function setupWatchMusicVideoButton() {
     const youtubeUrl = `https://www.youtube.com/results?search_query=${searchQuery}`;
 
     window.open(youtubeUrl, '_blank');
-  });
+  };
+
+  watchMusicVideoButton.addEventListener('click', clickHandler);
+  // Add the event listener cleanup to the maid
+  maid?.Give(() => watchMusicVideoButton.removeEventListener('click', clickHandler));
 }
 
 /**
@@ -421,9 +452,13 @@ function setupReleaseLogsButton() {
   const releaseLogsButton = document.querySelector('#ReleaseLogsButton');
   if (!releaseLogsButton) return;
 
-  releaseLogsButton.addEventListener('click', () => {
+  const clickHandler = () => {
     window.open('https://github.com/hudzax/amai-lyrics/releases', '_blank');
-  });
+  };
+
+  releaseLogsButton.addEventListener('click', clickHandler);
+  // Add the event listener cleanup to the maid
+  maid?.Give(() => releaseLogsButton.removeEventListener('click', clickHandler));
 }
 
 /**
