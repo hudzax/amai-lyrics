@@ -35,9 +35,9 @@
   --ImageMask: linear-gradient(
     180deg,
     transparent 0,                          /* Fully transparent at the top */
-    var(--spice-sidebar) 16px,              /* Sidebar color starts at 16px */
-    var(--spice-sidebar) calc(100% - 64px), /* Sidebar color ends before the bottom */
-    transparent calc(100% - 16px),          /* Starts fading to transparent */
+    var(--spice-sidebar) 128px,              /* Sidebar color starts at 16px */
+    var(--spice-sidebar) calc(100% - 128px), /* Sidebar color ends before the bottom */
+    transparent calc(100% - 8px),          /* Starts fading to transparent */
     transparent                             /* Fully transparent at the bottom */
   );
 
@@ -203,7 +203,6 @@ header.main-topBar-container .amai-info {
 #SpicyLyricsPage .ContentBox .NowBar.Active + .LyricsContainer .LyricsContent .simplebar-content-wrapper .simplebar-content {
   padding: 3cqh 3cqh 1.8cqh 3cqh;
   background-color: rgba(255, 255, 255, 0.1); /* Lowered opacity for stronger acrylic effect */
-  border-radius: 1cqh;
   backdrop-filter: blur(20px); /* Increased blur for more acrylic */
   -webkit-backdrop-filter: blur(20px); /* Safari support */
   border: 1px solid rgba(255, 255, 255, 0.2); /* Optional: enhances the frosted look */
