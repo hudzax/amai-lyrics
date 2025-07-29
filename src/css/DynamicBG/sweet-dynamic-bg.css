@@ -1,22 +1,24 @@
 /* 
- * Optimized Dynamic Background
- * - Uses fewer DOM elements
- * - Leverages CSS gradients for better performance
- * - Optimizes GPU usage with proper transform properties
- * - Reduces blur operations which are CPU intensive
+ * Enhanced Dynamic Background
+ * - Creates immersive visual experience
+ * - Enhanced color blending and gradients
+ * - Optimized performance with hardware acceleration
+ * - Improved transition smoothness
  */
 
 .sweet-dynamic-bg {
   /* Base variables */
   --bg-hue-shift: 0deg;
-  --bg-saturation: 1.5;
-  --bg-brightness: 0.6; /* Reduced from 0.8 to make it dimmer */
+  --bg-saturation: 2.2; /* Increased for richer colors */
+  --bg-brightness: 0.5; /* Slightly dimmer for better contrast */
+  --bg-blur-primary: 35px; /* Increased blur for primary layer */
+  --bg-blur-secondary: 55px; /* Increased blur for secondary layer */
   
   /* Rotation variables for different elements */
   --bg-rotation-primary: 0deg;
-  --bg-rotation-secondary: 0deg;
-  --bg-scale-primary: 1;
-  --bg-scale-secondary: 1;
+  --bg-rotation-secondary: 15deg; /* Offset rotation for depth */
+  --bg-scale-primary: 1.1; /* Slightly larger scale */
+  --bg-scale-secondary: 1.2; /* Slightly larger scale */
   
   height: 100%;
   left: 0;
@@ -39,29 +41,32 @@
   -webkit-backface-visibility: hidden;
 }
 
-/* Add a semi-transparent overlay for consistent dimming */
+/* Add a gradient overlay for depth and color blending */
 .sweet-dynamic-bg::after {
   content: '';
   position: absolute;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.2); /* Black overlay with 20% opacity */
+  background: linear-gradient(135deg, rgba(15, 15, 35, 0.4) 0%, rgba(30, 10, 70, 0.3) 50%, rgba(10, 20, 50, 0.4) 100%);
   z-index: 10; /* Above all other elements in the dynamic bg */
   pointer-events: none;
+  animation: gradientShift 30s linear infinite; /* Slow gradient movement */
 }
 
-/* Lightweight placeholder that appears instantly */
+/* Enhanced placeholder with color hint from current theme */
 .sweet-dynamic-bg .placeholder {
   position: absolute;
   inset: 0;
   background: radial-gradient(
     circle at center,
-    rgba(40, 40, 40, 0.7) 0%,
-    rgba(20, 20, 20, 0.3) 70%
+    rgba(60, 40, 80, 0.6) 0%,
+    rgba(30, 20, 50, 0.4) 50%,
+    rgba(15, 15, 30, 0.2) 90%
   );
   z-index: 1;
   border-radius: 50%;
   transform: scale(2);
-  opacity: 0.8;
+  opacity: 0.9;
+  filter: blur(8px);
 }
 
 /* Base style for background images */
@@ -88,8 +93,9 @@
   border-radius: 100em;
   z-index: 3;
   transform: rotate(var(--bg-rotation-primary, 0deg)) scale(var(--bg-scale-primary, 1));
-  filter: blur(25px) hue-rotate(var(--bg-hue-shift));
+  filter: blur(var(--bg-blur-primary)) hue-rotate(var(--bg-hue-shift)) brightness(1.1);
   animation: bgAnimPrimary 60s linear infinite;
+  mix-blend-mode: overlay; /* Enhanced blending with background */
 }
 
 /* Secondary background image styling */
@@ -102,8 +108,9 @@
   border-radius: 100em;
   z-index: 2;
   transform: rotate(var(--bg-rotation-secondary, 0deg)) scale(var(--bg-scale-secondary, 1));
-  filter: blur(45px) hue-rotate(calc(var(--bg-hue-shift) + 30deg));
+  filter: blur(var(--bg-blur-secondary)) hue-rotate(calc(var(--bg-hue-shift) + 30deg)) brightness(1.2);
   animation: bgAnimSecondary 75s linear infinite reverse;
+  mix-blend-mode: soft-light; /* Softer blending for secondary layer */
 }
 
 /* Active state for crossfade */
@@ -167,6 +174,21 @@
   }
   to {
     transform: rotate(calc(var(--bg-rotation-primary, 0deg) + 1turn)) scale(var(--bg-scale-primary, 1));
+  }
+}
+
+/* Animation for gradient overlay movement */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 0%;
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    background-position: 100% 100%;
+    opacity: 0.7;
   }
 }
 /* Optimized animation keyframes for secondary element (Keep as is) */

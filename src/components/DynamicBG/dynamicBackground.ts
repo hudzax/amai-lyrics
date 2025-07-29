@@ -54,14 +54,14 @@ async function setupDynamicBackground(
     // Set initial random CSS variables (only once or less frequently?)
     // For now, set them on creation
     const rotationPrimary = Math.floor(Math.random() * 360);
-    const rotationSecondary = Math.floor(Math.random() * 360);
+    const rotationSecondary = (Math.floor(Math.random() * 360) + 15) % 360; // Offset by 15 degrees
     document.documentElement.style.setProperty('--bg-rotation-primary', `${rotationPrimary}deg`);
     document.documentElement.style.setProperty(
       '--bg-rotation-secondary',
       `${rotationSecondary}deg`,
     );
-    const scalePrimary = 0.9 + Math.random() * 0.3; // Between 0.9 and 1.2
-    const scaleSecondary = 0.9 + Math.random() * 0.3; // Between 0.9 and 1.2
+    const scalePrimary = 1.0 + Math.random() * 0.2; // Between 1.0 and 1.2
+    const scaleSecondary = 1.1 + Math.random() * 0.2; // Between 1.1 and 1.3
     document.documentElement.style.setProperty('--bg-scale-primary', `${scalePrimary}`);
     document.documentElement.style.setProperty('--bg-scale-secondary', `${scaleSecondary}`);
     const hueShift = Math.floor(Math.random() * 30);
@@ -110,14 +110,14 @@ const updateDynamicBackground = debounce(
       inactiveImg.classList.add('active');
       // Set new random CSS variables for each transition for more variety
       const rotationPrimary = Math.floor(Math.random() * 360);
-      const rotationSecondary = Math.floor(Math.random() * 360);
+      const rotationSecondary = (Math.floor(Math.random() * 360) + 15) % 360; // Offset by 15 degrees
       document.documentElement.style.setProperty('--bg-rotation-primary', `${rotationPrimary}deg`);
       document.documentElement.style.setProperty(
         '--bg-rotation-secondary',
         `${rotationSecondary}deg`,
       );
-      const scalePrimary = 0.9 + Math.random() * 0.3;
-      const scaleSecondary = 0.9 + Math.random() * 0.3;
+      const scalePrimary = 1.0 + Math.random() * 0.2; // Between 1.0 and 1.2
+      const scaleSecondary = 1.1 + Math.random() * 0.2; // Between 1.1 and 1.3
       document.documentElement.style.setProperty('--bg-scale-primary', `${scalePrimary}`);
       document.documentElement.style.setProperty('--bg-scale-secondary', `${scaleSecondary}`);
       const hueShift = Math.floor(Math.random() * 30);
