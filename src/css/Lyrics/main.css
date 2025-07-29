@@ -14,8 +14,8 @@
 
 #SpicyLyricsPage .LyricsContainer .LyricsContent {
   --TextGlowDef: rgba(255,255,255,0.15) 0px 0px 6px;
-  --ActiveTextGlowDef: rgba(255,255,255,0.4) 0px 0px 14px;
-  --StrongTextGlowDef: rgba(255,255,255,0.68) 0px 0px 16.4px;
+  --ActiveTextGlowDef: rgba(255,255,255,0.25) 0px 0px 16px;
+  --StrongTextGlowDef: rgba(255,255,255,0.68) 0px 0px 16px;
   --StrongerTextGlowDef: rgba(255,255,255,0.74) 0px 0px 16px;
   --DefaultLyricsSize: clamp(1.5rem,calc(.425cqw * 7), 3rem);
   --DefaultLyricsSize-Small: clamp(1.1rem,calc(1cqw* 6), 1.5rem);
