@@ -412,7 +412,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.2.4";
+      version = "1.2.5";
     }
   });
 
@@ -8575,12 +8575,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           const { LineElem, container } = result;
           lastLine = LineElem;
           fastdom_default.write(() => {
-            setTimeout(() => {
-              fastdom_default.write(() => {
-                LineElem.classList.add("Active", "OverridenByScroller");
-              });
-            }, PositionOffset / 2);
             scrollIntoCenterView(container, LineElem, 270, -50);
+            LineElem.classList.add("Active", "OverridenByScroller");
           });
         });
       }
@@ -8601,9 +8597,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-24184-YnW0XQ95Xm6a/1984c029b7c8/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-13196-443LUWLzlKx5/19855f8eddd8/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-24184-YnW0XQ95Xm6a/1984c029b7c8/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-13196-443LUWLzlKx5/19855f8eddd8/DotLoader.css"() {
     }
   });
 
@@ -8644,14 +8640,14 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       bgContainer.appendChild(imgB);
       element.appendChild(bgContainer);
       const rotationPrimary = Math.floor(Math.random() * 360);
-      const rotationSecondary = Math.floor(Math.random() * 360);
+      const rotationSecondary = (Math.floor(Math.random() * 360) + 15) % 360;
       document.documentElement.style.setProperty("--bg-rotation-primary", `${rotationPrimary}deg`);
       document.documentElement.style.setProperty(
         "--bg-rotation-secondary",
         `${rotationSecondary}deg`
       );
-      const scalePrimary = 0.9 + Math.random() * 0.3;
-      const scaleSecondary = 0.9 + Math.random() * 0.3;
+      const scalePrimary = 1 + Math.random() * 0.2;
+      const scaleSecondary = 1.1 + Math.random() * 0.2;
       document.documentElement.style.setProperty("--bg-scale-primary", `${scalePrimary}`);
       document.documentElement.style.setProperty("--bg-scale-secondary", `${scaleSecondary}`);
       const hueShift = Math.floor(Math.random() * 30);
@@ -8702,14 +8698,14 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             activeImg.classList.remove("active");
             inactiveImg.classList.add("active");
             const rotationPrimary = Math.floor(Math.random() * 360);
-            const rotationSecondary = Math.floor(Math.random() * 360);
+            const rotationSecondary = (Math.floor(Math.random() * 360) + 15) % 360;
             document.documentElement.style.setProperty("--bg-rotation-primary", `${rotationPrimary}deg`);
             document.documentElement.style.setProperty(
               "--bg-rotation-secondary",
               `${rotationSecondary}deg`
             );
-            const scalePrimary = 0.9 + Math.random() * 0.3;
-            const scaleSecondary = 0.9 + Math.random() * 0.3;
+            const scalePrimary = 1 + Math.random() * 0.2;
+            const scaleSecondary = 1.1 + Math.random() * 0.2;
             document.documentElement.style.setProperty("--bg-scale-primary", `${scalePrimary}`);
             document.documentElement.style.setProperty("--bg-scale-secondary", `${scaleSecondary}`);
             const hueShift = Math.floor(Math.random() * 30);
@@ -9675,6 +9671,95 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
+  // src/constants/PageViewSelectors.ts
+  var PageViewSelectors;
+  var init_PageViewSelectors = __esm({
+    "src/constants/PageViewSelectors.ts"() {
+      PageViewSelectors = {
+        PageRoot: ".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]",
+        SpicyLyricsPage: "#SpicyLyricsPage",
+        ContentBox: "#SpicyLyricsPage .ContentBox",
+        MediaImage: "#SpicyLyricsPage .MediaImage",
+        SongName: "#SpicyLyricsPage .SongName span",
+        Artists: "#SpicyLyricsPage .Artists span",
+        ViewControls: "#SpicyLyricsPage .ContentBox .ViewControls",
+        Header: "#SpicyLyricsPage .ContentBox .NowBar .Header",
+        HeaderViewControls: "#SpicyLyricsPage .ContentBox .NowBar .Header .ViewControls",
+        RefreshLyricsButton: "#RefreshLyrics",
+        WatchMusicVideoButton: "#WatchMusicVideoButton",
+        ReleaseLogsButton: "#ReleaseLogsButton",
+        CloseButton: "#Close",
+        FullscreenToggleButton: "#FullscreenToggle",
+        LoaderContainer: "#SpicyLyricsPage .loaderContainer",
+        LyricsContent: "#SpicyLyricsPage .LyricsContent",
+        NowBar: "#SpicyLyricsPage .NowBar",
+        NotificationContainer: "#SpicyLyricsPage .NotificationContainer"
+      };
+    }
+  });
+
+  // src/components/Pages/PageHTML.ts
+  var PageHTML, NowBarHTML;
+  var init_PageHTML = __esm({
+    "src/components/Pages/PageHTML.ts"() {
+      PageHTML = `
+<div class="NotificationContainer"></div>
+<div class="ContentBox">
+    <div class="NowBar"></div>
+    <div class="LyricsContainer">
+        <div class="loaderContainer">
+            <div id="DotLoader"></div>
+        </div>
+        <div class="LyricsContent ScrollbarScrollable"></div>
+    </div>
+    <div class="ViewControls"></div>
+    <div class="DropZone LeftSide">
+        <span>Switch Sides</span>
+    </div>
+    <div class="DropZone RightSide">
+        <span>Switch Sides</span>
+    </div>
+</div>
+`;
+      NowBarHTML = `
+<div class="CenteredView">
+    <div class="Header">
+        <div class="MediaBox">
+            <div class="MediaContent" draggable="true"></div>
+            <div class="MediaImagePlaceholder"></div>
+            <img class="MediaImage" 
+                 src="" 
+                 data-high-res=""
+                 fetchpriority="high"
+                 loading="eager"
+                 decoding="sync"
+                 draggable="true"  alt=""/>
+        </div>
+        <div class="Metadata">
+            <div class="SongName">
+                <span></span>
+            </div>
+            <div class="Artists">
+                <span></span>
+            </div>
+        </div>
+    </div>
+    <div class="AmaiPageButtonContainer">
+      <button id="RefreshLyrics" class="AmaiPageButton">
+          Reload Current Lyrics
+      </button>  
+      <button id="WatchMusicVideoButton" class="AmaiPageButton">
+          Watch Music Video
+      </button>
+      <button id="ReleaseLogsButton" class="AmaiPageButton">
+          Open Release Notes
+      </button>
+    </div>
+</div>
+`;
+    }
+  });
+
   // src/components/Pages/PageView.ts
   var PageView_exports = {};
   __export(PageView_exports, {
@@ -9688,84 +9773,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (PageView.IsOpened)
       return;
     maid = new Maid();
-    let elem;
-    await fastdom_default.write(() => {
-      elem = document.createElement("div");
-      elem.id = "SpicyLyricsPage";
-      elem.innerHTML = `
-          <div class="NotificationContainer">
-              <div class="NotificationIcon"></div>
-              <div class="NotificationText">
-                  <div class="NotificationTitle"></div>
-                  <div class="NotificationDescription"></div>
-              </div>
-              <div class="NotificationCloseButton">X</div>
-          </div>
-          <div class="ContentBox">
-              <div class="NowBar">
-                  <div class="CenteredView">
-                      <div class="Header">
-                          <div class="MediaBox">
-                              <div class="MediaContent" draggable="true"></div>
-                              <div class="MediaImagePlaceholder"></div>
-                              <img class="MediaImage" 
-                                   src="" 
-                                   data-high-res=""
-                                   fetchpriority="high"
-                                   loading="eager"
-                                   decoding="sync"
-                                   draggable="true"  alt=""/>
-                          </div>
-                          <div class="Metadata">
-                              <div class="SongName">
-                                  <span></span>
-                              </div>
-                              <div class="Artists">
-                                  <span></span>
-                              </div>
-                          </div>
-                      </div>
-                      <div class="AmaiPageButtonContainer">
-                        <button id="RefreshLyrics" class="AmaiPageButton">
-                            Reload Current Lyrics
-                        </button>  
-                        <button id="WatchMusicVideoButton" class="AmaiPageButton">
-                            Watch Music Video
-                        </button>
-                        <button id="ReleaseLogsButton" class="AmaiPageButton">
-                            Open Release Notes
-                        </button>
-                      </div>
-                  </div>
-              </div>
-              <div class="LyricsContainer">
-                  <div class="loaderContainer">
-                      <div id="DotLoader"></div>
-                  </div>
-                  <div class="LyricsContent ScrollbarScrollable"></div>
-              </div>
-              <div class="ViewControls"></div>
-              <div class="DropZone LeftSide">
-                  <span>Switch Sides</span>
-              </div>
-              <div class="DropZone RightSide">
-                  <span>Switch Sides</span>
-              </div>
-          </div>
-      `;
-      if (PageRoot)
-        PageRoot.appendChild(elem);
-    });
+    await createPageElement();
     Defaults_default.LyricsContainerExists = true;
-    let contentBox = null;
-    let mediaImage = null;
-    await fastdom_default.read(() => {
-      contentBox = document.querySelector("#SpicyLyricsPage .ContentBox");
-      mediaImage = document.querySelector("#SpicyLyricsPage .MediaImage");
-    });
+    const contentBox = document.querySelector(PageViewSelectors.ContentBox);
     if (contentBox) {
       await ApplyDynamicBackground(contentBox);
     }
+    const mediaImage = document.querySelector(PageViewSelectors.MediaImage);
     if (mediaImage) {
       setupImageLoading(mediaImage);
     }
@@ -9782,15 +9796,26 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     setupWatchMusicVideoButton();
     PageView.IsOpened = true;
   }
+  async function createPageElement() {
+    let elem;
+    await fastdom_default.write(() => {
+      elem = document.createElement("div");
+      elem.id = "SpicyLyricsPage";
+      elem.innerHTML = PageHTML;
+      if (PageRoot)
+        PageRoot.appendChild(elem);
+    });
+    const nowBar = document.querySelector(PageViewSelectors.NowBar);
+    if (nowBar) {
+      nowBar.innerHTML = NowBarHTML;
+    }
+  }
   async function DestroyPage() {
     if (!PageView.IsOpened)
       return;
     if (Fullscreen_default.IsOpen)
       Fullscreen_default.Close();
-    let spicyLyricsPage = null;
-    await fastdom_default.read(() => {
-      spicyLyricsPage = document.querySelector("#SpicyLyricsPage");
-    });
+    const spicyLyricsPage = document.querySelector(PageViewSelectors.SpicyLyricsPage);
     if (!spicyLyricsPage)
       return;
     await fastdom_default.write(() => {
@@ -9806,10 +9831,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     PageView.IsOpened = false;
   }
   async function AppendViewControls(ReAppend = false) {
-    let elem = null;
-    await fastdom_default.read(() => {
-      elem = document.querySelector("#SpicyLyricsPage .ContentBox .ViewControls");
-    });
+    const elem = document.querySelector(PageViewSelectors.ViewControls);
     if (!elem)
       return;
     await fastdom_default.write(() => {
@@ -9821,37 +9843,23 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       `;
     });
     if (Fullscreen_default.IsOpen) {
-      let headerElem = null;
-      await fastdom_default.read(() => {
-        headerElem = document.querySelector(
-          "#SpicyLyricsPage .ContentBox .NowBar .Header"
-        );
-      });
+      const headerElem = document.querySelector(PageViewSelectors.Header);
       if (headerElem) {
         await fastdom_default.write(() => {
           TransferElement(elem, headerElem, 0);
         });
       }
       Object.values(Tooltips).forEach((a) => a?.destroy());
-      let viewControlsElem = null;
-      await fastdom_default.read(() => {
-        viewControlsElem = document.querySelector(
-          "#SpicyLyricsPage .ContentBox .NowBar .Header .ViewControls"
-        );
-      });
+      const viewControlsElem = document.querySelector(
+        PageViewSelectors.HeaderViewControls
+      );
       SetupTippy(viewControlsElem);
     } else {
-      let headerViewControlsElem = null;
-      await fastdom_default.read(() => {
-        headerViewControlsElem = document.querySelector(
-          "#SpicyLyricsPage .ContentBox .NowBar .Header .ViewControls"
-        );
-      });
+      const headerViewControlsElem = document.querySelector(
+        PageViewSelectors.HeaderViewControls
+      );
       if (headerViewControlsElem) {
-        let contentBoxElem = null;
-        await fastdom_default.read(() => {
-          contentBoxElem = document.querySelector("#SpicyLyricsPage .ContentBox");
-        });
+        const contentBoxElem = document.querySelector(PageViewSelectors.ContentBox);
         if (contentBoxElem) {
           await fastdom_default.write(() => {
             TransferElement(elem, contentBoxElem);
@@ -9864,22 +9872,28 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     function SetupTippy(elem2) {
       if (!elem2)
         return;
-      const closeButton = elem2.querySelector("#Close");
-      Tooltips.Close = Spicetify.Tippy(closeButton, {
-        ...Spicetify.TippyProps,
-        content: `Exit Lyrics Page`
-      });
-      const closeClickHandler = () => Session_default.GoBack();
-      closeButton?.addEventListener("click", closeClickHandler);
-      maid?.Give(() => closeButton?.removeEventListener("click", closeClickHandler));
-      const fullscreenBtn = elem2.querySelector("#FullscreenToggle");
-      Tooltips.FullscreenToggle = Spicetify.Tippy(fullscreenBtn, {
-        ...Spicetify.TippyProps,
-        content: `Toggle Fullscreen View`
-      });
-      const fullscreenClickHandler = () => Fullscreen_default.Toggle();
-      fullscreenBtn?.addEventListener("click", fullscreenClickHandler);
-      maid?.Give(() => fullscreenBtn?.removeEventListener("click", fullscreenClickHandler));
+      const closeButton = elem2.querySelector(PageViewSelectors.CloseButton);
+      if (closeButton) {
+        Tooltips.Close = Spicetify.Tippy(closeButton, {
+          ...Spicetify.TippyProps,
+          content: `Exit Lyrics Page`
+        });
+        const closeClickHandler = () => Session_default.GoBack();
+        closeButton.addEventListener("click", closeClickHandler);
+        maid?.Give(() => closeButton.removeEventListener("click", closeClickHandler));
+      }
+      const fullscreenBtn = elem2.querySelector(
+        PageViewSelectors.FullscreenToggleButton
+      );
+      if (fullscreenBtn) {
+        Tooltips.FullscreenToggle = Spicetify.Tippy(fullscreenBtn, {
+          ...Spicetify.TippyProps,
+          content: `Toggle Fullscreen View`
+        });
+        const fullscreenClickHandler = () => Fullscreen_default.Toggle();
+        fullscreenBtn.addEventListener("click", fullscreenClickHandler);
+        maid?.Give(() => fullscreenBtn.removeEventListener("click", fullscreenClickHandler));
+      }
     }
   }
   function setupImageLoading(imageElement) {
@@ -9911,57 +9925,59 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   async function UpdatePageContent() {
     if (!PageView.IsOpened)
       return;
-    let mediaImage = null;
-    await fastdom_default.read(() => {
-      mediaImage = document.querySelector("#SpicyLyricsPage .MediaImage");
-    });
+    const mediaImage = document.querySelector(PageViewSelectors.MediaImage);
     if (mediaImage) {
       await fastdom_default.write(() => {
         if (mediaImage.classList.contains("loaded")) {
           mediaImage.classList.remove("loaded");
         }
       });
-      SpotifyPlayer.GetSongName().then(async (songName) => {
-        let songNameElem = null;
-        await fastdom_default.read(() => {
-          songNameElem = document.querySelector("#SpicyLyricsPage .SongName span");
-        });
-        if (songNameElem && songNameElem.textContent !== songName) {
-          await fastdom_default.write(() => {
-            songNameElem.textContent = songName;
-          });
-        }
+      updateSongInfo();
+      updateArtwork(mediaImage);
+    }
+  }
+  async function updateSongInfo() {
+    const songNamePromise = SpotifyPlayer.GetSongName();
+    const artistsPromise = SpotifyPlayer.GetArtists();
+    const [songName, artists] = await Promise.all([songNamePromise, artistsPromise]);
+    const songNameElem = document.querySelector(PageViewSelectors.SongName);
+    if (songNameElem && songNameElem.textContent !== songName) {
+      await fastdom_default.write(() => {
+        songNameElem.textContent = songName;
       });
-      SpotifyPlayer.GetArtists().then(async (artists) => {
-        let artistsElem = null;
-        await fastdom_default.read(() => {
-          artistsElem = document.querySelector("#SpicyLyricsPage .Artists span");
-        });
-        const joined = SpotifyPlayer.JoinArtists(artists);
-        if (artistsElem && artistsElem.textContent !== joined) {
-          await fastdom_default.write(() => {
-            artistsElem.textContent = joined;
-          });
-        }
-      });
-      Promise.all([SpotifyPlayer.Artwork.Get("l"), SpotifyPlayer.Artwork.Get("xl")]).then(async ([standardUrl, highResUrl]) => {
-        if (standardUrl && mediaImage.src !== standardUrl) {
-          await fastdom_default.write(() => {
-            mediaImage.src = standardUrl;
-          });
-        }
-        if (highResUrl && mediaImage.getAttribute("data-high-res") !== highResUrl) {
-          await fastdom_default.write(() => {
-            mediaImage.setAttribute("data-high-res", highResUrl);
-          });
-        }
-      }).catch((error) => {
-        console.error("Failed to load artwork:", error);
+    }
+    const artistsElem = document.querySelector(PageViewSelectors.Artists);
+    const joinedArtists = SpotifyPlayer.JoinArtists(artists);
+    if (artistsElem && artistsElem.textContent !== joinedArtists) {
+      await fastdom_default.write(() => {
+        artistsElem.textContent = joinedArtists;
       });
     }
   }
+  async function updateArtwork(mediaImage) {
+    try {
+      const [standardUrl, highResUrl] = await Promise.all([
+        SpotifyPlayer.Artwork.Get("l"),
+        SpotifyPlayer.Artwork.Get("xl")
+      ]);
+      if (standardUrl && mediaImage.src !== standardUrl) {
+        await fastdom_default.write(() => {
+          mediaImage.src = standardUrl;
+        });
+      }
+      if (highResUrl && mediaImage.getAttribute("data-high-res") !== highResUrl) {
+        await fastdom_default.write(() => {
+          mediaImage.setAttribute("data-high-res", highResUrl);
+        });
+      }
+    } catch (error) {
+      console.error("Failed to load artwork:", error);
+    }
+  }
   function setupRefreshButton() {
-    const refreshButton = document.querySelector("#RefreshLyrics");
+    const refreshButton = document.querySelector(
+      PageViewSelectors.RefreshLyricsButton
+    );
     if (!refreshButton)
       return;
     const clickHandler = async () => {
@@ -9988,7 +10004,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     maid?.Give(() => refreshButton.removeEventListener("click", clickHandler));
   }
   function setupWatchMusicVideoButton() {
-    const watchMusicVideoButton = document.querySelector("#WatchMusicVideoButton");
+    const watchMusicVideoButton = document.querySelector(
+      PageViewSelectors.WatchMusicVideoButton
+    );
     if (!watchMusicVideoButton)
       return;
     const clickHandler = async () => {
@@ -10007,7 +10025,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     maid?.Give(() => watchMusicVideoButton.removeEventListener("click", clickHandler));
   }
   function setupReleaseLogsButton() {
-    const releaseLogsButton = document.querySelector("#ReleaseLogsButton");
+    const releaseLogsButton = document.querySelector(
+      PageViewSelectors.ReleaseLogsButton
+    );
     if (!releaseLogsButton)
       return;
     const clickHandler = () => {
@@ -10017,7 +10037,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     maid?.Give(() => releaseLogsButton.removeEventListener("click", clickHandler));
   }
   function showRefreshButton() {
-    const refreshButton = document.querySelector("#RefreshLyrics");
+    const refreshButton = document.querySelector(
+      PageViewSelectors.RefreshLyricsButton
+    );
     if (refreshButton) {
       fastdom_default.write(() => {
         refreshButton.classList.remove("hidden");
@@ -10025,7 +10047,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   }
   function hideRefreshButton() {
-    const refreshButton = document.querySelector("#RefreshLyrics");
+    const refreshButton = document.querySelector(
+      PageViewSelectors.RefreshLyricsButton
+    );
     if (refreshButton) {
       fastdom_default.write(() => {
         refreshButton.classList.add("hidden");
@@ -10053,6 +10077,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_storage();
       init_cache();
       init_Maid();
+      init_PageViewSelectors();
+      init_PageHTML();
       Tooltips = {
         Close: null,
         Kofi: null,
@@ -10069,9 +10095,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       };
       PageRoot = null;
       fastdom_default.read(() => {
-        PageRoot = document.querySelector(
-          ".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]"
-        );
+        PageRoot = document.querySelector(PageViewSelectors.PageRoot);
       });
       PageView_default = PageView;
     }
@@ -19701,7 +19725,7 @@ ${JSON.stringify(lyricsOnly)}`
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-24184-YnW0XQ95Xm6a/1984c029b7c8/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-13196-443LUWLzlKx5/19855f8eddd8/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -19727,7 +19751,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24184-YnW0XQ95Xm6a/1984c029af00/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13196-443LUWLzlKx5/19855f8ecfb0/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -19869,7 +19893,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24184-YnW0XQ95Xm6a/1984c029b2d1/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13196-443LUWLzlKx5/19855f8ed431/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -20077,7 +20101,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24184-YnW0XQ95Xm6a/1984c029b362/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13196-443LUWLzlKx5/19855f8ed572/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -20617,15 +20641,17 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24184-YnW0XQ95Xm6a/1984c029b4a3/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13196-443LUWLzlKx5/19855f8ed733/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
-  --bg-saturation: 1.5;
-  --bg-brightness: 0.6;
+  --bg-saturation: 2.2;
+  --bg-brightness: 0.5;
+  --bg-blur-primary: 35px;
+  --bg-blur-secondary: 55px;
   --bg-rotation-primary: 0deg;
-  --bg-rotation-secondary: 0deg;
-  --bg-scale-primary: 1;
-  --bg-scale-secondary: 1;
+  --bg-rotation-secondary: 15deg;
+  --bg-scale-primary: 1.1;
+  --bg-scale-secondary: 1.2;
   height: 100%;
   left: 0;
   overflow: hidden;
@@ -20644,18 +20670,20 @@ button:has(#SpicyLyricsPageSvg):after {
   content: "";
   position: absolute;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, rgba(15, 15, 35, 0.4) 0%, rgba(30, 10, 70, 0.3) 50%, rgba(10, 20, 50, 0.4) 100%);
   z-index: 10;
   pointer-events: none;
+  animation: gradientShift 30s linear infinite;
 }
 .sweet-dynamic-bg .placeholder {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, rgba(40, 40, 40, 0.7) 0%, rgba(20, 20, 20, 0.3) 70%);
+  background: radial-gradient(circle at center, rgba(60, 40, 80, 0.6) 0%, rgba(30, 20, 50, 0.4) 50%, rgba(15, 15, 30, 0.2) 90%);
   z-index: 1;
   border-radius: 50%;
   transform: scale(2);
-  opacity: 0.8;
+  opacity: 0.9;
+  filter: blur(8px);
 }
 .sweet-dynamic-bg > img.bg-image {
   position: absolute;
@@ -20678,8 +20706,9 @@ button:has(#SpicyLyricsPageSvg):after {
   border-radius: 100em;
   z-index: 3;
   transform: rotate(var(--bg-rotation-primary, 0deg)) scale(var(--bg-scale-primary, 1));
-  filter: blur(25px) hue-rotate(var(--bg-hue-shift));
+  filter: blur(var(--bg-blur-primary)) hue-rotate(var(--bg-hue-shift)) brightness(1.1);
   animation: bgAnimPrimary 60s linear infinite;
+  mix-blend-mode: overlay;
 }
 .sweet-dynamic-bg > img.secondary {
   position: absolute;
@@ -20690,8 +20719,9 @@ button:has(#SpicyLyricsPageSvg):after {
   border-radius: 100em;
   z-index: 2;
   transform: rotate(var(--bg-rotation-secondary, 0deg)) scale(var(--bg-scale-secondary, 1));
-  filter: blur(45px) hue-rotate(calc(var(--bg-hue-shift) + 30deg));
+  filter: blur(var(--bg-blur-secondary)) hue-rotate(calc(var(--bg-hue-shift) + 30deg)) brightness(1.2);
   animation: bgAnimSecondary 75s linear infinite reverse;
+  mix-blend-mode: soft-light;
 }
 .sweet-dynamic-bg > img.primary.active {
   opacity: 1;
@@ -20743,6 +20773,19 @@ button:has(#SpicyLyricsPageSvg):after {
     transform: rotate(calc(var(--bg-rotation-primary, 0deg) + 1turn)) scale(var(--bg-scale-primary, 1));
   }
 }
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 0%;
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    background-position: 100% 100%;
+    opacity: 0.7;
+  }
+}
 @keyframes bgAnimSecondary {
   0% {
     transform: rotate(var(--bg-rotation-secondary, 0deg)) scale(var(--bg-scale-secondary, 1));
@@ -20772,7 +20815,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24184-YnW0XQ95Xm6a/1984c029b514/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13196-443LUWLzlKx5/19855f8ed884/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -20787,8 +20830,8 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent {
   --TextGlowDef: rgba(255,255,255,0.15) 0px 0px 6px;
-  --ActiveTextGlowDef: rgba(255,255,255,0.4) 0px 0px 14px;
-  --StrongTextGlowDef: rgba(255,255,255,0.68) 0px 0px 16.4px;
+  --ActiveTextGlowDef: rgba(255,255,255,0.25) 0px 0px 16px;
+  --StrongTextGlowDef: rgba(255,255,255,0.68) 0px 0px 16px;
   --StrongerTextGlowDef: rgba(255,255,255,0.74) 0px 0px 16px;
   --DefaultLyricsSize: clamp(1.5rem,calc(.425cqw * 7), 3rem);
   --DefaultLyricsSize-Small: clamp(1.1rem,calc(1cqw* 6), 1.5rem);
@@ -21032,7 +21075,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24184-YnW0XQ95Xm6a/1984c029b5b5/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13196-443LUWLzlKx5/19855f8ed9b5/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -21317,7 +21360,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24184-YnW0XQ95Xm6a/1984c029b646/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13196-443LUWLzlKx5/19855f8edb06/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -21340,7 +21383,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24184-YnW0XQ95Xm6a/1984c029b6a7/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13196-443LUWLzlKx5/19855f8edb67/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
