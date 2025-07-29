@@ -59,16 +59,11 @@ export function ScrollToActiveLine(ScrollSimplebar: SimpleBar) {
 
           // Use FastDOM for DOM writes
           fastdom.write(() => {
-            // Schedule class addition with setTimeout
-            setTimeout(() => {
-              // Wrap in another FastDOM write to ensure it's batched properly
-              fastdom.write(() => {
-                LineElem.classList.add('Active', 'OverridenByScroller');
-              });
-            }, PositionOffset / 2);
-
             // Scroll into view - this already uses requestAnimationFrame internally
             scrollIntoCenterView(container, LineElem, 270, -50); // Scroll Into View with a 300ms Animation
+
+            // Add classes directly without setTimeout
+            LineElem.classList.add('Active', 'OverridenByScroller');
           });
         });
     }
