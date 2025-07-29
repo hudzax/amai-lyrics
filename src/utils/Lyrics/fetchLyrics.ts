@@ -8,7 +8,7 @@ import storage from '../storage';
 import { resetLyricsUI, ClearLyricsPageContainer, ShowLoaderContainer } from './ui';
 import { getLyricsFromLocalStorage, getLyricsFromCache, lyricsCache } from './cache';
 import { fetchLyricsFromAPI } from './api';
-import { hideRefreshButton } from '../../components/Pages/PageView';
+import { hideRefreshButton } from '../../components/Pages/pageButtons';
 
 import { LyricsData } from './processing';
 

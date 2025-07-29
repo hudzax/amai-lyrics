@@ -3,7 +3,7 @@ import { ApplyStaticLyrics } from '../Applyer/Static';
 import { ApplyLineLyrics } from '../Applyer/Synced/Line';
 import { ApplySyllableLyrics } from '../Applyer/Synced/Syllable';
 import fetchLyrics from '../fetchLyrics';
-import { showRefreshButton } from '../../../components/Pages/PageView';
+import { showRefreshButton } from '../../../components/Pages/pageButtons';
 import { addLinesEvListener } from '../lyrics';
 
 /**

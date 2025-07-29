@@ -7,7 +7,7 @@ import Defaults from '../../components/Global/Defaults';
 import { OpenNowBar, DeregisterNowBarBtn } from '../../components/Utils/NowBar';
 import PageView from '../../components/Pages/PageView';
 import Fullscreen from '../../components/Utils/Fullscreen';
-import { showRefreshButton } from '../../components/Pages/PageView';
+import { showRefreshButton } from '../../components/Pages/pageButtons';
 
 let ContainerShowLoaderTimeout: number | null = null;
 
@@ -24,7 +24,7 @@ export function resetLyricsUI(): void {
     .querySelector('#SpicyLyricsPage .ContentBox .LyricsContainer')
     ?.classList.remove('Hidden');
 
-  if (!Fullscreen.IsOpen) PageView.AppendViewControls(true);
+  if (!Fullscreen.IsOpen) PageView.AppendViewControls();
 }
 
 /**
