@@ -32,27 +32,21 @@ document.addEventListener('fullscreenchange', () => {
 });
 
 // Add keyboard shortcut to exit fullscreen mode when Escape key is pressed
-document.addEventListener(
-  'keydown',
-  Fullscreen.handleEscapeKey.bind(Fullscreen),
-);
+document.addEventListener('keydown', Fullscreen.handleEscapeKey.bind(Fullscreen));
 
 const MediaBox_Data = {
   Eventified: false,
   Functions: {
     MouseIn: () => {
-      if (MediaBox_Data.Animators.brightness.reversed)
-        MediaBox_Data.Animators.brightness.Reverse();
-      if (MediaBox_Data.Animators.blur.reversed)
-        MediaBox_Data.Animators.blur.Reverse();
+      if (MediaBox_Data.Animators.brightness.reversed) MediaBox_Data.Animators.brightness.Reverse();
+      if (MediaBox_Data.Animators.blur.reversed) MediaBox_Data.Animators.blur.Reverse();
       MediaBox_Data.Animators.brightness.Start();
       MediaBox_Data.Animators.blur.Start();
     },
     MouseOut: () => {
       if (!MediaBox_Data.Animators.brightness.reversed)
         MediaBox_Data.Animators.brightness.Reverse();
-      if (!MediaBox_Data.Animators.blur.reversed)
-        MediaBox_Data.Animators.blur.Reverse();
+      if (!MediaBox_Data.Animators.blur.reversed) MediaBox_Data.Animators.blur.Reverse();
       MediaBox_Data.Animators.brightness.Start();
       MediaBox_Data.Animators.blur.Start();
     },
@@ -77,9 +71,7 @@ const MediaBox_Data = {
 };
 
 function Open() {
-  const SpicyPage = document.querySelector<HTMLElement>(
-    '.Root__main-view #SpicyLyricsPage',
-  );
+  const SpicyPage = document.querySelector<HTMLElement>('.Root__main-view #SpicyLyricsPage');
   const Root = document.body as HTMLElement;
 
   if (SpicyPage) {
@@ -99,9 +91,7 @@ function Open() {
         .catch((err) => {
           // If fullscreen fails, still set up UI (fallback)
           setupFullscreenUI();
-          alert(
-            `Error attempting to enable fullscreen mode: ${err.message} (${err.name})`,
-          );
+          alert(`Error attempting to enable fullscreen mode: ${err.message} (${err.name})`);
         });
     } else {
       // Already in fullscreen, just set up UI
@@ -111,7 +101,7 @@ function Open() {
     // Function to set up UI elements after fullscreen transition
     function setupFullscreenUI() {
       // Ensure controls are properly added
-      PageView.AppendViewControls(true);
+      PageView.AppendViewControls();
 
       // Open the now bar with playback controls
       OpenNowBar();
@@ -130,23 +120,11 @@ function Open() {
         MediaBox_Data.Functions.Eventify(MediaImage);
 
         // Remove existing listeners first to prevent duplicates
-        MediaBox.removeEventListener(
-          'mouseenter',
-          MediaBox_Data.Functions.MouseIn,
-        );
-        MediaBox.removeEventListener(
-          'mouseleave',
-          MediaBox_Data.Functions.MouseOut,
-        );
+        MediaBox.removeEventListener('mouseenter', MediaBox_Data.Functions.MouseIn);
+        MediaBox.removeEventListener('mouseleave', MediaBox_Data.Functions.MouseOut);
 
-        MediaBox.addEventListener(
-          'mouseenter',
-          MediaBox_Data.Functions.MouseIn,
-        );
-        MediaBox.addEventListener(
-          'mouseleave',
-          MediaBox_Data.Functions.MouseOut,
-        );
+        MediaBox.addEventListener('mouseenter', MediaBox_Data.Functions.MouseIn);
+        MediaBox.addEventListener('mouseleave', MediaBox_Data.Functions.MouseOut);
       }
 
       // Notify other components
@@ -185,13 +163,11 @@ function Close() {
       Fullscreen.IsOpen = false;
 
       // Update controls for non-fullscreen mode
-      PageView.AppendViewControls(true);
+      PageView.AppendViewControls();
 
       // Handle no lyrics case
       const currentLyrics = storage.get('currentLyricsData');
-      const NoLyrics =
-        typeof currentLyrics === 'string' &&
-        currentLyrics.includes('NO_LYRICS');
+      const NoLyrics = typeof currentLyrics === 'string' && currentLyrics.includes('NO_LYRICS');
       if (NoLyrics) {
         OpenNowBar();
         const lyricsContainer = document.querySelector(
@@ -214,14 +190,8 @@ function Close() {
       );
 
       if (MediaBox) {
-        MediaBox.removeEventListener(
-          'mouseenter',
-          MediaBox_Data.Functions.MouseIn,
-        );
-        MediaBox.removeEventListener(
-          'mouseleave',
-          MediaBox_Data.Functions.MouseOut,
-        );
+        MediaBox.removeEventListener('mouseenter', MediaBox_Data.Functions.MouseIn);
+        MediaBox.removeEventListener('mouseleave', MediaBox_Data.Functions.MouseOut);
       }
 
       if (MediaImage) {
