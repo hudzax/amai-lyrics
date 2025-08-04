@@ -3,14 +3,6 @@
  *
  * This module provides a simple interface to batch DOM read/write operations
  * which helps prevent layout thrashing by properly sequencing DOM operations.
- *
- * Optimizations include:
- * - Efficient queue processing with minimal memory overhead
- * - Consistent frame scheduling
- * - Proper error handling with Promise rejection
- * - Memory management with queue size limits
- * - Support for cancellation of pending operations
- * - Browser compatibility fallbacks
  */
 
 // Browser compatibility fallbacks
@@ -78,13 +70,12 @@ class FastQueue<T> {
     return -1;
   }
 
-  removeAt(index: number): boolean {
+  get(index: number): T | undefined {
     const actualIndex = this.head + index;
-    if (actualIndex >= this.head && actualIndex < this.items.length && this.items[actualIndex]) {
-      delete this.items[actualIndex];
-      return true;
+    if (actualIndex >= this.head && actualIndex < this.items.length) {
+      return this.items[actualIndex];
     }
-    return false;
+    return undefined;
   }
 
   clear(): void {
@@ -104,10 +95,8 @@ let isProcessing = false;
 
 // Performance monitoring and limits
 let lastProcessTime = 0;
-let lastCleanup = 0;
-const MAX_PROCESS_TIME = 8; // Max time (ms) to spend processing per frame
+const MAX_PROCESS_TIME = 16; // Max time (ms) to spend processing per frame
 const MAX_QUEUE_SIZE = 1000; // Prevent unbounded memory growth
-const CLEANUP_INTERVAL = 5000; // Cleanup cancelled operations every 5 seconds
 
 /**
  * Add item to queue with size limit enforcement
@@ -118,18 +107,6 @@ function addToQueue<T>(queue: FastQueue<QueueItem<T>>, item: QueueItem<T>): void
     queue.shift(); // Remove oldest
   }
   queue.push(item);
-}
-
-/**
- * Clean up cancelled operations periodically
- */
-function cleanup(): void {
-  const currentTime = now();
-  if (currentTime - lastCleanup > CLEANUP_INTERVAL) {
-    // Note: FastQueue automatically handles cleanup through its shift mechanism
-    // Cancelled items are marked and skipped during processing
-    lastCleanup = currentTime;
-  }
 }
 
 /**
@@ -190,9 +167,6 @@ function processQueues(): void {
 
   // Track processing time for monitoring
   lastProcessTime = now() - startTime;
-
-  // Periodic cleanup
-  cleanup();
 }
 
 /**
@@ -213,22 +187,15 @@ function createCancellablePromise<T>(
   fn: () => T,
 ): CancellablePromise<T> {
   const id = currentQueueId++;
-  let cancelled = false;
+  let rejectPromise: (reason?: Error) => void;
 
   const promise = new Promise<T>((resolve, reject) => {
-    if (cancelled) {
-      reject(new Error('Operation cancelled'));
-      return;
-    }
+    rejectPromise = reject;
 
     const item: QueueItem<T> = {
       fn,
-      resolve: (result: T) => {
-        if (!cancelled) resolve(result);
-      },
-      reject: (error: Error) => {
-        if (!cancelled) reject(error);
-      },
+      resolve,
+      reject,
       id,
       cancelled: false,
     };
@@ -238,8 +205,11 @@ function createCancellablePromise<T>(
   }) as CancellablePromise<T>;
 
   promise.cancel = (): boolean => {
-    cancelled = true;
-    return cancel(id);
+    const wasCancelled = cancel(id);
+    if (wasCancelled) {
+      rejectPromise(new Error('Operation cancelled'));
+    }
+    return wasCancelled;
   };
 
   return promise;
@@ -260,13 +230,21 @@ function cancel(id: number): boolean {
   // Find and mark the operation as cancelled in the read queue
   const readIndex = readQueue.findIndex((op) => op.id === id);
   if (readIndex !== -1) {
-    return readQueue.removeAt(readIndex);
+    const item = readQueue.get(readIndex);
+    if (item) {
+      item.cancelled = true;
+      return true;
+    }
   }
 
   // Find and mark the operation as cancelled in the write queue
   const writeIndex = writeQueue.findIndex((op) => op.id === id);
   if (writeIndex !== -1) {
-    return writeQueue.removeAt(writeIndex);
+    const item = writeQueue.get(writeIndex);
+    if (item) {
+      item.cancelled = true;
+      return true;
+    }
   }
 
   return false;
