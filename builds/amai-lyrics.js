@@ -412,7 +412,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.2.5";
+      version = "1.2.6";
     }
   });
 
@@ -7970,170 +7970,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // src/utils/Lyrics/SongProgressBar.ts
-  var SongProgressBar;
-  var init_SongProgressBar = __esm({
-    "src/utils/Lyrics/SongProgressBar.ts"() {
-      SongProgressBar = class {
-        constructor() {
-          this.destroyed = false;
-          this.duration = 0;
-          this.position = 0;
-        }
-        Update(params) {
-          if (this.destroyed) {
-            console.warn("This progress bar has been destroyed and cannot be used");
-            return;
-          }
-          this.duration = params.duration;
-          this.position = Math.min(params.position, this.duration);
-        }
-        Destroy() {
-          if (this.destroyed)
-            return;
-          this.destroyed = true;
-        }
-        GetFormattedDuration() {
-          return this.formatTime(this.duration);
-        }
-        GetFormattedPosition() {
-          return this.formatTime(this.position);
-        }
-        GetProgressPercentage() {
-          if (this.duration <= 0)
-            return 0;
-          return this.position / this.duration;
-        }
-        CalculatePositionFromClick(params) {
-          const { sliderBar, event } = params;
-          if (this.duration <= 0)
-            return 0;
-          const rect = sliderBar.getBoundingClientRect();
-          const clickX = event.clientX - rect.left;
-          const percentage = Math.max(0, Math.min(1, clickX / rect.width));
-          return Math.floor(percentage * this.duration);
-        }
-        formatTime(timeInMs) {
-          if (isNaN(timeInMs) || timeInMs < 0) {
-            return "0:00";
-          }
-          const totalSeconds = Math.floor(timeInMs / 1e3);
-          const minutes = Math.floor(totalSeconds / 60);
-          const seconds = totalSeconds % 60;
-          return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-        }
-      };
-    }
-  });
-
-  // src/components/Styling/Icons.ts
-  var TrackSkip, Icons;
-  var init_Icons = __esm({
-    "src/components/Styling/Icons.ts"() {
-      TrackSkip = `
-	<div class="PlaybackControl TrackSkip REPLACEME">
-		<svg viewBox="0 0 35 20" xmlns="http://www.w3.org/2000/svg">
-			<path d="M 19.467 19.905 C 20.008 19.905 20.463 19.746 21.005 19.426 L 33.61 12.023 C 34.533 11.482 35 10.817 35 9.993 C 35 9.158 34.545 8.53 33.61 7.977 L 21.005 0.574 C 20.463 0.254 19.998 0.094 19.456 0.094 C 18.374 0.094 17.475 0.917 17.475 2.418 L 17.475 9.49 C 17.315 8.898 16.873 8.408 16.135 7.977 L 3.529 0.574 C 3 0.254 2.533 0.094 1.993 0.094 C 0.911 0.094 0 0.917 0 2.418 L 0 17.582 C 0 19.083 0.91 19.906 1.993 19.906 C 2.533 19.906 3 19.746 3.529 19.426 L 16.135 12.023 C 16.861 11.593 17.315 11.088 17.475 10.485 L 17.475 17.582 C 17.475 19.083 18.386 19.906 19.467 19.906 L 19.467 19.905 Z" fill-rule="nonzero"/>
-		</svg>
-	</div>
-`;
-      Icons = {
-        LyricsPage: `
-        <svg class="Svg-sc-ytk21e-0 Svg-img-16-icon" id="SpicyLyricsPageSvg" version="1.0" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet">
-            <g clip-path="url(#clip0_1_2)">
-                <g clip-path="url(#clip1_1_2)">
-                    <path d="M167.664 32.175C163.033 27.5654 157.213 24.3179 150.845 22.7905C144.477 21.2632 137.809 21.5155 131.576 23.5194C125.343 25.5234 119.788 29.2012 115.522 34.1473C111.256 39.0935 108.446 45.1157 107.402 51.55L148.192 92.1375C154.659 91.0982 160.711 88.3022 165.682 84.0577C170.653 79.8132 174.349 74.2852 176.363 68.0832C178.377 61.8813 178.63 55.2464 177.096 48.9102C175.561 42.5741 172.297 36.7828 167.664 32.175ZM130.906 101.475L98.0051 68.725C84.8516 83.6287 71.6986 98.5328 58.5462 113.438L24.9416 151.5C22.243 154.572 20.8182 158.549 20.9557 162.627C21.0932 166.705 22.7827 170.578 25.6821 173.463C28.5815 176.348 32.4743 178.029 36.5724 178.166C40.6705 178.303 44.6678 176.885 47.7551 174.2L86.1963 140.6L130.919 101.488L130.906 101.475ZM88.445 51.175C89.5849 41.0445 93.5761 31.44 99.9594 23.4668C106.343 15.4936 114.859 9.47565 124.527 6.10546C134.196 2.73527 144.625 2.14979 154.613 4.41638C164.601 6.68297 173.744 11.7095 180.988 18.9177C188.232 26.1258 193.284 35.2226 195.562 45.1612C197.839 55.0999 197.251 65.4765 193.864 75.0971C190.477 84.7177 184.429 93.1913 176.416 99.5429C168.403 105.894 158.75 109.866 148.569 111L98.6458 154.663L60.2045 188.275C53.5213 194.108 44.8584 197.193 35.9733 196.904C27.0881 196.615 18.6462 192.974 12.3601 186.719C6.07397 180.464 2.41449 172.064 2.12407 163.223C1.83364 154.382 4.93401 145.762 10.7962 139.113L44.4134 101.05L88.445 51.175Z" />
-                    <path d="M14.4253 71.9866L24.7716 82.7005L38.1583 76.1714L31.166 89.3221L41.5123 100.036L26.8445 97.4497L19.8521 110.6L17.7792 95.8513L3.11139 93.2649L16.4981 86.7358L14.4253 71.9866Z" />
-                    <path d="M116.417 140.835L133.497 158.522L155.597 147.744L144.053 169.454L161.134 187.141L136.919 182.871L125.376 204.581L121.954 180.232L97.7398 175.963L119.839 165.184L116.417 140.835Z" />
-                    <path d="M81.5977 24.9164L63.3254 41.3689L73.3262 63.831L52.0325 51.5371L33.7602 67.9896L38.8723 43.939L17.5786 31.6451L42.0317 29.075L47.1438 5.02446L57.1446 27.4866L81.5977 24.9164Z" />
-                    <path d="M169.688 110.558L166.338 125.071L179.105 132.742L164.267 134.04L160.917 148.552L155.097 134.842L140.26 136.14L151.501 126.369L145.681 112.659L158.448 120.33L169.688 110.558Z" />
-                </g>
-            </g>
-            <defs>
-                <clipPath id="clip0_1_2">
-                    <rect width="200" height="200" />
-                </clipPath>
-                <clipPath id="clip1_1_2">
-                    <rect width="201" height="200" transform="translate(-1)"/>
-                </clipPath>
-            </defs>
-        </svg>
-    `,
-        LyricsLargeIcon: `
-        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 200 200" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon" id="SpicyLyricsPageSvg">
-            <g clip-path="url(#clip0_1_2)">
-                <g clip-path="url(#clip1_1_2)">
-                    <path d="M167.664 32.175C163.033 27.5654 157.213 24.3179 150.845 22.7905C144.477 21.2632 137.809 21.5155 131.576 23.5194C125.343 25.5234 119.788 29.2012 115.522 34.1473C111.256 39.0935 108.446 45.1157 107.402 51.55L148.192 92.1375C154.659 91.0982 160.711 88.3022 165.682 84.0577C170.653 79.8132 174.349 74.2852 176.363 68.0832C178.377 61.8813 178.63 55.2464 177.096 48.9102C175.561 42.5741 172.297 36.7828 167.664 32.175ZM130.906 101.475L98.0051 68.725C84.8516 83.6287 71.6986 98.5328 58.5462 113.438L24.9416 151.5C22.243 154.572 20.8182 158.549 20.9557 162.627C21.0932 166.705 22.7827 170.578 25.6821 173.463C28.5815 176.348 32.4743 178.029 36.5724 178.166C40.6705 178.303 44.6678 176.885 47.7551 174.2L86.1963 140.6L130.919 101.488L130.906 101.475ZM88.445 51.175C89.5849 41.0445 93.5761 31.44 99.9594 23.4668C106.343 15.4936 114.859 9.47565 124.527 6.10546C134.196 2.73527 144.625 2.14979 154.613 4.41638C164.601 6.68297 173.744 11.7095 180.988 18.9177C188.232 26.1258 193.284 35.2226 195.562 45.1612C197.839 55.0999 197.251 65.4765 193.864 75.0971C190.477 84.7177 184.429 93.1913 176.416 99.5429C168.403 105.894 158.75 109.866 148.569 111L98.6458 154.663L60.2045 188.275C53.5213 194.108 44.8584 197.193 35.9733 196.904C27.0881 196.615 18.6462 192.974 12.3601 186.719C6.07397 180.464 2.41449 172.064 2.12407 163.223C1.83364 154.382 4.93401 145.762 10.7962 139.113L44.4134 101.05L88.445 51.175Z" />
-                    <path d="M14.4253 71.9866L24.7716 82.7005L38.1583 76.1714L31.166 89.3221L41.5123 100.036L26.8445 97.4497L19.8521 110.6L17.7792 95.8513L3.11139 93.2649L16.4981 86.7358L14.4253 71.9866Z" />
-                    <path d="M116.417 140.835L133.497 158.522L155.597 147.744L144.053 169.454L161.134 187.141L136.919 182.871L125.376 204.581L121.954 180.232L97.7398 175.963L119.839 165.184L116.417 140.835Z" />
-                    <path d="M81.5977 24.9164L63.3254 41.3689L73.3262 63.831L52.0325 51.5371L33.7602 67.9896L38.8723 43.939L17.5786 31.6451L42.0317 29.075L47.1438 5.02446L57.1446 27.4866L81.5977 24.9164Z" />
-                    <path d="M169.688 110.558L166.338 125.071L179.105 132.742L164.267 134.04L160.917 148.552L155.097 134.842L140.26 136.14L151.501 126.369L145.681 112.659L158.448 120.33L169.688 110.558Z" />
-                </g>
-            </g>
-            <defs>
-                <clipPath id="clip0_1_2">
-                    <rect width="200" height="200" />
-                </clipPath>
-                <clipPath id="clip1_1_2">
-                    <rect width="201" height="200" transform="translate(-1)"/>
-                </clipPath>
-            </defs>
-        </svg>
-    `,
-        Close: `
-        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 16 16" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon">
-            <path d="M1.47 1.47a.75.75 0 0 1 1.06 0L8 6.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L9.06 8l5.47 5.47a.75.75 0 1 1-1.06 1.06L8 9.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L6.94 8 1.47 2.53a.75.75 0 0 1 0-1.06z"></path>
-        </svg>
-    `,
-        Kofi: `
-        <img height="16" loading="eager" src="data:image/png;base64,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" />
-    `,
-        NowBar: `
-        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 16 16" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon">
-            <path d="M11.5 9.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/><path d="M1.75 3A1.75 1.75 0 000 4.75v6.5C0 12.216.784 13 1.75 13H2v1.25a.75.75 0 001.5 0V13h9v1.25a.75.75 0 001.5 0V13h.25A1.75 1.75 0 0016 11.25v-6.5A1.75 1.75 0 0014.25 3H1.75zM1.5 4.75a.25.25 0 01.25-.25h12.5a.25.25 0 01.25.25v6.5a.25.25 0 01-.25.25H1.75a.25.25 0 01-.25-.25v-6.5z"/>
-        </svg>
-    `,
-        Fullscreen: `
-        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 16 16" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon">
-            <path d="M6.064 10.229l-2.418 2.418L2 11v4h4l-1.647-1.646 2.418-2.418-.707-.707zM11 2l1.647 1.647-2.418 2.418.707.707 2.418-2.418L15 6V2h-4z"/>
-        </svg>
-    `,
-        CloseFullscreen: `
-        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 24 24" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon">
-            <path d="M21.707 2.293a1 1 0 0 1 0 1.414L17.414 8h1.829a1 1 0 0 1 0 2H14V4.757a1 1 0 1 1 2 0v1.829l4.293-4.293a1 1 0 0 1 1.414 0zM2.293 21.707a1 1 0 0 1 0-1.414L6.586 16H4.757a1 1 0 0 1 0-2H10v5.243a1 1 0 0 1-2 0v-1.829l-4.293 4.293a1 1 0 0 1-1.414 0z" />
-        </svg>
-    `,
-        PrevTrack: TrackSkip.replace("REPLACEME", "PrevTrack"),
-        Play: `
-		<svg viewBox="0 0 18 20" xmlns="http://www.w3.org/2000/svg" class="Play">
-			<path d="M 1.558 20 C 2.006 20 2.381 19.838 2.874 19.561 L 16.622 11.572 C 17.527 11.053 17.894 10.65 17.894 9.997 C 17.894 9.35 17.527 8.948 16.622 8.419 L 2.874 0.439 C 2.381 0.153 2.006 0 1.558 0 C 0.706 0 0.106 0.654 0.106 1.694 L 0.106 18.298 C 0.106 19.346 0.706 20 1.558 20 L 1.558 20 Z" fill-rule="nonzero" transform="matrix(1, 0, 0, 1, 0, 8.881784197001252e-16)"/>
-		</svg>
-	`,
-        Pause: `
-		<svg viewBox="0 0 15 20" xmlns="http://www.w3.org/2000/svg" class="Pause">
-			<path d="M 4.427 19.963 C 5.513 19.963 6.06 19.416 6.06 18.33 L 6.06 1.66 C 6.06 0.545 5.513 0.037 4.427 0.037 L 1.633 0.037 C 0.548 0.037 0 0.575 0 1.66 L 0 18.331 C -0.009 19.416 0.538 19.963 1.633 19.963 L 4.427 19.963 Z M 13.377 19.963 C 14.462 19.963 15 19.416 15 18.33 L 15 1.66 C 15 0.545 14.462 0.037 13.376 0.037 L 10.573 0.037 C 9.487 0.037 8.949 0.575 8.949 1.66 L 8.949 18.331 C 8.949 19.416 9.487 19.963 10.573 19.963 L 13.376 19.963 L 13.377 19.963 Z" fill-rule="nonzero"/>
-		</svg>
-	`,
-        NextTrack: TrackSkip.replace("REPLACEME", "NextTrack"),
-        Shuffle: `
-        <svg viewBox="0 0 25 20" xmlns="http://www.w3.org/2000/svg">
-            <path d="M 19.857 19.948 C 20.135 19.94 20.403 19.841 20.62 19.663 L 24.632 16.281 C 25.123 15.868 25.123 15.223 24.632 14.797 L 20.62 11.402 C 20.403 11.224 20.135 11.125 19.857 11.117 C 19.212 11.117 18.81 11.518 18.81 12.164 L 18.81 14.1 L 17.003 14.1 C 15.853 14.1 15.144 13.738 14.33 12.782 L 11.956 9.981 L 14.33 7.167 C 15.17 6.186 15.802 5.849 16.939 5.849 L 18.81 5.849 L 18.81 7.838 C 18.81 8.471 19.212 8.871 19.857 8.871 C 20.133 8.868 20.403 8.773 20.62 8.6 L 24.632 5.216 C 25.123 4.803 25.123 4.145 24.632 3.732 L 20.62 0.337 C 20.406 0.154 20.136 0.053 19.857 0.052 C 19.212 0.052 18.81 0.453 18.81 1.087 L 18.81 3.241 L 16.925 3.241 C 15.015 3.241 13.827 3.771 12.472 5.398 L 10.277 7.992 L 7.992 5.269 C 6.738 3.798 5.55 3.241 3.719 3.241 L 1.393 3.241 C 0.569 3.241 0 3.784 0 4.546 C 0 5.308 0.567 5.849 1.393 5.849 L 3.628 5.849 C 4.712 5.849 5.436 6.199 6.249 7.167 L 8.611 9.967 L 6.247 12.782 C 5.423 13.752 4.763 14.1 3.691 14.1 L 1.393 14.1 C 0.569 14.1 0 14.641 0 15.403 C 0 16.165 0.567 16.707 1.393 16.707 L 3.783 16.707 C 5.617 16.707 6.738 16.153 7.992 14.68 L 10.29 11.956 L 12.537 14.629 C 13.815 16.153 15.066 16.707 16.925 16.707 L 18.81 16.707 L 18.81 18.902 C 18.81 19.548 19.212 19.948 19.857 19.948 Z"/>
-        </svg>
-	`,
-        Loop: `
-		<svg viewBox="0 0 20 17" xmlns="http://www.w3.org/2000/svg" class="Loop">
-			<path d="M 1.148 8.951 C 1.786 8.956 2.307 8.441 2.307 7.803 L 2.307 7.201 C 2.307 5.853 3.255 4.949 4.705 4.949 L 11.426 4.949 L 11.426 6.778 C 11.426 7.325 11.773 7.67 12.33 7.67 C 12.572 7.67 12.806 7.583 12.988 7.424 L 16.454 4.515 C 16.879 4.158 16.879 3.589 16.454 3.233 L 12.988 0.301 C 12.806 0.142 12.572 0.055 12.33 0.055 C 11.773 0.055 11.428 0.402 11.428 0.948 L 11.428 2.686 L 4.872 2.686 C 1.895 2.686 0 4.37 0 7.001 L 0 7.803 C 0 8.44 0.513 8.951 1.148 8.951 L 1.148 8.951 Z M 7.681 16.945 C 8.227 16.945 8.572 16.6 8.572 16.053 L 8.572 14.303 L 15.128 14.303 C 18.116 14.303 20 12.619 20 9.988 L 20 9.186 C 20 8.302 19.043 7.75 18.278 8.192 C 17.922 8.397 17.703 8.776 17.703 9.186 L 17.703 9.788 C 17.703 11.136 16.745 12.04 15.295 12.04 L 8.572 12.04 L 8.572 10.223 C 8.572 9.676 8.227 9.331 7.681 9.331 C 7.436 9.331 7.199 9.417 7.012 9.576 L 3.556 12.497 C 3.121 12.842 3.133 13.41 3.556 13.767 L 7.012 16.711 C 7.202 16.862 7.438 16.944 7.681 16.945 L 7.681 16.945 Z" fill-rule="nonzero"/>
-		</svg>
-	`,
-        LoopTrack: `
-		<svg viewBox="0 0 20 17" xmlns="http://www.w3.org/2000/svg" class="LoopTrack">
-			<path d="M 18.885 6.353 C 19.52 6.353 19.888 6.008 19.888 5.318 L 19.888 1.236 C 19.888 0.511 19.409 0.022 18.696 0.022 C 18.105 0.022 17.758 0.21 17.302 0.556 L 16.176 1.437 C 15.907 1.639 15.819 1.839 15.819 2.073 C 15.819 2.418 16.074 2.697 16.488 2.697 C 16.666 2.697 16.81 2.641 16.956 2.529 L 17.781 1.839 L 17.859 1.839 L 17.859 5.318 C 17.859 6.008 18.227 6.353 18.885 6.353 L 18.885 6.353 Z M 1.147 8.986 C 1.791 9.003 2.319 8.48 2.306 7.836 L 2.306 7.234 C 2.306 5.886 3.254 4.982 4.703 4.982 L 9.274 4.982 L 9.274 6.811 C 9.274 7.358 9.62 7.703 10.178 7.703 C 10.42 7.703 10.653 7.616 10.836 7.457 L 14.302 4.548 C 14.727 4.191 14.727 3.621 14.302 3.265 L 10.837 0.333 C 10.655 0.175 10.421 0.087 10.179 0.088 C 9.622 0.088 9.275 0.434 9.275 0.981 L 9.275 2.719 L 4.873 2.719 C 1.895 2.719 0 4.403 0 7.034 L 0 7.836 C 0 8.494 0.502 8.984 1.148 8.984 L 1.147 8.986 Z M 7.68 16.978 C 8.226 16.978 8.572 16.633 8.572 16.086 L 8.572 14.336 L 15.127 14.336 C 18.115 14.336 20 12.652 20 10.021 L 20 9.219 C 20.013 8.58 19.491 8.058 18.851 8.071 C 18.21 8.054 17.686 8.578 17.703 9.219 L 17.703 9.821 C 17.703 11.169 16.744 12.073 15.295 12.073 L 8.572 12.073 L 8.572 10.256 C 8.572 9.709 8.226 9.364 7.68 9.364 C 7.435 9.364 7.198 9.45 7.011 9.609 L 3.555 12.53 C 3.12 12.875 3.132 13.443 3.555 13.8 L 7.011 16.744 C 7.201 16.895 7.437 16.977 7.68 16.978 L 7.68 16.978 Z" fill-rule="nonzero" transform="matrix(1, 0, 0, 1, 0, -8.881784197001252e-16)"/>
-		</svg>
-	`
-      };
-    }
-  });
-
   // src/utils/Animator.ts
   var Animator;
   var init_Animator = __esm({
@@ -8241,12 +8077,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     queue.push(item);
   }
-  function cleanup() {
-    const currentTime = now();
-    if (currentTime - lastCleanup > CLEANUP_INTERVAL) {
-      lastCleanup = currentTime;
-    }
-  }
   function processQueues() {
     isProcessing = true;
     const startTime = now();
@@ -8289,7 +8119,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       scheduleFrame();
     }
     lastProcessTime = now() - startTime;
-    cleanup();
   }
   function scheduleFrame() {
     if (!scheduledAnimationFrame && (readQueue.length > 0 || writeQueue.length > 0)) {
@@ -8299,22 +8128,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   function createCancellablePromise(queue, fn) {
     const id = currentQueueId++;
-    let cancelled = false;
+    let rejectPromise;
     const promise = new Promise((resolve, reject) => {
-      if (cancelled) {
-        reject(new Error("Operation cancelled"));
-        return;
-      }
+      rejectPromise = reject;
       const item = {
         fn,
-        resolve: (result) => {
-          if (!cancelled)
-            resolve(result);
-        },
-        reject: (error) => {
-          if (!cancelled)
-            reject(error);
-        },
+        resolve,
+        reject,
         id,
         cancelled: false
       };
@@ -8322,8 +8142,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       scheduleFrame();
     });
     promise.cancel = () => {
-      cancelled = true;
-      return cancel(id);
+      const wasCancelled = cancel(id);
+      if (wasCancelled) {
+        rejectPromise(new Error("Operation cancelled"));
+      }
+      return wasCancelled;
     };
     return promise;
   }
@@ -8334,15 +8157,23 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   function cancel(id) {
     const readIndex = readQueue.findIndex((op) => op.id === id);
     if (readIndex !== -1) {
-      return readQueue.removeAt(readIndex);
+      const item = readQueue.get(readIndex);
+      if (item) {
+        item.cancelled = true;
+        return true;
+      }
     }
     const writeIndex = writeQueue.findIndex((op) => op.id === id);
     if (writeIndex !== -1) {
-      return writeQueue.removeAt(writeIndex);
+      const item = writeQueue.get(writeIndex);
+      if (item) {
+        item.cancelled = true;
+        return true;
+      }
     }
     return false;
   }
-  var now, raf, FastQueue, readQueue, writeQueue, scheduledAnimationFrame, currentQueueId, isProcessing, lastProcessTime, lastCleanup, MAX_PROCESS_TIME, MAX_QUEUE_SIZE, CLEANUP_INTERVAL, fastdom_default;
+  var now, raf, FastQueue, readQueue, writeQueue, scheduledAnimationFrame, currentQueueId, isProcessing, lastProcessTime, MAX_PROCESS_TIME, MAX_QUEUE_SIZE, fastdom_default;
   var init_fastdom = __esm({
     "src/utils/fastdom.ts"() {
       now = (() => {
@@ -8388,13 +8219,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           }
           return -1;
         }
-        removeAt(index) {
+        get(index) {
           const actualIndex = this.head + index;
-          if (actualIndex >= this.head && actualIndex < this.items.length && this.items[actualIndex]) {
-            delete this.items[actualIndex];
-            return true;
+          if (actualIndex >= this.head && actualIndex < this.items.length) {
+            return this.items[actualIndex];
           }
-          return false;
+          return void 0;
         }
         clear() {
           this.items.length = 0;
@@ -8407,10 +8237,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       currentQueueId = 0;
       isProcessing = false;
       lastProcessTime = 0;
-      lastCleanup = 0;
-      MAX_PROCESS_TIME = 8;
+      MAX_PROCESS_TIME = 16;
       MAX_QUEUE_SIZE = 1e3;
-      CLEANUP_INTERVAL = 5e3;
       fastdom_default = {
         read: (fn) => {
           return createCancellablePromise(readQueue, fn);
@@ -8597,9 +8425,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-13196-443LUWLzlKx5/19855f8eddd8/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-26236-j4x5kija4n4S/198766010db8/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-13196-443LUWLzlKx5/19855f8eddd8/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-26236-j4x5kija4n4S/198766010db8/DotLoader.css"() {
     }
   });
 
@@ -9480,105 +9308,29 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // src/utils/Lyrics/Global/Applyer.ts
-  var Applyer_exports = {};
-  __export(Applyer_exports, {
-    default: () => ApplyLyrics
-  });
-  function ApplyLyrics(lyrics) {
-    if (!document.querySelector("#SpicyLyricsPage"))
-      return;
-    setBlurringLastLine(null);
-    if (!lyrics || !lyrics?.id)
-      return;
-    const currentTrackId = Spicetify.Player.data.item?.uri?.split(":")[2];
-    if (currentTrackId !== lyrics?.id) {
-      fetchLyrics(Spicetify.Player.data.item?.uri).then(ApplyLyrics);
-      return;
-    }
-    const lyricsHandlers = {
-      Syllable: ApplySyllableLyrics,
-      Line: ApplyLineLyrics,
-      Static: ApplyStaticLyrics
-    };
-    const applyHandler = lyricsHandlers[lyrics.Type];
-    if (applyHandler) {
-      applyHandler(lyrics);
-      showRefreshButton();
-      addLinesEvListener();
-    }
-  }
-  var init_Applyer = __esm({
-    "src/utils/Lyrics/Global/Applyer.ts"() {
-      init_LyricsAnimator();
-      init_Static();
-      init_Line();
-      init_Syllable();
-      init_fetchLyrics();
-      init_PageView();
-      init_lyrics();
-    }
-  });
-
-  // src/components/Utils/TransferElement.ts
-  function TransferElement(element, targetContainer, index = -1) {
-    if (!element || !targetContainer) {
-      console.error("Both element and target container must be provided.");
-      return;
-    }
-    try {
-      if (index < 0 || index >= targetContainer.children.length) {
-        targetContainer.appendChild(element);
-      } else {
-        targetContainer.insertBefore(element, targetContainer.children[index]);
-      }
-    } catch (error) {
-      console.error("Error transferring element:", error);
-    }
-  }
-  var init_TransferElement = __esm({
-    "src/components/Utils/TransferElement.ts"() {
-    }
-  });
-
-  // src/components/Global/Session.ts
-  var sessionHistory, Session, Session_default;
-  var init_Session = __esm({
-    "src/components/Global/Session.ts"() {
-      init_Global();
-      sessionHistory = [];
-      Session = {
-        Navigate: (data) => {
-          Spicetify.Platform.History.push(data);
-        },
-        GoBack: () => {
-          if (sessionHistory.length > 1) {
-            Session.Navigate(sessionHistory[sessionHistory.length - 2]);
-          } else {
-            Session.Navigate({ pathname: "/" });
-          }
-        },
-        GetPreviousLocation: () => {
-          if (sessionHistory.length > 1) {
-            return sessionHistory[sessionHistory.length - 2];
-          }
-          return null;
-        },
-        RecordNavigation: (data) => {
-          Session.PushToHistory(data);
-          Global_default.Event.evoke("session:navigation", data);
-        },
-        FilterOutTheSameLocation: (data) => {
-          sessionHistory = sessionHistory.filter(
-            (location) => location.pathname !== data.pathname && location.search !== data?.search && location.hash !== data?.hash
-          );
-        },
-        PushToHistory: (data) => {
-          sessionHistory.push(data);
-        }
+  // src/constants/PageViewSelectors.ts
+  var PageViewSelectors;
+  var init_PageViewSelectors = __esm({
+    "src/constants/PageViewSelectors.ts"() {
+      PageViewSelectors = {
+        PageRoot: ".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]",
+        SpicyLyricsPage: "#SpicyLyricsPage",
+        ContentBox: "#SpicyLyricsPage .ContentBox",
+        MediaImage: "#SpicyLyricsPage .MediaImage",
+        SongName: "#SpicyLyricsPage .SongName span",
+        Artists: "#SpicyLyricsPage .Artists span",
+        ViewControls: "#SpicyLyricsPage .ContentBox .ViewControls",
+        Header: "#SpicyLyricsPage .ContentBox .NowBar .Header",
+        HeaderViewControls: "#SpicyLyricsPage .ContentBox .NowBar .Header .ViewControls",
+        RefreshLyricsButton: "#RefreshLyrics",
+        WatchMusicVideoButton: "#WatchMusicVideoButton",
+        CloseButton: "#Close",
+        FullscreenToggleButton: "#FullscreenToggle",
+        LoaderContainer: "#SpicyLyricsPage .loaderContainer",
+        LyricsContent: "#SpicyLyricsPage .LyricsContent",
+        NowBar: "#SpicyLyricsPage .NowBar",
+        NotificationContainer: "#SpicyLyricsPage .NotificationContainer"
       };
-      window._spicy_lyrics_session = Session;
-      Session_default = Session;
     }
   });
 
@@ -9671,30 +9423,130 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // src/constants/PageViewSelectors.ts
-  var PageViewSelectors;
-  var init_PageViewSelectors = __esm({
-    "src/constants/PageViewSelectors.ts"() {
-      PageViewSelectors = {
-        PageRoot: ".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]",
-        SpicyLyricsPage: "#SpicyLyricsPage",
-        ContentBox: "#SpicyLyricsPage .ContentBox",
-        MediaImage: "#SpicyLyricsPage .MediaImage",
-        SongName: "#SpicyLyricsPage .SongName span",
-        Artists: "#SpicyLyricsPage .Artists span",
-        ViewControls: "#SpicyLyricsPage .ContentBox .ViewControls",
-        Header: "#SpicyLyricsPage .ContentBox .NowBar .Header",
-        HeaderViewControls: "#SpicyLyricsPage .ContentBox .NowBar .Header .ViewControls",
-        RefreshLyricsButton: "#RefreshLyrics",
-        WatchMusicVideoButton: "#WatchMusicVideoButton",
-        ReleaseLogsButton: "#ReleaseLogsButton",
-        CloseButton: "#Close",
-        FullscreenToggleButton: "#FullscreenToggle",
-        LoaderContainer: "#SpicyLyricsPage .loaderContainer",
-        LyricsContent: "#SpicyLyricsPage .LyricsContent",
-        NowBar: "#SpicyLyricsPage .NowBar",
-        NotificationContainer: "#SpicyLyricsPage .NotificationContainer"
-      };
+  // src/components/Pages/pageButtons.ts
+  function setupActionButtons(maid2) {
+    setupRefreshButton(maid2);
+    setupWatchMusicVideoButton(maid2);
+  }
+  function setupRefreshButton(maid2) {
+    const refreshButton = document.querySelector(
+      PageViewSelectors.RefreshLyricsButton
+    );
+    if (!refreshButton)
+      return;
+    const clickHandler = async () => {
+      const currentUri = Spicetify.Player.data?.item?.uri;
+      if (!currentUri) {
+        Spicetify.showNotification("No track playing", false, 1e3);
+        return;
+      }
+      await fastdom_default.write(() => {
+        refreshButton.classList.add("hidden");
+      });
+      try {
+        const trackId = currentUri.split(":")[2];
+        removeLyricsFromCache(trackId);
+        storage_default.set("currentLyricsData", null);
+        const lyrics = await fetchLyrics(currentUri);
+        ApplyLyrics(lyrics);
+      } catch (error) {
+        console.error("Error refreshing lyrics:", error);
+        Spicetify.showNotification("Error refreshing lyrics", false, 2e3);
+      }
+    };
+    refreshButton.addEventListener("click", clickHandler);
+    maid2?.Give(() => refreshButton.removeEventListener("click", clickHandler));
+  }
+  function setupWatchMusicVideoButton(maid2) {
+    const watchMusicVideoButton = document.querySelector(
+      PageViewSelectors.WatchMusicVideoButton
+    );
+    if (!watchMusicVideoButton)
+      return;
+    const clickHandler = async () => {
+      const songName = await SpotifyPlayer.GetSongName();
+      const artists = await SpotifyPlayer.GetArtists();
+      if (!songName || !artists || artists.length === 0) {
+        Spicetify.showNotification("No track playing or artist information available", false, 1e3);
+        return;
+      }
+      const artistNames = SpotifyPlayer.JoinArtists(artists);
+      const searchQuery = encodeURIComponent(`${artistNames} ${songName} music video`);
+      const youtubeUrl = `https://www.youtube.com/results?search_query=${searchQuery}`;
+      window.open(youtubeUrl, "_blank");
+    };
+    watchMusicVideoButton.addEventListener("click", clickHandler);
+    maid2?.Give(() => watchMusicVideoButton.removeEventListener("click", clickHandler));
+  }
+  function showRefreshButton() {
+    const refreshButton = document.querySelector(
+      PageViewSelectors.RefreshLyricsButton
+    );
+    if (refreshButton) {
+      fastdom_default.write(() => {
+        refreshButton.classList.remove("hidden");
+      });
+    }
+  }
+  function hideRefreshButton() {
+    const refreshButton = document.querySelector(
+      PageViewSelectors.RefreshLyricsButton
+    );
+    if (refreshButton) {
+      fastdom_default.write(() => {
+        refreshButton.classList.add("hidden");
+      });
+    }
+  }
+  var init_pageButtons = __esm({
+    "src/components/Pages/pageButtons.ts"() {
+      init_PageViewSelectors();
+      init_fastdom();
+      init_storage();
+      init_cache();
+      init_fetchLyrics();
+      init_Applyer();
+      init_SpotifyPlayer();
+    }
+  });
+
+  // src/utils/Lyrics/Global/Applyer.ts
+  var Applyer_exports = {};
+  __export(Applyer_exports, {
+    default: () => ApplyLyrics
+  });
+  function ApplyLyrics(lyrics) {
+    if (!document.querySelector("#SpicyLyricsPage"))
+      return;
+    setBlurringLastLine(null);
+    if (!lyrics || !lyrics?.id)
+      return;
+    const currentTrackId = Spicetify.Player.data.item?.uri?.split(":")[2];
+    if (currentTrackId !== lyrics?.id) {
+      fetchLyrics(Spicetify.Player.data.item?.uri).then(ApplyLyrics);
+      return;
+    }
+    const lyricsHandlers = {
+      Syllable: ApplySyllableLyrics,
+      Line: ApplyLineLyrics,
+      Static: ApplyStaticLyrics
+    };
+    const applyHandler = lyricsHandlers[lyrics.Type];
+    if (applyHandler) {
+      applyHandler(lyrics);
+      showRefreshButton();
+      addLinesEvListener();
+    }
+  }
+  var init_Applyer = __esm({
+    "src/utils/Lyrics/Global/Applyer.ts"() {
+      init_LyricsAnimator();
+      init_Static();
+      init_Line();
+      init_Syllable();
+      init_fetchLyrics();
+      init_pageButtons();
+      init_lyrics();
     }
   });
 
@@ -9702,6 +9554,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var PageHTML, NowBarHTML;
   var init_PageHTML = __esm({
     "src/components/Pages/PageHTML.ts"() {
+      init_Defaults();
       PageHTML = `
 <div class="NotificationContainer"></div>
 <div class="ContentBox">
@@ -9727,8 +9580,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         <div class="MediaBox">
             <div class="MediaContent" draggable="true"></div>
             <div class="MediaImagePlaceholder"></div>
-            <img class="MediaImage" 
-                 src="" 
+            <img class="MediaImage"
+                 src=""
                  data-high-res=""
                  fetchpriority="high"
                  loading="eager"
@@ -9745,158 +9598,21 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         </div>
     </div>
     <div class="AmaiPageButtonContainer">
-      <button id="RefreshLyrics" class="AmaiPageButton">
-          Reload Current Lyrics
-      </button>  
-      <button id="WatchMusicVideoButton" class="AmaiPageButton">
-          Watch Music Video
-      </button>
-      <button id="ReleaseLogsButton" class="AmaiPageButton">
-          Open Release Notes
-      </button>
+        <button id="RefreshLyrics" class="AmaiPageButton">
+            Reload Current Lyrics
+        </button>
+        <button id="WatchMusicVideoButton" class="AmaiPageButton">
+            Watch Music Video
+        </button>
+        <span onclick="window.open('https://github.com/hudzax/amai-lyrics/releases')" class="amai-version-number">Amai Lyrics v${Defaults_default.Version}</span>
     </div>
 </div>
 `;
     }
   });
 
-  // src/components/Pages/PageView.ts
-  var PageView_exports = {};
-  __export(PageView_exports, {
-    PageRoot: () => PageRoot,
-    Tooltips: () => Tooltips,
-    default: () => PageView_default,
-    hideRefreshButton: () => hideRefreshButton,
-    showRefreshButton: () => showRefreshButton
-  });
-  async function OpenPage() {
-    if (PageView.IsOpened)
-      return;
-    maid = new Maid();
-    await createPageElement();
-    Defaults_default.LyricsContainerExists = true;
-    const contentBox = document.querySelector(PageViewSelectors.ContentBox);
-    if (contentBox) {
-      await ApplyDynamicBackground(contentBox);
-    }
-    const mediaImage = document.querySelector(PageViewSelectors.MediaImage);
-    if (mediaImage) {
-      setupImageLoading(mediaImage);
-    }
-    await UpdatePageContent();
-    const currentUri = Spicetify.Player.data?.item?.uri;
-    if (currentUri) {
-      fetchLyrics(currentUri).then(ApplyLyrics);
-    }
-    Session_OpenNowBar();
-    Session_NowBar_SetSide();
-    await AppendViewControls();
-    setupRefreshButton();
-    setupReleaseLogsButton();
-    setupWatchMusicVideoButton();
-    PageView.IsOpened = true;
-  }
-  async function createPageElement() {
-    let elem;
-    await fastdom_default.write(() => {
-      elem = document.createElement("div");
-      elem.id = "SpicyLyricsPage";
-      elem.innerHTML = PageHTML;
-      if (PageRoot)
-        PageRoot.appendChild(elem);
-    });
-    const nowBar = document.querySelector(PageViewSelectors.NowBar);
-    if (nowBar) {
-      nowBar.innerHTML = NowBarHTML;
-    }
-  }
-  async function DestroyPage() {
-    if (!PageView.IsOpened)
-      return;
-    if (Fullscreen_default.IsOpen)
-      Fullscreen_default.Close();
-    const spicyLyricsPage = document.querySelector(PageViewSelectors.SpicyLyricsPage);
-    if (!spicyLyricsPage)
-      return;
-    await fastdom_default.write(() => {
-      spicyLyricsPage?.remove();
-    });
-    Defaults_default.LyricsContainerExists = false;
-    removeLinesEvListener();
-    Object.values(Tooltips).forEach((a) => a?.destroy());
-    ResetLastLine();
-    ScrollSimplebar?.unMount();
-    maid?.CleanUp();
-    maid = null;
-    PageView.IsOpened = false;
-  }
-  async function AppendViewControls(ReAppend = false) {
-    const elem = document.querySelector(PageViewSelectors.ViewControls);
-    if (!elem)
-      return;
-    await fastdom_default.write(() => {
-      if (ReAppend)
-        elem.innerHTML = "";
-      elem.innerHTML = `
-          <button id="Close" class="ViewControl">${Icons.Close}</button>
-          <button id="FullscreenToggle" class="ViewControl">${Fullscreen_default.IsOpen ? Icons.CloseFullscreen : Icons.Fullscreen}</button>
-      `;
-    });
-    if (Fullscreen_default.IsOpen) {
-      const headerElem = document.querySelector(PageViewSelectors.Header);
-      if (headerElem) {
-        await fastdom_default.write(() => {
-          TransferElement(elem, headerElem, 0);
-        });
-      }
-      Object.values(Tooltips).forEach((a) => a?.destroy());
-      const viewControlsElem = document.querySelector(
-        PageViewSelectors.HeaderViewControls
-      );
-      SetupTippy(viewControlsElem);
-    } else {
-      const headerViewControlsElem = document.querySelector(
-        PageViewSelectors.HeaderViewControls
-      );
-      if (headerViewControlsElem) {
-        const contentBoxElem = document.querySelector(PageViewSelectors.ContentBox);
-        if (contentBoxElem) {
-          await fastdom_default.write(() => {
-            TransferElement(elem, contentBoxElem);
-          });
-        }
-      }
-      Object.values(Tooltips).forEach((a) => a?.destroy());
-      SetupTippy(elem);
-    }
-    function SetupTippy(elem2) {
-      if (!elem2)
-        return;
-      const closeButton = elem2.querySelector(PageViewSelectors.CloseButton);
-      if (closeButton) {
-        Tooltips.Close = Spicetify.Tippy(closeButton, {
-          ...Spicetify.TippyProps,
-          content: `Exit Lyrics Page`
-        });
-        const closeClickHandler = () => Session_default.GoBack();
-        closeButton.addEventListener("click", closeClickHandler);
-        maid?.Give(() => closeButton.removeEventListener("click", closeClickHandler));
-      }
-      const fullscreenBtn = elem2.querySelector(
-        PageViewSelectors.FullscreenToggleButton
-      );
-      if (fullscreenBtn) {
-        Tooltips.FullscreenToggle = Spicetify.Tippy(fullscreenBtn, {
-          ...Spicetify.TippyProps,
-          content: `Toggle Fullscreen View`
-        });
-        const fullscreenClickHandler = () => Fullscreen_default.Toggle();
-        fullscreenBtn.addEventListener("click", fullscreenClickHandler);
-        maid?.Give(() => fullscreenBtn.removeEventListener("click", fullscreenClickHandler));
-      }
-    }
-  }
-  function setupImageLoading(imageElement) {
+  // src/components/Pages/pageContent.ts
+  function setupImageLoading(imageElement, maid2) {
     if (imageElement._setupImageLoading)
       return;
     imageElement._setupImageLoading = true;
@@ -9918,12 +9634,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       }
     };
     imageElement.onload = onloadHandler;
-    maid?.Give(() => {
+    maid2?.Give(() => {
       imageElement.onload = null;
     });
   }
-  async function UpdatePageContent() {
-    if (!PageView.IsOpened)
+  async function UpdatePageContent(isOpened) {
+    if (!isOpened)
       return;
     const mediaImage = document.querySelector(PageViewSelectors.MediaImage);
     if (mediaImage) {
@@ -9974,89 +9690,335 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       console.error("Failed to load artwork:", error);
     }
   }
-  function setupRefreshButton() {
-    const refreshButton = document.querySelector(
-      PageViewSelectors.RefreshLyricsButton
-    );
-    if (!refreshButton)
+  var init_pageContent = __esm({
+    "src/components/Pages/pageContent.ts"() {
+      init_SpotifyPlayer();
+      init_fastdom();
+      init_PageViewSelectors();
+    }
+  });
+
+  // src/components/Styling/Icons.ts
+  var TrackSkip, Icons;
+  var init_Icons = __esm({
+    "src/components/Styling/Icons.ts"() {
+      TrackSkip = `
+	<div class="PlaybackControl TrackSkip REPLACEME">
+		<svg viewBox="0 0 35 20" xmlns="http://www.w3.org/2000/svg">
+			<path d="M 19.467 19.905 C 20.008 19.905 20.463 19.746 21.005 19.426 L 33.61 12.023 C 34.533 11.482 35 10.817 35 9.993 C 35 9.158 34.545 8.53 33.61 7.977 L 21.005 0.574 C 20.463 0.254 19.998 0.094 19.456 0.094 C 18.374 0.094 17.475 0.917 17.475 2.418 L 17.475 9.49 C 17.315 8.898 16.873 8.408 16.135 7.977 L 3.529 0.574 C 3 0.254 2.533 0.094 1.993 0.094 C 0.911 0.094 0 0.917 0 2.418 L 0 17.582 C 0 19.083 0.91 19.906 1.993 19.906 C 2.533 19.906 3 19.746 3.529 19.426 L 16.135 12.023 C 16.861 11.593 17.315 11.088 17.475 10.485 L 17.475 17.582 C 17.475 19.083 18.386 19.906 19.467 19.906 L 19.467 19.905 Z" fill-rule="nonzero"/>
+		</svg>
+	</div>
+`;
+      Icons = {
+        LyricsPage: `
+        <svg class="Svg-sc-ytk21e-0 Svg-img-16-icon" id="SpicyLyricsPageSvg" version="1.0" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet">
+            <g clip-path="url(#clip0_1_2)">
+                <g clip-path="url(#clip1_1_2)">
+                    <path d="M167.664 32.175C163.033 27.5654 157.213 24.3179 150.845 22.7905C144.477 21.2632 137.809 21.5155 131.576 23.5194C125.343 25.5234 119.788 29.2012 115.522 34.1473C111.256 39.0935 108.446 45.1157 107.402 51.55L148.192 92.1375C154.659 91.0982 160.711 88.3022 165.682 84.0577C170.653 79.8132 174.349 74.2852 176.363 68.0832C178.377 61.8813 178.63 55.2464 177.096 48.9102C175.561 42.5741 172.297 36.7828 167.664 32.175ZM130.906 101.475L98.0051 68.725C84.8516 83.6287 71.6986 98.5328 58.5462 113.438L24.9416 151.5C22.243 154.572 20.8182 158.549 20.9557 162.627C21.0932 166.705 22.7827 170.578 25.6821 173.463C28.5815 176.348 32.4743 178.029 36.5724 178.166C40.6705 178.303 44.6678 176.885 47.7551 174.2L86.1963 140.6L130.919 101.488L130.906 101.475ZM88.445 51.175C89.5849 41.0445 93.5761 31.44 99.9594 23.4668C106.343 15.4936 114.859 9.47565 124.527 6.10546C134.196 2.73527 144.625 2.14979 154.613 4.41638C164.601 6.68297 173.744 11.7095 180.988 18.9177C188.232 26.1258 193.284 35.2226 195.562 45.1612C197.839 55.0999 197.251 65.4765 193.864 75.0971C190.477 84.7177 184.429 93.1913 176.416 99.5429C168.403 105.894 158.75 109.866 148.569 111L98.6458 154.663L60.2045 188.275C53.5213 194.108 44.8584 197.193 35.9733 196.904C27.0881 196.615 18.6462 192.974 12.3601 186.719C6.07397 180.464 2.41449 172.064 2.12407 163.223C1.83364 154.382 4.93401 145.762 10.7962 139.113L44.4134 101.05L88.445 51.175Z" />
+                    <path d="M14.4253 71.9866L24.7716 82.7005L38.1583 76.1714L31.166 89.3221L41.5123 100.036L26.8445 97.4497L19.8521 110.6L17.7792 95.8513L3.11139 93.2649L16.4981 86.7358L14.4253 71.9866Z" />
+                    <path d="M116.417 140.835L133.497 158.522L155.597 147.744L144.053 169.454L161.134 187.141L136.919 182.871L125.376 204.581L121.954 180.232L97.7398 175.963L119.839 165.184L116.417 140.835Z" />
+                    <path d="M81.5977 24.9164L63.3254 41.3689L73.3262 63.831L52.0325 51.5371L33.7602 67.9896L38.8723 43.939L17.5786 31.6451L42.0317 29.075L47.1438 5.02446L57.1446 27.4866L81.5977 24.9164Z" />
+                    <path d="M169.688 110.558L166.338 125.071L179.105 132.742L164.267 134.04L160.917 148.552L155.097 134.842L140.26 136.14L151.501 126.369L145.681 112.659L158.448 120.33L169.688 110.558Z" />
+                </g>
+            </g>
+            <defs>
+                <clipPath id="clip0_1_2">
+                    <rect width="200" height="200" />
+                </clipPath>
+                <clipPath id="clip1_1_2">
+                    <rect width="201" height="200" transform="translate(-1)"/>
+                </clipPath>
+            </defs>
+        </svg>
+    `,
+        LyricsLargeIcon: `
+        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 200 200" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon" id="SpicyLyricsPageSvg">
+            <g clip-path="url(#clip0_1_2)">
+                <g clip-path="url(#clip1_1_2)">
+                    <path d="M167.664 32.175C163.033 27.5654 157.213 24.3179 150.845 22.7905C144.477 21.2632 137.809 21.5155 131.576 23.5194C125.343 25.5234 119.788 29.2012 115.522 34.1473C111.256 39.0935 108.446 45.1157 107.402 51.55L148.192 92.1375C154.659 91.0982 160.711 88.3022 165.682 84.0577C170.653 79.8132 174.349 74.2852 176.363 68.0832C178.377 61.8813 178.63 55.2464 177.096 48.9102C175.561 42.5741 172.297 36.7828 167.664 32.175ZM130.906 101.475L98.0051 68.725C84.8516 83.6287 71.6986 98.5328 58.5462 113.438L24.9416 151.5C22.243 154.572 20.8182 158.549 20.9557 162.627C21.0932 166.705 22.7827 170.578 25.6821 173.463C28.5815 176.348 32.4743 178.029 36.5724 178.166C40.6705 178.303 44.6678 176.885 47.7551 174.2L86.1963 140.6L130.919 101.488L130.906 101.475ZM88.445 51.175C89.5849 41.0445 93.5761 31.44 99.9594 23.4668C106.343 15.4936 114.859 9.47565 124.527 6.10546C134.196 2.73527 144.625 2.14979 154.613 4.41638C164.601 6.68297 173.744 11.7095 180.988 18.9177C188.232 26.1258 193.284 35.2226 195.562 45.1612C197.839 55.0999 197.251 65.4765 193.864 75.0971C190.477 84.7177 184.429 93.1913 176.416 99.5429C168.403 105.894 158.75 109.866 148.569 111L98.6458 154.663L60.2045 188.275C53.5213 194.108 44.8584 197.193 35.9733 196.904C27.0881 196.615 18.6462 192.974 12.3601 186.719C6.07397 180.464 2.41449 172.064 2.12407 163.223C1.83364 154.382 4.93401 145.762 10.7962 139.113L44.4134 101.05L88.445 51.175Z" />
+                    <path d="M14.4253 71.9866L24.7716 82.7005L38.1583 76.1714L31.166 89.3221L41.5123 100.036L26.8445 97.4497L19.8521 110.6L17.7792 95.8513L3.11139 93.2649L16.4981 86.7358L14.4253 71.9866Z" />
+                    <path d="M116.417 140.835L133.497 158.522L155.597 147.744L144.053 169.454L161.134 187.141L136.919 182.871L125.376 204.581L121.954 180.232L97.7398 175.963L119.839 165.184L116.417 140.835Z" />
+                    <path d="M81.5977 24.9164L63.3254 41.3689L73.3262 63.831L52.0325 51.5371L33.7602 67.9896L38.8723 43.939L17.5786 31.6451L42.0317 29.075L47.1438 5.02446L57.1446 27.4866L81.5977 24.9164Z" />
+                    <path d="M169.688 110.558L166.338 125.071L179.105 132.742L164.267 134.04L160.917 148.552L155.097 134.842L140.26 136.14L151.501 126.369L145.681 112.659L158.448 120.33L169.688 110.558Z" />
+                </g>
+            </g>
+            <defs>
+                <clipPath id="clip0_1_2">
+                    <rect width="200" height="200" />
+                </clipPath>
+                <clipPath id="clip1_1_2">
+                    <rect width="201" height="200" transform="translate(-1)"/>
+                </clipPath>
+            </defs>
+        </svg>
+    `,
+        Close: `
+        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 16 16" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon">
+            <path d="M1.47 1.47a.75.75 0 0 1 1.06 0L8 6.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L9.06 8l5.47 5.47a.75.75 0 1 1-1.06 1.06L8 9.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L6.94 8 1.47 2.53a.75.75 0 0 1 0-1.06z"></path>
+        </svg>
+    `,
+        Kofi: `
+        <img height="16" loading="eager" src="data:image/png;base64,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" />
+    `,
+        NowBar: `
+        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 16 16" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon">
+            <path d="M11.5 9.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/><path d="M1.75 3A1.75 1.75 0 000 4.75v6.5C0 12.216.784 13 1.75 13H2v1.25a.75.75 0 001.5 0V13h9v1.25a.75.75 0 001.5 0V13h.25A1.75 1.75 0 0016 11.25v-6.5A1.75 1.75 0 0014.25 3H1.75zM1.5 4.75a.25.25 0 01.25-.25h12.5a.25.25 0 01.25.25v6.5a.25.25 0 01-.25.25H1.75a.25.25 0 01-.25-.25v-6.5z"/>
+        </svg>
+    `,
+        Fullscreen: `
+        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 16 16" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon">
+            <path d="M6.064 10.229l-2.418 2.418L2 11v4h4l-1.647-1.646 2.418-2.418-.707-.707zM11 2l1.647 1.647-2.418 2.418.707.707 2.418-2.418L15 6V2h-4z"/>
+        </svg>
+    `,
+        CloseFullscreen: `
+        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 24 24" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon">
+            <path d="M21.707 2.293a1 1 0 0 1 0 1.414L17.414 8h1.829a1 1 0 0 1 0 2H14V4.757a1 1 0 1 1 2 0v1.829l4.293-4.293a1 1 0 0 1 1.414 0zM2.293 21.707a1 1 0 0 1 0-1.414L6.586 16H4.757a1 1 0 0 1 0-2H10v5.243a1 1 0 0 1-2 0v-1.829l-4.293 4.293a1 1 0 0 1-1.414 0z" />
+        </svg>
+    `,
+        PrevTrack: TrackSkip.replace("REPLACEME", "PrevTrack"),
+        Play: `
+		<svg viewBox="0 0 18 20" xmlns="http://www.w3.org/2000/svg" class="Play">
+			<path d="M 1.558 20 C 2.006 20 2.381 19.838 2.874 19.561 L 16.622 11.572 C 17.527 11.053 17.894 10.65 17.894 9.997 C 17.894 9.35 17.527 8.948 16.622 8.419 L 2.874 0.439 C 2.381 0.153 2.006 0 1.558 0 C 0.706 0 0.106 0.654 0.106 1.694 L 0.106 18.298 C 0.106 19.346 0.706 20 1.558 20 L 1.558 20 Z" fill-rule="nonzero" transform="matrix(1, 0, 0, 1, 0, 8.881784197001252e-16)"/>
+		</svg>
+	`,
+        Pause: `
+		<svg viewBox="0 0 15 20" xmlns="http://www.w3.org/2000/svg" class="Pause">
+			<path d="M 4.427 19.963 C 5.513 19.963 6.06 19.416 6.06 18.33 L 6.06 1.66 C 6.06 0.545 5.513 0.037 4.427 0.037 L 1.633 0.037 C 0.548 0.037 0 0.575 0 1.66 L 0 18.331 C -0.009 19.416 0.538 19.963 1.633 19.963 L 4.427 19.963 Z M 13.377 19.963 C 14.462 19.963 15 19.416 15 18.33 L 15 1.66 C 15 0.545 14.462 0.037 13.376 0.037 L 10.573 0.037 C 9.487 0.037 8.949 0.575 8.949 1.66 L 8.949 18.331 C 8.949 19.416 9.487 19.963 10.573 19.963 L 13.376 19.963 L 13.377 19.963 Z" fill-rule="nonzero"/>
+		</svg>
+	`,
+        NextTrack: TrackSkip.replace("REPLACEME", "NextTrack"),
+        Shuffle: `
+        <svg viewBox="0 0 25 20" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 19.857 19.948 C 20.135 19.94 20.403 19.841 20.62 19.663 L 24.632 16.281 C 25.123 15.868 25.123 15.223 24.632 14.797 L 20.62 11.402 C 20.403 11.224 20.135 11.125 19.857 11.117 C 19.212 11.117 18.81 11.518 18.81 12.164 L 18.81 14.1 L 17.003 14.1 C 15.853 14.1 15.144 13.738 14.33 12.782 L 11.956 9.981 L 14.33 7.167 C 15.17 6.186 15.802 5.849 16.939 5.849 L 18.81 5.849 L 18.81 7.838 C 18.81 8.471 19.212 8.871 19.857 8.871 C 20.133 8.868 20.403 8.773 20.62 8.6 L 24.632 5.216 C 25.123 4.803 25.123 4.145 24.632 3.732 L 20.62 0.337 C 20.406 0.154 20.136 0.053 19.857 0.052 C 19.212 0.052 18.81 0.453 18.81 1.087 L 18.81 3.241 L 16.925 3.241 C 15.015 3.241 13.827 3.771 12.472 5.398 L 10.277 7.992 L 7.992 5.269 C 6.738 3.798 5.55 3.241 3.719 3.241 L 1.393 3.241 C 0.569 3.241 0 3.784 0 4.546 C 0 5.308 0.567 5.849 1.393 5.849 L 3.628 5.849 C 4.712 5.849 5.436 6.199 6.249 7.167 L 8.611 9.967 L 6.247 12.782 C 5.423 13.752 4.763 14.1 3.691 14.1 L 1.393 14.1 C 0.569 14.1 0 14.641 0 15.403 C 0 16.165 0.567 16.707 1.393 16.707 L 3.783 16.707 C 5.617 16.707 6.738 16.153 7.992 14.68 L 10.29 11.956 L 12.537 14.629 C 13.815 16.153 15.066 16.707 16.925 16.707 L 18.81 16.707 L 18.81 18.902 C 18.81 19.548 19.212 19.948 19.857 19.948 Z"/>
+        </svg>
+	`,
+        Loop: `
+		<svg viewBox="0 0 20 17" xmlns="http://www.w3.org/2000/svg" class="Loop">
+			<path d="M 1.148 8.951 C 1.786 8.956 2.307 8.441 2.307 7.803 L 2.307 7.201 C 2.307 5.853 3.255 4.949 4.705 4.949 L 11.426 4.949 L 11.426 6.778 C 11.426 7.325 11.773 7.67 12.33 7.67 C 12.572 7.67 12.806 7.583 12.988 7.424 L 16.454 4.515 C 16.879 4.158 16.879 3.589 16.454 3.233 L 12.988 0.301 C 12.806 0.142 12.572 0.055 12.33 0.055 C 11.773 0.055 11.428 0.402 11.428 0.948 L 11.428 2.686 L 4.872 2.686 C 1.895 2.686 0 4.37 0 7.001 L 0 7.803 C 0 8.44 0.513 8.951 1.148 8.951 L 1.148 8.951 Z M 7.681 16.945 C 8.227 16.945 8.572 16.6 8.572 16.053 L 8.572 14.303 L 15.128 14.303 C 18.116 14.303 20 12.619 20 9.988 L 20 9.186 C 20 8.302 19.043 7.75 18.278 8.192 C 17.922 8.397 17.703 8.776 17.703 9.186 L 17.703 9.788 C 17.703 11.136 16.745 12.04 15.295 12.04 L 8.572 12.04 L 8.572 10.223 C 8.572 9.676 8.227 9.331 7.681 9.331 C 7.436 9.331 7.199 9.417 7.012 9.576 L 3.556 12.497 C 3.121 12.842 3.133 13.41 3.556 13.767 L 7.012 16.711 C 7.202 16.862 7.438 16.944 7.681 16.945 L 7.681 16.945 Z" fill-rule="nonzero"/>
+		</svg>
+	`,
+        LoopTrack: `
+		<svg viewBox="0 0 20 17" xmlns="http://www.w3.org/2000/svg" class="LoopTrack">
+			<path d="M 18.885 6.353 C 19.52 6.353 19.888 6.008 19.888 5.318 L 19.888 1.236 C 19.888 0.511 19.409 0.022 18.696 0.022 C 18.105 0.022 17.758 0.21 17.302 0.556 L 16.176 1.437 C 15.907 1.639 15.819 1.839 15.819 2.073 C 15.819 2.418 16.074 2.697 16.488 2.697 C 16.666 2.697 16.81 2.641 16.956 2.529 L 17.781 1.839 L 17.859 1.839 L 17.859 5.318 C 17.859 6.008 18.227 6.353 18.885 6.353 L 18.885 6.353 Z M 1.147 8.986 C 1.791 9.003 2.319 8.48 2.306 7.836 L 2.306 7.234 C 2.306 5.886 3.254 4.982 4.703 4.982 L 9.274 4.982 L 9.274 6.811 C 9.274 7.358 9.62 7.703 10.178 7.703 C 10.42 7.703 10.653 7.616 10.836 7.457 L 14.302 4.548 C 14.727 4.191 14.727 3.621 14.302 3.265 L 10.837 0.333 C 10.655 0.175 10.421 0.087 10.179 0.088 C 9.622 0.088 9.275 0.434 9.275 0.981 L 9.275 2.719 L 4.873 2.719 C 1.895 2.719 0 4.403 0 7.034 L 0 7.836 C 0 8.494 0.502 8.984 1.148 8.984 L 1.147 8.986 Z M 7.68 16.978 C 8.226 16.978 8.572 16.633 8.572 16.086 L 8.572 14.336 L 15.127 14.336 C 18.115 14.336 20 12.652 20 10.021 L 20 9.219 C 20.013 8.58 19.491 8.058 18.851 8.071 C 18.21 8.054 17.686 8.578 17.703 9.219 L 17.703 9.821 C 17.703 11.169 16.744 12.073 15.295 12.073 L 8.572 12.073 L 8.572 10.256 C 8.572 9.709 8.226 9.364 7.68 9.364 C 7.435 9.364 7.198 9.45 7.011 9.609 L 3.555 12.53 C 3.12 12.875 3.132 13.443 3.555 13.8 L 7.011 16.744 C 7.201 16.895 7.437 16.977 7.68 16.978 L 7.68 16.978 Z" fill-rule="nonzero" transform="matrix(1, 0, 0, 1, 0, -8.881784197001252e-16)"/>
+		</svg>
+	`
+      };
+    }
+  });
+
+  // src/components/Utils/TransferElement.ts
+  function TransferElement(element, targetContainer, index = -1) {
+    if (!element || !targetContainer) {
+      console.error("Both element and target container must be provided.");
       return;
-    const clickHandler = async () => {
-      const currentUri = Spicetify.Player.data?.item?.uri;
-      if (!currentUri) {
-        Spicetify.showNotification("No track playing", false, 1e3);
-        return;
+    }
+    try {
+      if (index < 0 || index >= targetContainer.children.length) {
+        targetContainer.appendChild(element);
+      } else {
+        targetContainer.insertBefore(element, targetContainer.children[index]);
       }
-      await fastdom_default.write(() => {
-        refreshButton.classList.add("hidden");
-      });
-      try {
-        const trackId = currentUri.split(":")[2];
-        removeLyricsFromCache(trackId);
-        storage_default.set("currentLyricsData", null);
-        const lyrics = await fetchLyrics(currentUri);
-        ApplyLyrics(lyrics);
-      } catch (error) {
-        console.error("Error refreshing lyrics:", error);
-        Spicetify.showNotification("Error refreshing lyrics", false, 2e3);
-      }
-    };
-    refreshButton.addEventListener("click", clickHandler);
-    maid?.Give(() => refreshButton.removeEventListener("click", clickHandler));
-  }
-  function setupWatchMusicVideoButton() {
-    const watchMusicVideoButton = document.querySelector(
-      PageViewSelectors.WatchMusicVideoButton
-    );
-    if (!watchMusicVideoButton)
-      return;
-    const clickHandler = async () => {
-      const songName = await SpotifyPlayer.GetSongName();
-      const artists = await SpotifyPlayer.GetArtists();
-      if (!songName || !artists || artists.length === 0) {
-        Spicetify.showNotification("No track playing or artist information available", false, 1e3);
-        return;
-      }
-      const artistNames = SpotifyPlayer.JoinArtists(artists);
-      const searchQuery = encodeURIComponent(`${artistNames} ${songName} music video`);
-      const youtubeUrl = `https://www.youtube.com/results?search_query=${searchQuery}`;
-      window.open(youtubeUrl, "_blank");
-    };
-    watchMusicVideoButton.addEventListener("click", clickHandler);
-    maid?.Give(() => watchMusicVideoButton.removeEventListener("click", clickHandler));
-  }
-  function setupReleaseLogsButton() {
-    const releaseLogsButton = document.querySelector(
-      PageViewSelectors.ReleaseLogsButton
-    );
-    if (!releaseLogsButton)
-      return;
-    const clickHandler = () => {
-      window.open("https://github.com/hudzax/amai-lyrics/releases", "_blank");
-    };
-    releaseLogsButton.addEventListener("click", clickHandler);
-    maid?.Give(() => releaseLogsButton.removeEventListener("click", clickHandler));
-  }
-  function showRefreshButton() {
-    const refreshButton = document.querySelector(
-      PageViewSelectors.RefreshLyricsButton
-    );
-    if (refreshButton) {
-      fastdom_default.write(() => {
-        refreshButton.classList.remove("hidden");
-      });
+    } catch (error) {
+      console.error("Error transferring element:", error);
     }
   }
-  function hideRefreshButton() {
-    const refreshButton = document.querySelector(
-      PageViewSelectors.RefreshLyricsButton
-    );
-    if (refreshButton) {
-      fastdom_default.write(() => {
-        refreshButton.classList.add("hidden");
-      });
+  var init_TransferElement = __esm({
+    "src/components/Utils/TransferElement.ts"() {
+    }
+  });
+
+  // src/components/Global/Session.ts
+  var sessionHistory, Session, Session_default;
+  var init_Session = __esm({
+    "src/components/Global/Session.ts"() {
+      init_Global();
+      sessionHistory = [];
+      Session = {
+        Navigate: (data) => {
+          Spicetify.Platform.History.push(data);
+        },
+        GoBack: () => {
+          if (sessionHistory.length > 1) {
+            Session.Navigate(sessionHistory[sessionHistory.length - 2]);
+          } else {
+            Session.Navigate({ pathname: "/" });
+          }
+        },
+        GetPreviousLocation: () => {
+          if (sessionHistory.length > 1) {
+            return sessionHistory[sessionHistory.length - 2];
+          }
+          return null;
+        },
+        RecordNavigation: (data) => {
+          Session.PushToHistory(data);
+          Global_default.Event.evoke("session:navigation", data);
+        },
+        FilterOutTheSameLocation: (data) => {
+          sessionHistory = sessionHistory.filter(
+            (location) => location.pathname !== data.pathname && location.search !== data?.search && location.hash !== data?.hash
+          );
+        },
+        PushToHistory: (data) => {
+          sessionHistory.push(data);
+        }
+      };
+      window._spicy_lyrics_session = Session;
+      Session_default = Session;
+    }
+  });
+
+  // src/components/Pages/pageControls.ts
+  async function AppendViewControls(maid2, ReAppend = false) {
+    const elem = document.querySelector(PageViewSelectors.ViewControls);
+    if (!elem)
+      return;
+    await fastdom_default.write(() => {
+      if (ReAppend)
+        elem.innerHTML = "";
+      elem.innerHTML = `
+          <button id="Close" class="ViewControl">${Icons.Close}</button>
+          <button id="FullscreenToggle" class="ViewControl">${Fullscreen_default.IsOpen ? Icons.CloseFullscreen : Icons.Fullscreen}</button>
+      `;
+    });
+    if (Fullscreen_default.IsOpen) {
+      const headerElem = document.querySelector(PageViewSelectors.Header);
+      if (headerElem) {
+        await fastdom_default.write(() => {
+          TransferElement(elem, headerElem, 0);
+        });
+      }
+      Object.values(Tooltips).forEach((a) => a?.destroy());
+      const viewControlsElem = document.querySelector(
+        PageViewSelectors.HeaderViewControls
+      );
+      SetupTippy(viewControlsElem, maid2);
+    } else {
+      const headerViewControlsElem = document.querySelector(
+        PageViewSelectors.HeaderViewControls
+      );
+      if (headerViewControlsElem) {
+        const contentBoxElem = document.querySelector(PageViewSelectors.ContentBox);
+        if (contentBoxElem) {
+          await fastdom_default.write(() => {
+            TransferElement(elem, contentBoxElem);
+          });
+        }
+      }
+      Object.values(Tooltips).forEach((a) => a?.destroy());
+      SetupTippy(elem, maid2);
     }
   }
-  var Tooltips, maid, PageView, PageRoot, PageView_default;
+  function SetupTippy(elem, maid2) {
+    if (!elem)
+      return;
+    const closeButton = elem.querySelector(PageViewSelectors.CloseButton);
+    if (closeButton) {
+      Tooltips.Close = Spicetify.Tippy(closeButton, {
+        ...Spicetify.TippyProps,
+        content: `Exit Lyrics Page`
+      });
+      const closeClickHandler = () => Session_default.GoBack();
+      closeButton.addEventListener("click", closeClickHandler);
+      maid2?.Give(() => closeButton.removeEventListener("click", closeClickHandler));
+    }
+    const fullscreenBtn = elem.querySelector(
+      PageViewSelectors.FullscreenToggleButton
+    );
+    if (fullscreenBtn) {
+      Tooltips.FullscreenToggle = Spicetify.Tippy(fullscreenBtn, {
+        ...Spicetify.TippyProps,
+        content: `Toggle Fullscreen View`
+      });
+      const fullscreenClickHandler = () => Fullscreen_default.Toggle();
+      fullscreenBtn.addEventListener("click", fullscreenClickHandler);
+      maid2?.Give(() => fullscreenBtn.removeEventListener("click", fullscreenClickHandler));
+    }
+  }
+  var Tooltips;
+  var init_pageControls = __esm({
+    "src/components/Pages/pageControls.ts"() {
+      init_PageViewSelectors();
+      init_Icons();
+      init_Fullscreen();
+      init_TransferElement();
+      init_Session();
+      init_fastdom();
+      Tooltips = {
+        Close: null,
+        Kofi: null,
+        FullscreenToggle: null,
+        LyricsToggle: null
+      };
+    }
+  });
+
+  // src/components/Pages/PageView.ts
+  var PageView_exports = {};
+  __export(PageView_exports, {
+    PageRoot: () => PageRoot,
+    default: () => PageView_default
+  });
+  async function OpenPage() {
+    if (PageView.IsOpened)
+      return;
+    maid = new Maid();
+    await createPageElement();
+    Defaults_default.LyricsContainerExists = true;
+    const contentBox = document.querySelector(PageViewSelectors.ContentBox);
+    if (contentBox) {
+      await ApplyDynamicBackground(contentBox);
+    }
+    const mediaImage = document.querySelector(PageViewSelectors.MediaImage);
+    if (mediaImage) {
+      setupImageLoading(mediaImage, maid);
+    }
+    await PageView.UpdatePageContent();
+    const currentUri = Spicetify.Player.data?.item?.uri;
+    if (currentUri) {
+      fetchLyrics(currentUri).then(ApplyLyrics);
+    }
+    Session_OpenNowBar();
+    Session_NowBar_SetSide();
+    await PageView.AppendViewControls();
+    setupActionButtons(maid);
+    PageView.IsOpened = true;
+  }
+  async function createPageElement() {
+    let elem;
+    await fastdom_default.write(() => {
+      elem = document.createElement("div");
+      elem.id = "SpicyLyricsPage";
+      elem.innerHTML = PageHTML;
+      if (PageRoot)
+        PageRoot.appendChild(elem);
+    });
+    const nowBar = document.querySelector(PageViewSelectors.NowBar);
+    if (nowBar) {
+      nowBar.innerHTML = NowBarHTML;
+    }
+  }
+  async function DestroyPage() {
+    if (!PageView.IsOpened)
+      return;
+    if (Fullscreen_default.IsOpen)
+      Fullscreen_default.Close();
+    const spicyLyricsPage = document.querySelector(PageViewSelectors.SpicyLyricsPage);
+    if (!spicyLyricsPage)
+      return;
+    await fastdom_default.write(() => {
+      spicyLyricsPage?.remove();
+    });
+    Defaults_default.LyricsContainerExists = false;
+    removeLinesEvListener();
+    Object.values(Tooltips).forEach((a) => a?.destroy());
+    ResetLastLine();
+    ScrollSimplebar?.unMount();
+    maid?.CleanUp();
+    maid = null;
+    PageView.IsOpened = false;
+  }
+  var maid, PageView, PageRoot, PageView_default;
   var init_PageView = __esm({
     "src/components/Pages/PageView.ts"() {
       init_fetchLyrics();
@@ -10064,33 +10026,24 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_lyrics();
       init_dynamicBackground();
       init_Defaults();
-      init_Icons();
       init_ScrollSimplebar();
       init_Applyer();
-      init_SpotifyPlayer();
-      init_NowBar();
+      init_NowBar2();
       init_Fullscreen();
-      init_TransferElement();
-      init_Session();
       init_ScrollToActiveLine();
       init_fastdom();
-      init_storage();
-      init_cache();
       init_Maid();
       init_PageViewSelectors();
       init_PageHTML();
-      Tooltips = {
-        Close: null,
-        Kofi: null,
-        FullscreenToggle: null,
-        LyricsToggle: null
-      };
+      init_pageContent();
+      init_pageControls();
+      init_pageButtons();
       maid = null;
       PageView = {
         Open: OpenPage,
         Destroy: DestroyPage,
-        AppendViewControls,
-        UpdatePageContent,
+        AppendViewControls: () => AppendViewControls(maid),
+        UpdatePageContent: () => UpdatePageContent(PageView.IsOpened),
         IsOpened: false
       };
       PageRoot = null;
@@ -10103,13 +10056,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
 
   // src/components/Utils/Fullscreen.ts
   function Open() {
-    const SpicyPage = document.querySelector(
-      ".Root__main-view #SpicyLyricsPage"
-    );
+    const SpicyPage = document.querySelector(".Root__main-view #SpicyLyricsPage");
     const Root = document.body;
     if (SpicyPage) {
       let setupFullscreenUI = function() {
-        PageView_default.AppendViewControls(true);
+        PageView_default.AppendViewControls();
         OpenNowBar();
         ResetLastLine();
         const MediaBox = document.querySelector(
@@ -10120,22 +10071,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         );
         if (MediaBox && MediaImage) {
           MediaBox_Data.Functions.Eventify(MediaImage);
-          MediaBox.removeEventListener(
-            "mouseenter",
-            MediaBox_Data.Functions.MouseIn
-          );
-          MediaBox.removeEventListener(
-            "mouseleave",
-            MediaBox_Data.Functions.MouseOut
-          );
-          MediaBox.addEventListener(
-            "mouseenter",
-            MediaBox_Data.Functions.MouseIn
-          );
-          MediaBox.addEventListener(
-            "mouseleave",
-            MediaBox_Data.Functions.MouseOut
-          );
+          MediaBox.removeEventListener("mouseenter", MediaBox_Data.Functions.MouseIn);
+          MediaBox.removeEventListener("mouseleave", MediaBox_Data.Functions.MouseOut);
+          MediaBox.addEventListener("mouseenter", MediaBox_Data.Functions.MouseIn);
+          MediaBox.addEventListener("mouseleave", MediaBox_Data.Functions.MouseOut);
         }
         Global_default.Event.evoke("fullscreen:open", null);
       };
@@ -10147,9 +10086,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           setupFullscreenUI();
         }).catch((err2) => {
           setupFullscreenUI();
-          alert(
-            `Error attempting to enable fullscreen mode: ${err2.message} (${err2.name})`
-          );
+          alert(`Error attempting to enable fullscreen mode: ${err2.message} (${err2.name})`);
         });
       } else {
         setupFullscreenUI();
@@ -10163,7 +10100,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         TransferElement(SpicyPage, PageRoot);
         SpicyPage.classList.remove("Fullscreen");
         Fullscreen.IsOpen = false;
-        PageView_default.AppendViewControls(true);
+        PageView_default.AppendViewControls();
         const currentLyrics = storage_default.get("currentLyricsData");
         const NoLyrics = typeof currentLyrics === "string" && currentLyrics.includes("NO_LYRICS");
         if (NoLyrics) {
@@ -10184,14 +10121,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage"
         );
         if (MediaBox) {
-          MediaBox.removeEventListener(
-            "mouseenter",
-            MediaBox_Data.Functions.MouseIn
-          );
-          MediaBox.removeEventListener(
-            "mouseleave",
-            MediaBox_Data.Functions.MouseOut
-          );
+          MediaBox.removeEventListener("mouseenter", MediaBox_Data.Functions.MouseIn);
+          MediaBox.removeEventListener("mouseleave", MediaBox_Data.Functions.MouseOut);
         }
         if (MediaImage) {
           MediaBox_Data.Functions.Reset(MediaImage);
@@ -10235,7 +10166,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_storage();
       init_Global();
       init_PageView();
-      init_NowBar();
+      init_NowBar2();
       init_TransferElement();
       Fullscreen = {
         Open,
@@ -10256,10 +10187,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           Fullscreen.Close();
         }
       });
-      document.addEventListener(
-        "keydown",
-        Fullscreen.handleEscapeKey.bind(Fullscreen)
-      );
+      document.addEventListener("keydown", Fullscreen.handleEscapeKey.bind(Fullscreen));
       MediaBox_Data = {
         Eventified: false,
         Functions: {
@@ -10302,431 +10230,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // src/components/Utils/NowBar.ts
-  var NowBar_exports = {};
-  __export(NowBar_exports, {
-    CloseNowBar: () => CloseNowBar,
-    DeregisterNowBarBtn: () => DeregisterNowBarBtn,
-    NowBar_SwapSides: () => NowBar_SwapSides,
-    OpenNowBar: () => OpenNowBar,
-    Session_NowBar_SetSide: () => Session_NowBar_SetSide,
-    Session_OpenNowBar: () => Session_OpenNowBar,
-    UpdateNowBar: () => UpdateNowBar
-  });
-  function OpenNowBar() {
-    const NowBar = document.querySelector("#SpicyLyricsPage .ContentBox .NowBar");
-    if (!NowBar)
-      return;
-    UpdateNowBar(true);
-    if (!NowBar.classList.contains("Active"))
-      NowBar.classList.add("Active");
-    storage_default.set("IsNowBarOpen", "true");
-    if (Fullscreen_default.IsOpen) {
-      const MediaBox = document.querySelector(
-        "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent"
-      );
-      if (!MediaBox)
-        return;
-      const existingAlbumData = MediaBox.querySelector(".AlbumData");
-      if (existingAlbumData)
-        MediaBox.removeChild(existingAlbumData);
-      const existingPlaybackControls = MediaBox.querySelector(".PlaybackControls");
-      if (existingPlaybackControls)
-        MediaBox.removeChild(existingPlaybackControls);
-      {
-        let createControlsElement = function() {
-          const ControlsElement = document.createElement("div");
-          ControlsElement.classList.add("PlaybackControls");
-          ControlsElement.innerHTML = `
-          <div class="PlaybackControl ShuffleToggle">
-            ${Icons.Shuffle} 
-          </div>
-          ${Icons.PrevTrack}
-          <div class="PlaybackControl PlayStateToggle ${SpotifyPlayer.IsPlaying ? "Playing" : "Paused"}">
-            ${SpotifyPlayer.IsPlaying ? Icons.Pause : Icons.Play}
-          </div>
-          ${Icons.NextTrack}
-          <div class="PlaybackControl LoopToggle">
-            ${SpotifyPlayer.LoopType === "track" ? Icons.LoopTrack : Icons.Loop}
-          </div>
-        `;
-          return ControlsElement;
-        }, setupInitialControlState = function(element) {
-          if (SpotifyPlayer.LoopType !== "none") {
-            const loopToggle = element.querySelector(".LoopToggle");
-            const loopSvg = element.querySelector(".LoopToggle svg");
-            if (loopToggle)
-              loopToggle.classList.add("Enabled");
-            if (loopSvg)
-              loopSvg.style.filter = "drop-shadow(0 0 5px white)";
-          }
-          if (SpotifyPlayer.ShuffleType !== "none") {
-            const shuffleToggle = element.querySelector(".ShuffleToggle");
-            const shuffleSvg = element.querySelector(".ShuffleToggle svg");
-            if (shuffleToggle)
-              shuffleToggle.classList.add("Enabled");
-            if (shuffleSvg)
-              shuffleSvg.style.filter = "drop-shadow(0 0 5px white)";
-          }
-        }, setupEventHandlers = function(element) {
-          const eventHandlers = {
-            pressHandlers: /* @__PURE__ */ new Map(),
-            releaseHandlers: /* @__PURE__ */ new Map(),
-            clickHandlers: /* @__PURE__ */ new Map()
-          };
-          setupPressReleaseHandlers(element, eventHandlers);
-          setupClickHandlers(element, eventHandlers);
-          return eventHandlers;
-        }, setupPressReleaseHandlers = function(element, eventHandlers) {
-          const playbackControls = element.querySelectorAll(".PlaybackControl");
-          playbackControls.forEach((control) => {
-            const pressHandler = () => {
-              control.classList.add("Pressed");
-            };
-            const releaseHandler = () => {
-              control.classList.remove("Pressed");
-            };
-            eventHandlers.pressHandlers.set(control, pressHandler);
-            eventHandlers.releaseHandlers.set(control, releaseHandler);
-            control.addEventListener("mousedown", pressHandler);
-            control.addEventListener("touchstart", pressHandler);
-            control.addEventListener("mouseup", releaseHandler);
-            control.addEventListener("mouseleave", releaseHandler);
-            control.addEventListener("touchend", releaseHandler);
-          });
-        }, setupClickHandlers = function(element, eventHandlers) {
-          const PlayPauseControl = element.querySelector(".PlayStateToggle");
-          const PrevTrackControl = element.querySelector(".PrevTrack");
-          const NextTrackControl = element.querySelector(".NextTrack");
-          const ShuffleControl = element.querySelector(".ShuffleToggle");
-          const LoopControl = element.querySelector(".LoopToggle");
-          if (!PlayPauseControl || !PrevTrackControl || !NextTrackControl || !ShuffleControl || !LoopControl) {
-            console.error("Missing required control elements");
-            return;
-          }
-          const playPauseHandler = createPlayPauseHandler(PlayPauseControl);
-          const prevTrackHandler = () => SpotifyPlayer.Skip.Prev();
-          const nextTrackHandler = () => SpotifyPlayer.Skip.Next();
-          const shuffleHandler = createShuffleHandler(ShuffleControl);
-          const loopHandler = createLoopHandler(LoopControl);
-          eventHandlers.clickHandlers.set(PlayPauseControl, playPauseHandler);
-          eventHandlers.clickHandlers.set(PrevTrackControl, prevTrackHandler);
-          eventHandlers.clickHandlers.set(NextTrackControl, nextTrackHandler);
-          eventHandlers.clickHandlers.set(ShuffleControl, shuffleHandler);
-          eventHandlers.clickHandlers.set(LoopControl, loopHandler);
-          PlayPauseControl.addEventListener("click", playPauseHandler);
-          PrevTrackControl.addEventListener("click", prevTrackHandler);
-          NextTrackControl.addEventListener("click", nextTrackHandler);
-          ShuffleControl.addEventListener("click", shuffleHandler);
-          LoopControl.addEventListener("click", loopHandler);
-        }, createPlayPauseHandler = function(control) {
-          return () => {
-            const playSvg = control.querySelector("svg");
-            if (SpotifyPlayer.IsPlaying) {
-              SpotifyPlayer.IsPlaying = false;
-              SpotifyPlayer.Pause();
-              control.classList.remove("Playing");
-              control.classList.add("Paused");
-              if (playSvg) {
-                playSvg.innerHTML = Icons.Play;
-              }
-            } else {
-              SpotifyPlayer.IsPlaying = true;
-              SpotifyPlayer.Play();
-              control.classList.remove("Paused");
-              control.classList.add("Playing");
-              if (playSvg) {
-                playSvg.innerHTML = Icons.Pause;
-              }
-            }
-          };
-        }, createShuffleHandler = function(control) {
-          return () => {
-            const shuffleSvg = control.querySelector("svg");
-            if (SpotifyPlayer.ShuffleType === "none") {
-              SpotifyPlayer.ShuffleType = "normal";
-              control.classList.add("Enabled");
-              if (shuffleSvg instanceof HTMLElement) {
-                shuffleSvg.style.filter = "drop-shadow(0 0 5px white)";
-              }
-              Spicetify.Player.setShuffle(true);
-            } else if (SpotifyPlayer.ShuffleType === "normal") {
-              SpotifyPlayer.ShuffleType = "none";
-              control.classList.remove("Enabled");
-              if (shuffleSvg instanceof HTMLElement) {
-                shuffleSvg.style.filter = "";
-              }
-              Spicetify.Player.setShuffle(false);
-            }
-          };
-        }, createLoopHandler = function(control) {
-          return () => {
-            const loopSvg = control.querySelector("svg");
-            if (!loopSvg)
-              return;
-            if (SpotifyPlayer.LoopType === "none") {
-              SpotifyPlayer.LoopType = "context";
-              Spicetify.Player.setRepeat(1);
-              control.classList.add("Enabled");
-              if (loopSvg instanceof HTMLElement) {
-                loopSvg.innerHTML = Icons.Loop;
-                loopSvg.style.filter = "drop-shadow(0 0 5px white)";
-              }
-            } else if (SpotifyPlayer.LoopType === "context") {
-              SpotifyPlayer.LoopType = "track";
-              Spicetify.Player.setRepeat(2);
-              if (loopSvg instanceof HTMLElement) {
-                loopSvg.innerHTML = Icons.LoopTrack;
-                loopSvg.style.filter = "drop-shadow(0 0 5px white)";
-              }
-            } else if (SpotifyPlayer.LoopType === "track") {
-              SpotifyPlayer.LoopType = "none";
-              Spicetify.Player.setRepeat(0);
-              control.classList.remove("Enabled");
-              if (loopSvg instanceof HTMLElement) {
-                loopSvg.innerHTML = Icons.Loop;
-                loopSvg.style.filter = "";
-              }
-            }
-          };
-        }, cleanupEventHandlers = function(element, eventHandlers) {
-          const playbackControls = element.querySelectorAll(".PlaybackControl");
-          const PlayPauseControl = element.querySelector(".PlayStateToggle");
-          const PrevTrackControl = element.querySelector(".PrevTrack");
-          const NextTrackControl = element.querySelector(".NextTrack");
-          const ShuffleControl = element.querySelector(".ShuffleToggle");
-          const LoopControl = element.querySelector(".LoopToggle");
-          playbackControls.forEach((control) => {
-            const pressHandler = eventHandlers.pressHandlers.get(control);
-            const releaseHandler = eventHandlers.releaseHandlers.get(control);
-            if (pressHandler) {
-              control.removeEventListener("mousedown", pressHandler);
-              control.removeEventListener("touchstart", pressHandler);
-            }
-            if (releaseHandler) {
-              control.removeEventListener("mouseup", releaseHandler);
-              control.removeEventListener("mouseleave", releaseHandler);
-              control.removeEventListener("touchend", releaseHandler);
-            }
-          });
-          if (PlayPauseControl) {
-            const handler = eventHandlers.clickHandlers.get(PlayPauseControl);
-            if (handler)
-              PlayPauseControl.removeEventListener("click", handler);
-          }
-          if (PrevTrackControl) {
-            const handler = eventHandlers.clickHandlers.get(PrevTrackControl);
-            if (handler)
-              PrevTrackControl.removeEventListener("click", handler);
-          }
-          if (NextTrackControl) {
-            const handler = eventHandlers.clickHandlers.get(NextTrackControl);
-            if (handler)
-              NextTrackControl.removeEventListener("click", handler);
-          }
-          if (ShuffleControl) {
-            const handler = eventHandlers.clickHandlers.get(ShuffleControl);
-            if (handler)
-              ShuffleControl.removeEventListener("click", handler);
-          }
-          if (LoopControl) {
-            const handler = eventHandlers.clickHandlers.get(LoopControl);
-            if (handler)
-              LoopControl.removeEventListener("click", handler);
-          }
-          eventHandlers.pressHandlers.clear();
-          eventHandlers.releaseHandlers.clear();
-          eventHandlers.clickHandlers.clear();
-          if (element.parentNode) {
-            element.parentNode.removeChild(element);
-          }
-        }, createProgressBarElements = function() {
-          const songProgressBar = new SongProgressBar();
-          songProgressBar.Update({
-            duration: SpotifyPlayer.GetTrackDuration() ?? 0,
-            position: SpotifyPlayer.GetTrackPosition() ?? 0
-          });
-          const timelineElement = document.createElement("div");
-          timelineElement.classList.add("Timeline");
-          timelineElement.innerHTML = `
-          <span class="Time Position">${songProgressBar.GetFormattedPosition() ?? "0:00"}</span>
-          <div class="SliderBar" style="--SliderProgress: ${songProgressBar.GetProgressPercentage() ?? 0}">
-            <div class="Handle"></div>
-          </div>
-          <span class="Time Duration">${songProgressBar.GetFormattedDuration() ?? "0:00"}</span>
-        `;
-          const sliderBar = timelineElement.querySelector(".SliderBar");
-          return { songProgressBar, timelineElement, sliderBar };
-        }, createUpdateFunction = function(songProgressBar, timelineElement, sliderBar) {
-          return (e = null) => {
-            const positionElement = timelineElement.querySelector(".Time.Position");
-            const durationElement = timelineElement.querySelector(".Time.Duration");
-            if (!positionElement || !durationElement || !sliderBar) {
-              console.error("Missing required elements for timeline update");
-              return;
-            }
-            let currentPosition;
-            if (e === null) {
-              currentPosition = SpotifyPlayer.GetTrackPosition();
-            } else if (typeof e === "number") {
-              currentPosition = e;
-            } else if (e && e.data && typeof e.data === "number") {
-              currentPosition = e.data;
-            } else {
-              currentPosition = SpotifyPlayer.GetTrackPosition();
-            }
-            songProgressBar.Update({
-              duration: SpotifyPlayer.GetTrackDuration() ?? 0,
-              position: currentPosition ?? 0
-            });
-            const sliderPercentage = songProgressBar.GetProgressPercentage();
-            const formattedPosition = songProgressBar.GetFormattedPosition();
-            const formattedDuration = songProgressBar.GetFormattedDuration();
-            sliderBar.style.setProperty("--SliderProgress", sliderPercentage.toString());
-            durationElement.textContent = formattedDuration;
-            positionElement.textContent = formattedPosition;
-          };
-        }, createSliderClickHandler = function(songProgressBar, sliderBar, timelineElement) {
-          return (event) => {
-            if (!Fullscreen_default.IsOpen)
-              return;
-            const positionMs = songProgressBar.CalculatePositionFromClick({
-              sliderBar,
-              event
-            });
-            if (typeof SpotifyPlayer !== "undefined" && SpotifyPlayer.Seek) {
-              SpotifyPlayer.Seek(positionMs);
-              progressBarState.lastKnownPosition = positionMs;
-              progressBarState.lastUpdateTime = performance.now();
-              songProgressBar.Update({
-                duration: SpotifyPlayer.GetTrackDuration() ?? 0,
-                position: positionMs
-              });
-              const sliderPercentage = songProgressBar.GetProgressPercentage();
-              const formattedPosition = songProgressBar.GetFormattedPosition();
-              sliderBar.style.setProperty("--SliderProgress", sliderPercentage.toString());
-              const positionElement = timelineElement.querySelector(".Time.Position");
-              if (positionElement) {
-                positionElement.textContent = formattedPosition;
-              }
-            }
-          };
-        }, initializeTrackingVariables = function() {
-          progressBarState.lastKnownPosition = SpotifyPlayer.GetTrackPosition() || 0;
-          progressBarState.lastUpdateTime = performance.now();
-        }, setupUpdateInterval = function(updateTimelineState) {
-          return setInterval(() => {
-            if (SpotifyPlayer.IsPlaying) {
-              const { lastKnownPosition, lastUpdateTime } = progressBarState;
-              const now2 = performance.now();
-              const elapsed = now2 - (lastUpdateTime || now2);
-              if (elapsed > 3e3) {
-                const actualPosition = SpotifyPlayer.GetTrackPosition() || 0;
-                progressBarState.lastKnownPosition = actualPosition;
-                progressBarState.lastUpdateTime = now2;
-                updateTimelineState(actualPosition);
-              } else {
-                const interpolatedPosition = (lastKnownPosition || 0) + elapsed;
-                progressBarState.lastInterpolationUpdate = now2;
-                updateTimelineState(interpolatedPosition);
-              }
-            }
-          }, 100);
-        }, cleanupProgressBar = function(sliderBar, sliderBarHandler) {
-          if (sliderBar) {
-            sliderBar.removeEventListener("click", sliderBarHandler);
-          }
-          const { updateInterval, SongProgressBar_ClassInstance, TimeLineElement } = progressBarState;
-          if (updateInterval) {
-            clearInterval(updateInterval);
-          }
-          if (SongProgressBar_ClassInstance) {
-            SongProgressBar_ClassInstance.Destroy();
-          }
-          if (TimeLineElement && TimeLineElement.parentNode) {
-            TimeLineElement.parentNode.removeChild(TimeLineElement);
-          }
-          Object.keys(progressBarState).forEach((key) => {
-            delete progressBarState[key];
-          });
-          progressBarState.lastKnownPosition = 0;
-          progressBarState.lastUpdateTime = 0;
-        };
-        const AppendQueue = [];
-        {
-          const AlbumNameElement = document.createElement("div");
-          AlbumNameElement.classList.add("AlbumData");
-          AlbumNameElement.innerHTML = `<span>${SpotifyPlayer.GetAlbumName()}</span>`;
-          AppendQueue.push(AlbumNameElement);
-        }
-        const SetupPlaybackControls = () => {
-          const ControlsElement = createControlsElement();
-          setupInitialControlState(ControlsElement);
-          const eventHandlers = setupEventHandlers(ControlsElement);
-          return {
-            Apply: () => {
-              AppendQueue.push(ControlsElement);
-            },
-            CleanUp: () => cleanupEventHandlers(ControlsElement, eventHandlers),
-            GetElement: () => ControlsElement
-          };
-        };
-        const SetupSongProgressBar = () => {
-          const { songProgressBar, timelineElement, sliderBar } = createProgressBarElements();
-          if (!sliderBar) {
-            console.error("Could not find SliderBar element");
-            return null;
-          }
-          const updateTimelineState = createUpdateFunction(
-            songProgressBar,
-            timelineElement,
-            sliderBar
-          );
-          const sliderBarHandler = createSliderClickHandler(
-            songProgressBar,
-            sliderBar,
-            timelineElement
-          );
-          sliderBar.addEventListener("click", sliderBarHandler);
-          updateTimelineState();
-          initializeTrackingVariables();
-          const updateInterval = setupUpdateInterval(updateTimelineState);
-          progressBarState.SongProgressBar_ClassInstance = songProgressBar;
-          progressBarState.TimeLineElement = timelineElement;
-          progressBarState.updateTimelineState_Function = updateTimelineState;
-          progressBarState.updateInterval = updateInterval;
-          return {
-            Apply: () => {
-              AppendQueue.push(timelineElement);
-            },
-            GetElement: () => timelineElement,
-            CleanUp: () => cleanupProgressBar(sliderBar, sliderBarHandler)
-          };
-        };
-        ActivePlaybackControlsInstance = SetupPlaybackControls();
-        ActivePlaybackControlsInstance.Apply();
-        ActiveSetupSongProgressBarInstance = SetupSongProgressBar();
-        if (ActiveSetupSongProgressBarInstance) {
-          ActiveSetupSongProgressBarInstance.Apply();
-        }
-        Whentil_default.When(
-          () => document.querySelector("#SpicyLyricsPage .ContentBox .NowBar .Header .ViewControls"),
-          () => {
-            const viewControls = MediaBox.querySelector(".ViewControls");
-            const fragment = document.createDocumentFragment();
-            AppendQueue.forEach((element) => {
-              fragment.appendChild(element);
-            });
-            if (fragment.childNodes.length > 0) {
-              MediaBox.innerHTML = "";
-              if (viewControls)
-                MediaBox.appendChild(viewControls);
-              MediaBox.appendChild(fragment);
-            }
-          }
-        );
-      }
-    }
+  // src/components/NowBar/DragAndDrop.ts
+  function setupDragAndDrop() {
     const DragBox = Fullscreen_default.IsOpen ? document.querySelector("#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent") : document.querySelector("#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage");
     if (!DragBox)
       return;
@@ -10737,6 +10242,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       DragBox.addEventListener("dragstart", () => {
         setTimeout(() => {
           document.querySelector("#SpicyLyricsPage").classList.add("SomethingDragging");
+          const NowBar = document.querySelector("#SpicyLyricsPage .ContentBox .NowBar");
           if (NowBar.classList.contains("LeftSide")) {
             dropZones.forEach((zone) => {
               if (zone.classList.contains("LeftSide")) {
@@ -10776,6 +10282,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         zone.addEventListener("drop", (e) => {
           e.preventDefault();
           zone.classList.remove("DraggingOver");
+          const NowBar = document.querySelector("#SpicyLyricsPage .ContentBox .NowBar");
           const currentClass = NowBar.classList.contains("LeftSide") ? "LeftSide" : "RightSide";
           const newClass = zone.classList.contains("RightSide") ? "RightSide" : "LeftSide";
           if (currentClass !== newClass) {
@@ -10789,14 +10296,155 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       }
     });
   }
+  var init_DragAndDrop = __esm({
+    "src/components/NowBar/DragAndDrop.ts"() {
+      init_storage();
+      init_Fullscreen();
+    }
+  });
+
+  // src/components/NowBar/state.ts
+  function setActivePlaybackControlsInstance(instance) {
+    ActivePlaybackControlsInstance = instance;
+  }
+  function setActiveSetupSongProgressBarInstance(instance) {
+    ActiveSetupSongProgressBarInstance = instance;
+  }
+  var ActivePlaybackControlsInstance, progressBarState, ActiveSetupSongProgressBarInstance;
+  var init_state = __esm({
+    "src/components/NowBar/state.ts"() {
+      ActivePlaybackControlsInstance = null;
+      progressBarState = {
+        lastKnownPosition: 0,
+        lastUpdateTime: 0
+      };
+      ActiveSetupSongProgressBarInstance = null;
+    }
+  });
+
+  // src/components/NowBar/EventListeners.ts
+  function setupEventListeners() {
+    Global_default.Event.listen("playback:playpause", (e) => {
+      handlePlayPauseEvent(e);
+    });
+    Global_default.Event.listen("playback:loop", (e) => {
+      handleLoopEvent(e);
+    });
+    Global_default.Event.listen("playback:shuffle", (e) => {
+      handleShuffleEvent(e);
+    });
+    Global_default.Event.listen("playback:position", handlePositionUpdate);
+    Global_default.Event.listen("playback:progress", handlePositionUpdate);
+    Global_default.Event.listen("fullscreen:exit", () => {
+      CleanUpActiveComponents();
+    });
+  }
+  function handlePlayPauseEvent(e) {
+    if (!Fullscreen_default.IsOpen)
+      return;
+    updatePlayPauseUI(e);
+    updateProgressBarState();
+  }
+  function updatePlayPauseUI(e) {
+    if (!ActivePlaybackControlsInstance)
+      return;
+    const playbackControls = ActivePlaybackControlsInstance.GetElement();
+    const playPauseButton = playbackControls?.querySelector(".PlayStateToggle");
+    if (!playPauseButton)
+      return;
+    const isPaused = e?.data?.isPaused;
+    const svg = playPauseButton.querySelector("svg");
+    if (isPaused) {
+      playPauseButton.classList.remove("Playing");
+      playPauseButton.classList.add("Paused");
+      if (svg)
+        svg.innerHTML = Icons.Play;
+    } else {
+      playPauseButton.classList.remove("Paused");
+      playPauseButton.classList.add("Playing");
+      if (svg)
+        svg.innerHTML = Icons.Pause;
+    }
+  }
+  function updateProgressBarState() {
+    if (!ActiveSetupSongProgressBarInstance)
+      return;
+    const actualPosition = SpotifyPlayer.GetTrackPosition() || 0;
+    progressBarState.lastKnownPosition = actualPosition;
+    progressBarState.lastUpdateTime = performance.now();
+    const updateTimelineState = progressBarState.updateTimelineState_Function;
+    if (updateTimelineState) {
+      updateTimelineState(actualPosition);
+    }
+  }
+  function handleLoopEvent(e) {
+    if (!Fullscreen_default.IsOpen || !ActivePlaybackControlsInstance)
+      return;
+    const playbackControls = ActivePlaybackControlsInstance.GetElement();
+    const loopButton = playbackControls.querySelector(".LoopToggle");
+    if (!loopButton)
+      return;
+    const svg = loopButton.querySelector("svg");
+    if (!svg)
+      return;
+    svg.style.filter = "";
+    svg.innerHTML = e === "track" ? Icons.LoopTrack : Icons.Loop;
+    if (e !== "none") {
+      loopButton.classList.add("Enabled");
+      svg.style.filter = "drop-shadow(0 0 5px white)";
+    } else {
+      loopButton.classList.remove("Enabled");
+    }
+  }
+  function handleShuffleEvent(e) {
+    if (!Fullscreen_default.IsOpen || !ActivePlaybackControlsInstance)
+      return;
+    const playbackControls = ActivePlaybackControlsInstance.GetElement();
+    const shuffleButton = playbackControls.querySelector(".ShuffleToggle");
+    if (!shuffleButton)
+      return;
+    const svg = shuffleButton.querySelector("svg");
+    if (!svg)
+      return;
+    svg.style.filter = "";
+    if (e !== "none") {
+      shuffleButton.classList.add("Enabled");
+      svg.style.filter = "drop-shadow(0 0 5px white)";
+    } else {
+      shuffleButton.classList.remove("Enabled");
+    }
+  }
+  function handlePositionUpdate(e) {
+    if (!Fullscreen_default.IsOpen || !ActiveSetupSongProgressBarInstance)
+      return;
+    let position = null;
+    if (typeof e === "number") {
+      position = e;
+    } else if (e && e.data && typeof e.data === "number") {
+      position = e.data;
+    }
+    if (position !== null) {
+      if (progressBarState.lastKnownPosition !== position) {
+        progressBarState.lastKnownPosition = position;
+        progressBarState.lastUpdateTime = performance.now();
+        const lastInterpolationUpdate = progressBarState.lastInterpolationUpdate || 0;
+        if (performance.now() - lastInterpolationUpdate > 500) {
+          const updateTimelineState = progressBarState.updateTimelineState_Function;
+          if (updateTimelineState) {
+            updateTimelineState(position);
+          }
+        }
+      }
+    }
+  }
   function CleanUpActiveComponents() {
     if (ActivePlaybackControlsInstance) {
       ActivePlaybackControlsInstance.CleanUp();
-      ActivePlaybackControlsInstance = null;
+      setActivePlaybackControlsInstance(null);
     }
     if (ActiveSetupSongProgressBarInstance) {
       ActiveSetupSongProgressBarInstance.CleanUp();
-      ActiveSetupSongProgressBarInstance = null;
+      setActiveSetupSongProgressBarInstance(null);
     }
     Object.keys(progressBarState).forEach((key) => {
       if (key !== "lastKnownPosition" && key !== "lastUpdateTime") {
@@ -10822,6 +10470,526 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       if (songProgressBar)
         MediaBox.removeChild(songProgressBar);
     }
+  }
+  var init_EventListeners = __esm({
+    "src/components/NowBar/EventListeners.ts"() {
+      init_Global();
+      init_SpotifyPlayer();
+      init_Icons();
+      init_Fullscreen();
+      init_state();
+    }
+  });
+
+  // src/components/NowBar/PlaybackControls.ts
+  function createControlsElement() {
+    const ControlsElement = document.createElement("div");
+    ControlsElement.classList.add("PlaybackControls");
+    ControlsElement.innerHTML = `
+          <div class="PlaybackControl ShuffleToggle">
+            ${Icons.Shuffle} 
+          </div>
+          ${Icons.PrevTrack}
+          <div class="PlaybackControl PlayStateToggle ${SpotifyPlayer.IsPlaying ? "Playing" : "Paused"}">
+            ${SpotifyPlayer.IsPlaying ? Icons.Pause : Icons.Play}
+          </div>
+          ${Icons.NextTrack}
+          <div class="PlaybackControl LoopToggle">
+            ${SpotifyPlayer.LoopType === "track" ? Icons.LoopTrack : Icons.Loop}
+          </div>
+        `;
+    return ControlsElement;
+  }
+  function setupInitialControlState(element) {
+    if (SpotifyPlayer.LoopType !== "none") {
+      const loopToggle = element.querySelector(".LoopToggle");
+      const loopSvg = element.querySelector(".LoopToggle svg");
+      if (loopToggle)
+        loopToggle.classList.add("Enabled");
+      if (loopSvg)
+        loopSvg.style.filter = "drop-shadow(0 0 5px white)";
+    }
+    if (SpotifyPlayer.ShuffleType !== "none") {
+      const shuffleToggle = element.querySelector(".ShuffleToggle");
+      const shuffleSvg = element.querySelector(".ShuffleToggle svg");
+      if (shuffleToggle)
+        shuffleToggle.classList.add("Enabled");
+      if (shuffleSvg)
+        shuffleSvg.style.filter = "drop-shadow(0 0 5px white)";
+    }
+  }
+  function setupEventHandlers(element) {
+    const eventHandlers = {
+      pressHandlers: /* @__PURE__ */ new Map(),
+      releaseHandlers: /* @__PURE__ */ new Map(),
+      clickHandlers: /* @__PURE__ */ new Map()
+    };
+    setupPressReleaseHandlers(element, eventHandlers);
+    setupClickHandlers(element, eventHandlers);
+    return eventHandlers;
+  }
+  function setupPressReleaseHandlers(element, eventHandlers) {
+    const playbackControls = element.querySelectorAll(".PlaybackControl");
+    playbackControls.forEach((control) => {
+      const pressHandler = () => {
+        control.classList.add("Pressed");
+      };
+      const releaseHandler = () => {
+        control.classList.remove("Pressed");
+      };
+      eventHandlers.pressHandlers.set(control, pressHandler);
+      eventHandlers.releaseHandlers.set(control, releaseHandler);
+      control.addEventListener("mousedown", pressHandler);
+      control.addEventListener("touchstart", pressHandler);
+      control.addEventListener("mouseup", releaseHandler);
+      control.addEventListener("mouseleave", releaseHandler);
+      control.addEventListener("touchend", releaseHandler);
+    });
+  }
+  function setupClickHandlers(element, eventHandlers) {
+    const PlayPauseControl = element.querySelector(".PlayStateToggle");
+    const PrevTrackControl = element.querySelector(".PrevTrack");
+    const NextTrackControl = element.querySelector(".NextTrack");
+    const ShuffleControl = element.querySelector(".ShuffleToggle");
+    const LoopControl = element.querySelector(".LoopToggle");
+    if (!PlayPauseControl || !PrevTrackControl || !NextTrackControl || !ShuffleControl || !LoopControl) {
+      console.error("Missing required control elements");
+      return;
+    }
+    const playPauseHandler = createPlayPauseHandler(PlayPauseControl);
+    const prevTrackHandler = () => SpotifyPlayer.Skip.Prev();
+    const nextTrackHandler = () => SpotifyPlayer.Skip.Next();
+    const shuffleHandler = createShuffleHandler(ShuffleControl);
+    const loopHandler = createLoopHandler(LoopControl);
+    eventHandlers.clickHandlers.set(PlayPauseControl, playPauseHandler);
+    eventHandlers.clickHandlers.set(PrevTrackControl, prevTrackHandler);
+    eventHandlers.clickHandlers.set(NextTrackControl, nextTrackHandler);
+    eventHandlers.clickHandlers.set(ShuffleControl, shuffleHandler);
+    eventHandlers.clickHandlers.set(LoopControl, loopHandler);
+    PlayPauseControl.addEventListener("click", playPauseHandler);
+    PrevTrackControl.addEventListener("click", prevTrackHandler);
+    NextTrackControl.addEventListener("click", nextTrackHandler);
+    ShuffleControl.addEventListener("click", shuffleHandler);
+    LoopControl.addEventListener("click", loopHandler);
+  }
+  function createPlayPauseHandler(control) {
+    return () => {
+      const playSvg = control.querySelector("svg");
+      if (SpotifyPlayer.IsPlaying) {
+        SpotifyPlayer.IsPlaying = false;
+        SpotifyPlayer.Pause();
+        control.classList.remove("Playing");
+        control.classList.add("Paused");
+        if (playSvg) {
+          playSvg.innerHTML = Icons.Play;
+        }
+      } else {
+        SpotifyPlayer.IsPlaying = true;
+        SpotifyPlayer.Play();
+        control.classList.remove("Paused");
+        control.classList.add("Playing");
+        if (playSvg) {
+          playSvg.innerHTML = Icons.Pause;
+        }
+      }
+    };
+  }
+  function createShuffleHandler(control) {
+    return () => {
+      const shuffleSvg = control.querySelector("svg");
+      if (SpotifyPlayer.ShuffleType === "none") {
+        SpotifyPlayer.ShuffleType = "normal";
+        control.classList.add("Enabled");
+        if (shuffleSvg instanceof HTMLElement) {
+          shuffleSvg.style.filter = "drop-shadow(0 0 5px white)";
+        }
+        Spicetify.Player.setShuffle(true);
+      } else if (SpotifyPlayer.ShuffleType === "normal") {
+        SpotifyPlayer.ShuffleType = "none";
+        control.classList.remove("Enabled");
+        if (shuffleSvg instanceof HTMLElement) {
+          shuffleSvg.style.filter = "";
+        }
+        Spicetify.Player.setShuffle(false);
+      }
+    };
+  }
+  function createLoopHandler(control) {
+    return () => {
+      const loopSvg = control.querySelector("svg");
+      if (!loopSvg)
+        return;
+      if (SpotifyPlayer.LoopType === "none") {
+        SpotifyPlayer.LoopType = "context";
+        Spicetify.Player.setRepeat(1);
+        control.classList.add("Enabled");
+        if (loopSvg instanceof HTMLElement) {
+          loopSvg.innerHTML = Icons.Loop;
+          loopSvg.style.filter = "drop-shadow(0 0 5px white)";
+        }
+      } else if (SpotifyPlayer.LoopType === "context") {
+        SpotifyPlayer.LoopType = "track";
+        Spicetify.Player.setRepeat(2);
+        if (loopSvg instanceof HTMLElement) {
+          loopSvg.innerHTML = Icons.LoopTrack;
+          loopSvg.style.filter = "drop-shadow(0 0 5px white)";
+        }
+      } else if (SpotifyPlayer.LoopType === "track") {
+        SpotifyPlayer.LoopType = "none";
+        Spicetify.Player.setRepeat(0);
+        control.classList.remove("Enabled");
+        if (loopSvg instanceof HTMLElement) {
+          loopSvg.innerHTML = Icons.Loop;
+          loopSvg.style.filter = "";
+        }
+      }
+    };
+  }
+  function cleanupEventHandlers(element, eventHandlers) {
+    const playbackControls = element.querySelectorAll(".PlaybackControl");
+    const PlayPauseControl = element.querySelector(".PlayStateToggle");
+    const PrevTrackControl = element.querySelector(".PrevTrack");
+    const NextTrackControl = element.querySelector(".NextTrack");
+    const ShuffleControl = element.querySelector(".ShuffleToggle");
+    const LoopControl = element.querySelector(".LoopToggle");
+    playbackControls.forEach((control) => {
+      const pressHandler = eventHandlers.pressHandlers.get(control);
+      const releaseHandler = eventHandlers.releaseHandlers.get(control);
+      if (pressHandler) {
+        control.removeEventListener("mousedown", pressHandler);
+        control.removeEventListener("touchstart", pressHandler);
+      }
+      if (releaseHandler) {
+        control.removeEventListener("mouseup", releaseHandler);
+        control.removeEventListener("mouseleave", releaseHandler);
+        control.removeEventListener("touchend", releaseHandler);
+      }
+    });
+    if (PlayPauseControl) {
+      const handler = eventHandlers.clickHandlers.get(PlayPauseControl);
+      if (handler)
+        PlayPauseControl.removeEventListener("click", handler);
+    }
+    if (PrevTrackControl) {
+      const handler = eventHandlers.clickHandlers.get(PrevTrackControl);
+      if (handler)
+        PrevTrackControl.removeEventListener("click", handler);
+    }
+    if (NextTrackControl) {
+      const handler = eventHandlers.clickHandlers.get(NextTrackControl);
+      if (handler)
+        NextTrackControl.removeEventListener("click", handler);
+    }
+    if (ShuffleControl) {
+      const handler = eventHandlers.clickHandlers.get(ShuffleControl);
+      if (handler)
+        ShuffleControl.removeEventListener("click", handler);
+    }
+    if (LoopControl) {
+      const handler = eventHandlers.clickHandlers.get(LoopControl);
+      if (handler)
+        LoopControl.removeEventListener("click", handler);
+    }
+    eventHandlers.pressHandlers.clear();
+    eventHandlers.releaseHandlers.clear();
+    eventHandlers.clickHandlers.clear();
+    if (element.parentNode) {
+      element.parentNode.removeChild(element);
+    }
+  }
+  var SetupPlaybackControls;
+  var init_PlaybackControls = __esm({
+    "src/components/NowBar/PlaybackControls.ts"() {
+      init_Icons();
+      init_SpotifyPlayer();
+      SetupPlaybackControls = (AppendQueue) => {
+        const ControlsElement = createControlsElement();
+        setupInitialControlState(ControlsElement);
+        const eventHandlers = setupEventHandlers(ControlsElement);
+        return {
+          Apply: () => {
+            AppendQueue.push(ControlsElement);
+          },
+          CleanUp: () => cleanupEventHandlers(ControlsElement, eventHandlers),
+          GetElement: () => ControlsElement
+        };
+      };
+    }
+  });
+
+  // src/utils/Lyrics/SongProgressBar.ts
+  var SongProgressBar;
+  var init_SongProgressBar = __esm({
+    "src/utils/Lyrics/SongProgressBar.ts"() {
+      SongProgressBar = class {
+        constructor() {
+          this.destroyed = false;
+          this.duration = 0;
+          this.position = 0;
+        }
+        Update(params) {
+          if (this.destroyed) {
+            console.warn("This progress bar has been destroyed and cannot be used");
+            return;
+          }
+          this.duration = params.duration;
+          this.position = Math.min(params.position, this.duration);
+        }
+        Destroy() {
+          if (this.destroyed)
+            return;
+          this.destroyed = true;
+        }
+        GetFormattedDuration() {
+          return this.formatTime(this.duration);
+        }
+        GetFormattedPosition() {
+          return this.formatTime(this.position);
+        }
+        GetProgressPercentage() {
+          if (this.duration <= 0)
+            return 0;
+          return this.position / this.duration;
+        }
+        CalculatePositionFromClick(params) {
+          const { sliderBar, event } = params;
+          if (this.duration <= 0)
+            return 0;
+          const rect = sliderBar.getBoundingClientRect();
+          const clickX = event.clientX - rect.left;
+          const percentage = Math.max(0, Math.min(1, clickX / rect.width));
+          return Math.floor(percentage * this.duration);
+        }
+        formatTime(timeInMs) {
+          if (isNaN(timeInMs) || timeInMs < 0) {
+            return "0:00";
+          }
+          const totalSeconds = Math.floor(timeInMs / 1e3);
+          const minutes = Math.floor(totalSeconds / 60);
+          const seconds = totalSeconds % 60;
+          return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+        }
+      };
+    }
+  });
+
+  // src/components/NowBar/ProgressBar.ts
+  function createProgressBarElements() {
+    const songProgressBar = new SongProgressBar();
+    songProgressBar.Update({
+      duration: SpotifyPlayer.GetTrackDuration() ?? 0,
+      position: SpotifyPlayer.GetTrackPosition() ?? 0
+    });
+    const timelineElement = document.createElement("div");
+    timelineElement.classList.add("Timeline");
+    timelineElement.innerHTML = `
+          <span class="Time Position">${songProgressBar.GetFormattedPosition() ?? "0:00"}</span>
+          <div class="SliderBar" style="--SliderProgress: ${songProgressBar.GetProgressPercentage() ?? 0}">
+            <div class="Handle"></div>
+          </div>
+          <span class="Time Duration">${songProgressBar.GetFormattedDuration() ?? "0:00"}</span>
+        `;
+    const sliderBar = timelineElement.querySelector(".SliderBar");
+    return { songProgressBar, timelineElement, sliderBar };
+  }
+  function createUpdateFunction(songProgressBar, timelineElement, sliderBar) {
+    return (e = null) => {
+      const positionElement = timelineElement.querySelector(".Time.Position");
+      const durationElement = timelineElement.querySelector(".Time.Duration");
+      if (!positionElement || !durationElement || !sliderBar) {
+        console.error("Missing required elements for timeline update");
+        return;
+      }
+      let currentPosition;
+      if (e === null) {
+        currentPosition = SpotifyPlayer.GetTrackPosition();
+      } else if (typeof e === "number") {
+        currentPosition = e;
+      } else if (e && e.data && typeof e.data === "number") {
+        currentPosition = e.data;
+      } else {
+        currentPosition = SpotifyPlayer.GetTrackPosition();
+      }
+      songProgressBar.Update({
+        duration: SpotifyPlayer.GetTrackDuration() ?? 0,
+        position: currentPosition ?? 0
+      });
+      const sliderPercentage = songProgressBar.GetProgressPercentage();
+      const formattedPosition = songProgressBar.GetFormattedPosition();
+      const formattedDuration = songProgressBar.GetFormattedDuration();
+      sliderBar.style.setProperty("--SliderProgress", sliderPercentage.toString());
+      durationElement.textContent = formattedDuration;
+      positionElement.textContent = formattedPosition;
+    };
+  }
+  function createSliderClickHandler(songProgressBar, sliderBar, timelineElement) {
+    return (event) => {
+      if (!Fullscreen_default.IsOpen)
+        return;
+      const positionMs = songProgressBar.CalculatePositionFromClick({
+        sliderBar,
+        event
+      });
+      if (typeof SpotifyPlayer !== "undefined" && SpotifyPlayer.Seek) {
+        SpotifyPlayer.Seek(positionMs);
+        progressBarState.lastKnownPosition = positionMs;
+        progressBarState.lastUpdateTime = performance.now();
+        songProgressBar.Update({
+          duration: SpotifyPlayer.GetTrackDuration() ?? 0,
+          position: positionMs
+        });
+        const sliderPercentage = songProgressBar.GetProgressPercentage();
+        const formattedPosition = songProgressBar.GetFormattedPosition();
+        sliderBar.style.setProperty("--SliderProgress", sliderPercentage.toString());
+        const positionElement = timelineElement.querySelector(".Time.Position");
+        if (positionElement) {
+          positionElement.textContent = formattedPosition;
+        }
+      }
+    };
+  }
+  function initializeTrackingVariables() {
+    progressBarState.lastKnownPosition = SpotifyPlayer.GetTrackPosition() || 0;
+    progressBarState.lastUpdateTime = performance.now();
+  }
+  function setupUpdateInterval(updateTimelineState) {
+    return setInterval(() => {
+      if (SpotifyPlayer.IsPlaying) {
+        const { lastKnownPosition, lastUpdateTime } = progressBarState;
+        const now2 = performance.now();
+        const elapsed = now2 - (lastUpdateTime || now2);
+        if (elapsed > 3e3) {
+          const actualPosition = SpotifyPlayer.GetTrackPosition() || 0;
+          progressBarState.lastKnownPosition = actualPosition;
+          progressBarState.lastUpdateTime = now2;
+          updateTimelineState(actualPosition);
+        } else {
+          const interpolatedPosition = (lastKnownPosition || 0) + elapsed;
+          progressBarState.lastInterpolationUpdate = now2;
+          updateTimelineState(interpolatedPosition);
+        }
+      }
+    }, 100);
+  }
+  function cleanupProgressBar(sliderBar, sliderBarHandler) {
+    if (sliderBar) {
+      sliderBar.removeEventListener("click", sliderBarHandler);
+    }
+    const { updateInterval, SongProgressBar_ClassInstance, TimeLineElement } = progressBarState;
+    if (updateInterval) {
+      clearInterval(updateInterval);
+    }
+    if (SongProgressBar_ClassInstance) {
+      SongProgressBar_ClassInstance.Destroy();
+    }
+    if (TimeLineElement && TimeLineElement.parentNode) {
+      TimeLineElement.parentNode.removeChild(TimeLineElement);
+    }
+    Object.keys(progressBarState).forEach((key) => {
+      delete progressBarState[key];
+    });
+    progressBarState.lastKnownPosition = 0;
+    progressBarState.lastUpdateTime = 0;
+  }
+  var SetupSongProgressBar;
+  var init_ProgressBar = __esm({
+    "src/components/NowBar/ProgressBar.ts"() {
+      init_SongProgressBar();
+      init_SpotifyPlayer();
+      init_Fullscreen();
+      init_state();
+      SetupSongProgressBar = (AppendQueue) => {
+        const { songProgressBar, timelineElement, sliderBar } = createProgressBarElements();
+        if (!sliderBar) {
+          console.error("Could not find SliderBar element");
+          return null;
+        }
+        const updateTimelineState = createUpdateFunction(
+          songProgressBar,
+          timelineElement,
+          sliderBar
+        );
+        const sliderBarHandler = createSliderClickHandler(
+          songProgressBar,
+          sliderBar,
+          timelineElement
+        );
+        sliderBar.addEventListener("click", sliderBarHandler);
+        updateTimelineState();
+        initializeTrackingVariables();
+        const updateInterval = setupUpdateInterval(updateTimelineState);
+        progressBarState.SongProgressBar_ClassInstance = songProgressBar;
+        progressBarState.TimeLineElement = timelineElement;
+        progressBarState.updateTimelineState_Function = updateTimelineState;
+        progressBarState.updateInterval = updateInterval;
+        return {
+          Apply: () => {
+            AppendQueue.push(timelineElement);
+          },
+          GetElement: () => timelineElement,
+          CleanUp: () => cleanupProgressBar(sliderBar, sliderBarHandler)
+        };
+      };
+    }
+  });
+
+  // src/components/NowBar/NowBar.ts
+  function OpenNowBar() {
+    const NowBar = document.querySelector("#SpicyLyricsPage .ContentBox .NowBar");
+    if (!NowBar)
+      return;
+    UpdateNowBar(true);
+    if (!NowBar.classList.contains("Active"))
+      NowBar.classList.add("Active");
+    storage_default.set("IsNowBarOpen", "true");
+    if (Fullscreen_default.IsOpen) {
+      const MediaBox = document.querySelector(
+        "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent"
+      );
+      if (!MediaBox)
+        return;
+      const existingAlbumData = MediaBox.querySelector(".AlbumData");
+      if (existingAlbumData)
+        MediaBox.removeChild(existingAlbumData);
+      const existingPlaybackControls = MediaBox.querySelector(".PlaybackControls");
+      if (existingPlaybackControls)
+        MediaBox.removeChild(existingPlaybackControls);
+      {
+        const AppendQueue = [];
+        {
+          const AlbumNameElement = document.createElement("div");
+          AlbumNameElement.classList.add("AlbumData");
+          AlbumNameElement.innerHTML = `<span>${SpotifyPlayer.GetAlbumName()}</span>`;
+          AppendQueue.push(AlbumNameElement);
+        }
+        const playbackControlsInstance = SetupPlaybackControls(AppendQueue);
+        setActivePlaybackControlsInstance(playbackControlsInstance);
+        ActivePlaybackControlsInstance.Apply();
+        const songProgressBarInstance = SetupSongProgressBar(AppendQueue);
+        setActiveSetupSongProgressBarInstance(songProgressBarInstance);
+        if (ActiveSetupSongProgressBarInstance) {
+          ActiveSetupSongProgressBarInstance.Apply();
+        }
+        Whentil_default.When(
+          () => document.querySelector("#SpicyLyricsPage .ContentBox .NowBar .Header .ViewControls"),
+          () => {
+            const viewControls = MediaBox.querySelector(".ViewControls");
+            const fragment = document.createDocumentFragment();
+            AppendQueue.forEach((element) => {
+              fragment.appendChild(element);
+            });
+            if (fragment.childNodes.length > 0) {
+              MediaBox.innerHTML = "";
+              if (viewControls)
+                MediaBox.appendChild(viewControls);
+              MediaBox.appendChild(fragment);
+            }
+          }
+        );
+      }
+    }
+    setupDragAndDrop();
+    setupEventListeners();
   }
   function CloseNowBar() {
     const NowBar = document.querySelector("#SpicyLyricsPage .ContentBox .NowBar");
@@ -10943,134 +11111,34 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       nowBarButton.remove();
     }
   }
-  function handlePlayPauseEvent(e) {
-    if (!Fullscreen_default.IsOpen)
-      return;
-    updatePlayPauseUI(e);
-    updateProgressBarState();
-  }
-  function updatePlayPauseUI(e) {
-    if (!ActivePlaybackControlsInstance)
-      return;
-    const playbackControls = ActivePlaybackControlsInstance.GetElement();
-    const playPauseButton = playbackControls?.querySelector(".PlayStateToggle");
-    if (!playPauseButton)
-      return;
-    const isPaused = e?.data?.isPaused;
-    const svg = playPauseButton.querySelector("svg");
-    if (isPaused) {
-      playPauseButton.classList.remove("Playing");
-      playPauseButton.classList.add("Paused");
-      if (svg)
-        svg.innerHTML = Icons.Play;
-    } else {
-      playPauseButton.classList.remove("Paused");
-      playPauseButton.classList.add("Playing");
-      if (svg)
-        svg.innerHTML = Icons.Pause;
-    }
-  }
-  function updateProgressBarState() {
-    if (!ActiveSetupSongProgressBarInstance)
-      return;
-    const actualPosition = SpotifyPlayer.GetTrackPosition() || 0;
-    progressBarState.lastKnownPosition = actualPosition;
-    progressBarState.lastUpdateTime = performance.now();
-    const updateTimelineState = progressBarState.updateTimelineState_Function;
-    if (updateTimelineState) {
-      updateTimelineState(actualPosition);
-    }
-  }
-  function handleLoopEvent(e) {
-    if (!Fullscreen_default.IsOpen || !ActivePlaybackControlsInstance)
-      return;
-    const playbackControls = ActivePlaybackControlsInstance.GetElement();
-    const loopButton = playbackControls.querySelector(".LoopToggle");
-    if (!loopButton)
-      return;
-    const svg = loopButton.querySelector("svg");
-    if (!svg)
-      return;
-    svg.style.filter = "";
-    svg.innerHTML = e === "track" ? Icons.LoopTrack : Icons.Loop;
-    if (e !== "none") {
-      loopButton.classList.add("Enabled");
-      svg.style.filter = "drop-shadow(0 0 5px white)";
-    } else {
-      loopButton.classList.remove("Enabled");
-    }
-  }
-  function handleShuffleEvent(e) {
-    if (!Fullscreen_default.IsOpen || !ActivePlaybackControlsInstance)
-      return;
-    const playbackControls = ActivePlaybackControlsInstance.GetElement();
-    const shuffleButton = playbackControls.querySelector(".ShuffleToggle");
-    if (!shuffleButton)
-      return;
-    const svg = shuffleButton.querySelector("svg");
-    if (!svg)
-      return;
-    svg.style.filter = "";
-    if (e !== "none") {
-      shuffleButton.classList.add("Enabled");
-      svg.style.filter = "drop-shadow(0 0 5px white)";
-    } else {
-      shuffleButton.classList.remove("Enabled");
-    }
-  }
-  function handlePositionUpdate(e) {
-    if (!Fullscreen_default.IsOpen || !ActiveSetupSongProgressBarInstance)
-      return;
-    let position = null;
-    if (typeof e === "number") {
-      position = e;
-    } else if (e && e.data && typeof e.data === "number") {
-      position = e.data;
-    }
-    if (position !== null) {
-      if (progressBarState.lastKnownPosition !== position) {
-        progressBarState.lastKnownPosition = position;
-        progressBarState.lastUpdateTime = performance.now();
-        const lastInterpolationUpdate = progressBarState.lastInterpolationUpdate || 0;
-        if (performance.now() - lastInterpolationUpdate > 500) {
-          const updateTimelineState = progressBarState.updateTimelineState_Function;
-          if (updateTimelineState) {
-            updateTimelineState(position);
-          }
-        }
-      }
-    }
-  }
-  var ActivePlaybackControlsInstance, progressBarState, ActiveSetupSongProgressBarInstance;
   var init_NowBar = __esm({
-    "src/components/Utils/NowBar.ts"() {
-      init_SongProgressBar();
+    "src/components/NowBar/NowBar.ts"() {
       init_storage();
       init_Whentil();
-      init_Global();
       init_SpotifyPlayer();
-      init_Icons();
       init_Fullscreen();
-      ActivePlaybackControlsInstance = null;
-      progressBarState = {
-        lastKnownPosition: 0,
-        lastUpdateTime: 0
-      };
-      ActiveSetupSongProgressBarInstance = null;
-      Global_default.Event.listen("playback:playpause", (e) => {
-        handlePlayPauseEvent(e);
-      });
-      Global_default.Event.listen("playback:loop", (e) => {
-        handleLoopEvent(e);
-      });
-      Global_default.Event.listen("playback:shuffle", (e) => {
-        handleShuffleEvent(e);
-      });
-      Global_default.Event.listen("playback:position", handlePositionUpdate);
-      Global_default.Event.listen("playback:progress", handlePositionUpdate);
-      Global_default.Event.listen("fullscreen:exit", () => {
-        CleanUpActiveComponents();
-      });
+      init_DragAndDrop();
+      init_EventListeners();
+      init_PlaybackControls();
+      init_ProgressBar();
+      init_state();
+    }
+  });
+
+  // src/components/Utils/NowBar.ts
+  var NowBar_exports = {};
+  __export(NowBar_exports, {
+    CloseNowBar: () => CloseNowBar,
+    DeregisterNowBarBtn: () => DeregisterNowBarBtn,
+    NowBar_SwapSides: () => NowBar_SwapSides,
+    OpenNowBar: () => OpenNowBar,
+    Session_NowBar_SetSide: () => Session_NowBar_SetSide,
+    Session_OpenNowBar: () => Session_OpenNowBar,
+    UpdateNowBar: () => UpdateNowBar
+  });
+  var init_NowBar2 = __esm({
+    "src/components/Utils/NowBar.ts"() {
+      init_NowBar();
     }
   });
 
@@ -11082,7 +11150,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     document.querySelector("#SpicyLyricsPage .ContentBox .LyricsContainer")?.classList.remove("Hidden");
     if (!Fullscreen_default.IsOpen)
-      PageView_default.AppendViewControls(true);
+      PageView_default.AppendViewControls();
   }
   async function noLyricsMessage(trackId) {
     try {
@@ -11137,10 +11205,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     "src/utils/Lyrics/ui.ts"() {
       init_storage();
       init_Defaults();
-      init_NowBar();
+      init_NowBar2();
       init_PageView();
       init_Fullscreen();
-      init_PageView();
+      init_pageButtons();
       ContainerShowLoaderTimeout = null;
     }
   });
@@ -18889,7 +18957,7 @@ ${JSON.stringify(lyricsOnly)}`
       init_ui();
       init_cache();
       init_api();
-      init_PageView();
+      init_pageButtons();
     }
   });
 
@@ -19515,7 +19583,7 @@ ${JSON.stringify(lyricsOnly)}`
       this.backgroundManager.apply(Spicetify.Player.data?.item?.metadata?.image_url);
       if (Spicetify.Player.data.item?.type === "track") {
         if (document.querySelector("#SpicyLyricsPage .ContentBox .NowBar")) {
-          const { UpdateNowBar: UpdateNowBar2 } = await Promise.resolve().then(() => (init_NowBar(), NowBar_exports));
+          const { UpdateNowBar: UpdateNowBar2 } = await Promise.resolve().then(() => (init_NowBar2(), NowBar_exports));
           UpdateNowBar2();
         }
       }
@@ -19725,7 +19793,7 @@ ${JSON.stringify(lyricsOnly)}`
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-13196-443LUWLzlKx5/19855f8eddd8/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-26236-j4x5kija4n4S/198766010db8/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -19751,7 +19819,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13196-443LUWLzlKx5/19855f8ecfb0/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-26236-j4x5kija4n4S/1987660104b0/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -19893,7 +19961,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13196-443LUWLzlKx5/19855f8ed431/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-26236-j4x5kija4n4S/1987660108b1/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -20101,7 +20169,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13196-443LUWLzlKx5/19855f8ed572/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-26236-j4x5kija4n4S/198766010942/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -20641,7 +20709,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13196-443LUWLzlKx5/19855f8ed733/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-26236-j4x5kija4n4S/198766010a73/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -20815,7 +20883,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13196-443LUWLzlKx5/19855f8ed884/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-26236-j4x5kija4n4S/198766010b04/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -20891,6 +20959,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   color: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  font-size: .9em;
 }
 #SpicyLyricsPage .AmaiPageButton:hover {
   background: rgba(255, 255, 255, 0.2);
@@ -20910,6 +20979,15 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
 }
 #SpicyLyricsPage.Fullscreen .AmaiPageButtonContainer {
   display: none;
+}
+#SpicyLyricsPage .amai-version-number {
+  font-size: .85em;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  font-weight: normal;
+}
+#SpicyLyricsPage .amai-version-number:hover {
+  color: rgba(255, 255, 255, 1);
 }
 header.main-topBar-container .amai-info {
   position: fixed;
@@ -21075,7 +21153,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13196-443LUWLzlKx5/19855f8ed9b5/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-26236-j4x5kija4n4S/198766010ba5/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -21360,7 +21438,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13196-443LUWLzlKx5/19855f8edb06/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-26236-j4x5kija4n4S/198766010c36/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -21383,7 +21461,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-13196-443LUWLzlKx5/19855f8edb67/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-26236-j4x5kija4n4S/198766010c97/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
