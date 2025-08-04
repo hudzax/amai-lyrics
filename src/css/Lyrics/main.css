@@ -90,6 +90,7 @@
   color: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  font-size: .9em;
 }
 
 #SpicyLyricsPage .AmaiPageButton:hover {
@@ -117,6 +118,17 @@
 /* Hide refresh button when in fullscreen mode */
 #SpicyLyricsPage.Fullscreen .AmaiPageButtonContainer {
   display: none;
+}
+
+#SpicyLyricsPage .amai-version-number {
+  font-size: .85em;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  font-weight:normal;
+}
+
+#SpicyLyricsPage .amai-version-number:hover {
+  color: rgba(255, 255, 255, 1);
 }
 
 header.main-topBar-container .amai-info {

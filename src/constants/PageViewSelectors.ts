@@ -10,7 +10,6 @@ export const PageViewSelectors = {
   HeaderViewControls: '#SpicyLyricsPage .ContentBox .NowBar .Header .ViewControls',
   RefreshLyricsButton: '#RefreshLyrics',
   WatchMusicVideoButton: '#WatchMusicVideoButton',
-  ReleaseLogsButton: '#ReleaseLogsButton',
   CloseButton: '#Close',
   FullscreenToggleButton: '#FullscreenToggle',
   LoaderContainer: '#SpicyLyricsPage .loaderContainer',

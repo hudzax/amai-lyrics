@@ -8,9 +8,8 @@ import ApplyLyrics from '../../utils/Lyrics/Global/Applyer';
 import { SpotifyPlayer } from '../Global/SpotifyPlayer';
 
 export function setupActionButtons(maid: Maid | null) {
-    setupRefreshButton(maid);
-    setupReleaseLogsButton(maid);
-    setupWatchMusicVideoButton(maid);
+  setupRefreshButton(maid);
+  setupWatchMusicVideoButton(maid);
 }
 
 function setupRefreshButton(maid: Maid | null) {
@@ -70,20 +69,6 @@ function setupWatchMusicVideoButton(maid: Maid | null) {
 
   watchMusicVideoButton.addEventListener('click', clickHandler);
   maid?.Give(() => watchMusicVideoButton.removeEventListener('click', clickHandler));
-}
-
-function setupReleaseLogsButton(maid: Maid | null) {
-  const releaseLogsButton = document.querySelector<HTMLButtonElement>(
-    PageViewSelectors.ReleaseLogsButton,
-  );
-  if (!releaseLogsButton) return;
-
-  const clickHandler = () => {
-    window.open('https://github.com/hudzax/amai-lyrics/releases', '_blank');
-  };
-
-  releaseLogsButton.addEventListener('click', clickHandler);
-  maid?.Give(() => releaseLogsButton.removeEventListener('click', clickHandler));
 }
 
 export function showRefreshButton() {

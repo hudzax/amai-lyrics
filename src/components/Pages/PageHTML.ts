@@ -1,3 +1,5 @@
+import Defaults from '../Global/Defaults';
+
 export const PageHTML = `
 <div class="NotificationContainer"></div>
 <div class="ContentBox">
@@ -24,8 +26,8 @@ export const NowBarHTML = `
         <div class="MediaBox">
             <div class="MediaContent" draggable="true"></div>
             <div class="MediaImagePlaceholder"></div>
-            <img class="MediaImage" 
-                 src="" 
+            <img class="MediaImage"
+                 src=""
                  data-high-res=""
                  fetchpriority="high"
                  loading="eager"
@@ -42,15 +44,13 @@ export const NowBarHTML = `
         </div>
     </div>
     <div class="AmaiPageButtonContainer">
-      <button id="RefreshLyrics" class="AmaiPageButton">
-          Reload Current Lyrics
-      </button>  
-      <button id="WatchMusicVideoButton" class="AmaiPageButton">
-          Watch Music Video
-      </button>
-      <button id="ReleaseLogsButton" class="AmaiPageButton">
-          Open Release Notes
-      </button>
+        <button id="RefreshLyrics" class="AmaiPageButton">
+            Reload Current Lyrics
+        </button>
+        <button id="WatchMusicVideoButton" class="AmaiPageButton">
+            Watch Music Video
+        </button>
+        <span onclick="window.open('https://github.com/hudzax/amai-lyrics/releases')" class="amai-version-number">Amai Lyrics v${Defaults.Version}</span>
     </div>
 </div>
 `;
