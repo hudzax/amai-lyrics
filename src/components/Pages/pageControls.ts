@@ -4,7 +4,7 @@ import { Icons } from '../Styling/Icons';
 import Fullscreen from '../Utils/Fullscreen';
 import TransferElement from '../Utils/TransferElement';
 import Session from '../Global/Session';
-import fastdom from '../../utils/fastdom';
+import fastdom from 'fastdom';
 
 export const Tooltips: Record<string, { destroy: () => void } | null> = {
   Close: null,
@@ -16,21 +16,28 @@ export const Tooltips: Record<string, { destroy: () => void } | null> = {
 export async function AppendViewControls(maid: Maid | null, ReAppend: boolean = false) {
   const elem = document.querySelector<HTMLElement>(PageViewSelectors.ViewControls);
   if (!elem) return;
-  await fastdom.write(() => {
-    if (ReAppend) elem.innerHTML = '';
-    elem.innerHTML = `
-          <button id="Close" class="ViewControl">${Icons.Close}</button>
-          <button id="FullscreenToggle" class="ViewControl">${
-            Fullscreen.IsOpen ? Icons.CloseFullscreen : Icons.Fullscreen
-          }</button>
-      `;
+
+  await new Promise<void>((resolve) => {
+    fastdom.mutate(() => {
+      if (ReAppend) elem.innerHTML = '';
+      elem.innerHTML = `
+            <button id="Close" class="ViewControl">${Icons.Close}</button>
+            <button id="FullscreenToggle" class="ViewControl">${
+              Fullscreen.IsOpen ? Icons.CloseFullscreen : Icons.Fullscreen
+            }</button>
+        `;
+      resolve();
+    });
   });
 
   if (Fullscreen.IsOpen) {
     const headerElem = document.querySelector<HTMLElement>(PageViewSelectors.Header);
     if (headerElem) {
-      await fastdom.write(() => {
-        TransferElement(elem, headerElem, 0);
+      await new Promise<void>((resolve) => {
+        fastdom.mutate(() => {
+          TransferElement(elem, headerElem, 0);
+          resolve();
+        });
       });
     }
     Object.values(Tooltips).forEach((a) => a?.destroy());
@@ -45,8 +52,11 @@ export async function AppendViewControls(maid: Maid | null, ReAppend: boolean = 
     if (headerViewControlsElem) {
       const contentBoxElem = document.querySelector<HTMLElement>(PageViewSelectors.ContentBox);
       if (contentBoxElem) {
-        await fastdom.write(() => {
-          TransferElement(elem, contentBoxElem);
+        await new Promise<void>((resolve) => {
+          fastdom.mutate(() => {
+            TransferElement(elem, contentBoxElem);
+            resolve();
+          });
         });
       }
     }

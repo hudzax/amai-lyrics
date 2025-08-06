@@ -1,5 +1,5 @@
 import { SpotifyPlayer } from '../Global/SpotifyPlayer';
-import fastdom from '../../utils/fastdom';
+import fastdom from 'fastdom';
 import { PageViewSelectors } from '../../constants/PageViewSelectors';
 import { Maid } from '@hudzax/web-modules/Maid';
 
@@ -12,7 +12,7 @@ export function setupImageLoading(imageElement: ImageElementWithSetup, maid: Mai
   imageElement._setupImageLoading = true;
 
   const onloadHandler = () => {
-    fastdom.write(() => {
+    fastdom.mutate(() => {
       imageElement.classList.add('loaded');
     });
 
@@ -20,7 +20,7 @@ export function setupImageLoading(imageElement: ImageElementWithSetup, maid: Mai
     if (highResUrl) {
       const highResImage = new Image();
       highResImage.onload = () => {
-        fastdom.write(() => {
+        fastdom.mutate(() => {
           if (imageElement.src !== highResUrl) {
             imageElement.src = highResUrl;
           }
@@ -42,14 +42,16 @@ export async function UpdatePageContent(isOpened: boolean) {
   const mediaImage = document.querySelector<HTMLImageElement>(PageViewSelectors.MediaImage);
 
   if (mediaImage) {
-    await fastdom.write(() => {
-      if (mediaImage.classList.contains('loaded')) {
-        mediaImage.classList.remove('loaded');
-      }
+    const mutationPromise = new Promise<void>((resolve) => {
+      fastdom.mutate(() => {
+        if (mediaImage.classList.contains('loaded')) {
+          mediaImage.classList.remove('loaded');
+        }
+        resolve();
+      });
     });
 
-    updateSongInfo();
-    updateArtwork(mediaImage);
+    await Promise.all([mutationPromise, updateSongInfo(), updateArtwork(mediaImage)]);
   }
 }
 
@@ -60,19 +62,20 @@ async function updateSongInfo() {
   const [songName, artists] = await Promise.all([songNamePromise, artistsPromise]);
 
   const songNameElem = document.querySelector<HTMLElement>(PageViewSelectors.SongName);
-  if (songNameElem && songNameElem.textContent !== songName) {
-    await fastdom.write(() => {
-      songNameElem.textContent = songName;
-    });
-  }
-
   const artistsElem = document.querySelector<HTMLElement>(PageViewSelectors.Artists);
   const joinedArtists = SpotifyPlayer.JoinArtists(artists);
-  if (artistsElem && artistsElem.textContent !== joinedArtists) {
-    await fastdom.write(() => {
-      artistsElem.textContent = joinedArtists;
+
+  return new Promise<void>((resolve) => {
+    fastdom.mutate(() => {
+      if (songNameElem && songNameElem.textContent !== songName) {
+        songNameElem.textContent = songName;
+      }
+      if (artistsElem && artistsElem.textContent !== joinedArtists) {
+        artistsElem.textContent = joinedArtists;
+      }
+      resolve();
     });
-  }
+  });
 }
 
 async function updateArtwork(mediaImage: HTMLImageElement) {
@@ -82,16 +85,17 @@ async function updateArtwork(mediaImage: HTMLImageElement) {
       SpotifyPlayer.Artwork.Get('xl'),
     ]);
 
-    if (standardUrl && mediaImage.src !== standardUrl) {
-      await fastdom.write(() => {
-        mediaImage.src = standardUrl;
+    return new Promise<void>((resolve) => {
+      fastdom.mutate(() => {
+        if (standardUrl && mediaImage.src !== standardUrl) {
+          mediaImage.src = standardUrl;
+        }
+        if (highResUrl && mediaImage.getAttribute('data-high-res') !== highResUrl) {
+          mediaImage.setAttribute('data-high-res', highResUrl);
+        }
+        resolve();
       });
-    }
-    if (highResUrl && mediaImage.getAttribute('data-high-res') !== highResUrl) {
-      await fastdom.write(() => {
-        mediaImage.setAttribute('data-high-res', highResUrl);
-      });
-    }
+    });
   } catch (error) {
     console.error('Failed to load artwork:', error);
   }

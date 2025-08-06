@@ -1,4 +1,4 @@
-import fastdom from '../../utils/fastdom';
+import fastdom from 'fastdom';
 
 interface BackgroundCache {
   nowPlayingBar: Element | null;
@@ -30,24 +30,25 @@ export class NowPlayingBarBackground {
       // Quick check for cached values to avoid unnecessary work
       if (coverUrl === this.cached.lastImgUrl && this.cached.dynamicBg) return;
 
-      fastdom.readThenWrite(
-        // Read phase
-        () => {
+      // Use closure variables to pass data from measure to mutate
+      new Promise<{
+        nowPlayingBar: Element | null;
+        hasDynamicBg: boolean;
+        images: { imgA: HTMLImageElement; imgB: HTMLImageElement } | null;
+      }>((resolve) => {
+        fastdom.measure(() => {
           const nowPlayingBar = document.querySelector('.Root__right-sidebar aside.NowPlayingView');
-
-          return {
-            nowPlayingBar: nowPlayingBar,
-            hasDynamicBg: !!this.cached.dynamicBg,
-            images: this.cached.dynamicBg
-              ? {
-                  imgA: this.cached.dynamicBg.querySelector('#bg-img-a') as HTMLImageElement,
-                  imgB: this.cached.dynamicBg.querySelector('#bg-img-b') as HTMLImageElement,
-                }
-              : null,
-          };
-        },
-        // Write phase
-        ({ nowPlayingBar, hasDynamicBg, images }) => {
+          const hasDynamicBg = !!this.cached.dynamicBg;
+          const images = this.cached.dynamicBg
+            ? {
+                imgA: this.cached.dynamicBg.querySelector('#bg-img-a') as HTMLImageElement,
+                imgB: this.cached.dynamicBg.querySelector('#bg-img-b') as HTMLImageElement,
+              }
+            : null;
+          resolve({ nowPlayingBar, hasDynamicBg, images });
+        });
+      }).then(({ nowPlayingBar, hasDynamicBg, images }) => {
+        fastdom.mutate(() => {
           if (!nowPlayingBar) {
             this.clearCache();
             return;
@@ -64,8 +65,8 @@ export class NowPlayingBarBackground {
           }
 
           this.cached.lastImgUrl = coverUrl;
-        },
-      );
+        });
+      });
     } catch (error) {
       console.error('Error Applying the Dynamic BG to the NowPlayingBar:', error);
     }

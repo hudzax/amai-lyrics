@@ -1,4 +1,4 @@
-import fastdom from '../fastdom';
+import fastdom from 'fastdom';
 
 interface ScrollIntoViewOptions {
   container: HTMLElement;
@@ -19,9 +19,7 @@ function cubicEaseInOut(progress: number): number {
     : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 }
 
-export function smoothScrollIntoView(
-  options: ScrollIntoViewOptions,
-): ScrollController {
+export function smoothScrollIntoView(options: ScrollIntoViewOptions): ScrollController {
   const {
     container,
     element,
@@ -37,19 +35,16 @@ export function smoothScrollIntoView(
     cancel: () => cancelAnimation(),
   };
 
-  // Use FastDOM for DOM reads
-  fastdom.readThenWrite(
-    // Read phase - get all measurements
-    () => {
+  // Use closure variables to pass data from measure to mutate
+  new Promise<{ startScroll: number; distance: number }>((resolve) => {
+    fastdom.measure(() => {
       const containerRect = container.getBoundingClientRect();
       const elementRect = element.getBoundingClientRect();
-
       let targetScroll: number;
       let startScroll: number;
 
       if (axis === 'vertical') {
         startScroll = container.scrollTop;
-
         if (align === 'center') {
           targetScroll =
             elementRect.top -
@@ -58,14 +53,10 @@ export function smoothScrollIntoView(
             (container.clientHeight / 2 - element.clientHeight / 2) -
             offset;
         } else {
-          // 'top'
-          targetScroll =
-            elementRect.top - containerRect.top + container.scrollTop - offset;
+          targetScroll = elementRect.top - containerRect.top + container.scrollTop - offset;
         }
       } else {
-        // 'horizontal'
         startScroll = container.scrollLeft;
-
         if (align === 'center') {
           targetScroll =
             elementRect.left -
@@ -74,36 +65,24 @@ export function smoothScrollIntoView(
             (container.clientWidth / 2 - element.clientWidth / 2) -
             offset;
         } else {
-          // 'top' treated as 'start' horizontally
-          targetScroll =
-            elementRect.left -
-            containerRect.left +
-            container.scrollLeft -
-            offset;
+          targetScroll = elementRect.left - containerRect.left + container.scrollLeft - offset;
         }
       }
-
-      return {
-        startScroll,
-        targetScroll,
-        distance: targetScroll - startScroll,
-        axis,
-      };
-    },
-    // Write phase - start the animation
-    ({ startScroll, distance, axis }) => {
+      const distance = targetScroll - startScroll;
+      resolve({ startScroll, distance });
+    });
+  }).then(({ startScroll, distance }) => {
+    fastdom.mutate(() => {
       const startTime = performance.now();
       let animationFrameId: number;
 
-      // Animation function - will be called via requestAnimationFrame
       function animate(currentTime: number) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
         const easedProgress = cubicEaseInOut(progress);
         const newScroll = startScroll + distance * easedProgress;
 
-        // Use FastDOM for writes
-        fastdom.write(() => {
+        fastdom.mutate(() => {
           if (axis === 'vertical') {
             container.scrollTop = newScroll;
           } else {
@@ -116,19 +95,13 @@ export function smoothScrollIntoView(
         }
       }
 
-      // Start the animation
       animationFrameId = requestAnimationFrame(animate);
 
-      // Update the cancel function
       cancelAnimation = () => {
         cancelAnimationFrame(animationFrameId);
       };
-
-      return {
-        cancel: cancelAnimation,
-      };
-    },
-  );
+    });
+  });
 
   // Return the controller immediately
   return controller;

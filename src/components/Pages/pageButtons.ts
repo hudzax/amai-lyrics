@@ -1,6 +1,6 @@
 import { Maid } from '@hudzax/web-modules/Maid';
 import { PageViewSelectors } from '../../constants/PageViewSelectors';
-import fastdom from '../../utils/fastdom';
+import fastdom from 'fastdom';
 import storage from '../../utils/storage';
 import { removeLyricsFromCache } from '../../utils/Lyrics/cache';
 import fetchLyrics from '../../utils/Lyrics/fetchLyrics';
@@ -25,8 +25,11 @@ function setupRefreshButton(maid: Maid | null) {
       return;
     }
 
-    await fastdom.write(() => {
-      refreshButton.classList.add('hidden');
+    await new Promise<void>((resolve) => {
+      fastdom.mutate(() => {
+        refreshButton.classList.add('hidden');
+        resolve();
+      });
     });
 
     try {
@@ -76,8 +79,11 @@ export function showRefreshButton() {
     PageViewSelectors.RefreshLyricsButton,
   );
   if (refreshButton) {
-    fastdom.write(() => {
-      refreshButton.classList.remove('hidden');
+    new Promise<void>((resolve) => {
+      fastdom.mutate(() => {
+        refreshButton.classList.remove('hidden');
+        resolve();
+      });
     });
   }
 }
@@ -87,8 +93,11 @@ export function hideRefreshButton() {
     PageViewSelectors.RefreshLyricsButton,
   );
   if (refreshButton) {
-    fastdom.write(() => {
-      refreshButton.classList.add('hidden');
+    new Promise<void>((resolve) => {
+      fastdom.mutate(() => {
+        refreshButton.classList.add('hidden');
+        resolve();
+      });
     });
   }
 }

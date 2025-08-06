@@ -8,7 +8,7 @@ import ApplyLyrics from '../../utils/Lyrics/Global/Applyer';
 import { Session_NowBar_SetSide, Session_OpenNowBar } from '../Utils/NowBar';
 import Fullscreen from '../Utils/Fullscreen';
 import { ResetLastLine } from '../../utils/Scrolling/ScrollToActiveLine';
-import fastdom from '../../utils/fastdom';
+import fastdom from 'fastdom';
 import { Maid } from '@hudzax/web-modules/Maid';
 import { PageViewSelectors } from '../../constants/PageViewSelectors';
 import { PageHTML, NowBarHTML } from './PageHTML';
@@ -27,15 +27,22 @@ const PageView = {
 };
 
 export let PageRoot: HTMLElement | null = null;
-fastdom.read(() => {
-  PageRoot = document.querySelector<HTMLElement>(PageViewSelectors.PageRoot);
-});
+
+async function initializePageRoot() {
+  return new Promise<void>((resolve) => {
+    fastdom.measure(() => {
+      PageRoot = document.querySelector<HTMLElement>(PageViewSelectors.PageRoot);
+      resolve();
+    });
+  });
+}
 
 async function OpenPage() {
   if (PageView.IsOpened) return;
 
   maid = new Maid();
 
+  await initializePageRoot();
   await createPageElement();
 
   Defaults.LyricsContainerExists = true;
@@ -68,18 +75,22 @@ async function OpenPage() {
 }
 
 async function createPageElement() {
-  let elem: HTMLDivElement;
-  await fastdom.write(() => {
-    elem = document.createElement('div');
-    elem.id = 'SpicyLyricsPage';
-    elem.innerHTML = PageHTML;
-    if (PageRoot) PageRoot.appendChild(elem);
-  });
+  return new Promise<void>((resolve) => {
+    fastdom.mutate(() => {
+      const elem = document.createElement('div');
+      elem.id = 'SpicyLyricsPage';
+      elem.innerHTML = PageHTML;
+      if (PageRoot) {
+        PageRoot.appendChild(elem);
+      }
 
-  const nowBar = document.querySelector<HTMLElement>(PageViewSelectors.NowBar);
-  if (nowBar) {
-    nowBar.innerHTML = NowBarHTML;
-  }
+      const nowBar = document.querySelector<HTMLElement>(PageViewSelectors.NowBar);
+      if (nowBar) {
+        nowBar.innerHTML = NowBarHTML;
+      }
+      resolve();
+    });
+  });
 }
 
 async function DestroyPage() {
@@ -87,7 +98,7 @@ async function DestroyPage() {
   if (Fullscreen.IsOpen) Fullscreen.Close();
   const spicyLyricsPage = document.querySelector<HTMLElement>(PageViewSelectors.SpicyLyricsPage);
   if (!spicyLyricsPage) return;
-  await fastdom.write(() => {
+  fastdom.mutate(() => {
     spicyLyricsPage?.remove();
   });
   Defaults.LyricsContainerExists = false;
