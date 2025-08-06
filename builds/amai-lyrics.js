@@ -412,7 +412,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.2.6";
+      version = "1.2.7";
     }
   });
 
@@ -5662,11 +5662,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       console.error("Playback state is incomplete.");
       return null;
     }
-    const now2 = Date.now();
+    const now = Date.now();
     if (isPaused) {
       return positionAsOfTimestamp;
     } else {
-      return positionAsOfTimestamp + (now2 - timestamp);
+      return positionAsOfTimestamp + (now - timestamp);
     }
   }
   var syncTimings, canSyncNonLocalTimestamp, syncedPosition;
@@ -6098,10 +6098,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                   word.AnimatorStoreTime_scale = performance.now();
                 if (!word.AnimatorStoreTime_glow)
                   word.AnimatorStoreTime_glow = performance.now();
-                const now2 = performance.now();
-                const elapsed_translateY = now2 - word.AnimatorStoreTime_translateY;
-                const elapsed_scale = now2 - word.AnimatorStoreTime_scale;
-                const elapsed_glow = now2 - word.AnimatorStoreTime_glow;
+                const now = performance.now();
+                const elapsed_translateY = now - word.AnimatorStoreTime_translateY;
+                const elapsed_scale = now - word.AnimatorStoreTime_scale;
+                const elapsed_glow = now - word.AnimatorStoreTime_glow;
                 const duration_translateY = 550;
                 const progress_translateY = Math.min(elapsed_translateY / duration_translateY, 1);
                 const duration_scale = 1100;
@@ -6555,10 +6555,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var require_now = __commonJS({
     "node_modules/lodash/now.js"(exports, module) {
       var root = require_root();
-      var now2 = function() {
+      var now = function() {
         return root.Date.now();
       };
-      module.exports = now2;
+      module.exports = now;
     }
   });
 
@@ -6717,7 +6717,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var require_debounce = __commonJS({
     "node_modules/lodash/debounce.js"(exports, module) {
       var isObject = require_isObject();
-      var now2 = require_now();
+      var now = require_now();
       var toNumber = require_toNumber();
       var FUNC_ERROR_TEXT = "Expected a function";
       var nativeMax = Math.max;
@@ -6755,7 +6755,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           return lastCallTime === void 0 || timeSinceLastCall >= wait || timeSinceLastCall < 0 || maxing && timeSinceLastInvoke >= maxWait;
         }
         function timerExpired() {
-          var time = now2();
+          var time = now();
           if (shouldInvoke(time)) {
             return trailingEdge(time);
           }
@@ -6769,7 +6769,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           lastArgs = lastThis = void 0;
           return result;
         }
-        function cancel2() {
+        function cancel() {
           if (timerId !== void 0) {
             clearTimeout(timerId);
           }
@@ -6777,10 +6777,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           lastArgs = lastCallTime = lastThis = timerId = void 0;
         }
         function flush() {
-          return timerId === void 0 ? result : trailingEdge(now2());
+          return timerId === void 0 ? result : trailingEdge(now());
         }
         function debounced() {
-          var time = now2(), isInvoking = shouldInvoke(time);
+          var time = now(), isInvoking = shouldInvoke(time);
           lastArgs = arguments;
           lastThis = this;
           lastCallTime = time;
@@ -6799,7 +6799,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           }
           return result;
         }
-        debounced.cancel = cancel2;
+        debounced.cancel = cancel;
         debounced.flush = flush;
         return debounced;
       }
@@ -8007,8 +8007,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         animate() {
           if (this.isDestroyed || this.startTime === null)
             return;
-          const now2 = performance.now();
-          const elapsed = now2 - this.startTime;
+          const now = performance.now();
+          const elapsed = now - this.startTime;
           const t = Math.min(elapsed / this.duration, 1);
           const startValue = this.reversed ? this.to : this.from;
           const endValue = this.reversed ? this.from : this.to;
@@ -8069,204 +8069,111 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // src/utils/fastdom.ts
-  function addToQueue(queue, item) {
-    if (queue.length >= MAX_QUEUE_SIZE) {
-      console.warn("FastDOM queue size limit reached, dropping oldest operations");
-      queue.shift();
-    }
-    queue.push(item);
-  }
-  function processQueues() {
-    isProcessing = true;
-    const startTime = now();
-    while (readQueue.length > 0) {
-      const item = readQueue.shift();
-      if (!item || item.cancelled)
-        continue;
-      const { fn, resolve, reject } = item;
-      try {
-        const result = fn();
-        resolve(result);
-      } catch (error) {
-        console.error("Error in read operation:", error);
-        reject(error instanceof Error ? error : new Error(String(error)));
-      }
-    }
-    const writeStartTime = now();
-    while (writeQueue.length > 0) {
-      if (now() - writeStartTime > MAX_PROCESS_TIME) {
-        scheduledAnimationFrame = false;
-        isProcessing = false;
-        scheduleFrame();
-        return;
-      }
-      const item = writeQueue.shift();
-      if (!item || item.cancelled)
-        continue;
-      const { fn, resolve, reject } = item;
-      try {
-        const result = fn();
-        resolve(result);
-      } catch (error) {
-        console.error("Error in write operation:", error);
-        reject(error instanceof Error ? error : new Error(String(error)));
-      }
-    }
-    scheduledAnimationFrame = false;
-    isProcessing = false;
-    if (readQueue.length > 0 || writeQueue.length > 0) {
-      scheduleFrame();
-    }
-    lastProcessTime = now() - startTime;
-  }
-  function scheduleFrame() {
-    if (!scheduledAnimationFrame && (readQueue.length > 0 || writeQueue.length > 0)) {
-      scheduledAnimationFrame = true;
-      raf(processQueues);
-    }
-  }
-  function createCancellablePromise(queue, fn) {
-    const id = currentQueueId++;
-    let rejectPromise;
-    const promise = new Promise((resolve, reject) => {
-      rejectPromise = reject;
-      const item = {
-        fn,
-        resolve,
-        reject,
-        id,
-        cancelled: false
-      };
-      addToQueue(queue, item);
-      scheduleFrame();
-    });
-    promise.cancel = () => {
-      const wasCancelled = cancel(id);
-      if (wasCancelled) {
-        rejectPromise(new Error("Operation cancelled"));
-      }
-      return wasCancelled;
-    };
-    return promise;
-  }
-  function clear() {
-    readQueue.clear();
-    writeQueue.clear();
-  }
-  function cancel(id) {
-    const readIndex = readQueue.findIndex((op) => op.id === id);
-    if (readIndex !== -1) {
-      const item = readQueue.get(readIndex);
-      if (item) {
-        item.cancelled = true;
-        return true;
-      }
-    }
-    const writeIndex = writeQueue.findIndex((op) => op.id === id);
-    if (writeIndex !== -1) {
-      const item = writeQueue.get(writeIndex);
-      if (item) {
-        item.cancelled = true;
-        return true;
-      }
-    }
-    return false;
-  }
-  var now, raf, FastQueue, readQueue, writeQueue, scheduledAnimationFrame, currentQueueId, isProcessing, lastProcessTime, MAX_PROCESS_TIME, MAX_QUEUE_SIZE, fastdom_default;
-  var init_fastdom = __esm({
-    "src/utils/fastdom.ts"() {
-      now = (() => {
-        if (typeof performance !== "undefined" && performance.now) {
-          return () => performance.now();
+  // node_modules/fastdom/fastdom.js
+  var require_fastdom = __commonJS({
+    "node_modules/fastdom/fastdom.js"(exports, module) {
+      !function(win) {
+        "use strict";
+        var debug = 0 ? console.log.bind(console, "[fastdom]") : function() {
+        };
+        var raf = win.requestAnimationFrame || win.webkitRequestAnimationFrame || win.mozRequestAnimationFrame || win.msRequestAnimationFrame || function(cb) {
+          return setTimeout(cb, 16);
+        };
+        function FastDom() {
+          var self2 = this;
+          self2.reads = [];
+          self2.writes = [];
+          self2.raf = raf.bind(win);
+          debug("initialized", self2);
         }
-        return () => Date.now();
-      })();
-      raf = (() => {
-        if (typeof requestAnimationFrame !== "undefined") {
-          return requestAnimationFrame;
-        }
-        return (callback) => setTimeout(callback, 16);
-      })();
-      FastQueue = class {
-        constructor() {
-          this.items = [];
-          this.head = 0;
-        }
-        push(item) {
-          this.items.push(item);
-        }
-        shift() {
-          if (this.head >= this.items.length)
-            return void 0;
-          const item = this.items[this.head];
-          delete this.items[this.head];
-          this.head++;
-          if (this.head >= this.items.length) {
-            this.items.length = 0;
-            this.head = 0;
+        FastDom.prototype = {
+          constructor: FastDom,
+          runTasks: function(tasks) {
+            debug("run tasks");
+            var task;
+            while (task = tasks.shift())
+              task();
+          },
+          measure: function(fn, ctx) {
+            debug("measure");
+            var task = !ctx ? fn : fn.bind(ctx);
+            this.reads.push(task);
+            scheduleFlush(this);
+            return task;
+          },
+          mutate: function(fn, ctx) {
+            debug("mutate");
+            var task = !ctx ? fn : fn.bind(ctx);
+            this.writes.push(task);
+            scheduleFlush(this);
+            return task;
+          },
+          clear: function(task) {
+            debug("clear", task);
+            return remove(this.reads, task) || remove(this.writes, task);
+          },
+          extend: function(props) {
+            debug("extend", props);
+            if (typeof props != "object")
+              throw new Error("expected object");
+            var child = Object.create(this);
+            mixin(child, props);
+            child.fastdom = this;
+            if (child.initialize)
+              child.initialize();
+            return child;
+          },
+          catch: null
+        };
+        function scheduleFlush(fastdom8) {
+          if (!fastdom8.scheduled) {
+            fastdom8.scheduled = true;
+            fastdom8.raf(flush.bind(null, fastdom8));
+            debug("flush scheduled");
           }
-          return item;
         }
-        get length() {
-          return this.items.length - this.head;
-        }
-        findIndex(predicate) {
-          for (let i = this.head; i < this.items.length; i++) {
-            if (this.items[i] && predicate(this.items[i])) {
-              return i - this.head;
-            }
+        function flush(fastdom8) {
+          debug("flush");
+          var writes = fastdom8.writes;
+          var reads = fastdom8.reads;
+          var error;
+          try {
+            debug("flushing reads", reads.length);
+            fastdom8.runTasks(reads);
+            debug("flushing writes", writes.length);
+            fastdom8.runTasks(writes);
+          } catch (e) {
+            error = e;
           }
-          return -1;
-        }
-        get(index) {
-          const actualIndex = this.head + index;
-          if (actualIndex >= this.head && actualIndex < this.items.length) {
-            return this.items[actualIndex];
+          fastdom8.scheduled = false;
+          if (reads.length || writes.length)
+            scheduleFlush(fastdom8);
+          if (error) {
+            debug("task errored", error.message);
+            if (fastdom8.catch)
+              fastdom8.catch(error);
+            else
+              throw error;
           }
-          return void 0;
         }
-        clear() {
-          this.items.length = 0;
-          this.head = 0;
+        function remove(array, item) {
+          var index = array.indexOf(item);
+          return !!~index && !!array.splice(index, 1);
         }
-      };
-      readQueue = new FastQueue();
-      writeQueue = new FastQueue();
-      scheduledAnimationFrame = false;
-      currentQueueId = 0;
-      isProcessing = false;
-      lastProcessTime = 0;
-      MAX_PROCESS_TIME = 16;
-      MAX_QUEUE_SIZE = 1e3;
-      fastdom_default = {
-        read: (fn) => {
-          return createCancellablePromise(readQueue, fn);
-        },
-        write: (fn) => {
-          return createCancellablePromise(writeQueue, fn);
-        },
-        readThenWrite: (readFn, writeFn) => {
-          return new Promise((resolve, reject) => {
-            const readPromise = createCancellablePromise(readQueue, readFn);
-            readPromise.then((readResult) => {
-              const writePromise = createCancellablePromise(
-                writeQueue,
-                () => writeFn(readResult)
-              );
-              return writePromise;
-            }).then(resolve).catch(reject);
+        function mixin(target, source) {
+          for (var key in source) {
+            if (source.hasOwnProperty(key))
+              target[key] = source[key];
+          }
+        }
+        var exports2 = win.fastdom = win.fastdom || new FastDom();
+        if (typeof define == "function")
+          define(function() {
+            return exports2;
           });
-        },
-        clear,
-        getMetrics: () => ({
-          readQueueLength: readQueue.length,
-          writeQueueLength: writeQueue.length,
-          lastProcessTime,
-          isProcessing,
-          scheduledAnimationFrame
-        })
-      };
+        else if (typeof module == "object")
+          module.exports = exports2;
+      }(typeof window !== "undefined" ? window : typeof exports != "undefined" ? exports : globalThis);
     }
   });
 
@@ -8288,8 +8195,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const controller = {
       cancel: () => cancelAnimation()
     };
-    fastdom_default.readThenWrite(
-      () => {
+    new Promise((resolve) => {
+      import_fastdom.default.measure(() => {
         const containerRect = container.getBoundingClientRect();
         const elementRect = element.getBoundingClientRect();
         let targetScroll;
@@ -8309,14 +8216,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             targetScroll = elementRect.left - containerRect.left + container.scrollLeft - offset;
           }
         }
-        return {
-          startScroll,
-          targetScroll,
-          distance: targetScroll - startScroll,
-          axis
-        };
-      },
-      ({ startScroll, distance, axis: axis2 }) => {
+        const distance = targetScroll - startScroll;
+        resolve({ startScroll, distance });
+      });
+    }).then(({ startScroll, distance }) => {
+      import_fastdom.default.mutate(() => {
         const startTime = performance.now();
         let animationFrameId;
         function animate(currentTime) {
@@ -8324,8 +8228,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           const progress = Math.min(elapsed / duration, 1);
           const easedProgress = cubicEaseInOut(progress);
           const newScroll = startScroll + distance * easedProgress;
-          fastdom_default.write(() => {
-            if (axis2 === "vertical") {
+          import_fastdom.default.mutate(() => {
+            if (axis === "vertical") {
               container.scrollTop = newScroll;
             } else {
               container.scrollLeft = newScroll;
@@ -8339,11 +8243,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         cancelAnimation = () => {
           cancelAnimationFrame(animationFrameId);
         };
-        return {
-          cancel: cancelAnimation
-        };
-      }
-    );
+      });
+    });
     return controller;
   }
   function scrollIntoCenterView(container, element, duration = 150, offset = 0, axis = "vertical") {
@@ -8356,9 +8257,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       axis
     });
   }
+  var import_fastdom;
   var init_ScrollIntoView = __esm({
     "src/utils/ScrollIntoView/index.ts"() {
-      init_fastdom();
+      import_fastdom = __toESM(require_fastdom());
     }
   });
 
@@ -8389,20 +8291,19 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         }
       }
       if (currentLine) {
-        fastdom_default.read(() => {
-          const LineElem = currentLine.HTMLElement;
-          const container = ScrollSimplebar2?.getScrollElement();
-          if (!container)
-            return null;
-          if (lastLine && lastLine === LineElem)
-            return null;
-          return { LineElem, container };
-        }).then((result) => {
-          if (!result)
-            return;
-          const { LineElem, container } = result;
-          lastLine = LineElem;
-          fastdom_default.write(() => {
+        new Promise((resolve) => {
+          import_fastdom2.default.measure(() => {
+            const LineElem = currentLine.HTMLElement;
+            const container = ScrollSimplebar2?.getScrollElement();
+            resolve({ LineElem, container });
+          });
+        }).then(({ LineElem, container }) => {
+          import_fastdom2.default.mutate(() => {
+            if (!container || !LineElem)
+              return;
+            if (lastLine && lastLine === LineElem)
+              return;
+            lastLine = LineElem;
             scrollIntoCenterView(container, LineElem, 270, -50);
             LineElem.classList.add("Active", "OverridenByScroller");
           });
@@ -8413,21 +8314,21 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   function ResetLastLine() {
     lastLine = null;
   }
-  var lastLine;
+  var import_fastdom2, lastLine;
   var init_ScrollToActiveLine = __esm({
     "src/utils/Scrolling/ScrollToActiveLine.ts"() {
       init_Defaults();
       init_SpotifyPlayer();
       init_lyrics();
       init_ScrollIntoView();
-      init_fastdom();
+      import_fastdom2 = __toESM(require_fastdom());
       lastLine = null;
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-26236-j4x5kija4n4S/198766010db8/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-18688-78LuIfxB5fmq/198818fbb4f8/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-26236-j4x5kija4n4S/198766010db8/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-18688-78LuIfxB5fmq/198818fbb4f8/DotLoader.css"() {
     }
   });
 
@@ -9440,8 +9341,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         Spicetify.showNotification("No track playing", false, 1e3);
         return;
       }
-      await fastdom_default.write(() => {
-        refreshButton.classList.add("hidden");
+      await new Promise((resolve) => {
+        import_fastdom3.default.mutate(() => {
+          refreshButton.classList.add("hidden");
+          resolve();
+        });
       });
       try {
         const trackId = currentUri.split(":")[2];
@@ -9483,8 +9387,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       PageViewSelectors.RefreshLyricsButton
     );
     if (refreshButton) {
-      fastdom_default.write(() => {
-        refreshButton.classList.remove("hidden");
+      new Promise((resolve) => {
+        import_fastdom3.default.mutate(() => {
+          refreshButton.classList.remove("hidden");
+          resolve();
+        });
       });
     }
   }
@@ -9493,15 +9400,19 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       PageViewSelectors.RefreshLyricsButton
     );
     if (refreshButton) {
-      fastdom_default.write(() => {
-        refreshButton.classList.add("hidden");
+      new Promise((resolve) => {
+        import_fastdom3.default.mutate(() => {
+          refreshButton.classList.add("hidden");
+          resolve();
+        });
       });
     }
   }
+  var import_fastdom3;
   var init_pageButtons = __esm({
     "src/components/Pages/pageButtons.ts"() {
       init_PageViewSelectors();
-      init_fastdom();
+      import_fastdom3 = __toESM(require_fastdom());
       init_storage();
       init_cache();
       init_fetchLyrics();
@@ -9617,14 +9528,14 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return;
     imageElement._setupImageLoading = true;
     const onloadHandler = () => {
-      fastdom_default.write(() => {
+      import_fastdom4.default.mutate(() => {
         imageElement.classList.add("loaded");
       });
       const highResUrl = imageElement.getAttribute("data-high-res");
       if (highResUrl) {
         const highResImage = new Image();
         highResImage.onload = () => {
-          fastdom_default.write(() => {
+          import_fastdom4.default.mutate(() => {
             if (imageElement.src !== highResUrl) {
               imageElement.src = highResUrl;
             }
@@ -9643,13 +9554,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return;
     const mediaImage = document.querySelector(PageViewSelectors.MediaImage);
     if (mediaImage) {
-      await fastdom_default.write(() => {
-        if (mediaImage.classList.contains("loaded")) {
-          mediaImage.classList.remove("loaded");
-        }
+      const mutationPromise = new Promise((resolve) => {
+        import_fastdom4.default.mutate(() => {
+          if (mediaImage.classList.contains("loaded")) {
+            mediaImage.classList.remove("loaded");
+          }
+          resolve();
+        });
       });
-      updateSongInfo();
-      updateArtwork(mediaImage);
+      await Promise.all([mutationPromise, updateSongInfo(), updateArtwork(mediaImage)]);
     }
   }
   async function updateSongInfo() {
@@ -9657,18 +9570,19 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const artistsPromise = SpotifyPlayer.GetArtists();
     const [songName, artists] = await Promise.all([songNamePromise, artistsPromise]);
     const songNameElem = document.querySelector(PageViewSelectors.SongName);
-    if (songNameElem && songNameElem.textContent !== songName) {
-      await fastdom_default.write(() => {
-        songNameElem.textContent = songName;
-      });
-    }
     const artistsElem = document.querySelector(PageViewSelectors.Artists);
     const joinedArtists = SpotifyPlayer.JoinArtists(artists);
-    if (artistsElem && artistsElem.textContent !== joinedArtists) {
-      await fastdom_default.write(() => {
-        artistsElem.textContent = joinedArtists;
+    return new Promise((resolve) => {
+      import_fastdom4.default.mutate(() => {
+        if (songNameElem && songNameElem.textContent !== songName) {
+          songNameElem.textContent = songName;
+        }
+        if (artistsElem && artistsElem.textContent !== joinedArtists) {
+          artistsElem.textContent = joinedArtists;
+        }
+        resolve();
       });
-    }
+    });
   }
   async function updateArtwork(mediaImage) {
     try {
@@ -9676,24 +9590,26 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         SpotifyPlayer.Artwork.Get("l"),
         SpotifyPlayer.Artwork.Get("xl")
       ]);
-      if (standardUrl && mediaImage.src !== standardUrl) {
-        await fastdom_default.write(() => {
-          mediaImage.src = standardUrl;
+      return new Promise((resolve) => {
+        import_fastdom4.default.mutate(() => {
+          if (standardUrl && mediaImage.src !== standardUrl) {
+            mediaImage.src = standardUrl;
+          }
+          if (highResUrl && mediaImage.getAttribute("data-high-res") !== highResUrl) {
+            mediaImage.setAttribute("data-high-res", highResUrl);
+          }
+          resolve();
         });
-      }
-      if (highResUrl && mediaImage.getAttribute("data-high-res") !== highResUrl) {
-        await fastdom_default.write(() => {
-          mediaImage.setAttribute("data-high-res", highResUrl);
-        });
-      }
+      });
     } catch (error) {
       console.error("Failed to load artwork:", error);
     }
   }
+  var import_fastdom4;
   var init_pageContent = __esm({
     "src/components/Pages/pageContent.ts"() {
       init_SpotifyPlayer();
-      init_fastdom();
+      import_fastdom4 = __toESM(require_fastdom());
       init_PageViewSelectors();
     }
   });
@@ -9873,19 +9789,25 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const elem = document.querySelector(PageViewSelectors.ViewControls);
     if (!elem)
       return;
-    await fastdom_default.write(() => {
-      if (ReAppend)
-        elem.innerHTML = "";
-      elem.innerHTML = `
-          <button id="Close" class="ViewControl">${Icons.Close}</button>
-          <button id="FullscreenToggle" class="ViewControl">${Fullscreen_default.IsOpen ? Icons.CloseFullscreen : Icons.Fullscreen}</button>
-      `;
+    await new Promise((resolve) => {
+      import_fastdom5.default.mutate(() => {
+        if (ReAppend)
+          elem.innerHTML = "";
+        elem.innerHTML = `
+            <button id="Close" class="ViewControl">${Icons.Close}</button>
+            <button id="FullscreenToggle" class="ViewControl">${Fullscreen_default.IsOpen ? Icons.CloseFullscreen : Icons.Fullscreen}</button>
+        `;
+        resolve();
+      });
     });
     if (Fullscreen_default.IsOpen) {
       const headerElem = document.querySelector(PageViewSelectors.Header);
       if (headerElem) {
-        await fastdom_default.write(() => {
-          TransferElement(elem, headerElem, 0);
+        await new Promise((resolve) => {
+          import_fastdom5.default.mutate(() => {
+            TransferElement(elem, headerElem, 0);
+            resolve();
+          });
         });
       }
       Object.values(Tooltips).forEach((a) => a?.destroy());
@@ -9900,8 +9822,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       if (headerViewControlsElem) {
         const contentBoxElem = document.querySelector(PageViewSelectors.ContentBox);
         if (contentBoxElem) {
-          await fastdom_default.write(() => {
-            TransferElement(elem, contentBoxElem);
+          await new Promise((resolve) => {
+            import_fastdom5.default.mutate(() => {
+              TransferElement(elem, contentBoxElem);
+              resolve();
+            });
           });
         }
       }
@@ -9935,7 +9860,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       maid2?.Give(() => fullscreenBtn.removeEventListener("click", fullscreenClickHandler));
     }
   }
-  var Tooltips;
+  var import_fastdom5, Tooltips;
   var init_pageControls = __esm({
     "src/components/Pages/pageControls.ts"() {
       init_PageViewSelectors();
@@ -9943,7 +9868,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_Fullscreen();
       init_TransferElement();
       init_Session();
-      init_fastdom();
+      import_fastdom5 = __toESM(require_fastdom());
       Tooltips = {
         Close: null,
         Kofi: null,
@@ -9959,10 +9884,19 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     PageRoot: () => PageRoot,
     default: () => PageView_default
   });
+  async function initializePageRoot() {
+    return new Promise((resolve) => {
+      import_fastdom6.default.measure(() => {
+        PageRoot = document.querySelector(PageViewSelectors.PageRoot);
+        resolve();
+      });
+    });
+  }
   async function OpenPage() {
     if (PageView.IsOpened)
       return;
     maid = new Maid();
+    await initializePageRoot();
     await createPageElement();
     Defaults_default.LyricsContainerExists = true;
     const contentBox = document.querySelector(PageViewSelectors.ContentBox);
@@ -9985,18 +9919,21 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     PageView.IsOpened = true;
   }
   async function createPageElement() {
-    let elem;
-    await fastdom_default.write(() => {
-      elem = document.createElement("div");
-      elem.id = "SpicyLyricsPage";
-      elem.innerHTML = PageHTML;
-      if (PageRoot)
-        PageRoot.appendChild(elem);
+    return new Promise((resolve) => {
+      import_fastdom6.default.mutate(() => {
+        const elem = document.createElement("div");
+        elem.id = "SpicyLyricsPage";
+        elem.innerHTML = PageHTML;
+        if (PageRoot) {
+          PageRoot.appendChild(elem);
+        }
+        const nowBar = document.querySelector(PageViewSelectors.NowBar);
+        if (nowBar) {
+          nowBar.innerHTML = NowBarHTML;
+        }
+        resolve();
+      });
     });
-    const nowBar = document.querySelector(PageViewSelectors.NowBar);
-    if (nowBar) {
-      nowBar.innerHTML = NowBarHTML;
-    }
   }
   async function DestroyPage() {
     if (!PageView.IsOpened)
@@ -10006,7 +9943,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const spicyLyricsPage = document.querySelector(PageViewSelectors.SpicyLyricsPage);
     if (!spicyLyricsPage)
       return;
-    await fastdom_default.write(() => {
+    import_fastdom6.default.mutate(() => {
       spicyLyricsPage?.remove();
     });
     Defaults_default.LyricsContainerExists = false;
@@ -10018,7 +9955,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     maid = null;
     PageView.IsOpened = false;
   }
-  var maid, PageView, PageRoot, PageView_default;
+  var import_fastdom6, maid, PageView, PageRoot, PageView_default;
   var init_PageView = __esm({
     "src/components/Pages/PageView.ts"() {
       init_fetchLyrics();
@@ -10031,7 +9968,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_NowBar2();
       init_Fullscreen();
       init_ScrollToActiveLine();
-      init_fastdom();
+      import_fastdom6 = __toESM(require_fastdom());
       init_Maid();
       init_PageViewSelectors();
       init_PageHTML();
@@ -10047,9 +9984,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         IsOpened: false
       };
       PageRoot = null;
-      fastdom_default.read(() => {
-        PageRoot = document.querySelector(PageViewSelectors.PageRoot);
-      });
       PageView_default = PageView;
     }
   });
@@ -10856,16 +10790,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return setInterval(() => {
       if (SpotifyPlayer.IsPlaying) {
         const { lastKnownPosition, lastUpdateTime } = progressBarState;
-        const now2 = performance.now();
-        const elapsed = now2 - (lastUpdateTime || now2);
+        const now = performance.now();
+        const elapsed = now - (lastUpdateTime || now);
         if (elapsed > 3e3) {
           const actualPosition = SpotifyPlayer.GetTrackPosition() || 0;
           progressBarState.lastKnownPosition = actualPosition;
-          progressBarState.lastUpdateTime = now2;
+          progressBarState.lastUpdateTime = now;
           updateTimelineState(actualPosition);
         } else {
           const interpolatedPosition = (lastKnownPosition || 0) + elapsed;
-          progressBarState.lastInterpolationUpdate = now2;
+          progressBarState.lastInterpolationUpdate = now;
           updateTimelineState(interpolatedPosition);
         }
       }
@@ -19597,7 +19531,7 @@ ${JSON.stringify(lyricsOnly)}`
   };
 
   // src/components/DynamicBG/NowPlayingBarBackground.ts
-  init_fastdom();
+  var import_fastdom7 = __toESM(require_fastdom());
   var NowPlayingBarBackground = class {
     constructor() {
       this.cached = {
@@ -19616,19 +19550,18 @@ ${JSON.stringify(lyricsOnly)}`
       try {
         if (coverUrl === this.cached.lastImgUrl && this.cached.dynamicBg)
           return;
-        fastdom_default.readThenWrite(
-          () => {
+        new Promise((resolve) => {
+          import_fastdom7.default.measure(() => {
             const nowPlayingBar = document.querySelector(".Root__right-sidebar aside.NowPlayingView");
-            return {
-              nowPlayingBar,
-              hasDynamicBg: !!this.cached.dynamicBg,
-              images: this.cached.dynamicBg ? {
-                imgA: this.cached.dynamicBg.querySelector("#bg-img-a"),
-                imgB: this.cached.dynamicBg.querySelector("#bg-img-b")
-              } : null
-            };
-          },
-          ({ nowPlayingBar, hasDynamicBg, images }) => {
+            const hasDynamicBg = !!this.cached.dynamicBg;
+            const images = this.cached.dynamicBg ? {
+              imgA: this.cached.dynamicBg.querySelector("#bg-img-a"),
+              imgB: this.cached.dynamicBg.querySelector("#bg-img-b")
+            } : null;
+            resolve({ nowPlayingBar, hasDynamicBg, images });
+          });
+        }).then(({ nowPlayingBar, hasDynamicBg, images }) => {
+          import_fastdom7.default.mutate(() => {
             if (!nowPlayingBar) {
               this.clearCache();
               return;
@@ -19642,8 +19575,8 @@ ${JSON.stringify(lyricsOnly)}`
               this.updateExistingBackground(images, coverUrl);
             }
             this.cached.lastImgUrl = coverUrl;
-          }
-        );
+          });
+        });
       } catch (error) {
         console.error("Error Applying the Dynamic BG to the NowPlayingBar:", error);
       }
@@ -19793,7 +19726,7 @@ ${JSON.stringify(lyricsOnly)}`
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-26236-j4x5kija4n4S/198766010db8/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-18688-78LuIfxB5fmq/198818fbb4f8/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -19819,7 +19752,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-26236-j4x5kija4n4S/1987660104b0/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18688-78LuIfxB5fmq/198818fbac10/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -19961,7 +19894,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-26236-j4x5kija4n4S/1987660108b1/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18688-78LuIfxB5fmq/198818fbafd1/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -20169,7 +20102,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-26236-j4x5kija4n4S/198766010942/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18688-78LuIfxB5fmq/198818fbb072/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -20709,7 +20642,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-26236-j4x5kija4n4S/198766010a73/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18688-78LuIfxB5fmq/198818fbb1b3/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -20883,7 +20816,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-26236-j4x5kija4n4S/198766010b04/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18688-78LuIfxB5fmq/198818fbb234/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -21153,7 +21086,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-26236-j4x5kija4n4S/198766010ba5/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18688-78LuIfxB5fmq/198818fbb2e5/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -21438,7 +21371,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-26236-j4x5kija4n4S/198766010c36/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18688-78LuIfxB5fmq/198818fbb376/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -21461,7 +21394,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-26236-j4x5kija4n4S/198766010c97/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18688-78LuIfxB5fmq/198818fbb3d7/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
