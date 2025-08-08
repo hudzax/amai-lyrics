@@ -38,7 +38,7 @@ interface GeminiGenerationConfig extends GenerateContentConfig {
 /**
  * Gets phonetic lyrics based on detected language
  */
-export async function getPhoneticLyrics(
+export async function fetchPhoneticLyrics(
   lyricsJson: LyricsData,
   hasKanji: boolean,
   hasKorean: boolean,
@@ -46,26 +46,93 @@ export async function getPhoneticLyrics(
 ): Promise<LyricsData> {
   if (hasKanji) {
     if (storage.get('enable_romaji') === 'true') {
-      return await generateRomaji(lyricsJson, lyricsOnly);
+      return await generateRomajiLyrics(lyricsJson, lyricsOnly);
     } else {
-      return await generateFurigana(lyricsJson, lyricsOnly);
+      return await generateFuriganaLyrics(lyricsJson, lyricsOnly);
     }
   } else if (hasKorean) {
-    return await generateRomaja(lyricsJson, lyricsOnly);
+    return await generateRomajaLyrics(lyricsJson, lyricsOnly);
   } else {
     return lyricsJson;
   }
 }
 
 /**
- * Fetches translations using Gemini AI
+ * Fetches translations by first trying the Amai Worker API and falling back to Gemini.
+ *
+ * @param lyricsOnly An array of strings representing the lyrics to be translated.
+ * @returns A promise that resolves to an array of translated strings.
  */
-export async function fetchTranslationsWithGemini(lyricsOnly: string[]): Promise<string[]> {
+export async function fetchLyricTranslations(lyricsOnly: string[]): Promise<string[]> {
   if (storage.get('disable_translation') === 'true') {
     console.log('Amai Lyrics: Translation disabled');
     return lyricsOnly.map(() => '');
   }
 
+  const targetLang =
+    storage.get('translation_language')?.toString() || Defaults.translationLanguage;
+  const prompt = buildTranslationPrompt(targetLang);
+
+  // Try fetching from Amai first
+  const amaiTranslations = await fetchAmaiTranslations(lyricsOnly, prompt);
+  if (amaiTranslations.length > 0 && amaiTranslations.some((line) => line.trim() !== '')) {
+    console.log('Amai Lyrics: Translations fetched from Amai API');
+    return amaiTranslations;
+  }
+
+  // Fallback to Gemini
+  console.log('Amai Lyrics: Falling back to Gemini for translations');
+  return await fetchGeminiTranslations(lyricsOnly, prompt);
+}
+
+/**
+ * Fetches translations from the Amai Worker API.
+ *
+ * @param lyricsOnly An array of strings representing the lyrics to be translated.
+ * @param prompt The translation prompt to use.
+ * @returns A promise that resolves to an array of translated strings.
+ */
+export async function fetchAmaiTranslations(
+  lyricsOnly: string[],
+  prompt: string,
+): Promise<string[]> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5-second timeout
+
+    const response = await fetch(Defaults.lyrics.api.translationUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        lyrics: lyricsOnly,
+        prompt: prompt,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.translation || [];
+  } catch (error) {
+    console.error('Error fetching translations from Amai Worker:', error);
+    return [];
+  }
+}
+
+/**
+ * Fetches translations using Gemini AI
+ */
+export async function fetchGeminiTranslations(
+  lyricsOnly: string[],
+  prompt: string,
+): Promise<string[]> {
   try {
     console.log('[Amai Lyrics] Translation fetch started');
 
@@ -76,14 +143,7 @@ export async function fetchTranslationsWithGemini(lyricsOnly: string[]): Promise
     }
 
     const ai = new GoogleGenAI({ apiKey: geminiApiKey });
-
-    const generationConfig = createGeminiConfig(Defaults.systemInstruction, 0.85);
-
-    const targetLang =
-      storage.get('translation_language')?.toString() || Defaults.translationLanguage;
-
-    const prompt = createTranslationPrompt(targetLang);
-
+    const generationConfig = buildGeminiConfig(Defaults.systemInstruction, 0.85);
     const response = await ai.models.generateContent({
       config: generationConfig,
       model: AI_MODELS.TRANSLATION,
@@ -106,7 +166,7 @@ export async function fetchTranslationsWithGemini(lyricsOnly: string[]): Promise
 /**
  * Creates a translation prompt for Gemini
  */
-export function createTranslationPrompt(targetLang: string): string {
+export function buildTranslationPrompt(targetLang: string): string {
   // Escape special regex characters in the target language
   const escapedLang = targetLang.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -119,7 +179,7 @@ export function createTranslationPrompt(targetLang: string): string {
 /**
  * Creates Gemini API configuration
  */
-export function createGeminiConfig(
+export function buildGeminiConfig(
   systemInstruction: string,
   temperature: number,
 ): GeminiGenerationConfig {
@@ -151,52 +211,52 @@ export function createGeminiConfig(
 /**
  * Generates furigana for Japanese lyrics
  */
-export async function generateFurigana(
+export async function generateFuriganaLyrics(
   lyricsJson: LyricsData,
   lyricsOnly: string[],
 ): Promise<LyricsData> {
-  return await generateLyricsWithPrompt(lyricsJson, lyricsOnly, Defaults.furiganaPrompt);
+  return await generateLyricsUsingPrompt(lyricsJson, lyricsOnly, Defaults.furiganaPrompt);
 }
 
 /**
  * Generates romaja for Korean lyrics
  */
-export async function generateRomaja(
+export async function generateRomajaLyrics(
   lyricsJson: LyricsData,
   lyricsOnly: string[],
 ): Promise<LyricsData> {
-  return await generateLyricsWithPrompt(lyricsJson, lyricsOnly, Defaults.romajaPrompt);
+  return await generateLyricsUsingPrompt(lyricsJson, lyricsOnly, Defaults.romajaPrompt);
 }
 
 /**
  * Generates romaji for Japanese lyrics
  */
-export async function generateRomaji(
+export async function generateRomajiLyrics(
   lyricsJson: LyricsData,
   lyricsOnly: string[],
 ): Promise<LyricsData> {
-  return await generateLyricsWithPrompt(lyricsJson, lyricsOnly, Defaults.romajiPrompt);
+  return await generateLyricsUsingPrompt(lyricsJson, lyricsOnly, Defaults.romajiPrompt);
 }
 
 /**
  * Generic function to generate lyrics with a specific prompt
  */
-export async function generateLyricsWithPrompt(
+export async function generateLyricsUsingPrompt(
   lyricsJson: LyricsData,
   lyricsOnly: string[],
   prompt: string,
 ): Promise<LyricsData> {
-  if (!(await checkGeminiAPIKey(lyricsJson))) {
+  if (!(await verifyGeminiAPIKey(lyricsJson))) {
     return lyricsJson;
   }
 
-  return await processLyricsWithGemini(lyricsJson, lyricsOnly, Defaults.systemInstruction, prompt);
+  return await processLyricsUsingGemini(lyricsJson, lyricsOnly, Defaults.systemInstruction, prompt);
 }
 
 /**
  * Checks if Gemini API key is available
  */
-export async function checkGeminiAPIKey(lyricsJson: LyricsData): Promise<boolean> {
+export async function verifyGeminiAPIKey(lyricsJson: LyricsData): Promise<boolean> {
   const geminiApiKey = storage.get('GEMINI_API_KEY')?.toString();
   if (!geminiApiKey || geminiApiKey === '') {
     console.error('Amai Lyrics: Gemini API Key missing');
@@ -209,7 +269,7 @@ export async function checkGeminiAPIKey(lyricsJson: LyricsData): Promise<boolean
 /**
  * Processes lyrics with Gemini AI
  */
-export async function processLyricsWithGemini(
+export async function processLyricsUsingGemini(
   lyricsJson: LyricsData,
   lyricsOnly: string[],
   systemInstruction: string,
@@ -220,7 +280,7 @@ export async function processLyricsWithGemini(
 
     const ai = new GoogleGenAI({ apiKey: geminiApiKey });
 
-    const generationConfig = createGeminiConfig(systemInstruction, 0.258);
+    const generationConfig = buildGeminiConfig(systemInstruction, 0.258);
 
     if (lyricsOnly.length === 0) return lyricsJson;
 
@@ -257,7 +317,7 @@ export async function processLyricsWithGemini(
     }
 
     if (lines) {
-      updateLyricsText(lyricsJson, lines);
+      updateLyricsWithText(lyricsJson, lines);
     }
   } catch (error) {
     console.error('Amai Lyrics:', error);
@@ -270,7 +330,7 @@ export async function processLyricsWithGemini(
 /**
  * Updates lyrics text with processed text
  */
-export function updateLyricsText(lyricsJson: LyricsData, lines: string[]): void {
+export function updateLyricsWithText(lyricsJson: LyricsData, lines: string[]): void {
   if (lyricsJson.Type === 'Line' && lyricsJson.Content) {
     lyricsJson.Content = lyricsJson.Content.map((item: LineBasedLyricItem, index: number) => ({
       ...item,

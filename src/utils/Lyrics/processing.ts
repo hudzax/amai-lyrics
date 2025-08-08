@@ -6,15 +6,10 @@ import storage from '../storage';
 import Defaults from '../../components/Global/Defaults';
 import { HideLoaderContainer, ClearLyricsPageContainer } from './ui';
 import { cacheLyrics } from './cache';
-import { getPhoneticLyrics, fetchTranslationsWithGemini } from './ai';
+import { fetchPhoneticLyrics, fetchLyricTranslations } from './ai';
 import { convertLyrics } from './conversion';
 import { LyricsResult } from '../API/Lyrics';
-import {
-  Syllable,
-  LineBasedLyricItem,
-  SyllableBasedLyricItem,
-  LyricsLine,
-} from './conversion';
+import { Syllable, LineBasedLyricItem, SyllableBasedLyricItem, LyricsLine } from './conversion';
 
 export interface LyricsDataSyllable {
   id?: string;
@@ -101,18 +96,17 @@ export async function processAndEnhanceLyrics(
     };
   }
 
-  const { lyricsJson: preparedLyricsJson, lyricsOnly } =
-    await prepareLyricsForGemini(initialLyricsData);
+  const { lyricsJson: preparedLyricsJson, lyricsOnly } = await prepareLyricsForGemini(
+    initialLyricsData,
+  );
 
   const { hasKanji, hasKorean } = detectLanguages(preparedLyricsJson);
 
-  const phoneticLyricsJson: LyricsData = JSON.parse(
-    JSON.stringify(preparedLyricsJson),
-  );
+  const phoneticLyricsJson: LyricsData = JSON.parse(JSON.stringify(preparedLyricsJson));
 
   const [processedLyricsJson, translations] = await Promise.all([
-    getPhoneticLyrics(phoneticLyricsJson, hasKanji, hasKorean, lyricsOnly),
-    fetchTranslationsWithGemini(lyricsOnly),
+    fetchPhoneticLyrics(phoneticLyricsJson, hasKanji, hasKorean, lyricsOnly),
+    fetchLyricTranslations(lyricsOnly),
   ]);
 
   attachTranslations(processedLyricsJson, translations);
@@ -151,19 +145,13 @@ export function detectLanguages(lyricsJson: LyricsData): {
 
   if (lyricsJson.Type === 'Syllable' && lyricsJson.Content) {
     hasKanji = lyricsJson.Content.some((item) =>
-      item.Lead?.Syllables?.some((syl: Syllable) =>
-        JAPANESE_REGEX.test(syl.Text),
-      ),
+      item.Lead?.Syllables?.some((syl: Syllable) => JAPANESE_REGEX.test(syl.Text)),
     );
     hasKorean = lyricsJson.Content.some((item) =>
-      item.Lead?.Syllables?.some((syl: Syllable) =>
-        KOREAN_REGEX.test(syl.Text),
-      ),
+      item.Lead?.Syllables?.some((syl: Syllable) => KOREAN_REGEX.test(syl.Text)),
     );
   } else if (lyricsJson.Type === 'Line' && lyricsJson.Content) {
-    hasKanji = lyricsJson.Content.some((item) =>
-      JAPANESE_REGEX.test(item.Text),
-    );
+    hasKanji = lyricsJson.Content.some((item) => JAPANESE_REGEX.test(item.Text));
     hasKorean = lyricsJson.Content.some((item) => KOREAN_REGEX.test(item.Text));
   } else if (lyricsJson.Type === 'Static' && lyricsJson.Lines) {
     hasKanji = lyricsJson.Lines.some((item) => JAPANESE_REGEX.test(item.Text));
@@ -179,10 +167,7 @@ export function detectLanguages(lyricsJson: LyricsData): {
  * @param lyricsJson - Lyrics data
  * @param translations - Array of translated lines
  */
-export function attachTranslations(
-  lyricsJson: LyricsData,
-  translations: string[],
-): void {
+export function attachTranslations(lyricsJson: LyricsData, translations: string[]): void {
   if (lyricsJson.Type === 'Line' && lyricsJson.Content) {
     lyricsJson.Content.forEach((line, idx: number) => {
       (line as LyricsLine).Translation = translations[idx] || '';
@@ -206,9 +191,7 @@ export async function prepareLyricsForGemini(
   if (lyricsJson.Type === 'Syllable') {
     // Cast lyricsJson to LyricsDataSyllable to access Content with correct type
     const syllableData = lyricsJson as LyricsDataSyllable;
-    const convertedContent = convertLyrics(
-      syllableData.Content || [],
-    ) as LineBasedLyricItem[];
+    const convertedContent = convertLyrics(syllableData.Content || []) as LineBasedLyricItem[];
 
     // Create a new object with the updated type and content
     lyricsJson = {
@@ -267,9 +250,7 @@ export async function extractLyrics(lyricsJson: LyricsData): Promise<string[]> {
   if (lyricsJson.Type === 'Static' && lyricsJson.Lines) {
     // Cast to LyricsDataStatic to access Lines with correct type
     const staticData = lyricsJson as LyricsDataStatic;
-    staticData.Lines = removeEmptyLinesAndCharacters(
-      staticData.Lines || [],
-    ) as LyricsLine[];
+    staticData.Lines = removeEmptyLinesAndCharacters(staticData.Lines || []) as LyricsLine[];
     return staticData.Lines.map((item) => item.Text);
   }
 
