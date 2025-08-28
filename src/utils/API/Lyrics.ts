@@ -94,7 +94,15 @@ async function fetchLyricsData(
 
     let data = {};
     try {
-      data = await res.json();
+      // Check if response body is empty
+      const responseBody = await res.text();
+      if (responseBody.trim() === '') {
+        console.warn('Received empty response body');
+        data = {};
+      } else {
+        // Parse JSON only if response body is not empty
+        data = JSON.parse(responseBody);
+      }
     } catch (error) {
       console.error('Error parsing response JSON:', error);
     }
