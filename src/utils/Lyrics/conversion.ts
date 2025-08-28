@@ -59,8 +59,6 @@ export interface LineBasedLyricItem {
  * @returns Line-based lyrics data
  */
 export function convertLyrics(data: SyllableBasedLyricItem[]): LineBasedLyricItem[] {
-  console.log('Converting Syllable to Line type');
-
   return data.map((item) => {
     let leadText = '';
     let prevIsJapanese: boolean | null = null;

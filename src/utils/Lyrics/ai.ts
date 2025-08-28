@@ -65,7 +65,7 @@ export async function fetchPhoneticLyrics(
  */
 export async function fetchLyricTranslations(lyricsOnly: string[]): Promise<string[]> {
   if (storage.get('disable_translation') === 'true') {
-    console.log('Amai Lyrics: Translation disabled');
+    console.log('[Amai Lyrics] Translation disabled');
     return lyricsOnly.map(() => '');
   }
 
@@ -76,12 +76,11 @@ export async function fetchLyricTranslations(lyricsOnly: string[]): Promise<stri
   // Try fetching from Amai first
   const amaiTranslations = await fetchAmaiTranslations(lyricsOnly, prompt);
   if (amaiTranslations.length > 0 && amaiTranslations.some((line) => line.trim() !== '')) {
-    console.log('Amai Lyrics: Translations fetched from Amai API');
     return amaiTranslations;
   }
 
   // Fallback to Gemini
-  console.log('Amai Lyrics: Falling back to Gemini for translations');
+  console.log('[Amai Lyrics] Falling back to Gemini for translations');
   return await fetchGeminiTranslations(lyricsOnly, prompt);
 }
 

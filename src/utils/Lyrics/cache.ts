@@ -72,7 +72,7 @@ export async function getLyricsFromCache(
     return { ...lyricsFromCache, fromCache: true };
   } catch (error) {
     ClearLyricsPageContainer();
-    console.log('Error parsing saved lyrics data:', error);
+    console.log('[Amai Lyrics] Error parsing saved lyrics data:', error);
     return await noLyricsMessage();
   }
 }
