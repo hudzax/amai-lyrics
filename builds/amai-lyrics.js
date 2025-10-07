@@ -412,7 +412,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.2.8";
+      version = "1.2.9";
     }
   });
 
@@ -3444,7 +3444,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         let len = 0;
         let sym = 0;
         let min = 0, max = 0;
-        let root = 0;
+        let root2 = 0;
         let curr = 0;
         let drop = 0;
         let left = 0;
@@ -3467,14 +3467,14 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         for (sym = 0; sym < codes; sym++) {
           count[lens[lens_index + sym]]++;
         }
-        root = bits;
+        root2 = bits;
         for (max = MAXBITS; max >= 1; max--) {
           if (count[max] !== 0) {
             break;
           }
         }
-        if (root > max) {
-          root = max;
+        if (root2 > max) {
+          root2 = max;
         }
         if (max === 0) {
           table[table_index++] = 1 << 24 | 64 << 16 | 0;
@@ -3487,8 +3487,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             break;
           }
         }
-        if (root < min) {
-          root = min;
+        if (root2 < min) {
+          root2 = min;
         }
         left = 1;
         for (len = 1; len <= MAXBITS; len++) {
@@ -3526,10 +3526,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         sym = 0;
         len = min;
         next = table_index;
-        curr = root;
+        curr = root2;
         drop = 0;
         low = -1;
-        used = 1 << root;
+        used = 1 << root2;
         mask = used - 1;
         if (type === LENS$1 && used > ENOUGH_LENS$1 || type === DISTS$1 && used > ENOUGH_DISTS$1) {
           return 1;
@@ -3570,9 +3570,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             }
             len = lens[lens_index + work[sym]];
           }
-          if (len > root && (huff & mask) !== low) {
+          if (len > root2 && (huff & mask) !== low) {
             if (drop === 0) {
-              drop = root;
+              drop = root2;
             }
             next += min;
             curr = len - drop;
@@ -3590,13 +3590,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
               return 1;
             }
             low = huff & mask;
-            table[low] = root << 24 | curr << 16 | next - table_index | 0;
+            table[low] = root2 << 24 | curr << 16 | next - table_index | 0;
           }
         }
         if (huff !== 0) {
           table[next + huff] = len - drop << 24 | 64 << 16 | 0;
         }
-        opts.bits = root;
+        opts.bits = root2;
         return 0;
       };
       inftrees = inflate_table;
@@ -5663,11 +5663,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       console.error("Playback state is incomplete.");
       return null;
     }
-    const now = Date.now();
+    const now2 = Date.now();
     if (isPaused) {
       return positionAsOfTimestamp;
     } else {
-      return positionAsOfTimestamp + (now - timestamp);
+      return positionAsOfTimestamp + (now2 - timestamp);
     }
   }
   var syncTimings, canSyncNonLocalTimestamp, syncedPosition;
@@ -6099,10 +6099,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                   word.AnimatorStoreTime_scale = performance.now();
                 if (!word.AnimatorStoreTime_glow)
                   word.AnimatorStoreTime_glow = performance.now();
-                const now = performance.now();
-                const elapsed_translateY = now - word.AnimatorStoreTime_translateY;
-                const elapsed_scale = now - word.AnimatorStoreTime_scale;
-                const elapsed_glow = now - word.AnimatorStoreTime_glow;
+                const now2 = performance.now();
+                const elapsed_translateY = now2 - word.AnimatorStoreTime_translateY;
+                const elapsed_scale = now2 - word.AnimatorStoreTime_scale;
+                const elapsed_glow = now2 - word.AnimatorStoreTime_glow;
                 const duration_translateY = 550;
                 const progress_translateY = Math.min(elapsed_translateY / duration_translateY, 1);
                 const duration_scale = 1100;
@@ -6523,313 +6523,328 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // node_modules/lodash/isObject.js
-  var require_isObject = __commonJS({
-    "node_modules/lodash/isObject.js"(exports, module) {
-      function isObject(value) {
-        var type = typeof value;
-        return value != null && (type == "object" || type == "function");
-      }
-      module.exports = isObject;
+  // node_modules/lodash-es/isObject.js
+  function isObject(value) {
+    var type = typeof value;
+    return value != null && (type == "object" || type == "function");
+  }
+  var isObject_default;
+  var init_isObject = __esm({
+    "node_modules/lodash-es/isObject.js"() {
+      isObject_default = isObject;
     }
   });
 
-  // node_modules/lodash/_freeGlobal.js
-  var require_freeGlobal = __commonJS({
-    "node_modules/lodash/_freeGlobal.js"(exports, module) {
-      var freeGlobal = typeof global == "object" && global && global.Object === Object && global;
-      module.exports = freeGlobal;
+  // node_modules/lodash-es/_freeGlobal.js
+  var freeGlobal, freeGlobal_default;
+  var init_freeGlobal = __esm({
+    "node_modules/lodash-es/_freeGlobal.js"() {
+      freeGlobal = typeof global == "object" && global && global.Object === Object && global;
+      freeGlobal_default = freeGlobal;
     }
   });
 
-  // node_modules/lodash/_root.js
-  var require_root = __commonJS({
-    "node_modules/lodash/_root.js"(exports, module) {
-      var freeGlobal = require_freeGlobal();
-      var freeSelf = typeof self == "object" && self && self.Object === Object && self;
-      var root = freeGlobal || freeSelf || Function("return this")();
-      module.exports = root;
+  // node_modules/lodash-es/_root.js
+  var freeSelf, root, root_default;
+  var init_root = __esm({
+    "node_modules/lodash-es/_root.js"() {
+      init_freeGlobal();
+      freeSelf = typeof self == "object" && self && self.Object === Object && self;
+      root = freeGlobal_default || freeSelf || Function("return this")();
+      root_default = root;
     }
   });
 
-  // node_modules/lodash/now.js
-  var require_now = __commonJS({
-    "node_modules/lodash/now.js"(exports, module) {
-      var root = require_root();
-      var now = function() {
-        return root.Date.now();
+  // node_modules/lodash-es/now.js
+  var now, now_default;
+  var init_now = __esm({
+    "node_modules/lodash-es/now.js"() {
+      init_root();
+      now = function() {
+        return root_default.Date.now();
       };
-      module.exports = now;
+      now_default = now;
     }
   });
 
-  // node_modules/lodash/_trimmedEndIndex.js
-  var require_trimmedEndIndex = __commonJS({
-    "node_modules/lodash/_trimmedEndIndex.js"(exports, module) {
-      var reWhitespace = /\s/;
-      function trimmedEndIndex(string) {
-        var index = string.length;
-        while (index-- && reWhitespace.test(string.charAt(index))) {
-        }
-        return index;
+  // node_modules/lodash-es/_trimmedEndIndex.js
+  function trimmedEndIndex(string) {
+    var index = string.length;
+    while (index-- && reWhitespace.test(string.charAt(index))) {
+    }
+    return index;
+  }
+  var reWhitespace, trimmedEndIndex_default;
+  var init_trimmedEndIndex = __esm({
+    "node_modules/lodash-es/_trimmedEndIndex.js"() {
+      reWhitespace = /\s/;
+      trimmedEndIndex_default = trimmedEndIndex;
+    }
+  });
+
+  // node_modules/lodash-es/_baseTrim.js
+  function baseTrim(string) {
+    return string ? string.slice(0, trimmedEndIndex_default(string) + 1).replace(reTrimStart, "") : string;
+  }
+  var reTrimStart, baseTrim_default;
+  var init_baseTrim = __esm({
+    "node_modules/lodash-es/_baseTrim.js"() {
+      init_trimmedEndIndex();
+      reTrimStart = /^\s+/;
+      baseTrim_default = baseTrim;
+    }
+  });
+
+  // node_modules/lodash-es/_Symbol.js
+  var Symbol2, Symbol_default;
+  var init_Symbol = __esm({
+    "node_modules/lodash-es/_Symbol.js"() {
+      init_root();
+      Symbol2 = root_default.Symbol;
+      Symbol_default = Symbol2;
+    }
+  });
+
+  // node_modules/lodash-es/_getRawTag.js
+  function getRawTag(value) {
+    var isOwn = hasOwnProperty.call(value, symToStringTag), tag = value[symToStringTag];
+    try {
+      value[symToStringTag] = void 0;
+      var unmasked = true;
+    } catch (e) {
+    }
+    var result = nativeObjectToString.call(value);
+    if (unmasked) {
+      if (isOwn) {
+        value[symToStringTag] = tag;
+      } else {
+        delete value[symToStringTag];
       }
-      module.exports = trimmedEndIndex;
+    }
+    return result;
+  }
+  var objectProto, hasOwnProperty, nativeObjectToString, symToStringTag, getRawTag_default;
+  var init_getRawTag = __esm({
+    "node_modules/lodash-es/_getRawTag.js"() {
+      init_Symbol();
+      objectProto = Object.prototype;
+      hasOwnProperty = objectProto.hasOwnProperty;
+      nativeObjectToString = objectProto.toString;
+      symToStringTag = Symbol_default ? Symbol_default.toStringTag : void 0;
+      getRawTag_default = getRawTag;
     }
   });
 
-  // node_modules/lodash/_baseTrim.js
-  var require_baseTrim = __commonJS({
-    "node_modules/lodash/_baseTrim.js"(exports, module) {
-      var trimmedEndIndex = require_trimmedEndIndex();
-      var reTrimStart = /^\s+/;
-      function baseTrim(string) {
-        return string ? string.slice(0, trimmedEndIndex(string) + 1).replace(reTrimStart, "") : string;
+  // node_modules/lodash-es/_objectToString.js
+  function objectToString(value) {
+    return nativeObjectToString2.call(value);
+  }
+  var objectProto2, nativeObjectToString2, objectToString_default;
+  var init_objectToString = __esm({
+    "node_modules/lodash-es/_objectToString.js"() {
+      objectProto2 = Object.prototype;
+      nativeObjectToString2 = objectProto2.toString;
+      objectToString_default = objectToString;
+    }
+  });
+
+  // node_modules/lodash-es/_baseGetTag.js
+  function baseGetTag(value) {
+    if (value == null) {
+      return value === void 0 ? undefinedTag : nullTag;
+    }
+    return symToStringTag2 && symToStringTag2 in Object(value) ? getRawTag_default(value) : objectToString_default(value);
+  }
+  var nullTag, undefinedTag, symToStringTag2, baseGetTag_default;
+  var init_baseGetTag = __esm({
+    "node_modules/lodash-es/_baseGetTag.js"() {
+      init_Symbol();
+      init_getRawTag();
+      init_objectToString();
+      nullTag = "[object Null]";
+      undefinedTag = "[object Undefined]";
+      symToStringTag2 = Symbol_default ? Symbol_default.toStringTag : void 0;
+      baseGetTag_default = baseGetTag;
+    }
+  });
+
+  // node_modules/lodash-es/isObjectLike.js
+  function isObjectLike(value) {
+    return value != null && typeof value == "object";
+  }
+  var isObjectLike_default;
+  var init_isObjectLike = __esm({
+    "node_modules/lodash-es/isObjectLike.js"() {
+      isObjectLike_default = isObjectLike;
+    }
+  });
+
+  // node_modules/lodash-es/isSymbol.js
+  function isSymbol(value) {
+    return typeof value == "symbol" || isObjectLike_default(value) && baseGetTag_default(value) == symbolTag;
+  }
+  var symbolTag, isSymbol_default;
+  var init_isSymbol = __esm({
+    "node_modules/lodash-es/isSymbol.js"() {
+      init_baseGetTag();
+      init_isObjectLike();
+      symbolTag = "[object Symbol]";
+      isSymbol_default = isSymbol;
+    }
+  });
+
+  // node_modules/lodash-es/toNumber.js
+  function toNumber(value) {
+    if (typeof value == "number") {
+      return value;
+    }
+    if (isSymbol_default(value)) {
+      return NAN;
+    }
+    if (isObject_default(value)) {
+      var other = typeof value.valueOf == "function" ? value.valueOf() : value;
+      value = isObject_default(other) ? other + "" : other;
+    }
+    if (typeof value != "string") {
+      return value === 0 ? value : +value;
+    }
+    value = baseTrim_default(value);
+    var isBinary = reIsBinary.test(value);
+    return isBinary || reIsOctal.test(value) ? freeParseInt(value.slice(2), isBinary ? 2 : 8) : reIsBadHex.test(value) ? NAN : +value;
+  }
+  var NAN, reIsBadHex, reIsBinary, reIsOctal, freeParseInt, toNumber_default;
+  var init_toNumber = __esm({
+    "node_modules/lodash-es/toNumber.js"() {
+      init_baseTrim();
+      init_isObject();
+      init_isSymbol();
+      NAN = 0 / 0;
+      reIsBadHex = /^[-+]0x[0-9a-f]+$/i;
+      reIsBinary = /^0b[01]+$/i;
+      reIsOctal = /^0o[0-7]+$/i;
+      freeParseInt = parseInt;
+      toNumber_default = toNumber;
+    }
+  });
+
+  // node_modules/lodash-es/debounce.js
+  function debounce(func, wait, options) {
+    var lastArgs, lastThis, maxWait, result, timerId, lastCallTime, lastInvokeTime = 0, leading = false, maxing = false, trailing = true;
+    if (typeof func != "function") {
+      throw new TypeError(FUNC_ERROR_TEXT);
+    }
+    wait = toNumber_default(wait) || 0;
+    if (isObject_default(options)) {
+      leading = !!options.leading;
+      maxing = "maxWait" in options;
+      maxWait = maxing ? nativeMax(toNumber_default(options.maxWait) || 0, wait) : maxWait;
+      trailing = "trailing" in options ? !!options.trailing : trailing;
+    }
+    function invokeFunc(time) {
+      var args = lastArgs, thisArg = lastThis;
+      lastArgs = lastThis = void 0;
+      lastInvokeTime = time;
+      result = func.apply(thisArg, args);
+      return result;
+    }
+    function leadingEdge(time) {
+      lastInvokeTime = time;
+      timerId = setTimeout(timerExpired, wait);
+      return leading ? invokeFunc(time) : result;
+    }
+    function remainingWait(time) {
+      var timeSinceLastCall = time - lastCallTime, timeSinceLastInvoke = time - lastInvokeTime, timeWaiting = wait - timeSinceLastCall;
+      return maxing ? nativeMin(timeWaiting, maxWait - timeSinceLastInvoke) : timeWaiting;
+    }
+    function shouldInvoke(time) {
+      var timeSinceLastCall = time - lastCallTime, timeSinceLastInvoke = time - lastInvokeTime;
+      return lastCallTime === void 0 || timeSinceLastCall >= wait || timeSinceLastCall < 0 || maxing && timeSinceLastInvoke >= maxWait;
+    }
+    function timerExpired() {
+      var time = now_default();
+      if (shouldInvoke(time)) {
+        return trailingEdge(time);
       }
-      module.exports = baseTrim;
+      timerId = setTimeout(timerExpired, remainingWait(time));
     }
-  });
-
-  // node_modules/lodash/_Symbol.js
-  var require_Symbol = __commonJS({
-    "node_modules/lodash/_Symbol.js"(exports, module) {
-      var root = require_root();
-      var Symbol2 = root.Symbol;
-      module.exports = Symbol2;
-    }
-  });
-
-  // node_modules/lodash/_getRawTag.js
-  var require_getRawTag = __commonJS({
-    "node_modules/lodash/_getRawTag.js"(exports, module) {
-      var Symbol2 = require_Symbol();
-      var objectProto = Object.prototype;
-      var hasOwnProperty = objectProto.hasOwnProperty;
-      var nativeObjectToString = objectProto.toString;
-      var symToStringTag = Symbol2 ? Symbol2.toStringTag : void 0;
-      function getRawTag(value) {
-        var isOwn = hasOwnProperty.call(value, symToStringTag), tag = value[symToStringTag];
-        try {
-          value[symToStringTag] = void 0;
-          var unmasked = true;
-        } catch (e) {
-        }
-        var result = nativeObjectToString.call(value);
-        if (unmasked) {
-          if (isOwn) {
-            value[symToStringTag] = tag;
-          } else {
-            delete value[symToStringTag];
-          }
-        }
-        return result;
+    function trailingEdge(time) {
+      timerId = void 0;
+      if (trailing && lastArgs) {
+        return invokeFunc(time);
       }
-      module.exports = getRawTag;
+      lastArgs = lastThis = void 0;
+      return result;
     }
-  });
-
-  // node_modules/lodash/_objectToString.js
-  var require_objectToString = __commonJS({
-    "node_modules/lodash/_objectToString.js"(exports, module) {
-      var objectProto = Object.prototype;
-      var nativeObjectToString = objectProto.toString;
-      function objectToString(value) {
-        return nativeObjectToString.call(value);
+    function cancel() {
+      if (timerId !== void 0) {
+        clearTimeout(timerId);
       }
-      module.exports = objectToString;
+      lastInvokeTime = 0;
+      lastArgs = lastCallTime = lastThis = timerId = void 0;
     }
-  });
-
-  // node_modules/lodash/_baseGetTag.js
-  var require_baseGetTag = __commonJS({
-    "node_modules/lodash/_baseGetTag.js"(exports, module) {
-      var Symbol2 = require_Symbol();
-      var getRawTag = require_getRawTag();
-      var objectToString = require_objectToString();
-      var nullTag = "[object Null]";
-      var undefinedTag = "[object Undefined]";
-      var symToStringTag = Symbol2 ? Symbol2.toStringTag : void 0;
-      function baseGetTag(value) {
-        if (value == null) {
-          return value === void 0 ? undefinedTag : nullTag;
-        }
-        return symToStringTag && symToStringTag in Object(value) ? getRawTag(value) : objectToString(value);
-      }
-      module.exports = baseGetTag;
+    function flush() {
+      return timerId === void 0 ? result : trailingEdge(now_default());
     }
-  });
-
-  // node_modules/lodash/isObjectLike.js
-  var require_isObjectLike = __commonJS({
-    "node_modules/lodash/isObjectLike.js"(exports, module) {
-      function isObjectLike(value) {
-        return value != null && typeof value == "object";
-      }
-      module.exports = isObjectLike;
-    }
-  });
-
-  // node_modules/lodash/isSymbol.js
-  var require_isSymbol = __commonJS({
-    "node_modules/lodash/isSymbol.js"(exports, module) {
-      var baseGetTag = require_baseGetTag();
-      var isObjectLike = require_isObjectLike();
-      var symbolTag = "[object Symbol]";
-      function isSymbol(value) {
-        return typeof value == "symbol" || isObjectLike(value) && baseGetTag(value) == symbolTag;
-      }
-      module.exports = isSymbol;
-    }
-  });
-
-  // node_modules/lodash/toNumber.js
-  var require_toNumber = __commonJS({
-    "node_modules/lodash/toNumber.js"(exports, module) {
-      var baseTrim = require_baseTrim();
-      var isObject = require_isObject();
-      var isSymbol = require_isSymbol();
-      var NAN = 0 / 0;
-      var reIsBadHex = /^[-+]0x[0-9a-f]+$/i;
-      var reIsBinary = /^0b[01]+$/i;
-      var reIsOctal = /^0o[0-7]+$/i;
-      var freeParseInt = parseInt;
-      function toNumber(value) {
-        if (typeof value == "number") {
-          return value;
+    function debounced() {
+      var time = now_default(), isInvoking = shouldInvoke(time);
+      lastArgs = arguments;
+      lastThis = this;
+      lastCallTime = time;
+      if (isInvoking) {
+        if (timerId === void 0) {
+          return leadingEdge(lastCallTime);
         }
-        if (isSymbol(value)) {
-          return NAN;
-        }
-        if (isObject(value)) {
-          var other = typeof value.valueOf == "function" ? value.valueOf() : value;
-          value = isObject(other) ? other + "" : other;
-        }
-        if (typeof value != "string") {
-          return value === 0 ? value : +value;
-        }
-        value = baseTrim(value);
-        var isBinary = reIsBinary.test(value);
-        return isBinary || reIsOctal.test(value) ? freeParseInt(value.slice(2), isBinary ? 2 : 8) : reIsBadHex.test(value) ? NAN : +value;
-      }
-      module.exports = toNumber;
-    }
-  });
-
-  // node_modules/lodash/debounce.js
-  var require_debounce = __commonJS({
-    "node_modules/lodash/debounce.js"(exports, module) {
-      var isObject = require_isObject();
-      var now = require_now();
-      var toNumber = require_toNumber();
-      var FUNC_ERROR_TEXT = "Expected a function";
-      var nativeMax = Math.max;
-      var nativeMin = Math.min;
-      function debounce3(func, wait, options) {
-        var lastArgs, lastThis, maxWait, result, timerId, lastCallTime, lastInvokeTime = 0, leading = false, maxing = false, trailing = true;
-        if (typeof func != "function") {
-          throw new TypeError(FUNC_ERROR_TEXT);
-        }
-        wait = toNumber(wait) || 0;
-        if (isObject(options)) {
-          leading = !!options.leading;
-          maxing = "maxWait" in options;
-          maxWait = maxing ? nativeMax(toNumber(options.maxWait) || 0, wait) : maxWait;
-          trailing = "trailing" in options ? !!options.trailing : trailing;
-        }
-        function invokeFunc(time) {
-          var args = lastArgs, thisArg = lastThis;
-          lastArgs = lastThis = void 0;
-          lastInvokeTime = time;
-          result = func.apply(thisArg, args);
-          return result;
-        }
-        function leadingEdge(time) {
-          lastInvokeTime = time;
+        if (maxing) {
+          clearTimeout(timerId);
           timerId = setTimeout(timerExpired, wait);
-          return leading ? invokeFunc(time) : result;
+          return invokeFunc(lastCallTime);
         }
-        function remainingWait(time) {
-          var timeSinceLastCall = time - lastCallTime, timeSinceLastInvoke = time - lastInvokeTime, timeWaiting = wait - timeSinceLastCall;
-          return maxing ? nativeMin(timeWaiting, maxWait - timeSinceLastInvoke) : timeWaiting;
-        }
-        function shouldInvoke(time) {
-          var timeSinceLastCall = time - lastCallTime, timeSinceLastInvoke = time - lastInvokeTime;
-          return lastCallTime === void 0 || timeSinceLastCall >= wait || timeSinceLastCall < 0 || maxing && timeSinceLastInvoke >= maxWait;
-        }
-        function timerExpired() {
-          var time = now();
-          if (shouldInvoke(time)) {
-            return trailingEdge(time);
-          }
-          timerId = setTimeout(timerExpired, remainingWait(time));
-        }
-        function trailingEdge(time) {
-          timerId = void 0;
-          if (trailing && lastArgs) {
-            return invokeFunc(time);
-          }
-          lastArgs = lastThis = void 0;
-          return result;
-        }
-        function cancel() {
-          if (timerId !== void 0) {
-            clearTimeout(timerId);
-          }
-          lastInvokeTime = 0;
-          lastArgs = lastCallTime = lastThis = timerId = void 0;
-        }
-        function flush() {
-          return timerId === void 0 ? result : trailingEdge(now());
-        }
-        function debounced() {
-          var time = now(), isInvoking = shouldInvoke(time);
-          lastArgs = arguments;
-          lastThis = this;
-          lastCallTime = time;
-          if (isInvoking) {
-            if (timerId === void 0) {
-              return leadingEdge(lastCallTime);
-            }
-            if (maxing) {
-              clearTimeout(timerId);
-              timerId = setTimeout(timerExpired, wait);
-              return invokeFunc(lastCallTime);
-            }
-          }
-          if (timerId === void 0) {
-            timerId = setTimeout(timerExpired, wait);
-          }
-          return result;
-        }
-        debounced.cancel = cancel;
-        debounced.flush = flush;
-        return debounced;
       }
-      module.exports = debounce3;
+      if (timerId === void 0) {
+        timerId = setTimeout(timerExpired, wait);
+      }
+      return result;
+    }
+    debounced.cancel = cancel;
+    debounced.flush = flush;
+    return debounced;
+  }
+  var FUNC_ERROR_TEXT, nativeMax, nativeMin, debounce_default;
+  var init_debounce = __esm({
+    "node_modules/lodash-es/debounce.js"() {
+      init_isObject();
+      init_now();
+      init_toNumber();
+      FUNC_ERROR_TEXT = "Expected a function";
+      nativeMax = Math.max;
+      nativeMin = Math.min;
+      debounce_default = debounce;
     }
   });
 
-  // node_modules/lodash/throttle.js
-  var require_throttle = __commonJS({
-    "node_modules/lodash/throttle.js"(exports, module) {
-      var debounce3 = require_debounce();
-      var isObject = require_isObject();
-      var FUNC_ERROR_TEXT = "Expected a function";
-      function throttle2(func, wait, options) {
-        var leading = true, trailing = true;
-        if (typeof func != "function") {
-          throw new TypeError(FUNC_ERROR_TEXT);
-        }
-        if (isObject(options)) {
-          leading = "leading" in options ? !!options.leading : leading;
-          trailing = "trailing" in options ? !!options.trailing : trailing;
-        }
-        return debounce3(func, wait, {
-          "leading": leading,
-          "maxWait": wait,
-          "trailing": trailing
-        });
-      }
-      module.exports = throttle2;
+  // node_modules/lodash-es/throttle.js
+  function throttle(func, wait, options) {
+    var leading = true, trailing = true;
+    if (typeof func != "function") {
+      throw new TypeError(FUNC_ERROR_TEXT2);
+    }
+    if (isObject_default(options)) {
+      leading = "leading" in options ? !!options.leading : leading;
+      trailing = "trailing" in options ? !!options.trailing : trailing;
+    }
+    return debounce_default(func, wait, {
+      "leading": leading,
+      "maxWait": wait,
+      "trailing": trailing
+    });
+  }
+  var FUNC_ERROR_TEXT2, throttle_default;
+  var init_throttle = __esm({
+    "node_modules/lodash-es/throttle.js"() {
+      init_debounce();
+      init_isObject();
+      FUNC_ERROR_TEXT2 = "Expected a function";
+      throttle_default = throttle;
     }
   });
 
@@ -6878,11 +6893,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return cachedScrollbarWidth;
   }
-  var import_debounce, import_throttle, __assign, getOptions$1, canUseDOM, helpers, cachedScrollbarWidth, cachedDevicePixelRatio, getElementWindow, getElementDocument, getOptions, addClasses, removeClasses, classNamesToQuery, SimpleBarCore;
+  var __assign, getOptions$1, canUseDOM, helpers, cachedScrollbarWidth, cachedDevicePixelRatio, getElementWindow, getElementDocument, getOptions, addClasses, removeClasses, classNamesToQuery, SimpleBarCore;
   var init_dist = __esm({
     "node_modules/simplebar-core/dist/index.mjs"() {
-      import_debounce = __toESM(require_debounce(), 1);
-      import_throttle = __toESM(require_throttle(), 1);
+      init_debounce();
+      init_throttle();
       __assign = function() {
         __assign = Object.assign || function __assign2(t) {
           for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -7180,10 +7195,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           if (typeof this.el !== "object" || !this.el.nodeName) {
             throw new Error("Argument passed to SimpleBar must be an HTML element instead of ".concat(this.el));
           }
-          this.onMouseMove = (0, import_throttle.default)(this._onMouseMove, 64);
-          this.onWindowResize = (0, import_debounce.default)(this._onWindowResize, 64, { leading: true });
-          this.onStopScrolling = (0, import_debounce.default)(this._onStopScrolling, this.stopScrollDelay);
-          this.onMouseEntered = (0, import_debounce.default)(this._onMouseEntered, this.stopScrollDelay);
+          this.onMouseMove = throttle_default(this._onMouseMove, 64);
+          this.onWindowResize = debounce_default(this._onWindowResize, 64, { leading: true });
+          this.onStopScrolling = debounce_default(this._onStopScrolling, this.stopScrollDelay);
+          this.onMouseEntered = debounce_default(this._onMouseEntered, this.stopScrollDelay);
           this.init();
         }
         SimpleBarCore2.getRtlHelpers = function() {
@@ -8008,8 +8023,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         animate() {
           if (this.isDestroyed || this.startTime === null)
             return;
-          const now = performance.now();
-          const elapsed = now - this.startTime;
+          const now2 = performance.now();
+          const elapsed = now2 - this.startTime;
           const t = Math.min(elapsed / this.duration, 1);
           const startValue = this.reversed ? this.to : this.from;
           const endValue = this.reversed ? this.from : this.to;
@@ -8327,9 +8342,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-24396-6WHvBhrri7UW/198899b47408/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-23332-C46jrJjiFA6R/199c0e7f62b8/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-24396-6WHvBhrri7UW/198899b47408/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-23332-C46jrJjiFA6R/199c0e7f62b8/DotLoader.css"() {
     }
   });
 
@@ -9271,7 +9286,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return { ...lyricsFromCache, fromCache: true };
     } catch (error) {
       ClearLyricsPageContainer();
-      console.log("Error parsing saved lyrics data:", error);
+      console.log("[Amai Lyrics] Error parsing saved lyrics data:", error);
       return await noLyricsMessage();
     }
   }
@@ -10791,16 +10806,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return setInterval(() => {
       if (SpotifyPlayer.IsPlaying) {
         const { lastKnownPosition, lastUpdateTime } = progressBarState;
-        const now = performance.now();
-        const elapsed = now - (lastUpdateTime || now);
+        const now2 = performance.now();
+        const elapsed = now2 - (lastUpdateTime || now2);
         if (elapsed > 3e3) {
           const actualPosition = SpotifyPlayer.GetTrackPosition() || 0;
           progressBarState.lastKnownPosition = actualPosition;
-          progressBarState.lastUpdateTime = now;
+          progressBarState.lastUpdateTime = now2;
           updateTimelineState(actualPosition);
         } else {
           const interpolatedPosition = (lastKnownPosition || 0) + elapsed;
-          progressBarState.lastInterpolationUpdate = now;
+          progressBarState.lastInterpolationUpdate = now2;
           updateTimelineState(interpolatedPosition);
         }
       }
@@ -11188,7 +11203,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       }
       let data = {};
       try {
-        data = await res.json();
+        const responseBody = await res.text();
+        if (responseBody.trim() === "") {
+          console.warn("Received empty response body");
+          data = {};
+        } else {
+          data = JSON.parse(responseBody);
+        }
       } catch (error) {
         console.error("Error parsing response JSON:", error);
       }
@@ -18357,17 +18378,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   async function fetchLyricTranslations(lyricsOnly) {
     if (storage_default.get("disable_translation") === "true") {
-      console.log("Amai Lyrics: Translation disabled");
+      console.log("[Amai Lyrics] Translation disabled");
       return lyricsOnly.map(() => "");
     }
     const targetLang = storage_default.get("translation_language")?.toString() || Defaults_default.translationLanguage;
     const prompt = buildTranslationPrompt(targetLang);
     const amaiTranslations = await fetchAmaiTranslations(lyricsOnly, prompt);
     if (amaiTranslations.length > 0 && amaiTranslations.some((line) => line.trim() !== "")) {
-      console.log("Amai Lyrics: Translations fetched from Amai API");
       return amaiTranslations;
     }
-    console.log("Amai Lyrics: Falling back to Gemini for translations");
+    console.log("[Amai Lyrics] Falling back to Gemini for translations");
     return await fetchGeminiTranslations(lyricsOnly, prompt);
   }
   async function fetchAmaiTranslations(lyricsOnly, prompt) {
@@ -18543,15 +18563,14 @@ ${JSON.stringify(lyricsOnly)}`
       init_Defaults();
       init_web();
       AI_MODELS = {
-        TRANSLATION: "gemini-2.5-flash-lite",
-        PHONETIC: "gemini-2.5-flash"
+        TRANSLATION: "gemini-flash-lite-latest",
+        PHONETIC: "gemini-flash-latest"
       };
     }
   });
 
   // src/utils/Lyrics/conversion.ts
   function convertLyrics(data) {
-    console.log("Converting Syllable to Line type");
     return data.map((item) => {
       let leadText = "";
       let prevIsJapanese = null;
@@ -19752,7 +19771,7 @@ ${JSON.stringify(lyricsOnly)}`
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-24396-6WHvBhrri7UW/198899b47408/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-23332-C46jrJjiFA6R/199c0e7f62b8/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -19778,7 +19797,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24396-6WHvBhrri7UW/198899b46ab0/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-23332-C46jrJjiFA6R/199c0e7f5a50/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -19920,7 +19939,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24396-6WHvBhrri7UW/198899b46eb1/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-23332-C46jrJjiFA6R/199c0e7f5e31/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -20128,7 +20147,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24396-6WHvBhrri7UW/198899b46f62/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-23332-C46jrJjiFA6R/199c0e7f5ec2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -20138,7 +20157,6 @@ button:has(#SpicyLyricsPageSvg):after {
   --ColorStop2: hsla(0, 0%, 98%, .45);
   --ColorStop3: hsla(0, 0%, 93%, .25);
   animation: skeleton 1s linear infinite;
-  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   background: linear-gradient(-45deg, var(--ColorStop1) var(--ValueStop1), var(--ColorStop2) var(--ValueStop2), var(--ColorStop3) var(--ValueStop3));
   background-position-x: 100%;
@@ -20668,7 +20686,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24396-6WHvBhrri7UW/198899b470b3/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-23332-C46jrJjiFA6R/199c0e7f5ff3/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -20842,7 +20860,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24396-6WHvBhrri7UW/198899b47144/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-23332-C46jrJjiFA6R/199c0e7f6074/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -21112,7 +21130,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24396-6WHvBhrri7UW/198899b471f5/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-23332-C46jrJjiFA6R/199c0e7f6105/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -21397,7 +21415,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24396-6WHvBhrri7UW/198899b47296/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-23332-C46jrJjiFA6R/199c0e7f6186/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -21420,7 +21438,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-24396-6WHvBhrri7UW/198899b472f7/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-23332-C46jrJjiFA6R/199c0e7f61c7/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
