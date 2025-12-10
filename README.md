@@ -19,9 +19,7 @@ Using Google's Gemini AI, it automatically generates:
 - **Furigana Support:** Shows pronunciation guides above Kanji characters.
 - **Romaji Support:** Displays Japanese lyrics in Latin letters.
 - **Korean Romanization:** Shows Korean lyrics in Latin letters.
-- **Gemini Integration:** Uses Google's Gemini AI to generate annotations.
 - **Better Visuals:** Clean and easy-to-read design.
-- **Easy Setup:** Just get an API key from [Google AI Studio](https://aistudio.google.com/app/apikey) and add it in Spotify settings (explained below).
 
 ### 🌍 Supported Translation Languages
 
