@@ -59,27 +59,7 @@ Here’s what it looks like:
 
 ### Step 1: Install Spicetify (if you haven’t already)
 
-Spicetify is a tool that lets you customize Spotify. You only need to do this once.
-
-- **On Windows:**
-
-  1. Open **PowerShell** (search for it in the Start menu).
-  2. Copy and paste this command, then press **Enter**:
-
-     ```powershell
-     iwr -useb https://raw.githubusercontent.com/spicetify/marketplace/main/resources/install.ps1 | iex
-     ```
-
-- **On Linux or macOS:**
-
-  1. Open your **Terminal** app.
-  2. Copy and paste this command, then press **Enter**:
-
-     ```bash
-     curl -fsSL https://raw.githubusercontent.com/spicetify/cli/main/install.sh | sh
-     ```
-
-This will install Spicetify on your computer.
+For Spicetify installation instructions, please refer to the [official Spicetify documentation](https://spicetify.app/docs/getting-started/).
 
 ---
 
