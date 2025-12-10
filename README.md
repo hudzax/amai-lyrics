@@ -11,8 +11,6 @@ Using Google's Gemini AI, it automatically generates:
 
 —all displayed seamlessly inside Spotify. Setup is simple with your own API key, and the clean design keeps everything easy to read.
 
----
-
 ## 🌟 Features
 
 - **Line-by-line Translation:** See translations for each line of lyrics.
@@ -21,7 +19,7 @@ Using Google's Gemini AI, it automatically generates:
 - **Korean Romanization:** Shows Korean lyrics in Latin letters.
 - **Better Visuals:** Clean and easy-to-read design.
 
-### 🌍 Supported Translation Languages
+## 🌍 Supported Translation Languages
 
 Amai Lyrics supports translations into the following languages:
 
@@ -39,8 +37,6 @@ Amai Lyrics supports translations into the following languages:
 
 You can change the translation language in Spotify's settings after installing the extension.
 
----
-
 ## 👀 Preview
 
 Here’s what it looks like:
@@ -51,21 +47,15 @@ Here’s what it looks like:
 
 ![Korean Romanization Preview](./previews/preview-romaja.png)
 
----
-
 ## 🚀 How to Install
 
 ### Step 1: Install Spicetify (if you haven’t already)
 
 For Spicetify installation instructions, please refer to the [official Spicetify documentation](https://spicetify.app/docs/getting-started/).
 
----
-
 ### Step 2: Download The Extension
 
 - Download [amai-lyrics-main.js](https://github.com/hudzax/amai-lyrics/releases/latest/download/amai-lyrics-main.js)
-
----
 
 ### Step 3: Find Spicetify’s Config Folder
 
@@ -78,15 +68,11 @@ For Spicetify installation instructions, please refer to the [official Spicetify
 
 - This will open a folder on your computer. Inside, you’ll see an **Extensions** folder.
 
----
-
 ### Step 4: Add Amai Lyrics to Extensions
 
 - Move or copy the **`amai-lyrics-main.js`** file you downloaded into the **Extensions** folder.
 
   ![Config Folder Screenshot](./previews/config-dir.jpg)
-
----
 
 ### Step 5: Enable it in Spicetify
 
@@ -102,8 +88,6 @@ For Spicetify installation instructions, please refer to the [official Spicetify
 - **Restart Spotify** (close it completely and open it again).
 
 That’s it! You only need to do this once. Amai Lyrics will update itself automatically when new versions come out.
-
----
 
 ## ⚙️ Set Up Your Gemini API Key
 
