@@ -412,7 +412,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.2.9";
+      version = "1.2.10";
     }
   });
 
@@ -8342,9 +8342,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-23332-C46jrJjiFA6R/199c0e7f62b8/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-15096-xPgMvsjDiCXR/19b07cc316b8/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-23332-C46jrJjiFA6R/199c0e7f62b8/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-15096-xPgMvsjDiCXR/19b07cc316b8/DotLoader.css"() {
     }
   });
 
@@ -19771,7 +19771,7 @@ ${JSON.stringify(lyricsOnly)}`
       var el = document.createElement('style');
       el.id = `amaiDlyrics`;
       el.textContent = (String.raw`
-  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-23332-C46jrJjiFA6R/199c0e7f62b8/DotLoader.css */
+  /* C:/Users/Hathaway/AppData/Local/Temp/tmp-15096-xPgMvsjDiCXR/19b07cc316b8/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -19797,7 +19797,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-23332-C46jrJjiFA6R/199c0e7f5a50/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15096-xPgMvsjDiCXR/19b07cc30ee0/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -19939,7 +19939,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-23332-C46jrJjiFA6R/199c0e7f5e31/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15096-xPgMvsjDiCXR/19b07cc312a1/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -20147,7 +20147,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-23332-C46jrJjiFA6R/199c0e7f5ec2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15096-xPgMvsjDiCXR/19b07cc31322/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -20686,7 +20686,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-23332-C46jrJjiFA6R/199c0e7f5ff3/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15096-xPgMvsjDiCXR/19b07cc31443/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -20710,6 +20710,7 @@ button:has(#SpicyLyricsPageSvg):after {
   transform-style: preserve-3d;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  z-index: -1;
 }
 .sweet-dynamic-bg::after {
   content: "";
@@ -20860,7 +20861,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-23332-C46jrJjiFA6R/199c0e7f6074/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15096-xPgMvsjDiCXR/19b07cc314b4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -21130,7 +21131,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-23332-C46jrJjiFA6R/199c0e7f6105/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15096-xPgMvsjDiCXR/19b07cc31535/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -21415,7 +21416,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-23332-C46jrJjiFA6R/199c0e7f6186/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15096-xPgMvsjDiCXR/19b07cc315b6/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -21438,7 +21439,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-23332-C46jrJjiFA6R/199c0e7f61c7/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-15096-xPgMvsjDiCXR/19b07cc315f7/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
