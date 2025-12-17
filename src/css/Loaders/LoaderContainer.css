@@ -14,7 +14,6 @@
 }
 
 #SpicyLyricsPage .LyricsContainer .loaderContainer.active {
-  position: relative;
   opacity: 1;
   z-index: 9;
 }
