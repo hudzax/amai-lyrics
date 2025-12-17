@@ -1,5 +1,6 @@
 import fetchLyrics from '../../utils/Lyrics/fetchLyrics';
 import '../../css/Loaders/DotLoader.css';
+import '../../css/Loaders/ProcessingIndicator.css';
 import { removeLinesEvListener } from '../../utils/Lyrics/lyrics';
 import ApplyDynamicBackground from '../DynamicBG/dynamicBackground';
 import Defaults from '../Global/Defaults';
@@ -109,6 +110,12 @@ async function DestroyPage() {
   maid?.CleanUp();
   maid = null;
   PageView.IsOpened = false;
+
+  // Clean up processing indicator timeout if it exists
+  if (window.ProcessingIndicatorTimeout) {
+    clearTimeout(window.ProcessingIndicatorTimeout);
+    window.ProcessingIndicatorTimeout = null;
+  }
 }
 
 export default PageView;

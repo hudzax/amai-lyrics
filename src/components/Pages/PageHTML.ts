@@ -8,6 +8,10 @@ export const PageHTML = `
         <div class="loaderContainer">
             <div id="DotLoader"></div>
         </div>
+        <div class="processingIndicator">
+            <div class="progress"></div>
+            <div class="text">Processing translations...</div>
+        </div>
         <div class="LyricsContent ScrollbarScrollable"></div>
     </div>
     <div class="ViewControls"></div>

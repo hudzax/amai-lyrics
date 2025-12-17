@@ -4,7 +4,7 @@
 
 import storage from '../storage';
 import Defaults from '../../components/Global/Defaults';
-import { HideLoaderContainer, ClearLyricsPageContainer } from './ui';
+import { HideLoaderContainer, ClearLyricsPageContainer, ShowProcessingIndicator, EnsureProcessingIndicatorHidden } from './ui';
 import { cacheLyrics } from './cache';
 import { fetchPhoneticLyrics, fetchLyricTranslations } from './ai';
 import { convertLyrics } from './conversion';
@@ -150,6 +150,9 @@ async function processLyricsEnhancementsAsync(
   lyricsOnly: string[],
 ): Promise<void> {
   try {
+    // Show processing indicator
+    ShowProcessingIndicator();
+
     // Process phonetic and translations in parallel
     const [processedLyricsJson, translations] = await Promise.all([
       fetchPhoneticLyrics(lyricsJson, hasKanji, hasKorean, lyricsOnly),
@@ -165,13 +168,16 @@ async function processLyricsEnhancementsAsync(
     if (Spicetify.Player.data.item.uri?.split(':')[2] === trackId) {
       // Update the displayed lyrics with translations
       updateDisplayedLyricsWithTranslations(processedLyricsJson);
-      
+
       Spicetify.showNotification('Translations updated', false, 1000);
       storage.set('currentLyricsData', JSON.stringify(processedLyricsJson));
     }
   } catch (error) {
     console.error('Amai Lyrics: Error processing enhancements', error);
     // Don't show error to user - keep original lyrics visible
+  } finally {
+    // Always hide processing indicator, whether success or failure
+    EnsureProcessingIndicatorHidden();
   }
 }
 

@@ -99,3 +99,58 @@ export function ClearLyricsPageContainer(): void {
     lyricsContent.innerHTML = '';
   }
 }
+
+/**
+ * Shows the processing indicator for phonetic/translation processing
+ */
+export function ShowProcessingIndicator(): void {
+  try {
+    const indicator = document.querySelector(
+      '#SpicyLyricsPage .LyricsContainer .processingIndicator',
+    );
+    if (indicator) {
+      // Clear any existing timeout to prevent flickering
+      if (window.ProcessingIndicatorTimeout) {
+        clearTimeout(window.ProcessingIndicatorTimeout);
+        window.ProcessingIndicatorTimeout = null;
+      }
+      indicator.classList.add('active');
+    }
+  } catch (error) {
+    console.error('Amai Lyrics: Error showing processing indicator', error);
+  }
+}
+
+/**
+ * Hides the processing indicator
+ */
+export function HideProcessingIndicator(): void {
+  try {
+    const indicator = document.querySelector(
+      '#SpicyLyricsPage .LyricsContainer .processingIndicator',
+    );
+    if (indicator) {
+      indicator.classList.remove('active');
+    }
+  } catch (error) {
+    console.error('Amai Lyrics: Error hiding processing indicator', error);
+  }
+}
+
+/**
+ * Ensures processing indicator is hidden (with timeout fallback)
+ * Used as a safety measure to prevent stuck indicators
+ */
+export function EnsureProcessingIndicatorHidden(): void {
+  // Hide immediately if visible
+  HideProcessingIndicator();
+
+  // Set timeout to ensure it gets hidden even if something goes wrong
+  if (window.ProcessingIndicatorTimeout) {
+    clearTimeout(window.ProcessingIndicatorTimeout);
+  }
+  window.ProcessingIndicatorTimeout = setTimeout(() => {
+    HideProcessingIndicator();
+    window.ProcessingIndicatorTimeout = null;
+  }, 5000); // 5 second safety timeout
+}

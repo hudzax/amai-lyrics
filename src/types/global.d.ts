@@ -1,11 +1,12 @@
 // Global Types
 declare global {
   interface Window {
-    _spicy_lyrics_metadata?: any;
-    _spicy_lyrics?: any;
-    _spicy_lyrics_session?: any;
+    _spicy_lyrics_metadata?: unknown;
+    _spicy_lyrics?: unknown;
+    _spicy_lyrics_session?: unknown;
+    ProcessingIndicatorTimeout?: NodeJS.Timeout | null;
   }
-  type Vibrant = Promise<any>;
+  type Vibrant = Promise<unknown>;
 }
 
 export {};

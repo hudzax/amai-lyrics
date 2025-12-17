@@ -1,6 +1,7 @@
 import sleep from '../utils/sleep';
 import { ButtonManager } from './ButtonManager';
 import { NowPlayingBarBackground } from '../components/DynamicBG/NowPlayingBarBackground';
+import { EnsureProcessingIndicatorHidden } from '../utils/Lyrics/ui';
 
 export class SongChangeManager {
   private buttonManager: ButtonManager;
@@ -23,7 +24,10 @@ export class SongChangeManager {
     }
 
     if (!currentUri) return;
-
+  
+    // Hide processing indicator when song changes to prevent stuck indicators
+    EnsureProcessingIndicatorHidden();
+  
     // Fetch and apply lyrics on song change (already non-blocking)
     const { default: fetchLyrics } = await import('../utils/Lyrics/fetchLyrics');
     const { default: ApplyLyrics } = await import('../utils/Lyrics/Global/Applyer');
