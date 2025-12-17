@@ -50,6 +50,7 @@ export interface LineBasedLyricItem {
   Text: string;
   StartTime: number;
   EndTime: number;
+  Translation?: string;
 }
 
 /**

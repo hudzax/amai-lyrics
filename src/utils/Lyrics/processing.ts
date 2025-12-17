@@ -102,32 +102,77 @@ export async function processAndEnhanceLyrics(
 
   const { hasKanji, hasKorean } = detectLanguages(preparedLyricsJson);
 
-  const phoneticLyricsJson: LyricsData = JSON.parse(JSON.stringify(preparedLyricsJson));
-
-  const [processedLyricsJson, translations] = await Promise.all([
-    fetchPhoneticLyrics(phoneticLyricsJson, hasKanji, hasKorean, lyricsOnly),
-    fetchLyricTranslations(lyricsOnly),
-  ]);
-
-  attachTranslations(processedLyricsJson, translations);
-
-  await cacheLyrics(trackId, { ...processedLyricsJson, id: id });
-
+  // STEP 1: Display lyrics immediately (without translations)
+  const lyricsToDisplay = JSON.parse(JSON.stringify(preparedLyricsJson));
+  
+  // Cache and display the initial lyrics
+  await cacheLyrics(trackId, { ...lyricsToDisplay, id: id });
+  
   storage.set('currentlyFetching', 'false');
 
   if (Spicetify.Player.data.item.uri?.split(':')[2] === trackId) {
-    Spicetify.showNotification('Completed', false, 1000);
-    Defaults.CurrentLyricsType = processedLyricsJson.Type;
-    storage.set('currentLyricsData', JSON.stringify(processedLyricsJson));
+    Spicetify.showNotification('Lyrics loaded', false, 1000);
+    Defaults.CurrentLyricsType = lyricsToDisplay.Type;
+    storage.set('currentLyricsData', JSON.stringify(lyricsToDisplay));
     HideLoaderContainer();
     ClearLyricsPageContainer();
   }
 
+  // STEP 2: Process phonetic and translations asynchronously
+  const phoneticLyricsJson: LyricsData = JSON.parse(JSON.stringify(preparedLyricsJson));
+
+  // Start async processing without blocking the initial display
+  processLyricsEnhancementsAsync(trackId, phoneticLyricsJson, hasKanji, hasKorean, lyricsOnly);
+
+  // Return immediately with the basic lyrics
   return {
-    ...processedLyricsJson,
+    ...lyricsToDisplay,
     id: lyricsJson.id as string,
     fromCache: false,
   };
+}
+
+/**
+ * Processes lyrics enhancements (phonetic and translations) asynchronously
+ * and updates the UI when complete
+ *
+ * @param trackId - Spotify track ID
+ * @param lyricsJson - Lyrics data to enhance
+ * @param hasKanji - Whether lyrics contain Japanese characters
+ * @param hasKorean - Whether lyrics contain Korean characters
+ * @param lyricsOnly - Plain text lyrics array
+ */
+async function processLyricsEnhancementsAsync(
+  trackId: string,
+  lyricsJson: LyricsData,
+  hasKanji: boolean,
+  hasKorean: boolean,
+  lyricsOnly: string[],
+): Promise<void> {
+  try {
+    // Process phonetic and translations in parallel
+    const [processedLyricsJson, translations] = await Promise.all([
+      fetchPhoneticLyrics(lyricsJson, hasKanji, hasKorean, lyricsOnly),
+      fetchLyricTranslations(lyricsOnly),
+    ]);
+
+    attachTranslations(processedLyricsJson, translations);
+
+    // Update cache with enhanced lyrics
+    await cacheLyrics(trackId, { ...processedLyricsJson, id: trackId });
+
+    // Only update UI if this is still the current track
+    if (Spicetify.Player.data.item.uri?.split(':')[2] === trackId) {
+      // Update the displayed lyrics with translations
+      updateDisplayedLyricsWithTranslations(processedLyricsJson);
+      
+      Spicetify.showNotification('Translations updated', false, 1000);
+      storage.set('currentLyricsData', JSON.stringify(processedLyricsJson));
+    }
+  } catch (error) {
+    console.error('Amai Lyrics: Error processing enhancements', error);
+    // Don't show error to user - keep original lyrics visible
+  }
 }
 
 /**
@@ -170,7 +215,7 @@ export function detectLanguages(lyricsJson: LyricsData): {
 export function attachTranslations(lyricsJson: LyricsData, translations: string[]): void {
   if (lyricsJson.Type === 'Line' && lyricsJson.Content) {
     lyricsJson.Content.forEach((line, idx: number) => {
-      (line as LyricsLine).Translation = translations[idx] || '';
+      line.Translation = translations[idx] || '';
     });
   } else if (lyricsJson.Type === 'Static' && lyricsJson.Lines) {
     lyricsJson.Lines.forEach((line, idx: number) => {
@@ -255,4 +300,106 @@ export async function extractLyrics(lyricsJson: LyricsData): Promise<string[]> {
   }
 
   return [];
+}
+
+/**
+ * Updates the currently displayed lyrics with translations
+ * This function preserves scroll position and animation state
+ *
+ * @param lyricsData - Enhanced lyrics data with translations
+ */
+export function updateDisplayedLyricsWithTranslations(lyricsData: LyricsData): void {
+  try {
+    if (!Defaults.LyricsContainerExists) return;
+
+    const lyricsContainer = document.querySelector<HTMLElement>(
+      '#SpicyLyricsPage .LyricsContainer .LyricsContent',
+    );
+    
+    if (!lyricsContainer) return;
+
+    // Preserve current scroll position
+    const simplebarContent = lyricsContainer.querySelector('.simplebar-content-wrapper');
+    const scrollTop = simplebarContent?.scrollTop || 0;
+
+    // Update translations based on lyrics type
+    if (lyricsData.Type === 'Line' && lyricsData.Content) {
+      updateLineLyricsTranslations(lyricsData.Content);
+    } else if (lyricsData.Type === 'Static' && lyricsData.Lines) {
+      updateStaticLyricsTranslations(lyricsData.Lines);
+    }
+
+    // Restore scroll position
+    if (simplebarContent) {
+      simplebarContent.scrollTop = scrollTop;
+    }
+  } catch (error) {
+    console.error('Amai Lyrics: Error updating translations', error);
+  }
+}
+
+/**
+ * Updates line-synced lyrics with translations
+ *
+ * @param content - Line-based lyrics content with translations
+ */
+function updateLineLyricsTranslations(content: LineBasedLyricItem[]): void {
+  const lineElements = document.querySelectorAll('#SpicyLyricsPage .LyricsContainer .LyricsContent .main-lyrics-text.line');
+  
+  content.forEach((line, index) => {
+    if (index >= lineElements.length) return;
+
+    const lineElement = lineElements[index] as HTMLElement;
+    const existingTranslation = lineElement.querySelector('.translation');
+    
+    // Only add translation if it exists, is not empty, and is different from original
+    if (line.Translation && line.Translation.trim() !== '') {
+      if (existingTranslation) {
+        // Update existing translation
+        existingTranslation.textContent = line.Translation;
+      } else {
+        // Create new translation element
+        const translationElem = document.createElement('div');
+        translationElem.classList.add('translation');
+        translationElem.textContent = line.Translation;
+        lineElement.appendChild(translationElem);
+      }
+    } else if (existingTranslation) {
+      // Remove translation if it's empty
+      existingTranslation.remove();
+    }
+  });
+}
+
+/**
+ * Updates static lyrics with translations
+ *
+ * @param lines - Static lyrics lines with translations
+ */
+function updateStaticLyricsTranslations(lines: LyricsLine[]): void {
+  const lineElements = document.querySelectorAll('#SpicyLyricsPage .LyricsContainer .LyricsContent .line.static .main-lyrics-text');
+  
+  lines.forEach((line, index) => {
+    if (index >= lineElements.length) return;
+
+    const lineElement = lineElements[index] as HTMLElement;
+    const existingTranslation = lineElement.querySelector('.translation');
+    
+    // Only add translation if it exists, is not empty, and is different from original
+    if (line.Translation && line.Translation.trim() !== '') {
+      if (existingTranslation) {
+        // Update existing translation
+        existingTranslation.textContent = line.Translation;
+      } else {
+        // Create new translation element
+        const translationElem = document.createElement('div');
+        translationElem.classList.add('translation');
+        translationElem.textContent = line.Translation;
+        lineElement.appendChild(translationElem);
+      }
+    } else if (existingTranslation) {
+      // Remove translation if it's empty
+      existingTranslation.remove();
+    }
+  });
 }
