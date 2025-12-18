@@ -54,6 +54,9 @@ export const NowBarHTML = `
         <button id="WatchMusicVideoButton" class="AmaiPageButton">
             Watch Music Video
         </button>
+        <button id="AmaiSettingsButton" class="AmaiPageButton">
+            Settings
+        </button>
         <span onclick="window.open('https://github.com/hudzax/amai-lyrics/releases')" class="amai-version-number">Amai Lyrics v${Defaults.Version}</span>
     </div>
 </div>

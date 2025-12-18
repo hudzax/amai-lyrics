@@ -10,6 +10,7 @@ import { SpotifyPlayer } from '../Global/SpotifyPlayer';
 export function setupActionButtons(maid: Maid | null) {
   setupRefreshButton(maid);
   setupWatchMusicVideoButton(maid);
+  setupSettingsButton(maid);
 }
 
 function setupRefreshButton(maid: Maid | null) {
@@ -72,6 +73,20 @@ function setupWatchMusicVideoButton(maid: Maid | null) {
 
   watchMusicVideoButton.addEventListener('click', clickHandler);
   maid?.Give(() => watchMusicVideoButton.removeEventListener('click', clickHandler));
+}
+
+function setupSettingsButton(maid: Maid | null) {
+  const settingsButton = document.querySelector<HTMLButtonElement>(
+    PageViewSelectors.SettingsButton,
+  );
+  if (!settingsButton) return;
+
+  const clickHandler = () => {
+    Spicetify.Platform.History.push('/preferences');
+  };
+
+  settingsButton.addEventListener('click', clickHandler);
+  maid?.Give(() => settingsButton.removeEventListener('click', clickHandler));
 }
 
 export function showRefreshButton() {
