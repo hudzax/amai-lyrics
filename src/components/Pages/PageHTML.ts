@@ -49,10 +49,10 @@ export const NowBarHTML = `
     </div>
     <div class="AmaiPageButtonContainer">
         <button id="RefreshLyrics" class="AmaiPageButton">
-            Reload Current Lyrics
+            Reload Lyrics
         </button>
         <button id="WatchMusicVideoButton" class="AmaiPageButton">
-            Watch Music Video
+            Watch MV
         </button>
         <button id="AmaiSettingsButton" class="AmaiPageButton">
             Settings
