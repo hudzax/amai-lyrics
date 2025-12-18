@@ -126,6 +126,44 @@ export async function fetchAmaiTranslations(
 }
 
 /**
+ * Fetches phonetic lyrics from the Amai Worker API.
+ *
+ * @param lyricsOnly An array of strings representing the lyrics to be processed.
+ * @param prompt The phonetic conversion prompt to use (furigana, romaji, romaja).
+ * @returns A promise that resolves to an array of phonetic lines.
+ */
+export async function fetchAmaiPhonetic(lyricsOnly: string[], prompt: string): Promise<string[]> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5-second timeout
+
+    const response = await fetch(Defaults.lyrics.api.phoneticUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        lyrics: lyricsOnly,
+        prompt: prompt,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.phonetic || [];
+  } catch (error) {
+    console.error('Error fetching phonetic lyrics from Amai Worker:', error);
+    return [];
+  }
+}
+
+/**
  * Fetches translations using Gemini AI
  */
 export async function fetchGeminiTranslations(
@@ -245,6 +283,15 @@ export async function generateLyricsUsingPrompt(
   lyricsOnly: string[],
   prompt: string,
 ): Promise<LyricsData> {
+  // Try fetching from Amai first
+  const amaiLines = await fetchAmaiPhonetic(lyricsOnly, prompt);
+  if (amaiLines.length > 0 && amaiLines.some((line) => line.trim() !== '')) {
+    updateLyricsWithText(lyricsJson, amaiLines);
+    return lyricsJson;
+  }
+
+  // Fallback to Gemini
+  console.log('[Amai Lyrics] Falling back to Gemini for phonetic lyrics');
   if (!(await verifyGeminiAPIKey(lyricsJson))) {
     return lyricsJson;
   }

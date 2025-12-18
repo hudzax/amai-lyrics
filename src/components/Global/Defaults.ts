@@ -6,6 +6,7 @@ const Defaults = {
     api: {
       url: 'https://amai-worker-production.nandemo.workers.dev/lyrics',
       translationUrl: 'https://amai-worker-production.nandemo.workers.dev/translations',
+      phoneticUrl: 'https://amai-worker-production.nandemo.workers.dev/phonetic',
     },
   },
   CurrentLyricsType: 'None',
