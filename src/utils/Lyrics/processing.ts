@@ -56,6 +56,14 @@ export type LyricsData = LyricsDataSyllable | LyricsDataLine | LyricsDataStatic;
 const JAPANESE_REGEX = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
 const KOREAN_REGEX = /[\uAC00-\uD7AF]/;
 
+// Regular expressions for phonetic text processing
+const JAPANESE_CHAR_REGEX = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/g;
+const JAPANESE_ROMAJI_REGEX =
+  /(([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)|[(\uFF08]([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)[)\uFF09])(?:{|\uFF5B)([^}\uFF5D]+)(?:}|\uFF5D)/g;
+const JAPANESE_FURIGANA_REGEX = /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^}]+)}/g;
+const KOREAN_ROMAJA_REGEX =
+  /((?:\([0-9\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)(?:[a-zA-Z]*)[?.!,"']?){([^}]+)}/g;
+
 // Timing offset for lyrics synchronization
 const LYRICS_TIMING_OFFSET = 0.55;
 
@@ -108,7 +116,7 @@ export async function processAndEnhanceLyrics(
   const { hasKanji, hasKorean } = detectLanguages(preparedLyricsJson);
 
   // STEP 1: Display lyrics immediately (without translations)
-  const lyricsToDisplay = JSON.parse(JSON.stringify(preparedLyricsJson));
+  const lyricsToDisplay = structuredClone(preparedLyricsJson);
 
   // Cache and display the initial lyrics
   await cacheLyrics(trackId, { ...lyricsToDisplay, id: id });
@@ -124,7 +132,7 @@ export async function processAndEnhanceLyrics(
   }
 
   // STEP 2: Process phonetic and translations asynchronously
-  const phoneticLyricsJson: LyricsData = JSON.parse(JSON.stringify(preparedLyricsJson));
+  const phoneticLyricsJson: LyricsData = structuredClone(preparedLyricsJson);
 
   // Start async processing without blocking the initial display
   processLyricsEnhancementsAsync(trackId, phoneticLyricsJson, hasKanji, hasKorean, lyricsOnly);
@@ -200,18 +208,33 @@ export function detectLanguages(lyricsJson: LyricsData): {
   let hasKorean = false;
 
   if (lyricsJson.Type === 'Syllable' && lyricsJson.Content) {
-    hasKanji = lyricsJson.Content.some((item) =>
-      item.Lead?.Syllables?.some((syl: Syllable) => JAPANESE_REGEX.test(syl.Text)),
-    );
-    hasKorean = lyricsJson.Content.some((item) =>
-      item.Lead?.Syllables?.some((syl: Syllable) => KOREAN_REGEX.test(syl.Text)),
-    );
+    for (const item of lyricsJson.Content) {
+      if (
+        !hasKanji &&
+        item.Lead?.Syllables?.some((syl: Syllable) => JAPANESE_REGEX.test(syl.Text))
+      ) {
+        hasKanji = true;
+      }
+      if (
+        !hasKorean &&
+        item.Lead?.Syllables?.some((syl: Syllable) => KOREAN_REGEX.test(syl.Text))
+      ) {
+        hasKorean = true;
+      }
+      if (hasKanji && hasKorean) break;
+    }
   } else if (lyricsJson.Type === 'Line' && lyricsJson.Content) {
-    hasKanji = lyricsJson.Content.some((item) => JAPANESE_REGEX.test(item.Text));
-    hasKorean = lyricsJson.Content.some((item) => KOREAN_REGEX.test(item.Text));
+    for (const item of lyricsJson.Content) {
+      if (!hasKanji && JAPANESE_REGEX.test(item.Text)) hasKanji = true;
+      if (!hasKorean && KOREAN_REGEX.test(item.Text)) hasKorean = true;
+      if (hasKanji && hasKorean) break;
+    }
   } else if (lyricsJson.Type === 'Static' && lyricsJson.Lines) {
-    hasKanji = lyricsJson.Lines.some((item) => JAPANESE_REGEX.test(item.Text));
-    hasKorean = lyricsJson.Lines.some((item) => KOREAN_REGEX.test(item.Text));
+    for (const item of lyricsJson.Lines) {
+      if (!hasKanji && JAPANESE_REGEX.test(item.Text)) hasKanji = true;
+      if (!hasKorean && KOREAN_REGEX.test(item.Text)) hasKorean = true;
+      if (hasKanji && hasKorean) break;
+    }
   }
 
   return { hasKanji, hasKorean };
@@ -241,9 +264,10 @@ export function attachTranslations(lyricsJson: LyricsData, translations: string[
  * @param lyricsJson - Raw lyrics data
  * @returns Prepared lyrics and text-only array
  */
-export async function prepareLyricsForGemini(
-  lyricsJson: LyricsData,
-): Promise<{ lyricsJson: LyricsData; lyricsOnly: string[] }> {
+export function prepareLyricsForGemini(lyricsJson: LyricsData): {
+  lyricsJson: LyricsData;
+  lyricsOnly: string[];
+} {
   if (lyricsJson.Type === 'Syllable') {
     // Cast lyricsJson to LyricsDataSyllable to access Content with correct type
     const syllableData = lyricsJson as LyricsDataSyllable;
@@ -257,7 +281,7 @@ export async function prepareLyricsForGemini(
     } as LyricsDataLine; // Cast to LyricsDataLine
   }
 
-  const lyricsOnly = await extractLyrics(lyricsJson);
+  const lyricsOnly = extractLyrics(lyricsJson);
 
   if (lyricsOnly.length > 0) {
     lyricsJson.Raw = lyricsOnly;
@@ -267,28 +291,34 @@ export async function prepareLyricsForGemini(
 }
 
 /**
+ * Helper function to remove empty lines and normalize text
+ *
+ * @param items - Array of lyrics lines or items
+ * @returns Cleaned array
+ */
+function removeEmptyLinesAndCharacters(
+  items: LyricsLine[] | LineBasedLyricItem[],
+): (LyricsLine | LineBasedLyricItem)[] {
+  items = items.filter((item) => item.Text?.trim() !== '');
+
+  items = items.map((item) => {
+    if (item.Text) {
+      item.Text = item.Text.replace(/[「」",.!]/g, '');
+      item.Text = item.Text.normalize('NFKC');
+    }
+    return item;
+  });
+
+  return items;
+}
+
+/**
  * Extracts plain text lyrics from structured data
  *
  * @param lyricsJson - Lyrics data
  * @returns Array of lyrics text only
  */
-export async function extractLyrics(lyricsJson: LyricsData): Promise<string[]> {
-  const removeEmptyLinesAndCharacters = (
-    items: LyricsLine[] | LineBasedLyricItem[],
-  ): (LyricsLine | LineBasedLyricItem)[] => {
-    items = items.filter((item) => item.Text?.trim() !== '');
-
-    items = items.map((item) => {
-      if (item.Text) {
-        item.Text = item.Text.replace(/[「」",.!]/g, '');
-        item.Text = item.Text.normalize('NFKC');
-      }
-      return item;
-    });
-
-    return items;
-  };
-
+export function extractLyrics(lyricsJson: LyricsData): string[] {
   if (lyricsJson.Type === 'Line' && lyricsJson.Content) {
     // Cast to LyricsDataLine to access Content with correct type
     const lineData = lyricsJson as LyricsDataLine;
@@ -322,29 +352,18 @@ export async function extractLyrics(lyricsJson: LyricsData): Promise<string[]> {
  * @returns Processed HTML string with ruby tags
  */
 export function processPhoneticText(text: string, enableRomaji: boolean): string {
-  const JapaneseRegex = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/g;
-
-  if (JapaneseRegex.test(text)) {
+  if (JAPANESE_CHAR_REGEX.test(text)) {
     if (enableRomaji) {
-      return text.replace(
-        /(([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)|[(\uFF08]([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)[)\uFF09])(?:{|\uFF5B)([^}\uFF5D]+)(?:}|\uFF5D)/g,
-        (match, p1, p2, p3, p4) => {
-          const textPart = p2 || p3;
-          return `<ruby>${textPart}<rt>${p4}</rt></ruby>`;
-        },
-      );
+      return text.replace(JAPANESE_ROMAJI_REGEX, (match, p1, p2, p3, p4) => {
+        const textPart = p2 || p3;
+        return `<ruby>${textPart}<rt>${p4}</rt></ruby>`;
+      });
     } else {
-      return text.replace(
-        /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^}]+)}/g,
-        '<ruby>$1<rt>$2</rt></ruby>',
-      );
+      return text.replace(JAPANESE_FURIGANA_REGEX, '<ruby>$1<rt>$2</rt></ruby>');
     }
   } else {
     // Korean phonetics
-    return text.replace(
-      /((?:\([0-9\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)(?:[a-zA-Z]*)[?.!,"']?){([^}]+)}/g,
-      '<ruby class="romaja">$1<rt>$2</rt></ruby>',
-    );
+    return text.replace(KOREAN_ROMAJA_REGEX, '<ruby class="romaja">$1<rt>$2</rt></ruby>');
   }
 }
 
@@ -388,6 +407,64 @@ export function updateDisplayedLyricsWithTranslations(lyricsData: LyricsData): v
 }
 
 /**
+ * Helper function to update a single lyrics line element with phonetics and translation
+ *
+ * @param lineElement - The DOM element to update
+ * @param text - The lyrics text
+ * @param translation - The translation text (if any)
+ * @param enableRomaji - Whether romaji mode is enabled
+ * @param rawText - Original raw text for comparison
+ */
+function updateLineElement(
+  lineElement: HTMLElement,
+  text: string,
+  translation: string | undefined,
+  enableRomaji: boolean,
+  rawText?: string,
+): void {
+  // Update phonetics by re-processing the text with the latest data
+  const processedText = processPhoneticText(text, enableRomaji);
+
+  // Update the main text content (excluding translation)
+  const existingTranslation = lineElement.querySelector('.translation');
+  if (existingTranslation) {
+    // Store translation, update innerHTML, then re-add translation
+    const translationText = existingTranslation.textContent || '';
+    lineElement.innerHTML = processedText;
+    const newTranslationElem = document.createElement('div');
+    newTranslationElem.classList.add('translation');
+    newTranslationElem.textContent = translationText;
+    lineElement.appendChild(newTranslationElem);
+  } else {
+    // No existing translation, just update innerHTML
+    lineElement.innerHTML = processedText;
+  }
+
+  // Now handle translation updates
+  const updatedTranslation = lineElement.querySelector('.translation');
+
+  // Check if translation is different from original and not empty
+  const hasDistinctTranslation =
+    translation && translation.trim() !== '' && (!rawText || translation.trim() !== rawText.trim());
+
+  if (hasDistinctTranslation) {
+    if (updatedTranslation) {
+      // Update existing translation
+      updatedTranslation.textContent = translation;
+    } else {
+      // Create new translation element
+      const translationElem = document.createElement('div');
+      translationElem.classList.add('translation');
+      translationElem.textContent = translation;
+      lineElement.appendChild(translationElem);
+    }
+  } else if (updatedTranslation && !hasDistinctTranslation) {
+    // Remove translation if it's empty or same as original
+    updatedTranslation.remove();
+  }
+}
+
+/**
  * Updates line-synced lyrics with phonetics and translations
  *
  * @param content - Line-based lyrics content with translations
@@ -405,51 +482,13 @@ function updateLineLyricsTranslations(
 
   content.forEach((line, index) => {
     if (index >= lineElements.length) return;
-
-    const lineElement = lineElements[index] as HTMLElement;
-
-    // Update phonetics by re-processing the text with the latest data
-    const processedText = processPhoneticText(line.Text, enableRomaji);
-
-    // Update the main text content (excluding translation)
-    const existingTranslation = lineElement.querySelector('.translation');
-    if (existingTranslation) {
-      // Store translation, update innerHTML, then re-add translation
-      const translationText = existingTranslation.textContent || '';
-      lineElement.innerHTML = processedText;
-      const newTranslationElem = document.createElement('div');
-      newTranslationElem.classList.add('translation');
-      newTranslationElem.textContent = translationText;
-      lineElement.appendChild(newTranslationElem);
-    } else {
-      // No existing translation, just update innerHTML
-      lineElement.innerHTML = processedText;
-    }
-
-    // Now handle translation updates
-    const updatedTranslation = lineElement.querySelector('.translation');
-
-    // Check if translation is different from original and not empty
-    const hasDistinctTranslation =
-      line.Translation &&
-      line.Translation.trim() !== '' &&
-      (!rawLyrics || line.Translation.trim() !== rawLyrics[index]?.trim());
-
-    if (hasDistinctTranslation) {
-      if (updatedTranslation) {
-        // Update existing translation
-        updatedTranslation.textContent = line.Translation;
-      } else {
-        // Create new translation element
-        const translationElem = document.createElement('div');
-        translationElem.classList.add('translation');
-        translationElem.textContent = line.Translation;
-        lineElement.appendChild(translationElem);
-      }
-    } else if (updatedTranslation && !hasDistinctTranslation) {
-      // Remove translation if it's empty or same as original
-      updatedTranslation.remove();
-    }
+    updateLineElement(
+      lineElements[index] as HTMLElement,
+      line.Text,
+      line.Translation,
+      enableRomaji,
+      rawLyrics?.[index],
+    );
   });
 }
 
@@ -471,50 +510,12 @@ function updateStaticLyricsTranslations(
 
   lines.forEach((line, index) => {
     if (index >= lineElements.length) return;
-
-    const lineElement = lineElements[index] as HTMLElement;
-
-    // Update phonetics by re-processing the text with the latest data
-    const processedText = processPhoneticText(line.Text, enableRomaji);
-
-    // Update the main text content (excluding translation)
-    const existingTranslation = lineElement.querySelector('.translation');
-    if (existingTranslation) {
-      // Store translation, update innerHTML, then re-add translation
-      const translationText = existingTranslation.textContent || '';
-      lineElement.innerHTML = processedText;
-      const newTranslationElem = document.createElement('div');
-      newTranslationElem.classList.add('translation');
-      newTranslationElem.textContent = translationText;
-      lineElement.appendChild(newTranslationElem);
-    } else {
-      // No existing translation, just update innerHTML
-      lineElement.innerHTML = processedText;
-    }
-
-    // Now handle translation updates
-    const updatedTranslation = lineElement.querySelector('.translation');
-
-    // Check if translation is different from original and not empty
-    const hasDistinctTranslation =
-      line.Translation &&
-      line.Translation.trim() !== '' &&
-      (!rawLyrics || line.Translation.trim() !== rawLyrics[index]?.trim());
-
-    if (hasDistinctTranslation) {
-      if (updatedTranslation) {
-        // Update existing translation
-        updatedTranslation.textContent = line.Translation;
-      } else {
-        // Create new translation element
-        const translationElem = document.createElement('div');
-        translationElem.classList.add('translation');
-        translationElem.textContent = line.Translation;
-        lineElement.appendChild(translationElem);
-      }
-    } else if (updatedTranslation && !hasDistinctTranslation) {
-      // Remove translation if it's empty or same as original
-      updatedTranslation.remove();
-    }
+    updateLineElement(
+      lineElements[index] as HTMLElement,
+      line.Text,
+      line.Translation,
+      enableRomaji,
+      rawLyrics?.[index],
+    );
   });
 }
