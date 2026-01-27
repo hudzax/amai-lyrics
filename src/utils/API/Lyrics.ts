@@ -1,5 +1,4 @@
 import Defaults from '../../components/Global/Defaults';
-import SpicyFetch from './SpicyFetch';
 import {
   SyllableBasedLyricItem,
   LineBasedLyricItem,
@@ -48,16 +47,21 @@ export async function getLyrics(
 /**
  * Fetches the current user's Spotify profile data
  */
+// src/utils/API/Lyrics.ts:52-68
 async function fetchUserData(): Promise<UserData> {
   try {
-    const [data, status] = await SpicyFetch(
-      'https://api.spotify.com/v1/me',
-      true, // IsExternal
-      true, // cache
-      false, // cosmos
-    );
+    // Use Spicetify's internal UserAPI instead of external API call
+    const user = await Spicetify.Platform.UserAPI?.getUser();
+    console.log('user', user);
 
-    return status === 200 ? data : {};
+    if (user) {
+      return {
+        id: user.username,
+        display_name: user.displayName,
+      };
+    }
+
+    return {};
   } catch (error) {
     console.error('Error fetching user data:', error);
     return {};
