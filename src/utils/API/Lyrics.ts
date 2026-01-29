@@ -52,7 +52,6 @@ async function fetchUserData(): Promise<UserData> {
   try {
     // Use Spicetify's internal UserAPI instead of external API call
     const user = await Spicetify.Platform.UserAPI?.getUser();
-    console.log('user', user);
 
     if (user) {
       return {
