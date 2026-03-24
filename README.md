@@ -100,7 +100,6 @@ Follow these steps to set up your Gemini API key:
    - Open Spotify.
    - Go to **Settings** (click your profile picture > Settings).
 3. **Add your API key:**
-
    - Scroll all the way down until you see the **API key** field.
    - Paste your Gemini API key there.
 
@@ -109,7 +108,6 @@ Follow these steps to set up your Gemini API key:
    _Don’t worry, your key is stored only on your computer and used just for this extension._
 
 4. **See the lyrics:**
-
    - Play a song.
    - Click the lyrics icon at the bottom of Spotify.
    - Wait a few seconds — the lyrics will appear with line-by-line translation, Furigana, Romaji, or Romanization!
@@ -118,8 +116,5 @@ Follow these steps to set up your Gemini API key:
 
 ---
 
-## 🙏 Credits
-
-Big thanks to **Spikerko** for creating the original Spicy Lyrics extension.
-
-And thank you for trying **Amai Lyrics**! Have fun singing along! 🎉
+Based on Spicy Lyrics by Spikerko
+Licensed under AGPLv3
