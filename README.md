@@ -116,5 +116,7 @@ Follow these steps to set up your Gemini API key:
 
 ---
 
-Based on Spicy Lyrics by Spikerko
+Copyright (C) 2024-2025 Spikerko (Original Spicy Lyrics)  
+Copyright (C) 2025-2026 hudzax (Modifications)  
+Based on Spicy Lyrics by Spikerko  
 Licensed under AGPLv3
