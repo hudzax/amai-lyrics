@@ -12,8 +12,8 @@ import { LineBasedLyricItem, LyricsLine } from './conversion'; // Import LineBas
  * AI Model Constants
  */
 const AI_MODELS = {
-  TRANSLATION: 'gemini-flash-lite-latest',
-  PHONETIC: 'gemini-flash-latest',
+  TRANSLATION: 'gemini-3.1-flash-lite-preview',
+  PHONETIC: 'gemini-3.1-flash-lite-preview',
 } as const;
 
 interface GeminiGenerationConfig extends GenerateContentConfig {
