@@ -412,7 +412,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.2.15";
+      version = "1.2.16";
     }
   });
 
@@ -8343,15 +8343,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-25904-c8jDFyQeu0E7/19d570c5e8d8/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-21044-zoSG37M0wFUw/19d64f5f3da8/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-25904-c8jDFyQeu0E7/19d570c5e8d8/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-21044-zoSG37M0wFUw/19d64f5f3da8/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-25904-c8jDFyQeu0E7/19d570c5e919/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-21044-zoSG37M0wFUw/19d64f5f3de9/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-25904-c8jDFyQeu0E7/19d570c5e919/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-21044-zoSG37M0wFUw/19d64f5f3de9/ProcessingIndicator.css"() {
     }
   });
 
@@ -18454,11 +18454,19 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     const targetLang = storage_default.get("translation_language")?.toString() || Defaults_default.translationLanguage;
     const prompt = buildTranslationPrompt(targetLang);
+    const geminiApiKey = storage_default.get("GEMINI_API_KEY")?.toString();
+    if (geminiApiKey && geminiApiKey.trim() !== "") {
+      console.log("[Amai Lyrics] Using Gemini for translations");
+      const geminiTranslations = await fetchGeminiTranslations(lyricsOnly, prompt);
+      if (geminiTranslations.length > 0 && geminiTranslations.some((line) => line.trim() !== "")) {
+        return geminiTranslations;
+      }
+      console.log("[Amai Lyrics] Gemini failed, falling back to Amai API for translations");
+    }
     const amaiTranslations = await fetchAmaiTranslations(lyricsOnly, prompt);
     if (amaiTranslations.length > 0 && amaiTranslations.some((line) => line.trim() !== "")) {
       return amaiTranslations;
     }
-    console.log("[Amai Lyrics] Falling back to Gemini for translations");
     return await fetchGeminiTranslations(lyricsOnly, prompt);
   }
   async function fetchAmaiTranslations(lyricsOnly, prompt) {
@@ -18580,6 +18588,23 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return await generateLyricsUsingPrompt(lyricsJson, lyricsOnly, Defaults_default.romajiPrompt);
   }
   async function generateLyricsUsingPrompt(lyricsJson, lyricsOnly, prompt) {
+    const geminiApiKey = storage_default.get("GEMINI_API_KEY")?.toString();
+    if (geminiApiKey && geminiApiKey.trim() !== "") {
+      console.log("[Amai Lyrics] Using Gemini for phonetic lyrics");
+      const resultJson = await processLyricsUsingGemini(lyricsJson, lyricsOnly, Defaults_default.systemInstruction, prompt);
+      if (resultJson.Info && resultJson.Info.includes("Fetch Error")) {
+        console.log("[Amai Lyrics] Gemini failed, falling back to Amai API for phonetic lyrics");
+        const errorMsg = resultJson.Info;
+        resultJson.Info = void 0;
+        const amaiLines2 = await fetchAmaiPhonetic(lyricsOnly, prompt);
+        if (amaiLines2.length > 0 && amaiLines2.some((line) => line.trim() !== "")) {
+          updateLyricsWithText(resultJson, amaiLines2);
+        } else {
+          resultJson.Info = errorMsg;
+        }
+      }
+      return resultJson;
+    }
     const amaiLines = await fetchAmaiPhonetic(lyricsOnly, prompt);
     if (amaiLines.length > 0 && amaiLines.some((line) => line.trim() !== "")) {
       updateLyricsWithText(lyricsJson, amaiLines);
@@ -20013,7 +20038,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25904-c8jDFyQeu0E7/19d570c5e8d8/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21044-zoSG37M0wFUw/19d64f5f3da8/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -20039,7 +20064,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25904-c8jDFyQeu0E7/19d570c5e919/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21044-zoSG37M0wFUw/19d64f5f3de9/ProcessingIndicator.css */
 #SpicyLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -20119,7 +20144,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25904-c8jDFyQeu0E7/19d570c5e240/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21044-zoSG37M0wFUw/19d64f5f36c0/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -20268,7 +20293,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25904-c8jDFyQeu0E7/19d570c5e511/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21044-zoSG37M0wFUw/19d64f5f3971/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -20476,7 +20501,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25904-c8jDFyQeu0E7/19d570c5e582/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21044-zoSG37M0wFUw/19d64f5f3a02/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -21015,7 +21040,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25904-c8jDFyQeu0E7/19d570c5e673/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21044-zoSG37M0wFUw/19d64f5f3ad3/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -21190,7 +21215,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25904-c8jDFyQeu0E7/19d570c5e6c4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21044-zoSG37M0wFUw/19d64f5f3b54/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -21467,7 +21492,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25904-c8jDFyQeu0E7/19d570c5e735/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21044-zoSG37M0wFUw/19d64f5f3bf5/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -21752,7 +21777,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25904-c8jDFyQeu0E7/19d570c5e796/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21044-zoSG37M0wFUw/19d64f5f3c76/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -21774,7 +21799,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-25904-c8jDFyQeu0E7/19d570c5e7c7/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21044-zoSG37M0wFUw/19d64f5f3cb7/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
