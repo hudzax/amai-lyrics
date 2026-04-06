@@ -4,6 +4,7 @@ import {
   LineBasedLyricItem,
   LyricsLine, // Import LyricsLine
 } from '../Lyrics/conversion';
+import { SpotifyPlayer } from '../../components/Global/SpotifyPlayer';
 
 const API_URL = Defaults.lyrics.api.url;
 
@@ -38,8 +39,24 @@ export async function getLyrics(
   // Fetch user data
   const userData = await fetchUserData();
 
+  let trackDetails = {};
+  if (SpotifyPlayer.GetSongId() === id) {
+    const trackName = await SpotifyPlayer.GetSongName();
+    const artistNameArray = await SpotifyPlayer.GetArtists();
+    const artistName = SpotifyPlayer.JoinArtists(artistNameArray);
+    const albumName = SpotifyPlayer.GetAlbumName();
+    const durationMs = SpotifyPlayer.GetTrackDuration();
+
+    trackDetails = {
+      track_name: trackName,
+      artist_name: artistName,
+      album_name: albumName,
+      duration_ms: durationMs,
+    };
+  }
+
   // Request lyrics
-  const { data, status } = await fetchLyricsData(id, userData, headers);
+  const { data, status } = await fetchLyricsData(id, userData, trackDetails, headers);
 
   return { response: data, status };
 }
@@ -73,6 +90,7 @@ async function fetchUserData(): Promise<UserData> {
 async function fetchLyricsData(
   id: string,
   userData: UserData,
+  trackDetails: any,
   headers: Record<string, string>,
 ): Promise<{ data: LyricsResult; status: number }> {
   try {
@@ -86,6 +104,7 @@ async function fetchLyricsData(
         country: userData?.country,
         product: userData?.product,
         images: JSON.stringify(userData?.images),
+        ...trackDetails,
       }),
     });
 
