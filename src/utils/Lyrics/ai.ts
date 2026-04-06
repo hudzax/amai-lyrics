@@ -58,7 +58,7 @@ export async function fetchPhoneticLyrics(
 }
 
 /**
- * Fetches translations by first trying the Amai Worker API and falling back to Gemini.
+ * Fetches translations, prioritizing Gemini if an API key is set, and falling back to Amai.
  *
  * @param lyricsOnly An array of strings representing the lyrics to be translated.
  * @returns A promise that resolves to an array of translated strings.
@@ -73,14 +73,23 @@ export async function fetchLyricTranslations(lyricsOnly: string[]): Promise<stri
     storage.get('translation_language')?.toString() || Defaults.translationLanguage;
   const prompt = buildTranslationPrompt(targetLang);
 
-  // Try fetching from Amai first
+  const geminiApiKey = storage.get('GEMINI_API_KEY')?.toString();
+  if (geminiApiKey && geminiApiKey.trim() !== '') {
+    console.log('[Amai Lyrics] Using Gemini for translations');
+    const geminiTranslations = await fetchGeminiTranslations(lyricsOnly, prompt);
+    if (geminiTranslations.length > 0 && geminiTranslations.some((line) => line.trim() !== '')) {
+      return geminiTranslations;
+    }
+    console.log('[Amai Lyrics] Gemini failed, falling back to Amai API for translations');
+  }
+
+  // Try fetching from Amai
   const amaiTranslations = await fetchAmaiTranslations(lyricsOnly, prompt);
   if (amaiTranslations.length > 0 && amaiTranslations.some((line) => line.trim() !== '')) {
     return amaiTranslations;
   }
 
-  // Fallback to Gemini
-  console.log('[Amai Lyrics] Falling back to Gemini for translations');
+  // Fallback to Gemini (this will trigger missing key or empty strings)
   return await fetchGeminiTranslations(lyricsOnly, prompt);
 }
 
@@ -283,7 +292,29 @@ export async function generateLyricsUsingPrompt(
   lyricsOnly: string[],
   prompt: string,
 ): Promise<LyricsData> {
-  // Try fetching from Amai first
+  const geminiApiKey = storage.get('GEMINI_API_KEY')?.toString();
+
+  if (geminiApiKey && geminiApiKey.trim() !== '') {
+    console.log('[Amai Lyrics] Using Gemini for phonetic lyrics');
+    const resultJson = await processLyricsUsingGemini(lyricsJson, lyricsOnly, Defaults.systemInstruction, prompt);
+    
+    // Fall back to Amai if Gemini encountered a fetch error
+    if (resultJson.Info && resultJson.Info.includes('Fetch Error')) {
+      console.log('[Amai Lyrics] Gemini failed, falling back to Amai API for phonetic lyrics');
+      const errorMsg = resultJson.Info;
+      resultJson.Info = undefined;
+      
+      const amaiLines = await fetchAmaiPhonetic(lyricsOnly, prompt);
+      if (amaiLines.length > 0 && amaiLines.some((line) => line.trim() !== '')) {
+        updateLyricsWithText(resultJson, amaiLines);
+      } else {
+        resultJson.Info = errorMsg; // Restore error if Amai also fails
+      }
+    }
+    return resultJson;
+  }
+
+  // Try fetching from Amai first if no Gemini key is set
   const amaiLines = await fetchAmaiPhonetic(lyricsOnly, prompt);
   if (amaiLines.length > 0 && amaiLines.some((line) => line.trim() !== '')) {
     updateLyricsWithText(lyricsJson, amaiLines);
