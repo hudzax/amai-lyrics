@@ -57,7 +57,7 @@ const JAPANESE_REGEX = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
 const KOREAN_REGEX = /[\uAC00-\uD7AF]/;
 
 // Regular expressions for phonetic text processing
-const JAPANESE_CHAR_REGEX = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/g;
+const JAPANESE_CHAR_REGEX = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/;
 const JAPANESE_ROMAJI_REGEX =
   /(([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)|[(\uFF08]([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)[)\uFF09])(?:{|\uFF5B)([^}\uFF5D]+)(?:}|\uFF5D)/g;
 const JAPANESE_FURIGANA_REGEX = /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^}]+)}/g;
@@ -422,6 +422,9 @@ function updateLineElement(
   enableRomaji: boolean,
   rawText?: string,
 ): void {
+  // Strip out layout tags before processing phonetics so they don't get rendered
+  text = text.replace('[DEF=font_size:small]', '');
+
   // Update phonetics by re-processing the text with the latest data
   const processedText = processPhoneticText(text, enableRomaji);
 

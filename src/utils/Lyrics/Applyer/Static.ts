@@ -35,7 +35,7 @@ export function ApplyStaticLyrics(data) {
   data.Lines.forEach((line, index) => {
     const lineElem = document.createElement('div');
 
-    const JapaneseRegex = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/g;
+    const JapaneseRegex = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/;
     if (JapaneseRegex.test(line.Text)) {
       if (
         !data.Info &&
@@ -84,12 +84,12 @@ export function ApplyStaticLyrics(data) {
     if (
       line.Translation &&
       line.Translation.trim() !== '' &&
-      line.Translation.trim() !== data.Raw[index].trim()
+      (!data.Raw || line.Translation.trim() !== data.Raw[index]?.trim())
     ) {
       const translationElem = document.createElement('div');
       translationElem.classList.add('translation');
       translationElem.textContent = line.Translation;
-      lineElem.appendChild(translationElem);
+      mainTextContainer.appendChild(translationElem);
     }
 
     if (isRtl(line.Text) && !lineElem.classList.contains('rtl')) {

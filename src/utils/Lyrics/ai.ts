@@ -12,8 +12,8 @@ import { LineBasedLyricItem, LyricsLine } from './conversion'; // Import LineBas
  * AI Model Constants
  */
 const AI_MODELS = {
-  TRANSLATION: 'gemini-3.1-flash-lite-preview',
-  PHONETIC: 'gemini-3.1-flash-lite-preview',
+  TRANSLATION: 'gemini-flash-lite-latest',
+  PHONETIC: 'gemini-flash-lite-latest',
 } as const;
 
 interface GeminiGenerationConfig extends GenerateContentConfig {
@@ -296,14 +296,19 @@ export async function generateLyricsUsingPrompt(
 
   if (geminiApiKey && geminiApiKey.trim() !== '') {
     console.log('[Amai Lyrics] Using Gemini for phonetic lyrics');
-    const resultJson = await processLyricsUsingGemini(lyricsJson, lyricsOnly, Defaults.systemInstruction, prompt);
-    
+    const resultJson = await processLyricsUsingGemini(
+      lyricsJson,
+      lyricsOnly,
+      Defaults.systemInstruction,
+      prompt,
+    );
+
     // Fall back to Amai if Gemini encountered a fetch error
     if (resultJson.Info && resultJson.Info.includes('Fetch Error')) {
       console.log('[Amai Lyrics] Gemini failed, falling back to Amai API for phonetic lyrics');
       const errorMsg = resultJson.Info;
       resultJson.Info = undefined;
-      
+
       const amaiLines = await fetchAmaiPhonetic(lyricsOnly, prompt);
       if (amaiLines.length > 0 && amaiLines.some((line) => line.trim() !== '')) {
         updateLyricsWithText(resultJson, amaiLines);

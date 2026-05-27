@@ -130,7 +130,7 @@ export function ApplyLineLyrics(data: LyricsData): void {
   data.Content.forEach((line, index, arr) => {
     const lineElem = document.createElement('div');
 
-    const JapaneseRegex = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/g;
+    const JapaneseRegex = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/;
     if (JapaneseRegex.test(line.Text)) {
       if (
         !data.Info &&
