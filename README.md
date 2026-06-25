@@ -39,6 +39,10 @@ Amai Lyrics supports translations into the following languages:
 
 You can change the translation language in Spotify's settings after installing the extension.
 
+## 💻 Supported Platforms
+
+Amai Lyrics works on **Windows**, **Linux**, and **macOS**. These are the platforms supported by Spicetify, which Amai Lyrics runs on.
+
 ## 👀 Preview
 
 Here’s what it looks like:
