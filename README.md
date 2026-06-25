@@ -4,14 +4,14 @@
 
 Welcome! **Amai Lyrics** is an extension for [Spicetify](https://spicetify.app/) that helps you enjoy Japanese and Korean songs on Spotify. It adds Furigana to help you read Kanji, shows Romaji and Korean Romanization so you can follow along, and provides line-by-line translations.
 
-Using Google's Gemini AI, it automatically generates:
+Using Google's latest Gemini model, Amai Lyrics can now display:
 
 - **Translations** for each line
 - **Furigana** (pronunciation guides) above Kanji
 - **Romaji** (Latin script) for Japanese lyrics
 - **Korean Romanization** (Latin script) for Korean lyrics
 
-—all displayed seamlessly inside Spotify. Setup is simple with your own API key, and the clean design keeps everything easy to read.
+Setup is simple with your own API key, and the clean design keeps everything easy to read.
 
 ## 🌟 Features
 
