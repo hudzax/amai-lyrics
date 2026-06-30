@@ -183,6 +183,64 @@ function generalSettings() {
     },
   );
 
+  const translationFontSizeOptions = ['Extra Small', 'Small', 'Normal', 'Large', 'Extra Large'];
+  const fontSizeValues = ['0.8', '0.95', '1.15', '1.4', '1.7'];
+  const currentSize = storage.get('translation_font_size') || Defaults.translationFontSize;
+  const defaultIndex = fontSizeValues.indexOf(currentSize) !== -1
+    ? fontSizeValues.indexOf(currentSize)
+    : 2;
+
+  settings.addDropDown(
+    'translation-font-size',
+    'Translation Font Size',
+    translationFontSizeOptions,
+    defaultIndex,
+    () => {
+      const selected = settings.getFieldValue('translation-font-size') as string;
+      const index = translationFontSizeOptions.indexOf(selected);
+      const value = fontSizeValues[index >= 0 ? index : 2];
+      storage.set('translation_font_size', value);
+
+      const container = document.querySelector<HTMLElement>(
+        '#SpicyLyricsPage .LyricsContainer .LyricsContent',
+      );
+      if (container) {
+        container.style.setProperty('--TranslationFontSize', value + 'rem');
+      }
+    },
+  );
+
+  const lyricsSizeOptions = ['Extra Small', 'Small', 'Normal', 'Large', 'Extra Large'];
+  const lyricsSizeValues = ['1.2', '1.5', '', '2.5', '3'];
+  const currentLyricsSize = storage.get('default_lyrics_size') || '';
+  const defaultLyricsSizeIndex = currentLyricsSize
+    ? Math.max(0, lyricsSizeValues.indexOf(currentLyricsSize))
+    : 2;
+
+  settings.addDropDown(
+    'default-lyrics-size',
+    'Main Lyrics Size',
+    lyricsSizeOptions,
+    defaultLyricsSizeIndex,
+    () => {
+      const selected = settings.getFieldValue('default-lyrics-size') as string;
+      const index = lyricsSizeOptions.indexOf(selected);
+      const value = lyricsSizeValues[index >= 0 ? index : 2];
+      storage.set('default_lyrics_size', value);
+
+      const container = document.querySelector<HTMLElement>(
+        '#SpicyLyricsPage .LyricsContainer .LyricsContent',
+      );
+      if (container) {
+        if (value) {
+          container.style.setProperty('--DefaultLyricsSize', value + 'rem');
+        } else {
+          container.style.removeProperty('--DefaultLyricsSize');
+        }
+      }
+    },
+  );
+
   settings.pushSettings();
 }
 
