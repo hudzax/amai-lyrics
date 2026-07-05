@@ -89,15 +89,6 @@ function resetLetterStyles(letter, status, scaleValue, gradientPosition) {
   }
 }
 
-// Helper: Animate dot styles
-function animateDot(dot, percentage, blurRadius, textShadowOpacity, scale, translateY) {
-  dot.HTMLElement.style.setProperty('--opacity-size', `${0.2 + percentage}`);
-  dot.HTMLElement.style.transform = `translateY(calc(var(--font-size) * ${translateY}))`;
-  dot.HTMLElement.style.scale = `${0.2 + scale}`;
-  dot.HTMLElement.style.setProperty('--text-shadow-blur-radius', `${blurRadius}px`);
-  dot.HTMLElement.style.setProperty('--text-shadow-opacity', `${textShadowOpacity}%`);
-}
-
 // Helper: Animate word styles (non-dot, non-letterGroup)
 function animateWord(
   word,
@@ -224,26 +215,12 @@ export function Animate(position) {
               word.scale = emphasisScale;
               word.glow = 0;
             } else if (isDot) {
-              let dotTranslateY;
-              if (percentage <= 0) {
-                dotTranslateY = -0.07 * percentage;
-              } else if (percentage <= 0.88) {
-                dotTranslateY = -0.07 + (0.2 - -0.07) * ((percentage - 0.88) / 0.88);
-              } else {
-                dotTranslateY = 0.2 + (0 - 0.2) * ((percentage - 0.22) / 0.88);
-              }
-              const dotScale = 0.75 + (1 - 0.75) * percentage;
-              const dotTextShadowOpacity = calculateOpacity(percentage, word) * 1.5;
-              animateDot(
-                word,
-                percentage,
-                blurRadius,
-                dotTextShadowOpacity,
-                dotScale,
-                dotTranslateY,
-              );
-              word.scale = dotScale;
-              word.glow = dotTextShadowOpacity / 100;
+              const dotDuration = word.EndTime - word.StartTime;
+              word.HTMLElement.style.setProperty('--dot-duration', `${dotDuration}ms`);
+              void word.HTMLElement.offsetWidth;
+              word.HTMLElement.classList.add('dot-active');
+              word.scale = 1;
+              word.glow = 0.5;
             } else {
               animateWord(
                 word,
@@ -277,14 +254,15 @@ export function Animate(position) {
               word.translateY = 0.01;
             }
             if (isDot) {
-              setStyleIfChanged(word.HTMLElement, '--opacity-size', `${0.2}`);
-              setStyleIfChanged(
-                word.HTMLElement,
-                'transform',
-                'translateY(calc(var(--font-size) * 0.01))',
-              );
+              word.HTMLElement.classList.remove('dot-active');
+              word.HTMLElement.style.transform = '';
+              word.HTMLElement.style.scale = '';
+              word.HTMLElement.style.opacity = '';
+              word.HTMLElement.style.setProperty('--text-shadow-blur-radius', '');
+              word.HTMLElement.style.setProperty('--text-shadow-opacity', '');
               word.translateY = 0.01;
-              setStyleIfChanged(word.HTMLElement, 'scale', '0.75');
+              word.scale = 0.75;
+              word.glow = 0;
             } else {
               setStyleIfChanged(
                 word.HTMLElement,
@@ -311,15 +289,14 @@ export function Animate(position) {
               setStyleIfChanged(word.HTMLElement, 'scale', '1');
             }
             if (isDot) {
-              setStyleIfChanged(word.HTMLElement, '--opacity-size', `${0.2 + 1}`);
-              setStyleIfChanged(
-                word.HTMLElement,
-                'transform',
-                `translateY(calc(var(--font-size) * 0))`,
-              );
-              setStyleIfChanged(word.HTMLElement, 'scale', '1.2');
-              setStyleIfChanged(word.HTMLElement, '--text-shadow-opacity', `50%`);
-              setStyleIfChanged(word.HTMLElement, '--text-shadow-blur-radius', `12px`);
+              word.HTMLElement.classList.remove('dot-active');
+              word.HTMLElement.style.transform = 'translateY(calc(var(--font-size) * 0))';
+              word.HTMLElement.style.scale = '1.2';
+              word.HTMLElement.style.opacity = '1';
+              word.HTMLElement.style.setProperty('--text-shadow-blur-radius', '12px');
+              word.HTMLElement.style.setProperty('--text-shadow-opacity', '50%');
+              word.scale = 1.2;
+              word.glow = 0.5;
             } else if (!isLetterGroup) {
               setStyleIfChanged(word.HTMLElement, '--text-shadow-blur-radius', '4px');
               // Animate out with interpolation
@@ -412,33 +389,24 @@ export function Animate(position) {
           for (let i = 0; i < Array.length; i++) {
             const dot = Array[i];
             if (dot.Status === 'Active') {
-              const totalDuration = dot.EndTime - dot.StartTime;
-              const elapsedDuration = edtrackpos - dot.StartTime;
-              const percentage = Math.max(0, Math.min(elapsedDuration / totalDuration, 1));
-              const blurRadius = 4 + (16 - 4) * percentage;
-              const textShadowOpacity = calculateOpacity(percentage, dot) * 1.5;
-              const scale = 0.75 + (1 - 0.75) * percentage;
-              let translateY;
-              if (percentage <= 0) {
-                translateY = -0.07 * percentage;
-              } else if (percentage <= 0.88) {
-                translateY = -0.07 + (0.2 - -0.07) * ((percentage - 0.88) / 0.88);
-              } else {
-                translateY = 0.2 + (0 - 0.2) * ((percentage - 0.22) / 0.88);
-              }
-              animateDot(dot, percentage, blurRadius, textShadowOpacity, scale, translateY);
+              const dotDuration = dot.EndTime - dot.StartTime;
+              dot.HTMLElement.style.setProperty('--dot-duration', `${dotDuration}ms`);
+              void dot.HTMLElement.offsetWidth;
+              dot.HTMLElement.classList.add('dot-active');
             } else if (dot.Status === 'NotSung') {
-              dot.HTMLElement.style.setProperty('--opacity-size', `${0.2}`);
-              dot.HTMLElement.style.transform = `translateY(calc(var(--font-size) * 0))`;
-              dot.HTMLElement.style.scale = `0.75`;
-              dot.HTMLElement.style.setProperty('--text-shadow-blur-radius', `4px`);
-              dot.HTMLElement.style.setProperty('--text-shadow-opacity', `0%`);
+              dot.HTMLElement.classList.remove('dot-active');
+              dot.HTMLElement.style.transform = '';
+              dot.HTMLElement.style.scale = '';
+              dot.HTMLElement.style.opacity = '';
+              dot.HTMLElement.style.setProperty('--text-shadow-blur-radius', '');
+              dot.HTMLElement.style.setProperty('--text-shadow-opacity', '');
             } else if (dot.Status === 'Sung') {
-              dot.HTMLElement.style.setProperty('--opacity-size', `${0.2 + 1}`);
-              dot.HTMLElement.style.transform = `translateY(calc(var(--font-size) * 0))`;
-              dot.HTMLElement.style.scale = `1.2`;
-              dot.HTMLElement.style.setProperty('--text-shadow-blur-radius', `12px`);
-              dot.HTMLElement.style.setProperty('--text-shadow-opacity', `50%`);
+              dot.HTMLElement.classList.remove('dot-active');
+              dot.HTMLElement.style.transform = 'translateY(calc(var(--font-size) * 0))';
+              dot.HTMLElement.style.scale = '1.2';
+              dot.HTMLElement.style.opacity = '1';
+              dot.HTMLElement.style.setProperty('--text-shadow-blur-radius', '12px');
+              dot.HTMLElement.style.setProperty('--text-shadow-opacity', '50%');
             }
           }
         } else {
