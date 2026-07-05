@@ -412,7 +412,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.3.1";
+      version = "1.3.2";
     }
   });
 
@@ -5876,13 +5876,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       setStyleIfChanged(letter.HTMLElement, "--gradient-position", gradientPosition);
     }
   }
-  function animateDot(dot, percentage, blurRadius, textShadowOpacity, scale, translateY) {
-    dot.HTMLElement.style.setProperty("--opacity-size", `${0.2 + percentage}`);
-    dot.HTMLElement.style.transform = `translateY(calc(var(--font-size) * ${translateY}))`;
-    dot.HTMLElement.style.scale = `${0.2 + scale}`;
-    dot.HTMLElement.style.setProperty("--text-shadow-blur-radius", `${blurRadius}px`);
-    dot.HTMLElement.style.setProperty("--text-shadow-opacity", `${textShadowOpacity}%`);
-  }
   function animateWord(word, totalDuration, percentage, gradientPosition, translateY, scale, blurRadius, textShadowOpacity) {
     setStyleIfChanged(word.HTMLElement, "--gradient-position", `${gradientPosition}%`);
     if (totalDuration > 230) {
@@ -5994,26 +5987,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                 word.scale = emphasisScale;
                 word.glow = 0;
               } else if (isDot) {
-                let dotTranslateY;
-                if (percentage <= 0) {
-                  dotTranslateY = -0.07 * percentage;
-                } else if (percentage <= 0.88) {
-                  dotTranslateY = -0.07 + (0.2 - -0.07) * ((percentage - 0.88) / 0.88);
-                } else {
-                  dotTranslateY = 0.2 + (0 - 0.2) * ((percentage - 0.22) / 0.88);
-                }
-                const dotScale = 0.75 + (1 - 0.75) * percentage;
-                const dotTextShadowOpacity = calculateOpacity(percentage, word) * 1.5;
-                animateDot(
-                  word,
-                  percentage,
-                  blurRadius,
-                  dotTextShadowOpacity,
-                  dotScale,
-                  dotTranslateY
-                );
-                word.scale = dotScale;
-                word.glow = dotTextShadowOpacity / 100;
+                const dotDuration = word.EndTime - word.StartTime;
+                word.HTMLElement.style.setProperty("--dot-duration", `${dotDuration}ms`);
+                void word.HTMLElement.offsetWidth;
+                word.HTMLElement.classList.add("dot-active");
+                word.scale = 1;
+                word.glow = 0.5;
               } else {
                 animateWord(
                   word,
@@ -6047,14 +6026,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                 word.translateY = 0.01;
               }
               if (isDot) {
-                setStyleIfChanged(word.HTMLElement, "--opacity-size", `${0.2}`);
-                setStyleIfChanged(
-                  word.HTMLElement,
-                  "transform",
-                  "translateY(calc(var(--font-size) * 0.01))"
-                );
+                word.HTMLElement.classList.remove("dot-active");
+                word.HTMLElement.style.transform = "";
+                word.HTMLElement.style.scale = "";
+                word.HTMLElement.style.opacity = "";
+                word.HTMLElement.style.setProperty("--text-shadow-blur-radius", "");
+                word.HTMLElement.style.setProperty("--text-shadow-opacity", "");
                 word.translateY = 0.01;
-                setStyleIfChanged(word.HTMLElement, "scale", "0.75");
+                word.scale = 0.75;
+                word.glow = 0;
               } else {
                 setStyleIfChanged(
                   word.HTMLElement,
@@ -6081,15 +6061,14 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                 setStyleIfChanged(word.HTMLElement, "scale", "1");
               }
               if (isDot) {
-                setStyleIfChanged(word.HTMLElement, "--opacity-size", `${0.2 + 1}`);
-                setStyleIfChanged(
-                  word.HTMLElement,
-                  "transform",
-                  `translateY(calc(var(--font-size) * 0))`
-                );
-                setStyleIfChanged(word.HTMLElement, "scale", "1.2");
-                setStyleIfChanged(word.HTMLElement, "--text-shadow-opacity", `50%`);
-                setStyleIfChanged(word.HTMLElement, "--text-shadow-blur-radius", `12px`);
+                word.HTMLElement.classList.remove("dot-active");
+                word.HTMLElement.style.transform = "translateY(calc(var(--font-size) * 0))";
+                word.HTMLElement.style.scale = "1.2";
+                word.HTMLElement.style.opacity = "1";
+                word.HTMLElement.style.setProperty("--text-shadow-blur-radius", "12px");
+                word.HTMLElement.style.setProperty("--text-shadow-opacity", "50%");
+                word.scale = 1.2;
+                word.glow = 0.5;
               } else if (!isLetterGroup) {
                 setStyleIfChanged(word.HTMLElement, "--text-shadow-blur-radius", "4px");
                 const element = word.HTMLElement;
@@ -6181,33 +6160,24 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             for (let i = 0; i < Array2.length; i++) {
               const dot = Array2[i];
               if (dot.Status === "Active") {
-                const totalDuration = dot.EndTime - dot.StartTime;
-                const elapsedDuration = edtrackpos - dot.StartTime;
-                const percentage2 = Math.max(0, Math.min(elapsedDuration / totalDuration, 1));
-                const blurRadius = 4 + (16 - 4) * percentage2;
-                const textShadowOpacity = calculateOpacity(percentage2, dot) * 1.5;
-                const scale = 0.75 + (1 - 0.75) * percentage2;
-                let translateY;
-                if (percentage2 <= 0) {
-                  translateY = -0.07 * percentage2;
-                } else if (percentage2 <= 0.88) {
-                  translateY = -0.07 + (0.2 - -0.07) * ((percentage2 - 0.88) / 0.88);
-                } else {
-                  translateY = 0.2 + (0 - 0.2) * ((percentage2 - 0.22) / 0.88);
-                }
-                animateDot(dot, percentage2, blurRadius, textShadowOpacity, scale, translateY);
+                const dotDuration = dot.EndTime - dot.StartTime;
+                dot.HTMLElement.style.setProperty("--dot-duration", `${dotDuration}ms`);
+                void dot.HTMLElement.offsetWidth;
+                dot.HTMLElement.classList.add("dot-active");
               } else if (dot.Status === "NotSung") {
-                dot.HTMLElement.style.setProperty("--opacity-size", `${0.2}`);
-                dot.HTMLElement.style.transform = `translateY(calc(var(--font-size) * 0))`;
-                dot.HTMLElement.style.scale = `0.75`;
-                dot.HTMLElement.style.setProperty("--text-shadow-blur-radius", `4px`);
-                dot.HTMLElement.style.setProperty("--text-shadow-opacity", `0%`);
+                dot.HTMLElement.classList.remove("dot-active");
+                dot.HTMLElement.style.transform = "";
+                dot.HTMLElement.style.scale = "";
+                dot.HTMLElement.style.opacity = "";
+                dot.HTMLElement.style.setProperty("--text-shadow-blur-radius", "");
+                dot.HTMLElement.style.setProperty("--text-shadow-opacity", "");
               } else if (dot.Status === "Sung") {
-                dot.HTMLElement.style.setProperty("--opacity-size", `${0.2 + 1}`);
-                dot.HTMLElement.style.transform = `translateY(calc(var(--font-size) * 0))`;
-                dot.HTMLElement.style.scale = `1.2`;
-                dot.HTMLElement.style.setProperty("--text-shadow-blur-radius", `12px`);
-                dot.HTMLElement.style.setProperty("--text-shadow-opacity", `50%`);
+                dot.HTMLElement.classList.remove("dot-active");
+                dot.HTMLElement.style.transform = "translateY(calc(var(--font-size) * 0))";
+                dot.HTMLElement.style.scale = "1.2";
+                dot.HTMLElement.style.opacity = "1";
+                dot.HTMLElement.style.setProperty("--text-shadow-blur-radius", "12px");
+                dot.HTMLElement.style.setProperty("--text-shadow-opacity", "50%");
               }
             }
           } else {
@@ -8345,15 +8315,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-400-zWinSKa3nIL4/19f1d30769a8/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-18660-54sYMFJGQz5w/19f33627f958/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-400-zWinSKa3nIL4/19f1d30769a8/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-18660-54sYMFJGQz5w/19f33627f958/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-400-zWinSKa3nIL4/19f1d30769e9/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-18660-54sYMFJGQz5w/19f33627f9a9/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-400-zWinSKa3nIL4/19f1d30769e9/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-18660-54sYMFJGQz5w/19f33627f9a9/ProcessingIndicator.css"() {
     }
   });
 
@@ -32604,7 +32574,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-400-zWinSKa3nIL4/19f1d30769a8/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18660-54sYMFJGQz5w/19f33627f958/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -32630,7 +32600,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-400-zWinSKa3nIL4/19f1d30769e9/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18660-54sYMFJGQz5w/19f33627f9a9/ProcessingIndicator.css */
 #SpicyLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -32710,7 +32680,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-400-zWinSKa3nIL4/19f1d30762d0/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18660-54sYMFJGQz5w/19f33627f090/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -32859,7 +32829,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-400-zWinSKa3nIL4/19f1d3076571/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18660-54sYMFJGQz5w/19f33627f341/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -33067,7 +33037,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-400-zWinSKa3nIL4/19f1d30765d2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18660-54sYMFJGQz5w/19f33627f3d2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -33606,7 +33576,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-400-zWinSKa3nIL4/19f1d3076683/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18660-54sYMFJGQz5w/19f33627f503/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -33781,7 +33751,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-400-zWinSKa3nIL4/19f1d30766f4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18660-54sYMFJGQz5w/19f33627f574/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -34058,7 +34028,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-400-zWinSKa3nIL4/19f1d3076775/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18660-54sYMFJGQz5w/19f33627f625/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -34248,6 +34218,41 @@ ruby > rt {
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.bg-line {
   margin: -1.3cqw 0 1.5cqw !important;
 }
+@property --text-shadow-blur-radius { syntax: "<length>"; initial-value: 4px; inherits: false; }
+@property --text-shadow-opacity { syntax: "<percentage>"; initial-value: 0%; inherits: false; }
+@keyframes dot-pop {
+  0% {
+    transform: translateY(calc(var(--font-size) * 0.01));
+    scale: 0.75;
+    opacity: 0.2;
+    --text-shadow-blur-radius: 4px;
+    --text-shadow-opacity: 0%;
+  }
+  20% {
+    transform: translateY(calc(var(--font-size) * -0.12));
+    scale: 0.85;
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(calc(var(--font-size) * 0.05));
+    scale: 0.95;
+    opacity: 0.8;
+  }
+  75% {
+    transform: translateY(calc(var(--font-size) * -0.04));
+    scale: 1.05;
+    opacity: 0.9;
+    --text-shadow-blur-radius: 8px;
+    --text-shadow-opacity: 30%;
+  }
+  100% {
+    transform: translateY(calc(var(--font-size) * 0));
+    scale: 1.2;
+    opacity: 1;
+    --text-shadow-blur-radius: 12px;
+    --text-shadow-opacity: 50%;
+  }
+}
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .dotGroup {
   --dot-gap: clamp(0.005rem, 1.7cqw, 0.2rem);
   display: flex;
@@ -34256,12 +34261,14 @@ ruby > rt {
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .dotGroup .dot {
   --font-size: calc(var(--DefaultLyricsSize)*1.3);
-  --opacity-size: .2;
   border-radius: 50%;
   scale: 0.75;
   font-size: var(--font-size);
-  opacity: var(--opacity-size);
+  opacity: 0.2;
   --gradient-position: 100%;
+}
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .dotGroup .dot.dot-active {
+  animation: dot-pop var(--dot-duration, 1s) cubic-bezier(0.34, 1.56, 0.64, 1) 1 forwards;
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active {
   opacity: 1;
@@ -34330,7 +34337,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-400-zWinSKa3nIL4/19f1d30767e6/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18660-54sYMFJGQz5w/19f33627f6b6/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -34352,7 +34359,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-400-zWinSKa3nIL4/19f1d3076827/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18660-54sYMFJGQz5w/19f33627f707/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
