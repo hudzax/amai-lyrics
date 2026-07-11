@@ -2,6 +2,7 @@ import Global from '../Global/Global';
 import { SpotifyPlayer } from '../Global/SpotifyPlayer';
 import { Icons } from '../Styling/Icons';
 import Fullscreen from '../Utils/Fullscreen';
+import Whentil from '../../utils/Whentil';
 import {
   ActivePlaybackControlsInstance,
   ActiveSetupSongProgressBarInstance,
@@ -15,6 +16,25 @@ import { PlaybackPlayPauseEvent } from './types';
  * Set up all event listeners for playback events
  */
 export function setupEventListeners() {
+  // Keep the round record spinning only while the song is playing
+  Global.Event.listen('playback:playpause', () => {
+    updateVinylSpinState();
+  });
+
+  // Resume spin correctly when a new song starts (auto-play)
+  Global.Event.listen('playback:songchange', () => {
+    updateVinylSpinState();
+  });
+
+  // Set initial spin state once the record element is available
+  Whentil.When(
+    () =>
+      document.querySelector(
+        '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage',
+      ),
+    () => updateVinylSpinState(),
+  );
+
   // Handle play/pause events
   Global.Event.listen('playback:playpause', (e) => {
     handlePlayPauseEvent(e);
@@ -38,6 +58,19 @@ export function setupEventListeners() {
   Global.Event.listen('fullscreen:exit', () => {
     CleanUpActiveComponents();
   });
+}
+
+/**
+ * Toggles the spinning record animation based on the current playback state.
+ * The record only rotates while the song is playing.
+ */
+function updateVinylSpinState(): void {
+  const MediaImage = document.querySelector<HTMLImageElement>(
+    '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage',
+  );
+  if (!MediaImage) return;
+
+  MediaImage.classList.toggle('Playing', SpotifyPlayer.IsPlaying);
 }
 
 /**

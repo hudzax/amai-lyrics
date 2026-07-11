@@ -82,11 +82,13 @@ export function ApplyLineLyrics(data: LyricsData): void {
     const totalTime = endTime - startTime;
     const dotTime = totalTime / 3;
 
+    const NOTE_GLYPHS = ['♪', '♫', '♩'];
+
     const dots: HTMLElement[] = [];
     for (let i = 0; i < 3; i++) {
       const dot = document.createElement('span');
       dot.classList.add('word', 'dot');
-      dot.textContent = '•';
+      dot.textContent = NOTE_GLYPHS[i % NOTE_GLYPHS.length];
 
       LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables.Lead.push({
         HTMLElement: dot,

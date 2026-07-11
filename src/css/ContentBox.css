@@ -85,14 +85,15 @@
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    background: 
-        radial-gradient(circle at center, transparent 15%, rgba(255,255,255,0.02) 15.5%, transparent 16%),
-        radial-gradient(circle at center, transparent 20%, rgba(255,255,255,0.02) 20.5%, transparent 21%),
-        radial-gradient(circle at center, transparent 25%, rgba(255,255,255,0.02) 25.5%, transparent 26%),
-        radial-gradient(circle at center, transparent 30%, rgba(255,255,255,0.02) 30.5%, transparent 31%),
-        radial-gradient(circle at center, transparent 35%, rgba(255,255,255,0.02) 35.5%, transparent 36%),
-        radial-gradient(circle at center, transparent 40%, rgba(255,255,255,0.02) 40.5%, transparent 41%),
-        radial-gradient(circle at center, transparent 45%, rgba(255,255,255,0.02) 45.5%, transparent 46%),
+    background:
+        radial-gradient(circle at 30% 25%, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.03) 18%, transparent 38%),
+        radial-gradient(circle at center, transparent 15%, rgba(255,255,255,0.05) 15.5%, transparent 16%),
+        radial-gradient(circle at center, transparent 20%, rgba(255,255,255,0.05) 20.5%, transparent 21%),
+        radial-gradient(circle at center, transparent 25%, rgba(255,255,255,0.05) 25.5%, transparent 26%),
+        radial-gradient(circle at center, transparent 30%, rgba(255,255,255,0.05) 30.5%, transparent 31%),
+        radial-gradient(circle at center, transparent 35%, rgba(255,255,255,0.05) 35.5%, transparent 36%),
+        radial-gradient(circle at center, transparent 40%, rgba(255,255,255,0.05) 40.5%, transparent 41%),
+        radial-gradient(circle at center, transparent 45%, rgba(255,255,255,0.05) 45.5%, transparent 46%),
         radial-gradient(circle at center, #1a1a1a 0%, #0d0d0d 70%, #000000 100%);
     z-index: 1;
 
@@ -104,8 +105,8 @@
 #SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox::after {
     content: '';
     position: absolute;
-    width: 8%;
-    height: 8%;
+    width: 5%;
+    height: 5%;
     border-radius: 50%;
     background: radial-gradient(circle at center, #000000 0%, #1a1a1a 50%, #333333 100%);
     z-index: 4;
@@ -122,8 +123,8 @@
 #SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImagePlaceholder {
     position: absolute;
     border-radius: 50%;
-    width: 55%;
-    height: 55%;
+    width: 40%;
+    height: 40%;
     background-color: rgba(30, 30, 30, 0.3);
     z-index: 2;
     transition: opacity 0.3s ease-in-out;
@@ -148,8 +149,8 @@
     --ArtworkBrightness: 1;
     --ArtworkBlur: 0px;
     border-radius: 50%;
-    width: 55%;
-    height: 55%;
+    width: 40%;
+    height: 40%;
     box-shadow: 0 4px 12px 0 rgba(0, 0, 0, .4);
     opacity: .95;
     transition: opacity, scale .1s cubic-bezier(.24,.01,.97,1.41);
@@ -159,9 +160,14 @@
     will-change: transform;
     contain: paint layout;
     animation: vinyl-spin 12s linear infinite;
-    
+    animation-play-state: paused;
+
     /* Start with simpler rendering until loaded */
     filter: brightness(var(--ArtworkBrightness));
+}
+
+#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage.Playing {
+    animation-play-state: running;
 }
 
 /* Apply full styling only after image has loaded */
