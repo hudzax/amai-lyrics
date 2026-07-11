@@ -35,6 +35,7 @@ export interface LyricsResult {
 export async function getLyrics(
   id: string,
   headers: Record<string, string> = {},
+  flush = false,
 ): Promise<{ response: LyricsResult; status: number }> {
   // Fetch user data
   const userData = await fetchUserData();
@@ -56,7 +57,7 @@ export async function getLyrics(
   }
 
   // Request lyrics
-  const { data, status } = await fetchLyricsData(id, userData, trackDetails, headers);
+  const { data, status } = await fetchLyricsData(id, userData, trackDetails, headers, flush);
 
   return { response: data, status };
 }
@@ -92,9 +93,10 @@ async function fetchLyricsData(
   userData: UserData,
   trackDetails: any,
   headers: Record<string, string>,
+  flush = false,
 ): Promise<{ data: LyricsResult; status: number }> {
   try {
-    const res = await fetch(`${API_URL}/${id}`, {
+    const res = await fetch(`${API_URL}/${id}${flush ? '?flush=true' : ''}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...headers },
       body: JSON.stringify({

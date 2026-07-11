@@ -37,7 +37,7 @@ function setupRefreshButton(maid: Maid | null) {
       const trackId = currentUri.split(':')[2];
       removeLyricsFromCache(trackId);
       storage.set('currentLyricsData', null);
-      const lyrics = await fetchLyrics(currentUri);
+      const lyrics = await fetchLyrics(currentUri, true);
       ApplyLyrics(lyrics);
     } catch (error) {
       console.error('Error refreshing lyrics:', error);

@@ -16,6 +16,7 @@ import { processAndEnhanceLyrics, LyricsData } from './processing';
  */
 export async function fetchLyricsFromAPI(
   trackId: string,
+  flush = false,
 ): Promise<LyricsData | string> {
   try {
     Spicetify.showNotification('Fetching lyrics..', false, 1000);
@@ -23,9 +24,13 @@ export async function fetchLyricsFromAPI(
     const spotifyAccessToken = await Platform.GetSpotifyAccessToken();
 
     // Fetch lyrics from API
-    const { response: lyricsJson, status } = await getLyrics(trackId, {
-      Authorization: `Bearer ${spotifyAccessToken}`,
-    });
+    const { response: lyricsJson, status } = await getLyrics(
+      trackId,
+      {
+        Authorization: `Bearer ${spotifyAccessToken}`,
+      },
+      flush,
+    );
 
     // Handle non-200 status codes
     if (status !== 200) {

@@ -22,7 +22,7 @@ import { LyricsData } from './processing';
  * @param uri - Spotify track URI
  * @returns Processed lyrics data or error message
  */
-export default async function fetchLyrics(uri: string): Promise<LyricsData | string> {
+export default async function fetchLyrics(uri: string, flush = false): Promise<LyricsData | string> {
   resetLyricsUI();
   ClearLyricsPageContainer();
   document
@@ -49,7 +49,7 @@ export default async function fetchLyrics(uri: string): Promise<LyricsData | str
   storage.set('currentlyFetching', 'true');
 
   ShowLoaderContainer();
-  return await fetchLyricsFromAPI(trackId);
+  return await fetchLyricsFromAPI(trackId, flush);
 }
 
 export { lyricsCache };
