@@ -412,7 +412,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.3.3";
+      version = "1.3.4";
     }
   });
 
@@ -8315,15 +8315,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-9868-Cu1bcfdonV62/19f51ed2cc78/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-10372-O9mJQuZ1t749/19f5218e3a98/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-9868-Cu1bcfdonV62/19f51ed2cc78/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-10372-O9mJQuZ1t749/19f5218e3a98/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-9868-Cu1bcfdonV62/19f51ed2ccc9/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-10372-O9mJQuZ1t749/19f5218e3ae9/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-9868-Cu1bcfdonV62/19f51ed2ccc9/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-10372-O9mJQuZ1t749/19f5218e3ae9/ProcessingIndicator.css"() {
     }
   });
 
@@ -8696,11 +8696,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       dotGroup.classList.add("dotGroup");
       const totalTime = endTime - startTime;
       const dotTime = totalTime / 3;
+      const NOTE_GLYPHS = ["\u266A", "\u266B", "\u2669"];
       const dots = [];
       for (let i = 0; i < 3; i++) {
         const dot = document.createElement("span");
         dot.classList.add("word", "dot");
-        dot.textContent = "\u2022";
+        dot.textContent = NOTE_GLYPHS[i % NOTE_GLYPHS.length];
         LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables.Lead.push({
           HTMLElement: dot,
           StartTime: startTime + dotTime * i,
@@ -10292,6 +10293,18 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
 
   // src/components/NowBar/EventListeners.ts
   function setupEventListeners() {
+    Global_default.Event.listen("playback:playpause", () => {
+      updateVinylSpinState();
+    });
+    Global_default.Event.listen("playback:songchange", () => {
+      updateVinylSpinState();
+    });
+    Whentil_default.When(
+      () => document.querySelector(
+        "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage"
+      ),
+      () => updateVinylSpinState()
+    );
     Global_default.Event.listen("playback:playpause", (e) => {
       handlePlayPauseEvent(e);
     });
@@ -10306,6 +10319,14 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     Global_default.Event.listen("fullscreen:exit", () => {
       CleanUpActiveComponents();
     });
+  }
+  function updateVinylSpinState() {
+    const MediaImage = document.querySelector(
+      "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage"
+    );
+    if (!MediaImage)
+      return;
+    MediaImage.classList.toggle("Playing", SpotifyPlayer.IsPlaying);
   }
   function handlePlayPauseEvent(e) {
     if (!Fullscreen_default.IsOpen)
@@ -10445,6 +10466,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_SpotifyPlayer();
       init_Icons();
       init_Fullscreen();
+      init_Whentil();
       init_state();
     }
   });
@@ -32578,7 +32600,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9868-Cu1bcfdonV62/19f51ed2cc78/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10372-O9mJQuZ1t749/19f5218e3a98/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -32604,7 +32626,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9868-Cu1bcfdonV62/19f51ed2ccc9/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10372-O9mJQuZ1t749/19f5218e3ae9/ProcessingIndicator.css */
 #SpicyLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -32684,7 +32706,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9868-Cu1bcfdonV62/19f51ed2c640/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10372-O9mJQuZ1t749/19f5218e3450/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -32833,7 +32855,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9868-Cu1bcfdonV62/19f51ed2c8f1/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10372-O9mJQuZ1t749/19f5218e3701/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -33041,7 +33063,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9868-Cu1bcfdonV62/19f51ed2c952/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10372-O9mJQuZ1t749/19f5218e3762/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -33119,13 +33141,14 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100%;
   border-radius: 50%;
   background:
-    radial-gradient(circle at center, transparent 15%, rgba(255, 255, 255, 0.02) 15.5%, transparent 16%),
-    radial-gradient(circle at center, transparent 20%, rgba(255, 255, 255, 0.02) 20.5%, transparent 21%),
-    radial-gradient(circle at center, transparent 25%, rgba(255, 255, 255, 0.02) 25.5%, transparent 26%),
-    radial-gradient(circle at center, transparent 30%, rgba(255, 255, 255, 0.02) 30.5%, transparent 31%),
-    radial-gradient(circle at center, transparent 35%, rgba(255, 255, 255, 0.02) 35.5%, transparent 36%),
-    radial-gradient(circle at center, transparent 40%, rgba(255, 255, 255, 0.02) 40.5%, transparent 41%),
-    radial-gradient(circle at center, transparent 45%, rgba(255, 255, 255, 0.02) 45.5%, transparent 46%),
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.03) 18%, transparent 38%),
+    radial-gradient(circle at center, transparent 15%, rgba(255, 255, 255, 0.05) 15.5%, transparent 16%),
+    radial-gradient(circle at center, transparent 20%, rgba(255, 255, 255, 0.05) 20.5%, transparent 21%),
+    radial-gradient(circle at center, transparent 25%, rgba(255, 255, 255, 0.05) 25.5%, transparent 26%),
+    radial-gradient(circle at center, transparent 30%, rgba(255, 255, 255, 0.05) 30.5%, transparent 31%),
+    radial-gradient(circle at center, transparent 35%, rgba(255, 255, 255, 0.05) 35.5%, transparent 36%),
+    radial-gradient(circle at center, transparent 40%, rgba(255, 255, 255, 0.05) 40.5%, transparent 41%),
+    radial-gradient(circle at center, transparent 45%, rgba(255, 255, 255, 0.05) 45.5%, transparent 46%),
     radial-gradient(circle at center, #1a1a1a 0%, #0d0d0d 70%, #000000 100%);
   z-index: 1;
   box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 9px 20px 0 rgba(0, 0, 0, .271);
@@ -33133,8 +33156,8 @@ button:has(#SpicyLyricsPageSvg):after {
 #SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox::after {
   content: "";
   position: absolute;
-  width: 8%;
-  height: 8%;
+  width: 5%;
+  height: 5%;
   border-radius: 50%;
   background: radial-gradient(circle at center, #000000 0%, #1a1a1a 50%, #333333 100%);
   z-index: 4;
@@ -33147,8 +33170,8 @@ button:has(#SpicyLyricsPageSvg):after {
 #SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImagePlaceholder {
   position: absolute;
   border-radius: 50%;
-  width: 55%;
-  height: 55%;
+  width: 40%;
+  height: 40%;
   background-color: rgba(30, 30, 30, 0.3);
   z-index: 2;
   transition: opacity 0.3s ease-in-out;
@@ -33169,8 +33192,8 @@ button:has(#SpicyLyricsPageSvg):after {
   --ArtworkBrightness: 1;
   --ArtworkBlur: 0px;
   border-radius: 50%;
-  width: 55%;
-  height: 55%;
+  width: 40%;
+  height: 40%;
   box-shadow: 0 4px 12px 0 rgba(0, 0, 0, .4);
   opacity: .95;
   transition: opacity, scale .1s cubic-bezier(.24, .01, .97, 1.41);
@@ -33180,7 +33203,11 @@ button:has(#SpicyLyricsPageSvg):after {
   will-change: transform;
   contain: paint layout;
   animation: vinyl-spin 12s linear infinite;
+  animation-play-state: paused;
   filter: brightness(var(--ArtworkBrightness));
+}
+#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage.Playing {
+  animation-play-state: running;
 }
 #SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage.loaded {
   filter: brightness(var(--ArtworkBrightness)) blur(var(--ArtworkBlur));
@@ -33580,7 +33607,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9868-Cu1bcfdonV62/19f51ed2c9f3/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10372-O9mJQuZ1t749/19f5218e3833/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -33755,7 +33782,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9868-Cu1bcfdonV62/19f51ed2ca54/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10372-O9mJQuZ1t749/19f5218e3894/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -34032,7 +34059,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9868-Cu1bcfdonV62/19f51ed2cac5/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10372-O9mJQuZ1t749/19f5218e3905/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -34226,32 +34253,15 @@ ruby > rt {
 @property --text-shadow-opacity { syntax: "<percentage>"; initial-value: 0%; inherits: false; }
 @keyframes dot-pop {
   0% {
-    transform: translateY(calc(var(--font-size) * 0.01));
-    scale: 0.75;
+    transform: translateY(calc(var(--font-size) * 0.04));
+    scale: 0.7;
     opacity: 0.2;
     --text-shadow-blur-radius: 4px;
     --text-shadow-opacity: 0%;
   }
-  20% {
-    transform: translateY(calc(var(--font-size) * -0.12));
-    scale: 0.85;
-    opacity: 0.5;
-  }
-  50% {
-    transform: translateY(calc(var(--font-size) * 0.05));
-    scale: 0.95;
-    opacity: 0.8;
-  }
-  75% {
-    transform: translateY(calc(var(--font-size) * -0.04));
-    scale: 1.05;
-    opacity: 0.9;
-    --text-shadow-blur-radius: 8px;
-    --text-shadow-opacity: 30%;
-  }
   100% {
-    transform: translateY(calc(var(--font-size) * 0));
-    scale: 1.2;
+    transform: translateY(calc(var(--font-size) * -0.06));
+    scale: 1.1;
     opacity: 1;
     --text-shadow-blur-radius: 12px;
     --text-shadow-opacity: 50%;
@@ -34264,15 +34274,18 @@ ruby > rt {
   gap: var(--dot-gap);
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .dotGroup .dot {
-  --font-size: calc(var(--DefaultLyricsSize)*1.3);
-  border-radius: 50%;
+  --font-size: calc(var(--DefaultLyricsSize)*0.9);
   scale: 0.75;
   font-size: var(--font-size);
   opacity: 0.2;
   --gradient-position: 100%;
+  transition:
+    scale 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .dotGroup .dot.dot-active {
-  animation: dot-pop var(--dot-duration, 1s) cubic-bezier(0.34, 1.56, 0.64, 1) 1 forwards;
+  animation: dot-pop var(--dot-duration, 1s) cubic-bezier(0.22, 1, 0.36, 1) 1 forwards;
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active {
   opacity: 1;
@@ -34341,7 +34354,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9868-Cu1bcfdonV62/19f51ed2cb16/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10372-O9mJQuZ1t749/19f5218e3966/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -34363,7 +34376,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9868-Cu1bcfdonV62/19f51ed2cb47/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10372-O9mJQuZ1t749/19f5218e39a7/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
