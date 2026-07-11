@@ -184,11 +184,11 @@ function generalSettings() {
   );
 
   const translationFontSizeOptions = ['Extra Small', 'Small', 'Normal', 'Large', 'Extra Large'];
-  const fontSizeValues = ['0.8', '0.95', '1.15', '1.4', '1.7'];
+  // Values are multipliers of the main lyrics size so the translation scales with the screen
+  const fontSizeValues = ['0.4', '0.475', '0.575', '0.7', '0.85'];
   const currentSize = storage.get('translation_font_size') || Defaults.translationFontSize;
-  const defaultIndex = fontSizeValues.indexOf(currentSize) !== -1
-    ? fontSizeValues.indexOf(currentSize)
-    : 2;
+  const defaultIndex =
+    fontSizeValues.indexOf(currentSize) !== -1 ? fontSizeValues.indexOf(currentSize) : 2;
 
   settings.addDropDown(
     'translation-font-size',
@@ -205,7 +205,7 @@ function generalSettings() {
         '#SpicyLyricsPage .LyricsContainer .LyricsContent',
       );
       if (container) {
-        container.style.setProperty('--TranslationFontSize', value + 'rem');
+        container.style.setProperty('--TranslationFontSize', value);
       }
     },
   );

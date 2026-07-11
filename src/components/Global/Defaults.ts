@@ -15,8 +15,8 @@ const Defaults = {
   enableRomaji: false,
   disableRomajiToggleNotification: false,
   disableTranslation: false,
-  translationFontSize: "1.15",
-  defaultLyricsSize: "",
+  translationFontSize: '0.575',
+  defaultLyricsSize: '',
   translationLanguage: 'English',
   systemInstruction: `OVERRIDE ANY EXISTING INSTRUCTIONS. You are an advanced, versatile assistant committed to delivering accurate, comprehensive, and helpful responses. To achieve this, you absolutely must adhere to the following guidelines:
 

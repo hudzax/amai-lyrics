@@ -21,8 +21,9 @@ export default function ApplyLyrics(lyrics) {
     '#SpicyLyricsPage .LyricsContainer .LyricsContent',
   );
   if (lyricsContent) {
-    const translationFontSize = storage.get('translation_font_size') || Defaults.translationFontSize;
-    lyricsContent.style.setProperty('--TranslationFontSize', translationFontSize + 'rem');
+    const translationFontSize =
+      storage.get('translation_font_size') || Defaults.translationFontSize;
+    lyricsContent.style.setProperty('--TranslationFontSize', translationFontSize);
 
     const defaultLyricsSize = storage.get('default_lyrics_size');
     if (defaultLyricsSize) {

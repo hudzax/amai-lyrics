@@ -268,9 +268,10 @@ ruby > rt {
 
 .translation {
   display: block;
-  font-size: var(--TranslationFontSize, 1.15rem);
+  /* Scale relative to the main lyrics size so the translation grows with the screen */
+  font-size: calc(var(--DefaultLyricsSize) * var(--TranslationFontSize, 0.575));
   /* color: #ccc; */
-  line-height: 1.35rem;
+  line-height: calc(var(--DefaultLyricsSize) * var(--TranslationFontSize, 0.575) * 1.35);
   font-weight: 500;
 }
 
