@@ -124,7 +124,6 @@ export async function processAndEnhanceLyrics(
   storage.set('currentlyFetching', 'false');
 
   if (Spicetify.Player.data.item.uri?.split(':')[2] === trackId) {
-    Spicetify.showNotification('Lyrics loaded', false, 1000);
     Defaults.CurrentLyricsType = lyricsToDisplay.Type;
     storage.set('currentLyricsData', JSON.stringify(lyricsToDisplay));
     HideLoaderContainer();
@@ -182,7 +181,6 @@ async function processLyricsEnhancementsAsync(
       // Update the displayed lyrics with translations
       updateDisplayedLyricsWithTranslations(processedLyricsJson);
 
-      Spicetify.showNotification('Translations updated', false, 1000);
       storage.set('currentLyricsData', JSON.stringify(processedLyricsJson));
     }
   } catch (error) {

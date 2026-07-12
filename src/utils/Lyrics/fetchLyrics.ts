@@ -42,7 +42,6 @@ export default async function fetchLyrics(uri: string, flush = false): Promise<L
 
   const currFetching = storage.get('currentlyFetching');
   if (currFetching === 'true') {
-    Spicetify.showNotification('Currently fetching, please wait..');
     return 'Currently fetching lyrics';
   }
 

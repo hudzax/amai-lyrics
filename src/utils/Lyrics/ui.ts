@@ -37,7 +37,6 @@ export async function noLyricsMessage(trackId?: string): Promise<string> {
   try {
     storage.set('currentlyFetching', 'false');
     if (Spicetify.Player.data.item.uri?.split(':')[2] === trackId) {
-      Spicetify.showNotification('Lyrics unavailable', false, 1000);
       HideLoaderContainer();
       Defaults.CurrentLyricsType = 'None';
       document

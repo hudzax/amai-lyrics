@@ -19,8 +19,6 @@ export async function fetchLyricsFromAPI(
   flush = false,
 ): Promise<LyricsData | string> {
   try {
-    Spicetify.showNotification('Fetching lyrics..', false, 1000);
-
     const spotifyAccessToken = await Platform.GetSpotifyAccessToken();
 
     // Fetch lyrics from API
@@ -55,7 +53,6 @@ export async function fetchLyricsFromAPI(
 
     storage.set('currentlyFetching', 'false');
     ClearLyricsPageContainer();
-    Spicetify.showNotification('Error loading lyrics', false, 2000);
     return await noLyricsMessage();
   }
 }
@@ -73,36 +70,6 @@ export async function handleErrorStatus(status: number): Promise<string> {
 
   // Log the error for diagnostics
   console.warn(`Lyrics API error: HTTP status ${status}`);
-
-  // Handle specific error codes
-  switch (status) {
-    case 401:
-      Spicetify.showNotification('Authentication error', false, 2000);
-      break;
-    case 404:
-      Spicetify.showNotification('Lyrics not found', false, 2000);
-      break;
-    case 429:
-      Spicetify.showNotification(
-        'Rate limited, please try again later',
-        false,
-        2000,
-      );
-      break;
-    case 500:
-    case 502:
-    case 503:
-    case 504:
-      Spicetify.showNotification('Lyrics service unavailable', false, 2000);
-      break;
-    default:
-      // Generic error for other status codes
-      Spicetify.showNotification(
-        `Error fetching lyrics (${status})`,
-        false,
-        2000,
-      );
-  }
 
   return await noLyricsMessage();
 }
