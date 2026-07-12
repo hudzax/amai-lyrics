@@ -20,6 +20,9 @@ Setup is simple with your own API key, and the clean design keeps everything eas
 - **Romaji Support:** Displays Japanese lyrics in Latin letters.
 - **Korean Romanization:** Shows Korean lyrics in Latin letters.
 - **Better Visuals:** Clean and easy-to-read design.
+- **Playbar Lyrics:** Shows the current lyric line in the native Spotify playbar, revealing the playback controls on hover. Includes Furigana/Romaji rendering and a subtle entrance animation. Toggle available in settings.
+
+  ![Playbar Lyrics Preview](./previews/playbar-lyrics.png)
 
 ## 🌍 Supported Translation Languages
 
