@@ -144,6 +144,18 @@ function generalSettings() {
     },
   );
 
+  settings.addToggle(
+    'enablePlaybarLyrics',
+    'Show current lyric in the bottom playbar',
+    true,
+    () => {
+      storage.set(
+        'enable_playbar_lyrics',
+        settings.getFieldValue('enablePlaybarLyrics') as string,
+      );
+    },
+  );
+
   settings.addDropDown(
     'translation-language',
     'Translation Language',

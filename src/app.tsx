@@ -27,6 +27,7 @@ import './css/Lyrics/main.css';
 import './css/Lyrics/Mixed.css';
 import './css/Loaders/LoaderContainer.css';
 import './css/FullscreenTransition.css';
+import './css/PlaybarLyrics.css';
 
 function setupUI(): ButtonManager {
   AppInitializer.setupSkeletonStyles();
@@ -86,6 +87,10 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
   // Initialize player state and events
   SpotifyPlayer.IsPlaying = IsPlaying();
   EventManager.initialize(buttonManager.getButton());
+
+  // Show the active lyric line in the native bottom playbar
+  const { InitializePlaybarLyrics } = await import('./components/PlaybarLyrics/PlaybarLyrics');
+  InitializePlaybarLyrics();
 }
 
 async function main() {

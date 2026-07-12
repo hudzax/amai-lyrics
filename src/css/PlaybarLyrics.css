@@ -1,0 +1,62 @@
+/* ============================================================
+   Playbar Lyrics
+   Shows the current lyric line over the native bottom playbar
+   controls and reveals the controls on hover.
+   ============================================================ */
+
+.amai-playbar-host {
+  position: relative;
+}
+
+.amai-playbar-lyrics {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  max-width: 60%;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  color: var(--text-base, #ffffff);
+  font-size: 18px;
+  line-height: 1.3;
+  padding-block: 0.12em;
+  font-family: "Manrope", "Noto Sans JP", "Noto Sans Display", sans-serif;
+  z-index: 2;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+.amai-playbar-lyrics-inner {
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Active lyric line with ruby annotations */
+.amai-playbar-lyrics ruby {
+  ruby-position: over;
+}
+
+/* When an active line exists, hide the native controls and show the lyrics */
+.amai-hide-controls .player-controls {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.amai-hide-controls .amai-playbar-lyrics {
+  opacity: 1;
+}
+
+/* Hovering the control area always reveals the native controls */
+.amai-hide-controls .player-controls:hover,
+.amai-hide-controls:hover .player-controls,
+.now-playing-bar__center:hover .player-controls {
+  opacity: 1 !important;
+}
+
+.amai-hide-controls .player-controls:hover ~ .amai-playbar-lyrics,
+.amai-hide-controls:hover .amai-playbar-lyrics,
+.now-playing-bar__center:hover .amai-playbar-lyrics {
+  opacity: 0 !important;
+}
