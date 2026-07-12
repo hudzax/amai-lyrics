@@ -14,6 +14,7 @@ import { EventManager } from './managers/EventManager';
 import { PageManager } from './managers/PageManager';
 import { SongChangeManager } from './managers/SongChangeManager';
 import { NowPlayingBarBackground } from './components/DynamicBG/NowPlayingBarBackground';
+import { installBlankToastSuppressor } from './utils/suppressBlankToasts';
 
 // Constants
 import { INTERVALS } from './constants/intervals';
@@ -94,6 +95,8 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
 }
 
 async function main() {
+  installBlankToastSuppressor();
+
   await AppInitializer.initializeCore();
 
   const buttonManager = setupUI();
