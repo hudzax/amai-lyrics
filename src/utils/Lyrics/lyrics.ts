@@ -70,12 +70,25 @@ export function ClearLyricsContentArrays() {
   // Clear the maps as well
   lineElementToStartTimeMap.clear();
   syllableElementToStartTimeMap.clear();
+  // Force a fresh initial render on the next tick (e.g. when a new song loads)
+  lastRenderedPosition = -1;
+  hasRenderedInitial = false;
 }
 
 const THROTTLE_TIME = 0.05;
+let lastRenderedPosition = -1;
+let hasRenderedInitial = false;
 new IntervalManager(THROTTLE_TIME, () => {
   if (!Defaults.LyricsContainerExists) return;
+  // Skip work entirely when the lyrics page isn't visible
+  if (Spicetify.Platform.History.location.pathname !== '/AmaiLyrics') return;
+
   const progress = SpotifyPlayer.GetTrackPosition();
+  // Nothing moved since the last frame -> no re-render needed
+  if (hasRenderedInitial && progress === lastRenderedPosition) return;
+
+  lastRenderedPosition = progress;
+  hasRenderedInitial = true;
   Lyrics.TimeSetter(progress);
   Lyrics.Animate(progress);
 }).Start();

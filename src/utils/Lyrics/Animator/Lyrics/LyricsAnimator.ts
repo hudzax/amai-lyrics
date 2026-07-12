@@ -9,6 +9,16 @@ export function setBlurringLastLine(c) {
   Blurring_LastLine = c;
 }
 
+// Cache the Credits element to avoid re-querying the DOM on every animation frame
+let cachedCredits: HTMLElement | null = null;
+function getCredits(): HTMLElement | null {
+  if (cachedCredits && cachedCredits.isConnected) return cachedCredits;
+  cachedCredits = document.querySelector<HTMLElement>(
+    '#SpicyLyricsPage .LyricsContainer .LyricsContent .Credits',
+  );
+  return cachedCredits;
+}
+
 // Helper: Set style property only if changed
 const setStyleIfChanged = (element: HTMLElement, property: string, value: string) => {
   if (element.style.getPropertyValue(property) !== value) {
@@ -37,32 +47,6 @@ const calculateOpacity = (percentage: number, word: Word): number => {
     return (1 - percentage) * 100;
   }
 };
-
-// Helper: Animate letter styles
-function animateLetter(
-  letter,
-  percentage,
-  emphasisScale,
-  emphasisBlurRadius,
-  emphasisTextShadowOpacity,
-) {
-  let translateY;
-  if (percentage <= 0.5) {
-    translateY = -0.1 * (percentage / 0.5);
-  } else {
-    translateY = -0.1 + (0 - -0.1) * ((percentage - 0.5) / 0.5);
-  }
-  const letterGradientPosition = `${percentage * 100}%`;
-  setStyleIfChanged(
-    letter.HTMLElement,
-    'transform',
-    `translateY(calc(var(--DefaultLyricsSize) * ${translateY}))`,
-  );
-  setStyleIfChanged(letter.HTMLElement, 'scale', `${emphasisScale * 1.04}`);
-  setStyleIfChanged(letter.HTMLElement, '--text-shadow-blur-radius', `${emphasisBlurRadius}px`);
-  setStyleIfChanged(letter.HTMLElement, '--text-shadow-opacity', `${emphasisTextShadowOpacity}%`);
-  setStyleIfChanged(letter.HTMLElement, '--gradient-position', letterGradientPosition);
-}
 
 // Helper: Reset letter styles for NotSung/Sung
 function resetLetterStyles(letter, status, scaleValue, gradientPosition) {
@@ -144,9 +128,7 @@ export function Animate(position) {
   const edtrackpos = position + timeOffset;
   if (!CurrentLyricsType || CurrentLyricsType === 'None') return;
 
-  const Credits = document.querySelector<HTMLElement>(
-    '#SpicyLyricsPage .LyricsContainer .LyricsContent .Credits',
-  );
+  const Credits = getCredits();
 
   if (CurrentLyricsType === 'Syllable') {
     const arr = LyricsObject.Types.Syllable.Lines;
@@ -175,35 +157,17 @@ export function Animate(position) {
             const scale = IdleLyricsScale + (1.017 - IdleLyricsScale) * percentage;
             const gradientPosition = percentage * 100;
             if (isLetterGroup) {
-              const emphasisBlurRadius = 6 + (18 - 6) * percentage;
               const emphasisTranslateY = 0.02 + (-0.065 - 0.02) * percentage;
               const emphasisScale =
                 IdleEmphasisLyricsScale + (1.023 - IdleEmphasisLyricsScale) * percentage;
-              const emphasisTextShadowOpacity = calculateOpacity(percentage, word) * 5;
               for (let k = 0; k < word.Letters.length; k++) {
                 const letter = word.Letters[k];
                 if (letter.Status === 'Active') {
-                  // Animate active letter
-                  const totalDuration = letter.EndTime - letter.StartTime;
-                  const elapsedDuration = edtrackpos - letter.StartTime;
-                  const percentage = Math.max(0, Math.min(elapsedDuration / totalDuration, 1));
-                  animateLetter(
-                    letter,
-                    percentage,
-                    emphasisScale,
-                    emphasisBlurRadius,
-                    emphasisTextShadowOpacity,
-                  );
-                  animateLetter(
-                    letter,
-                    percentage,
-                    emphasisScale,
-                    emphasisBlurRadius,
-                    emphasisTextShadowOpacity,
-                  );
+                  // Final letter styling is the NotSung state (resetLetterStyles
+                  // overrides any transient active styling), so apply it directly.
                   resetLetterStyles(letter, 'NotSung', IdleEmphasisLyricsScale, '-20%');
                 } else if (letter.Status === 'Sung') {
-                  resetLetterStyles(letter, 'Sung', '1', '100%');
+                  resetLetterStyles(word.Letters[k], 'Sung', '1', '100%');
                 }
               }
               setStyleIfChanged(word.HTMLElement, 'scale', `${emphasisScale}`);
@@ -215,10 +179,14 @@ export function Animate(position) {
               word.scale = emphasisScale;
               word.glow = 0;
             } else if (isDot) {
-              const dotDuration = word.EndTime - word.StartTime;
-              word.HTMLElement.style.setProperty('--dot-duration', `${dotDuration}ms`);
-              void word.HTMLElement.offsetWidth;
-              word.HTMLElement.classList.add('dot-active');
+              // Force reflow + restart the dot animation only on the active transition,
+              // not on every frame, to avoid a synchronous layout flush each tick.
+              if (!word.HTMLElement.classList.contains('dot-active')) {
+                const dotDuration = word.EndTime - word.StartTime;
+                word.HTMLElement.style.setProperty('--dot-duration', `${dotDuration}ms`);
+                void word.HTMLElement.offsetWidth;
+                word.HTMLElement.classList.add('dot-active');
+              }
               word.scale = 1;
               word.glow = 0.5;
             } else {
@@ -389,10 +357,12 @@ export function Animate(position) {
           for (let i = 0; i < Array.length; i++) {
             const dot = Array[i];
             if (dot.Status === 'Active') {
-              const dotDuration = dot.EndTime - dot.StartTime;
-              dot.HTMLElement.style.setProperty('--dot-duration', `${dotDuration}ms`);
-              void dot.HTMLElement.offsetWidth;
-              dot.HTMLElement.classList.add('dot-active');
+              if (!dot.HTMLElement.classList.contains('dot-active')) {
+                const dotDuration = dot.EndTime - dot.StartTime;
+                dot.HTMLElement.style.setProperty('--dot-duration', `${dotDuration}ms`);
+                void dot.HTMLElement.offsetWidth;
+                dot.HTMLElement.classList.add('dot-active');
+              }
             } else if (dot.Status === 'NotSung') {
               dot.HTMLElement.classList.remove('dot-active');
               dot.HTMLElement.style.transform = '';

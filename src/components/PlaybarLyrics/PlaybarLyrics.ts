@@ -27,6 +27,10 @@ let intervalManager: IntervalManager | null = null;
 let resizeObserver: ResizeObserver | null = null;
 let lastText = '';
 
+// Cache the parsed line list so we don't JSON.parse the full lyrics blob every tick
+let cachedLines: LineEntry[] | null = null;
+let cachedLinesRaw: string | null = null;
+
 function isEnabled(): boolean {
   return storage.get('enable_playbar_lyrics') !== 'false';
 }
@@ -94,6 +98,8 @@ function positionLyrics(): void {
 
 function onSongChange(): void {
   lastText = '';
+  cachedLines = null;
+  cachedLinesRaw = null;
   if (lyricsElement) lyricsElement.innerHTML = '';
 }
 
@@ -151,7 +157,16 @@ function update(): void {
     return;
   }
 
-  const lines = getLinesFromStorage();
+  const raw = storage.get('currentLyricsData');
+  const rawKey = raw != null ? String(raw) : null;
+  let lines: LineEntry[] | null;
+  if (rawKey != null && rawKey === cachedLinesRaw) {
+    lines = cachedLines;
+  } else {
+    cachedLinesRaw = rawKey;
+    lines = getLinesFromStorage();
+    cachedLines = lines;
+  }
   if (!lines) {
     centerWrapper.classList.remove('amai-hide-controls');
     if (lastText !== '') {

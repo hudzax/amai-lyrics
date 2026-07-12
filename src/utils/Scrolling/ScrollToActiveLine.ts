@@ -32,17 +32,16 @@ export function ScrollToActiveLine(ScrollSimplebar: SimpleBar) {
 
     // If we found an active line, process it with FastDOM
     if (currentLine) {
+      const LineElem = currentLine.HTMLElement as HTMLElement;
+      // Already scrolled to this exact line -> skip all DOM work this tick
+      if (lastLine === LineElem) return;
+
       // Use closure variables to pass data from measure to mutate
-      new Promise<{ LineElem: HTMLElement | null; container: HTMLElement | null }>((resolve) => {
-        fastdom.measure(() => {
-          const LineElem = currentLine.HTMLElement as HTMLElement;
-          const container = ScrollSimplebar?.getScrollElement() as HTMLElement;
-          resolve({ LineElem, container });
-        });
-      }).then(({ LineElem, container }) => {
+      fastdom.measure(() => {
+        const container = ScrollSimplebar?.getScrollElement() as HTMLElement;
         fastdom.mutate(() => {
           if (!container || !LineElem) return;
-          if (lastLine && lastLine === LineElem) return;
+          if (lastLine === LineElem) return;
 
           lastLine = LineElem;
 
