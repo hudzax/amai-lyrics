@@ -116,8 +116,8 @@
 }
 
 #SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox {
-    width: 25cqw;
-    height: 25cqw;
+    width: 16cqw;
+    height: 16cqw;
 }
 
 #SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImagePlaceholder {
@@ -142,7 +142,25 @@
 }
 
 #SpicyLyricsPage .ContentBox .NowBar .AmaiPageButtonContainer .AmaiPageButton {
-    width: 24cqh;
+    width: clamp(160px, 18cqh, 220px);
+}
+
+/* In fullscreen, let the vinyl + controls + buttons group grow naturally and stay centered */
+#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView {
+    position: relative;
+    height: auto;
+}
+
+/* 3 buttons sit below the controls group in normal flow, below the vinyl area */
+#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .AmaiPageButtonContainer {
+    position: relative;
+    margin: 18cqh auto 0;
+    left: auto;
+    transform: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 100;
 }
 
 #SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage {
@@ -180,17 +198,15 @@
 }
 
 #SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox .MediaContent .AlbumData {
-    font-size: calc(var(--default-font-size) * 0.95);
+    font-size: calc(var(--default-font-size) * 0.75);
     font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
     z-index: 99;
-    /* margin-bottom: 1cqh; */
     opacity: 1;
     color: white;
-    margin-top: 15.5cqh;
     overflow: hidden;
     width: 20cqw;
     box-sizing: border-box;
@@ -216,6 +232,45 @@
     justify-content: center;
     flex-direction: column;
     margin: 2cqh;
+}
+
+/* In fullscreen the song name is shown via the MediaContent group below the vinyl */
+#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .Metadata .SongName {
+    display: none;
+}
+
+/* Artist name now shown in the MediaContent group above the album name */
+#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .Metadata .Artists {
+    display: none;
+}
+
+#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox .MediaContent .ArtistData {
+    font-size: calc(var(--default-font-size) * 0.65);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    z-index: 99;
+    color: white;
+    opacity: .75;
+    overflow: hidden;
+    width: 20cqw;
+    box-sizing: border-box;
+}
+
+#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox .MediaContent .ArtistData span {
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    text-align: center;
+}
+
+/* Push the (now-empty) Metadata below the absolutely-positioned controls group */
+#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .Metadata {
+    margin-top: 18cqh;
 }
 
 #SpicyLyricsPage .ContentBox .NowBar .Header .Metadata .SongName {
@@ -367,21 +422,24 @@
 
 #SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox .MediaContent {
     position: absolute;
-    top: 0;
-    left: 0;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
     width: 100%;
-    height: 100%;
+    height: auto;
     z-index: 99;
     display: flex;
     align-items: center;
     /* justify-content: space-between; */
     flex-direction: column;
-    opacity: 0;
+    gap: 2.4cqh;
+    margin-top: 4cqh;
+    opacity: 1;
     transition: opacity .2s;
 }
 
 #SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox:hover .MediaContent {
-    opacity: .85;
+    opacity: 1;
 }
 
 #SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent {
@@ -434,14 +492,26 @@
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
+    gap: 2.4cqh;
     width: 100%;
     height: 5cqh;
-    padding: 0 5cqh 0;
-    /* margin-bottom: 3.8cqh; */
-    position: absolute;
-    bottom: 7.2cqh;
+    padding: 0;
+    position: relative;
+    opacity: 1 !important;
+    visibility: visible !important;
     z-index: 2;
+}
+
+/* Track progress indicator positioned below the playback controls */
+#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .Timeline {
+    position: relative;
+    bottom: auto;
+    width: 22cqw;
+    padding: 0;
+    order: 1;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 #SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl.TrackSkip.PrevTrack {

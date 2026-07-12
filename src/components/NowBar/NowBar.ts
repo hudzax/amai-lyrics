@@ -17,7 +17,7 @@ import {
  * Opens the NowBar and initializes its components
  * Sets up playback controls and progress bar in fullscreen mode
  */
-function OpenNowBar() {
+async function OpenNowBar() {
   const NowBar = document.querySelector('#SpicyLyricsPage .ContentBox .NowBar');
   if (!NowBar) return;
   UpdateNowBar(true);
@@ -41,6 +41,14 @@ function OpenNowBar() {
     // Let's Apply more data into the fullscreen mode.
     {
       const AppendQueue = [];
+      {
+        // Artist name, shown above the album name in the controls group
+        const ArtistNameElement = document.createElement('div');
+        ArtistNameElement.classList.add('ArtistData');
+        const artistNames = SpotifyPlayer.JoinArtists(await SpotifyPlayer.GetArtists());
+        ArtistNameElement.innerHTML = `<span>${artistNames}</span>`;
+        AppendQueue.push(ArtistNameElement);
+      }
       {
         const AlbumNameElement = document.createElement('div');
         AlbumNameElement.classList.add('AlbumData');
