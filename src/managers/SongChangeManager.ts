@@ -2,10 +2,12 @@ import sleep from '../utils/sleep';
 import { ButtonManager } from './ButtonManager';
 import { NowPlayingBarBackground } from '../components/DynamicBG/NowPlayingBarBackground';
 import { EnsureProcessingIndicatorHidden } from '../utils/Lyrics/ui';
+import storage from '../utils/storage';
 
 export class SongChangeManager {
   private buttonManager: ButtonManager;
   private backgroundManager: NowPlayingBarBackground;
+  private latestUri: string | null = null;
 
   constructor(buttonManager: ButtonManager, backgroundManager: NowPlayingBarBackground) {
     this.buttonManager = buttonManager;
@@ -24,14 +26,32 @@ export class SongChangeManager {
     }
 
     if (!currentUri) return;
-  
+
+    // Track the most recently requested track so we only apply the lyrics that
+    // belong to the track the user ultimately landed on.
+    this.latestUri = currentUri;
+
     // Hide processing indicator when song changes to prevent stuck indicators
     EnsureProcessingIndicatorHidden();
-  
+
+    // Clear the global "currently fetching" flag so a rapid sequence of skips
+    // doesn't leave the final track un-fetched. Each song change triggers a
+    // real fetch for the current track; stale results are discarded by their
+    // own track-id guard inside processAndEnhanceLyrics. Without this, the
+    // inflight fetch for an earlier (skipped) track would block every
+    // subsequent fetch until it resolved, leaving the playbar lyrics empty
+    // until the lyrics page was opened.
+    storage.set('currentlyFetching', 'false');
+
     // Fetch and apply lyrics on song change (already non-blocking)
     const { default: fetchLyrics } = await import('../utils/Lyrics/fetchLyrics');
     const { default: ApplyLyrics } = await import('../utils/Lyrics/Global/Applyer');
-    fetchLyrics(currentUri).then(ApplyLyrics);
+    fetchLyrics(currentUri).then((lyrics) => {
+      // Only apply if this track is still the latest one the user landed on.
+      if (this.latestUri === currentUri) {
+        ApplyLyrics(lyrics);
+      }
+    });
 
     // Update button registration (synchronous but fast)
     this.buttonManager.updateRegistration();
