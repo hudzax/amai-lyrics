@@ -2,13 +2,28 @@
    Playbar Lyrics
    Shows the current lyric line over the native bottom playbar
    controls and reveals the controls on hover.
+   
+   Color animation uses CSS custom properties set dynamically
+   from the album artwork's dominant colors.
    ============================================================ */
 
 .amai-playbar-host {
   position: relative;
 }
 
+/*
+ * The lyrics container gets 5 color custom properties (--color-1 … --color-5)
+ * injected from JavaScript when artwork colors are extracted.  If extraction
+ * hasn't run yet (or fails), we fall back to a pleasant gradient based on
+ * Spotify's brand accent.
+ */
 .amai-playbar-lyrics {
+  --color-1: #1ed760;
+  --color-2: #1db954;
+  --color-3: #169c46;
+  --color-4: #1ed760;
+  --color-5: #1db954;
+
   position: absolute;
   transform: translate(-50%, -50%);
   max-width: 60%;
@@ -16,13 +31,20 @@
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.2s ease;
-  color: var(--text-base, #ffffff);
   font-size: 18px;
   line-height: 1.3;
   padding-block: 0.12em;
   font-family: "Manrope", "Noto Sans JP", "Noto Sans Display", sans-serif;
   z-index: 2;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  /*
+   * Multi-layered shadow keeps text readable regardless of colour brightness.
+   * The black shadow adds contrast against the (normally) dark playbar,
+   * while the white glow helps when the gradient passes through a very dark hue.
+   */
+  text-shadow:
+    0 0 12px rgba(0, 0, 0, 0.55),
+    0 0 24px rgba(0, 0, 0, 0.25),
+    0 0 4px  rgba(255, 255, 255, 0.12);
 }
 
 .amai-playbar-lyrics-inner {
@@ -31,6 +53,39 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+
+  /*
+   * Animate the text colour by using a wide gradient as the background,
+   * clipping it to the text, and shifting the background position.
+   *
+   * The gradient uses the five artwork-derived colours (with an extra
+   * copy of --color-1 at the end to create a seamless loop).
+   */
+  background-image: linear-gradient(
+    90deg,
+    var(--color-1)   0%,
+    var(--color-2)  20%,
+    var(--color-3)  40%,
+    var(--color-4)  60%,
+    var(--color-5)  80%,
+    var(--color-1) 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+
+  animation: playbar-lyrics-color-shift 12s linear infinite;
+}
+
+@keyframes playbar-lyrics-color-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
 }
 
 /* Active lyric line with ruby annotations */
