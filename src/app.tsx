@@ -105,9 +105,8 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
 async function main() {
   // Tear down any previous instance before re-initializing (spicetify-watch /
   // Reload UI re-injects the script and re-runs main from a fresh module).
-  const previousTeardown = (
-    window as unknown as { __amaiLyricsTeardown?: () => void }
-  ).__amaiLyricsTeardown;
+  const previousTeardown = (window as unknown as { __amaiLyricsTeardown?: () => void })
+    .__amaiLyricsTeardown;
   if (typeof previousTeardown === 'function') {
     try {
       previousTeardown();

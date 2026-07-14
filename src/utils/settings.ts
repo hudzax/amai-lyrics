@@ -149,10 +149,7 @@ function generalSettings() {
     'Show current lyric in the bottom playbar',
     true,
     () => {
-      storage.set(
-        'enable_playbar_lyrics',
-        settings.getFieldValue('enablePlaybarLyrics') as string,
-      );
+      storage.set('enable_playbar_lyrics', settings.getFieldValue('enablePlaybarLyrics') as string);
     },
   );
 

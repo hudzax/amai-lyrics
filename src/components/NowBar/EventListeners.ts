@@ -55,9 +55,7 @@ export function setupEventListeners() {
   // Set initial spin state once the record element is available
   nowBarInitWhen = Whentil.When(
     () =>
-      document.querySelector(
-        '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage',
-      ),
+      document.querySelector('#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage'),
     () => updateVinylSpinState(),
   );
 

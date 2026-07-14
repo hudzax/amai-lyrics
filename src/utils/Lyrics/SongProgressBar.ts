@@ -10,10 +10,10 @@ export class SongProgressBar {
 
   Update(params: { duration: number; position: number }): void {
     if (this.destroyed) {
-      console.warn("This progress bar has been destroyed and cannot be used");
+      console.warn('This progress bar has been destroyed and cannot be used');
       return;
     }
-    
+
     // Both duration and position are expected to be in milliseconds
     this.duration = params.duration;
     this.position = Math.min(params.position, this.duration);
@@ -38,15 +38,15 @@ export class SongProgressBar {
   }
 
   // Calculate position in milliseconds directly
-  CalculatePositionFromClick(params: { sliderBar: HTMLElement, event: MouseEvent }): number {
+  CalculatePositionFromClick(params: { sliderBar: HTMLElement; event: MouseEvent }): number {
     const { sliderBar, event } = params;
-    
+
     if (this.duration <= 0) return 0;
-    
+
     const rect = sliderBar.getBoundingClientRect();
     const clickX = event.clientX - rect.left;
     const percentage = Math.max(0, Math.min(1, clickX / rect.width));
-    
+
     // Calculate position in milliseconds directly
     return Math.floor(percentage * this.duration);
   }
@@ -54,16 +54,16 @@ export class SongProgressBar {
   // Format milliseconds to MM:SS or HH:MM:SS
   private formatTime(timeInMs: number): string {
     if (isNaN(timeInMs) || timeInMs < 0) {
-      return "0:00";
+      return '0:00';
     }
-    
+
     // Convert milliseconds to seconds
     const totalSeconds = Math.floor(timeInMs / 1000);
-    
+
     // Format as MM:SS
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
-    
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   }
 }

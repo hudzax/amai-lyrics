@@ -5,10 +5,7 @@ import GetHeaderUrl from './GetHeaderUrl';
 // Track ongoing fetches
 const isFetching = new Map();
 
-export default async function ApplyContent(
-  CurrentSongArtist: string,
-  CurrentSongUri: string,
-) {
+export default async function ApplyContent(CurrentSongArtist: string, CurrentSongUri: string) {
   if (!CurrentSongArtist) throw new Error('Invalid Song Artist');
   if (!CurrentSongUri) throw new Error('Invalid Song URI');
   const TrackId = CurrentSongUri.split(':')[2];
@@ -20,9 +17,7 @@ export default async function ApplyContent(
       expiresIn: number;
     };
   }
-  const Cached: CachedVisual | undefined = await ArtistVisuals.Cache.get(
-    ArtistId,
-  );
+  const Cached: CachedVisual | undefined = await ArtistVisuals.Cache.get(ArtistId);
 
   if (Cached) {
     if (Cached.metadata.expiresIn <= Date.now()) {

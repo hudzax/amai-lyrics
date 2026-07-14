@@ -8,9 +8,8 @@ type TokenProviderResponse = {
 };
 
 // Store all our Spotify Services
-const Spotify: typeof Spicetify = (
-  globalThis as unknown as { Spicetify: typeof Spicetify }
-).Spicetify;
+const Spotify: typeof Spicetify = (globalThis as unknown as { Spicetify: typeof Spicetify })
+  .Spicetify;
 let SpotifyPlatform: typeof Spicetify.Platform;
 let SpotifyInternalFetch: typeof Spicetify.CosmosAsync;
 
@@ -37,13 +36,10 @@ let accessTokenPromise: Promise<string> | undefined;
 
 const GetSpotifyAccessToken = (): Promise<string> => {
   if (tokenProviderResponse) {
-    const timeUntilRefresh =
-      (tokenProviderResponse.expiresAtTime - Date.now()) / 1000;
+    const timeUntilRefresh = (tokenProviderResponse.expiresAtTime - Date.now()) / 1000;
     if (timeUntilRefresh <= 2) {
       tokenProviderResponse = undefined;
-      accessTokenPromise = new Promise((resolve) =>
-        Timeout(timeUntilRefresh, resolve),
-      ).then(() => {
+      accessTokenPromise = new Promise((resolve) => Timeout(timeUntilRefresh, resolve)).then(() => {
         accessTokenPromise = undefined;
         return GetSpotifyAccessToken();
       });
@@ -64,19 +60,14 @@ const GetSpotifyAccessToken = (): Promise<string> => {
     .catch((error: Error) => {
       if (error.message.includes('Resolver not found')) {
         if (!SpotifyPlatform.Session) {
-          console.warn(
-            'Failed to find SpotifyPlatform.Session for fetching token',
-          );
+          console.warn('Failed to find SpotifyPlatform.Session for fetching token');
         } else {
           tokenProviderResponse = {
             accessToken: SpotifyPlatform.Session.accessToken,
-            expiresAtTime:
-              SpotifyPlatform.Session.accessTokenExpirationTimestampMs,
+            expiresAtTime: SpotifyPlatform.Session.accessTokenExpirationTimestampMs,
             tokenType: 'Bearer',
           };
-          accessTokenPromise = Promise.resolve(
-            tokenProviderResponse.accessToken,
-          );
+          accessTokenPromise = Promise.resolve(tokenProviderResponse.accessToken);
         }
       }
       return GetSpotifyAccessToken();

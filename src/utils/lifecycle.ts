@@ -34,9 +34,7 @@ class Lifecycle {
   trackGlobalEvent(id: number): void {
     this.track(() => {
       // Lazy import avoids a circular dependency at module load.
-      import('./EventManager')
-        .then(({ default: Event }) => Event.unListen(id))
-        .catch(() => {});
+      import('./EventManager').then(({ default: Event }) => Event.unListen(id)).catch(() => {});
     });
   }
 
@@ -97,8 +95,7 @@ class Lifecycle {
    */
   registerGlobalTeardown(): void {
     if (typeof window === 'undefined') return;
-    (window as unknown as Record<string, unknown>).__amaiLyricsTeardown = () =>
-      this.disposeAll();
+    (window as unknown as Record<string, unknown>).__amaiLyricsTeardown = () => this.disposeAll();
   }
 }
 

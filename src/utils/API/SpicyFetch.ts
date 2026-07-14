@@ -22,9 +22,7 @@ export default async function SpicyFetch(
       if (Array.isArray(CachedContent)) {
         // console.log('CachedContent array:', CachedContent);
         const content =
-          typeof CachedContent[0] === 'string'
-            ? JSON.parse(CachedContent[0])
-            : CachedContent[0];
+          typeof CachedContent[0] === 'string' ? JSON.parse(CachedContent[0]) : CachedContent[0];
         return [content, CachedContent[1]];
       }
       // console.log('CachedContent:', CachedContent);
@@ -102,15 +100,12 @@ async function CacheContent(
     const expiresIn = Date.now() + expirationTtl;
     const processedKey = md5(key);
 
-    const processedData =
-      typeof data === 'object' ? JSON.stringify(data) : data;
+    const processedData = typeof data === 'object' ? JSON.stringify(data) : data;
 
     const compressedData = pako.deflate(processedData, {
       level: 1,
     }); // Max compression level
-    const compressedString = String.fromCharCode(
-      ...new Uint8Array(compressedData),
-    ); // Encode to base64
+    const compressedString = String.fromCharCode(...new Uint8Array(compressedData)); // Encode to base64
 
     await SpicyFetchCache.set(processedKey, {
       Content: compressedString,
@@ -134,9 +129,7 @@ async function GetCachedContent(key: string): Promise<[object, number] | null> {
           return content.Content as [object, number];
         }
 
-        const compressedData = Uint8Array.from(content.Content, (c: string) =>
-          c.charCodeAt(0),
-        );
+        const compressedData = Uint8Array.from(content.Content, (c: string) => c.charCodeAt(0));
         const decompressedData = pako.inflate(compressedData, { to: 'string' });
 
         return JSON.parse(decompressedData) as [object, number];

@@ -152,13 +152,13 @@ export function ApplyLineLyrics(data: LyricsData): void {
         );
       } else {
         line.Text = line.Text?.replace(
-          /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^\}]+)}/g,
+          /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^}]+)}/g,
           '<ruby>$1<rt>$2</rt></ruby>',
         );
       }
     } else {
       line.Text = line.Text?.replace(
-        /((?:\([0-9\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)(?:[a-zA-Z]*)[?.!,"']?){([^\}]+)}/g,
+        /((?:\([0-9\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)(?:[a-zA-Z]*)[?.!,"']?){([^}]+)}/g,
         '<ruby class="romaja">$1<rt>$2</rt></ruby>',
       );
     }

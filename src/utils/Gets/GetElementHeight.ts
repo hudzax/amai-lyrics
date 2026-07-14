@@ -3,9 +3,5 @@ export function GetElementHeight(element: HTMLElement) {
   const beforeStyles = getComputedStyle(element, '::before');
   const afterStyles = getComputedStyle(element, '::after');
 
-  return (
-    element.offsetHeight +
-    parseFloat(beforeStyles.height) +
-    parseFloat(afterStyles.height)
-  );
+  return element.offsetHeight + parseFloat(beforeStyles.height) + parseFloat(afterStyles.height);
 }

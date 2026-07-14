@@ -39,7 +39,11 @@ function isSuppressed(message: unknown): boolean {
 function overrideShowNotification() {
   const original = Spicetify.showNotification?.bind(Spicetify);
   if (!original) return;
-  Spicetify.showNotification = ((message: Parameters<typeof Spicetify.showNotification>[0], isError?: boolean, msTimeout?: number) => {
+  Spicetify.showNotification = ((
+    message: Parameters<typeof Spicetify.showNotification>[0],
+    isError?: boolean,
+    msTimeout?: number,
+  ) => {
     if (isSuppressed(message)) return;
     return original(message, isError, msTimeout);
   }) as typeof Spicetify.showNotification;
@@ -47,7 +51,10 @@ function overrideShowNotification() {
 
 function overrideSnackbar() {
   const spicetify = Spicetify as unknown as {
-    Snackbar?: { enqueueSnackbar?: (msg: unknown, opts?: unknown) => unknown; __amaiWrapped?: boolean };
+    Snackbar?: {
+      enqueueSnackbar?: (msg: unknown, opts?: unknown) => unknown;
+      __amaiWrapped?: boolean;
+    };
   };
   const snackbar = spicetify.Snackbar;
   if (!snackbar || typeof snackbar.enqueueSnackbar !== 'function' || snackbar.__amaiWrapped) {

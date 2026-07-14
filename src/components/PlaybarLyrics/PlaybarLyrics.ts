@@ -39,7 +39,6 @@ let cachedLinesRaw: string | null = null;
 // ---- Artwork color animation state ----
 let currentColors: string[] = [];
 let lastArtworkUrl = '';
-const COLOR_ANIM_DURATION = 12; // seconds, must match CSS `animation-duration`
 
 // Minimum perceived brightness (0-255) for artwork colours used in text.
 // Colours darker than this get lightened so the lyrics stay readable against
@@ -76,7 +75,11 @@ function liftToLuminance(hex: string, minLum: number): string {
     const nr = Math.round(r + (255 - r) * t);
     const ng = Math.round(g + (255 - g) * t);
     const nb = Math.round(b + (255 - b) * t);
-    if (hexLuminance(`#${nr.toString(16).padStart(2, '0')}${ng.toString(16).padStart(2, '0')}${nb.toString(16).padStart(2, '0')}`) >= minLum) {
+    if (
+      hexLuminance(
+        `#${nr.toString(16).padStart(2, '0')}${ng.toString(16).padStart(2, '0')}${nb.toString(16).padStart(2, '0')}`,
+      ) >= minLum
+    ) {
       r = nr;
       g = ng;
       b = nb;
@@ -92,6 +95,18 @@ function isEnabled(): boolean {
   return storage.get('enable_playbar_lyrics') !== 'false';
 }
 
+interface StoredLyrics {
+  id: string;
+  Type: string;
+  Content: unknown;
+}
+
+interface TimedLyricItem {
+  StartTime?: number | null;
+  EndTime?: number | null;
+  Text?: string;
+}
+
 /**
  * Reads the globally stored parsed lyrics and builds a timed line list for the
  * current track. Only timed lyrics (Line / Syllable) are supported.
@@ -100,9 +115,9 @@ function getLinesFromStorage(): LineEntry[] | null {
   const raw = storage.get('currentLyricsData');
   if (!raw) return null;
 
-  let data: any;
+  let data: StoredLyrics;
   try {
-    data = JSON.parse(String(raw));
+    data = JSON.parse(String(raw)) as StoredLyrics;
   } catch {
     return null;
   }
@@ -112,11 +127,11 @@ function getLinesFromStorage(): LineEntry[] | null {
   const currentTrackId = Spicetify.Player.data?.item?.uri?.split(':')[2];
   if (currentTrackId !== data.id) return null;
 
-  let content: any[] | undefined;
+  let content: TimedLyricItem[] | undefined;
   if (data.Type === 'Line' && Array.isArray(data.Content)) {
-    content = data.Content;
+    content = data.Content as TimedLyricItem[];
   } else if (data.Type === 'Syllable' && Array.isArray(data.Content)) {
-    content = convertLyrics(data.Content);
+    content = convertLyrics(data.Content as Parameters<typeof convertLyrics>[0]);
   } else {
     // Static lyrics have no timing information
     return null;
@@ -258,10 +273,13 @@ async function refreshArtworkColors(): Promise<void> {
 
 function update(): void {
   // Re-inject if Spotify re-rendered the playbar and removed our element
-  if (!lyricsElement || !lyricsElement.isConnected || !centerWrapper || !centerWrapper.isConnected) {
-    const controls = document.querySelector<HTMLElement>(
-      '.Root__now-playing-bar .player-controls',
-    );
+  if (
+    !lyricsElement ||
+    !lyricsElement.isConnected ||
+    !centerWrapper ||
+    !centerWrapper.isConnected
+  ) {
+    const controls = document.querySelector<HTMLElement>('.Root__now-playing-bar .player-controls');
     if (controls?.parentElement) {
       inject();
     } else {
