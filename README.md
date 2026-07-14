@@ -22,7 +22,9 @@ Setup is simple with your own API key, and the clean design keeps everything eas
 - **Better Visuals:** Clean and easy-to-read design.
 - **Playbar Lyrics:** Shows the current lyric line in the native Spotify playbar, revealing the playback controls on hover. Includes Furigana/Romaji rendering and a subtle entrance animation. Toggle available in settings.
 
-  ![Playbar Lyrics Preview](./previews/playbar-lyrics.png)
+  ![Playbar Lyrics Preview 1](./previews/playbar_lyrics_preview_1.png)
+  ![Playbar Lyrics Preview 2](./previews/playbar_lyrics_preview_2.png)
+  ![Playbar Lyrics Preview 3](./previews/playbar_lyrics_preview_3.png)
 
 ## 🌍 Supported Translation Languages
 
