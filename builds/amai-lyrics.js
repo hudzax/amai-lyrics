@@ -412,7 +412,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.4.7";
+      version = "1.4.8";
     }
   });
 
@@ -8297,15 +8297,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-8064-YENPxBj1POU2/19f58abf6099/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-18988-4JjD1iuyYvvh/19f5e34868a9/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-8064-YENPxBj1POU2/19f58abf6099/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-18988-4JjD1iuyYvvh/19f5e34868a9/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-8064-YENPxBj1POU2/19f58abf60ca/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-18988-4JjD1iuyYvvh/19f5e34868da/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-8064-YENPxBj1POU2/19f58abf60ca/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-18988-4JjD1iuyYvvh/19f5e34868da/ProcessingIndicator.css"() {
     }
   });
 
@@ -31666,12 +31666,164 @@ ${JSON.stringify(lyricsOnly)}`
     }
   });
 
+  // src/utils/ArtworkColors.ts
+  function rgbToHex({ r, g, b }) {
+    const toHex = (c) => Math.round(c).toString(16).padStart(2, "0");
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  }
+  function quantize(value, bits) {
+    return value >> 8 - bits << 8 - bits;
+  }
+  function luminance({ r, g, b }) {
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+  function saturation({ r, g, b }) {
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    if (max === 0)
+      return 0;
+    return (max - min) / max * 255;
+  }
+  function bucketKey({ r, g, b }) {
+    return `${r},${g},${b}`;
+  }
+  function quantizePixels(data, width, height, loose) {
+    const bucketMap = /* @__PURE__ */ new Map();
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const idx = (y * width + x) * 4;
+        const r = data[idx];
+        const g = data[idx + 1];
+        const b = data[idx + 2];
+        const a = data[idx + 3];
+        if (a < 128)
+          continue;
+        const rgb = { r, g, b };
+        const lum = luminance(rgb);
+        if (loose) {
+          if (lum < 15 || lum > 245)
+            continue;
+        } else {
+          const sat = saturation(rgb);
+          if (lum < MIN_LIGHTNESS || lum > MAX_LIGHTNESS || sat < MIN_SATURATION) {
+            continue;
+          }
+        }
+        const q = {
+          r: quantize(r, QUANTIZE_BITS),
+          g: quantize(g, QUANTIZE_BITS),
+          b: quantize(b, QUANTIZE_BITS)
+        };
+        const key = bucketKey(q);
+        const entry = bucketMap.get(key);
+        if (entry) {
+          entry.count++;
+        } else {
+          bucketMap.set(key, { rgb: q, count: 1 });
+        }
+      }
+    }
+    return [...bucketMap.entries()].sort((a, b) => b[1].count - a[1].count).slice(0, RESULT_COUNT).map(([, entry]) => rgbToHex(entry.rgb));
+  }
+  function readBitmapPixels(bitmap) {
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx)
+      return null;
+    ctx.drawImage(bitmap, 0, 0);
+    try {
+      const imageData = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
+      return { data: imageData.data, width: bitmap.width, height: bitmap.height };
+    } catch {
+      return null;
+    }
+  }
+  async function extractArtworkColors(imageUrl) {
+    let blob;
+    try {
+      const response = await fetch(imageUrl, {
+        mode: "cors",
+        credentials: "omit",
+        referrerPolicy: "no-referrer"
+      });
+      if (!response.ok)
+        return [];
+      blob = await response.blob();
+    } catch {
+      return [];
+    }
+    let bitmap;
+    try {
+      bitmap = await createImageBitmap(blob, {
+        resizeWidth: BITMAP_SIZE,
+        resizeHeight: BITMAP_SIZE,
+        resizeQuality: "pixelated"
+      });
+    } catch {
+      return [];
+    }
+    const result = readBitmapPixels(bitmap);
+    bitmap.close();
+    if (!result)
+      return [];
+    const { data, width, height } = result;
+    let colors = quantizePixels(data, width, height, false);
+    if (colors.length < 2) {
+      colors = quantizePixels(data, width, height, true);
+    }
+    return colors;
+  }
+  var BITMAP_SIZE, QUANTIZE_BITS, RESULT_COUNT, MIN_SATURATION, MIN_LIGHTNESS, MAX_LIGHTNESS, ArtworkColors_default;
+  var init_ArtworkColors = __esm({
+    "src/utils/ArtworkColors.ts"() {
+      BITMAP_SIZE = 40;
+      QUANTIZE_BITS = 5;
+      RESULT_COUNT = 5;
+      MIN_SATURATION = 30;
+      MIN_LIGHTNESS = 35;
+      MAX_LIGHTNESS = 235;
+      ArtworkColors_default = extractArtworkColors;
+    }
+  });
+
   // src/components/PlaybarLyrics/PlaybarLyrics.ts
   var PlaybarLyrics_exports = {};
   __export(PlaybarLyrics_exports, {
     InitializePlaybarLyrics: () => InitializePlaybarLyrics,
     default: () => PlaybarLyrics_default
   });
+  function hexLuminance(hex) {
+    const clean = hex.replace("#", "");
+    const r = parseInt(clean.substring(0, 2), 16);
+    const g = parseInt(clean.substring(2, 4), 16);
+    const b = parseInt(clean.substring(4, 6), 16);
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+  function liftToLuminance(hex, minLum) {
+    if (hexLuminance(hex) >= minLum)
+      return hex;
+    const clean = hex.replace("#", "");
+    let r = parseInt(clean.substring(0, 2), 16);
+    let g = parseInt(clean.substring(2, 4), 16);
+    let b = parseInt(clean.substring(4, 6), 16);
+    const steps = 8;
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps;
+      const nr = Math.round(r + (255 - r) * t);
+      const ng = Math.round(g + (255 - g) * t);
+      const nb = Math.round(b + (255 - b) * t);
+      if (hexLuminance(`#${nr.toString(16).padStart(2, "0")}${ng.toString(16).padStart(2, "0")}${nb.toString(16).padStart(2, "0")}`) >= minLum) {
+        r = nr;
+        g = ng;
+        b = nb;
+        break;
+      }
+    }
+    const toHex = (c) => Math.round(c).toString(16).padStart(2, "0");
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  }
   function isEnabled() {
     return storage_default.get("enable_playbar_lyrics") !== "false";
   }
@@ -31729,8 +31881,13 @@ ${JSON.stringify(lyricsOnly)}`
     lastText = "";
     cachedLines = null;
     cachedLinesRaw = null;
-    if (lyricsElement)
+    currentColors = [];
+    lastArtworkUrl = "";
+    if (lyricsElement) {
       lyricsElement.innerHTML = "";
+      applyArtworkColors([]);
+    }
+    refreshArtworkColors();
   }
   function setLyricsText(html) {
     if (!lyricsElement)
@@ -31751,6 +31908,46 @@ ${JSON.stringify(lyricsOnly)}`
         { duration: 300, easing: "ease-in-out" }
       );
     }
+  }
+  function applyArtworkColors(colors) {
+    if (!lyricsElement)
+      return;
+    if (!colors.length) {
+      lyricsElement.style.removeProperty("--color-1");
+      lyricsElement.style.removeProperty("--color-2");
+      lyricsElement.style.removeProperty("--color-3");
+      lyricsElement.style.removeProperty("--color-4");
+      lyricsElement.style.removeProperty("--color-5");
+      return;
+    }
+    const boosted = colors.map((c) => liftToLuminance(c, MIN_TEXT_COLOR_LUMINANCE));
+    const padded = [...boosted];
+    while (padded.length < 5) {
+      padded.push(padded[padded.length % padded.length]);
+    }
+    lyricsElement.style.setProperty("--color-1", padded[0]);
+    lyricsElement.style.setProperty("--color-2", padded[1]);
+    lyricsElement.style.setProperty("--color-3", padded[2]);
+    lyricsElement.style.setProperty("--color-4", padded[3]);
+    lyricsElement.style.setProperty("--color-5", padded[4]);
+  }
+  async function refreshArtworkColors() {
+    let artworkUrl = await SpotifyPlayer.Artwork.Get("d");
+    if (!artworkUrl) {
+      applyArtworkColors([]);
+      return;
+    }
+    if (artworkUrl.startsWith("spotify:image:")) {
+      const imageId = artworkUrl.replace("spotify:image:", "");
+      artworkUrl = `https://i.scdn.co/image/${imageId}`;
+    }
+    if (artworkUrl === lastArtworkUrl && currentColors.length > 0) {
+      return;
+    }
+    lastArtworkUrl = artworkUrl;
+    const colors = await ArtworkColors_default(artworkUrl);
+    currentColors = colors;
+    applyArtworkColors(colors);
   }
   function update() {
     if (!lyricsElement || !lyricsElement.isConnected || !centerWrapper || !centerWrapper.isConnected) {
@@ -31839,6 +32036,7 @@ ${JSON.stringify(lyricsOnly)}`
       if (seek)
         resizeObserver.observe(seek);
     }
+    refreshArtworkColors();
   }
   function InitializePlaybarLyrics() {
     Whentil_default.When(
@@ -31852,7 +32050,7 @@ ${JSON.stringify(lyricsOnly)}`
       }
     );
   }
-  var POSITION_OFFSET, UPDATE_INTERVAL, lyricsElement, centerWrapper, intervalManager, resizeObserver, lastText, cachedLines, cachedLinesRaw, PlaybarLyrics_default;
+  var POSITION_OFFSET, UPDATE_INTERVAL, lyricsElement, centerWrapper, intervalManager, resizeObserver, lastText, cachedLines, cachedLinesRaw, currentColors, lastArtworkUrl, MIN_TEXT_COLOR_LUMINANCE, PlaybarLyrics_default;
   var init_PlaybarLyrics = __esm({
     "src/components/PlaybarLyrics/PlaybarLyrics.ts"() {
       init_storage();
@@ -31861,6 +32059,7 @@ ${JSON.stringify(lyricsOnly)}`
       init_processing();
       init_conversion();
       init_Whentil();
+      init_ArtworkColors();
       POSITION_OFFSET = 600;
       UPDATE_INTERVAL = 0.15;
       lyricsElement = null;
@@ -31870,6 +32069,9 @@ ${JSON.stringify(lyricsOnly)}`
       lastText = "";
       cachedLines = null;
       cachedLinesRaw = null;
+      currentColors = [];
+      lastArtworkUrl = "";
+      MIN_TEXT_COLOR_LUMINANCE = 140;
       PlaybarLyrics_default = InitializePlaybarLyrics;
     }
   });
@@ -32884,7 +33086,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8064-YENPxBj1POU2/19f58abf6099/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18988-4JjD1iuyYvvh/19f5e34868a9/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -32910,7 +33112,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8064-YENPxBj1POU2/19f58abf60ca/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18988-4JjD1iuyYvvh/19f5e34868da/ProcessingIndicator.css */
 #SpicyLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -32990,7 +33192,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8064-YENPxBj1POU2/19f58abf59b0/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18988-4JjD1iuyYvvh/19f5e3486260/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -33139,7 +33341,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8064-YENPxBj1POU2/19f58abf5c51/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18988-4JjD1iuyYvvh/19f5e3486501/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -33347,7 +33549,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8064-YENPxBj1POU2/19f58abf5cc2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18988-4JjD1iuyYvvh/19f5e3486572/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -33949,7 +34151,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8064-YENPxBj1POU2/19f58abf5db3/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18988-4JjD1iuyYvvh/19f5e3486643/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -34124,7 +34326,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8064-YENPxBj1POU2/19f58abf5e04/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18988-4JjD1iuyYvvh/19f5e34866a4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -34401,7 +34603,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8064-YENPxBj1POU2/19f58abf5e75/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18988-4JjD1iuyYvvh/19f5e3486725/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -34696,7 +34898,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8064-YENPxBj1POU2/19f58abf5ee6/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18988-4JjD1iuyYvvh/19f5e3486786/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -34718,7 +34920,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8064-YENPxBj1POU2/19f58abf5f17/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18988-4JjD1iuyYvvh/19f5e34867b7/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -34745,11 +34947,16 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-8064-YENPxBj1POU2/19f58abf5f48/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18988-4JjD1iuyYvvh/19f5e34867e8/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
 .amai-playbar-lyrics {
+  --color-1: #1ed760;
+  --color-2: #1db954;
+  --color-3: #169c46;
+  --color-4: #1ed760;
+  --color-5: #1db954;
   position: absolute;
   transform: translate(-50%, -50%);
   max-width: 60%;
@@ -34757,7 +34964,6 @@ ruby > rt {
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.2s ease;
-  color: var(--text-base, #ffffff);
   font-size: 18px;
   line-height: 1.3;
   padding-block: 0.12em;
@@ -34767,7 +34973,10 @@ ruby > rt {
     "Noto Sans Display",
     sans-serif;
   z-index: 2;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  text-shadow:
+    0 0 12px rgba(0, 0, 0, 0.55),
+    0 0 24px rgba(0, 0, 0, 0.25),
+    0 0 4px rgba(255, 255, 255, 0.12);
 }
 .amai-playbar-lyrics-inner {
   display: inline-block;
@@ -34775,6 +34984,21 @@ ruby > rt {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  background-image: linear-gradient(90deg, var(--color-1) 0%, var(--color-2) 20%, var(--color-3) 40%, var(--color-4) 60%, var(--color-5) 80%, var(--color-1) 100%);
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: playbar-lyrics-color-shift 12s linear infinite;
+}
+@keyframes playbar-lyrics-color-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
 }
 .amai-playbar-lyrics ruby {
   ruby-position: over;
