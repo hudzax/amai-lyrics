@@ -4,6 +4,7 @@ import { SpotifyPlayer } from '../Global/SpotifyPlayer';
 import { processPhoneticText } from '../../utils/Lyrics/processing';
 import { convertLyrics } from '../../utils/Lyrics/conversion';
 import Whentil from '../../utils/Whentil';
+import extractArtworkColors from '../../utils/ArtworkColors';
 
 /**
  * Shows the currently active lyric line inside Spotify's native bottom playbar,
@@ -30,6 +31,58 @@ let lastText = '';
 // Cache the parsed line list so we don't JSON.parse the full lyrics blob every tick
 let cachedLines: LineEntry[] | null = null;
 let cachedLinesRaw: string | null = null;
+
+// ---- Artwork color animation state ----
+let currentColors: string[] = [];
+let lastArtworkUrl = '';
+const COLOR_ANIM_DURATION = 12; // seconds, must match CSS `animation-duration`
+
+// Minimum perceived brightness (0-255) for artwork colours used in text.
+// Colours darker than this get lightened so the lyrics stay readable against
+// Spotify's dark playbar background.
+const MIN_TEXT_COLOR_LUMINANCE = 140;
+
+/**
+ * Perceived sRGB luminance of a hex colour (0-255 scale).
+ */
+function hexLuminance(hex: string): number {
+  const clean = hex.replace('#', '');
+  const r = parseInt(clean.substring(0, 2), 16);
+  const g = parseInt(clean.substring(2, 4), 16);
+  const b = parseInt(clean.substring(4, 6), 16);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/**
+ * Lightens a hex colour by mixing it with white until its perceived luminance
+ * reaches `minLum`.  Returns the adjusted hex string.
+ */
+function liftToLuminance(hex: string, minLum: number): string {
+  if (hexLuminance(hex) >= minLum) return hex;
+
+  const clean = hex.replace('#', '');
+  let r = parseInt(clean.substring(0, 2), 16);
+  let g = parseInt(clean.substring(2, 4), 16);
+  let b = parseInt(clean.substring(4, 6), 16);
+
+  // Linearly interpolate toward white (255,255,255) until luminance is adequate
+  const steps = 8;
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps;
+    const nr = Math.round(r + (255 - r) * t);
+    const ng = Math.round(g + (255 - g) * t);
+    const nb = Math.round(b + (255 - b) * t);
+    if (hexLuminance(`#${nr.toString(16).padStart(2, '0')}${ng.toString(16).padStart(2, '0')}${nb.toString(16).padStart(2, '0')}`) >= minLum) {
+      r = nr;
+      g = ng;
+      b = nb;
+      break;
+    }
+  }
+
+  const toHex = (c: number) => Math.round(c).toString(16).padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
 
 function isEnabled(): boolean {
   return storage.get('enable_playbar_lyrics') !== 'false';
@@ -100,7 +153,14 @@ function onSongChange(): void {
   lastText = '';
   cachedLines = null;
   cachedLinesRaw = null;
-  if (lyricsElement) lyricsElement.innerHTML = '';
+  currentColors = [];
+  lastArtworkUrl = '';
+  if (lyricsElement) {
+    lyricsElement.innerHTML = '';
+    applyArtworkColors([]);
+  }
+  // Start extracting colors from the new artwork
+  refreshArtworkColors();
 }
 
 /**
@@ -129,6 +189,67 @@ function setLyricsText(html: string): void {
       { duration: 300, easing: 'ease-in-out' },
     );
   }
+}
+
+/**
+ * Applies artwork-derived colors as CSS custom properties on the lyrics
+ * element so the CSS animation can use them for a shifting text gradient.
+ */
+function applyArtworkColors(colors: string[]): void {
+  if (!lyricsElement) return;
+
+  if (!colors.length) {
+    lyricsElement.style.removeProperty('--color-1');
+    lyricsElement.style.removeProperty('--color-2');
+    lyricsElement.style.removeProperty('--color-3');
+    lyricsElement.style.removeProperty('--color-4');
+    lyricsElement.style.removeProperty('--color-5');
+    return;
+  }
+
+  // Boost dim colours so text stays readable against the dark playbar.
+  // This preserves hue/saturation character while guaranteeing legibility.
+  const boosted = colors.map((c) => liftToLuminance(c, MIN_TEXT_COLOR_LUMINANCE));
+
+  // Pad with repeats if fewer than 5 colours were extracted
+  const padded = [...boosted];
+  while (padded.length < 5) {
+    padded.push(padded[padded.length % padded.length]);
+  }
+
+  lyricsElement.style.setProperty('--color-1', padded[0]);
+  lyricsElement.style.setProperty('--color-2', padded[1]);
+  lyricsElement.style.setProperty('--color-3', padded[2]);
+  lyricsElement.style.setProperty('--color-4', padded[3]);
+  lyricsElement.style.setProperty('--color-5', padded[4]);
+}
+
+/**
+ * Extracts colors from the current artwork URL and applies them.
+ *
+ * Uses the same artwork-resolving logic as ApplyDynamicBackground so we
+ * get a real HTTP URL (not a spotify:image: URI) that can be loaded onto
+ * a canvas for pixel sampling.
+ */
+async function refreshArtworkColors(): Promise<void> {
+  // Resolve artwork URL the same way the dynamic background does
+  let artworkUrl = await SpotifyPlayer.Artwork.Get('d');
+  if (!artworkUrl) {
+    applyArtworkColors([]);
+    return;
+  }
+  if (artworkUrl.startsWith('spotify:image:')) {
+    const imageId = artworkUrl.replace('spotify:image:', '');
+    artworkUrl = `https://i.scdn.co/image/${imageId}`;
+  }
+  if (artworkUrl === lastArtworkUrl && currentColors.length > 0) {
+    return; // already up-to-date
+  }
+  lastArtworkUrl = artworkUrl;
+
+  const colors = await extractArtworkColors(artworkUrl);
+  currentColors = colors;
+  applyArtworkColors(colors);
 }
 
 function update(): void {
@@ -232,6 +353,9 @@ function inject(): void {
     const seek = wrapper.querySelector<HTMLElement>('.playback-bar');
     if (seek) resizeObserver.observe(seek);
   }
+
+  // Fetch and apply artwork colors for the initial track
+  refreshArtworkColors();
 }
 
 function cleanup(): void {
