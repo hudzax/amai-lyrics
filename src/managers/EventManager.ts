@@ -3,9 +3,44 @@ import { IntervalManager } from '../utils/IntervalManager';
 import Global from '../components/Global/Global';
 import Session from '../components/Global/Session';
 import Whentil from '../utils/Whentil';
+import lifecycle from '../utils/lifecycle';
 
 export class EventManager {
   private static button: Spicetify.Playbar.Button;
+
+  // Stored handler references so they can be removed on teardown.
+  private static onPlayPause = (e: { data?: { isPaused?: boolean } }) => {
+    SpotifyPlayer.IsPlaying = !e?.data?.isPaused;
+    Global.Event.evoke('playback:playpause', e);
+  };
+
+  private static onProgress = (e: unknown) => {
+    Global.Event.evoke('playback:progress', e);
+  };
+
+  private static onSongChange = (e: unknown) => {
+    Global.Event.evoke('playback:songchange', e);
+    EventManager.updatePlayerStatesOnSongChange();
+  };
+
+  private static onRepeatModeChanged = () => {
+    const LoopState = Spicetify.Player.getRepeat();
+    const LoopType = LoopState === 1 ? 'context' : LoopState === 2 ? 'track' : 'none';
+    if (SpotifyPlayer.LoopType !== LoopType) {
+      SpotifyPlayer.LoopType = LoopType;
+      Global.Event.evoke('playback:loop', LoopType);
+    }
+  };
+
+  private static onShuffleChanged = () => {
+    const shuffleState = Spicetify.Player.origin._state.shuffle;
+    const smartShuffleState = Spicetify.Player.origin._state.smartShuffle;
+    const ShuffleType = smartShuffleState ? 'smart' : shuffleState ? 'normal' : 'none';
+    if (SpotifyPlayer.ShuffleType !== ShuffleType) {
+      SpotifyPlayer.ShuffleType = ShuffleType;
+      Global.Event.evoke('playback:shuffle', ShuffleType);
+    }
+  };
 
   public static initialize(button: Spicetify.Playbar.Button) {
     this.button = button;
@@ -26,56 +61,29 @@ export class EventManager {
     SpotifyPlayer.ShuffleType = initialSmartShuffleState
       ? 'smart'
       : initialShuffleState
-      ? 'normal'
-      : 'none';
+        ? 'normal'
+        : 'none';
     Global.Event.evoke('playback:shuffle', SpotifyPlayer.ShuffleType);
 
     // Position tracking
     let lastPosition = 0;
-    new IntervalManager(0.5, () => {
+    const positionInterval = new IntervalManager(0.5, () => {
       const pos = SpotifyPlayer.GetTrackPosition();
       if (pos !== lastPosition) {
         Global.Event.evoke('playback:position', pos);
       }
       lastPosition = pos;
-    }).Start();
+    });
+    positionInterval.Start();
+    lifecycle.trackInterval(positionInterval);
   }
 
   private static setupPlayerEvents() {
-    // Play/pause events
-    Spicetify.Player.addEventListener('onplaypause', (e) => {
-      SpotifyPlayer.IsPlaying = !e?.data?.isPaused;
-      Global.Event.evoke('playback:playpause', e);
-    });
-
-    Spicetify.Player.addEventListener('onprogress', (e) =>
-      Global.Event.evoke('playback:progress', e),
-    );
-
-    Spicetify.Player.addEventListener('songchange', (e) => {
-      Global.Event.evoke('playback:songchange', e);
-      this.updatePlayerStatesOnSongChange();
-    });
-
-    // Repeat and shuffle event listeners
-    Spicetify.Player.addEventListener('repeat_mode_changed', () => {
-      const LoopState = Spicetify.Player.getRepeat();
-      const LoopType = LoopState === 1 ? 'context' : LoopState === 2 ? 'track' : 'none';
-      if (SpotifyPlayer.LoopType !== LoopType) {
-        SpotifyPlayer.LoopType = LoopType;
-        Global.Event.evoke('playback:loop', LoopType);
-      }
-    });
-
-    Spicetify.Player.addEventListener('shuffle_changed', () => {
-      const shuffleState = Spicetify.Player.origin._state.shuffle;
-      const smartShuffleState = Spicetify.Player.origin._state.smartShuffle;
-      const ShuffleType = smartShuffleState ? 'smart' : shuffleState ? 'normal' : 'none';
-      if (SpotifyPlayer.ShuffleType !== ShuffleType) {
-        SpotifyPlayer.ShuffleType = ShuffleType;
-        Global.Event.evoke('playback:shuffle', ShuffleType);
-      }
-    });
+    lifecycle.trackPlayerEvent('onplaypause', EventManager.onPlayPause);
+    lifecycle.trackPlayerEvent('onprogress', EventManager.onProgress);
+    lifecycle.trackPlayerEvent('songchange', EventManager.onSongChange);
+    lifecycle.trackPlayerEvent('repeat_mode_changed', EventManager.onRepeatModeChanged);
+    lifecycle.trackPlayerEvent('shuffle_changed', EventManager.onShuffleChanged);
   }
 
   private static updatePlayerStatesOnSongChange() {
@@ -93,8 +101,8 @@ export class EventManager {
     const newShuffleType = currentSmartShuffleState
       ? 'smart'
       : currentShuffleState
-      ? 'normal'
-      : 'none';
+        ? 'normal'
+        : 'none';
     if (SpotifyPlayer.ShuffleType !== newShuffleType) {
       SpotifyPlayer.ShuffleType = newShuffleType;
       Global.Event.evoke('playback:shuffle', newShuffleType);
@@ -102,7 +110,7 @@ export class EventManager {
   }
 
   private static setupNavigationEvents() {
-    Whentil.When(
+    const pageContainerWhen = Whentil.When(
       () =>
         document.querySelector(
           '.Root__main-view .main-view-container div[data-overlayscrollbars-viewport]',
@@ -116,8 +124,10 @@ export class EventManager {
         );
       },
     );
+    lifecycle.trackWhentil(pageContainerWhen);
 
-    Spicetify.Platform.History.listen(Session.RecordNavigation);
+    const unsubscribe = Spicetify.Platform.History.listen(Session.RecordNavigation);
+    lifecycle.trackHistory(unsubscribe);
     Session.RecordNavigation(Spicetify.Platform.History.location);
   }
 }

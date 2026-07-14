@@ -15,6 +15,7 @@ import { PageManager } from './managers/PageManager';
 import { SongChangeManager } from './managers/SongChangeManager';
 import { NowPlayingBarBackground } from './components/DynamicBG/NowPlayingBarBackground';
 import { installBlankToastSuppressor } from './utils/suppressBlankToasts';
+import lifecycle from './utils/lifecycle';
 
 // Constants
 import { INTERVALS } from './constants/intervals';
@@ -53,15 +54,17 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
   new PageManager(buttonManager); // Used for side effects (navigation setup)
 
   // Set up dynamic background updates
-  new IntervalManager(INTERVALS.DYNAMIC_BG_UPDATE, () => {
+  const dynamicBgInterval = new IntervalManager(INTERVALS.DYNAMIC_BG_UPDATE, () => {
     const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
     backgroundManager.apply(coverUrl);
-  }).Start();
+  });
+  dynamicBgInterval.Start();
+  lifecycle.trackInterval(dynamicBgInterval);
 
   // Set up song change listener
-  Spicetify.Player.addEventListener('songchange', (event) => {
-    songChangeManager.handleSongChange(event);
-  });
+  lifecycle.trackPlayerEvent('songchange', (event) =>
+    songChangeManager.handleSongChange(event as never),
+  );
 
   // Initialize with current song if available
   const currentUri = Spicetify.Player.data?.item?.uri;
@@ -72,7 +75,7 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
   }
 
   // Handle online/offline events
-  window.addEventListener('online', async () => {
+  const onOnline = async () => {
     storage.set('lastFetchedUri', null);
     const currentUri = Spicetify.Player.data?.item?.uri;
     if (currentUri) {
@@ -80,10 +83,15 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
       const { default: ApplyLyrics } = await import('./utils/Lyrics/Global/Applyer');
       fetchLyrics(currentUri).then(ApplyLyrics);
     }
-  });
+  };
+  lifecycle.trackWindow('online', onOnline as never);
 
   // Set up scrolling
-  new IntervalManager(ScrollingIntervalTime, () => ScrollToActiveLine(ScrollSimplebar)).Start();
+  const scrollingInterval = new IntervalManager(ScrollingIntervalTime, () =>
+    ScrollToActiveLine(ScrollSimplebar),
+  );
+  scrollingInterval.Start();
+  lifecycle.trackInterval(scrollingInterval);
 
   // Initialize player state and events
   SpotifyPlayer.IsPlaying = IsPlaying();
@@ -95,14 +103,30 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
 }
 
 async function main() {
+  // Tear down any previous instance before re-initializing (spicetify-watch /
+  // Reload UI re-injects the script and re-runs main from a fresh module).
+  const previousTeardown = (
+    window as unknown as { __amaiLyricsTeardown?: () => void }
+  ).__amaiLyricsTeardown;
+  if (typeof previousTeardown === 'function') {
+    try {
+      previousTeardown();
+    } catch (error) {
+      console.error('[Amai Lyrics] Error tearing down previous instance:', error);
+    }
+  }
+
   installBlankToastSuppressor();
 
   await AppInitializer.initializeCore();
 
   const buttonManager = setupUI();
+  lifecycle.trackCallback(() => buttonManager.dispose());
   await initializeAmaiLyrics(buttonManager);
 
   AppInitializer.setupPostLoadOptimizations();
+
+  lifecycle.registerGlobalTeardown();
 }
 
 export default main;

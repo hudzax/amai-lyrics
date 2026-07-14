@@ -4,6 +4,7 @@ import { SpotifyPlayer } from '../Global/SpotifyPlayer';
 import { processPhoneticText } from '../../utils/Lyrics/processing';
 import { convertLyrics } from '../../utils/Lyrics/conversion';
 import Whentil from '../../utils/Whentil';
+import lifecycle from '../../utils/lifecycle';
 import extractArtworkColors from '../../utils/ArtworkColors';
 
 /**
@@ -27,6 +28,9 @@ let centerWrapper: HTMLElement | null = null;
 let intervalManager: IntervalManager | null = null;
 let resizeObserver: ResizeObserver | null = null;
 let lastText = '';
+
+// Handle for the pending "wait for playbar" poll so it can be cancelled on teardown.
+let initWhen: ReturnType<typeof Whentil.When> | null = null;
 
 // Cache the parsed line list so we don't JSON.parse the full lyrics blob every tick
 let cachedLines: LineEntry[] | null = null;
@@ -379,7 +383,7 @@ function cleanup(): void {
  * Initializes the playbar lyrics overlay once the native playbar exists.
  */
 export function InitializePlaybarLyrics(): void {
-  Whentil.When(
+  initWhen = Whentil.When(
     () => document.querySelector('.Root__now-playing-bar .player-controls'),
     () => {
       window.addEventListener('resize', positionLyrics);
@@ -390,6 +394,11 @@ export function InitializePlaybarLyrics(): void {
       intervalManager.Start();
     },
   );
+
+  // Register teardown so re-init stops the loop, removes listeners, and
+  // disconnects the observer instead of leaving them running forever.
+  lifecycle.trackCallback(cleanup);
+  lifecycle.trackWhentil(initWhen);
 }
 
 export default InitializePlaybarLyrics;

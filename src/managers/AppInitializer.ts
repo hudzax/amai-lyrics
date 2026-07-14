@@ -1,11 +1,16 @@
 import { setSettingsMenu } from '../utils/settings';
 import Platform from '../components/Global/Platform';
 import { lyricsCache } from '../utils/Lyrics/cache';
+import lifecycle from '../utils/lifecycle';
 
 export class AppInitializer {
   public static async initializeCore() {
-    // Clear lyrics cache on startup
-    lyricsCache.destroy();
+    // Clear lyrics cache on first startup only (a re-init must not wipe it).
+    const windowRef = window as unknown as { __amaiCoreInitialized?: boolean };
+    if (!windowRef.__amaiCoreInitialized) {
+      lyricsCache.destroy();
+      windowRef.__amaiCoreInitialized = true;
+    }
 
     await this.injectGoogleFonts();
     await this.initializePlatformAndSettings();
@@ -31,7 +36,7 @@ export class AppInitializer {
 
   public static setupPostLoadOptimizations() {
     // Mark dynamic backgrounds as loaded after the page has fully loaded
-    window.addEventListener('load', () => {
+    const onLoad = () => {
       if (window.requestIdleCallback) {
         requestIdleCallback(
           () => {
@@ -48,7 +53,8 @@ export class AppInitializer {
           });
         }, 1000);
       }
-    });
+    };
+    lifecycle.trackWindow('load', onLoad);
   }
 
   public static setupSkeletonStyles() {

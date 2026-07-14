@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
+import lifecycle from "../../utils/lifecycle";
 import {
   ISettingsField,
   ISettingsFieldButton,
@@ -39,6 +40,7 @@ class SettingsSection {
         this.render();
       }
     });
+    lifecycle.trackHistory(this.stopHistoryListener);
 
     if (Spicetify.Platform.History.location.pathname === "/preferences") {
       await this.render();

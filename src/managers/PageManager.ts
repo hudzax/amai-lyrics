@@ -1,5 +1,6 @@
 import Global from '../components/Global/Global';
 import { ButtonManager } from './ButtonManager';
+import lifecycle from '../utils/lifecycle';
 
 export class PageManager {
   private buttonManager: ButtonManager;
@@ -11,15 +12,17 @@ export class PageManager {
   }
 
   private setupPageNavigation() {
-    Spicetify.Platform.History.listen((location: { pathname: string }) => {
+    const unsubscribe = Spicetify.Platform.History.listen((location: { pathname: string }) => {
       this.loadPage(location);
     });
+    lifecycle.trackHistory(unsubscribe);
 
     if (Spicetify.Platform.History.location.pathname === '/AmaiLyrics') {
-      Global.Event.listen('pagecontainer:available', () => {
+      const id = Global.Event.listen('pagecontainer:available', () => {
         this.loadPage(Spicetify.Platform.History.location);
         this.buttonManager.setActive(true);
       });
+      lifecycle.trackGlobalEvent(id);
     }
   }
 

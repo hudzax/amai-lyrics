@@ -1,6 +1,7 @@
 import { Icons } from '../components/Styling/Icons';
 import Session from '../components/Global/Session';
 import Whentil from '../utils/Whentil';
+import lifecycle from '../utils/lifecycle';
 
 export class ButtonManager {
   private button: Spicetify.Playbar.Button;
@@ -32,10 +33,20 @@ export class ButtonManager {
 
   private setupEventListeners() {
     // Set up listener to automatically update button registration when track type changes
-    Whentil.When(
+    const when = Whentil.When(
       () => Spicetify.Player.data.item?.type,
       () => this.updateRegistration(),
     );
+    lifecycle.trackWhentil(when);
+  }
+
+  /** Remove the playbar button and release its subscription on teardown. */
+  public dispose() {
+    try {
+      this.button.deregister();
+    } catch {
+      /* button may already be gone */
+    }
   }
 
   public updateRegistration() {
