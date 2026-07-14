@@ -5,8 +5,7 @@ export function md5(input: string): string {
 }
 
 export function spotifyHex(base62: string): string {
-  const base62chars =
-    '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const base62chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
   let num = BigInt(0);
   for (const char of base62) {
     const index = base62chars.indexOf(char);

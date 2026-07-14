@@ -28,7 +28,10 @@ const inFlight = new Map<string, Promise<LyricsData | string>>();
  * @param uri - Spotify track URI
  * @returns Processed lyrics data or error message
  */
-export default async function fetchLyrics(uri: string, flush = false): Promise<LyricsData | string> {
+export default async function fetchLyrics(
+  uri: string,
+  flush = false,
+): Promise<LyricsData | string> {
   resetLyricsUI();
   ClearLyricsPageContainer();
   document

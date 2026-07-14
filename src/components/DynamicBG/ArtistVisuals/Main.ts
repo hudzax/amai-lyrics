@@ -1,9 +1,9 @@
-import Cache from "./Cache";
-import ApplyContent from "./HeaderImage/Main";
+import Cache from './Cache';
+import ApplyContent from './HeaderImage/Main';
 
 const ArtistVisuals = {
-    Cache,
-    ApplyContent
-}
+  Cache,
+  ApplyContent,
+};
 
 export default ArtistVisuals;

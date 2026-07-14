@@ -8,7 +8,9 @@
     "build": "spicetify-creator",
     "build-local": "spicetify-creator --out=dist",
     "watch": "spicetify-creator --watch",
-    "spicetify-watch": "bash spicetify-watch.sh"
+    "spicetify-watch": "bash spicetify-watch.sh",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "license": "MIT",
   "devDependencies": {
@@ -19,7 +21,10 @@
     "@types/react-dom": "^18.3.1",
     "@types/spark-md5": "^3.0.5",
     "eslint": "^9.28.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.6",
     "globals": "^16.2.0",
+    "prettier": "^3.9.5",
     "spicetify-creator": "^1.0.17",
     "typescript-eslint": "^8.33.1"
   },

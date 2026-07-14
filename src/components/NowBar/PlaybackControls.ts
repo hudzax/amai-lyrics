@@ -94,10 +94,7 @@ function setupEventHandlers(element: HTMLElement): EventHandlerMap {
 /**
  * Sets up press/release handlers for visual feedback
  */
-function setupPressReleaseHandlers(
-  element: HTMLElement,
-  eventHandlers: EventHandlerMap,
-): void {
+function setupPressReleaseHandlers(element: HTMLElement, eventHandlers: EventHandlerMap): void {
   const playbackControls = element.querySelectorAll('.PlaybackControl');
 
   playbackControls.forEach((control) => {

@@ -51,9 +51,7 @@ export async function fetchLyricsFromAPI(
     // Log error with detailed information
     console.error(
       'Error fetching lyrics:',
-      error instanceof Error
-        ? { message: error.message, stack: error.stack }
-        : error,
+      error instanceof Error ? { message: error.message, stack: error.stack } : error,
     );
 
     ClearLyricsPageContainer();

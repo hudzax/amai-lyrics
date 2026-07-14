@@ -26,9 +26,7 @@ const Global = {
         // Ensure the current part is still an object
         if (typeof current[part] !== 'object' || Array.isArray(current[part])) {
           throw new TypeError(
-            `Cannot set nested property: ${keys
-              .slice(0, i + 1)
-              .join('.')} is not an object.`,
+            `Cannot set nested property: ${keys.slice(0, i + 1).join('.')} is not an object.`,
           );
         }
 

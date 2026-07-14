@@ -18,18 +18,10 @@ export const SetupSongProgressBar = (AppendQueue: HTMLElement[]): ComponentInsta
   }
 
   // Create the update function
-  const updateTimelineState = createUpdateFunction(
-    songProgressBar,
-    timelineElement,
-    sliderBar,
-  );
+  const updateTimelineState = createUpdateFunction(songProgressBar, timelineElement, sliderBar);
 
   // Set up click handler for seeking
-  const sliderBarHandler = createSliderClickHandler(
-    songProgressBar,
-    sliderBar,
-    timelineElement,
-  );
+  const sliderBarHandler = createSliderClickHandler(songProgressBar, sliderBar, timelineElement);
   sliderBar.addEventListener('click', sliderBarHandler);
 
   // Run initial update

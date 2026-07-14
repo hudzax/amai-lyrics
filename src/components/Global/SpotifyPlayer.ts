@@ -1,8 +1,6 @@
 import SpicyFetch from '../../utils/API/SpicyFetch';
 import { spotifyHex } from '../../utils/Hasher';
-import GetProgress, {
-  _DEPRECATED___GetProgress,
-} from '../../utils/Gets/GetProgress';
+import GetProgress, { _DEPRECATED___GetProgress } from '../../utils/Gets/GetProgress';
 
 type ArtworkSize = 's' | 'l' | 'xl' | 'd';
 
@@ -82,7 +80,7 @@ export const SpotifyPlayer = {
       }
 
       // Fall back to API call if metadata is not available
-      const psize = size === 'd' ? null : size?.toLowerCase() ?? null;
+      const psize = size === 'd' ? null : (size?.toLowerCase() ?? null);
       const Data = await SpotifyPlayer.Track.GetTrackInfo();
       const trackData = Data as {
         album?: {
@@ -90,9 +88,7 @@ export const SpotifyPlayer = {
         };
       };
       if (!trackData || !trackData.album?.cover_group?.image) return '';
-      const Images = SpotifyPlayer.Track.SortImages(
-        trackData.album.cover_group.image,
-      );
+      const Images = SpotifyPlayer.Track.SortImages(trackData.album.cover_group.image);
       switch (psize) {
         case 's':
           return Images.s[0] ? `spotify:image:${Images.s[0].file_id}` : '';

@@ -110,9 +110,8 @@ export async function processAndEnhanceLyrics(
     };
   }
 
-  const { lyricsJson: preparedLyricsJson, lyricsOnly } = await prepareLyricsForGemini(
-    initialLyricsData,
-  );
+  const { lyricsJson: preparedLyricsJson, lyricsOnly } =
+    await prepareLyricsForGemini(initialLyricsData);
 
   const { hasKanji, hasKorean } = detectLanguages(preparedLyricsJson);
 

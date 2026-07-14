@@ -35,9 +35,7 @@ export function applyStyles(
  * @param element - The HTML element to remove styles from
  * @returns Boolean indicating if styles were successfully removed
  */
-export function removeAllStyles(
-  element: HTMLElement | null | undefined,
-): boolean {
+export function removeAllStyles(element: HTMLElement | null | undefined): boolean {
   if (!element) {
     console.warn('Element not found for removing styles');
     return false;

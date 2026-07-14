@@ -24,8 +24,7 @@ interface RGB {
  * Converts an RGB value to a hex color string.
  */
 function rgbToHex({ r, g, b }: RGB): string {
-  const toHex = (c: number) =>
-    Math.round(c).toString(16).padStart(2, '0');
+  const toHex = (c: number) => Math.round(c).toString(16).padStart(2, '0');
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
@@ -123,7 +122,9 @@ function quantizePixels(
 /**
  * Reads pixel data from an ImageBitmap by drawing it onto a tiny canvas.
  */
-function readBitmapPixels(bitmap: ImageBitmap): { data: Uint8ClampedArray; width: number; height: number } | null {
+function readBitmapPixels(
+  bitmap: ImageBitmap,
+): { data: Uint8ClampedArray; width: number; height: number } | null {
   const canvas = document.createElement('canvas');
   canvas.width = bitmap.width;
   canvas.height = bitmap.height;

@@ -1,8 +1,4 @@
-import {
-  ArabicPersianRegex,
-  BOTTOM_ApplyLyricsSpacer,
-  TOP_ApplyLyricsSpacer,
-} from '../../Addons';
+import { ArabicPersianRegex, BOTTOM_ApplyLyricsSpacer, TOP_ApplyLyricsSpacer } from '../../Addons';
 import Defaults from '../../../components/Global/Defaults';
 import { applyStyles, removeAllStyles } from '../../CSS/Styles';
 import {
@@ -55,13 +51,13 @@ export function ApplyStaticLyrics(data) {
         );
       } else {
         line.Text = line.Text?.replace(
-          /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^\}]+)}/g,
+          /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^}]+)}/g,
           '<ruby>$1<rt>$2</rt></ruby>',
         );
       }
     } else {
       line.Text = line.Text?.replace(
-        /((?:\([0-9\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)(?:[a-zA-Z]*)[?.!,"']?){([^\}]+)}/g,
+        /((?:\([0-9\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)(?:[a-zA-Z]*)[?.!,"']?){([^}]+)}/g,
         '<ruby class="romaja">$1<rt>$2</rt></ruby>',
       );
     }
@@ -71,10 +67,7 @@ export function ApplyStaticLyrics(data) {
 
     if (line.Text?.includes('[DEF=font_size:small]')) {
       lineElem.style.fontSize = '35px';
-      mainTextContainer.innerHTML = line.Text.replace(
-        '[DEF=font_size:small]',
-        '',
-      );
+      mainTextContainer.innerHTML = line.Text.replace('[DEF=font_size:small]', '');
     } else {
       mainTextContainer.innerHTML = line.Text;
     }

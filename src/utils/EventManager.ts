@@ -18,15 +18,9 @@ windowRef.__amaiEventRegistry = eventRegistry;
 
 let nextId: number = windowRef.__amaiEventNextId ?? 1;
 
-const listen = (
-  eventName: string,
-  callback: (...args: unknown[]) => void,
-): number => {
+const listen = (eventName: string, callback: (...args: unknown[]) => void): number => {
   if (!eventRegistry.has(eventName)) {
-    eventRegistry.set(
-      eventName,
-      new Map<number, (...args: unknown[]) => void>(),
-    );
+    eventRegistry.set(eventName, new Map<number, (...args: unknown[]) => void>());
   }
 
   const id = nextId++;

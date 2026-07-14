@@ -2,9 +2,7 @@ export function ApplyInfo(data: { Info?: string; InfoDuration?: number }) {
   const DEFAULT_WPM = 200;
   const DEFAULT_DURATION = 8000; // 8 seconds fallback
 
-  const TopBarContainer = document.querySelector(
-    'header.main-topBar-container',
-  );
+  const TopBarContainer = document.querySelector('header.main-topBar-container');
   if (!data?.Info || !TopBarContainer) return;
 
   // Remove existing info elements to avoid duplicates

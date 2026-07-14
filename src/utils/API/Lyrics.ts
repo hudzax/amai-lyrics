@@ -91,7 +91,7 @@ async function fetchUserData(): Promise<UserData> {
 async function fetchLyricsData(
   id: string,
   userData: UserData,
-  trackDetails: any,
+  trackDetails: Record<string, unknown>,
   headers: Record<string, string>,
   flush = false,
 ): Promise<{ data: LyricsResult; status: number }> {

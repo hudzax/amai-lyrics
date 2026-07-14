@@ -66,9 +66,8 @@ export class SongChangeManager {
       PageView.UpdatePageContent();
 
       // Apply dynamic background
-      const { default: ApplyDynamicBackground } = await import(
-        '../components/DynamicBG/dynamicBackground'
-      );
+      const { default: ApplyDynamicBackground } =
+        await import('../components/DynamicBG/dynamicBackground');
       ApplyDynamicBackground(document.querySelector('#SpicyLyricsPage .ContentBox'));
     }
   }
