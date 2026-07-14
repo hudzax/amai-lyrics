@@ -2,7 +2,6 @@
  * UI-related functions for Amai Lyrics
  */
 
-import storage from '../storage';
 import Defaults from '../../components/Global/Defaults';
 import { OpenNowBar, DeregisterNowBarBtn } from '../../components/Utils/NowBar';
 import PageView from '../../components/Pages/PageView';
@@ -35,7 +34,6 @@ export function resetLyricsUI(): void {
  */
 export async function noLyricsMessage(trackId?: string): Promise<string> {
   try {
-    storage.set('currentlyFetching', 'false');
     if (Spicetify.Player.data.item.uri?.split(':')[2] === trackId) {
       HideLoaderContainer();
       Defaults.CurrentLyricsType = 'None';
@@ -52,7 +50,6 @@ export async function noLyricsMessage(trackId?: string): Promise<string> {
     }
   } catch (error) {
     console.error('Amai Lyrics: Error showing no lyrics message', error);
-    storage.set('currentlyFetching', 'false');
   }
 
   return '1';

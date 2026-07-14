@@ -2,7 +2,6 @@ import sleep from '../utils/sleep';
 import { ButtonManager } from './ButtonManager';
 import { NowPlayingBarBackground } from '../components/DynamicBG/NowPlayingBarBackground';
 import { EnsureProcessingIndicatorHidden } from '../utils/Lyrics/ui';
-import storage from '../utils/storage';
 
 export class SongChangeManager {
   private buttonManager: ButtonManager;
@@ -34,16 +33,10 @@ export class SongChangeManager {
     // Hide processing indicator when song changes to prevent stuck indicators
     EnsureProcessingIndicatorHidden();
 
-    // Clear the global "currently fetching" flag so a rapid sequence of skips
-    // doesn't leave the final track un-fetched. Each song change triggers a
-    // real fetch for the current track; stale results are discarded by their
-    // own track-id guard inside processAndEnhanceLyrics. Without this, the
-    // inflight fetch for an earlier (skipped) track would block every
-    // subsequent fetch until it resolved, leaving the playbar lyrics empty
-    // until the lyrics page was opened.
-    storage.set('currentlyFetching', 'false');
-
-    // Fetch and apply lyrics on song change (already non-blocking)
+    // Fetch and apply lyrics on song change. Fetches are now per-track and run
+    // concurrently, so a slow fetch for a skipped song never blocks the lyrics
+    // of the song the user lands on. Stale results are discarded by the
+    // `latestUri` guard below and by the track-id checks inside processing.
     const { default: fetchLyrics } = await import('../utils/Lyrics/fetchLyrics');
     const { default: ApplyLyrics } = await import('../utils/Lyrics/Global/Applyer');
     fetchLyrics(currentUri).then((lyrics) => {

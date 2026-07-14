@@ -2,8 +2,8 @@
  * API functions for fetching lyrics from Spotify
  */
 
-import storage from '../storage';
 import Platform from '../../components/Global/Platform';
+import { SpotifyPlayer } from '../../components/Global/SpotifyPlayer';
 import { getLyrics, LyricsResult } from '../API/Lyrics';
 import { ClearLyricsPageContainer, noLyricsMessage } from './ui';
 import { processAndEnhanceLyrics, LyricsData } from './processing';
@@ -40,8 +40,13 @@ export async function fetchLyricsFromAPI(
       return await noLyricsMessage(trackId);
     }
 
+    // Cheaper short-circuit for skipped tracks: if the user has already moved
+    // off this track, skip the expensive Gemini enhancement (phonetics +
+    // translations). The basic lyrics are still cached so a re-seek is fast.
+    const isCurrent = SpotifyPlayer.GetSongId() === trackId;
+
     // Process and enhance lyrics
-    return await processAndEnhanceLyrics(trackId, lyricsJson);
+    return await processAndEnhanceLyrics(trackId, lyricsJson, isCurrent);
   } catch (error) {
     // Log error with detailed information
     console.error(
@@ -51,7 +56,6 @@ export async function fetchLyricsFromAPI(
         : error,
     );
 
-    storage.set('currentlyFetching', 'false');
     ClearLyricsPageContainer();
     return await noLyricsMessage();
   }
@@ -65,7 +69,6 @@ export async function fetchLyricsFromAPI(
  */
 export async function handleErrorStatus(status: number): Promise<string> {
   // Clear any loading state
-  storage.set('currentlyFetching', 'false');
   ClearLyricsPageContainer();
 
   // Log the error for diagnostics

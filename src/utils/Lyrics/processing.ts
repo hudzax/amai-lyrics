@@ -77,6 +77,7 @@ const LYRICS_TIMING_OFFSET = 0.55;
 export async function processAndEnhanceLyrics(
   trackId: string,
   lyricsJson: LyricsResult,
+  isCurrent = true,
 ): Promise<LyricsData> {
   const id = lyricsJson.id || trackId;
   const type = (lyricsJson.Type || 'Static') as LyricsData['Type'];
@@ -121,8 +122,6 @@ export async function processAndEnhanceLyrics(
   // Cache and display the initial lyrics
   await cacheLyrics(trackId, { ...lyricsToDisplay, id: id });
 
-  storage.set('currentlyFetching', 'false');
-
   if (Spicetify.Player.data.item.uri?.split(':')[2] === trackId) {
     Defaults.CurrentLyricsType = lyricsToDisplay.Type;
     storage.set('currentLyricsData', JSON.stringify(lyricsToDisplay));
@@ -130,11 +129,15 @@ export async function processAndEnhanceLyrics(
     ClearLyricsPageContainer();
   }
 
-  // STEP 2: Process phonetic and translations asynchronously
-  const phoneticLyricsJson: LyricsData = structuredClone(preparedLyricsJson);
+  // STEP 2: Process phonetic and translations asynchronously. Skip the
+  // (potentially slow, network-bound) Gemini enhancement when this track is no
+  // longer the one the user is on, so seeking past a song doesn't waste work.
+  if (isCurrent) {
+    const phoneticLyricsJson: LyricsData = structuredClone(preparedLyricsJson);
 
-  // Start async processing without blocking the initial display
-  processLyricsEnhancementsAsync(trackId, phoneticLyricsJson, hasKanji, hasKorean, lyricsOnly);
+    // Start async processing without blocking the initial display
+    processLyricsEnhancementsAsync(trackId, phoneticLyricsJson, hasKanji, hasKorean, lyricsOnly);
+  }
 
   // Return immediately with the basic lyrics
   return {
