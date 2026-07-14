@@ -1,11 +1,22 @@
 // eventManager.js
 
-const eventRegistry = new Map<
-  string,
-  Map<number, (...args: unknown[]) => void>
->();
+// The bus is persisted on `window` so it survives Spicetify script
+// re-injection (watch/reload). A fresh module evaluation would otherwise
+// create a new registry, leaving teardown's `unListen` targeting the wrong
+// (orphaned) bus. Backing it with `window` keeps a single shared bus whose
+// listeners are genuinely removed on teardown.
+type EventRegistry = Map<string, Map<number, (...args: unknown[]) => void>>;
 
-let nextId = 1;
+const windowRef = window as unknown as {
+  __amaiEventRegistry?: EventRegistry;
+  __amaiEventNextId?: number;
+};
+
+const eventRegistry: EventRegistry =
+  windowRef.__amaiEventRegistry ?? new Map<string, Map<number, (...args: unknown[]) => void>>();
+windowRef.__amaiEventRegistry = eventRegistry;
+
+let nextId: number = windowRef.__amaiEventNextId ?? 1;
 
 const listen = (
   eventName: string,
@@ -19,6 +30,7 @@ const listen = (
   }
 
   const id = nextId++;
+  windowRef.__amaiEventNextId = nextId;
   eventRegistry.get(eventName)!.set(id, callback);
   return id;
 };

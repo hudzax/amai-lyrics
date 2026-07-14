@@ -12,6 +12,8 @@
  * "ackbar") so it can never touch normal icon-only UI.
  */
 
+import lifecycle from './lifecycle';
+
 const LETTER = /[A-Za-z]/;
 
 function extractText(message: unknown): string {
@@ -94,6 +96,7 @@ function setupBlankToastObserver() {
     }
   });
   observer.observe(document.body, { childList: true, subtree: true });
+  lifecycle.trackObserver(observer);
 }
 
 /** Safety net for the install race: scan briefly after startup. */
@@ -106,19 +109,32 @@ function startStartupPoll(durationMs = 3000, intervalMs = 250): void {
     elapsed += intervalMs;
     if (elapsed >= durationMs) clearInterval(timer);
   }, intervalMs);
+  lifecycle.track(() => clearInterval(timer));
 }
 
 export function installBlankToastSuppressor() {
-  overrideShowNotification();
+  const windowRef = window as unknown as { __amaiToastInstalled?: boolean };
 
-  if (!overrideSnackbar()) {
-    // Spicetify.Snackbar may not be initialized yet; retry briefly.
-    let tries = 0;
-    const timer = setInterval(() => {
-      if (overrideSnackbar() || ++tries > 20) clearInterval(timer);
-    }, 250);
+  // Monkey-patch the API wrappers only once. The previous wrapper persists
+  // across re-init and stays functional, so re-wrapping would just nest them.
+  if (!windowRef.__amaiToastInstalled) {
+    windowRef.__amaiToastInstalled = true;
+
+    overrideShowNotification();
+
+    if (!overrideSnackbar()) {
+      // Spicetify.Snackbar may not be initialized yet; retry briefly.
+      let tries = 0;
+      const timer = setInterval(() => {
+        if (overrideSnackbar() || ++tries > 20) clearInterval(timer);
+      }, 250);
+      lifecycle.track(() => clearInterval(timer));
+    }
   }
 
+  // Always (re)create the DOM observer and startup poll. Teardown disconnects
+  // the previous observer on re-init, so it must be recreated — otherwise
+  // blank "ackbar" toasts would stop being suppressed after a reload.
   setupBlankToastObserver();
   startStartupPoll();
 }

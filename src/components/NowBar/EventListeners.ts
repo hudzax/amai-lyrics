@@ -3,6 +3,7 @@ import { SpotifyPlayer } from '../Global/SpotifyPlayer';
 import { Icons } from '../Styling/Icons';
 import Fullscreen from '../Utils/Fullscreen';
 import Whentil from '../../utils/Whentil';
+import lifecycle from '../../utils/lifecycle';
 import {
   ActivePlaybackControlsInstance,
   ActiveSetupSongProgressBarInstance,
@@ -12,22 +13,47 @@ import {
 } from './state';
 import { PlaybackPlayPauseEvent } from './types';
 
+// Tracked subscriptions created per NowBar open so they can be removed on
+// close (and on plugin teardown) instead of accumulating on every open.
+let nowBarListenerIds: number[] = [];
+let nowBarInitWhen: ReturnType<typeof Whentil.When> | null = null;
+let nowBarTeardownTracked = false;
+
+/** Remove every NowBar listener registered by the previous open. */
+export function teardownNowBarListeners() {
+  for (const id of nowBarListenerIds) {
+    Global.Event.unListen(id);
+  }
+  nowBarListenerIds = [];
+  if (nowBarInitWhen) {
+    nowBarInitWhen.Cancel();
+    nowBarInitWhen = null;
+  }
+}
+
 /**
  * Set up all event listeners for playback events
  */
 export function setupEventListeners() {
+  // Remove any listeners left over from a previous open before re-registering.
+  teardownNowBarListeners();
+
   // Keep the round record spinning only while the song is playing
-  Global.Event.listen('playback:playpause', () => {
-    updateVinylSpinState();
-  });
+  nowBarListenerIds.push(
+    Global.Event.listen('playback:playpause', () => {
+      updateVinylSpinState();
+    }),
+  );
 
   // Resume spin correctly when a new song starts (auto-play)
-  Global.Event.listen('playback:songchange', () => {
-    updateVinylSpinState();
-  });
+  nowBarListenerIds.push(
+    Global.Event.listen('playback:songchange', () => {
+      updateVinylSpinState();
+    }),
+  );
 
   // Set initial spin state once the record element is available
-  Whentil.When(
+  nowBarInitWhen = Whentil.When(
     () =>
       document.querySelector(
         '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage',
@@ -36,28 +62,44 @@ export function setupEventListeners() {
   );
 
   // Handle play/pause events
-  Global.Event.listen('playback:playpause', (e) => {
-    handlePlayPauseEvent(e);
-  });
+  nowBarListenerIds.push(
+    Global.Event.listen('playback:playpause', (e) => {
+      handlePlayPauseEvent(e);
+    }),
+  );
 
   // Handle loop state changes
-  Global.Event.listen('playback:loop', (e: 'none' | 'context' | 'track') => {
-    handleLoopEvent(e);
-  });
+  nowBarListenerIds.push(
+    Global.Event.listen('playback:loop', (e: 'none' | 'context' | 'track') => {
+      handleLoopEvent(e);
+    }),
+  );
 
   // Handle shuffle state changes
-  Global.Event.listen('playback:shuffle', (e: 'none' | 'normal') => {
-    handleShuffleEvent(e);
-  });
+  nowBarListenerIds.push(
+    Global.Event.listen('playback:shuffle', (e: 'none' | 'normal') => {
+      handleShuffleEvent(e);
+    }),
+  );
 
   // Handle position and progress updates
-  Global.Event.listen('playback:position', handlePositionUpdate);
-  Global.Event.listen('playback:progress', handlePositionUpdate);
+  nowBarListenerIds.push(Global.Event.listen('playback:position', handlePositionUpdate));
+  nowBarListenerIds.push(Global.Event.listen('playback:progress', handlePositionUpdate));
 
   // Handle fullscreen exit
-  Global.Event.listen('fullscreen:exit', () => {
-    CleanUpActiveComponents();
-  });
+  nowBarListenerIds.push(
+    Global.Event.listen('fullscreen:exit', () => {
+      CleanUpActiveComponents();
+    }),
+  );
+
+  // Register teardown once. `teardownNowBarListeners` already removes every
+  // bus listener and cancels the Whentil task, so per-open tracking would only
+  // grow the registry with redundant no-op removals.
+  if (!nowBarTeardownTracked) {
+    nowBarTeardownTracked = true;
+    lifecycle.trackCallback(teardownNowBarListeners);
+  }
 }
 
 /**
@@ -222,6 +264,9 @@ function handlePositionUpdate(e: number | { data?: number }): void {
  * Cleans up all active component instances and removes elements from the DOM
  */
 export function CleanUpActiveComponents() {
+  // Remove the NowBar's global-bus listeners so re-opening doesn't stack them.
+  teardownNowBarListeners();
+
   // Clean up playback controls
   if (ActivePlaybackControlsInstance) {
     ActivePlaybackControlsInstance.CleanUp();
