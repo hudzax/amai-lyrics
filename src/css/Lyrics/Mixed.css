@@ -97,7 +97,16 @@
   --text-shadow-blur-radius: 4px;
   --text-shadow-opacity: 0%;
   --TextShadowDefinition: 0 0 var(--text-shadow-blur-radius) rgba(255,255,255,var(--text-shadow-opacity));
-  will-change: --gradient-percentage, transform, opacity, text-shadow, scale;
+}
+
+/* Only promote the active line's elements to compositor layers, since they are
+   the only ones animated per frame. Promoting every word/letter caused a layer
+   explosion (GPU memory blowup + dropped frames). Visually identical. */
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .word,
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .dotGroup,
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .letter,
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .letterGroup {
+  will-change: transform, opacity, text-shadow, scale;
 }
 
 
