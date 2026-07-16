@@ -412,7 +412,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.4.10";
+      version = "1.4.11";
     }
   });
 
@@ -8350,15 +8350,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-10404-5v6VXli3jKYj/19f64167c729/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-22404-lRMIzXEfseBL/19f6d55d7689/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-10404-5v6VXli3jKYj/19f64167c729/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-22404-lRMIzXEfseBL/19f6d55d7689/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-10404-5v6VXli3jKYj/19f64167c76a/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-22404-lRMIzXEfseBL/19f6d55d76ca/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-10404-5v6VXli3jKYj/19f64167c76a/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-22404-lRMIzXEfseBL/19f6d55d76ca/ProcessingIndicator.css"() {
     }
   });
 
@@ -31987,6 +31987,19 @@ ${JSON.stringify(lyricsOnly)}`
       lyricsElement.appendChild(inner);
     }
     inner.innerHTML = html;
+    requestAnimationFrame(() => {
+      const cw = lyricsElement.clientWidth;
+      if (inner.scrollWidth > cw) {
+        const dist = cw - inner.scrollWidth - 20;
+        inner.style.setProperty("--scroll-dist", `${dist}px`);
+        inner.style.setProperty("--scroll-dur", `${Math.max(6, Math.abs(dist) / 30)}s`);
+        inner.classList.add("amai-marquee");
+      } else {
+        inner.classList.remove("amai-marquee");
+        inner.style.removeProperty("--scroll-dist");
+        inner.style.removeProperty("--scroll-dur");
+      }
+    });
     if (inner.animate) {
       inner.animate(
         [
@@ -33250,7 +33263,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10404-5v6VXli3jKYj/19f64167c729/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22404-lRMIzXEfseBL/19f6d55d7689/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -33276,7 +33289,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10404-5v6VXli3jKYj/19f64167c76a/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22404-lRMIzXEfseBL/19f6d55d76ca/ProcessingIndicator.css */
 #SpicyLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -33356,7 +33369,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10404-5v6VXli3jKYj/19f64167bf60/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22404-lRMIzXEfseBL/19f6d55d6ea0/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -33505,7 +33518,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10404-5v6VXli3jKYj/19f64167c271/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22404-lRMIzXEfseBL/19f6d55d7141/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -33713,7 +33726,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10404-5v6VXli3jKYj/19f64167c2f2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22404-lRMIzXEfseBL/19f6d55d71a2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -34315,7 +34328,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10404-5v6VXli3jKYj/19f64167c413/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22404-lRMIzXEfseBL/19f6d55d7283/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -34490,7 +34503,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10404-5v6VXli3jKYj/19f64167c474/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22404-lRMIzXEfseBL/19f6d55d72e4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -34767,7 +34780,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10404-5v6VXli3jKYj/19f64167c505/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22404-lRMIzXEfseBL/19f6d55d7355/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -35066,7 +35079,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10404-5v6VXli3jKYj/19f64167c566/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22404-lRMIzXEfseBL/19f6d55d73b6/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -35088,7 +35101,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10404-5v6VXli3jKYj/19f64167c5a7/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22404-lRMIzXEfseBL/19f6d55d73e7/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -35115,7 +35128,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10404-5v6VXli3jKYj/19f64167c5d8/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22404-lRMIzXEfseBL/19f6d55d7418/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
@@ -35128,6 +35141,7 @@ ruby > rt {
   position: absolute;
   transform: translate(-50%, -50%);
   max-width: 60%;
+  overflow: hidden;
   text-align: center;
   pointer-events: none;
   opacity: 0;
@@ -35148,10 +35162,7 @@ ruby > rt {
 }
 .amai-playbar-lyrics-inner {
   display: inline-block;
-  max-width: 100%;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   background-image: linear-gradient(90deg, var(--color-1) 0%, var(--color-2) 20%, var(--color-3) 40%, var(--color-4) 60%, var(--color-5) 80%, var(--color-1) 100%);
   background-size: 200% 100%;
   background-clip: text;
@@ -35166,6 +35177,32 @@ ruby > rt {
   }
   100% {
     background-position: 200% 50%;
+  }
+}
+.amai-playbar-lyrics-inner.amai-marquee {
+  animation-name: playbar-lyrics-color-shift, playbar-lyrics-marquee;
+  animation-duration: 12s, var(--scroll-dur, 8s);
+  animation-timing-function: linear, ease-in-out;
+  animation-iteration-count: infinite;
+}
+@keyframes playbar-lyrics-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(0);
+  }
+  45% {
+    transform: translateX(var(--scroll-dist, -50px));
+  }
+  55% {
+    transform: translateX(var(--scroll-dist, -50px));
+  }
+  80% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(0);
   }
 }
 .amai-playbar-lyrics ruby {
