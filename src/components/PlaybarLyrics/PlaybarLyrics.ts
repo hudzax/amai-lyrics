@@ -199,6 +199,20 @@ function setLyricsText(html: string): void {
 
   inner.innerHTML = html;
 
+  requestAnimationFrame(() => {
+    const cw = lyricsElement!.clientWidth;
+    if (inner.scrollWidth > cw) {
+      const dist = cw - inner.scrollWidth - 20;
+      inner.style.setProperty('--scroll-dist', `${dist}px`);
+      inner.style.setProperty('--scroll-dur', `${Math.max(6, Math.abs(dist) / 30)}s`);
+      inner.classList.add('amai-marquee');
+    } else {
+      inner.classList.remove('amai-marquee');
+      inner.style.removeProperty('--scroll-dist');
+      inner.style.removeProperty('--scroll-dur');
+    }
+  });
+
   if (inner.animate) {
     inner.animate(
       [

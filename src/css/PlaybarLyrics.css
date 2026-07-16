@@ -27,6 +27,7 @@
   position: absolute;
   transform: translate(-50%, -50%);
   max-width: 60%;
+  overflow: hidden;
   text-align: center;
   pointer-events: none;
   opacity: 0;
@@ -49,10 +50,7 @@
 
 .amai-playbar-lyrics-inner {
   display: inline-block;
-  max-width: 100%;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 
   /*
    * Animate the text colour by using a wide gradient as the background,
@@ -86,6 +84,23 @@
   100% {
     background-position: 200% 50%;
   }
+}
+
+/* Marquee scroll when text overflows the container */
+.amai-playbar-lyrics-inner.amai-marquee {
+  animation-name: playbar-lyrics-color-shift, playbar-lyrics-marquee;
+  animation-duration: 12s, var(--scroll-dur, 8s);
+  animation-timing-function: linear, ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+@keyframes playbar-lyrics-marquee {
+  0%   { transform: translateX(0); }
+  20%  { transform: translateX(0); }
+  45%  { transform: translateX(var(--scroll-dist, -50px)); }
+  55%  { transform: translateX(var(--scroll-dist, -50px)); }
+  80%  { transform: translateX(0); }
+  100% { transform: translateX(0); }
 }
 
 /* Active lyric line with ruby annotations */
