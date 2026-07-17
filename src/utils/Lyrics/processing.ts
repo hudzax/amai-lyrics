@@ -13,6 +13,7 @@ import {
 import { cacheLyrics } from './cache';
 import { fetchPhoneticLyrics, fetchLyricTranslations } from './ai';
 import { convertLyrics } from './conversion';
+import Event from '../EventManager';
 import { LyricsResult } from '../API/Lyrics';
 import { Syllable, LineBasedLyricItem, SyllableBasedLyricItem, LyricsLine } from './conversion';
 
@@ -123,7 +124,9 @@ export async function processAndEnhanceLyrics(
 
   if (Spicetify.Player.data.item.uri?.split(':')[2] === trackId) {
     Defaults.CurrentLyricsType = lyricsToDisplay.Type;
-    storage.set('currentLyricsData', JSON.stringify(lyricsToDisplay));
+    const serialized = JSON.stringify(lyricsToDisplay);
+    storage.set('currentLyricsData', serialized);
+    Event.evoke('lyrics:data-updated', serialized);
     HideLoaderContainer();
     ClearLyricsPageContainer();
   }
@@ -183,7 +186,9 @@ async function processLyricsEnhancementsAsync(
       // Update the displayed lyrics with translations
       updateDisplayedLyricsWithTranslations(processedLyricsJson);
 
-      storage.set('currentLyricsData', JSON.stringify(processedLyricsJson));
+      const serialized = JSON.stringify(processedLyricsJson);
+      storage.set('currentLyricsData', serialized);
+      Event.evoke('lyrics:data-updated', serialized);
     }
   } catch (error) {
     console.error('Amai Lyrics: Error processing enhancements', error);
@@ -343,6 +348,13 @@ export function extractLyrics(lyricsJson: LyricsData): string[] {
   return [];
 }
 
+const phoneticTextCache = new Map<string, string>();
+const PHONETIC_CACHE_MAX = 100;
+
+function phoneticCacheKey(text: string, enableRomaji: boolean): string {
+  return `${enableRomaji ? 'r' : 'f'}\0${text}`;
+}
+
 /**
  * Processes phonetic patterns in text and converts them to HTML ruby tags
  * This mirrors the logic from ApplyLineLyrics
@@ -352,19 +364,31 @@ export function extractLyrics(lyricsJson: LyricsData): string[] {
  * @returns Processed HTML string with ruby tags
  */
 export function processPhoneticText(text: string, enableRomaji: boolean): string {
+  const key = phoneticCacheKey(text, enableRomaji);
+  const cached = phoneticTextCache.get(key);
+  if (cached !== undefined) return cached;
+
+  let result: string;
   if (JAPANESE_CHAR_REGEX.test(text)) {
     if (enableRomaji) {
-      return text.replace(JAPANESE_ROMAJI_REGEX, (match, p1, p2, p3, p4) => {
+      result = text.replace(JAPANESE_ROMAJI_REGEX, (match, p1, p2, p3, p4) => {
         const textPart = p2 || p3;
         return `<ruby>${textPart}<rt>${p4}</rt></ruby>`;
       });
     } else {
-      return text.replace(JAPANESE_FURIGANA_REGEX, '<ruby>$1<rt>$2</rt></ruby>');
+      result = text.replace(JAPANESE_FURIGANA_REGEX, '<ruby>$1<rt>$2</rt></ruby>');
     }
   } else {
     // Korean phonetics
-    return text.replace(KOREAN_ROMAJA_REGEX, '<ruby class="romaja">$1<rt>$2</rt></ruby>');
+    result = text.replace(KOREAN_ROMAJA_REGEX, '<ruby class="romaja">$1<rt>$2</rt></ruby>');
   }
+
+  if (phoneticTextCache.size >= PHONETIC_CACHE_MAX) {
+    const firstKey = phoneticTextCache.keys().next().value;
+    if (firstKey !== undefined) phoneticTextCache.delete(firstKey);
+  }
+  phoneticTextCache.set(key, result);
+  return result;
 }
 
 /**

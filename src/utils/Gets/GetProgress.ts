@@ -81,8 +81,26 @@ export async function requestPositionSync(): Promise<void> {
   }
 }
 
+// Per-frame position cache — all per-frame loops (render, scroll, playbar)
+// within the same rAF tick share one position value instead of each calling
+// GetProgress independently.
+let cachedPosition: number | null = null;
+let cachedPositionTime = 0;
+let cachedIsPlaying: boolean | null = null;
+const POSITION_CACHE_TTL = 15; // ms (~1 frame at 60fps)
+
 // Function to get the current progress
 export default function GetProgress() {
+  const now = performance.now();
+  const isPlaying = Spicetify.Player.isPlaying();
+  if (
+    cachedPosition !== null &&
+    cachedIsPlaying === isPlaying &&
+    now - cachedPositionTime < POSITION_CACHE_TTL
+  ) {
+    return cachedPosition;
+  }
+
   // Fast path: no sync data, fallback
   if (!syncedPosition.StartedSyncAt && !syncedPosition.Position) {
     if (SpotifyPlayer?._DEPRECATED_?.GetTrackPosition) {
@@ -93,19 +111,24 @@ export default function GetProgress() {
   }
 
   const platform = Spicetify.Platform;
-  const isPlaying = Spicetify.Player.isPlaying();
   const isLocal = platform.PlaybackAPI._isLocal;
 
   const startedAt = syncedPosition.StartedSyncAt;
   const basePosition = syncedPosition.Position;
   const delta = performance.now() - startedAt;
 
+  let result: number;
   if (!isPlaying) {
-    return platform.PlayerAPI._state.positionAsOfTimestamp;
+    result = platform.PlayerAPI._state.positionAsOfTimestamp;
+  } else {
+    const calculated = basePosition + delta;
+    result = isLocal ? calculated : calculated + Global.NonLocalTimeOffset;
   }
 
-  const calculated = basePosition + delta;
-  return isLocal ? calculated : calculated + Global.NonLocalTimeOffset;
+  cachedPosition = result;
+  cachedPositionTime = now;
+  cachedIsPlaying = isPlaying;
+  return result;
 }
 
 // DEPRECATED

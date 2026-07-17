@@ -7,10 +7,34 @@ export class SongChangeManager {
   private buttonManager: ButtonManager;
   private backgroundManager: NowPlayingBarBackground;
   private latestUri: string | null = null;
+  private bgDebounceTimer: number | null = null;
+  private pageBgDebounceTimer: number | null = null;
 
   constructor(buttonManager: ButtonManager, backgroundManager: NowPlayingBarBackground) {
     this.buttonManager = buttonManager;
     this.backgroundManager = backgroundManager;
+  }
+
+  private debouncedBgApply(coverUrl: string | undefined): void {
+    if (this.bgDebounceTimer !== null) clearTimeout(this.bgDebounceTimer);
+    this.bgDebounceTimer = window.setTimeout(() => {
+      this.backgroundManager.apply(coverUrl);
+      this.bgDebounceTimer = null;
+    }, 500);
+  }
+
+  private async debouncedPageBgApply(): Promise<void> {
+    if (this.pageBgDebounceTimer !== null) clearTimeout(this.pageBgDebounceTimer);
+    return new Promise((resolve) => {
+      this.pageBgDebounceTimer = window.setTimeout(async () => {
+        const { default: ApplyDynamicBackground } = await import(
+          '../components/DynamicBG/dynamicBackground'
+        );
+        ApplyDynamicBackground(document.querySelector('#SpicyLyricsPage .ContentBox'));
+        this.pageBgDebounceTimer = null;
+        resolve();
+      }, 500);
+    });
   }
 
   public async handleSongChange(event: { data?: { item?: { uri?: string } } }) {
@@ -49,8 +73,10 @@ export class SongChangeManager {
     // Update button registration (synchronous but fast)
     this.buttonManager.updateRegistration();
 
-    // Apply background immediately with current data
-    this.backgroundManager.apply(Spicetify.Player.data?.item?.metadata?.image_url);
+    // Debounce background updates — when rapidly skipping tracks, they'll only
+    // fire once the user settles on a song for 500ms, keeping the main thread
+    // free for the critical song-change work.
+    this.debouncedBgApply(Spicetify.Player.data?.item?.metadata?.image_url);
 
     // Update UI elements directly without waiting for track info
     if (Spicetify.Player.data.item?.type === 'track') {
@@ -65,10 +91,8 @@ export class SongChangeManager {
       const { default: PageView } = await import('../components/Pages/PageView');
       PageView.UpdatePageContent();
 
-      // Apply dynamic background
-      const { default: ApplyDynamicBackground } =
-        await import('../components/DynamicBG/dynamicBackground');
-      ApplyDynamicBackground(document.querySelector('#SpicyLyricsPage .ContentBox'));
+      // Debounce the dynamic background update on the lyrics page
+      this.debouncedPageBgApply();
     }
   }
 }

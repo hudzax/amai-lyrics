@@ -6,6 +6,7 @@ import { convertLyrics } from '../../utils/Lyrics/conversion';
 import Whentil from '../../utils/Whentil';
 import lifecycle from '../../utils/lifecycle';
 import extractArtworkColors from '../../utils/ArtworkColors';
+import Event from '../../utils/EventManager';
 
 /**
  * Shows the currently active lyric line inside Spotify's native bottom playbar,
@@ -15,7 +16,7 @@ import extractArtworkColors from '../../utils/ArtworkColors';
 
 // Matches the offset used by ScrollToActiveLine for consistency
 const POSITION_OFFSET = 600; // ms — show the line a bit ahead of the audio
-const UPDATE_INTERVAL = 0.15; // seconds
+const UPDATE_INTERVAL = 0.3; // seconds
 
 interface LineEntry {
   text: string;
@@ -36,9 +37,16 @@ let initWhen: ReturnType<typeof Whentil.When> | null = null;
 let cachedLines: LineEntry[] | null = null;
 let cachedLinesRaw: string | null = null;
 
+// In-memory lyrics data kept in sync on song change + AI enhancement so the
+// update loop never reads from localStorage (synchronous I/O) on its hot path.
+let inMemoryLyricsData: string | null = null;
+
+let lyricsDataListenerId: number | null = null;
+
 // ---- Artwork color animation state ----
 let currentColors: string[] = [];
 let lastArtworkUrl = '';
+let artworkColorDebounceTimer: number | null = null;
 
 // Minimum perceived brightness (0-255) for artwork colours used in text.
 // Colours darker than this get lightened so the lyrics stay readable against
@@ -111,8 +119,8 @@ interface TimedLyricItem {
  * Reads the globally stored parsed lyrics and builds a timed line list for the
  * current track. Only timed lyrics (Line / Syllable) are supported.
  */
-function getLinesFromStorage(): LineEntry[] | null {
-  const raw = storage.get('currentLyricsData');
+function getLinesFromStorage(rawOverride?: string): LineEntry[] | null {
+  const raw = rawOverride ?? storage.get('currentLyricsData');
   if (!raw) return null;
 
   let data: StoredLyrics;
@@ -172,14 +180,20 @@ function onSongChange(): void {
   lastText = '';
   cachedLines = null;
   cachedLinesRaw = null;
+  inMemoryLyricsData = storage.get('currentLyricsData');
   currentColors = [];
   lastArtworkUrl = '';
   if (lyricsElement) {
     lyricsElement.innerHTML = '';
     applyArtworkColors([]);
   }
-  // Start extracting colors from the new artwork
-  refreshArtworkColors();
+  // Debounce artwork color extraction — when rapidly skipping tracks, only
+  // the final song's artwork is processed, avoiding wasted fetch + CPU work.
+  if (artworkColorDebounceTimer !== null) clearTimeout(artworkColorDebounceTimer);
+  artworkColorDebounceTimer = window.setTimeout(() => {
+    artworkColorDebounceTimer = null;
+    refreshArtworkColors();
+  }, 500);
 }
 
 /**
@@ -314,14 +328,13 @@ function update(): void {
     return;
   }
 
-  const raw = storage.get('currentLyricsData');
-  const rawKey = raw != null ? String(raw) : null;
+  const rawKey = inMemoryLyricsData;
   let lines: LineEntry[] | null;
   if (rawKey != null && rawKey === cachedLinesRaw) {
     lines = cachedLines;
   } else {
     cachedLinesRaw = rawKey;
-    lines = getLinesFromStorage();
+    lines = getLinesFromStorage(inMemoryLyricsData ?? undefined);
     cachedLines = lines;
   }
   if (!lines) {
@@ -401,6 +414,14 @@ function cleanup(): void {
   resizeObserver = null;
   window.removeEventListener('resize', positionLyrics);
   Spicetify.Player.removeEventListener('songchange', onSongChange);
+  if (artworkColorDebounceTimer !== null) {
+    clearTimeout(artworkColorDebounceTimer);
+    artworkColorDebounceTimer = null;
+  }
+  if (lyricsDataListenerId != null) {
+    Event.unListen(lyricsDataListenerId);
+    lyricsDataListenerId = null;
+  }
   if (lyricsElement && lyricsElement.parentElement) {
     lyricsElement.parentElement.classList.remove('amai-hide-controls');
     lyricsElement.parentElement.classList.remove('amai-playbar-host');
@@ -420,6 +441,14 @@ export function InitializePlaybarLyrics(): void {
     () => {
       window.addEventListener('resize', positionLyrics);
       Spicetify.Player.addEventListener('songchange', onSongChange);
+
+      // Listen for in-memory lyrics data updates from AI enhancements — avoids
+      // reading localStorage every tick in the update loop.
+      lyricsDataListenerId = Event.listen('lyrics:data-updated', (data: unknown) => {
+        inMemoryLyricsData = typeof data === 'string' ? data : null;
+        cachedLines = null;
+        cachedLinesRaw = null;
+      });
 
       inject();
       intervalManager = new IntervalManager(UPDATE_INTERVAL, update);

@@ -4,6 +4,7 @@ import { LyricsObject, Word } from '../../lyrics';
 import { BlurMultiplier, IdleEmphasisLyricsScale, IdleLyricsScale, timeOffset } from '../Shared';
 
 export let Blurring_LastLine = null;
+let lastIsPlaying: boolean | null = null;
 
 export function setBlurringLastLine(c) {
   Blurring_LastLine = c;
@@ -130,12 +131,19 @@ export function Animate(position) {
 
   const Credits = getCredits();
 
+  const SKIP_IF_STATUS_UNCHANGED = true;
+
   if (CurrentLyricsType === 'Syllable') {
     const arr = LyricsObject.Types.Syllable.Lines;
     for (let index = 0; index < arr.length; index++) {
       const line = arr[index];
+      const prevStatus = line.lastStatus;
+
       if (line.Status === 'Active') {
-        if (!SpotifyPlayer.IsPlaying) applyBlur(arr, index, BlurMultiplier);
+        if (SpotifyPlayer.IsPlaying !== lastIsPlaying) {
+          Blurring_LastLine = null;
+          lastIsPlaying = SpotifyPlayer.IsPlaying;
+        }
         if (Blurring_LastLine !== index) {
           applyBlur(arr, index, BlurMultiplier);
           Blurring_LastLine = index;
@@ -163,8 +171,6 @@ export function Animate(position) {
               for (let k = 0; k < word.Letters.length; k++) {
                 const letter = word.Letters[k];
                 if (letter.Status === 'Active') {
-                  // Final letter styling is the NotSung state (resetLetterStyles
-                  // overrides any transient active styling), so apply it directly.
                   resetLetterStyles(letter, 'NotSung', IdleEmphasisLyricsScale, '-20%');
                 } else if (letter.Status === 'Sung') {
                   resetLetterStyles(word.Letters[k], 'Sung', '1', '100%');
@@ -179,8 +185,6 @@ export function Animate(position) {
               word.scale = emphasisScale;
               word.glow = 0;
             } else if (isDot) {
-              // Force reflow + restart the dot animation only on the active transition,
-              // not on every frame, to avoid a synchronous layout flush each tick.
               if (!word.HTMLElement.classList.contains('dot-active')) {
                 const dotDuration = word.EndTime - word.StartTime;
                 word.HTMLElement.style.setProperty('--dot-duration', `${dotDuration}ms`);
@@ -267,7 +271,6 @@ export function Animate(position) {
               word.glow = 0.5;
             } else if (!isLetterGroup) {
               setStyleIfChanged(word.HTMLElement, '--text-shadow-blur-radius', '4px');
-              // Animate out with interpolation
               const element = word.HTMLElement;
               const currentTranslateY = word.translateY;
               const currentScale = word.scale;
@@ -323,28 +326,38 @@ export function Animate(position) {
         }
         if (Credits) Credits.classList.remove('Active');
       } else if (line.Status === 'NotSung') {
-        line.HTMLElement.classList.add('NotSung');
-        line.HTMLElement.classList.remove('Sung');
-        if (
-          line.HTMLElement.classList.contains('Active') &&
-          !line.HTMLElement.classList.contains('OverridenByScroller')
-        ) {
-          line.HTMLElement.classList.remove('Active');
+        if (!SKIP_IF_STATUS_UNCHANGED || prevStatus !== 'NotSung') {
+          line.HTMLElement.classList.add('NotSung');
+          line.HTMLElement.classList.remove('Sung');
+          if (
+            line.HTMLElement.classList.contains('Active') &&
+            !line.HTMLElement.classList.contains('OverridenByScroller')
+          ) {
+            line.HTMLElement.classList.remove('Active');
+          }
         }
       } else if (line.Status === 'Sung') {
-        line.HTMLElement.classList.add('Sung');
-        line.HTMLElement.classList.remove('Active', 'NotSung');
-        if (arr.length === index + 1 && Credits) {
-          Credits.classList.add('Active');
+        if (!SKIP_IF_STATUS_UNCHANGED || prevStatus !== 'Sung') {
+          line.HTMLElement.classList.add('Sung');
+          line.HTMLElement.classList.remove('Active', 'NotSung');
+          if (arr.length === index + 1 && Credits) {
+            Credits.classList.add('Active');
+          }
         }
       }
+      line.lastStatus = line.Status;
     }
   } else if (CurrentLyricsType === 'Line') {
     const arr = LyricsObject.Types.Line.Lines;
     for (let index = 0; index < arr.length; index++) {
       const line = arr[index];
+      const prevStatus = line.lastStatus;
+
       if (line.Status === 'Active') {
-        if (!SpotifyPlayer.IsPlaying) applyBlur(arr, index, BlurMultiplier);
+        if (SpotifyPlayer.IsPlaying !== lastIsPlaying) {
+          Blurring_LastLine = null;
+          lastIsPlaying = SpotifyPlayer.IsPlaying;
+        }
         if (Blurring_LastLine !== index) {
           applyBlur(arr, index, BlurMultiplier);
           Blurring_LastLine = index;
@@ -383,24 +396,25 @@ export function Animate(position) {
           line.HTMLElement.style.setProperty('--gradient-position', `${percentage * 100}%`);
         }
       } else if (line.Status === 'NotSung') {
-        if (!line.HTMLElement.classList.contains('NotSung')) {
+        if (!SKIP_IF_STATUS_UNCHANGED || prevStatus !== 'NotSung') {
           line.HTMLElement.classList.add('NotSung');
+          line.HTMLElement.classList.remove('Sung');
+          if (
+            line.HTMLElement.classList.contains('Active') &&
+            !line.HTMLElement.classList.contains('OverridenByScroller')
+          ) {
+            line.HTMLElement.classList.remove('Active');
+          }
+          line.HTMLElement.style.setProperty('--gradient-position', `0%`);
         }
-        line.HTMLElement.classList.remove('Sung');
-        if (
-          line.HTMLElement.classList.contains('Active') &&
-          !line.HTMLElement.classList.contains('OverridenByScroller')
-        ) {
-          line.HTMLElement.classList.remove('Active');
-        }
-        line.HTMLElement.style.setProperty('--gradient-position', `0%`);
       } else if (line.Status === 'Sung') {
-        if (!line.HTMLElement.classList.contains('Sung')) {
+        if (!SKIP_IF_STATUS_UNCHANGED || prevStatus !== 'Sung') {
           line.HTMLElement.classList.add('Sung');
+          line.HTMLElement.classList.remove('Active', 'NotSung');
+          line.HTMLElement.style.setProperty('--gradient-position', `100%`);
         }
-        line.HTMLElement.classList.remove('Active', 'NotSung');
-        line.HTMLElement.style.setProperty('--gradient-position', `100%`);
       }
+      line.lastStatus = line.Status;
     }
   }
 }
