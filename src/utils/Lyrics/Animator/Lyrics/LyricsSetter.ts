@@ -49,6 +49,11 @@ export function TimeSetter(PreCurrentPosition: number) {
 
   const lines = LyricsObject.Types[CurrentLyricsType].Lines;
 
+  // Perf: word/letter/dot Status values are only ever read by `Animate` for the
+  // *active* line (non-active lines have their look driven by line.Status + CSS
+  // classes). So we only deep-update the active line's inner items and cheaply
+  // flip line.Status for everything else — this turns a full O(lyrics) pass over
+  // every syllable/letter each frame into O(lines) + the active line only.
   if (CurrentLyricsType === 'Syllable') {
     for (const line of lines) {
       const start = line.StartTime;
@@ -59,24 +64,8 @@ export function TimeSetter(PreCurrentPosition: number) {
         updateCollectionStatus(line.Syllables.Lead, CurrentPosition, true);
       } else if (start >= CurrentPosition) {
         line.Status = 'NotSung';
-        for (const word of line.Syllables.Lead) {
-          word.Status = 'NotSung';
-          if (word?.LetterGroup && Array.isArray(word.Letters)) {
-            for (const letter of word.Letters) {
-              letter.Status = 'NotSung';
-            }
-          }
-        }
       } else if (end <= CurrentPosition) {
         line.Status = 'Sung';
-        for (const word of line.Syllables.Lead) {
-          word.Status = 'Sung';
-          if (word?.LetterGroup && Array.isArray(word.Letters)) {
-            for (const letter of word.Letters) {
-              letter.Status = 'Sung';
-            }
-          }
-        }
       }
     }
   } else if (CurrentLyricsType === 'Line') {
@@ -91,18 +80,8 @@ export function TimeSetter(PreCurrentPosition: number) {
         }
       } else if (start >= CurrentPosition) {
         line.Status = 'NotSung';
-        if (line.DotLine) {
-          for (const dot of line.Syllables.Lead) {
-            dot.Status = 'NotSung';
-          }
-        }
       } else if (end <= CurrentPosition) {
         line.Status = 'Sung';
-        if (line.DotLine) {
-          for (const dot of line.Syllables.Lead) {
-            dot.Status = 'Sung';
-          }
-        }
       }
     }
   }

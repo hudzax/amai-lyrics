@@ -4,8 +4,7 @@ class IntervalManager implements Giveable {
   private maid: Maid;
   private readonly callback: () => void;
   private readonly duration: number; // Duration in milliseconds
-  private lastTimestamp: number | null;
-  private animationFrameId: number | null;
+  private timerId: number | null = null;
   public Running: boolean;
   public Destroyed: boolean;
 
@@ -17,13 +16,14 @@ class IntervalManager implements Giveable {
     this.maid = new Maid();
     this.callback = callback;
     this.duration = duration === Infinity ? 0 : duration * 1000; // Convert seconds to milliseconds or set to 0 for immediate execution
-    this.lastTimestamp = null;
-    this.animationFrameId = null;
     this.Running = false;
     this.Destroyed = false;
   }
 
-  // Starts the requestAnimationFrame loop
+  // Starts the timer. Uses setTimeout (not requestAnimationFrame) because these
+  // intervals don't need per-frame resolution: the old rAF implementation kept
+  // many idle rAF chains running at 60Hz for the app's whole lifetime just to
+  // decide that a 0.1–1s tick hadn't elapsed yet.
   public Start() {
     if (this.Destroyed) {
       console.warn('Cannot start; IntervalManager has been destroyed.');
@@ -36,42 +36,32 @@ class IntervalManager implements Giveable {
     }
 
     this.Running = true;
-    this.lastTimestamp = null;
 
-    const loop = (timestamp: number) => {
+    const tick = () => {
+      // Bail if stopped/destroyed while a tick was already scheduled.
       if (!this.Running || this.Destroyed) return;
-
-      if (this.lastTimestamp === null) {
-        this.lastTimestamp = timestamp;
-      }
-
-      const elapsed = timestamp - this.lastTimestamp;
-
-      if (this.duration === 0 || elapsed >= this.duration) {
-        this.callback();
-        this.lastTimestamp = this.duration === 0 ? null : timestamp; // Reset timestamp for immediate execution when duration is infinite
-      }
-
-      this.animationFrameId = requestAnimationFrame(loop);
+      this.callback();
+      // Recursive setTimeout (rather than setInterval) so a slow callback can
+      // never stack multiple pending ticks.
+      this.timerId = window.setTimeout(tick, this.duration);
     };
 
-    this.animationFrameId = requestAnimationFrame(loop);
+    this.timerId = window.setTimeout(tick, this.duration);
 
     // Register cleanup with the Maid
     this.maid.Give(() => this.Stop());
   }
 
-  // Stops the animation frame loop without destroying the manager
+  // Stops the timer without destroying the manager
   public Stop() {
-    if (this.animationFrameId !== null) {
-      cancelAnimationFrame(this.animationFrameId);
-      this.animationFrameId = null;
+    if (this.timerId !== null) {
+      window.clearTimeout(this.timerId);
+      this.timerId = null;
       this.Running = false;
-      this.lastTimestamp = null;
     }
   }
 
-  // Restarts the animation frame loop
+  // Restarts the timer loop
   public Restart() {
     if (this.Destroyed) {
       console.warn('Cannot restart; IntervalManager has been destroyed.');

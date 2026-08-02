@@ -50,15 +50,27 @@ async function getNonLocalPosition(startedAt: number, SpotifyPlatform: SpotifyPl
   };
 }
 
+// While paused the track position is static, but we still need to detect when
+// playback resumes so the loop can wake back up. Poll at a low rate and do zero
+// RPC/position work in the meantime — GetProgress already falls back to
+// `positionAsOfTimestamp` while paused.
+const PAUSED_POLL_MS = 500;
+
 export async function requestPositionSync(): Promise<void> {
   try {
+    // Paused: stay in a cheap idle poll, no getPositionState/resume calls.
+    if (!Spicetify.Player.isPlaying()) {
+      setTimeout(requestPositionSync, PAUSED_POLL_MS);
+      return;
+    }
+
     const SpotifyPlatform = Spicetify.Platform;
     const startedAt = performance.now();
     const isLocallyPlaying = SpotifyPlatform.PlaybackAPI._isLocal;
 
-    // Decide delay *before* async call for consistency
+    // Decide delay *before* async call for consistency (only reached while playing)
     const delay =
-      !Spicetify.Player.isPlaying() || canSyncNonLocalTimestamp === 0
+      canSyncNonLocalTimestamp === 0
         ? 1 / 60
         : isLocallyPlaying
           ? 1 / 60
@@ -78,6 +90,8 @@ export async function requestPositionSync(): Promise<void> {
     setTimeout(requestPositionSync, delay * 1000);
   } catch (error) {
     console.error('Sync Position: Fail, More Details:', error);
+    // Keep polling on error so we recover as soon as playback state allows.
+    setTimeout(requestPositionSync, PAUSED_POLL_MS);
   }
 }
 

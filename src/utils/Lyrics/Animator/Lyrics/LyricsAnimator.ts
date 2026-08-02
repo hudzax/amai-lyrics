@@ -20,9 +20,23 @@ function getCredits(): HTMLElement | null {
   return cachedCredits;
 }
 
-// Helper: Set style property only if changed
+// Cache of the last value we wrote per (element, property) so we can skip
+// unchanged style writes without reading `element.style.getPropertyValue()`.
+// Reading inline style on the hot path forces style resolution and, interleaved
+// with the many per-frame writes, can trigger recalculation. The WeakMap keys
+// are the lyric DOM nodes themselves, so stale entries are garbage-collected
+// whenever a song's lyrics are re-created. This animator is the sole writer of
+// the custom properties it tracks (gradients, transforms, scales, shadows).
+const styleWriteCache = new WeakMap<HTMLElement, Map<string, string>>();
+
 const setStyleIfChanged = (element: HTMLElement, property: string, value: string) => {
-  if (element.style.getPropertyValue(property) !== value) {
+  let props = styleWriteCache.get(element);
+  if (!props) {
+    props = new Map();
+    styleWriteCache.set(element, props);
+  }
+  if (props.get(property) !== value) {
+    props.set(property, value);
     element.style.setProperty(property, value);
   }
 };
