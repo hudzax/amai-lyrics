@@ -2,6 +2,7 @@ import { Maid } from '@hudzax/web-modules/Maid';
 import { IntervalManager } from '../IntervalManager';
 import Defaults from '../../components/Global/Defaults';
 import { SpotifyPlayer } from '../../components/Global/SpotifyPlayer';
+import { requestPositionTracking } from '../Gets/GetProgress';
 import { Lyrics } from './Animator/Main';
 
 export const ScrollingIntervalTime = 0.1;
@@ -79,6 +80,10 @@ const THROTTLE_TIME = 0.05;
 let lastRenderedPosition = -1;
 let hasRenderedInitial = false;
 
+// Registers/unregisters the lyrics page as a position consumer so the sync loop
+// only does RPC work while lyrics are actually on screen.
+let pagePositionClient: (() => void) | null = null;
+
 // This module-level loop runs for the plugin's lifetime. Guard it with a
 // window-persisted flag so a re-init (script re-injection) does not start a
 // second concurrent loop.
@@ -88,7 +93,13 @@ if (!windowRef.__amaiRenderLoopStarted) {
   new IntervalManager(THROTTLE_TIME, () => {
     if (!Defaults.LyricsContainerExists) return;
     // Skip work entirely when the lyrics page isn't visible
-    if (Spicetify.Platform.History.location.pathname !== '/AmaiLyrics') return;
+    const onLyricsPage = Spicetify.Platform.History.location.pathname === '/AmaiLyrics';
+    if (onLyricsPage && !pagePositionClient) pagePositionClient = requestPositionTracking();
+    else if (!onLyricsPage && pagePositionClient) {
+      pagePositionClient();
+      pagePositionClient = null;
+    }
+    if (!onLyricsPage) return;
 
     const progress = SpotifyPlayer.GetTrackPosition();
     // Nothing moved since the last frame -> no re-render needed

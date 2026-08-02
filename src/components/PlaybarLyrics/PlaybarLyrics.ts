@@ -1,6 +1,7 @@
 import storage from '../../utils/storage';
 import { IntervalManager } from '../../utils/IntervalManager';
 import { SpotifyPlayer } from '../Global/SpotifyPlayer';
+import { requestPositionTracking } from '../../utils/Gets/GetProgress';
 import { processPhoneticText } from '../../utils/Lyrics/processing';
 import { convertLyrics } from '../../utils/Lyrics/conversion';
 import Whentil from '../../utils/Whentil';
@@ -29,6 +30,9 @@ let centerWrapper: HTMLElement | null = null;
 let intervalManager: IntervalManager | null = null;
 let resizeObserver: ResizeObserver | null = null;
 let lastText = '';
+// Registers the playbar as a position consumer while it's actually showing
+// lyrics, so the sync loop only does RPC work when needed.
+let playbarPositionClient: (() => void) | null = null;
 
 // Handle for the pending "wait for playbar" poll so it can be cancelled on teardown.
 let initWhen: ReturnType<typeof Whentil.When> | null = null;
@@ -320,6 +324,16 @@ function update(): void {
   const onLyricsPage = Spicetify.Platform.History.location.pathname === '/AmaiLyrics';
   const isPaused = !SpotifyPlayer.IsPlaying;
 
+  // Register/unregister as a position consumer based on whether the playbar is
+  // actually rendering lyrics (enabled, playing, and not on the lyrics page).
+  const needsPosition = enabled && !onLyricsPage && !isPaused;
+  if (needsPosition && !playbarPositionClient) {
+    playbarPositionClient = requestPositionTracking();
+  } else if (!needsPosition && playbarPositionClient) {
+    playbarPositionClient();
+    playbarPositionClient = null;
+  }
+
   // Disabled, viewing the lyrics page, or paused -> restore native controls, hide overlay
   if (!enabled || onLyricsPage || isPaused) {
     centerWrapper.classList.remove('amai-hide-controls');
@@ -410,6 +424,10 @@ function inject(): void {
 function cleanup(): void {
   intervalManager?.Stop();
   intervalManager = null;
+  if (playbarPositionClient) {
+    playbarPositionClient();
+    playbarPositionClient = null;
+  }
   resizeObserver?.disconnect();
   resizeObserver = null;
   window.removeEventListener('resize', positionLyrics);

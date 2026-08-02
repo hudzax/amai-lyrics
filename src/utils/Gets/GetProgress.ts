@@ -56,43 +56,99 @@ async function getNonLocalPosition(startedAt: number, SpotifyPlatform: SpotifyPl
 // `positionAsOfTimestamp` while paused.
 const PAUSED_POLL_MS = 500;
 
-export async function requestPositionSync(): Promise<void> {
+// How often to refresh the position anchor while at least one consumer (lyrics
+// page, playbar lyrics, fullscreen NowBar) actually needs a position. GetProgress
+// computes `base + delta` between syncs, so positions stay smooth at 60fps without
+// needing a 60Hz anchor — a few syncs per second is plenty to correct drift.
+// (This replaces the old fixed ~60Hz getPositionState/resume loop that ran
+// unconditionally for the whole session whenever music was playing.)
+const ACTIVE_SYNC_MS = 250;
+
+// When nothing on screen needs a position, do NO RPC at all — just heartbeat
+// cheaply so the loop is still alive to notice pause/play transitions and wake
+// back up as soon as a consumer registers.
+const IDLE_HEARTBEAT_MS = 1000;
+
+// Reference-counted consumers that need an accurate playback position.
+let activePositionClients = 0;
+let syncNow = false;
+let loopScheduled = false;
+
+/**
+ * Registers a consumer of the playback position and returns a release function.
+ * The sync loop only runs its (potentially RPC-heavy) anchor refresh while at
+ * least one consumer is active; otherwise it idles cheaply. On the first
+ * registration of the session it requests an immediate sync so the very first
+ * frame uses a fresh anchor.
+ */
+export function requestPositionTracking(): () => void {
+  activePositionClients++;
+  if (activePositionClients === 1) {
+    syncNow = true;
+    scheduleLoop(0);
+  }
+  return () => {
+    activePositionClients = Math.max(0, activePositionClients - 1);
+  };
+}
+
+function scheduleLoop(delay: number): void {
+  if (loopScheduled) return;
+  loopScheduled = true;
+  window.setTimeout(() => {
+    loopScheduled = false;
+    void runLoop();
+  }, delay);
+}
+
+async function doSync(): Promise<void> {
+  const SpotifyPlatform = Spicetify.Platform;
+  const startedAt = performance.now();
+  const isLocallyPlaying = SpotifyPlatform.PlaybackAPI._isLocal;
+
+  let pos: { StartedSyncAt: number; Position: number };
+  if (isLocallyPlaying) {
+    pos = await getLocalPosition(startedAt, SpotifyPlatform);
+  } else {
+    pos = await getNonLocalPosition(startedAt, SpotifyPlatform);
+  }
+
+  // Update the existing object to reduce allocations
+  syncedPosition.StartedSyncAt = pos.StartedSyncAt;
+  syncedPosition.Position = pos.Position;
+}
+
+async function runLoop(): Promise<void> {
   try {
-    // Paused: stay in a cheap idle poll, no getPositionState/resume calls.
-    if (!Spicetify.Player.isPlaying()) {
-      setTimeout(requestPositionSync, PAUSED_POLL_MS);
-      return;
-    }
+    const isPlaying = Spicetify.Player.isPlaying();
 
-    const SpotifyPlatform = Spicetify.Platform;
-    const startedAt = performance.now();
-    const isLocallyPlaying = SpotifyPlatform.PlaybackAPI._isLocal;
-
-    // Decide delay *before* async call for consistency (only reached while playing)
-    const delay =
-      canSyncNonLocalTimestamp === 0
-        ? 1 / 60
-        : isLocallyPlaying
-          ? 1 / 60
-          : syncTimings[syncTimings.length - canSyncNonLocalTimestamp];
-
-    let pos: { StartedSyncAt: number; Position: number };
-    if (isLocallyPlaying) {
-      pos = await getLocalPosition(startedAt, SpotifyPlatform);
+    // Only do the (potentially RPC-heavy) anchor sync while something actually
+    // needs a fresh position. Otherwise stay idle and do zero RPC work.
+    if (isPlaying && (activePositionClients > 0 || syncNow)) {
+      syncNow = false;
+      await doSync();
     } else {
-      pos = await getNonLocalPosition(startedAt, SpotifyPlatform);
+      syncNow = false;
     }
 
-    // Update the existing object to reduce allocations
-    syncedPosition.StartedSyncAt = pos.StartedSyncAt;
-    syncedPosition.Position = pos.Position;
-
-    setTimeout(requestPositionSync, delay * 1000);
+    const nowPlaying = Spicetify.Player.isPlaying();
+    // Paused: stay in a cheap idle poll, no getPositionState/resume calls.
+    if (!nowPlaying) {
+      scheduleLoop(PAUSED_POLL_MS);
+    } else if (activePositionClients > 0) {
+      scheduleLoop(ACTIVE_SYNC_MS);
+    } else {
+      scheduleLoop(IDLE_HEARTBEAT_MS);
+    }
   } catch (error) {
     console.error('Sync Position: Fail, More Details:', error);
     // Keep polling on error so we recover as soon as playback state allows.
-    setTimeout(requestPositionSync, PAUSED_POLL_MS);
+    scheduleLoop(PAUSED_POLL_MS);
   }
+}
+
+export function requestPositionSync(): void {
+  scheduleLoop(0);
 }
 
 // Per-frame position cache — all per-frame loops (render, scroll, playbar)

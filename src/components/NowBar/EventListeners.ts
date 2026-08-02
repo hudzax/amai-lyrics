@@ -4,6 +4,7 @@ import { Icons } from '../Styling/Icons';
 import Fullscreen from '../Utils/Fullscreen';
 import Whentil from '../../utils/Whentil';
 import lifecycle from '../../utils/lifecycle';
+import { requestPositionTracking } from '../../utils/Gets/GetProgress';
 import {
   ActivePlaybackControlsInstance,
   ActiveSetupSongProgressBarInstance,
@@ -19,12 +20,24 @@ let nowBarListenerIds: number[] = [];
 let nowBarInitWhen: ReturnType<typeof Whentil.When> | null = null;
 let nowBarTeardownTracked = false;
 
+// Registers the fullscreen NowBar (custom progress bar) as a position consumer
+// so the sync loop only does RPC work while it's actually on screen.
+let fullscreenPositionClient: (() => void) | null = null;
+
+function releaseFullscreenPositionClient(): void {
+  if (fullscreenPositionClient) {
+    fullscreenPositionClient();
+    fullscreenPositionClient = null;
+  }
+}
+
 /** Remove every NowBar listener registered by the previous open. */
 export function teardownNowBarListeners() {
   for (const id of nowBarListenerIds) {
     Global.Event.unListen(id);
   }
   nowBarListenerIds = [];
+  releaseFullscreenPositionClient();
   if (nowBarInitWhen) {
     nowBarInitWhen.Cancel();
     nowBarInitWhen = null;
@@ -84,9 +97,17 @@ export function setupEventListeners() {
   nowBarListenerIds.push(Global.Event.listen('playback:position', handlePositionUpdate));
   nowBarListenerIds.push(Global.Event.listen('playback:progress', handlePositionUpdate));
 
-  // Handle fullscreen exit
+  // Handle fullscreen open/exit — the custom NowBar progress bar only exists in
+  // fullscreen, so only claim a position consumer for its lifetime.
+  nowBarListenerIds.push(
+    Global.Event.listen('fullscreen:open', () => {
+      releaseFullscreenPositionClient();
+      fullscreenPositionClient = requestPositionTracking();
+    }),
+  );
   nowBarListenerIds.push(
     Global.Event.listen('fullscreen:exit', () => {
+      releaseFullscreenPositionClient();
       CleanUpActiveComponents();
     }),
   );
