@@ -177,7 +177,7 @@ function LinesEvListener(e: Event) {
   }
 
   if (typeof startTime === 'number') {
-    Spicetify.Player.seek(startTime);
+    SpotifyPlayer.Seek(startTime);
   }
 }
 

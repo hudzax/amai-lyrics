@@ -151,6 +151,32 @@ export function requestPositionSync(): void {
   scheduleLoop(0);
 }
 
+// Re-anchors the synced position to the platform's currently reported position
+// using a fresh local timestamp, WITHOUT any RPC. Used right after a position
+// discontinuity (pause -> resume, or any seek) so the delta-based GetProgress()
+// math is correct on the very next frame instead of drifting until the next
+// periodic anchor sync.
+//
+// Why this is needed for resume: GetProgress() returns
+// `syncedPosition.Position + (performance.now() - syncedPosition.StartedSyncAt)`
+// while playing. The anchor is frozen while paused, so on resume that delta has
+// grown by the entire pause duration. A forced RPC re-sync races with
+// Spicetify.Player.isPlaying() flipping to true, so it can be dropped for up to
+// the next paused-poll tick. Re-anchoring here is instant and race-free; the
+// next scheduled doSync() refines it with an exact position read.
+export function reanchorPosition(): void {
+  const platform = Spicetify.Platform as unknown as {
+    PlayerAPI?: { _state?: { positionAsOfTimestamp?: number; timestamp?: number } };
+  };
+  const state = platform?.PlayerAPI?._state;
+  if (!state) return;
+  const positionAsOfTimestamp =
+    typeof state.positionAsOfTimestamp === 'number' ? state.positionAsOfTimestamp : 0;
+  const timestamp = typeof state.timestamp === 'number' ? state.timestamp : Date.now();
+  syncedPosition.StartedSyncAt = performance.now();
+  syncedPosition.Position = positionAsOfTimestamp + (Date.now() - timestamp);
+}
+
 // Per-frame position cache — all per-frame loops (render, scroll, playbar)
 // within the same rAF tick share one position value instead of each calling
 // GetProgress independently.

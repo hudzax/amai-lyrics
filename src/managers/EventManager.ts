@@ -1,5 +1,6 @@
 import { SpotifyPlayer } from '../components/Global/SpotifyPlayer';
 import { IntervalManager } from '../utils/IntervalManager';
+import { reanchorPosition, requestPositionSync } from '../utils/Gets/GetProgress';
 import Global from '../components/Global/Global';
 import Session from '../components/Global/Session';
 import Whentil from '../utils/Whentil';
@@ -10,7 +11,16 @@ export class EventManager {
 
   // Stored handler references so they can be removed on teardown.
   private static onPlayPause = (e: { data?: { isPaused?: boolean } }) => {
-    SpotifyPlayer.IsPlaying = !e?.data?.isPaused;
+    const isPaused = e?.data?.isPaused;
+    SpotifyPlayer.IsPlaying = !isPaused;
+    // Resuming after a pause: the position anchor was frozen during the pause, so
+    // GetProgress() would otherwise keep adding the elapsed pause duration to the
+    // stale anchor. Re-anchor locally and instantly (race-free) to the platform's
+    // current position, then trigger an exact RPC sync to refine it.
+    if (!isPaused) {
+      reanchorPosition();
+      requestPositionSync();
+    }
     Global.Event.evoke('playback:playpause', e);
   };
 
