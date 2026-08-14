@@ -402,7 +402,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.4.16";
+      version = "1.4.17";
     }
   });
 
@@ -5615,6 +5615,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   __export(GetProgress_exports, {
     _DEPRECATED___GetProgress: () => _DEPRECATED___GetProgress,
     default: () => GetProgress,
+    reanchorPosition: () => reanchorPosition,
     requestPositionSync: () => requestPositionSync,
     requestPositionTracking: () => requestPositionTracking
   });
@@ -5691,6 +5692,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   function requestPositionSync() {
     scheduleLoop(0);
+  }
+  function reanchorPosition() {
+    const platform = Spicetify.Platform;
+    const state = platform?.PlayerAPI?._state;
+    if (!state)
+      return;
+    const positionAsOfTimestamp = typeof state.positionAsOfTimestamp === "number" ? state.positionAsOfTimestamp : 0;
+    const timestamp = typeof state.timestamp === "number" ? state.timestamp : Date.now();
+    syncedPosition.StartedSyncAt = performance.now();
+    syncedPosition.Position = positionAsOfTimestamp + (Date.now() - timestamp);
   }
   function GetProgress() {
     const now2 = performance.now();
@@ -5830,6 +5841,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         },
         Seek: (position) => {
           Spicetify.Player.origin.seekTo(position);
+          requestPositionSync();
         },
         Artwork: {
           Get: async (size) => {
@@ -6460,7 +6472,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       startTime = syllableElementToStartTimeMap.get(target);
     }
     if (typeof startTime === "number") {
-      Spicetify.Player.seek(startTime);
+      SpotifyPlayer.Seek(startTime);
     }
   }
   function addLinesEvListener() {
@@ -8446,15 +8458,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-9160-5ET9qBAixxEn/1a000a6fc369/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134ab039/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-9160-5ET9qBAixxEn/1a000a6fc369/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134ab039/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-9160-5ET9qBAixxEn/1a000a6fc3aa/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134ab09a/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-9160-5ET9qBAixxEn/1a000a6fc3aa/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134ab09a/ProcessingIndicator.css"() {
     }
   });
 
@@ -34261,6 +34273,7 @@ ${JSON.stringify(lyricsOnly)}`
   // src/managers/EventManager.ts
   init_SpotifyPlayer();
   init_IntervalManager();
+  init_GetProgress();
   init_Global();
   init_Session();
   init_Whentil();
@@ -34335,7 +34348,12 @@ ${JSON.stringify(lyricsOnly)}`
   };
   var EventManager = _EventManager;
   EventManager.onPlayPause = (e) => {
-    SpotifyPlayer.IsPlaying = !e?.data?.isPaused;
+    const isPaused = e?.data?.isPaused;
+    SpotifyPlayer.IsPlaying = !isPaused;
+    if (!isPaused) {
+      reanchorPosition();
+      requestPositionSync();
+    }
     Global_default.Event.evoke("playback:playpause", e);
   };
   EventManager.onProgress = (e) => {
@@ -34816,7 +34834,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9160-5ET9qBAixxEn/1a000a6fc369/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134ab039/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -34842,7 +34860,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9160-5ET9qBAixxEn/1a000a6fc3aa/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134ab09a/ProcessingIndicator.css */
 #SpicyLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -34922,7 +34940,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9160-5ET9qBAixxEn/1a000a6fbb70/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134aa920/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -35071,7 +35089,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9160-5ET9qBAixxEn/1a000a6fbe51/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134aac21/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -35279,7 +35297,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9160-5ET9qBAixxEn/1a000a6fbee2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134aac92/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -35881,7 +35899,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9160-5ET9qBAixxEn/1a000a6fbfa3/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134aad53/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -36056,7 +36074,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9160-5ET9qBAixxEn/1a000a6fbff4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134aadb4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -36333,7 +36351,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9160-5ET9qBAixxEn/1a000a6fc075/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134aae15/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -36632,7 +36650,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9160-5ET9qBAixxEn/1a000a6fc0d6/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134aae76/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -36654,7 +36672,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9160-5ET9qBAixxEn/1a000a6fc107/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134aaea7/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -36681,7 +36699,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-9160-5ET9qBAixxEn/1a000a6fc138/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134aaed8/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
