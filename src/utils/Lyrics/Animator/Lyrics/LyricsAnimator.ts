@@ -241,11 +241,13 @@ export function Animate(position) {
             }
             if (isDot) {
               word.HTMLElement.classList.remove('dot-active');
-              word.HTMLElement.style.transform = '';
-              word.HTMLElement.style.scale = '';
-              word.HTMLElement.style.opacity = '';
-              word.HTMLElement.style.setProperty('--text-shadow-blur-radius', '');
-              word.HTMLElement.style.setProperty('--text-shadow-opacity', '');
+              // Route through setStyleIfChanged so these static reset values are
+              // written once on the NotSung transition instead of every tick.
+              setStyleIfChanged(word.HTMLElement, 'transform', '');
+              setStyleIfChanged(word.HTMLElement, 'scale', '');
+              setStyleIfChanged(word.HTMLElement, 'opacity', '');
+              setStyleIfChanged(word.HTMLElement, '--text-shadow-blur-radius', '');
+              setStyleIfChanged(word.HTMLElement, '--text-shadow-opacity', '');
               word.translateY = 0.01;
               word.scale = 0.75;
               word.glow = 0;
@@ -276,11 +278,17 @@ export function Animate(position) {
             }
             if (isDot) {
               word.HTMLElement.classList.remove('dot-active');
-              word.HTMLElement.style.transform = 'translateY(calc(var(--font-size) * 0))';
-              word.HTMLElement.style.scale = '1.2';
-              word.HTMLElement.style.opacity = '1';
-              word.HTMLElement.style.setProperty('--text-shadow-blur-radius', '12px');
-              word.HTMLElement.style.setProperty('--text-shadow-opacity', '50%');
+              // Route through setStyleIfChanged so these static values are written
+              // once on the Sung transition instead of every tick.
+              setStyleIfChanged(
+                word.HTMLElement,
+                'transform',
+                'translateY(calc(var(--font-size) * 0))',
+              );
+              setStyleIfChanged(word.HTMLElement, 'scale', '1.2');
+              setStyleIfChanged(word.HTMLElement, 'opacity', '1');
+              setStyleIfChanged(word.HTMLElement, '--text-shadow-blur-radius', '12px');
+              setStyleIfChanged(word.HTMLElement, '--text-shadow-opacity', '50%');
               word.scale = 1.2;
               word.glow = 0.5;
             } else if (!isLetterGroup) {
@@ -392,22 +400,30 @@ export function Animate(position) {
               }
             } else if (dot.Status === 'NotSung') {
               dot.HTMLElement.classList.remove('dot-active');
-              dot.HTMLElement.style.transform = '';
-              dot.HTMLElement.style.scale = '';
-              dot.HTMLElement.style.opacity = '';
-              dot.HTMLElement.style.setProperty('--text-shadow-blur-radius', '');
-              dot.HTMLElement.style.setProperty('--text-shadow-opacity', '');
+              // Route through setStyleIfChanged so these static reset values are
+              // written once on the NotSung transition instead of every tick.
+              setStyleIfChanged(dot.HTMLElement, 'transform', '');
+              setStyleIfChanged(dot.HTMLElement, 'scale', '');
+              setStyleIfChanged(dot.HTMLElement, 'opacity', '');
+              setStyleIfChanged(dot.HTMLElement, '--text-shadow-blur-radius', '');
+              setStyleIfChanged(dot.HTMLElement, '--text-shadow-opacity', '');
             } else if (dot.Status === 'Sung') {
               dot.HTMLElement.classList.remove('dot-active');
-              dot.HTMLElement.style.transform = 'translateY(calc(var(--font-size) * 0))';
-              dot.HTMLElement.style.scale = '1.2';
-              dot.HTMLElement.style.opacity = '1';
-              dot.HTMLElement.style.setProperty('--text-shadow-blur-radius', '12px');
-              dot.HTMLElement.style.setProperty('--text-shadow-opacity', '50%');
+              // Route through setStyleIfChanged so these static values are written
+              // once on the Sung transition instead of every tick.
+              setStyleIfChanged(
+                dot.HTMLElement,
+                'transform',
+                'translateY(calc(var(--font-size) * 0))',
+              );
+              setStyleIfChanged(dot.HTMLElement, 'scale', '1.2');
+              setStyleIfChanged(dot.HTMLElement, 'opacity', '1');
+              setStyleIfChanged(dot.HTMLElement, '--text-shadow-blur-radius', '12px');
+              setStyleIfChanged(dot.HTMLElement, '--text-shadow-opacity', '50%');
             }
           }
         } else {
-          line.HTMLElement.style.setProperty('--gradient-position', `${percentage * 100}%`);
+          setStyleIfChanged(line.HTMLElement, '--gradient-position', `${percentage * 100}%`);
         }
       } else if (line.Status === 'NotSung') {
         if (!SKIP_IF_STATUS_UNCHANGED || prevStatus !== 'NotSung') {
