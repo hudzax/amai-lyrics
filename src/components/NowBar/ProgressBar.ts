@@ -1,4 +1,6 @@
 import { SongProgressBar } from '../../utils/Lyrics/SongProgressBar';
+import { IntervalManager } from '../../utils/IntervalManager';
+import { INTERVALS } from '../../constants/intervals';
 import { SpotifyPlayer } from '../Global/SpotifyPlayer';
 import Fullscreen from '../Utils/Fullscreen';
 import { progressBarState } from './state';
@@ -186,13 +188,18 @@ function initializeTrackingVariables() {
 }
 
 /**
- * Sets up the update interval for smooth progress bar updates
+ * Sets up the update interval for smooth progress bar updates.
+ *
+ * Uses IntervalManager instead of a bare setInterval so the whole update loop
+ * is auto-paused while the window is hidden/minimized and destroyed on
+ * lifecycle teardown. No inner document.hidden check is needed anymore: the
+ * manager simply stops ticking while hidden, and the interpolation below
+ * self-corrects on the next visible tick (>3s elapsed -> real-position
+ * re-anchor through the player API).
  */
-function setupUpdateInterval(updateTimelineState: (position?: number) => void) {
-  return setInterval(() => {
-    // No point writing progress text while the window isn't visible; the
-    // next visible tick re-anchors via the elapsed-time path below.
-    if (document.hidden || !SpotifyPlayer.IsPlaying) {
+function setupUpdateInterval(updateTimelineState: (position?: number) => void): IntervalManager {
+  const updateInterval = new IntervalManager(INTERVALS.PROGRESS_BAR_UPDATE, () => {
+    if (!SpotifyPlayer.IsPlaying) {
       return;
     }
 
@@ -216,7 +223,9 @@ function setupUpdateInterval(updateTimelineState: (position?: number) => void) {
       progressBarState.lastInterpolationUpdate = now;
       updateTimelineState(interpolatedPosition);
     }
-  }, 100); // Update frequently for smooth animation
+  });
+  updateInterval.Start();
+  return updateInterval;
 }
 
 /**
@@ -228,11 +237,9 @@ function cleanupProgressBar(sliderBar: HTMLElement, sliderBarHandler: EventListe
     sliderBar.removeEventListener('click', sliderBarHandler);
   }
 
-  // Clear the update interval
+  // Destroy the update interval (also unregisters its visibility listener)
   const { updateInterval, SongProgressBar_ClassInstance, TimeLineElement } = progressBarState;
-  if (updateInterval) {
-    clearInterval(updateInterval);
-  }
+  updateInterval?.Destroy();
 
   // Clean up the progress bar instance
   if (SongProgressBar_ClassInstance) {

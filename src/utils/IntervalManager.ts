@@ -7,8 +7,8 @@ class IntervalManager implements Giveable {
   private timerId: number | null = null;
   public Running: boolean;
   public Destroyed: boolean;
-  /** True while paused for document.hidden. Stop()/Start() by the owner still works independently. */
-  private hiddenPaused = false;
+  /** True only while WE auto-paused the timer because document.hidden turned true. */
+  private autoPaused = false;
 
   constructor(duration: number, callback: () => void) {
     if (isNaN(duration)) {
@@ -27,19 +27,37 @@ class IntervalManager implements Giveable {
     // and let the renderer actually idle between song changes.
     const onVisibilityChange = (): void => {
       if (this.Destroyed) return;
+
       if (document.hidden) {
-        this.hiddenPaused = this.Running;
-        this.Stop();
-      } else {
-        const wasHiddenPaused = this.hiddenPaused;
-        this.hiddenPaused = false;
-        // Only resume if we were the ones who stopped it; an explicit
-        // owner-called Stop() while hidden stays stopped.
-        if (wasHiddenPaused && !this.Running) this.Start();
+        // Mark that WE are stopping this instance, then halt it without going
+        // through Stop() (which would cancel that marker as an owner action).
+        // An already-stopped timer marks nothing, so an explicit owner Stop()
+        // while hidden can never be overridden later.
+        if (this.Running) {
+          this.autoPaused = true;
+          this.pauseTimer();
+        }
+        return;
+      }
+
+      // Visible again: resume only if we were the ones who paused it. Any
+      // owner-initiated Start()/Stop() along the way clears this flag, so
+      // their intent survives the round trip.
+      if (this.autoPaused) {
+        this.autoPaused = false;
+        if (!this.Running) {
+          this.Running = true;
+          this.scheduleTick();
+        }
       }
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
     this.maid.Give(() => document.removeEventListener('visibilitychange', onVisibilityChange));
+
+    // Register cleanup ONCE here instead of inside Start(): Maid.Give() keys
+    // each item uniquely, so per-start registration kept appending disposers
+    // forever across start/pause/resume cycles.
+    this.maid.Give(() => this.Stop());
   }
 
   // Starts the timer. Uses setTimeout (not requestAnimationFrame) because these
@@ -58,27 +76,17 @@ class IntervalManager implements Giveable {
     }
 
     this.Running = true;
-    // If the owner explicitly starts us while hidden, let it tick but remember
-    // so the next visibilitychange doesn't try to double-start it.
-    this.hiddenPaused = document.hidden;
-
-    const tick = () => {
-      // Bail if stopped/destroyed while a tick was already scheduled.
-      if (!this.Running || this.Destroyed) return;
-      this.callback();
-      // Recursive setTimeout (rather than setInterval) so a slow callback can
-      // never stack multiple pending ticks.
-      this.timerId = window.setTimeout(tick, this.duration);
-    };
-
-    this.timerId = window.setTimeout(tick, this.duration);
-
-    // Register cleanup with the Maid
-    this.maid.Give(() => this.Stop());
+    // Drop any stale auto-pause marker (e.g. an owner restart issued while
+    // hidden) so the next visibilitychange cannot double-handle this instance.
+    this.autoPaused = false;
+    this.scheduleTick();
   }
 
   // Stops the timer without destroying the manager
   public Stop() {
+    // An explicit owner stop wins over any pending visibility auto-resume
+    // (e.g. an owner stop issued while hidden before the window shows again).
+    this.autoPaused = false;
     if (this.timerId !== null) {
       window.clearTimeout(this.timerId);
       this.timerId = null;
@@ -108,6 +116,32 @@ class IntervalManager implements Giveable {
     this.maid.CleanUp();
     this.Destroyed = true;
     this.Running = false;
+  }
+
+  /**
+   * Halts the pending tick WITHOUT touching auto-pause bookkeeping. Used only
+   * by the visibility handler so an automatic hide never looks like an owner
+   * stop (owner actions go through Stop(), which clears that marker).
+   */
+  private pauseTimer(): void {
+    if (this.timerId !== null) {
+      window.clearTimeout(this.timerId);
+      this.timerId = null;
+      this.Running = false;
+    }
+  }
+
+  /** Schedules the recursive tick loop; the caller must have set Running = true. */
+  private scheduleTick(): void {
+    const tick = (): void => {
+      // Bail if stopped/destroyed while a tick was already scheduled.
+      if (!this.Running || this.Destroyed) return;
+      this.callback();
+      // Recursive setTimeout (rather than setInterval) so a slow callback can
+      // never stack multiple pending ticks.
+      this.timerId = window.setTimeout(tick, this.duration);
+    };
+    this.timerId = window.setTimeout(tick, this.duration);
   }
 }
 

@@ -121,18 +121,33 @@ function setupBlankToastObserver() {
 
   // Ackbar mounts once on first toast and stays in the DOM forever after.
   // Retry quickly for the first few seconds, then fall back to a slow check
-  // until we've actually hooked the container; afterwards this costs nothing.
-  attachObservers();
-  const initialTimer = window.setInterval(() => {
-    if (attachObservers()) window.clearInterval(initialTimer);
-  }, 250);
-  window.setTimeout(() => window.clearInterval(initialTimer), 5000);
-  const slowTimer = window.setInterval(() => {
-    if (!containersObserved && attachObservers()) window.clearInterval(slowTimer);
-  }, 4000);
+  // until we've actually hooked the container. All retry timers clear for good
+  // the moment the hook succeeds, so steady-state cost is zero.
+  let fastTimer: number | undefined;
+  let fastCapTimeout: number | undefined;
+  let slowTimer: number | undefined;
 
-  lifecycle.track(() => window.clearInterval(initialTimer));
-  lifecycle.track(() => window.clearInterval(slowTimer));
+  const stopRetries = (): void => {
+    if (fastTimer !== undefined) window.clearInterval(fastTimer);
+    if (fastCapTimeout !== undefined) window.clearTimeout(fastCapTimeout);
+    if (slowTimer !== undefined) window.clearInterval(slowTimer);
+    fastTimer = fastCapTimeout = slowTimer = undefined;
+  };
+
+  const hookContainers = (): void => {
+    if (attachObservers()) stopRetries();
+  };
+
+  fastTimer = window.setInterval(hookContainers, 250);
+  // Cap the fast phase: past ~5s the container simply hasn't mounted yet and
+  // the slow sweep below picks up late mounts instead.
+  fastCapTimeout = window.setTimeout(() => {
+    if (fastTimer !== undefined) window.clearInterval(fastTimer);
+    fastTimer = undefined;
+  }, 5000);
+  slowTimer = window.setInterval(hookContainers, 4000);
+
+  lifecycle.track(() => stopRetries());
   lifecycle.trackObserver(observer);
 }
 

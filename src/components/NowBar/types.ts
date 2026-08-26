@@ -1,4 +1,5 @@
 import { SongProgressBar } from '../../utils/Lyrics/SongProgressBar';
+import { IntervalManager } from '../../utils/IntervalManager';
 
 // Define types for better type safety
 export interface ComponentInstance {
@@ -28,7 +29,7 @@ export interface ProgressBarState {
   lastKnownPosition: number;
   lastUpdateTime: number;
   lastInterpolationUpdate?: number;
-  updateInterval?: ReturnType<typeof setInterval>;
+  updateInterval?: IntervalManager;
   updateTimelineState_Function?: (position?: number | null) => void;
   SongProgressBar_ClassInstance?: SongProgressBar;
   TimeLineElement?: HTMLElement;
