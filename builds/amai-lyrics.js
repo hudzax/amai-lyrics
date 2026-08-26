@@ -341,6 +341,7 @@
       IntervalManager = class {
         constructor(duration, callback) {
           this.timerId = null;
+          this.hiddenPaused = false;
           if (isNaN(duration)) {
             throw new Error("Duration cannot be NaN.");
           }
@@ -349,6 +350,21 @@
           this.duration = duration === Infinity ? 0 : duration * 1e3;
           this.Running = false;
           this.Destroyed = false;
+          const onVisibilityChange = () => {
+            if (this.Destroyed)
+              return;
+            if (document.hidden) {
+              this.hiddenPaused = this.Running;
+              this.Stop();
+            } else {
+              const wasHiddenPaused = this.hiddenPaused;
+              this.hiddenPaused = false;
+              if (wasHiddenPaused && !this.Running)
+                this.Start();
+            }
+          };
+          document.addEventListener("visibilitychange", onVisibilityChange);
+          this.maid.Give(() => document.removeEventListener("visibilitychange", onVisibilityChange));
         }
         Start() {
           if (this.Destroyed) {
@@ -360,6 +376,7 @@
             return;
           }
           this.Running = true;
+          this.hiddenPaused = document.hidden;
           const tick = () => {
             if (!this.Running || this.Destroyed)
               return;
@@ -402,7 +419,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.4.17";
+      version = "1.4.18";
     }
   });
 
@@ -7949,7 +7966,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
 
   // src/utils/Whentil.ts
   function Until(statement, callback, maxRepeats = Infinity) {
-    const delay2 = 10;
+    let delay2 = INITIAL_DELAY_MS;
     let isCancelled = false;
     let executedCount = 0;
     const resolveStatement = () => typeof statement === "function" ? statement() : statement;
@@ -7961,6 +7978,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         callback();
         executedCount++;
         setTimeout(runner, delay2);
+        delay2 = Math.min(delay2 * 2, MAX_DELAY_MS);
       }
     };
     setTimeout(runner, delay2);
@@ -7972,13 +7990,14 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         if (executedCount >= maxRepeats || isCancelled) {
           isCancelled = false;
           executedCount = 0;
+          delay2 = INITIAL_DELAY_MS;
           runner();
         }
       }
     };
   }
   function When(statement, callback, repeater = 1) {
-    const delay2 = 10;
+    let delay2 = INITIAL_DELAY_MS;
     let isCancelled = false;
     let executionsRemaining = repeater;
     const resolveStatement = () => typeof statement === "function" ? statement() : statement;
@@ -7989,14 +8008,17 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         const resolved = resolveStatement();
         if (resolved) {
           callback(resolved);
+          delay2 = INITIAL_DELAY_MS;
           executionsRemaining--;
           if (executionsRemaining > 0)
             setTimeout(runner, delay2);
         } else {
           setTimeout(runner, delay2);
+          delay2 = Math.min(delay2 * 2, MAX_DELAY_MS);
         }
       } catch {
         setTimeout(runner, delay2);
+        delay2 = Math.min(delay2 * 2, MAX_DELAY_MS);
       }
     };
     setTimeout(runner, delay2);
@@ -8008,14 +8030,17 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         if (executionsRemaining <= 0 || isCancelled) {
           isCancelled = false;
           executionsRemaining = repeater;
+          delay2 = INITIAL_DELAY_MS;
           runner();
         }
       }
     };
   }
-  var Whentil, Whentil_default;
+  var INITIAL_DELAY_MS, MAX_DELAY_MS, Whentil, Whentil_default;
   var init_Whentil = __esm({
     "src/utils/Whentil.ts"() {
+      INITIAL_DELAY_MS = 10;
+      MAX_DELAY_MS = 250;
       Whentil = {
         When,
         Until
@@ -8458,15 +8483,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134ab039/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d057f9/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134ab039/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d057f9/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134ab09a/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d0584a/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134ab09a/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d0584a/ProcessingIndicator.css"() {
     }
   });
 
@@ -11045,20 +11070,21 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   function setupUpdateInterval(updateTimelineState) {
     return setInterval(() => {
-      if (SpotifyPlayer.IsPlaying) {
-        const { lastKnownPosition, lastUpdateTime } = progressBarState;
-        const now2 = performance.now();
-        const elapsed = now2 - (lastUpdateTime || now2);
-        if (elapsed > 3e3) {
-          const actualPosition = SpotifyPlayer.GetTrackPosition() || 0;
-          progressBarState.lastKnownPosition = actualPosition;
-          progressBarState.lastUpdateTime = now2;
-          updateTimelineState(actualPosition);
-        } else {
-          const interpolatedPosition = (lastKnownPosition || 0) + elapsed;
-          progressBarState.lastInterpolationUpdate = now2;
-          updateTimelineState(interpolatedPosition);
-        }
+      if (document.hidden || !SpotifyPlayer.IsPlaying) {
+        return;
+      }
+      const { lastKnownPosition, lastUpdateTime } = progressBarState;
+      const now2 = performance.now();
+      const elapsed = now2 - (lastUpdateTime || now2);
+      if (elapsed > 3e3) {
+        const actualPosition = SpotifyPlayer.GetTrackPosition() || 0;
+        progressBarState.lastKnownPosition = actualPosition;
+        progressBarState.lastUpdateTime = now2;
+        updateTimelineState(actualPosition);
+      } else {
+        const interpolatedPosition = (lastKnownPosition || 0) + elapsed;
+        progressBarState.lastInterpolationUpdate = now2;
+        updateTimelineState(interpolatedPosition);
       }
     }, 100);
   }
@@ -34692,7 +34718,28 @@ ${JSON.stringify(lyricsOnly)}`
         });
       }
     });
-    observer.observe(document.body, { childList: true, subtree: true });
+    let containersObserved = false;
+    const attachObservers = () => {
+      const containers = document.querySelectorAll(SNACKBAR_SELECTOR);
+      containers.forEach((c) => {
+        observer.observe(c, { childList: true, subtree: true });
+      });
+      const found = containers.length > 0;
+      containersObserved = containersObserved || found;
+      return found;
+    };
+    attachObservers();
+    const initialTimer = window.setInterval(() => {
+      if (attachObservers())
+        window.clearInterval(initialTimer);
+    }, 250);
+    window.setTimeout(() => window.clearInterval(initialTimer), 5e3);
+    const slowTimer = window.setInterval(() => {
+      if (!containersObserved && attachObservers())
+        window.clearInterval(slowTimer);
+    }, 4e3);
+    lifecycle_default.track(() => window.clearInterval(initialTimer));
+    lifecycle_default.track(() => window.clearInterval(slowTimer));
     lifecycle_default.trackObserver(observer);
   }
   function startStartupPoll(durationMs = 3e3, intervalMs = 250) {
@@ -34754,11 +34801,18 @@ ${JSON.stringify(lyricsOnly)}`
     const songChangeManager = new SongChangeManager(buttonManager, backgroundManager);
     new PageManager(buttonManager);
     const dynamicBgInterval = new IntervalManager(INTERVALS.DYNAMIC_BG_UPDATE, () => {
+      if (!document.querySelector(".Root__right-sidebar aside.NowPlayingView"))
+        return;
       const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
       backgroundManager.apply(coverUrl);
     });
     dynamicBgInterval.Start();
     lifecycle_default.trackInterval(dynamicBgInterval);
+    const syncVisibilityClass = () => {
+      document.documentElement.classList.toggle("amai-hidden", document.hidden);
+    };
+    lifecycle_default.trackWindow("visibilitychange", syncVisibilityClass);
+    syncVisibilityClass();
     lifecycle_default.trackPlayerEvent(
       "songchange",
       (event) => songChangeManager.handleSongChange(event)
@@ -34834,7 +34888,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134ab039/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d057f9/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -34860,7 +34914,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134ab09a/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d0584a/ProcessingIndicator.css */
 #SpicyLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -34940,7 +34994,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134aa920/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d05170/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -35089,7 +35143,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134aac21/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d05411/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -35297,7 +35351,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134aac92/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d05482/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -35307,7 +35361,6 @@ button:has(#SpicyLyricsPageSvg):after {
   --ColorStop2: hsla(0, 0%, 98%, .45);
   --ColorStop3: hsla(0, 0%, 93%, .25);
   animation: skeleton 1s linear infinite;
-  backdrop-filter: blur(10px);
   background: linear-gradient(-45deg, var(--ColorStop1) var(--ValueStop1), var(--ColorStop2) var(--ValueStop2), var(--ColorStop3) var(--ValueStop3));
   background-position-x: 100%;
   background-size: 500%;
@@ -35899,7 +35952,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134aad53/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d05573/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -36034,14 +36087,12 @@ button:has(#SpicyLyricsPageSvg):after {
 }
 @keyframes gradientShift {
   0% {
-    background-position: 0% 0%;
     opacity: 0.7;
   }
   50% {
     opacity: 0.8;
   }
   100% {
-    background-position: 100% 100%;
     opacity: 0.7;
   }
 }
@@ -36073,8 +36124,14 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
     filter: blur(20px) hue-rotate(calc(var(--bg-hue-shift) + 30deg));
   }
 }
+.amai-hidden .sweet-dynamic-bg,
+.amai-hidden .sweet-dynamic-bg::after,
+.amai-hidden .sweet-dynamic-bg > img.bg-image,
+.amai-hidden .sweet-dynamic-bg .placeholder {
+  animation-play-state: paused !important;
+}
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134aadb4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d055c4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -36276,16 +36333,12 @@ header.main-topBar-container .amai-info {
 #SpicyLyricsPage .ContentBox .NowBar.Active + .LyricsContainer .LyricsContent .simplebar-content-wrapper .simplebar-content {
   padding: 3cqh 3cqh 1.8cqh 3cqh;
   background-color: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section {
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: 1cqh;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
@@ -36351,7 +36404,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134aae15/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d05635/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -36650,7 +36703,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134aae76/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d05686/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -36672,7 +36725,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134aaea7/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d056b7/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -36699,7 +36752,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7620-p2nZqA0aOdjY/1a00134aaed8/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d056d8/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
