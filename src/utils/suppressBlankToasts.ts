@@ -102,7 +102,37 @@ function setupBlankToastObserver() {
       });
     }
   });
-  observer.observe(document.body, { childList: true, subtree: true });
+
+  // Watch only the snackbar containers themselves, never document.body.
+  // Spotify's React tree mutates constantly everywhere else, so a body-wide
+  // subtree observer burned CPU on every UI update for the whole session.
+  let containersObserved = false;
+  const attachObservers = (): boolean => {
+    const containers = document.querySelectorAll(SNACKBAR_SELECTOR);
+    containers.forEach((c) => {
+      // Subtree stays on, but now it's scoped to the tiny snackbar container
+      // rather than the whole app document.
+      observer.observe(c, { childList: true, subtree: true });
+    });
+    const found = containers.length > 0;
+    containersObserved = containersObserved || found;
+    return found;
+  };
+
+  // Ackbar mounts once on first toast and stays in the DOM forever after.
+  // Retry quickly for the first few seconds, then fall back to a slow check
+  // until we've actually hooked the container; afterwards this costs nothing.
+  attachObservers();
+  const initialTimer = window.setInterval(() => {
+    if (attachObservers()) window.clearInterval(initialTimer);
+  }, 250);
+  window.setTimeout(() => window.clearInterval(initialTimer), 5000);
+  const slowTimer = window.setInterval(() => {
+    if (!containersObserved && attachObservers()) window.clearInterval(slowTimer);
+  }, 4000);
+
+  lifecycle.track(() => window.clearInterval(initialTimer));
+  lifecycle.track(() => window.clearInterval(slowTimer));
   lifecycle.trackObserver(observer);
 }
 

@@ -8,8 +8,9 @@
     --ColorStop2: hsla(0, 0%, 98%, .45);
     --ColorStop3: hsla(0, 0%, 93%, .25);
     animation: skeleton 1s linear infinite;
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
+    /* No backdrop-filter: the shimmer already animates background-position
+       every frame, and blur on top of that repaints the filter region of a
+       large surface for no visible benefit while loading. */
     background: linear-gradient(-45deg, var(--ColorStop1) var(--ValueStop1), var(--ColorStop2) var(--ValueStop2), var(--ColorStop3) var(--ValueStop3));
     background-position-x: 100%;
     background-size: 500%;

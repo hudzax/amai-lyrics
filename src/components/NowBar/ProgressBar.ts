@@ -190,27 +190,31 @@ function initializeTrackingVariables() {
  */
 function setupUpdateInterval(updateTimelineState: (position?: number) => void) {
   return setInterval(() => {
-    if (SpotifyPlayer.IsPlaying) {
-      // Get stored values
-      const { lastKnownPosition, lastUpdateTime } = progressBarState;
+    // No point writing progress text while the window isn't visible; the
+    // next visible tick re-anchors via the elapsed-time path below.
+    if (document.hidden || !SpotifyPlayer.IsPlaying) {
+      return;
+    }
 
-      // Calculate elapsed time
-      const now = performance.now();
-      const elapsed = now - (lastUpdateTime || now);
+    // Get stored values
+    const { lastKnownPosition, lastUpdateTime } = progressBarState;
 
-      // Update strategy: get actual position occasionally, interpolate most of the time
-      if (elapsed > 3000) {
-        // Every 3 seconds, get actual position from API
-        const actualPosition = SpotifyPlayer.GetTrackPosition() || 0;
-        progressBarState.lastKnownPosition = actualPosition;
-        progressBarState.lastUpdateTime = now;
-        updateTimelineState(actualPosition);
-      } else {
-        // Otherwise, interpolate position based on elapsed time
-        const interpolatedPosition = (lastKnownPosition || 0) + elapsed;
-        progressBarState.lastInterpolationUpdate = now;
-        updateTimelineState(interpolatedPosition);
-      }
+    // Calculate elapsed time
+    const now = performance.now();
+    const elapsed = now - (lastUpdateTime || now);
+
+    // Update strategy: get actual position occasionally, interpolate most of the time
+    if (elapsed > 3000) {
+      // Every 3 seconds, get actual position from API
+      const actualPosition = SpotifyPlayer.GetTrackPosition() || 0;
+      progressBarState.lastKnownPosition = actualPosition;
+      progressBarState.lastUpdateTime = now;
+      updateTimelineState(actualPosition);
+    } else {
+      // Otherwise, interpolate position based on elapsed time
+      const interpolatedPosition = (lastKnownPosition || 0) + elapsed;
+      progressBarState.lastInterpolationUpdate = now;
+      updateTimelineState(interpolatedPosition);
     }
   }, 100); // Update frequently for smooth animation
 }

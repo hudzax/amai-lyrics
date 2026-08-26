@@ -55,11 +55,23 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
 
   // Set up dynamic background updates
   const dynamicBgInterval = new IntervalManager(INTERVALS.DYNAMIC_BG_UPDATE, () => {
+    // Skip everything while the sidebar NowPlayingView isn't mounted: apply()
+    // would otherwise repeat its measure/mutate cycle every second forever.
+    if (!document.querySelector('.Root__right-sidebar aside.NowPlayingView')) return;
     const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
     backgroundManager.apply(coverUrl);
   });
   dynamicBgInterval.Start();
   lifecycle.trackInterval(dynamicBgInterval);
+
+  // Mirror visibility onto <html> so pure-CSS animations (dynamic background
+  // rotation etc.) can pause via .amai-hidden rules while the client is
+  // minimized / in tray, instead of burning GPU frames nobody sees.
+  const syncVisibilityClass = (): void => {
+    document.documentElement.classList.toggle('amai-hidden', document.hidden);
+  };
+  lifecycle.trackWindow('visibilitychange', syncVisibilityClass);
+  syncVisibilityClass();
 
   // Set up song change listener
   lifecycle.trackPlayerEvent('songchange', (event) =>

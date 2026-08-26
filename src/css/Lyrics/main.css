@@ -220,8 +220,10 @@ header.main-topBar-container .amai-info {
 #SpicyLyricsPage .ContentBox .NowBar.Active + .LyricsContainer .LyricsContent .simplebar-content-wrapper .simplebar-content {
   padding: 3cqh 3cqh 1.8cqh 3cqh;
   background-color: rgba(255, 255, 255, 0.1); /* Lowered opacity for stronger acrylic effect */
-  backdrop-filter: blur(20px); /* Increased blur for more acrylic */
-  -webkit-backdrop-filter: blur(20px); /* Safari support */
+  /* No backdrop-filter here: this surface covers the whole lyrics area and sits
+     directly on top of the always-animating dynamic background, so the blur
+     would force a full-surface re-filter every frame. A translucent fill keeps
+     the look at a fraction of the compositing cost. */
   border: 1px solid rgba(255, 255, 255, 0.2); /* Optional: enhances the frosted look */
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Optional shadow */
 }
@@ -229,8 +231,7 @@ header.main-topBar-container .amai-info {
 .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section {
   background-color: rgba(255, 255, 255, 0.1); /* Lowered opacity for stronger acrylic effect */
   border-radius: 1cqh;
-  backdrop-filter: blur(20px); /* Increased blur for more acrylic */
-  -webkit-backdrop-filter: blur(20px); /* Safari support */
+  /* No backdrop-filter — same reasoning as the lyrics content panel above. */
   border: 1px solid rgba(255, 255, 255, 0.2); /* Optional: enhances the frosted look */
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Optional shadow */
 }

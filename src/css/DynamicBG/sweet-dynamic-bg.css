@@ -50,6 +50,9 @@
   background: linear-gradient(135deg, rgba(15, 15, 35, 0.4) 0%, rgba(30, 10, 70, 0.3) 50%, rgba(10, 20, 50, 0.4) 100%);
   z-index: 10; /* Above all other elements in the dynamic bg */
   pointer-events: none;
+  /* Opacity-only pulse. The previous keyframe also animated background-position,
+     which forces a repaint every frame; opacity is compositor-only (and the
+     position half was a no-op anyway since the gradient fills its box). */
   animation: gradientShift 30s linear infinite; /* Slow gradient movement */
 }
 
@@ -181,14 +184,12 @@
 /* Animation for gradient overlay movement */
 @keyframes gradientShift {
   0% {
-    background-position: 0% 0%;
     opacity: 0.7;
   }
   50% {
     opacity: 0.8;
   }
   100% {
-    background-position: 100% 100%;
     opacity: 0.7;
   }
 }
@@ -227,4 +228,14 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   }
 
   /* No need to disable canvas as it's removed */
+}
+
+/* Freeze every dynamic-background animation while the Spotify window is hidden
+   (minimized / tray). The class is toggled on <html> by app.tsx via
+   visibilitychange, so the compositor gets zero work while nobody is watching. */
+.amai-hidden .sweet-dynamic-bg,
+.amai-hidden .sweet-dynamic-bg::after,
+.amai-hidden .sweet-dynamic-bg > img.bg-image,
+.amai-hidden .sweet-dynamic-bg .placeholder {
+  animation-play-state: paused !important;
 }
