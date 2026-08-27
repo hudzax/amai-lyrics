@@ -91,7 +91,8 @@ function Open() {
         .catch((err) => {
           // If fullscreen fails, still set up UI (fallback)
           setupFullscreenUI();
-          alert(`Error attempting to enable fullscreen mode: ${err.message} (${err.name})`);
+          console.error('Fullscreen error:', err);
+          Spicetify.showNotification(`Fullscreen failed: ${err.message}`, true, 2000);
         });
     } else {
       // Already in fullscreen, just set up UI
@@ -165,9 +166,19 @@ function Close() {
       // Update controls for non-fullscreen mode
       PageView.AppendViewControls();
 
-      // Handle no lyrics case
+      // Handle no lyrics case — support both legacy string and new JSON sentinel
       const currentLyrics = storage.get('currentLyricsData');
-      const NoLyrics = typeof currentLyrics === 'string' && currentLyrics.includes('NO_LYRICS');
+      let NoLyrics = false;
+      if (typeof currentLyrics === 'string' && currentLyrics.includes('NO_LYRICS')) {
+        NoLyrics = true;
+      } else if (currentLyrics) {
+        try {
+          const parsed = JSON.parse(currentLyrics as string) as { status?: string };
+          NoLyrics = parsed?.status === 'NO_LYRICS';
+        } catch {
+          /* not JSON */
+        }
+      }
       if (NoLyrics) {
         OpenNowBar();
         const lyricsContainer = document.querySelector(

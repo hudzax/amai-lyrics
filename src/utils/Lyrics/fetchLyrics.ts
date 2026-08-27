@@ -10,13 +10,20 @@ import { fetchLyricsFromAPI } from './api';
 import { hideRefreshButton } from '../../components/Pages/pageButtons';
 
 import { LyricsData } from './processing';
+import { NoLyricsResult } from './ui';
+
+export type LyricsFetchResult = LyricsData | NoLyricsResult;
+
+export function isNoLyricsResult(v: LyricsFetchResult): v is NoLyricsResult {
+  return typeof v === 'object' && v !== null && (v as NoLyricsResult).status === 'NO_LYRICS';
+}
 
 // Per-track in-flight fetches. Keyed by trackId so duplicate requests for the
 // same track share a single promise (dedupe), while fetches for *different*
 // tracks run fully concurrently. This replaces the old global `currentlyFetching`
 // boolean lock, which serialized every fetch and let a slow fetch for one song
 // block the lyrics of another when seeking.
-const inFlight = new Map<string, Promise<LyricsData | string>>();
+const inFlight = new Map<string, Promise<LyricsFetchResult>>();
 
 // ==============================
 // Main Export Function
@@ -26,19 +33,24 @@ const inFlight = new Map<string, Promise<LyricsData | string>>();
  * Main function to fetch lyrics for a given Spotify track URI
  *
  * @param uri - Spotify track URI
- * @returns Processed lyrics data or error message
+ * @returns Processed lyrics data or typed NO_LYRICS sentinel
  */
-export default async function fetchLyrics(
-  uri: string,
-  flush = false,
-): Promise<LyricsData | string> {
+export default async function fetchLyrics(uri: string, flush = false): Promise<LyricsFetchResult> {
+  if (!uri || typeof uri !== 'string' || !uri.includes(':')) {
+    const { noLyricsMessage } = await import('./ui');
+    return noLyricsMessage();
+  }
   resetLyricsUI();
   ClearLyricsPageContainer();
   document
     .querySelector<HTMLElement>('#SpicyLyricsPage .ContentBox')
     ?.classList.remove('LyricsHidden');
 
-  const trackId = uri.split(':')[2];
+  const trackId = uri.split(':')[2] ?? '';
+  if (!trackId) {
+    const { noLyricsMessage } = await import('./ui');
+    return noLyricsMessage();
+  }
 
   const localLyrics = await getLyricsFromLocalStorage(trackId);
   if (localLyrics) return localLyrics;

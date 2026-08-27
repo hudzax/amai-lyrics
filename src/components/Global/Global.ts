@@ -37,16 +37,16 @@ const Global = {
   },
   GetScope: <T = unknown>(key: string, fallback?: T): T | undefined => {
     const keys = key.split('.'); // Split the key string into an array of property names
-    let current = SCOPE_ROOT; // Start at the root object
+    let current: unknown = SCOPE_ROOT; // Start at the root object
 
     for (const part of keys) {
       if (current === undefined || current === null) {
         return fallback; // Return fallback if the key doesn't exist
       }
-      current = current[part]; // Traverse deeper into the object
+      current = (current as Record<string, unknown>)[part]; // Traverse deeper into the object
     }
 
-    return current === undefined ? fallback : current; // Return the value or fallback
+    return (current as T | undefined) === undefined ? fallback : (current as T); // Return the value or fallback
   },
 };
 

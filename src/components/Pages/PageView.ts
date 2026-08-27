@@ -62,7 +62,9 @@ async function OpenPage() {
 
   const currentUri = Spicetify.Player.data?.item?.uri;
   if (currentUri) {
-    fetchLyrics(currentUri).then(ApplyLyrics);
+    fetchLyrics(currentUri)
+      .then(ApplyLyrics)
+      .catch((e) => console.error('[Amai Lyrics] PageView fetch failed:', e));
   }
 
   Session_OpenNowBar();

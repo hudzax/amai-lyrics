@@ -12,17 +12,13 @@ import {
   ScrollSimplebar,
 } from '../../../Scrolling/Simplebar/ScrollSimplebar';
 import { ConvertTime } from '../../ConvertTime';
-import {
-  ClearLyricsContentArrays,
-  LINE_SYNCED_CurrentLineLyricsObject,
-  lyricsBetweenShow,
-  LyricsObject,
-  SetWordArrayInCurentLine_LINE_SYNCED,
-} from '../../lyrics';
+import { ClearLyricsContentArrays, lyricsBetweenShow, LyricsObject } from '../../lyrics';
 import { ApplyLyricsCredits } from '../Credits/ApplyLyricsCredits';
 import { ApplyInfo } from '../Info/ApplyInfo';
 import isRtl from '../../isRtl';
+import { createMusicalLineMs } from '../Utils/createMusicalLine';
 import storage from '../../../storage';
+import { createRubyFragment } from '../../../sanitize';
 
 // Type definitions for better type safety
 interface LyricLine {
@@ -69,63 +65,14 @@ export function ApplyLineLyrics(data: LyricsData): void {
   const fragment = document.createDocumentFragment();
   const convertStartTime = ConvertTime(data.StartTime);
 
-  /**
-   * Creates a group of dots to display during musical breaks
-   * @param startTime The start time of the dot group in milliseconds
-   * @param endTime The end time of the dot group in milliseconds
-   * @returns HTMLElement containing the dot group
-   */
-  function createDotGroup(startTime: number, endTime: number): HTMLElement {
-    const dotGroup = document.createElement('div');
-    dotGroup.classList.add('dotGroup');
-
-    const totalTime = endTime - startTime;
-    const dotTime = totalTime / 3;
-
-    const NOTE_GLYPHS = ['♪', '♫', '♩'];
-
-    const dots: HTMLElement[] = [];
-    for (let i = 0; i < 3; i++) {
-      const dot = document.createElement('span');
-      dot.classList.add('word', 'dot');
-      dot.textContent = NOTE_GLYPHS[i % NOTE_GLYPHS.length];
-
-      LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables.Lead.push({
-        HTMLElement: dot,
-        StartTime: startTime + dotTime * i,
-        EndTime: i === 2 ? endTime - 400 : startTime + dotTime * (i + 1),
-        TotalTime: dotTime,
-        Dot: true,
-      });
-
-      dots.push(dot);
-    }
-
-    dots.forEach((d) => dotGroup.appendChild(d));
-    return dotGroup;
-  }
-
   // Add initial dot group if there's a sufficient gap before the first line
   if (data.StartTime >= lyricsBetweenShow) {
-    const musicalLine = document.createElement('div');
-    musicalLine.classList.add('line', 'musical-line');
-
-    LyricsObject.Types.Line.Lines.push({
-      HTMLElement: musicalLine,
-      StartTime: 0,
-      EndTime: convertStartTime,
-      TotalTime: convertStartTime,
-      DotLine: true,
-    });
-
-    SetWordArrayInCurentLine_LINE_SYNCED();
-
-    if (data.Content[0]?.OppositeAligned) {
-      musicalLine.classList.add('OppositeAligned');
-    }
-
-    const dotGroup = createDotGroup(0, convertStartTime);
-    musicalLine.appendChild(dotGroup);
+    const musicalLine = createMusicalLineMs(
+      'Line',
+      0,
+      convertStartTime,
+      !!data.Content[0]?.OppositeAligned,
+    );
     fragment.appendChild(musicalLine);
   }
 
@@ -163,11 +110,11 @@ export function ApplyLineLyrics(data: LyricsData): void {
       );
     }
 
-    // Create main text container
+    // Create main text container — use sanitized ruby fragment to prevent XSS
     const mainTextContainer = document.createElement('span');
     mainTextContainer.classList.add('main-lyrics-text');
     mainTextContainer.classList.add('line');
-    mainTextContainer.innerHTML = line.Text;
+    mainTextContainer.appendChild(createRubyFragment(line.Text));
     lineElem.appendChild(mainTextContainer);
     // Removed lineElem.classList.add('line'); as the span is the actual line element
 
@@ -218,32 +165,14 @@ export function ApplyLineLyrics(data: LyricsData): void {
     const hasMusicalBreak = nextLine && nextLine.StartTime - line.EndTime >= lyricsBetweenShow;
 
     if (hasMusicalBreak) {
-      // Create a musical break line with dots
-      const musicalLine = document.createElement('div');
-      musicalLine.classList.add('line', 'musical-line');
-
       const nextStartTime = ConvertTime(nextLine.StartTime);
       const curEndTime = endTime;
-
-      // Register the musical line in the lyrics object
-      LyricsObject.Types.Line.Lines.push({
-        HTMLElement: musicalLine,
-        StartTime: curEndTime,
-        EndTime: nextStartTime,
-        TotalTime: nextStartTime - curEndTime,
-        DotLine: true,
-      });
-
-      SetWordArrayInCurentLine_LINE_SYNCED();
-
-      // Apply alignment if needed
-      if (nextLine.OppositeAligned) {
-        musicalLine.classList.add('OppositeAligned');
-      }
-
-      // Add dot group to represent the musical break
-      const dotGroup = createDotGroup(curEndTime, nextStartTime);
-      musicalLine.appendChild(dotGroup);
+      const musicalLine = createMusicalLineMs(
+        'Line',
+        curEndTime,
+        nextStartTime,
+        !!nextLine.OppositeAligned,
+      );
       fragment.appendChild(musicalLine);
     }
   });

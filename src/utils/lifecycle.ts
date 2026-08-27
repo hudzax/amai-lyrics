@@ -45,7 +45,7 @@ class Lifecycle {
 
   /** Register a window event and its removal. */
   trackWindow(
-    event: keyof WindowEventMap,
+    event: string,
     handler: (...args: unknown[]) => void,
     options?: boolean | AddEventListenerOptions,
   ): void {

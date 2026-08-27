@@ -46,13 +46,17 @@ async function OpenNowBar() {
         const ArtistNameElement = document.createElement('div');
         ArtistNameElement.classList.add('ArtistData');
         const artistNames = SpotifyPlayer.JoinArtists(await SpotifyPlayer.GetArtists());
-        ArtistNameElement.innerHTML = `<span>${artistNames}</span>`;
+        const artistSpan = document.createElement('span');
+        artistSpan.textContent = artistNames;
+        ArtistNameElement.appendChild(artistSpan);
         AppendQueue.push(ArtistNameElement);
       }
       {
         const AlbumNameElement = document.createElement('div');
         AlbumNameElement.classList.add('AlbumData');
-        AlbumNameElement.innerHTML = `<span>${SpotifyPlayer.GetAlbumName()}</span>`;
+        const albumSpan = document.createElement('span');
+        albumSpan.textContent = SpotifyPlayer.GetAlbumName();
+        AlbumNameElement.appendChild(albumSpan);
         /* AlbumNameElement.classList.add("marqueeify");
                 AlbumNameElement.setAttribute("marquee-base-width", "22cqw"); */
         AppendQueue.push(AlbumNameElement);

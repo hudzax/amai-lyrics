@@ -62,12 +62,14 @@ export class SongChangeManager {
     // `latestUri` guard below and by the track-id checks inside processing.
     const { default: fetchLyrics } = await import('../utils/Lyrics/fetchLyrics');
     const { default: ApplyLyrics } = await import('../utils/Lyrics/Global/Applyer');
-    fetchLyrics(currentUri).then((lyrics) => {
-      // Only apply if this track is still the latest one the user landed on.
-      if (this.latestUri === currentUri) {
-        ApplyLyrics(lyrics);
-      }
-    });
+    fetchLyrics(currentUri)
+      .then((lyrics) => {
+        // Only apply if this track is still the latest one the user landed on.
+        if (this.latestUri === currentUri) {
+          ApplyLyrics(lyrics);
+        }
+      })
+      .catch((e) => console.error('[Amai Lyrics] SongChange fetch failed:', e));
 
     // Update button registration (synchronous but fast)
     this.buttonManager.updateRegistration();

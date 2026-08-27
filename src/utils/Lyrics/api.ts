@@ -5,19 +5,19 @@
 import Platform from '../../components/Global/Platform';
 import { SpotifyPlayer } from '../../components/Global/SpotifyPlayer';
 import { getLyrics, LyricsResult } from '../API/Lyrics';
-import { ClearLyricsPageContainer, noLyricsMessage } from './ui';
+import { ClearLyricsPageContainer, noLyricsMessage, NoLyricsResult } from './ui';
 import { processAndEnhanceLyrics, LyricsData } from './processing';
 
 /**
  * Fetches lyrics from Spotify API and processes them
  *
  * @param trackId - Spotify track ID
- * @returns Processed lyrics data or error message
+ * @returns Processed lyrics data or typed NO_LYRICS sentinel
  */
 export async function fetchLyricsFromAPI(
   trackId: string,
   flush = false,
-): Promise<LyricsData | string> {
+): Promise<LyricsData | NoLyricsResult> {
   try {
     const spotifyAccessToken = await Platform.GetSpotifyAccessToken();
 
@@ -63,9 +63,9 @@ export async function fetchLyricsFromAPI(
  * Handles API error status codes with improved status code handling
  *
  * @param status - HTTP status code
- * @returns Error message
+ * @returns Typed NO_LYRICS sentinel
  */
-export async function handleErrorStatus(status: number): Promise<string> {
+export async function handleErrorStatus(status: number): Promise<NoLyricsResult> {
   // Clear any loading state
   ClearLyricsPageContainer();
 

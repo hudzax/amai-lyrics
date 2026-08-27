@@ -13,6 +13,7 @@ import { ApplyInfo } from './Info/ApplyInfo';
 // import { ApplyTranslation } from './Translation/ApplyTranslation';
 import isRtl from '../isRtl';
 import storage from '../../storage';
+import { createRubyFragment } from '../../sanitize';
 
 export function ApplyStaticLyrics(data) {
   if (!Defaults.LyricsContainerExists) return;
@@ -67,9 +68,11 @@ export function ApplyStaticLyrics(data) {
 
     if (line.Text?.includes('[DEF=font_size:small]')) {
       lineElem.style.fontSize = '35px';
-      mainTextContainer.innerHTML = line.Text.replace('[DEF=font_size:small]', '');
+      mainTextContainer.appendChild(
+        createRubyFragment(line.Text.replace('[DEF=font_size:small]', '')),
+      );
     } else {
-      mainTextContainer.innerHTML = line.Text;
+      mainTextContainer.appendChild(createRubyFragment(line.Text));
     }
 
     lineElem.appendChild(mainTextContainer);

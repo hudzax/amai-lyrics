@@ -4,6 +4,7 @@ import { SpotifyPlayer } from '../Global/SpotifyPlayer';
 import { requestPositionTracking } from '../../utils/Gets/GetProgress';
 import { processPhoneticText } from '../../utils/Lyrics/processing';
 import { convertLyrics } from '../../utils/Lyrics/conversion';
+import { createRubyFragment } from '../../utils/sanitize';
 import Whentil from '../../utils/Whentil';
 import lifecycle from '../../utils/lifecycle';
 import extractArtworkColors from '../../utils/ArtworkColors';
@@ -215,7 +216,8 @@ function setLyricsText(html: string): void {
     lyricsElement.appendChild(inner);
   }
 
-  inner.innerHTML = html;
+  inner.textContent = '';
+  inner.appendChild(createRubyFragment(html));
 
   requestAnimationFrame(() => {
     const cw = lyricsElement!.clientWidth;

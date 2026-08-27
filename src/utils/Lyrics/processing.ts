@@ -15,6 +15,7 @@ import { fetchPhoneticLyrics, fetchLyricTranslations } from './ai';
 import { convertLyrics } from './conversion';
 import Event from '../EventManager';
 import { LyricsResult } from '../API/Lyrics';
+import { createRubyFragment } from '../sanitize';
 import { Syllable, LineBasedLyricItem, SyllableBasedLyricItem, LyricsLine } from './conversion';
 
 export interface LyricsDataSyllable {
@@ -452,19 +453,24 @@ function updateLineElement(
   // Update phonetics by re-processing the text with the latest data
   const processedText = processPhoneticText(text, enableRomaji);
 
-  // Update the main text content (excluding translation)
+  // Update the main text content (excluding translation) — sanitized
   const existingTranslation = lineElement.querySelector('.translation');
-  if (existingTranslation) {
-    // Store translation, update innerHTML, then re-add translation
-    const translationText = existingTranslation.textContent || '';
-    lineElement.innerHTML = processedText;
+  const preservedText = existingTranslation?.textContent ?? null;
+  if (existingTranslation) existingTranslation.remove();
+  // Clear and insert sanitized ruby fragment
+  lineElement.textContent = '';
+  lineElement.appendChild(createRubyFragment(processedText));
+  if (preservedText !== null && preservedText !== '') {
     const newTranslationElem = document.createElement('div');
     newTranslationElem.classList.add('translation');
-    newTranslationElem.textContent = translationText;
+    newTranslationElem.textContent = preservedText;
     lineElement.appendChild(newTranslationElem);
-  } else {
-    // No existing translation, just update innerHTML
-    lineElement.innerHTML = processedText;
+  } else if (existingTranslation && preservedText === '') {
+    // Preserve empty translation node parity with previous logic
+    const empty = document.createElement('div');
+    empty.classList.add('translation');
+    empty.textContent = '';
+    lineElement.appendChild(empty);
   }
 
   // Now handle translation updates

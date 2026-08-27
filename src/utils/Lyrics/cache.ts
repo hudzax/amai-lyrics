@@ -5,9 +5,16 @@
 import { SpikyCache } from '@hudzax/web-modules/SpikyCache';
 import storage from '../storage';
 import Defaults from '../../components/Global/Defaults';
-import { HideLoaderContainer, ClearLyricsPageContainer, noLyricsMessage } from './ui';
+import {
+  HideLoaderContainer,
+  ClearLyricsPageContainer,
+  noLyricsMessage,
+  NoLyricsResult,
+} from './ui';
 
 import { LyricsData } from './processing';
+
+export type LyricsFetchResult = LyricsData | NoLyricsResult;
 
 type CachedLyricsData = LyricsData & {
   expiresAt: number;
@@ -48,7 +55,7 @@ export async function cacheLyrics(trackId: string, lyricsJson: LyricsData): Prom
  */
 export async function getLyricsFromCache(
   trackId: string,
-): Promise<(CachedLyricsData & { fromCache: boolean }) | string | null> {
+): Promise<(CachedLyricsData & { fromCache: boolean }) | NoLyricsResult | null> {
   if (!lyricsCache) return null;
 
   try {
@@ -85,27 +92,41 @@ export async function getLyricsFromCache(
  */
 export async function getLyricsFromLocalStorage(
   trackId: string,
-): Promise<LyricsData | string | null> {
+): Promise<LyricsData | NoLyricsResult | null> {
   const savedLyricsData = storage.get('currentLyricsData')?.toString();
   if (!savedLyricsData) return null;
 
   try {
-    if (savedLyricsData.includes('NO_LYRICS')) {
-      const split = savedLyricsData.split(':');
-      const id = split[1];
-      if (id === trackId) {
-        return await noLyricsMessage();
+    const parsed = JSON.parse(savedLyricsData) as {
+      status?: string;
+      id?: string;
+      Type?: string;
+    };
+    if (parsed?.status === 'NO_LYRICS') {
+      if (!parsed.id || parsed.id === trackId) {
+        return await noLyricsMessage(parsed.id ?? trackId);
       }
-    } else {
-      const lyricsData = JSON.parse(savedLyricsData);
-      if (lyricsData?.id === trackId) {
-        HideLoaderContainer();
-        ClearLyricsPageContainer();
-        Defaults.CurrentLyricsType = lyricsData.Type;
-        return lyricsData;
-      }
+      return null;
+    }
+    if (parsed?.id === trackId) {
+      HideLoaderContainer();
+      ClearLyricsPageContainer();
+      Defaults.CurrentLyricsType = parsed.Type as never;
+      return parsed as LyricsData;
     }
   } catch (error) {
+    // Fallback for legacy plain-string payloads (e.g. old NO_LYRICS:xxx format)
+    if (savedLyricsData.includes('NO_LYRICS')) {
+      try {
+        const legacySplit = savedLyricsData.split(':');
+        const legacyId = legacySplit[1]?.replace(/[^a-zA-Z0-9]/g, '');
+        if (!legacyId || legacyId === trackId) {
+          return await noLyricsMessage(legacyId ?? trackId);
+        }
+      } catch {
+        /* ignore legacy parse failure */
+      }
+    }
     console.error('Error parsing saved lyrics data:', error);
     HideLoaderContainer();
     ClearLyricsPageContainer();

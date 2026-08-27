@@ -83,7 +83,9 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
   if (currentUri) {
     const { default: fetchLyrics } = await import('./utils/Lyrics/fetchLyrics');
     const { default: ApplyLyrics } = await import('./utils/Lyrics/Global/Applyer');
-    fetchLyrics(currentUri).then(ApplyLyrics);
+    fetchLyrics(currentUri)
+      .then(ApplyLyrics)
+      .catch((e) => console.error('[Amai Lyrics] Failed to fetch initial lyrics:', e));
   }
 
   // Handle online/offline events
@@ -93,7 +95,9 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
     if (currentUri) {
       const { default: fetchLyrics } = await import('./utils/Lyrics/fetchLyrics');
       const { default: ApplyLyrics } = await import('./utils/Lyrics/Global/Applyer');
-      fetchLyrics(currentUri).then(ApplyLyrics);
+      fetchLyrics(currentUri)
+        .then(ApplyLyrics)
+        .catch((e) => console.error('[Amai Lyrics] Failed to re-fetch on online:', e));
     }
   };
   lifecycle.trackWindow('online', onOnline as never);

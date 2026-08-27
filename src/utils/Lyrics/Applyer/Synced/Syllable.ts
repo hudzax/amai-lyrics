@@ -25,6 +25,7 @@ import { ApplyInfo } from '../Info/ApplyInfo';
 import { IsLetterCapable } from '../Utils/IsLetterCapable';
 import Emphasize from '../Utils/Emphasize';
 import { IdleEmphasisLyricsScale, IdleLyricsScale } from '../../Animator/Shared';
+import { createMusicalLineMs } from '../Utils/createMusicalLine';
 import isRtl from '../../isRtl';
 
 export function ApplySyllableLyrics(data) {
@@ -39,74 +40,12 @@ export function ApplySyllableLyrics(data) {
   ClearScrollSimplebar();
   TOP_ApplyLyricsSpacer(LyricsContainer);
   if (data.StartTime >= lyricsBetweenShow && !SpotifyPlayer.IsPodcast) {
-    const musicalLine = document.createElement('div');
-    musicalLine.classList.add('line');
-    musicalLine.classList.add('musical-line');
-    LyricsObject.Types.Syllable.Lines.push({
-      HTMLElement: musicalLine,
-      StartTime: 0,
-      EndTime: ConvertTime(data.StartTime),
-      TotalTime: ConvertTime(data.StartTime),
-      DotLine: true,
-    });
-
-    SetWordArrayInCurentLine();
-
-    if (data.Content[0].OppositeAligned) {
-      musicalLine.classList.add('OppositeAligned');
-    }
-
-    const dotGroup = document.createElement('div');
-    dotGroup.classList.add('dotGroup');
-
-    const musicalDots1 = document.createElement('span');
-    const musicalDots2 = document.createElement('span');
-    const musicalDots3 = document.createElement('span');
-
-    const totalTime = ConvertTime(data.StartTime);
-    const dotTime = totalTime / 3;
-
-    musicalDots1.classList.add('word');
-    musicalDots1.classList.add('dot');
-    musicalDots1.textContent = '•';
-
-    LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables.Lead.push({
-      HTMLElement: musicalDots1,
-      StartTime: 0,
-      EndTime: dotTime,
-      TotalTime: dotTime,
-      Dot: true,
-    });
-
-    musicalDots2.classList.add('word');
-    musicalDots2.classList.add('dot');
-    musicalDots2.textContent = '•';
-
-    LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables.Lead.push({
-      HTMLElement: musicalDots2,
-      StartTime: dotTime,
-      EndTime: dotTime * 2,
-      TotalTime: dotTime,
-      Dot: true,
-    });
-
-    musicalDots3.classList.add('word');
-    musicalDots3.classList.add('dot');
-    musicalDots3.textContent = '•';
-
-    LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables.Lead.push({
-      HTMLElement: musicalDots3,
-      StartTime: dotTime * 2,
-      EndTime: ConvertTime(data.StartTime) - 400,
-      TotalTime: dotTime,
-      Dot: true,
-    });
-
-    dotGroup.appendChild(musicalDots1);
-    dotGroup.appendChild(musicalDots2);
-    dotGroup.appendChild(musicalDots3);
-
-    musicalLine.appendChild(dotGroup);
+    const musicalLine = createMusicalLineMs(
+      'Syllable',
+      0,
+      ConvertTime(data.StartTime),
+      data.Content[0]?.OppositeAligned ? true : false,
+    );
     LyricsContainer.appendChild(musicalLine);
   }
   data.Content.forEach((line, index, arr) => {
@@ -289,75 +228,12 @@ export function ApplySyllableLyrics(data) {
       arr[index + 1].Lead.StartTime - line.Lead.EndTime >= lyricsBetweenShow &&
       !SpotifyPlayer.IsPodcast
     ) {
-      const musicalLine = document.createElement('div');
-      musicalLine.classList.add('line');
-      musicalLine.classList.add('musical-line');
-
-      LyricsObject.Types.Syllable.Lines.push({
-        HTMLElement: musicalLine,
-        StartTime: ConvertTime(line.Lead.EndTime),
-        EndTime: ConvertTime(arr[index + 1].Lead.StartTime),
-        TotalTime: ConvertTime(arr[index + 1].Lead.StartTime) - ConvertTime(line.Lead.EndTime),
-        DotLine: true,
-      });
-
-      SetWordArrayInCurentLine();
-
-      if (arr[index + 1].OppositeAligned) {
-        musicalLine.classList.add('OppositeAligned');
-      }
-
-      const dotGroup = document.createElement('div');
-      dotGroup.classList.add('dotGroup');
-
-      const musicalDots1 = document.createElement('span');
-      const musicalDots2 = document.createElement('span');
-      const musicalDots3 = document.createElement('span');
-
-      const totalTime = ConvertTime(arr[index + 1].Lead.StartTime) - ConvertTime(line.Lead.EndTime);
-      const dotTime = totalTime / 3;
-
-      musicalDots1.classList.add('word');
-      musicalDots1.classList.add('dot');
-      musicalDots1.textContent = '•';
-
-      LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables.Lead.push({
-        HTMLElement: musicalDots1,
-        StartTime: ConvertTime(line.Lead.EndTime),
-        EndTime: ConvertTime(line.Lead.EndTime) + dotTime,
-        TotalTime: dotTime,
-        Dot: true,
-      });
-
-      musicalDots2.classList.add('word');
-      musicalDots2.classList.add('dot');
-      musicalDots2.textContent = '•';
-
-      LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables.Lead.push({
-        HTMLElement: musicalDots2,
-        StartTime: ConvertTime(line.Lead.EndTime) + dotTime,
-        EndTime: ConvertTime(line.Lead.EndTime) + dotTime * 2,
-        TotalTime: dotTime,
-        Dot: true,
-      });
-
-      musicalDots3.classList.add('word');
-      musicalDots3.classList.add('dot');
-      musicalDots3.textContent = '•';
-
-      LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables.Lead.push({
-        HTMLElement: musicalDots3,
-        StartTime: ConvertTime(line.Lead.EndTime) + dotTime * 2,
-        EndTime: ConvertTime(arr[index + 1].Lead.StartTime) - 400,
-        TotalTime: dotTime,
-        Dot: true,
-      });
-
-      dotGroup.appendChild(musicalDots1);
-      dotGroup.appendChild(musicalDots2);
-      dotGroup.appendChild(musicalDots3);
-
-      musicalLine.appendChild(dotGroup);
+      const musicalLine = createMusicalLineMs(
+        'Syllable',
+        ConvertTime(line.Lead.EndTime),
+        ConvertTime(arr[index + 1].Lead.StartTime),
+        !!arr[index + 1].OppositeAligned,
+      );
       LyricsContainer.appendChild(musicalLine);
     }
   });

@@ -2,17 +2,19 @@ import { setBlurringLastLine } from '../Animator/Lyrics/LyricsAnimator';
 import { ApplyStaticLyrics } from '../Applyer/Static';
 import { ApplyLineLyrics } from '../Applyer/Synced/Line';
 import { ApplySyllableLyrics } from '../Applyer/Synced/Syllable';
-import fetchLyrics from '../fetchLyrics';
+import fetchLyrics, { isNoLyricsResult } from '../fetchLyrics';
 import { showRefreshButton } from '../../../components/Pages/pageButtons';
 import { addLinesEvListener } from '../lyrics';
 import storage from '../../storage';
 import Defaults from '../../../components/Global/Defaults';
+import { NoLyricsResult } from '../ui';
+import { LyricsData } from '../processing';
 
 /**
  * Applies lyrics to the UI based on the lyrics type
- * @param lyrics The lyrics data object containing type and content
+ * @param lyrics The lyrics data object containing type and content, or NO_LYRICS sentinel
  */
-export default function ApplyLyrics(lyrics) {
+export default function ApplyLyrics(lyrics: LyricsData | NoLyricsResult | null | undefined) {
   // Check if lyrics page exists
   if (!document.querySelector('#SpicyLyricsPage')) return;
 
@@ -34,13 +36,25 @@ export default function ApplyLyrics(lyrics) {
   // Reset blurring effect
   setBlurringLastLine(null);
 
-  // Validate lyrics data
-  if (!lyrics || !lyrics?.id) return;
+  // Typed sentinel check — don't attempt to render NO_LYRICS payload
+  if (
+    !lyrics ||
+    isNoLyricsResult(lyrics as never) ||
+    (lyrics as NoLyricsResult).status === 'NO_LYRICS'
+  )
+    return;
+  const typedLyrics = lyrics as LyricsData;
+  if (!typedLyrics?.id) return;
 
   // Check if lyrics match current track
-  const currentTrackId = Spicetify.Player.data.item?.uri?.split(':')[2];
-  if (currentTrackId !== lyrics?.id) {
-    fetchLyrics(Spicetify.Player.data.item?.uri).then(ApplyLyrics);
+  const currentTrackId = Spicetify.Player.data?.item?.uri?.split(':')[2];
+  if (currentTrackId !== typedLyrics?.id) {
+    const uri = Spicetify.Player.data?.item?.uri;
+    if (uri) {
+      fetchLyrics(uri)
+        .then(ApplyLyrics)
+        .catch((e) => console.error('[Amai Lyrics] Failed to re-fetch mismatched lyrics:', e));
+    }
     return;
   }
 
@@ -51,9 +65,9 @@ export default function ApplyLyrics(lyrics) {
     Static: ApplyStaticLyrics,
   };
 
-  const applyHandler = lyricsHandlers[lyrics.Type];
+  const applyHandler = lyricsHandlers[typedLyrics.Type as keyof typeof lyricsHandlers];
   if (applyHandler) {
-    applyHandler(lyrics);
+    applyHandler(typedLyrics as never);
     // Show refresh button after lyrics are applied
     showRefreshButton();
     addLinesEvListener(); // Attach event listener after lyrics are rendered

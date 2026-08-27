@@ -113,7 +113,9 @@ function generalSettings() {
     const playerData = Spicetify.Player.data as Spicetify.PlayerState;
     if (!playerData?.item?.uri) return; // Exit if `uri` is not available
     const currentUri = playerData.item.uri;
-    fetchLyrics(currentUri).then(ApplyLyrics);
+    fetchLyrics(currentUri)
+      .then(ApplyLyrics)
+      .catch((e) => console.error('[Amai Lyrics] Refetch after API key change failed:', e));
   });
 
   settings.addButton('get-gemini-api', 'Get your own Gemini API here', 'get API Key', () => {

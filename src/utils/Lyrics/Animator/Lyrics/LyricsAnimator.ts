@@ -138,6 +138,278 @@ function resetWordAnimationTracking(word) {
   word.AnimatorStoreTime_scale = undefined;
 }
 
+// Shared dot-state helpers — extracted to deduplicate Syllable & Line paths
+function activateDot(word) {
+  if (!word.HTMLElement.classList.contains('dot-active')) {
+    const dotDuration = word.EndTime - word.StartTime;
+    word.HTMLElement.style.setProperty('--dot-duration', `${dotDuration}ms`);
+    void word.HTMLElement.offsetWidth;
+    word.HTMLElement.classList.add('dot-active');
+  }
+  word.scale = 1;
+  word.glow = 0.5;
+}
+
+function resetDotNotSung(word) {
+  word.HTMLElement.classList.remove('dot-active');
+  setStyleIfChanged(word.HTMLElement, 'transform', '');
+  setStyleIfChanged(word.HTMLElement, 'scale', '');
+  setStyleIfChanged(word.HTMLElement, 'opacity', '');
+  setStyleIfChanged(word.HTMLElement, '--text-shadow-blur-radius', '');
+  setStyleIfChanged(word.HTMLElement, '--text-shadow-opacity', '');
+  word.translateY = 0.01;
+  word.scale = 0.75;
+  word.glow = 0;
+}
+
+function resetDotSung(word) {
+  word.HTMLElement.classList.remove('dot-active');
+  setStyleIfChanged(word.HTMLElement, 'transform', 'translateY(calc(var(--font-size) * 0))');
+  setStyleIfChanged(word.HTMLElement, 'scale', '1.2');
+  setStyleIfChanged(word.HTMLElement, 'opacity', '1');
+  setStyleIfChanged(word.HTMLElement, '--text-shadow-blur-radius', '12px');
+  setStyleIfChanged(word.HTMLElement, '--text-shadow-opacity', '50%');
+  word.scale = 1.2;
+  word.glow = 0.5;
+}
+
+// Extracted handlers for Active / NotSung / Sung word states (Syllable path)
+function handleActiveWord(word, edtrackpos, isLetterGroup, isDot) {
+  if (isLetterGroup) {
+    const totalDuration = word.EndTime - word.StartTime;
+    const elapsed = edtrackpos - word.StartTime;
+    const pct = Math.max(0, Math.min(elapsed / totalDuration, 1));
+    const emphasisTranslateY = 0.02 + (-0.065 - 0.02) * pct;
+    const emphasisScale = IdleEmphasisLyricsScale + (1.023 - IdleEmphasisLyricsScale) * pct;
+    for (let k = 0; k < word.Letters.length; k++) {
+      const letter = word.Letters[k];
+      if (letter.Status === 'Active')
+        resetLetterStyles(letter, 'NotSung', IdleEmphasisLyricsScale, '-20%');
+      else if (letter.Status === 'Sung') resetLetterStyles(word.Letters[k], 'Sung', '1', '100%');
+    }
+    setStyleIfChanged(word.HTMLElement, 'scale', `${emphasisScale}`);
+    setStyleIfChanged(
+      word.HTMLElement,
+      'transform',
+      `translateY(calc(var(--DefaultLyricsSize) * ${emphasisTranslateY}))`,
+    );
+    word.scale = emphasisScale;
+    word.glow = 0;
+    return;
+  }
+  if (isDot) {
+    activateDot(word);
+    return;
+  }
+  const totalDuration = word.EndTime - word.StartTime;
+  const elapsedDuration = edtrackpos - word.StartTime;
+  const percentage = Math.max(0, Math.min(elapsedDuration / totalDuration, 1));
+  const blurRadius = 4 + (16 - 4) * percentage;
+  const textShadowOpacity = calculateOpacity(percentage, word) * 0.4;
+  const translateY = 0.01 + (-0.038 - 0.01) * percentage;
+  const scale = IdleLyricsScale + (1.017 - IdleLyricsScale) * percentage;
+  const gradientPosition = percentage * 100;
+  animateWord(
+    word,
+    totalDuration,
+    percentage,
+    gradientPosition,
+    translateY,
+    scale,
+    blurRadius,
+    textShadowOpacity,
+  );
+  resetWordAnimationTracking(word);
+}
+
+function handleNotSungWord(word, isLetterGroup, isDot) {
+  if (isLetterGroup) {
+    for (let k = 0; k < word.Letters.length; k++)
+      resetLetterStyles(word.Letters[k], 'NotSung', IdleEmphasisLyricsScale, '-20%');
+    setStyleIfChanged(
+      word.HTMLElement,
+      'transform',
+      'translateY(calc(var(--DefaultLyricsSize) * 0.02))',
+    );
+    word.translateY = 0.02;
+  } else if (!isDot) {
+    setStyleIfChanged(
+      word.HTMLElement,
+      'transform',
+      'translateY(calc(var(--DefaultLyricsSize) * 0.01))',
+    );
+    word.translateY = 0.01;
+  }
+  if (isDot) {
+    resetDotNotSung(word);
+  } else {
+    setStyleIfChanged(
+      word.HTMLElement,
+      'scale',
+      `${isLetterGroup ? IdleEmphasisLyricsScale : IdleLyricsScale}`,
+    );
+    word.scale = isLetterGroup ? IdleEmphasisLyricsScale : IdleLyricsScale;
+    setStyleIfChanged(word.HTMLElement, '--gradient-position', '-20%');
+  }
+  resetWordAnimationTracking(word);
+  setStyleIfChanged(word.HTMLElement, '--text-shadow-blur-radius', '4px');
+  setStyleIfChanged(word.HTMLElement, '--text-shadow-opacity', '0%');
+  word.glow = 0;
+}
+
+function handleSungWord(word, isLetterGroup, isDot) {
+  if (isLetterGroup) {
+    for (let k = 0; k < word.Letters.length; k++)
+      resetLetterStyles(word.Letters[k], 'Sung', '1', '100%');
+    setStyleIfChanged(
+      word.HTMLElement,
+      'transform',
+      `translateY(calc(var(--DefaultLyricsSize) * 0))`,
+    );
+    setStyleIfChanged(word.HTMLElement, 'scale', '1');
+  }
+  if (isDot) {
+    resetDotSung(word);
+    return;
+  }
+  if (!isLetterGroup) {
+    setStyleIfChanged(word.HTMLElement, '--text-shadow-blur-radius', '4px');
+    const element = word.HTMLElement;
+    const currentTranslateY = word.translateY;
+    const currentScale = word.scale;
+    const currentGlow = word.glow;
+    if (!word.AnimatorStoreTime_translateY) word.AnimatorStoreTime_translateY = performance.now();
+    if (!word.AnimatorStoreTime_scale) word.AnimatorStoreTime_scale = performance.now();
+    if (!word.AnimatorStoreTime_glow) word.AnimatorStoreTime_glow = performance.now();
+    const now = performance.now();
+    const elapsed_translateY = now - word.AnimatorStoreTime_translateY;
+    const elapsed_scale = now - word.AnimatorStoreTime_scale;
+    const elapsed_glow = now - word.AnimatorStoreTime_glow;
+    const progress_translateY = Math.min(elapsed_translateY / 550, 1);
+    const progress_scale = Math.min(elapsed_scale / 1100, 1);
+    const progress_glow = Math.min(elapsed_glow / 250, 1);
+    const interpolate = (s: number, e: number, p: number) => s + (e - s) * p;
+    const newTranslateY = interpolate(currentTranslateY, 0.0005, progress_translateY);
+    const newScale = interpolate(currentScale, 1, progress_scale);
+    const newGlow = interpolate(currentGlow, 0, progress_glow);
+    setStyleIfChanged(element, '--text-shadow-opacity', `${newGlow * 100}%`);
+    setStyleIfChanged(
+      element,
+      'transform',
+      `translateY(calc(var(--DefaultLyricsSize) * ${newTranslateY}))`,
+    );
+    setStyleIfChanged(element, 'scale', `${newScale}`);
+    if (progress_glow === 1) {
+      word.AnimatorStoreTime_glow = undefined;
+      word.glow = 0;
+    }
+    if (progress_translateY === 1) {
+      word.AnimatorStoreTime_translateY = undefined;
+      word.translateY = 0;
+    }
+    if (progress_scale === 1) {
+      word.AnimatorStoreTime_scale = undefined;
+      word.scale = 1;
+    }
+  }
+  setStyleIfChanged(word.HTMLElement, '--gradient-position', '100%');
+}
+
+function animateSyllableLines(arr, edtrackpos, Credits) {
+  for (let index = 0; index < arr.length; index++) {
+    const line = arr[index];
+    const prevStatus = line.lastStatus;
+    if (line.Status === 'Active') {
+      if (SpotifyPlayer.IsPlaying !== lastIsPlaying) {
+        Blurring_LastLine = null;
+        lastIsPlaying = SpotifyPlayer.IsPlaying;
+      }
+      if (Blurring_LastLine !== index) {
+        applyBlur(arr, index, BlurMultiplier);
+        Blurring_LastLine = index;
+      }
+      line.HTMLElement.classList.add('Active');
+      line.HTMLElement.classList.remove('NotSung', 'Sung', 'OverridenByScroller');
+      const words = line.Syllables.Lead;
+      for (let wi = 0; wi < words.length; wi++) {
+        const word = words[wi];
+        const isLetterGroup = word?.LetterGroup;
+        const isDot = word?.Dot;
+        if (word.Status === 'Active') handleActiveWord(word, edtrackpos, isLetterGroup, isDot);
+        else if (word.Status === 'NotSung') handleNotSungWord(word, isLetterGroup, isDot);
+        else if (word.Status === 'Sung') handleSungWord(word, isLetterGroup, isDot);
+      }
+      if (Credits) Credits.classList.remove('Active');
+    } else if (line.Status === 'NotSung') {
+      if (prevStatus !== 'NotSung') {
+        line.HTMLElement.classList.add('NotSung');
+        line.HTMLElement.classList.remove('Sung');
+        if (
+          line.HTMLElement.classList.contains('Active') &&
+          !line.HTMLElement.classList.contains('OverridenByScroller')
+        )
+          line.HTMLElement.classList.remove('Active');
+      }
+    } else if (line.Status === 'Sung') {
+      if (prevStatus !== 'Sung') {
+        line.HTMLElement.classList.add('Sung');
+        line.HTMLElement.classList.remove('Active', 'NotSung');
+        if (arr.length === index + 1 && Credits) Credits.classList.add('Active');
+      }
+    }
+    line.lastStatus = line.Status;
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function animateLineLines(arr: any[]) {
+  for (let index = 0; index < arr.length; index++) {
+    const line = arr[index];
+    const prevStatus = line.lastStatus;
+    if (line.Status === 'Active') {
+      if (SpotifyPlayer.IsPlaying !== lastIsPlaying) {
+        Blurring_LastLine = null;
+        lastIsPlaying = SpotifyPlayer.IsPlaying;
+      }
+      if (Blurring_LastLine !== index) {
+        applyBlur(arr, index, BlurMultiplier);
+        Blurring_LastLine = index;
+      }
+      line.HTMLElement.classList.add('Active');
+      line.HTMLElement.classList.remove('NotSung', 'OverridenByScroller', 'Sung');
+      if (line.DotLine) {
+        const dots = line.Syllables.Lead;
+        for (let i = 0; i < dots.length; i++) {
+          const dot = dots[i];
+          if (dot.Status === 'Active') activateDot(dot);
+          else if (dot.Status === 'NotSung') resetDotNotSung(dot);
+          else if (dot.Status === 'Sung') resetDotSung(dot);
+        }
+      } else {
+        setStyleIfChanged(line.HTMLElement, '--gradient-position', `100%`);
+      }
+    } else if (line.Status === 'NotSung') {
+      if (prevStatus !== 'NotSung') {
+        line.HTMLElement.classList.add('NotSung');
+        line.HTMLElement.classList.remove('Sung');
+        if (
+          line.HTMLElement.classList.contains('Active') &&
+          !line.HTMLElement.classList.contains('OverridenByScroller')
+        )
+          line.HTMLElement.classList.remove('Active');
+        setStyleIfChanged(line.HTMLElement, '--gradient-position', `0%`);
+      }
+    } else if (line.Status === 'Sung') {
+      if (prevStatus !== 'Sung') {
+        line.HTMLElement.classList.add('Sung');
+        line.HTMLElement.classList.remove('Active', 'NotSung');
+        setStyleIfChanged(line.HTMLElement, '--gradient-position', `100%`);
+      }
+    }
+    line.lastStatus = line.Status;
+  }
+}
+
 export function Animate(position) {
   const CurrentLyricsType = Defaults.CurrentLyricsType;
   const edtrackpos = position + timeOffset;
@@ -145,310 +417,10 @@ export function Animate(position) {
 
   const Credits = getCredits();
 
-  const SKIP_IF_STATUS_UNCHANGED = true;
-
   if (CurrentLyricsType === 'Syllable') {
-    const arr = LyricsObject.Types.Syllable.Lines;
-    for (let index = 0; index < arr.length; index++) {
-      const line = arr[index];
-      const prevStatus = line.lastStatus;
-
-      if (line.Status === 'Active') {
-        if (SpotifyPlayer.IsPlaying !== lastIsPlaying) {
-          Blurring_LastLine = null;
-          lastIsPlaying = SpotifyPlayer.IsPlaying;
-        }
-        if (Blurring_LastLine !== index) {
-          applyBlur(arr, index, BlurMultiplier);
-          Blurring_LastLine = index;
-        }
-        line.HTMLElement.classList.add('Active');
-        line.HTMLElement.classList.remove('NotSung', 'Sung', 'OverridenByScroller');
-        const words = line.Syllables.Lead;
-        for (let wordIndex = 0; wordIndex < words.length; wordIndex++) {
-          const word = words[wordIndex];
-          const isLetterGroup = word?.LetterGroup;
-          const isDot = word?.Dot;
-          if (word.Status === 'Active') {
-            const totalDuration = word.EndTime - word.StartTime;
-            const elapsedDuration = edtrackpos - word.StartTime;
-            const percentage = Math.max(0, Math.min(elapsedDuration / totalDuration, 1));
-            const blurRadius = 4 + (16 - 4) * percentage;
-            const textShadowOpacity = calculateOpacity(percentage, word) * 0.4;
-            const translateY = 0.01 + (-0.038 - 0.01) * percentage;
-            const scale = IdleLyricsScale + (1.017 - IdleLyricsScale) * percentage;
-            const gradientPosition = percentage * 100;
-            if (isLetterGroup) {
-              const emphasisTranslateY = 0.02 + (-0.065 - 0.02) * percentage;
-              const emphasisScale =
-                IdleEmphasisLyricsScale + (1.023 - IdleEmphasisLyricsScale) * percentage;
-              for (let k = 0; k < word.Letters.length; k++) {
-                const letter = word.Letters[k];
-                if (letter.Status === 'Active') {
-                  resetLetterStyles(letter, 'NotSung', IdleEmphasisLyricsScale, '-20%');
-                } else if (letter.Status === 'Sung') {
-                  resetLetterStyles(word.Letters[k], 'Sung', '1', '100%');
-                }
-              }
-              setStyleIfChanged(word.HTMLElement, 'scale', `${emphasisScale}`);
-              setStyleIfChanged(
-                word.HTMLElement,
-                'transform',
-                `translateY(calc(var(--DefaultLyricsSize) * ${emphasisTranslateY}))`,
-              );
-              word.scale = emphasisScale;
-              word.glow = 0;
-            } else if (isDot) {
-              if (!word.HTMLElement.classList.contains('dot-active')) {
-                const dotDuration = word.EndTime - word.StartTime;
-                word.HTMLElement.style.setProperty('--dot-duration', `${dotDuration}ms`);
-                void word.HTMLElement.offsetWidth;
-                word.HTMLElement.classList.add('dot-active');
-              }
-              word.scale = 1;
-              word.glow = 0.5;
-            } else {
-              animateWord(
-                word,
-                totalDuration,
-                percentage,
-                gradientPosition,
-                translateY,
-                scale,
-                blurRadius,
-                textShadowOpacity,
-              );
-              resetWordAnimationTracking(word);
-            }
-          } else if (word.Status === 'NotSung') {
-            if (isLetterGroup) {
-              for (let k = 0; k < word.Letters.length; k++) {
-                resetLetterStyles(word.Letters[k], 'NotSung', IdleEmphasisLyricsScale, '-20%');
-              }
-              setStyleIfChanged(
-                word.HTMLElement,
-                'transform',
-                'translateY(calc(var(--DefaultLyricsSize) * 0.02))',
-              );
-              word.translateY = 0.02;
-            } else if (!isDot) {
-              setStyleIfChanged(
-                word.HTMLElement,
-                'transform',
-                'translateY(calc(var(--DefaultLyricsSize) * 0.01))',
-              );
-              word.translateY = 0.01;
-            }
-            if (isDot) {
-              word.HTMLElement.classList.remove('dot-active');
-              // Route through setStyleIfChanged so these static reset values are
-              // written once on the NotSung transition instead of every tick.
-              setStyleIfChanged(word.HTMLElement, 'transform', '');
-              setStyleIfChanged(word.HTMLElement, 'scale', '');
-              setStyleIfChanged(word.HTMLElement, 'opacity', '');
-              setStyleIfChanged(word.HTMLElement, '--text-shadow-blur-radius', '');
-              setStyleIfChanged(word.HTMLElement, '--text-shadow-opacity', '');
-              word.translateY = 0.01;
-              word.scale = 0.75;
-              word.glow = 0;
-            } else {
-              setStyleIfChanged(
-                word.HTMLElement,
-                'scale',
-                `${isLetterGroup ? IdleEmphasisLyricsScale : IdleLyricsScale}`,
-              );
-              word.scale = isLetterGroup ? IdleEmphasisLyricsScale : IdleLyricsScale;
-              setStyleIfChanged(word.HTMLElement, '--gradient-position', '-20%');
-            }
-            resetWordAnimationTracking(word);
-            setStyleIfChanged(word.HTMLElement, '--text-shadow-blur-radius', '4px');
-            setStyleIfChanged(word.HTMLElement, '--text-shadow-opacity', '0%');
-            word.glow = 0;
-          } else if (word.Status === 'Sung') {
-            if (isLetterGroup) {
-              for (let k = 0; k < word.Letters.length; k++) {
-                resetLetterStyles(word.Letters[k], 'Sung', '1', '100%');
-              }
-              setStyleIfChanged(
-                word.HTMLElement,
-                'transform',
-                `translateY(calc(var(--DefaultLyricsSize) * 0))`,
-              );
-              setStyleIfChanged(word.HTMLElement, 'scale', '1');
-            }
-            if (isDot) {
-              word.HTMLElement.classList.remove('dot-active');
-              // Route through setStyleIfChanged so these static values are written
-              // once on the Sung transition instead of every tick.
-              setStyleIfChanged(
-                word.HTMLElement,
-                'transform',
-                'translateY(calc(var(--font-size) * 0))',
-              );
-              setStyleIfChanged(word.HTMLElement, 'scale', '1.2');
-              setStyleIfChanged(word.HTMLElement, 'opacity', '1');
-              setStyleIfChanged(word.HTMLElement, '--text-shadow-blur-radius', '12px');
-              setStyleIfChanged(word.HTMLElement, '--text-shadow-opacity', '50%');
-              word.scale = 1.2;
-              word.glow = 0.5;
-            } else if (!isLetterGroup) {
-              setStyleIfChanged(word.HTMLElement, '--text-shadow-blur-radius', '4px');
-              const element = word.HTMLElement;
-              const currentTranslateY = word.translateY;
-              const currentScale = word.scale;
-              const currentGlow = word.glow;
-              if (!word.AnimatorStoreTime_translateY)
-                word.AnimatorStoreTime_translateY = performance.now();
-              if (!word.AnimatorStoreTime_scale) word.AnimatorStoreTime_scale = performance.now();
-              if (!word.AnimatorStoreTime_glow) word.AnimatorStoreTime_glow = performance.now();
-              const now = performance.now();
-              const elapsed_translateY = now - word.AnimatorStoreTime_translateY;
-              const elapsed_scale = now - word.AnimatorStoreTime_scale;
-              const elapsed_glow = now - word.AnimatorStoreTime_glow;
-              const duration_translateY = 550;
-              const progress_translateY = Math.min(elapsed_translateY / duration_translateY, 1);
-              const duration_scale = 1100;
-              const progress_scale = Math.min(elapsed_scale / duration_scale, 1);
-              const duration_glow = 250;
-              const progress_glow = Math.min(elapsed_glow / duration_glow, 1);
-              const targetTranslateY = 0.0005;
-              const targetScale = 1;
-              const targetGlow = 0;
-              const interpolate = (start: number, end: number, progress) =>
-                start + (end - start) * progress;
-              const newTranslateY = interpolate(
-                currentTranslateY,
-                targetTranslateY,
-                progress_translateY,
-              );
-              const newScale = interpolate(currentScale, targetScale, progress_scale);
-              const newGlow = interpolate(currentGlow, targetGlow, progress_glow);
-              setStyleIfChanged(element, '--text-shadow-opacity', `${newGlow * 100}%`);
-              setStyleIfChanged(
-                element,
-                'transform',
-                `translateY(calc(var(--DefaultLyricsSize) * ${newTranslateY}))`,
-              );
-              setStyleIfChanged(element, 'scale', `${newScale}`);
-              if (progress_glow === 1) {
-                word.AnimatorStoreTime_glow = undefined;
-                word.glow = 0;
-              }
-              if (progress_translateY === 1) {
-                word.AnimatorStoreTime_translateY = undefined;
-                word.translateY = 0;
-              }
-              if (progress_scale === 1) {
-                word.AnimatorStoreTime_scale = undefined;
-                word.scale = 1;
-              }
-            }
-            setStyleIfChanged(word.HTMLElement, '--gradient-position', '100%');
-          }
-        }
-        if (Credits) Credits.classList.remove('Active');
-      } else if (line.Status === 'NotSung') {
-        if (!SKIP_IF_STATUS_UNCHANGED || prevStatus !== 'NotSung') {
-          line.HTMLElement.classList.add('NotSung');
-          line.HTMLElement.classList.remove('Sung');
-          if (
-            line.HTMLElement.classList.contains('Active') &&
-            !line.HTMLElement.classList.contains('OverridenByScroller')
-          ) {
-            line.HTMLElement.classList.remove('Active');
-          }
-        }
-      } else if (line.Status === 'Sung') {
-        if (!SKIP_IF_STATUS_UNCHANGED || prevStatus !== 'Sung') {
-          line.HTMLElement.classList.add('Sung');
-          line.HTMLElement.classList.remove('Active', 'NotSung');
-          if (arr.length === index + 1 && Credits) {
-            Credits.classList.add('Active');
-          }
-        }
-      }
-      line.lastStatus = line.Status;
-    }
+    animateSyllableLines(LyricsObject.Types.Syllable.Lines, edtrackpos, Credits);
   } else if (CurrentLyricsType === 'Line') {
-    const arr = LyricsObject.Types.Line.Lines;
-    for (let index = 0; index < arr.length; index++) {
-      const line = arr[index];
-      const prevStatus = line.lastStatus;
-
-      if (line.Status === 'Active') {
-        if (SpotifyPlayer.IsPlaying !== lastIsPlaying) {
-          Blurring_LastLine = null;
-          lastIsPlaying = SpotifyPlayer.IsPlaying;
-        }
-        if (Blurring_LastLine !== index) {
-          applyBlur(arr, index, BlurMultiplier);
-          Blurring_LastLine = index;
-        }
-        line.HTMLElement.classList.add('Active');
-        line.HTMLElement.classList.remove('NotSung', 'OverridenByScroller', 'Sung');
-        const percentage = 1;
-        if (line.DotLine) {
-          const Array = line.Syllables.Lead;
-          for (let i = 0; i < Array.length; i++) {
-            const dot = Array[i];
-            if (dot.Status === 'Active') {
-              if (!dot.HTMLElement.classList.contains('dot-active')) {
-                const dotDuration = dot.EndTime - dot.StartTime;
-                dot.HTMLElement.style.setProperty('--dot-duration', `${dotDuration}ms`);
-                void dot.HTMLElement.offsetWidth;
-                dot.HTMLElement.classList.add('dot-active');
-              }
-            } else if (dot.Status === 'NotSung') {
-              dot.HTMLElement.classList.remove('dot-active');
-              // Route through setStyleIfChanged so these static reset values are
-              // written once on the NotSung transition instead of every tick.
-              setStyleIfChanged(dot.HTMLElement, 'transform', '');
-              setStyleIfChanged(dot.HTMLElement, 'scale', '');
-              setStyleIfChanged(dot.HTMLElement, 'opacity', '');
-              setStyleIfChanged(dot.HTMLElement, '--text-shadow-blur-radius', '');
-              setStyleIfChanged(dot.HTMLElement, '--text-shadow-opacity', '');
-            } else if (dot.Status === 'Sung') {
-              dot.HTMLElement.classList.remove('dot-active');
-              // Route through setStyleIfChanged so these static values are written
-              // once on the Sung transition instead of every tick.
-              setStyleIfChanged(
-                dot.HTMLElement,
-                'transform',
-                'translateY(calc(var(--font-size) * 0))',
-              );
-              setStyleIfChanged(dot.HTMLElement, 'scale', '1.2');
-              setStyleIfChanged(dot.HTMLElement, 'opacity', '1');
-              setStyleIfChanged(dot.HTMLElement, '--text-shadow-blur-radius', '12px');
-              setStyleIfChanged(dot.HTMLElement, '--text-shadow-opacity', '50%');
-            }
-          }
-        } else {
-          setStyleIfChanged(line.HTMLElement, '--gradient-position', `${percentage * 100}%`);
-        }
-      } else if (line.Status === 'NotSung') {
-        if (!SKIP_IF_STATUS_UNCHANGED || prevStatus !== 'NotSung') {
-          line.HTMLElement.classList.add('NotSung');
-          line.HTMLElement.classList.remove('Sung');
-          if (
-            line.HTMLElement.classList.contains('Active') &&
-            !line.HTMLElement.classList.contains('OverridenByScroller')
-          ) {
-            line.HTMLElement.classList.remove('Active');
-          }
-          // These writes must go through setStyleIfChanged like the Active
-          // branch above: a direct write here changes the DOM without updating
-          // the write-cache, so the next Active write of the same value would
-          // be skipped as a no-op and the line's white fill would stay stale.
-          setStyleIfChanged(line.HTMLElement, '--gradient-position', `0%`);
-        }
-      } else if (line.Status === 'Sung') {
-        if (!SKIP_IF_STATUS_UNCHANGED || prevStatus !== 'Sung') {
-          line.HTMLElement.classList.add('Sung');
-          line.HTMLElement.classList.remove('Active', 'NotSung');
-          setStyleIfChanged(line.HTMLElement, '--gradient-position', `100%`);
-        }
-      }
-      line.lastStatus = line.Status;
-    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    animateLineLines(LyricsObject.Types.Line.Lines as any[]);
   }
 }

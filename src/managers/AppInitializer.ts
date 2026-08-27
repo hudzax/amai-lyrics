@@ -59,14 +59,12 @@ export class AppInitializer {
 
   public static setupSkeletonStyles() {
     const skeletonStyle = document.createElement('style');
-    skeletonStyle.innerHTML = `
-      <style>
+    skeletonStyle.textContent = `
         @keyframes skeleton {
           to {
             background-position-x: 0
           }
         }
-      </style>
     `;
     document.head.appendChild(skeletonStyle);
   }

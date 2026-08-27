@@ -54,6 +54,36 @@ export interface LineBasedLyricItem {
 }
 
 /**
+ * Collects syllables into words, respecting IsPartOfWord and Japanese spacing.
+ * Extracted to deduplicate Lead vs Background paths.
+ */
+function collectSyllableText(syllables: Syllable[]): string {
+  let text = '';
+  let prevIsJapanese: boolean | null = null;
+  let i = 0;
+  while (i < syllables.length) {
+    let syl = syllables[i];
+    let word = syl.Text;
+    while (syl.IsPartOfWord && i + 1 < syllables.length) {
+      i++;
+      syl = syllables[i];
+      word += syl.Text;
+      if (!syl.IsPartOfWord) break;
+    }
+    if (JAPANESE_REGEX.test(word)) {
+      if (prevIsJapanese === false && text) text += ' ';
+      text += word;
+      prevIsJapanese = true;
+    } else {
+      text += (text ? ' ' : '') + word;
+      prevIsJapanese = false;
+    }
+    i++;
+  }
+  return text;
+}
+
+/**
  * Converts syllable-based lyrics to line-based format
  *
  * @param data - Syllable-based lyrics data
@@ -61,9 +91,6 @@ export interface LineBasedLyricItem {
  */
 export function convertLyrics(data: SyllableBasedLyricItem[]): LineBasedLyricItem[] {
   return data.map((item) => {
-    let leadText = '';
-    let prevIsJapanese: boolean | null = null;
-
     if (!item.Lead || !item.Lead.Syllables || !Array.isArray(item.Lead.Syllables)) {
       console.error('Amai Lyrics: Invalid lyrics structure', item);
       return {
@@ -75,32 +102,7 @@ export function convertLyrics(data: SyllableBasedLyricItem[]): LineBasedLyricIte
       };
     }
 
-    // Replace the forEach with a for loop to look ahead
-    let i = 0;
-    while (i < item.Lead.Syllables.length) {
-      let syl = item.Lead.Syllables[i];
-      let word = syl.Text;
-
-      // Join with next syllables if IsPartOfWord is true
-      while (syl.IsPartOfWord && i + 1 < item.Lead.Syllables.length) {
-        i++;
-        syl = item.Lead.Syllables[i];
-        word += syl.Text;
-        if (!syl.IsPartOfWord) break;
-      }
-
-      if (JAPANESE_REGEX.test(word)) {
-        if (prevIsJapanese === false && leadText) {
-          leadText += ' ';
-        }
-        leadText += word;
-        prevIsJapanese = true;
-      } else {
-        leadText += (leadText ? ' ' : '') + word;
-        prevIsJapanese = false;
-      }
-      i++;
-    }
+    const leadText = collectSyllableText(item.Lead.Syllables);
 
     let startTime = item.Lead.StartTime;
     let endTime = item.Lead.EndTime;
@@ -114,39 +116,8 @@ export function convertLyrics(data: SyllableBasedLyricItem[]): LineBasedLyricIte
         if (typeof bg.EndTime === 'number') {
           endTime = Math.max(endTime, bg.EndTime);
         }
-
-        let bgText = '';
-        let prevIsJapanese: boolean | null = null;
-        if (!bg.Syllables || !Array.isArray(bg.Syllables)) {
-          return '';
-        }
-
-        let i = 0;
-        while (i < bg.Syllables.length) {
-          let syl = bg.Syllables[i];
-          let word = syl.Text;
-
-          while (syl.IsPartOfWord && i + 1 < bg.Syllables.length) {
-            i++;
-            syl = bg.Syllables[i];
-            word += syl.Text;
-            if (!syl.IsPartOfWord) break;
-          }
-
-          if (JAPANESE_REGEX.test(word)) {
-            if (prevIsJapanese === false && bgText) {
-              bgText += ' ';
-            }
-            bgText += word;
-            prevIsJapanese = true;
-          } else {
-            bgText += (bgText ? ' ' : '') + word;
-            prevIsJapanese = false;
-          }
-          i++;
-        }
-
-        return bgText;
+        if (!bg.Syllables || !Array.isArray(bg.Syllables)) return '';
+        return collectSyllableText(bg.Syllables);
       });
 
       fullText += ' (' + bgTexts.join(' ') + ')';

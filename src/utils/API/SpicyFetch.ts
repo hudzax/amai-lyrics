@@ -104,8 +104,8 @@ async function CacheContent(
 
     const compressedData = pako.deflate(processedData, {
       level: 1,
-    }); // Max compression level
-    const compressedString = String.fromCharCode(...new Uint8Array(compressedData)); // Encode to base64
+    });
+    const compressedString = String.fromCharCode(...new Uint8Array(compressedData));
 
     await SpicyFetchCache.set(processedKey, {
       Content: compressedString,
@@ -113,7 +113,12 @@ async function CacheContent(
     });
   } catch (error) {
     console.error('ERR CC', error);
-    await SpicyFetchCache.destroy();
+    // Remove only the failing entry instead of wiping the entire cache
+    try {
+      await SpicyFetchCache.remove(md5(key));
+    } catch {
+      // ignore secondary failure
+    }
   }
 }
 
@@ -125,7 +130,7 @@ async function GetCachedContent(key: string): Promise<[object, number] | null> {
       if (content.expiresIn > Date.now()) {
         // Here for backwards compatibility
         if (typeof content.Content !== 'string') {
-          await SpicyFetchCache.remove(key);
+          await SpicyFetchCache.remove(processedKey);
           return content.Content as [object, number];
         }
 
@@ -134,7 +139,7 @@ async function GetCachedContent(key: string): Promise<[object, number] | null> {
 
         return JSON.parse(decompressedData) as [object, number];
       } else {
-        await SpicyFetchCache.remove(key);
+        await SpicyFetchCache.remove(processedKey);
         return null;
       }
     }

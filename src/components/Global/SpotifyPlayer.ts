@@ -7,28 +7,52 @@ import GetProgress, {
 
 type ArtworkSize = 's' | 'l' | 'xl' | 'd';
 
-const TrackData_Map = new Map();
+/**
+ * Bounded LRU cache for track metadata. Prevents unbounded growth during
+ * long sessions while keeping recently played tracks fast.
+ */
+const TRACK_CACHE_MAX = 50;
+const TrackData_Map = new Map<string, unknown>();
+
+function touchLRU(key: string, value: unknown): void {
+  // Re-insert to move to end (most-recent)
+  TrackData_Map.delete(key);
+  TrackData_Map.set(key, value);
+  if (TrackData_Map.size > TRACK_CACHE_MAX) {
+    const oldest = TrackData_Map.keys().next().value as string | undefined;
+    if (oldest !== undefined) TrackData_Map.delete(oldest);
+  }
+}
 
 async function getOrFetchTrackData(trackId: string): Promise<unknown> {
+  if (!trackId) return null;
   if (TrackData_Map.has(trackId)) {
     const cached = TrackData_Map.get(trackId);
     if (cached instanceof Promise || (cached && typeof cached === 'object')) {
+      // Promote on hit for LRU ordering
+      touchLRU(trackId, cached as unknown);
       return cached;
     }
   }
   const fetchPromise = (async () => {
     const URL = `https://spclient.wg.spotify.com/metadata/4/track/${trackId}?market=from_token`;
     const [data, status] = await SpicyFetch(URL, true, true, false);
-    if (status !== 200) return null;
-    TrackData_Map.set(trackId, data);
+    if (status !== 200) {
+      // Remove failed promise entry so next call can retry
+      TrackData_Map.delete(trackId);
+      return null;
+    }
+    touchLRU(trackId, data);
     return data;
   })();
-  TrackData_Map.set(trackId, fetchPromise);
-  return fetchPromise;
-}
-
-if (typeof Spicetify !== 'undefined' && Spicetify?.Player) {
-  // TrackData_Map.clear(); // Do not clear cache on every song change; keep recently played tracks cached
+  touchLRU(trackId, fetchPromise);
+  try {
+    const result = await fetchPromise;
+    return result;
+  } catch (e) {
+    TrackData_Map.delete(trackId);
+    throw e;
+  }
 }
 
 export const SpotifyPlayer = {
@@ -42,7 +66,9 @@ export const SpotifyPlayer = {
   },
   Track: {
     GetTrackInfo: async () => {
-      const spotifyHexString = spotifyHex(SpotifyPlayer.GetSongId());
+      const songId = SpotifyPlayer.GetSongId();
+      if (!songId) return null;
+      const spotifyHexString = spotifyHex(songId);
       return getOrFetchTrackData(spotifyHexString);
     },
     SortImages: (images: { size: string; file_id: string }[]) => {
@@ -111,7 +137,7 @@ export const SpotifyPlayer = {
   GetSongName: async (): Promise<string> => {
     // Use metadata directly if available, avoiding the API call
     if (Spicetify.Player.data?.item?.metadata?.title) {
-      return Spicetify.Player.data.item.metadata.title;
+      return Spicetify.Player.data.item.metadata.title as string;
     }
     // Fall back to API call if metadata is not available
     const Data = await SpotifyPlayer.Track.GetTrackInfo();
@@ -119,10 +145,13 @@ export const SpotifyPlayer = {
     return trackData?.name || '';
   },
   GetAlbumName: (): string => {
-    return Spicetify.Player.data.item.metadata.album_title;
+    return Spicetify.Player.data?.item?.metadata?.album_title ?? '';
   },
-  GetSongId: (): string => {
-    return Spicetify.Player.data.item.uri?.split(':')[2] ?? null;
+  GetSongId: (): string | null => {
+    const uri = Spicetify.Player.data?.item?.uri;
+    if (!uri || typeof uri !== 'string') return null;
+    const parts = uri.split(':');
+    return parts.length === 3 ? (parts[2] ?? null) : null;
   },
   GetArtists: async (): Promise<string[]> => {
     // Use metadata directly if available, avoiding the API call
@@ -138,7 +167,7 @@ export const SpotifyPlayer = {
     return trackData?.artist?.map((a) => a.name) ?? [];
   },
   JoinArtists: (artists: string[]): string => {
-    return artists?.join(', ') ?? null;
+    return artists?.join(', ') ?? '';
   },
   IsPodcast: false,
   _DEPRECATED_: {

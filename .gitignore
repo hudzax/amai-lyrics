@@ -144,7 +144,7 @@ out
 # End of https://www.toptal.com/developers/gitignore/api/node
 
 
-dist/amai-lyrics.js
+dist/
 
 script_removefromcache.cmd
 testScript.js
@@ -154,3 +154,4 @@ release-flow.sh
 amai.sh
 .vscode/
 .idea/
+.claude/

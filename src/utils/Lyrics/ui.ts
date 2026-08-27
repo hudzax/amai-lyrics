@@ -26,15 +26,22 @@ export function resetLyricsUI(): void {
   if (!Fullscreen.IsOpen) PageView.AppendViewControls();
 }
 
+export interface NoLyricsResult {
+  status: 'NO_LYRICS';
+  id?: string;
+}
+
 /**
  * Shows a message when no lyrics are available
  *
  * @param trackId - Spotify track ID (optional)
- * @returns Status code string
+ * @returns Typed sentinel instead of magic string
  */
-export async function noLyricsMessage(trackId?: string): Promise<string> {
+export async function noLyricsMessage(trackId?: string): Promise<NoLyricsResult> {
   try {
-    if (Spicetify.Player.data.item.uri?.split(':')[2] === trackId) {
+    const currentId = Spicetify.Player.data?.item?.uri?.split(':')[2];
+    const isForCurrentTrack = !trackId || currentId === trackId;
+    if (isForCurrentTrack) {
       HideLoaderContainer();
       Defaults.CurrentLyricsType = 'None';
       document
@@ -47,12 +54,23 @@ export async function noLyricsMessage(trackId?: string): Promise<string> {
       DeregisterNowBarBtn();
       // Show refresh button so user can try again
       showRefreshButton();
+      // Persist sentinel so subsequent localStorage checks and Fullscreen
+      // detection know this track has no lyrics (without this, they see
+      // stale lyrics from previous track).
+      if (trackId) {
+        try {
+          const { default: storage } = await import('../storage');
+          storage.set('currentLyricsData', JSON.stringify({ status: 'NO_LYRICS', id: trackId }));
+        } catch {
+          /* ignore storage failure */
+        }
+      }
     }
   } catch (error) {
     console.error('Amai Lyrics: Error showing no lyrics message', error);
   }
 
-  return '1';
+  return { status: 'NO_LYRICS', id: trackId };
 }
 
 /**
