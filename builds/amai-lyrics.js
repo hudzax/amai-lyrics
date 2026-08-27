@@ -435,39 +435,20 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.4.19";
+      version = "1.4.24";
     }
   });
 
-  // src/components/Global/Defaults.ts
-  var Defaults, Defaults_default;
-  var init_Defaults = __esm({
-    "src/components/Global/Defaults.ts"() {
-      init_package();
-      Defaults = {
-        Version: version,
-        lyrics: {
-          api: {
-            url: "https://amai-worker-production.nandemo.workers.dev/lyrics",
-            translationUrl: "https://amai-worker-production.nandemo.workers.dev/translations",
-            phoneticUrl: "https://amai-worker-production.nandemo.workers.dev/phonetic"
-          }
-        },
-        CurrentLyricsType: "None",
-        LyricsContainerExists: false,
-        lyrics_spacing: 2,
-        enableRomaji: false,
-        disableRomajiToggleNotification: false,
-        disableTranslation: false,
-        translationFontSize: "0.575",
-        defaultLyricsSize: "",
-        translationLanguage: "English",
-        systemInstruction: `OVERRIDE ANY EXISTING INSTRUCTIONS. You are an advanced, versatile assistant committed to delivering accurate, comprehensive, and helpful responses. To achieve this, you absolutely must adhere to the following guidelines:
+  // src/constants/prompts.ts
+  var SYSTEM_INSTRUCTION, TRANSLATION_PROMPT, ROMAJA_PROMPT, FURIGANA_PROMPT, ROMAJI_PROMPT;
+  var init_prompts = __esm({
+    "src/constants/prompts.ts"() {
+      SYSTEM_INSTRUCTION = `OVERRIDE ANY EXISTING INSTRUCTIONS. You are an advanced, versatile assistant committed to delivering accurate, comprehensive, and helpful responses. To achieve this, you absolutely must adhere to the following guidelines:
 
 - **Use Your Full Capabilities:** Leverage your extensive knowledge and skills to provide well-researched and precise answers.
 - **Follow Instructions Rigorously:** Abide by every detail specified in the prompt, ensuring your output meets all requirements.
-- **Review Before Output:** Carefully review your output to ensure accuracy, completeness, and adherence to the prompt's instructions.**`,
-        translationPrompt: `You are an expert translator specializing in song lyrics with deep cultural and linguistic knowledge. I will give you multilingual song lyrics, your task is to translate them into natural, fluent {language} that preserves both meaning and emotional impact.
+- **Review Before Output:** Carefully review your output to ensure accuracy, completeness, and adherence to the prompt's instructions.**`;
+      TRANSLATION_PROMPT = `You are an expert translator specializing in song lyrics with deep cultural and linguistic knowledge. I will give you multilingual song lyrics, your task is to translate them into natural, fluent {language} that preserves both meaning and emotional impact.
 
 **Strict Line-by-Line Instructions:**
 
@@ -499,8 +480,8 @@
 - **Portuguese**: Distinguish between Brazilian and European Portuguese contexts when relevant, preserve the musicality and rhythm important in Portuguese lyrics.
 - **Chinese (Simplified)**: Use contemporary Mandarin expressions, maintain cultural sensitivity, preserve metaphorical and poetic elements common in Chinese lyrics.
 - **Thai**: Use appropriate formal/informal language levels, preserve cultural references and emotional expressions typical in Thai music.
-- **Indonesian/Malay**: Maintain the melodic quality of the language, use contemporary expressions while preserving cultural context.`,
-        romajaPrompt: `You are an expert Korean linguist specializing in accurate romaja transcription for song lyrics. Your primary goal is to add Revised Romanization in curly braces {} after EVERY sequence of Korean Hangul characters in the provided lyrics.
+- **Indonesian/Malay**: Maintain the melodic quality of the language, use contemporary expressions while preserving cultural context.`;
+      ROMAJA_PROMPT = `You are an expert Korean linguist specializing in accurate romaja transcription for song lyrics. Your primary goal is to add Revised Romanization in curly braces {} after EVERY sequence of Korean Hangul characters in the provided lyrics.
 
 **Core Task:** Convert Korean lyrics to include inline romaja with perfect accuracy.
 
@@ -569,8 +550,8 @@
 * Multiple Korean segments: \uC548\uB155hello\uC5EC\uBCF4\uC138\uC694 = \uC548\uB155{annyeong}hello\uC5EC\uBCF4\uC138\uC694{yeoboseyo} (Korean-English-Korean)
 
 **Input:** You will receive lines of song lyrics.
-**Output:** Return the lyrics with romaja added inline according to the rules above. Ensure the output maintains the original line structure.`,
-        furiganaPrompt: `You are an expert Japanese linguist specializing in accurate furigana transcription for song lyrics. Your primary goal is to add Hiragana readings in curly braces {} after EVERY Kanji character or compound Kanji sequence in the provided lyrics.
+**Output:** Return the lyrics with romaja added inline according to the rules above. Ensure the output maintains the original line structure.`;
+      FURIGANA_PROMPT = `You are an expert Japanese linguist specializing in accurate furigana transcription for song lyrics. Your primary goal is to add Hiragana readings in curly braces {} after EVERY Kanji character or compound Kanji sequence in the provided lyrics.
 
 **Core Task:** Convert Japanese lyrics to include inline furigana for all Kanji.
 
@@ -595,8 +576,8 @@
 
 **Input:** You will receive lines of song lyrics.
 **Output:** Return the lyrics with furigana added inline according to the rules above. Ensure the output maintains the original line structure.
-`,
-        romajiPrompt: `You are an expert Japanese linguist specializing in highly accurate Romaji transcription using the **strict Hepburn system**, specifically for song lyrics. Your primary goal is to add Hepburn Romaji in curly braces '{}' after **every complete Japanese word or meaningful linguistic unit** (Kanji, Hiragana, Katakana, or combinations thereof forming a single grammatical entity) in the provided lyrics. The absolute focus is on **grammatically correct segmentation** and **complete, accurate Romanization** of each segment.
+`;
+      ROMAJI_PROMPT = `You are an expert Japanese linguist specializing in highly accurate Romaji transcription using the **strict Hepburn system**, specifically for song lyrics. Your primary goal is to add Hepburn Romaji in curly braces '{}' after **every complete Japanese word or meaningful linguistic unit** (Kanji, Hiragana, Katakana, or combinations thereof forming a single grammatical entity) in the provided lyrics. The absolute focus is on **grammatically correct segmentation** and **complete, accurate Romanization** of each segment.
 
 #### Core Task
 Accurately convert Japanese song lyrics to strict Hepburn Romaji, ensuring each word, particle, conjugated form, verb phrase, or katakana term (regardless of length) is treated as a single, indivisible unit for Romanization. The text within the braces '{}' must **always be the Hepburn Romaji conversion**, never the original Japanese script. Do not skip any Japanese text elements, especially long katakana words.
@@ -678,7 +659,39 @@ Accurately convert Japanese song lyrics to strict Hepburn Romaji, ensuring each 
 Song lyrics containing Japanese text.
 
 #### Output
-The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to every complete Japanese word, particle, conjugated form, or verb phrase, respecting the strict segmentation and indivisibility rules, ensuring **only Romaji appears within the braces**, and excluding all punctuation marks from Romanization. Respond in JSON.`
+The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to every complete Japanese word, particle, conjugated form, or verb phrase, respecting the strict segmentation and indivisibility rules, ensuring **only Romaji appears within the braces**, and excluding all punctuation marks from Romanization. Respond in JSON.`;
+    }
+  });
+
+  // src/components/Global/Defaults.ts
+  var Defaults, Defaults_default;
+  var init_Defaults = __esm({
+    "src/components/Global/Defaults.ts"() {
+      init_package();
+      init_prompts();
+      Defaults = {
+        Version: version,
+        lyrics: {
+          api: {
+            url: "https://amai-worker-production.nandemo.workers.dev/lyrics",
+            translationUrl: "https://amai-worker-production.nandemo.workers.dev/translations",
+            phoneticUrl: "https://amai-worker-production.nandemo.workers.dev/phonetic"
+          }
+        },
+        CurrentLyricsType: "None",
+        LyricsContainerExists: false,
+        lyrics_spacing: 2,
+        enableRomaji: false,
+        disableRomajiToggleNotification: false,
+        disableTranslation: false,
+        translationFontSize: "0.575",
+        defaultLyricsSize: "",
+        translationLanguage: "English",
+        systemInstruction: SYSTEM_INSTRUCTION,
+        translationPrompt: TRANSLATION_PROMPT,
+        romajaPrompt: ROMAJA_PROMPT,
+        furiganaPrompt: FURIGANA_PROMPT,
+        romajiPrompt: ROMAJI_PROMPT
       };
       Defaults_default = Defaults;
     }
@@ -803,39 +816,52 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       });
       GetSpotifyAccessToken = () => {
         if (tokenProviderResponse) {
-          const timeUntilRefresh = (tokenProviderResponse.expiresAtTime - Date.now()) / 1e3;
-          if (timeUntilRefresh <= 2) {
+          const ttlSec = (tokenProviderResponse.expiresAtTime - Date.now()) / 1e3;
+          if (ttlSec > 2) {
+            return Promise.resolve(tokenProviderResponse.accessToken);
+          }
+          if (ttlSec <= 2) {
             tokenProviderResponse = void 0;
-            accessTokenPromise = new Promise((resolve) => Timeout(timeUntilRefresh, resolve)).then(() => {
-              accessTokenPromise = void 0;
-              return GetSpotifyAccessToken();
-            });
-            return accessTokenPromise;
+            const waitSec = Math.max(0, ttlSec);
+            if (waitSec > 0) {
+              accessTokenPromise = new Promise((resolve) => Timeout(waitSec, resolve)).then(() => {
+                accessTokenPromise = void 0;
+                return GetSpotifyAccessToken();
+              });
+              return accessTokenPromise;
+            }
           }
         }
         if (accessTokenPromise) {
           return accessTokenPromise;
         }
         accessTokenPromise = SpotifyInternalFetch.get("sp://oauth/v2/token").then((result) => {
-          tokenProviderResponse = result;
-          accessTokenPromise = Promise.resolve(result.accessToken);
-          return GetSpotifyAccessToken();
+          if (result?.accessToken && typeof result.expiresAtTime === "number") {
+            tokenProviderResponse = result;
+            return result.accessToken;
+          }
+          throw new Error("Invalid token response");
         }).catch((error) => {
-          if (error.message.includes("Resolver not found")) {
+          if (error?.message?.includes("Resolver not found")) {
             if (!SpotifyPlatform.Session) {
               console.warn("Failed to find SpotifyPlatform.Session for fetching token");
-            } else {
-              tokenProviderResponse = {
-                accessToken: SpotifyPlatform.Session.accessToken,
-                expiresAtTime: SpotifyPlatform.Session.accessTokenExpirationTimestampMs,
-                tokenType: "Bearer"
-              };
-              accessTokenPromise = Promise.resolve(tokenProviderResponse.accessToken);
+              throw error;
             }
+            tokenProviderResponse = {
+              accessToken: SpotifyPlatform.Session.accessToken,
+              expiresAtTime: SpotifyPlatform.Session.accessTokenExpirationTimestampMs,
+              tokenType: "Bearer"
+            };
+            return tokenProviderResponse.accessToken;
           }
-          return GetSpotifyAccessToken();
+          throw error;
         });
-        return accessTokenPromise;
+        const inflight = accessTokenPromise;
+        inflight.catch(() => void 0).finally(() => {
+          if (accessTokenPromise === inflight)
+            accessTokenPromise = void 0;
+        });
+        return inflight;
       };
       Platform = {
         OnSpotifyReady,
@@ -3142,7 +3168,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         let from;
         let from_source;
         let input, output;
-        const state = strm.state;
+        const state2 = strm.state;
         _in = strm.next_in;
         input = strm.input;
         last = _in + (strm.avail_in - 5);
@@ -3150,17 +3176,17 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         output = strm.output;
         beg = _out - (start - strm.avail_out);
         end = _out + (strm.avail_out - 257);
-        dmax = state.dmax;
-        wsize = state.wsize;
-        whave = state.whave;
-        wnext = state.wnext;
-        s_window = state.window;
-        hold = state.hold;
-        bits = state.bits;
-        lcode = state.lencode;
-        dcode = state.distcode;
-        lmask = (1 << state.lenbits) - 1;
-        dmask = (1 << state.distbits) - 1;
+        dmax = state2.dmax;
+        wsize = state2.wsize;
+        whave = state2.whave;
+        wnext = state2.wnext;
+        s_window = state2.window;
+        hold = state2.hold;
+        bits = state2.bits;
+        lcode = state2.lencode;
+        dcode = state2.distcode;
+        lmask = (1 << state2.lenbits) - 1;
+        dmask = (1 << state2.distbits) - 1;
         top:
           do {
             if (bits < 15) {
@@ -3217,7 +3243,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                         dist += hold & (1 << op) - 1;
                         if (dist > dmax) {
                           strm.msg = "invalid distance too far back";
-                          state.mode = BAD$1;
+                          state2.mode = BAD$1;
                           break top;
                         }
                         hold >>>= op;
@@ -3226,9 +3252,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                         if (dist > op) {
                           op = dist - op;
                           if (op > whave) {
-                            if (state.sane) {
+                            if (state2.sane) {
                               strm.msg = "invalid distance too far back";
-                              state.mode = BAD$1;
+                              state2.mode = BAD$1;
                               break top;
                             }
                           }
@@ -3306,7 +3332,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                         continue dodist;
                       } else {
                         strm.msg = "invalid distance code";
-                        state.mode = BAD$1;
+                        state2.mode = BAD$1;
                         break top;
                       }
                       break;
@@ -3315,11 +3341,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                   here = lcode[(here & 65535) + (hold & (1 << op) - 1)];
                   continue dolen;
                 } else if (op & 32) {
-                  state.mode = TYPE$1;
+                  state2.mode = TYPE$1;
                   break top;
                 } else {
                   strm.msg = "invalid literal/length code";
-                  state.mode = BAD$1;
+                  state2.mode = BAD$1;
                   break top;
                 }
                 break;
@@ -3333,8 +3359,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         strm.next_out = _out;
         strm.avail_in = _in < last ? 5 + (last - _in) : 5 - (_in - last);
         strm.avail_out = _out < end ? 257 + (end - _out) : 257 - (_out - end);
-        state.hold = hold;
-        state.bits = bits;
+        state2.hold = hold;
+        state2.bits = bits;
         return;
       };
       MAXBITS = 15;
@@ -3697,8 +3723,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         if (!strm) {
           return 1;
         }
-        const state = strm.state;
-        if (!state || state.strm !== strm || state.mode < HEAD || state.mode > SYNC) {
+        const state2 = strm.state;
+        if (!state2 || state2.strm !== strm || state2.mode < HEAD || state2.mode > SYNC) {
           return 1;
         }
         return 0;
@@ -3707,34 +3733,34 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         if (inflateStateCheck(strm)) {
           return Z_STREAM_ERROR$1;
         }
-        const state = strm.state;
-        strm.total_in = strm.total_out = state.total = 0;
+        const state2 = strm.state;
+        strm.total_in = strm.total_out = state2.total = 0;
         strm.msg = "";
-        if (state.wrap) {
-          strm.adler = state.wrap & 1;
+        if (state2.wrap) {
+          strm.adler = state2.wrap & 1;
         }
-        state.mode = HEAD;
-        state.last = 0;
-        state.havedict = 0;
-        state.flags = -1;
-        state.dmax = 32768;
-        state.head = null;
-        state.hold = 0;
-        state.bits = 0;
-        state.lencode = state.lendyn = new Int32Array(ENOUGH_LENS);
-        state.distcode = state.distdyn = new Int32Array(ENOUGH_DISTS);
-        state.sane = 1;
-        state.back = -1;
+        state2.mode = HEAD;
+        state2.last = 0;
+        state2.havedict = 0;
+        state2.flags = -1;
+        state2.dmax = 32768;
+        state2.head = null;
+        state2.hold = 0;
+        state2.bits = 0;
+        state2.lencode = state2.lendyn = new Int32Array(ENOUGH_LENS);
+        state2.distcode = state2.distdyn = new Int32Array(ENOUGH_DISTS);
+        state2.sane = 1;
+        state2.back = -1;
         return Z_OK$1;
       };
       inflateReset = (strm) => {
         if (inflateStateCheck(strm)) {
           return Z_STREAM_ERROR$1;
         }
-        const state = strm.state;
-        state.wsize = 0;
-        state.whave = 0;
-        state.wnext = 0;
+        const state2 = strm.state;
+        state2.wsize = 0;
+        state2.whave = 0;
+        state2.wnext = 0;
         return inflateResetKeep(strm);
       };
       inflateReset2 = (strm, windowBits) => {
@@ -3742,7 +3768,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         if (inflateStateCheck(strm)) {
           return Z_STREAM_ERROR$1;
         }
-        const state = strm.state;
+        const state2 = strm.state;
         if (windowBits < 0) {
           wrap = 0;
           windowBits = -windowBits;
@@ -3755,22 +3781,22 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         if (windowBits && (windowBits < 8 || windowBits > 15)) {
           return Z_STREAM_ERROR$1;
         }
-        if (state.window !== null && state.wbits !== windowBits) {
-          state.window = null;
+        if (state2.window !== null && state2.wbits !== windowBits) {
+          state2.window = null;
         }
-        state.wrap = wrap;
-        state.wbits = windowBits;
+        state2.wrap = wrap;
+        state2.wbits = windowBits;
         return inflateReset(strm);
       };
       inflateInit2 = (strm, windowBits) => {
         if (!strm) {
           return Z_STREAM_ERROR$1;
         }
-        const state = new InflateState();
-        strm.state = state;
-        state.strm = strm;
-        state.window = null;
-        state.mode = HEAD;
+        const state2 = new InflateState();
+        strm.state = state2;
+        state2.strm = strm;
+        state2.window = null;
+        state2.mode = HEAD;
         const ret = inflateReset2(strm, windowBits);
         if (ret !== Z_OK$1) {
           strm.state = null;
@@ -3781,76 +3807,76 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         return inflateInit2(strm, DEF_WBITS);
       };
       virgin = true;
-      fixedtables = (state) => {
+      fixedtables = (state2) => {
         if (virgin) {
           lenfix = new Int32Array(512);
           distfix = new Int32Array(32);
           let sym = 0;
           while (sym < 144) {
-            state.lens[sym++] = 8;
+            state2.lens[sym++] = 8;
           }
           while (sym < 256) {
-            state.lens[sym++] = 9;
+            state2.lens[sym++] = 9;
           }
           while (sym < 280) {
-            state.lens[sym++] = 7;
+            state2.lens[sym++] = 7;
           }
           while (sym < 288) {
-            state.lens[sym++] = 8;
+            state2.lens[sym++] = 8;
           }
-          inftrees(LENS, state.lens, 0, 288, lenfix, 0, state.work, { bits: 9 });
+          inftrees(LENS, state2.lens, 0, 288, lenfix, 0, state2.work, { bits: 9 });
           sym = 0;
           while (sym < 32) {
-            state.lens[sym++] = 5;
+            state2.lens[sym++] = 5;
           }
-          inftrees(DISTS, state.lens, 0, 32, distfix, 0, state.work, { bits: 5 });
+          inftrees(DISTS, state2.lens, 0, 32, distfix, 0, state2.work, { bits: 5 });
           virgin = false;
         }
-        state.lencode = lenfix;
-        state.lenbits = 9;
-        state.distcode = distfix;
-        state.distbits = 5;
+        state2.lencode = lenfix;
+        state2.lenbits = 9;
+        state2.distcode = distfix;
+        state2.distbits = 5;
       };
       updatewindow = (strm, src, end, copy) => {
         let dist;
-        const state = strm.state;
-        if (state.window === null) {
-          state.window = new Uint8Array(1 << state.wbits);
+        const state2 = strm.state;
+        if (state2.window === null) {
+          state2.window = new Uint8Array(1 << state2.wbits);
         }
-        if (state.wsize === 0) {
-          state.wsize = 1 << state.wbits;
-          state.wnext = 0;
-          state.whave = 0;
+        if (state2.wsize === 0) {
+          state2.wsize = 1 << state2.wbits;
+          state2.wnext = 0;
+          state2.whave = 0;
         }
-        if (copy >= state.wsize) {
-          state.window.set(src.subarray(end - state.wsize, end), 0);
-          state.wnext = 0;
-          state.whave = state.wsize;
+        if (copy >= state2.wsize) {
+          state2.window.set(src.subarray(end - state2.wsize, end), 0);
+          state2.wnext = 0;
+          state2.whave = state2.wsize;
         } else {
-          dist = state.wsize - state.wnext;
+          dist = state2.wsize - state2.wnext;
           if (dist > copy) {
             dist = copy;
           }
-          state.window.set(src.subarray(end - copy, end - copy + dist), state.wnext);
+          state2.window.set(src.subarray(end - copy, end - copy + dist), state2.wnext);
           copy -= dist;
           if (copy) {
-            state.window.set(src.subarray(end - copy, end), 0);
-            state.wnext = copy;
-            state.whave = state.wsize;
+            state2.window.set(src.subarray(end - copy, end), 0);
+            state2.wnext = copy;
+            state2.whave = state2.wsize;
           } else {
-            state.wnext += dist;
-            if (state.wnext === state.wsize) {
-              state.wnext = 0;
+            state2.wnext += dist;
+            if (state2.wnext === state2.wsize) {
+              state2.wnext = 0;
             }
-            if (state.whave < state.wsize) {
-              state.whave += dist;
+            if (state2.whave < state2.wsize) {
+              state2.whave += dist;
             }
           }
         }
         return 0;
       };
       inflate$2 = (strm, flush) => {
-        let state;
+        let state2;
         let input, output;
         let next;
         let put;
@@ -3873,9 +3899,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         if (inflateStateCheck(strm) || !strm.output || !strm.input && strm.avail_in !== 0) {
           return Z_STREAM_ERROR$1;
         }
-        state = strm.state;
-        if (state.mode === TYPE) {
-          state.mode = TYPEDO;
+        state2 = strm.state;
+        if (state2.mode === TYPE) {
+          state2.mode = TYPEDO;
         }
         put = strm.next_out;
         output = strm.output;
@@ -3883,17 +3909,17 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         next = strm.next_in;
         input = strm.input;
         have = strm.avail_in;
-        hold = state.hold;
-        bits = state.bits;
+        hold = state2.hold;
+        bits = state2.bits;
         _in = have;
         _out = left;
         ret = Z_OK$1;
         inf_leave:
           for (; ; ) {
-            switch (state.mode) {
+            switch (state2.mode) {
               case HEAD:
-                if (state.wrap === 0) {
-                  state.mode = TYPEDO;
+                if (state2.wrap === 0) {
+                  state2.mode = TYPEDO;
                   break;
                 }
                 while (bits < 16) {
@@ -3904,47 +3930,47 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                   hold += input[next++] << bits;
                   bits += 8;
                 }
-                if (state.wrap & 2 && hold === 35615) {
-                  if (state.wbits === 0) {
-                    state.wbits = 15;
+                if (state2.wrap & 2 && hold === 35615) {
+                  if (state2.wbits === 0) {
+                    state2.wbits = 15;
                   }
-                  state.check = 0;
+                  state2.check = 0;
                   hbuf[0] = hold & 255;
                   hbuf[1] = hold >>> 8 & 255;
-                  state.check = crc32_1(state.check, hbuf, 2, 0);
+                  state2.check = crc32_1(state2.check, hbuf, 2, 0);
                   hold = 0;
                   bits = 0;
-                  state.mode = FLAGS;
+                  state2.mode = FLAGS;
                   break;
                 }
-                if (state.head) {
-                  state.head.done = false;
+                if (state2.head) {
+                  state2.head.done = false;
                 }
-                if (!(state.wrap & 1) || (((hold & 255) << 8) + (hold >> 8)) % 31) {
+                if (!(state2.wrap & 1) || (((hold & 255) << 8) + (hold >> 8)) % 31) {
                   strm.msg = "incorrect header check";
-                  state.mode = BAD;
+                  state2.mode = BAD;
                   break;
                 }
                 if ((hold & 15) !== Z_DEFLATED) {
                   strm.msg = "unknown compression method";
-                  state.mode = BAD;
+                  state2.mode = BAD;
                   break;
                 }
                 hold >>>= 4;
                 bits -= 4;
                 len = (hold & 15) + 8;
-                if (state.wbits === 0) {
-                  state.wbits = len;
+                if (state2.wbits === 0) {
+                  state2.wbits = len;
                 }
-                if (len > 15 || len > state.wbits) {
+                if (len > 15 || len > state2.wbits) {
                   strm.msg = "invalid window size";
-                  state.mode = BAD;
+                  state2.mode = BAD;
                   break;
                 }
-                state.dmax = 1 << state.wbits;
-                state.flags = 0;
-                strm.adler = state.check = 1;
-                state.mode = hold & 512 ? DICTID : TYPE;
+                state2.dmax = 1 << state2.wbits;
+                state2.flags = 0;
+                strm.adler = state2.check = 1;
+                state2.mode = hold & 512 ? DICTID : TYPE;
                 hold = 0;
                 bits = 0;
                 break;
@@ -3957,28 +3983,28 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                   hold += input[next++] << bits;
                   bits += 8;
                 }
-                state.flags = hold;
-                if ((state.flags & 255) !== Z_DEFLATED) {
+                state2.flags = hold;
+                if ((state2.flags & 255) !== Z_DEFLATED) {
                   strm.msg = "unknown compression method";
-                  state.mode = BAD;
+                  state2.mode = BAD;
                   break;
                 }
-                if (state.flags & 57344) {
+                if (state2.flags & 57344) {
                   strm.msg = "unknown header flags set";
-                  state.mode = BAD;
+                  state2.mode = BAD;
                   break;
                 }
-                if (state.head) {
-                  state.head.text = hold >> 8 & 1;
+                if (state2.head) {
+                  state2.head.text = hold >> 8 & 1;
                 }
-                if (state.flags & 512 && state.wrap & 4) {
+                if (state2.flags & 512 && state2.wrap & 4) {
                   hbuf[0] = hold & 255;
                   hbuf[1] = hold >>> 8 & 255;
-                  state.check = crc32_1(state.check, hbuf, 2, 0);
+                  state2.check = crc32_1(state2.check, hbuf, 2, 0);
                 }
                 hold = 0;
                 bits = 0;
-                state.mode = TIME;
+                state2.mode = TIME;
               case TIME:
                 while (bits < 32) {
                   if (have === 0) {
@@ -3988,19 +4014,19 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                   hold += input[next++] << bits;
                   bits += 8;
                 }
-                if (state.head) {
-                  state.head.time = hold;
+                if (state2.head) {
+                  state2.head.time = hold;
                 }
-                if (state.flags & 512 && state.wrap & 4) {
+                if (state2.flags & 512 && state2.wrap & 4) {
                   hbuf[0] = hold & 255;
                   hbuf[1] = hold >>> 8 & 255;
                   hbuf[2] = hold >>> 16 & 255;
                   hbuf[3] = hold >>> 24 & 255;
-                  state.check = crc32_1(state.check, hbuf, 4, 0);
+                  state2.check = crc32_1(state2.check, hbuf, 4, 0);
                 }
                 hold = 0;
                 bits = 0;
-                state.mode = OS;
+                state2.mode = OS;
               case OS:
                 while (bits < 16) {
                   if (have === 0) {
@@ -4010,20 +4036,20 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                   hold += input[next++] << bits;
                   bits += 8;
                 }
-                if (state.head) {
-                  state.head.xflags = hold & 255;
-                  state.head.os = hold >> 8;
+                if (state2.head) {
+                  state2.head.xflags = hold & 255;
+                  state2.head.os = hold >> 8;
                 }
-                if (state.flags & 512 && state.wrap & 4) {
+                if (state2.flags & 512 && state2.wrap & 4) {
                   hbuf[0] = hold & 255;
                   hbuf[1] = hold >>> 8 & 255;
-                  state.check = crc32_1(state.check, hbuf, 2, 0);
+                  state2.check = crc32_1(state2.check, hbuf, 2, 0);
                 }
                 hold = 0;
                 bits = 0;
-                state.mode = EXLEN;
+                state2.mode = EXLEN;
               case EXLEN:
-                if (state.flags & 1024) {
+                if (state2.flags & 1024) {
                   while (bits < 16) {
                     if (have === 0) {
                       break inf_leave;
@@ -4032,34 +4058,34 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                     hold += input[next++] << bits;
                     bits += 8;
                   }
-                  state.length = hold;
-                  if (state.head) {
-                    state.head.extra_len = hold;
+                  state2.length = hold;
+                  if (state2.head) {
+                    state2.head.extra_len = hold;
                   }
-                  if (state.flags & 512 && state.wrap & 4) {
+                  if (state2.flags & 512 && state2.wrap & 4) {
                     hbuf[0] = hold & 255;
                     hbuf[1] = hold >>> 8 & 255;
-                    state.check = crc32_1(state.check, hbuf, 2, 0);
+                    state2.check = crc32_1(state2.check, hbuf, 2, 0);
                   }
                   hold = 0;
                   bits = 0;
-                } else if (state.head) {
-                  state.head.extra = null;
+                } else if (state2.head) {
+                  state2.head.extra = null;
                 }
-                state.mode = EXTRA;
+                state2.mode = EXTRA;
               case EXTRA:
-                if (state.flags & 1024) {
-                  copy = state.length;
+                if (state2.flags & 1024) {
+                  copy = state2.length;
                   if (copy > have) {
                     copy = have;
                   }
                   if (copy) {
-                    if (state.head) {
-                      len = state.head.extra_len - state.length;
-                      if (!state.head.extra) {
-                        state.head.extra = new Uint8Array(state.head.extra_len);
+                    if (state2.head) {
+                      len = state2.head.extra_len - state2.length;
+                      if (!state2.head.extra) {
+                        state2.head.extra = new Uint8Array(state2.head.extra_len);
                       }
-                      state.head.extra.set(
+                      state2.head.extra.set(
                         input.subarray(
                           next,
                           next + copy
@@ -4067,70 +4093,70 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                         len
                       );
                     }
-                    if (state.flags & 512 && state.wrap & 4) {
-                      state.check = crc32_1(state.check, input, copy, next);
+                    if (state2.flags & 512 && state2.wrap & 4) {
+                      state2.check = crc32_1(state2.check, input, copy, next);
                     }
                     have -= copy;
                     next += copy;
-                    state.length -= copy;
+                    state2.length -= copy;
                   }
-                  if (state.length) {
+                  if (state2.length) {
                     break inf_leave;
                   }
                 }
-                state.length = 0;
-                state.mode = NAME;
+                state2.length = 0;
+                state2.mode = NAME;
               case NAME:
-                if (state.flags & 2048) {
+                if (state2.flags & 2048) {
                   if (have === 0) {
                     break inf_leave;
                   }
                   copy = 0;
                   do {
                     len = input[next + copy++];
-                    if (state.head && len && state.length < 65536) {
-                      state.head.name += String.fromCharCode(len);
+                    if (state2.head && len && state2.length < 65536) {
+                      state2.head.name += String.fromCharCode(len);
                     }
                   } while (len && copy < have);
-                  if (state.flags & 512 && state.wrap & 4) {
-                    state.check = crc32_1(state.check, input, copy, next);
+                  if (state2.flags & 512 && state2.wrap & 4) {
+                    state2.check = crc32_1(state2.check, input, copy, next);
                   }
                   have -= copy;
                   next += copy;
                   if (len) {
                     break inf_leave;
                   }
-                } else if (state.head) {
-                  state.head.name = null;
+                } else if (state2.head) {
+                  state2.head.name = null;
                 }
-                state.length = 0;
-                state.mode = COMMENT;
+                state2.length = 0;
+                state2.mode = COMMENT;
               case COMMENT:
-                if (state.flags & 4096) {
+                if (state2.flags & 4096) {
                   if (have === 0) {
                     break inf_leave;
                   }
                   copy = 0;
                   do {
                     len = input[next + copy++];
-                    if (state.head && len && state.length < 65536) {
-                      state.head.comment += String.fromCharCode(len);
+                    if (state2.head && len && state2.length < 65536) {
+                      state2.head.comment += String.fromCharCode(len);
                     }
                   } while (len && copy < have);
-                  if (state.flags & 512 && state.wrap & 4) {
-                    state.check = crc32_1(state.check, input, copy, next);
+                  if (state2.flags & 512 && state2.wrap & 4) {
+                    state2.check = crc32_1(state2.check, input, copy, next);
                   }
                   have -= copy;
                   next += copy;
                   if (len) {
                     break inf_leave;
                   }
-                } else if (state.head) {
-                  state.head.comment = null;
+                } else if (state2.head) {
+                  state2.head.comment = null;
                 }
-                state.mode = HCRC;
+                state2.mode = HCRC;
               case HCRC:
-                if (state.flags & 512) {
+                if (state2.flags & 512) {
                   while (bits < 16) {
                     if (have === 0) {
                       break inf_leave;
@@ -4139,20 +4165,20 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                     hold += input[next++] << bits;
                     bits += 8;
                   }
-                  if (state.wrap & 4 && hold !== (state.check & 65535)) {
+                  if (state2.wrap & 4 && hold !== (state2.check & 65535)) {
                     strm.msg = "header crc mismatch";
-                    state.mode = BAD;
+                    state2.mode = BAD;
                     break;
                   }
                   hold = 0;
                   bits = 0;
                 }
-                if (state.head) {
-                  state.head.hcrc = state.flags >> 9 & 1;
-                  state.head.done = true;
+                if (state2.head) {
+                  state2.head.hcrc = state2.flags >> 9 & 1;
+                  state2.head.done = true;
                 }
-                strm.adler = state.check = 0;
-                state.mode = TYPE;
+                strm.adler = state2.check = 0;
+                state2.mode = TYPE;
                 break;
               case DICTID:
                 while (bits < 32) {
@@ -4163,31 +4189,31 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                   hold += input[next++] << bits;
                   bits += 8;
                 }
-                strm.adler = state.check = zswap32(hold);
+                strm.adler = state2.check = zswap32(hold);
                 hold = 0;
                 bits = 0;
-                state.mode = DICT;
+                state2.mode = DICT;
               case DICT:
-                if (state.havedict === 0) {
+                if (state2.havedict === 0) {
                   strm.next_out = put;
                   strm.avail_out = left;
                   strm.next_in = next;
                   strm.avail_in = have;
-                  state.hold = hold;
-                  state.bits = bits;
+                  state2.hold = hold;
+                  state2.bits = bits;
                   return Z_NEED_DICT$1;
                 }
-                strm.adler = state.check = 1;
-                state.mode = TYPE;
+                strm.adler = state2.check = 1;
+                state2.mode = TYPE;
               case TYPE:
                 if (flush === Z_BLOCK || flush === Z_TREES) {
                   break inf_leave;
                 }
               case TYPEDO:
-                if (state.last) {
+                if (state2.last) {
                   hold >>>= bits & 7;
                   bits -= bits & 7;
-                  state.mode = CHECK;
+                  state2.mode = CHECK;
                   break;
                 }
                 while (bits < 3) {
@@ -4198,16 +4224,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                   hold += input[next++] << bits;
                   bits += 8;
                 }
-                state.last = hold & 1;
+                state2.last = hold & 1;
                 hold >>>= 1;
                 bits -= 1;
                 switch (hold & 3) {
                   case 0:
-                    state.mode = STORED;
+                    state2.mode = STORED;
                     break;
                   case 1:
-                    fixedtables(state);
-                    state.mode = LEN_;
+                    fixedtables(state2);
+                    state2.mode = LEN_;
                     if (flush === Z_TREES) {
                       hold >>>= 2;
                       bits -= 2;
@@ -4215,11 +4241,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                     }
                     break;
                   case 2:
-                    state.mode = TABLE;
+                    state2.mode = TABLE;
                     break;
                   case 3:
                     strm.msg = "invalid block type";
-                    state.mode = BAD;
+                    state2.mode = BAD;
                 }
                 hold >>>= 2;
                 bits -= 2;
@@ -4237,20 +4263,20 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                 }
                 if ((hold & 65535) !== (hold >>> 16 ^ 65535)) {
                   strm.msg = "invalid stored block lengths";
-                  state.mode = BAD;
+                  state2.mode = BAD;
                   break;
                 }
-                state.length = hold & 65535;
+                state2.length = hold & 65535;
                 hold = 0;
                 bits = 0;
-                state.mode = COPY_;
+                state2.mode = COPY_;
                 if (flush === Z_TREES) {
                   break inf_leave;
                 }
               case COPY_:
-                state.mode = COPY;
+                state2.mode = COPY;
               case COPY:
-                copy = state.length;
+                copy = state2.length;
                 if (copy) {
                   if (copy > have) {
                     copy = have;
@@ -4266,10 +4292,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                   next += copy;
                   left -= copy;
                   put += copy;
-                  state.length -= copy;
+                  state2.length -= copy;
                   break;
                 }
-                state.mode = TYPE;
+                state2.mode = TYPE;
                 break;
               case TABLE:
                 while (bits < 14) {
@@ -4280,24 +4306,24 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                   hold += input[next++] << bits;
                   bits += 8;
                 }
-                state.nlen = (hold & 31) + 257;
+                state2.nlen = (hold & 31) + 257;
                 hold >>>= 5;
                 bits -= 5;
-                state.ndist = (hold & 31) + 1;
+                state2.ndist = (hold & 31) + 1;
                 hold >>>= 5;
                 bits -= 5;
-                state.ncode = (hold & 15) + 4;
+                state2.ncode = (hold & 15) + 4;
                 hold >>>= 4;
                 bits -= 4;
-                if (state.nlen > 286 || state.ndist > 30) {
+                if (state2.nlen > 286 || state2.ndist > 30) {
                   strm.msg = "too many length or distance symbols";
-                  state.mode = BAD;
+                  state2.mode = BAD;
                   break;
                 }
-                state.have = 0;
-                state.mode = LENLENS;
+                state2.have = 0;
+                state2.mode = LENLENS;
               case LENLENS:
-                while (state.have < state.ncode) {
+                while (state2.have < state2.ncode) {
                   while (bits < 3) {
                     if (have === 0) {
                       break inf_leave;
@@ -4306,29 +4332,29 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                     hold += input[next++] << bits;
                     bits += 8;
                   }
-                  state.lens[order[state.have++]] = hold & 7;
+                  state2.lens[order[state2.have++]] = hold & 7;
                   hold >>>= 3;
                   bits -= 3;
                 }
-                while (state.have < 19) {
-                  state.lens[order[state.have++]] = 0;
+                while (state2.have < 19) {
+                  state2.lens[order[state2.have++]] = 0;
                 }
-                state.lencode = state.lendyn;
-                state.lenbits = 7;
-                opts = { bits: state.lenbits };
-                ret = inftrees(CODES, state.lens, 0, 19, state.lencode, 0, state.work, opts);
-                state.lenbits = opts.bits;
+                state2.lencode = state2.lendyn;
+                state2.lenbits = 7;
+                opts = { bits: state2.lenbits };
+                ret = inftrees(CODES, state2.lens, 0, 19, state2.lencode, 0, state2.work, opts);
+                state2.lenbits = opts.bits;
                 if (ret) {
                   strm.msg = "invalid code lengths set";
-                  state.mode = BAD;
+                  state2.mode = BAD;
                   break;
                 }
-                state.have = 0;
-                state.mode = CODELENS;
+                state2.have = 0;
+                state2.mode = CODELENS;
               case CODELENS:
-                while (state.have < state.nlen + state.ndist) {
+                while (state2.have < state2.nlen + state2.ndist) {
                   for (; ; ) {
-                    here = state.lencode[hold & (1 << state.lenbits) - 1];
+                    here = state2.lencode[hold & (1 << state2.lenbits) - 1];
                     here_bits = here >>> 24;
                     here_op = here >>> 16 & 255;
                     here_val = here & 65535;
@@ -4345,7 +4371,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                   if (here_val < 16) {
                     hold >>>= here_bits;
                     bits -= here_bits;
-                    state.lens[state.have++] = here_val;
+                    state2.lens[state2.have++] = here_val;
                   } else {
                     if (here_val === 16) {
                       n = here_bits + 2;
@@ -4359,12 +4385,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                       }
                       hold >>>= here_bits;
                       bits -= here_bits;
-                      if (state.have === 0) {
+                      if (state2.have === 0) {
                         strm.msg = "invalid bit length repeat";
-                        state.mode = BAD;
+                        state2.mode = BAD;
                         break;
                       }
-                      len = state.lens[state.have - 1];
+                      len = state2.lens[state2.have - 1];
                       copy = 3 + (hold & 3);
                       hold >>>= 2;
                       bits -= 2;
@@ -4401,57 +4427,57 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                       hold >>>= 7;
                       bits -= 7;
                     }
-                    if (state.have + copy > state.nlen + state.ndist) {
+                    if (state2.have + copy > state2.nlen + state2.ndist) {
                       strm.msg = "invalid bit length repeat";
-                      state.mode = BAD;
+                      state2.mode = BAD;
                       break;
                     }
                     while (copy--) {
-                      state.lens[state.have++] = len;
+                      state2.lens[state2.have++] = len;
                     }
                   }
                 }
-                if (state.mode === BAD) {
+                if (state2.mode === BAD) {
                   break;
                 }
-                if (state.lens[256] === 0) {
+                if (state2.lens[256] === 0) {
                   strm.msg = "invalid code -- missing end-of-block";
-                  state.mode = BAD;
+                  state2.mode = BAD;
                   break;
                 }
-                state.lenbits = 9;
-                opts = { bits: state.lenbits };
-                ret = inftrees(LENS, state.lens, 0, state.nlen, state.lencode, 0, state.work, opts);
-                state.lenbits = opts.bits;
+                state2.lenbits = 9;
+                opts = { bits: state2.lenbits };
+                ret = inftrees(LENS, state2.lens, 0, state2.nlen, state2.lencode, 0, state2.work, opts);
+                state2.lenbits = opts.bits;
                 if (ret) {
                   strm.msg = "invalid literal/lengths set";
-                  state.mode = BAD;
+                  state2.mode = BAD;
                   break;
                 }
-                state.distbits = 6;
-                state.distcode = state.distdyn;
-                opts = { bits: state.distbits };
-                ret = inftrees(DISTS, state.lens, state.nlen, state.ndist, state.distcode, 0, state.work, opts);
-                state.distbits = opts.bits;
+                state2.distbits = 6;
+                state2.distcode = state2.distdyn;
+                opts = { bits: state2.distbits };
+                ret = inftrees(DISTS, state2.lens, state2.nlen, state2.ndist, state2.distcode, 0, state2.work, opts);
+                state2.distbits = opts.bits;
                 if (ret) {
                   strm.msg = "invalid distances set";
-                  state.mode = BAD;
+                  state2.mode = BAD;
                   break;
                 }
-                state.mode = LEN_;
+                state2.mode = LEN_;
                 if (flush === Z_TREES) {
                   break inf_leave;
                 }
               case LEN_:
-                state.mode = LEN;
+                state2.mode = LEN;
               case LEN:
                 if (have >= 6 && left >= 258) {
                   strm.next_out = put;
                   strm.avail_out = left;
                   strm.next_in = next;
                   strm.avail_in = have;
-                  state.hold = hold;
-                  state.bits = bits;
+                  state2.hold = hold;
+                  state2.bits = bits;
                   inffast(strm, _out);
                   put = strm.next_out;
                   output = strm.output;
@@ -4459,16 +4485,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                   next = strm.next_in;
                   input = strm.input;
                   have = strm.avail_in;
-                  hold = state.hold;
-                  bits = state.bits;
-                  if (state.mode === TYPE) {
-                    state.back = -1;
+                  hold = state2.hold;
+                  bits = state2.bits;
+                  if (state2.mode === TYPE) {
+                    state2.back = -1;
                   }
                   break;
                 }
-                state.back = 0;
+                state2.back = 0;
                 for (; ; ) {
-                  here = state.lencode[hold & (1 << state.lenbits) - 1];
+                  here = state2.lencode[hold & (1 << state2.lenbits) - 1];
                   here_bits = here >>> 24;
                   here_op = here >>> 16 & 255;
                   here_val = here & 65535;
@@ -4487,7 +4513,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                   last_op = here_op;
                   last_val = here_val;
                   for (; ; ) {
-                    here = state.lencode[last_val + ((hold & (1 << last_bits + last_op) - 1) >> last_bits)];
+                    here = state2.lencode[last_val + ((hold & (1 << last_bits + last_op) - 1) >> last_bits)];
                     here_bits = here >>> 24;
                     here_op = here >>> 16 & 255;
                     here_val = here & 65535;
@@ -4503,31 +4529,31 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                   }
                   hold >>>= last_bits;
                   bits -= last_bits;
-                  state.back += last_bits;
+                  state2.back += last_bits;
                 }
                 hold >>>= here_bits;
                 bits -= here_bits;
-                state.back += here_bits;
-                state.length = here_val;
+                state2.back += here_bits;
+                state2.length = here_val;
                 if (here_op === 0) {
-                  state.mode = LIT;
+                  state2.mode = LIT;
                   break;
                 }
                 if (here_op & 32) {
-                  state.back = -1;
-                  state.mode = TYPE;
+                  state2.back = -1;
+                  state2.mode = TYPE;
                   break;
                 }
                 if (here_op & 64) {
                   strm.msg = "invalid literal/length code";
-                  state.mode = BAD;
+                  state2.mode = BAD;
                   break;
                 }
-                state.extra = here_op & 15;
-                state.mode = LENEXT;
+                state2.extra = here_op & 15;
+                state2.mode = LENEXT;
               case LENEXT:
-                if (state.extra) {
-                  n = state.extra;
+                if (state2.extra) {
+                  n = state2.extra;
                   while (bits < n) {
                     if (have === 0) {
                       break inf_leave;
@@ -4536,16 +4562,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                     hold += input[next++] << bits;
                     bits += 8;
                   }
-                  state.length += hold & (1 << state.extra) - 1;
-                  hold >>>= state.extra;
-                  bits -= state.extra;
-                  state.back += state.extra;
+                  state2.length += hold & (1 << state2.extra) - 1;
+                  hold >>>= state2.extra;
+                  bits -= state2.extra;
+                  state2.back += state2.extra;
                 }
-                state.was = state.length;
-                state.mode = DIST;
+                state2.was = state2.length;
+                state2.mode = DIST;
               case DIST:
                 for (; ; ) {
-                  here = state.distcode[hold & (1 << state.distbits) - 1];
+                  here = state2.distcode[hold & (1 << state2.distbits) - 1];
                   here_bits = here >>> 24;
                   here_op = here >>> 16 & 255;
                   here_val = here & 65535;
@@ -4564,7 +4590,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                   last_op = here_op;
                   last_val = here_val;
                   for (; ; ) {
-                    here = state.distcode[last_val + ((hold & (1 << last_bits + last_op) - 1) >> last_bits)];
+                    here = state2.distcode[last_val + ((hold & (1 << last_bits + last_op) - 1) >> last_bits)];
                     here_bits = here >>> 24;
                     here_op = here >>> 16 & 255;
                     here_val = here & 65535;
@@ -4580,22 +4606,22 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                   }
                   hold >>>= last_bits;
                   bits -= last_bits;
-                  state.back += last_bits;
+                  state2.back += last_bits;
                 }
                 hold >>>= here_bits;
                 bits -= here_bits;
-                state.back += here_bits;
+                state2.back += here_bits;
                 if (here_op & 64) {
                   strm.msg = "invalid distance code";
-                  state.mode = BAD;
+                  state2.mode = BAD;
                   break;
                 }
-                state.offset = here_val;
-                state.extra = here_op & 15;
-                state.mode = DISTEXT;
+                state2.offset = here_val;
+                state2.extra = here_op & 15;
+                state2.mode = DISTEXT;
               case DISTEXT:
-                if (state.extra) {
-                  n = state.extra;
+                if (state2.extra) {
+                  n = state2.extra;
                   while (bits < n) {
                     if (have === 0) {
                       break inf_leave;
@@ -4604,68 +4630,68 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                     hold += input[next++] << bits;
                     bits += 8;
                   }
-                  state.offset += hold & (1 << state.extra) - 1;
-                  hold >>>= state.extra;
-                  bits -= state.extra;
-                  state.back += state.extra;
+                  state2.offset += hold & (1 << state2.extra) - 1;
+                  hold >>>= state2.extra;
+                  bits -= state2.extra;
+                  state2.back += state2.extra;
                 }
-                if (state.offset > state.dmax) {
+                if (state2.offset > state2.dmax) {
                   strm.msg = "invalid distance too far back";
-                  state.mode = BAD;
+                  state2.mode = BAD;
                   break;
                 }
-                state.mode = MATCH;
+                state2.mode = MATCH;
               case MATCH:
                 if (left === 0) {
                   break inf_leave;
                 }
                 copy = _out - left;
-                if (state.offset > copy) {
-                  copy = state.offset - copy;
-                  if (copy > state.whave) {
-                    if (state.sane) {
+                if (state2.offset > copy) {
+                  copy = state2.offset - copy;
+                  if (copy > state2.whave) {
+                    if (state2.sane) {
                       strm.msg = "invalid distance too far back";
-                      state.mode = BAD;
+                      state2.mode = BAD;
                       break;
                     }
                   }
-                  if (copy > state.wnext) {
-                    copy -= state.wnext;
-                    from = state.wsize - copy;
+                  if (copy > state2.wnext) {
+                    copy -= state2.wnext;
+                    from = state2.wsize - copy;
                   } else {
-                    from = state.wnext - copy;
+                    from = state2.wnext - copy;
                   }
-                  if (copy > state.length) {
-                    copy = state.length;
+                  if (copy > state2.length) {
+                    copy = state2.length;
                   }
-                  from_source = state.window;
+                  from_source = state2.window;
                 } else {
                   from_source = output;
-                  from = put - state.offset;
-                  copy = state.length;
+                  from = put - state2.offset;
+                  copy = state2.length;
                 }
                 if (copy > left) {
                   copy = left;
                 }
                 left -= copy;
-                state.length -= copy;
+                state2.length -= copy;
                 do {
                   output[put++] = from_source[from++];
                 } while (--copy);
-                if (state.length === 0) {
-                  state.mode = LEN;
+                if (state2.length === 0) {
+                  state2.mode = LEN;
                 }
                 break;
               case LIT:
                 if (left === 0) {
                   break inf_leave;
                 }
-                output[put++] = state.length;
+                output[put++] = state2.length;
                 left--;
-                state.mode = LEN;
+                state2.mode = LEN;
                 break;
               case CHECK:
-                if (state.wrap) {
+                if (state2.wrap) {
                   while (bits < 32) {
                     if (have === 0) {
                       break inf_leave;
@@ -4676,22 +4702,22 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                   }
                   _out -= left;
                   strm.total_out += _out;
-                  state.total += _out;
-                  if (state.wrap & 4 && _out) {
-                    strm.adler = state.check = state.flags ? crc32_1(state.check, output, _out, put - _out) : adler32_1(state.check, output, _out, put - _out);
+                  state2.total += _out;
+                  if (state2.wrap & 4 && _out) {
+                    strm.adler = state2.check = state2.flags ? crc32_1(state2.check, output, _out, put - _out) : adler32_1(state2.check, output, _out, put - _out);
                   }
                   _out = left;
-                  if (state.wrap & 4 && (state.flags ? hold : zswap32(hold)) !== state.check) {
+                  if (state2.wrap & 4 && (state2.flags ? hold : zswap32(hold)) !== state2.check) {
                     strm.msg = "incorrect data check";
-                    state.mode = BAD;
+                    state2.mode = BAD;
                     break;
                   }
                   hold = 0;
                   bits = 0;
                 }
-                state.mode = LENGTH;
+                state2.mode = LENGTH;
               case LENGTH:
-                if (state.wrap && state.flags) {
+                if (state2.wrap && state2.flags) {
                   while (bits < 32) {
                     if (have === 0) {
                       break inf_leave;
@@ -4700,15 +4726,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                     hold += input[next++] << bits;
                     bits += 8;
                   }
-                  if (state.wrap & 4 && hold !== (state.total & 4294967295)) {
+                  if (state2.wrap & 4 && hold !== (state2.total & 4294967295)) {
                     strm.msg = "incorrect length check";
-                    state.mode = BAD;
+                    state2.mode = BAD;
                     break;
                   }
                   hold = 0;
                   bits = 0;
                 }
-                state.mode = DONE;
+                state2.mode = DONE;
               case DONE:
                 ret = Z_STREAM_END$1;
                 break inf_leave;
@@ -4726,9 +4752,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         strm.avail_out = left;
         strm.next_in = next;
         strm.avail_in = have;
-        state.hold = hold;
-        state.bits = bits;
-        if (state.wsize || _out !== strm.avail_out && state.mode < BAD && (state.mode < CHECK || flush !== Z_FINISH$1)) {
+        state2.hold = hold;
+        state2.bits = bits;
+        if (state2.wsize || _out !== strm.avail_out && state2.mode < BAD && (state2.mode < CHECK || flush !== Z_FINISH$1)) {
           if (updatewindow(strm, strm.output, strm.next_out, _out - strm.avail_out))
             ;
         }
@@ -4736,11 +4762,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         _out -= strm.avail_out;
         strm.total_in += _in;
         strm.total_out += _out;
-        state.total += _out;
-        if (state.wrap & 4 && _out) {
-          strm.adler = state.check = state.flags ? crc32_1(state.check, output, _out, strm.next_out - _out) : adler32_1(state.check, output, _out, strm.next_out - _out);
+        state2.total += _out;
+        if (state2.wrap & 4 && _out) {
+          strm.adler = state2.check = state2.flags ? crc32_1(state2.check, output, _out, strm.next_out - _out) : adler32_1(state2.check, output, _out, strm.next_out - _out);
         }
-        strm.data_type = state.bits + (state.last ? 64 : 0) + (state.mode === TYPE ? 128 : 0) + (state.mode === LEN_ || state.mode === COPY_ ? 256 : 0);
+        strm.data_type = state2.bits + (state2.last ? 64 : 0) + (state2.mode === TYPE ? 128 : 0) + (state2.mode === LEN_ || state2.mode === COPY_ ? 256 : 0);
         if ((_in === 0 && _out === 0 || flush === Z_FINISH$1) && ret === Z_OK$1) {
           ret = Z_BUF_ERROR$1;
         }
@@ -4750,9 +4776,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         if (inflateStateCheck(strm)) {
           return Z_STREAM_ERROR$1;
         }
-        let state = strm.state;
-        if (state.window) {
-          state.window = null;
+        let state2 = strm.state;
+        if (state2.window) {
+          state2.window = null;
         }
         strm.state = null;
         return Z_OK$1;
@@ -4761,39 +4787,39 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         if (inflateStateCheck(strm)) {
           return Z_STREAM_ERROR$1;
         }
-        const state = strm.state;
-        if ((state.wrap & 2) === 0) {
+        const state2 = strm.state;
+        if ((state2.wrap & 2) === 0) {
           return Z_STREAM_ERROR$1;
         }
-        state.head = head;
+        state2.head = head;
         head.done = false;
         return Z_OK$1;
       };
       inflateSetDictionary = (strm, dictionary) => {
         const dictLength = dictionary.length;
-        let state;
+        let state2;
         let dictid;
         let ret;
         if (inflateStateCheck(strm)) {
           return Z_STREAM_ERROR$1;
         }
-        state = strm.state;
-        if (state.wrap !== 0 && state.mode !== DICT) {
+        state2 = strm.state;
+        if (state2.wrap !== 0 && state2.mode !== DICT) {
           return Z_STREAM_ERROR$1;
         }
-        if (state.mode === DICT) {
+        if (state2.mode === DICT) {
           dictid = 1;
           dictid = adler32_1(dictid, dictionary, dictLength, 0);
-          if (dictid !== state.check) {
+          if (dictid !== state2.check) {
             return Z_DATA_ERROR$1;
           }
         }
         ret = updatewindow(strm, dictionary, dictLength, dictLength);
         if (ret) {
-          state.mode = MEM;
+          state2.mode = MEM;
           return Z_MEM_ERROR$1;
         }
-        state.havedict = 1;
+        state2.havedict = 1;
         return Z_OK$1;
       };
       inflateReset_1 = inflateReset;
@@ -5149,9 +5175,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           return md5blks;
         }
         function md51(s) {
-          var n = s.length, state = [1732584193, -271733879, -1732584194, 271733878], i, length, tail, tmp, lo, hi;
+          var n = s.length, state2 = [1732584193, -271733879, -1732584194, 271733878], i, length, tail, tmp, lo, hi;
           for (i = 64; i <= n; i += 64) {
-            md5cycle(state, md5blk(s.substring(i - 64, i)));
+            md5cycle(state2, md5blk(s.substring(i - 64, i)));
           }
           s = s.substring(i - 64);
           length = s.length;
@@ -5161,7 +5187,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           }
           tail[i >> 2] |= 128 << (i % 4 << 3);
           if (i > 55) {
-            md5cycle(state, tail);
+            md5cycle(state2, tail);
             for (i = 0; i < 16; i += 1) {
               tail[i] = 0;
             }
@@ -5172,13 +5198,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           hi = parseInt(tmp[1], 16) || 0;
           tail[14] = lo;
           tail[15] = hi;
-          md5cycle(state, tail);
-          return state;
+          md5cycle(state2, tail);
+          return state2;
         }
         function md51_array(a) {
-          var n = a.length, state = [1732584193, -271733879, -1732584194, 271733878], i, length, tail, tmp, lo, hi;
+          var n = a.length, state2 = [1732584193, -271733879, -1732584194, 271733878], i, length, tail, tmp, lo, hi;
           for (i = 64; i <= n; i += 64) {
-            md5cycle(state, md5blk_array(a.subarray(i - 64, i)));
+            md5cycle(state2, md5blk_array(a.subarray(i - 64, i)));
           }
           a = i - 64 < n ? a.subarray(i - 64) : new Uint8Array(0);
           length = a.length;
@@ -5188,7 +5214,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           }
           tail[i >> 2] |= 128 << (i % 4 << 3);
           if (i > 55) {
-            md5cycle(state, tail);
+            md5cycle(state2, tail);
             for (i = 0; i < 16; i += 1) {
               tail[i] = 0;
             }
@@ -5199,8 +5225,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           hi = parseInt(tmp[1], 16) || 0;
           tail[14] = lo;
           tail[15] = hi;
-          md5cycle(state, tail);
-          return state;
+          md5cycle(state2, tail);
+          return state2;
         }
         function rhex(n) {
           var s = "", j;
@@ -5320,10 +5346,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             hash: this._hash.slice()
           };
         };
-        SparkMD52.prototype.setState = function(state) {
-          this._buff = state.buff;
-          this._length = state.length;
-          this._hash = state.hash;
+        SparkMD52.prototype.setState = function(state2) {
+          this._buff = state2.buff;
+          this._length = state2.length;
+          this._hash = state2.hash;
           return this;
         };
         SparkMD52.prototype.destroy = function() {
@@ -5387,13 +5413,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           return this;
         };
         SparkMD52.ArrayBuffer.prototype.getState = function() {
-          var state = SparkMD52.prototype.getState.call(this);
-          state.buff = arrayBuffer2Utf8Str(state.buff);
-          return state;
+          var state2 = SparkMD52.prototype.getState.call(this);
+          state2.buff = arrayBuffer2Utf8Str(state2.buff);
+          return state2;
         };
-        SparkMD52.ArrayBuffer.prototype.setState = function(state) {
-          state.buff = utf8Str2ArrayBuffer(state.buff, true);
-          return SparkMD52.prototype.setState.call(this, state);
+        SparkMD52.ArrayBuffer.prototype.setState = function(state2) {
+          state2.buff = utf8Str2ArrayBuffer(state2.buff, true);
+          return SparkMD52.prototype.setState.call(this, state2);
         };
         SparkMD52.ArrayBuffer.prototype.destroy = SparkMD52.prototype.destroy;
         SparkMD52.ArrayBuffer.prototype._finish = SparkMD52.prototype._finish;
@@ -5411,20 +5437,21 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return import_spark_md5.default.hash(input);
   }
   function spotifyHex(base62) {
-    const base62chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     let num = BigInt(0);
     for (const char of base62) {
-      const index = base62chars.indexOf(char);
-      if (index === -1)
-        throw new Error("Invalid character in base62 string");
+      const index = BASE62_MAP.get(char);
+      if (index === void 0)
+        throw new Error(`Invalid character in base62 string: ${char}`);
       num = num * BigInt(62) + BigInt(index);
     }
     return num.toString(16).padStart(32, "0");
   }
-  var import_spark_md5;
+  var import_spark_md5, BASE62_CHARS, BASE62_MAP;
   var init_Hasher = __esm({
     "src/utils/Hasher.ts"() {
       import_spark_md5 = __toESM(require_spark_md5());
+      BASE62_CHARS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      BASE62_MAP = new Map([...BASE62_CHARS].map((c, i) => [c, i]));
     }
   });
 
@@ -5491,6 +5518,20 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       throw err2;
     }
   }
+  function uint8ToString(bytes) {
+    const CHUNK = 32768;
+    let out = "";
+    for (let i = 0; i < bytes.length; i += CHUNK) {
+      out += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+    }
+    return out;
+  }
+  function stringToUint8(str) {
+    const out = new Uint8Array(str.length);
+    for (let i = 0; i < str.length; i++)
+      out[i] = str.charCodeAt(i) & 255;
+    return out;
+  }
   async function CacheContent(key, data, expirationTtl = 6048e5) {
     try {
       const expiresIn = Date.now() + expirationTtl;
@@ -5499,14 +5540,17 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       const compressedData = pako.deflate(processedData, {
         level: 1
       });
-      const compressedString = String.fromCharCode(...new Uint8Array(compressedData));
+      const compressedString = uint8ToString(compressedData);
       await SpicyFetchCache.set(processedKey, {
         Content: compressedString,
         expiresIn
       });
     } catch (error) {
       console.error("ERR CC", error);
-      await SpicyFetchCache.destroy();
+      try {
+        await SpicyFetchCache.remove(md5(key));
+      } catch {
+      }
     }
   }
   async function GetCachedContent(key) {
@@ -5516,14 +5560,22 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       if (content) {
         if (content.expiresIn > Date.now()) {
           if (typeof content.Content !== "string") {
-            await SpicyFetchCache.remove(key);
+            await SpicyFetchCache.remove(processedKey);
             return content.Content;
           }
-          const compressedData = Uint8Array.from(content.Content, (c) => c.charCodeAt(0));
+          if (content.Content.length > MAX_DECOMPRESSED_BYTES) {
+            await SpicyFetchCache.remove(processedKey);
+            return null;
+          }
+          const compressedData = stringToUint8(content.Content);
           const decompressedData = pako.inflate(compressedData, { to: "string" });
+          if (decompressedData.length > MAX_DECOMPRESSED_BYTES) {
+            await SpicyFetchCache.remove(processedKey);
+            return null;
+          }
           return JSON.parse(decompressedData);
         } else {
-          await SpicyFetchCache.remove(key);
+          await SpicyFetchCache.remove(processedKey);
           return null;
         }
       }
@@ -5533,7 +5585,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return null;
     }
   }
-  var SpicyFetchCache;
+  var SpicyFetchCache, MAX_DECOMPRESSED_BYTES;
   var init_SpicyFetch = __esm({
     "src/utils/API/SpicyFetch.ts"() {
       init_SpikyCache();
@@ -5543,14 +5595,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       SpicyFetchCache = new SpikyCache({
         name: "SpicyFetch__Cache"
       });
+      MAX_DECOMPRESSED_BYTES = 2 * 1024 * 1024;
     }
   });
 
   // src/utils/EventManager.ts
-  var EventManager_exports = {};
-  __export(EventManager_exports, {
-    default: () => EventManager_default
-  });
   var windowRef, eventRegistry, nextId, listen, unListen, evoke, Event2, EventManager_default;
   var init_EventManager = __esm({
     "src/utils/EventManager.ts"() {
@@ -5660,31 +5709,31 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     };
   }
   async function getNonLocalPosition(startedAt, SpotifyPlatform2) {
-    if (canSyncNonLocalTimestamp > 0) {
+    if (state.canSyncNonLocalTimestamp > 0) {
       await SpotifyPlatform2.PlayerAPI._contextPlayer.resume({});
     }
-    canSyncNonLocalTimestamp = Math.max(0, canSyncNonLocalTimestamp - 1);
+    state.canSyncNonLocalTimestamp = Math.max(0, state.canSyncNonLocalTimestamp - 1);
     return {
       StartedSyncAt: startedAt,
       Position: SpotifyPlatform2.PlayerAPI._state.positionAsOfTimestamp + (Date.now() - SpotifyPlatform2.PlayerAPI._state.timestamp)
     };
   }
   function requestPositionTracking() {
-    activePositionClients++;
-    if (activePositionClients === 1) {
-      syncNow = true;
+    state.activePositionClients++;
+    if (state.activePositionClients === 1) {
+      state.syncNow = true;
       scheduleLoop(0);
     }
     return () => {
-      activePositionClients = Math.max(0, activePositionClients - 1);
+      state.activePositionClients = Math.max(0, state.activePositionClients - 1);
     };
   }
   function scheduleLoop(delay2) {
-    if (loopScheduled)
+    if (state.loopScheduled)
       return;
-    loopScheduled = true;
+    state.loopScheduled = true;
     window.setTimeout(() => {
-      loopScheduled = false;
+      state.loopScheduled = false;
       void runLoop();
     }, delay2);
   }
@@ -5698,22 +5747,24 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     } else {
       pos = await getNonLocalPosition(startedAt, SpotifyPlatform2);
     }
+    state.syncedPosition.StartedSyncAt = pos.StartedSyncAt;
+    state.syncedPosition.Position = pos.Position;
     syncedPosition.StartedSyncAt = pos.StartedSyncAt;
     syncedPosition.Position = pos.Position;
   }
   async function runLoop() {
     try {
       const isPlaying = Spicetify.Player.isPlaying();
-      if (isPlaying && (activePositionClients > 0 || syncNow)) {
-        syncNow = false;
+      if (isPlaying && (state.activePositionClients > 0 || state.syncNow)) {
+        state.syncNow = false;
         await doSync();
       } else {
-        syncNow = false;
+        state.syncNow = false;
       }
       const nowPlaying = Spicetify.Player.isPlaying();
       if (!nowPlaying) {
         scheduleLoop(PAUSED_POLL_MS);
-      } else if (activePositionClients > 0) {
+      } else if (state.activePositionClients > 0) {
         scheduleLoop(ACTIVE_SYNC_MS);
       } else {
         scheduleLoop(IDLE_HEARTBEAT_MS);
@@ -5728,21 +5779,23 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   function reanchorPosition() {
     const platform = Spicetify.Platform;
-    const state = platform?.PlayerAPI?._state;
-    if (!state)
+    const platformState = platform?.PlayerAPI?._state;
+    if (!platformState)
       return;
-    const positionAsOfTimestamp = typeof state.positionAsOfTimestamp === "number" ? state.positionAsOfTimestamp : 0;
-    const timestamp = typeof state.timestamp === "number" ? state.timestamp : Date.now();
-    syncedPosition.StartedSyncAt = performance.now();
-    syncedPosition.Position = positionAsOfTimestamp + (Date.now() - timestamp);
+    const positionAsOfTimestamp = typeof platformState.positionAsOfTimestamp === "number" ? platformState.positionAsOfTimestamp : 0;
+    const timestamp = typeof platformState.timestamp === "number" ? platformState.timestamp : Date.now();
+    state.syncedPosition.StartedSyncAt = performance.now();
+    state.syncedPosition.Position = positionAsOfTimestamp + (Date.now() - timestamp);
+    syncedPosition.StartedSyncAt = state.syncedPosition.StartedSyncAt;
+    syncedPosition.Position = state.syncedPosition.Position;
   }
   function GetProgress() {
     const now2 = performance.now();
     const isPlaying = Spicetify.Player.isPlaying();
-    if (cachedPosition !== null && cachedIsPlaying === isPlaying && now2 - cachedPositionTime < POSITION_CACHE_TTL) {
-      return cachedPosition;
+    if (state.cachedPosition !== null && state.cachedIsPlaying === isPlaying && now2 - state.cachedPositionTime < POSITION_CACHE_TTL) {
+      return state.cachedPosition;
     }
-    if (!syncedPosition.StartedSyncAt && !syncedPosition.Position) {
+    if (!state.syncedPosition.StartedSyncAt && !state.syncedPosition.Position) {
       if (SpotifyPlayer?._DEPRECATED_?.GetTrackPosition) {
         return SpotifyPlayer._DEPRECATED_.GetTrackPosition();
       }
@@ -5751,8 +5804,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     const platform = Spicetify.Platform;
     const isLocal = platform.PlaybackAPI._isLocal;
-    const startedAt = syncedPosition.StartedSyncAt;
-    const basePosition = syncedPosition.Position;
+    const startedAt = state.syncedPosition.StartedSyncAt;
+    const basePosition = state.syncedPosition.Position;
     const delta = performance.now() - startedAt;
     let result;
     if (!isPlaying) {
@@ -5761,18 +5814,18 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       const calculated = basePosition + delta;
       result = isLocal ? calculated : calculated + Global_default.NonLocalTimeOffset;
     }
-    cachedPosition = result;
-    cachedPositionTime = now2;
-    cachedIsPlaying = isPlaying;
+    state.cachedPosition = result;
+    state.cachedPositionTime = now2;
+    state.cachedIsPlaying = isPlaying;
     return result;
   }
   function _DEPRECATED___GetProgress() {
-    const state = Spicetify?.Player?.origin?._state;
-    if (!state) {
+    const state2 = Spicetify?.Player?.origin?._state;
+    if (!state2) {
       console.error("Spicetify Player state is not available.");
       return 0;
     }
-    const { positionAsOfTimestamp, timestamp, isPaused } = state;
+    const { positionAsOfTimestamp, timestamp, isPaused } = state2;
     if (positionAsOfTimestamp == null || timestamp == null) {
       console.error("Playback state is incomplete.");
       return null;
@@ -5784,58 +5837,78 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return positionAsOfTimestamp + (now2 - timestamp);
     }
   }
-  var syncTimings, canSyncNonLocalTimestamp, syncedPosition, PAUSED_POLL_MS, ACTIVE_SYNC_MS, IDLE_HEARTBEAT_MS, activePositionClients, syncNow, loopScheduled, cachedPosition, cachedPositionTime, cachedIsPlaying, POSITION_CACHE_TTL;
+  var syncTimings, windowRef2, state, syncedPosition, PAUSED_POLL_MS, ACTIVE_SYNC_MS, IDLE_HEARTBEAT_MS, POSITION_CACHE_TTL;
   var init_GetProgress = __esm({
     "src/utils/Gets/GetProgress.ts"() {
       init_Global();
       init_SpotifyPlayer();
       syncTimings = [0.05, 0.1, 0.15, 0.75];
-      canSyncNonLocalTimestamp = Spicetify.Player.isPlaying() ? syncTimings.length : 0;
-      syncedPosition = {
-        StartedSyncAt: 0,
-        Position: 0
-      };
+      windowRef2 = window;
+      state = windowRef2.__amaiGetProgressState ?? (windowRef2.__amaiGetProgressState = {
+        canSyncNonLocalTimestamp: Spicetify.Player.isPlaying() ? syncTimings.length : 0,
+        syncedPosition: { StartedSyncAt: 0, Position: 0 },
+        activePositionClients: 0,
+        syncNow: false,
+        loopScheduled: false,
+        cachedPosition: null,
+        cachedPositionTime: 0,
+        cachedIsPlaying: null
+      });
+      syncedPosition = state.syncedPosition;
       PAUSED_POLL_MS = 500;
       ACTIVE_SYNC_MS = 250;
       IDLE_HEARTBEAT_MS = 1e3;
-      activePositionClients = 0;
-      syncNow = false;
-      loopScheduled = false;
-      cachedPosition = null;
-      cachedPositionTime = 0;
-      cachedIsPlaying = null;
       POSITION_CACHE_TTL = 15;
     }
   });
 
   // src/components/Global/SpotifyPlayer.ts
+  function touchLRU(key, value) {
+    TrackData_Map.delete(key);
+    TrackData_Map.set(key, value);
+    if (TrackData_Map.size > TRACK_CACHE_MAX) {
+      const oldest = TrackData_Map.keys().next().value;
+      if (oldest !== void 0)
+        TrackData_Map.delete(oldest);
+    }
+  }
   async function getOrFetchTrackData(trackId) {
+    if (!trackId)
+      return null;
     if (TrackData_Map.has(trackId)) {
       const cached = TrackData_Map.get(trackId);
       if (cached instanceof Promise || cached && typeof cached === "object") {
+        touchLRU(trackId, cached);
         return cached;
       }
     }
     const fetchPromise = (async () => {
       const URL2 = `https://spclient.wg.spotify.com/metadata/4/track/${trackId}?market=from_token`;
       const [data, status] = await SpicyFetch(URL2, true, true, false);
-      if (status !== 200)
+      if (status !== 200) {
+        TrackData_Map.delete(trackId);
         return null;
-      TrackData_Map.set(trackId, data);
+      }
+      touchLRU(trackId, data);
       return data;
     })();
-    TrackData_Map.set(trackId, fetchPromise);
-    return fetchPromise;
+    touchLRU(trackId, fetchPromise);
+    try {
+      const result = await fetchPromise;
+      return result;
+    } catch (e) {
+      TrackData_Map.delete(trackId);
+      throw e;
+    }
   }
-  var TrackData_Map, SpotifyPlayer;
+  var TRACK_CACHE_MAX, TrackData_Map, SpotifyPlayer;
   var init_SpotifyPlayer = __esm({
     "src/components/Global/SpotifyPlayer.ts"() {
       init_SpicyFetch();
       init_Hasher();
       init_GetProgress();
+      TRACK_CACHE_MAX = 50;
       TrackData_Map = /* @__PURE__ */ new Map();
-      if (typeof Spicetify !== "undefined" && Spicetify?.Player) {
-      }
       SpotifyPlayer = {
         IsPlaying: false,
         GetTrackPosition: GetProgress,
@@ -5847,7 +5920,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         },
         Track: {
           GetTrackInfo: async () => {
-            const spotifyHexString = spotifyHex(SpotifyPlayer.GetSongId());
+            const songId = SpotifyPlayer.GetSongId();
+            if (!songId)
+              return null;
+            const spotifyHexString = spotifyHex(songId);
             return getOrFetchTrackData(spotifyHexString);
           },
           SortImages: (images) => {
@@ -5908,10 +5984,14 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           return trackData?.name || "";
         },
         GetAlbumName: () => {
-          return Spicetify.Player.data.item.metadata.album_title;
+          return Spicetify.Player.data?.item?.metadata?.album_title ?? "";
         },
         GetSongId: () => {
-          return Spicetify.Player.data.item.uri?.split(":")[2] ?? null;
+          const uri = Spicetify.Player.data?.item?.uri;
+          if (!uri || typeof uri !== "string")
+            return null;
+          const parts = uri.split(":");
+          return parts.length === 3 ? parts[2] ?? null : null;
         },
         GetArtists: async () => {
           if (Spicetify.Player.data?.item?.metadata?.artist_name) {
@@ -5922,7 +6002,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           return trackData?.artist?.map((a) => a.name) ?? [];
         },
         JoinArtists: (artists) => {
-          return artists?.join(", ") ?? null;
+          return artists?.join(", ") ?? "";
         },
         IsPodcast: false,
         _DEPRECATED_: {
@@ -6023,297 +6103,283 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     word.AnimatorStoreTime_translateY = void 0;
     word.AnimatorStoreTime_scale = void 0;
   }
+  function activateDot(word) {
+    if (!word.HTMLElement.classList.contains("dot-active")) {
+      const dotDuration = word.EndTime - word.StartTime;
+      word.HTMLElement.style.setProperty("--dot-duration", `${dotDuration}ms`);
+      void word.HTMLElement.offsetWidth;
+      word.HTMLElement.classList.add("dot-active");
+    }
+    word.scale = 1;
+    word.glow = 0.5;
+  }
+  function resetDotNotSung(word) {
+    word.HTMLElement.classList.remove("dot-active");
+    setStyleIfChanged(word.HTMLElement, "transform", "");
+    setStyleIfChanged(word.HTMLElement, "scale", "");
+    setStyleIfChanged(word.HTMLElement, "opacity", "");
+    setStyleIfChanged(word.HTMLElement, "--text-shadow-blur-radius", "");
+    setStyleIfChanged(word.HTMLElement, "--text-shadow-opacity", "");
+    word.translateY = 0.01;
+    word.scale = 0.75;
+    word.glow = 0;
+  }
+  function resetDotSung(word) {
+    word.HTMLElement.classList.remove("dot-active");
+    setStyleIfChanged(word.HTMLElement, "transform", "translateY(calc(var(--font-size) * 0))");
+    setStyleIfChanged(word.HTMLElement, "scale", "1.2");
+    setStyleIfChanged(word.HTMLElement, "opacity", "1");
+    setStyleIfChanged(word.HTMLElement, "--text-shadow-blur-radius", "12px");
+    setStyleIfChanged(word.HTMLElement, "--text-shadow-opacity", "50%");
+    word.scale = 1.2;
+    word.glow = 0.5;
+  }
+  function handleActiveWord(word, edtrackpos, isLetterGroup, isDot) {
+    if (isLetterGroup) {
+      const totalDuration2 = word.EndTime - word.StartTime;
+      const elapsed = edtrackpos - word.StartTime;
+      const pct = Math.max(0, Math.min(elapsed / totalDuration2, 1));
+      const emphasisTranslateY = 0.02 + (-0.065 - 0.02) * pct;
+      const emphasisScale = IdleEmphasisLyricsScale + (1.023 - IdleEmphasisLyricsScale) * pct;
+      for (let k = 0; k < word.Letters.length; k++) {
+        const letter = word.Letters[k];
+        if (letter.Status === "Active")
+          resetLetterStyles(letter, "NotSung", IdleEmphasisLyricsScale, "-20%");
+        else if (letter.Status === "Sung")
+          resetLetterStyles(word.Letters[k], "Sung", "1", "100%");
+      }
+      setStyleIfChanged(word.HTMLElement, "scale", `${emphasisScale}`);
+      setStyleIfChanged(
+        word.HTMLElement,
+        "transform",
+        `translateY(calc(var(--DefaultLyricsSize) * ${emphasisTranslateY}))`
+      );
+      word.scale = emphasisScale;
+      word.glow = 0;
+      return;
+    }
+    if (isDot) {
+      activateDot(word);
+      return;
+    }
+    const totalDuration = word.EndTime - word.StartTime;
+    const elapsedDuration = edtrackpos - word.StartTime;
+    const percentage = Math.max(0, Math.min(elapsedDuration / totalDuration, 1));
+    const blurRadius = 4 + (16 - 4) * percentage;
+    const textShadowOpacity = calculateOpacity(percentage, word) * 0.4;
+    const translateY = 0.01 + (-0.038 - 0.01) * percentage;
+    const scale = IdleLyricsScale + (1.017 - IdleLyricsScale) * percentage;
+    const gradientPosition = percentage * 100;
+    animateWord(
+      word,
+      totalDuration,
+      percentage,
+      gradientPosition,
+      translateY,
+      scale,
+      blurRadius,
+      textShadowOpacity
+    );
+    resetWordAnimationTracking(word);
+  }
+  function handleNotSungWord(word, isLetterGroup, isDot) {
+    if (isLetterGroup) {
+      for (let k = 0; k < word.Letters.length; k++)
+        resetLetterStyles(word.Letters[k], "NotSung", IdleEmphasisLyricsScale, "-20%");
+      setStyleIfChanged(
+        word.HTMLElement,
+        "transform",
+        "translateY(calc(var(--DefaultLyricsSize) * 0.02))"
+      );
+      word.translateY = 0.02;
+    } else if (!isDot) {
+      setStyleIfChanged(
+        word.HTMLElement,
+        "transform",
+        "translateY(calc(var(--DefaultLyricsSize) * 0.01))"
+      );
+      word.translateY = 0.01;
+    }
+    if (isDot) {
+      resetDotNotSung(word);
+    } else {
+      setStyleIfChanged(
+        word.HTMLElement,
+        "scale",
+        `${isLetterGroup ? IdleEmphasisLyricsScale : IdleLyricsScale}`
+      );
+      word.scale = isLetterGroup ? IdleEmphasisLyricsScale : IdleLyricsScale;
+      setStyleIfChanged(word.HTMLElement, "--gradient-position", "-20%");
+    }
+    resetWordAnimationTracking(word);
+    setStyleIfChanged(word.HTMLElement, "--text-shadow-blur-radius", "4px");
+    setStyleIfChanged(word.HTMLElement, "--text-shadow-opacity", "0%");
+    word.glow = 0;
+  }
+  function handleSungWord(word, isLetterGroup, isDot) {
+    if (isLetterGroup) {
+      for (let k = 0; k < word.Letters.length; k++)
+        resetLetterStyles(word.Letters[k], "Sung", "1", "100%");
+      setStyleIfChanged(
+        word.HTMLElement,
+        "transform",
+        `translateY(calc(var(--DefaultLyricsSize) * 0))`
+      );
+      setStyleIfChanged(word.HTMLElement, "scale", "1");
+    }
+    if (isDot) {
+      resetDotSung(word);
+      return;
+    }
+    if (!isLetterGroup) {
+      setStyleIfChanged(word.HTMLElement, "--text-shadow-blur-radius", "4px");
+      const element = word.HTMLElement;
+      const currentTranslateY = word.translateY;
+      const currentScale = word.scale;
+      const currentGlow = word.glow;
+      if (!word.AnimatorStoreTime_translateY)
+        word.AnimatorStoreTime_translateY = performance.now();
+      if (!word.AnimatorStoreTime_scale)
+        word.AnimatorStoreTime_scale = performance.now();
+      if (!word.AnimatorStoreTime_glow)
+        word.AnimatorStoreTime_glow = performance.now();
+      const now2 = performance.now();
+      const elapsed_translateY = now2 - word.AnimatorStoreTime_translateY;
+      const elapsed_scale = now2 - word.AnimatorStoreTime_scale;
+      const elapsed_glow = now2 - word.AnimatorStoreTime_glow;
+      const progress_translateY = Math.min(elapsed_translateY / 550, 1);
+      const progress_scale = Math.min(elapsed_scale / 1100, 1);
+      const progress_glow = Math.min(elapsed_glow / 250, 1);
+      const interpolate = (s, e, p) => s + (e - s) * p;
+      const newTranslateY = interpolate(currentTranslateY, 5e-4, progress_translateY);
+      const newScale = interpolate(currentScale, 1, progress_scale);
+      const newGlow = interpolate(currentGlow, 0, progress_glow);
+      setStyleIfChanged(element, "--text-shadow-opacity", `${newGlow * 100}%`);
+      setStyleIfChanged(
+        element,
+        "transform",
+        `translateY(calc(var(--DefaultLyricsSize) * ${newTranslateY}))`
+      );
+      setStyleIfChanged(element, "scale", `${newScale}`);
+      if (progress_glow === 1) {
+        word.AnimatorStoreTime_glow = void 0;
+        word.glow = 0;
+      }
+      if (progress_translateY === 1) {
+        word.AnimatorStoreTime_translateY = void 0;
+        word.translateY = 0;
+      }
+      if (progress_scale === 1) {
+        word.AnimatorStoreTime_scale = void 0;
+        word.scale = 1;
+      }
+    }
+    setStyleIfChanged(word.HTMLElement, "--gradient-position", "100%");
+  }
+  function animateSyllableLines(arr, edtrackpos, Credits) {
+    for (let index = 0; index < arr.length; index++) {
+      const line = arr[index];
+      const prevStatus = line.lastStatus;
+      if (line.Status === "Active") {
+        if (SpotifyPlayer.IsPlaying !== lastIsPlaying) {
+          Blurring_LastLine = null;
+          lastIsPlaying = SpotifyPlayer.IsPlaying;
+        }
+        if (Blurring_LastLine !== index) {
+          applyBlur(arr, index, BlurMultiplier);
+          Blurring_LastLine = index;
+        }
+        line.HTMLElement.classList.add("Active");
+        line.HTMLElement.classList.remove("NotSung", "Sung", "OverridenByScroller");
+        const words = line.Syllables.Lead;
+        for (let wi = 0; wi < words.length; wi++) {
+          const word = words[wi];
+          const isLetterGroup = word?.LetterGroup;
+          const isDot = word?.Dot;
+          if (word.Status === "Active")
+            handleActiveWord(word, edtrackpos, isLetterGroup, isDot);
+          else if (word.Status === "NotSung")
+            handleNotSungWord(word, isLetterGroup, isDot);
+          else if (word.Status === "Sung")
+            handleSungWord(word, isLetterGroup, isDot);
+        }
+        if (Credits)
+          Credits.classList.remove("Active");
+      } else if (line.Status === "NotSung") {
+        if (prevStatus !== "NotSung") {
+          line.HTMLElement.classList.add("NotSung");
+          line.HTMLElement.classList.remove("Sung");
+          if (line.HTMLElement.classList.contains("Active") && !line.HTMLElement.classList.contains("OverridenByScroller"))
+            line.HTMLElement.classList.remove("Active");
+        }
+      } else if (line.Status === "Sung") {
+        if (prevStatus !== "Sung") {
+          line.HTMLElement.classList.add("Sung");
+          line.HTMLElement.classList.remove("Active", "NotSung");
+          if (arr.length === index + 1 && Credits)
+            Credits.classList.add("Active");
+        }
+      }
+      line.lastStatus = line.Status;
+    }
+  }
+  function animateLineLines(arr) {
+    for (let index = 0; index < arr.length; index++) {
+      const line = arr[index];
+      const prevStatus = line.lastStatus;
+      if (line.Status === "Active") {
+        if (SpotifyPlayer.IsPlaying !== lastIsPlaying) {
+          Blurring_LastLine = null;
+          lastIsPlaying = SpotifyPlayer.IsPlaying;
+        }
+        if (Blurring_LastLine !== index) {
+          applyBlur(arr, index, BlurMultiplier);
+          Blurring_LastLine = index;
+        }
+        line.HTMLElement.classList.add("Active");
+        line.HTMLElement.classList.remove("NotSung", "OverridenByScroller", "Sung");
+        if (line.DotLine) {
+          const dots = line.Syllables.Lead;
+          for (let i = 0; i < dots.length; i++) {
+            const dot = dots[i];
+            if (dot.Status === "Active")
+              activateDot(dot);
+            else if (dot.Status === "NotSung")
+              resetDotNotSung(dot);
+            else if (dot.Status === "Sung")
+              resetDotSung(dot);
+          }
+        } else {
+          setStyleIfChanged(line.HTMLElement, "--gradient-position", `100%`);
+        }
+      } else if (line.Status === "NotSung") {
+        if (prevStatus !== "NotSung") {
+          line.HTMLElement.classList.add("NotSung");
+          line.HTMLElement.classList.remove("Sung");
+          if (line.HTMLElement.classList.contains("Active") && !line.HTMLElement.classList.contains("OverridenByScroller"))
+            line.HTMLElement.classList.remove("Active");
+          setStyleIfChanged(line.HTMLElement, "--gradient-position", `0%`);
+        }
+      } else if (line.Status === "Sung") {
+        if (prevStatus !== "Sung") {
+          line.HTMLElement.classList.add("Sung");
+          line.HTMLElement.classList.remove("Active", "NotSung");
+          setStyleIfChanged(line.HTMLElement, "--gradient-position", `100%`);
+        }
+      }
+      line.lastStatus = line.Status;
+    }
+  }
   function Animate(position) {
     const CurrentLyricsType = Defaults_default.CurrentLyricsType;
     const edtrackpos = position + timeOffset;
     if (!CurrentLyricsType || CurrentLyricsType === "None")
       return;
     const Credits = getCredits();
-    const SKIP_IF_STATUS_UNCHANGED = true;
     if (CurrentLyricsType === "Syllable") {
-      const arr = LyricsObject.Types.Syllable.Lines;
-      for (let index = 0; index < arr.length; index++) {
-        const line = arr[index];
-        const prevStatus = line.lastStatus;
-        if (line.Status === "Active") {
-          if (SpotifyPlayer.IsPlaying !== lastIsPlaying) {
-            Blurring_LastLine = null;
-            lastIsPlaying = SpotifyPlayer.IsPlaying;
-          }
-          if (Blurring_LastLine !== index) {
-            applyBlur(arr, index, BlurMultiplier);
-            Blurring_LastLine = index;
-          }
-          line.HTMLElement.classList.add("Active");
-          line.HTMLElement.classList.remove("NotSung", "Sung", "OverridenByScroller");
-          const words = line.Syllables.Lead;
-          for (let wordIndex = 0; wordIndex < words.length; wordIndex++) {
-            const word = words[wordIndex];
-            const isLetterGroup = word?.LetterGroup;
-            const isDot = word?.Dot;
-            if (word.Status === "Active") {
-              const totalDuration = word.EndTime - word.StartTime;
-              const elapsedDuration = edtrackpos - word.StartTime;
-              const percentage = Math.max(0, Math.min(elapsedDuration / totalDuration, 1));
-              const blurRadius = 4 + (16 - 4) * percentage;
-              const textShadowOpacity = calculateOpacity(percentage, word) * 0.4;
-              const translateY = 0.01 + (-0.038 - 0.01) * percentage;
-              const scale = IdleLyricsScale + (1.017 - IdleLyricsScale) * percentage;
-              const gradientPosition = percentage * 100;
-              if (isLetterGroup) {
-                const emphasisTranslateY = 0.02 + (-0.065 - 0.02) * percentage;
-                const emphasisScale = IdleEmphasisLyricsScale + (1.023 - IdleEmphasisLyricsScale) * percentage;
-                for (let k = 0; k < word.Letters.length; k++) {
-                  const letter = word.Letters[k];
-                  if (letter.Status === "Active") {
-                    resetLetterStyles(letter, "NotSung", IdleEmphasisLyricsScale, "-20%");
-                  } else if (letter.Status === "Sung") {
-                    resetLetterStyles(word.Letters[k], "Sung", "1", "100%");
-                  }
-                }
-                setStyleIfChanged(word.HTMLElement, "scale", `${emphasisScale}`);
-                setStyleIfChanged(
-                  word.HTMLElement,
-                  "transform",
-                  `translateY(calc(var(--DefaultLyricsSize) * ${emphasisTranslateY}))`
-                );
-                word.scale = emphasisScale;
-                word.glow = 0;
-              } else if (isDot) {
-                if (!word.HTMLElement.classList.contains("dot-active")) {
-                  const dotDuration = word.EndTime - word.StartTime;
-                  word.HTMLElement.style.setProperty("--dot-duration", `${dotDuration}ms`);
-                  void word.HTMLElement.offsetWidth;
-                  word.HTMLElement.classList.add("dot-active");
-                }
-                word.scale = 1;
-                word.glow = 0.5;
-              } else {
-                animateWord(
-                  word,
-                  totalDuration,
-                  percentage,
-                  gradientPosition,
-                  translateY,
-                  scale,
-                  blurRadius,
-                  textShadowOpacity
-                );
-                resetWordAnimationTracking(word);
-              }
-            } else if (word.Status === "NotSung") {
-              if (isLetterGroup) {
-                for (let k = 0; k < word.Letters.length; k++) {
-                  resetLetterStyles(word.Letters[k], "NotSung", IdleEmphasisLyricsScale, "-20%");
-                }
-                setStyleIfChanged(
-                  word.HTMLElement,
-                  "transform",
-                  "translateY(calc(var(--DefaultLyricsSize) * 0.02))"
-                );
-                word.translateY = 0.02;
-              } else if (!isDot) {
-                setStyleIfChanged(
-                  word.HTMLElement,
-                  "transform",
-                  "translateY(calc(var(--DefaultLyricsSize) * 0.01))"
-                );
-                word.translateY = 0.01;
-              }
-              if (isDot) {
-                word.HTMLElement.classList.remove("dot-active");
-                setStyleIfChanged(word.HTMLElement, "transform", "");
-                setStyleIfChanged(word.HTMLElement, "scale", "");
-                setStyleIfChanged(word.HTMLElement, "opacity", "");
-                setStyleIfChanged(word.HTMLElement, "--text-shadow-blur-radius", "");
-                setStyleIfChanged(word.HTMLElement, "--text-shadow-opacity", "");
-                word.translateY = 0.01;
-                word.scale = 0.75;
-                word.glow = 0;
-              } else {
-                setStyleIfChanged(
-                  word.HTMLElement,
-                  "scale",
-                  `${isLetterGroup ? IdleEmphasisLyricsScale : IdleLyricsScale}`
-                );
-                word.scale = isLetterGroup ? IdleEmphasisLyricsScale : IdleLyricsScale;
-                setStyleIfChanged(word.HTMLElement, "--gradient-position", "-20%");
-              }
-              resetWordAnimationTracking(word);
-              setStyleIfChanged(word.HTMLElement, "--text-shadow-blur-radius", "4px");
-              setStyleIfChanged(word.HTMLElement, "--text-shadow-opacity", "0%");
-              word.glow = 0;
-            } else if (word.Status === "Sung") {
-              if (isLetterGroup) {
-                for (let k = 0; k < word.Letters.length; k++) {
-                  resetLetterStyles(word.Letters[k], "Sung", "1", "100%");
-                }
-                setStyleIfChanged(
-                  word.HTMLElement,
-                  "transform",
-                  `translateY(calc(var(--DefaultLyricsSize) * 0))`
-                );
-                setStyleIfChanged(word.HTMLElement, "scale", "1");
-              }
-              if (isDot) {
-                word.HTMLElement.classList.remove("dot-active");
-                setStyleIfChanged(
-                  word.HTMLElement,
-                  "transform",
-                  "translateY(calc(var(--font-size) * 0))"
-                );
-                setStyleIfChanged(word.HTMLElement, "scale", "1.2");
-                setStyleIfChanged(word.HTMLElement, "opacity", "1");
-                setStyleIfChanged(word.HTMLElement, "--text-shadow-blur-radius", "12px");
-                setStyleIfChanged(word.HTMLElement, "--text-shadow-opacity", "50%");
-                word.scale = 1.2;
-                word.glow = 0.5;
-              } else if (!isLetterGroup) {
-                setStyleIfChanged(word.HTMLElement, "--text-shadow-blur-radius", "4px");
-                const element = word.HTMLElement;
-                const currentTranslateY = word.translateY;
-                const currentScale = word.scale;
-                const currentGlow = word.glow;
-                if (!word.AnimatorStoreTime_translateY)
-                  word.AnimatorStoreTime_translateY = performance.now();
-                if (!word.AnimatorStoreTime_scale)
-                  word.AnimatorStoreTime_scale = performance.now();
-                if (!word.AnimatorStoreTime_glow)
-                  word.AnimatorStoreTime_glow = performance.now();
-                const now2 = performance.now();
-                const elapsed_translateY = now2 - word.AnimatorStoreTime_translateY;
-                const elapsed_scale = now2 - word.AnimatorStoreTime_scale;
-                const elapsed_glow = now2 - word.AnimatorStoreTime_glow;
-                const duration_translateY = 550;
-                const progress_translateY = Math.min(elapsed_translateY / duration_translateY, 1);
-                const duration_scale = 1100;
-                const progress_scale = Math.min(elapsed_scale / duration_scale, 1);
-                const duration_glow = 250;
-                const progress_glow = Math.min(elapsed_glow / duration_glow, 1);
-                const targetTranslateY = 5e-4;
-                const targetScale = 1;
-                const targetGlow = 0;
-                const interpolate = (start, end, progress) => start + (end - start) * progress;
-                const newTranslateY = interpolate(
-                  currentTranslateY,
-                  targetTranslateY,
-                  progress_translateY
-                );
-                const newScale = interpolate(currentScale, targetScale, progress_scale);
-                const newGlow = interpolate(currentGlow, targetGlow, progress_glow);
-                setStyleIfChanged(element, "--text-shadow-opacity", `${newGlow * 100}%`);
-                setStyleIfChanged(
-                  element,
-                  "transform",
-                  `translateY(calc(var(--DefaultLyricsSize) * ${newTranslateY}))`
-                );
-                setStyleIfChanged(element, "scale", `${newScale}`);
-                if (progress_glow === 1) {
-                  word.AnimatorStoreTime_glow = void 0;
-                  word.glow = 0;
-                }
-                if (progress_translateY === 1) {
-                  word.AnimatorStoreTime_translateY = void 0;
-                  word.translateY = 0;
-                }
-                if (progress_scale === 1) {
-                  word.AnimatorStoreTime_scale = void 0;
-                  word.scale = 1;
-                }
-              }
-              setStyleIfChanged(word.HTMLElement, "--gradient-position", "100%");
-            }
-          }
-          if (Credits)
-            Credits.classList.remove("Active");
-        } else if (line.Status === "NotSung") {
-          if (!SKIP_IF_STATUS_UNCHANGED || prevStatus !== "NotSung") {
-            line.HTMLElement.classList.add("NotSung");
-            line.HTMLElement.classList.remove("Sung");
-            if (line.HTMLElement.classList.contains("Active") && !line.HTMLElement.classList.contains("OverridenByScroller")) {
-              line.HTMLElement.classList.remove("Active");
-            }
-          }
-        } else if (line.Status === "Sung") {
-          if (!SKIP_IF_STATUS_UNCHANGED || prevStatus !== "Sung") {
-            line.HTMLElement.classList.add("Sung");
-            line.HTMLElement.classList.remove("Active", "NotSung");
-            if (arr.length === index + 1 && Credits) {
-              Credits.classList.add("Active");
-            }
-          }
-        }
-        line.lastStatus = line.Status;
-      }
+      animateSyllableLines(LyricsObject.Types.Syllable.Lines, edtrackpos, Credits);
     } else if (CurrentLyricsType === "Line") {
-      const arr = LyricsObject.Types.Line.Lines;
-      for (let index = 0; index < arr.length; index++) {
-        const line = arr[index];
-        const prevStatus = line.lastStatus;
-        if (line.Status === "Active") {
-          if (SpotifyPlayer.IsPlaying !== lastIsPlaying) {
-            Blurring_LastLine = null;
-            lastIsPlaying = SpotifyPlayer.IsPlaying;
-          }
-          if (Blurring_LastLine !== index) {
-            applyBlur(arr, index, BlurMultiplier);
-            Blurring_LastLine = index;
-          }
-          line.HTMLElement.classList.add("Active");
-          line.HTMLElement.classList.remove("NotSung", "OverridenByScroller", "Sung");
-          const percentage = 1;
-          if (line.DotLine) {
-            const Array2 = line.Syllables.Lead;
-            for (let i = 0; i < Array2.length; i++) {
-              const dot = Array2[i];
-              if (dot.Status === "Active") {
-                if (!dot.HTMLElement.classList.contains("dot-active")) {
-                  const dotDuration = dot.EndTime - dot.StartTime;
-                  dot.HTMLElement.style.setProperty("--dot-duration", `${dotDuration}ms`);
-                  void dot.HTMLElement.offsetWidth;
-                  dot.HTMLElement.classList.add("dot-active");
-                }
-              } else if (dot.Status === "NotSung") {
-                dot.HTMLElement.classList.remove("dot-active");
-                setStyleIfChanged(dot.HTMLElement, "transform", "");
-                setStyleIfChanged(dot.HTMLElement, "scale", "");
-                setStyleIfChanged(dot.HTMLElement, "opacity", "");
-                setStyleIfChanged(dot.HTMLElement, "--text-shadow-blur-radius", "");
-                setStyleIfChanged(dot.HTMLElement, "--text-shadow-opacity", "");
-              } else if (dot.Status === "Sung") {
-                dot.HTMLElement.classList.remove("dot-active");
-                setStyleIfChanged(
-                  dot.HTMLElement,
-                  "transform",
-                  "translateY(calc(var(--font-size) * 0))"
-                );
-                setStyleIfChanged(dot.HTMLElement, "scale", "1.2");
-                setStyleIfChanged(dot.HTMLElement, "opacity", "1");
-                setStyleIfChanged(dot.HTMLElement, "--text-shadow-blur-radius", "12px");
-                setStyleIfChanged(dot.HTMLElement, "--text-shadow-opacity", "50%");
-              }
-            }
-          } else {
-            setStyleIfChanged(line.HTMLElement, "--gradient-position", `${percentage * 100}%`);
-          }
-        } else if (line.Status === "NotSung") {
-          if (!SKIP_IF_STATUS_UNCHANGED || prevStatus !== "NotSung") {
-            line.HTMLElement.classList.add("NotSung");
-            line.HTMLElement.classList.remove("Sung");
-            if (line.HTMLElement.classList.contains("Active") && !line.HTMLElement.classList.contains("OverridenByScroller")) {
-              line.HTMLElement.classList.remove("Active");
-            }
-            setStyleIfChanged(line.HTMLElement, "--gradient-position", `0%`);
-          }
-        } else if (line.Status === "Sung") {
-          if (!SKIP_IF_STATUS_UNCHANGED || prevStatus !== "Sung") {
-            line.HTMLElement.classList.add("Sung");
-            line.HTMLElement.classList.remove("Active", "NotSung");
-            setStyleIfChanged(line.HTMLElement, "--gradient-position", `100%`);
-          }
-        }
-        line.lastStatus = line.Status;
-      }
+      animateLineLines(LyricsObject.Types.Line.Lines);
     }
   }
   var Blurring_LastLine, lastIsPlaying, cachedCredits, styleWriteCache, setStyleIfChanged, applyBlur, calculateOpacity;
@@ -6438,6 +6504,24 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   });
 
   // src/utils/Lyrics/lyrics.ts
+  var lyrics_exports = {};
+  __export(lyrics_exports, {
+    ClearLyricsContentArrays: () => ClearLyricsContentArrays,
+    CurrentLineLyricsObject: () => CurrentLineLyricsObject,
+    LINE_SYNCED_CurrentLineLyricsObject: () => LINE_SYNCED_CurrentLineLyricsObject,
+    LyricsObject: () => LyricsObject,
+    ScrollingIntervalTime: () => ScrollingIntervalTime,
+    SetWordArrayInCurentLine: () => SetWordArrayInCurentLine,
+    SetWordArrayInCurentLine_LINE_SYNCED: () => SetWordArrayInCurentLine_LINE_SYNCED,
+    addLinesEvListener: () => addLinesEvListener,
+    destroyLyricsRenderLoop: () => destroyLyricsRenderLoop,
+    ensureLyricsRenderLoop: () => ensureLyricsRenderLoop,
+    lineElementToStartTimeMap: () => lineElementToStartTimeMap,
+    lyricsBetweenShow: () => lyricsBetweenShow,
+    populateElementTimeMaps: () => populateElementTimeMaps,
+    removeLinesEvListener: () => removeLinesEvListener,
+    syllableElementToStartTimeMap: () => syllableElementToStartTimeMap
+  });
   function SetWordArrayInCurentLine() {
     CurrentLineLyricsObject = LyricsObject.Types.Syllable.Lines.length - 1;
     LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables = {};
@@ -6454,6 +6538,48 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     LyricsObject.Types.Static.Lines = [];
     lineElementToStartTimeMap.clear();
     syllableElementToStartTimeMap.clear();
+    lastRenderedPosition = -1;
+    hasRenderedInitial = false;
+  }
+  function ensureLyricsRenderLoop() {
+    if (renderLoop && windowRef3.__amaiRenderLoopStarted)
+      return renderLoop;
+    windowRef3.__amaiRenderLoopStarted = true;
+    renderLoop = new IntervalManager(THROTTLE_TIME, () => {
+      if (!Defaults_default.LyricsContainerExists)
+        return;
+      const onLyricsPage = Spicetify.Platform.History.location.pathname === "/AmaiLyrics";
+      if (onLyricsPage && !pagePositionClient)
+        pagePositionClient = requestPositionTracking();
+      else if (!onLyricsPage && pagePositionClient) {
+        pagePositionClient();
+        pagePositionClient = null;
+      }
+      if (!onLyricsPage)
+        return;
+      const progress = SpotifyPlayer.GetTrackPosition();
+      if (hasRenderedInitial && progress === lastRenderedPosition)
+        return;
+      lastRenderedPosition = progress;
+      hasRenderedInitial = true;
+      Lyrics.TimeSetter(progress);
+      Lyrics.Animate(progress);
+    });
+    renderLoop.Start();
+    windowRef3.__amaiRenderLoop = renderLoop;
+    return renderLoop;
+  }
+  function destroyLyricsRenderLoop() {
+    if (pagePositionClient) {
+      pagePositionClient();
+      pagePositionClient = null;
+    }
+    if (renderLoop) {
+      renderLoop.Destroy();
+      renderLoop = null;
+    }
+    windowRef3.__amaiRenderLoop = null;
+    windowRef3.__amaiRenderLoopStarted = false;
     lastRenderedPosition = -1;
     hasRenderedInitial = false;
   }
@@ -6535,7 +6661,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       LinesEvListenerMaid.Destroy();
     }
   }
-  var ScrollingIntervalTime, lyricsBetweenShow, LyricsObject, lineElementToStartTimeMap, syllableElementToStartTimeMap, CurrentLineLyricsObject, LINE_SYNCED_CurrentLineLyricsObject, THROTTLE_TIME, lastRenderedPosition, hasRenderedInitial, pagePositionClient, windowRef2, LinesEvListenerMaid, LinesEvListenerExists;
+  var ScrollingIntervalTime, lyricsBetweenShow, LyricsObject, lineElementToStartTimeMap, syllableElementToStartTimeMap, CurrentLineLyricsObject, LINE_SYNCED_CurrentLineLyricsObject, THROTTLE_TIME, lastRenderedPosition, hasRenderedInitial, pagePositionClient, windowRef3, renderLoop, LinesEvListenerMaid, LinesEvListenerExists;
   var init_lyrics = __esm({
     "src/utils/Lyrics/lyrics.ts"() {
       init_Maid();
@@ -6567,37 +6693,18 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       lastRenderedPosition = -1;
       hasRenderedInitial = false;
       pagePositionClient = null;
-      windowRef2 = window;
-      if (!windowRef2.__amaiRenderLoopStarted) {
-        windowRef2.__amaiRenderLoopStarted = true;
-        new IntervalManager(THROTTLE_TIME, () => {
-          if (!Defaults_default.LyricsContainerExists)
-            return;
-          const onLyricsPage = Spicetify.Platform.History.location.pathname === "/AmaiLyrics";
-          if (onLyricsPage && !pagePositionClient)
-            pagePositionClient = requestPositionTracking();
-          else if (!onLyricsPage && pagePositionClient) {
-            pagePositionClient();
-            pagePositionClient = null;
-          }
-          if (!onLyricsPage)
-            return;
-          const progress = SpotifyPlayer.GetTrackPosition();
-          if (hasRenderedInitial && progress === lastRenderedPosition)
-            return;
-          lastRenderedPosition = progress;
-          hasRenderedInitial = true;
-          Lyrics.TimeSetter(progress);
-          Lyrics.Animate(progress);
-        }).Start();
+      windowRef3 = window;
+      renderLoop = windowRef3.__amaiRenderLoop ?? null;
+      if (!windowRef3.__amaiRenderLoopStarted) {
+        ensureLyricsRenderLoop();
       }
     }
   });
 
   // src/utils/Addons.ts
   function IsPlaying() {
-    const state = Spicetify?.Player?.data?.isPaused;
-    return !state;
+    const state2 = Spicetify?.Player?.data?.isPaused;
+    return !state2;
   }
   function TOP_ApplyLyricsSpacer(Container) {
     const div = document.createElement("div");
@@ -7901,40 +8008,54 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const LyricsContainer = document.querySelector(
       "#SpicyLyricsPage .LyricsContainer .LyricsContent"
     );
+    if (!LyricsContainer)
+      return;
     LyricsContainer.style.height = `${GetElementHeight(LyricsContainer)}px`;
     ScrollSimplebar = new SimpleBar(LyricsContainer, { autoHide: false });
     const container = document.querySelector(ElementEventQuery);
-    container?.addEventListener("mouseenter", () => {
+    onMouseEnter = () => {
       LyricsPageMouseEnter();
       updateScrollbarVisibility();
-    });
-    container?.addEventListener("mouseleave", () => {
+    };
+    onMouseLeave = () => {
       LyricsPageMouseLeave();
       updateScrollbarVisibility();
-    });
-    LyricsContainer.addEventListener("simplebar-dragstart", () => {
+    };
+    onDragStart = () => {
       isDragging = true;
       updateScrollbarVisibility();
-    });
-    LyricsContainer.addEventListener("simplebar-dragend", () => {
+    };
+    onDragEnd = () => {
       isDragging = false;
       updateScrollbarVisibility();
-    });
+    };
+    boundContainer = container;
+    boundLyricsContainer = LyricsContainer;
+    container?.addEventListener("mouseenter", onMouseEnter);
+    container?.addEventListener("mouseleave", onMouseLeave);
+    LyricsContainer.addEventListener("simplebar-dragstart", onDragStart);
+    LyricsContainer.addEventListener("simplebar-dragend", onDragEnd);
   }
   function ClearScrollSimplebar() {
-    const LyricsContainer = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
-    );
-    const container = document.querySelector(ElementEventQuery);
+    const LyricsContainer = boundLyricsContainer ?? document.querySelector("#SpicyLyricsPage .LyricsContainer .LyricsContent");
+    const container = boundContainer ?? document.querySelector(ElementEventQuery);
     ScrollSimplebar?.unMount();
     ScrollSimplebar = null;
     SetIsMouseInLyricsPage(false);
-    container?.removeEventListener("mouseenter", LyricsPageMouseEnter);
-    container?.removeEventListener("mouseleave", LyricsPageMouseLeave);
-    LyricsContainer?.removeEventListener("simplebar-dragstart", () => {
-    });
-    LyricsContainer?.removeEventListener("simplebar-dragend", () => {
-    });
+    if (container && onMouseEnter)
+      container.removeEventListener("mouseenter", onMouseEnter);
+    if (container && onMouseLeave)
+      container.removeEventListener("mouseleave", onMouseLeave);
+    if (LyricsContainer && onDragStart)
+      LyricsContainer.removeEventListener("simplebar-dragstart", onDragStart);
+    if (LyricsContainer && onDragEnd)
+      LyricsContainer.removeEventListener("simplebar-dragend", onDragEnd);
+    onMouseEnter = null;
+    onMouseLeave = null;
+    onDragStart = null;
+    onDragEnd = null;
+    boundContainer = null;
+    boundLyricsContainer = null;
   }
   function RecalculateScrollSimplebar() {
     ScrollSimplebar?.recalculate();
@@ -7951,7 +8072,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       LyricsContainer.classList.add("hide-scrollbar");
     }
   }
-  var ScrollSimplebar, isDragging, ElementEventQuery;
+  var ScrollSimplebar, isDragging, ElementEventQuery, onMouseEnter, onMouseLeave, onDragStart, onDragEnd, boundContainer, boundLyricsContainer;
   var init_ScrollSimplebar = __esm({
     "src/utils/Scrolling/Simplebar/ScrollSimplebar.ts"() {
       init_dist2();
@@ -7959,23 +8080,84 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_IsHovering();
       isDragging = false;
       ElementEventQuery = "#SpicyLyricsPage .ContentBox .LyricsContainer";
+      onMouseEnter = null;
+      onMouseLeave = null;
+      onDragStart = null;
+      onDragEnd = null;
+      boundContainer = null;
+      boundLyricsContainer = null;
     }
   });
 
   // src/utils/storage.ts
+  var storage_exports = {};
+  __export(storage_exports, {
+    StorageKeys: () => StorageKeys,
+    default: () => storage_default
+  });
   function set(key, value) {
-    Spicetify.LocalStorage.set(`${prefix}${key}`, value);
+    const fullKey = `${PREFIX}${key}`;
+    if (value === null) {
+      Spicetify.LocalStorage.remove(fullKey);
+      Spicetify.LocalStorage.remove(`${LEGACY_PREFIX}${key}`);
+      return;
+    }
+    Spicetify.LocalStorage.set(fullKey, value);
   }
   function get(key) {
-    return Spicetify.LocalStorage.get(`${prefix}${key}`);
+    const v = Spicetify.LocalStorage.get(`${PREFIX}${key}`);
+    if (v !== null && v !== void 0)
+      return v;
+    const legacy = Spicetify.LocalStorage.get(`${LEGACY_PREFIX}${key}`);
+    return legacy ?? null;
   }
-  var prefix, storage_default;
+  function getBoolean(key, fallback = false) {
+    const v = get(key);
+    if (v === "true")
+      return true;
+    if (v === "false")
+      return false;
+    return fallback;
+  }
+  function setBoolean(key, value) {
+    set(key, value ? "true" : "false");
+  }
+  function migrateLegacyKey(key) {
+    const legacyVal = Spicetify.LocalStorage.get(`${LEGACY_PREFIX}${key}`);
+    const newVal = Spicetify.LocalStorage.get(`${PREFIX}${key}`);
+    if (legacyVal != null && newVal == null) {
+      Spicetify.LocalStorage.set(`${PREFIX}${key}`, legacyVal);
+    }
+    if (legacyVal != null) {
+      Spicetify.LocalStorage.remove(`${LEGACY_PREFIX}${key}`);
+    }
+  }
+  var PREFIX, LEGACY_PREFIX, StorageKeys, storage_default;
   var init_storage = __esm({
     "src/utils/storage.ts"() {
-      prefix = "SpicyLyrics-";
+      PREFIX = "AmaiLyrics-";
+      LEGACY_PREFIX = "SpicyLyrics-";
+      StorageKeys = {
+        GEMINI_API_KEY: "GEMINI_API_KEY",
+        ENABLE_ROMAJI: "enable_romaji",
+        DISABLE_ROMAJI_TOGGLE_NOTIFICATION: "disable_romaji_toggle_notification",
+        DISABLE_TRANSLATION: "disable_translation",
+        TRANSLATION_LANGUAGE: "translation_language",
+        TRANSLATION_FONT_SIZE: "translation_font_size",
+        DEFAULT_LYRICS_SIZE: "default_lyrics_size",
+        ENABLE_PLAYBAR_LYRICS: "enable_playbar_lyrics",
+        CURRENT_LYRICS_DATA: "currentLyricsData",
+        LAST_FETCHED_URI: "lastFetchedUri"
+      };
       storage_default = {
         set,
-        get
+        get,
+        getBoolean,
+        setBoolean,
+        migrateLegacyKey,
+        PREFIX,
+        LEGACY_PREFIX,
+        Keys: StorageKeys
       };
     }
   });
@@ -7985,28 +8167,38 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     let delay2 = INITIAL_DELAY_MS;
     let isCancelled = false;
     let executedCount = 0;
+    let timerId = null;
     const resolveStatement = () => typeof statement === "function" ? statement() : statement;
     const runner = () => {
+      timerId = null;
       if (isCancelled || executedCount >= maxRepeats)
         return;
       const conditionMet = resolveStatement();
       if (!conditionMet) {
         callback();
         executedCount++;
-        setTimeout(runner, delay2);
-        delay2 = Math.min(delay2 * 2, MAX_DELAY_MS);
+        if (!isCancelled && executedCount < maxRepeats) {
+          timerId = window.setTimeout(runner, delay2);
+          delay2 = Math.min(delay2 * 2, MAX_DELAY_MS);
+        }
       }
     };
-    setTimeout(runner, delay2);
+    timerId = window.setTimeout(runner, delay2);
     return {
       Cancel() {
         isCancelled = true;
+        if (timerId !== null) {
+          window.clearTimeout(timerId);
+          timerId = null;
+        }
       },
       Reset() {
         if (executedCount >= maxRepeats || isCancelled) {
           isCancelled = false;
           executedCount = 0;
           delay2 = INITIAL_DELAY_MS;
+          if (timerId !== null)
+            window.clearTimeout(timerId);
           runner();
         }
       }
@@ -8016,7 +8208,14 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     let delay2 = INITIAL_DELAY_MS;
     let isCancelled = false;
     let executionsRemaining = repeater;
+    let timerId = null;
     const resolveStatement = () => typeof statement === "function" ? statement() : statement;
+    const schedule = (fn, ms) => {
+      timerId = window.setTimeout(() => {
+        timerId = null;
+        fn();
+      }, ms);
+    };
     const runner = () => {
       if (isCancelled || executionsRemaining <= 0)
         return;
@@ -8027,26 +8226,32 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           delay2 = INITIAL_DELAY_MS;
           executionsRemaining--;
           if (executionsRemaining > 0)
-            setTimeout(runner, delay2);
+            schedule(runner, delay2);
         } else {
-          setTimeout(runner, delay2);
+          schedule(runner, delay2);
           delay2 = Math.min(delay2 * 2, MAX_DELAY_MS);
         }
       } catch {
-        setTimeout(runner, delay2);
+        schedule(runner, delay2);
         delay2 = Math.min(delay2 * 2, MAX_DELAY_MS);
       }
     };
-    setTimeout(runner, delay2);
+    schedule(runner, delay2);
     return {
       Cancel() {
         isCancelled = true;
+        if (timerId !== null) {
+          window.clearTimeout(timerId);
+          timerId = null;
+        }
       },
       Reset() {
         if (executionsRemaining <= 0 || isCancelled) {
           isCancelled = false;
           executionsRemaining = repeater;
           delay2 = INITIAL_DELAY_MS;
+          if (timerId !== null)
+            window.clearTimeout(timerId);
           runner();
         }
       }
@@ -8083,6 +8288,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var Lifecycle, lifecycle, lifecycle_default;
   var init_lifecycle = __esm({
     "src/utils/lifecycle.ts"() {
+      init_EventManager();
       Lifecycle = class {
         constructor() {
           this.disposers = [];
@@ -8095,10 +8301,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           this.track(() => Spicetify.Player.removeEventListener(type, handler));
         }
         trackGlobalEvent(id) {
-          this.track(() => {
-            Promise.resolve().then(() => (init_EventManager(), EventManager_exports)).then(({ default: Event3 }) => Event3.unListen(id)).catch(() => {
-            });
-          });
+          this.track(() => EventManager_default.unListen(id));
         }
         trackHistory(unsubscribe) {
           if (typeof unsubscribe === "function")
@@ -8163,6 +8366,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           this.duration = duration * 1e3;
           this.currentProgress = from;
           this.maid = new Maid();
+          this.maid.Give(() => {
+            if (this.animationFrameId !== null)
+              cancelAnimationFrame(this.animationFrameId);
+          });
         }
         emit(event, progress) {
           if (this.events[event] && !this.isDestroyed) {
@@ -8191,7 +8398,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           this.emit("progress", this.currentProgress);
           if (t < 1) {
             this.animationFrameId = requestAnimationFrame(() => this.animate());
-            this.maid.Give(() => cancelAnimationFrame(this.animationFrameId));
           } else {
             this.emit("finish");
             this.reset();
@@ -8231,14 +8437,18 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           if (this.isDestroyed)
             return;
           this.emit("destroy");
+          if (this.animationFrameId !== null)
+            cancelAnimationFrame(this.animationFrameId);
           this.maid.Destroy();
           this.reset();
           this.isDestroyed = true;
         }
         reset() {
+          if (this.animationFrameId !== null) {
+            this.animationFrameId = null;
+          }
           this.startTime = null;
           this.pausedTime = null;
-          this.animationFrameId = null;
         }
       };
     }
@@ -8365,7 +8575,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       align = "top",
       axis = "vertical"
     } = options;
+    let cancelled = false;
     let cancelAnimation = () => {
+      cancelled = true;
     };
     const controller = {
       cancel: () => cancelAnimation()
@@ -8395,15 +8607,25 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         resolve({ startScroll, distance });
       });
     }).then(({ startScroll, distance }) => {
+      if (cancelled)
+        return;
+      if (!container.isConnected)
+        return;
       import_fastdom.default.mutate(() => {
+        if (cancelled || !container.isConnected)
+          return;
         const startTime = performance.now();
         let animationFrameId;
         function animate(currentTime) {
+          if (cancelled || !container.isConnected)
+            return;
           const elapsed = currentTime - startTime;
           const progress = Math.min(elapsed / duration, 1);
           const easedProgress = cubicEaseInOut(progress);
           const newScroll = startScroll + distance * easedProgress;
           import_fastdom.default.mutate(() => {
+            if (cancelled || !container.isConnected)
+              return;
             if (axis === "vertical") {
               container.scrollTop = newScroll;
             } else {
@@ -8416,6 +8638,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         }
         animationFrameId = requestAnimationFrame(animate);
         cancelAnimation = () => {
+          cancelled = true;
           cancelAnimationFrame(animationFrameId);
         };
       });
@@ -8469,6 +8692,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         const LineElem = currentLine.HTMLElement;
         if (lastLine === LineElem)
           return;
+        if (activeScrollController) {
+          activeScrollController.cancel();
+          activeScrollController = null;
+        }
         import_fastdom2.default.measure(() => {
           const container = ScrollSimplebar2?.getScrollElement();
           import_fastdom2.default.mutate(() => {
@@ -8480,7 +8707,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
               lastLine.classList.remove("OverridenByScroller");
             }
             lastLine = LineElem;
-            scrollIntoCenterView(container, LineElem, 270, -50);
+            activeScrollController = scrollIntoCenterView(container, LineElem, 270, -50);
             LineElem.classList.add("Active", "OverridenByScroller");
           });
         });
@@ -8488,9 +8715,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   }
   function ResetLastLine() {
+    if (activeScrollController) {
+      activeScrollController.cancel();
+      activeScrollController = null;
+    }
     lastLine = null;
   }
-  var import_fastdom2, lastLine;
+  var import_fastdom2, lastLine, activeScrollController;
   var init_ScrollToActiveLine = __esm({
     "src/utils/Scrolling/ScrollToActiveLine.ts"() {
       init_Defaults();
@@ -8499,18 +8730,80 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_ScrollIntoView();
       import_fastdom2 = __toESM(require_fastdom());
       lastLine = null;
+      activeScrollController = null;
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa4889/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-22840-yeW9NolhNqZ2/1a0424c3e409/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa4889/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-22840-yeW9NolhNqZ2/1a0424c3e409/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa49fa/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-22840-yeW9NolhNqZ2/1a0424c3e57a/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa49fa/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-22840-yeW9NolhNqZ2/1a0424c3e57a/ProcessingIndicator.css"() {
+    }
+  });
+
+  // src/utils/debounce.ts
+  function debounce2(fn, delay2) {
+    let timer = null;
+    const debounced = (...args) => {
+      if (timer !== null)
+        window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        timer = null;
+        fn(...args);
+      }, delay2);
+    };
+    debounced.cancel = () => {
+      if (timer !== null) {
+        window.clearTimeout(timer);
+        timer = null;
+      }
+    };
+    return debounced;
+  }
+  var init_debounce2 = __esm({
+    "src/utils/debounce.ts"() {
+    }
+  });
+
+  // src/components/DynamicBG/utils.ts
+  function normalizeImageUrl(url) {
+    if (!url)
+      return void 0;
+    if (url.startsWith("spotify:image:")) {
+      const imageId = url.replace("spotify:image:", "");
+      return `https://i.scdn.co/image/${imageId}`;
+    }
+    return url;
+  }
+  function setRandomCSSVariables() {
+    const rotationPrimary = Math.floor(Math.random() * 360);
+    const rotationSecondary = (Math.floor(Math.random() * 360) + 15) % 360;
+    document.documentElement.style.setProperty("--bg-rotation-primary", `${rotationPrimary}deg`);
+    document.documentElement.style.setProperty("--bg-rotation-secondary", `${rotationSecondary}deg`);
+    const scalePrimary = 1 + Math.random() * 0.2;
+    const scaleSecondary = 1.1 + Math.random() * 0.2;
+    document.documentElement.style.setProperty("--bg-scale-primary", `${scalePrimary}`);
+    document.documentElement.style.setProperty("--bg-scale-secondary", `${scaleSecondary}`);
+    const hueShift = Math.floor(Math.random() * 30);
+    document.documentElement.style.setProperty("--bg-hue-shift", `${hueShift}deg`);
+  }
+  function createBackgroundImage(id, className, src, loading) {
+    const img = document.createElement("img");
+    img.id = id;
+    img.className = className;
+    img.decoding = "async";
+    img.loading = loading;
+    if (src)
+      img.src = src;
+    return img;
+  }
+  var init_utils = __esm({
+    "src/components/DynamicBG/utils.ts"() {
     }
   });
 
@@ -8528,12 +8821,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       const placeholder = document.createElement("div");
       placeholder.className = "placeholder";
       bgContainer.appendChild(placeholder);
-      const imgA = document.createElement("img");
-      imgA.id = "bg-img-a";
-      imgA.className = "bg-image primary active";
-      imgA.decoding = "async";
-      imgA.loading = "eager";
-      imgA.src = imageUrl;
+      const imgA = createBackgroundImage("bg-img-a", "bg-image primary active", imageUrl, "eager");
       imgA.addEventListener(
         "load",
         () => {
@@ -8543,45 +8831,18 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         { once: true, passive: true }
       );
       bgContainer.appendChild(imgA);
-      const imgB = document.createElement("img");
-      imgB.id = "bg-img-b";
-      imgB.className = "bg-image secondary";
-      imgB.decoding = "async";
-      imgB.loading = "lazy";
+      const imgB = createBackgroundImage("bg-img-b", "bg-image secondary", "", "lazy");
       bgContainer.appendChild(imgB);
       element.appendChild(bgContainer);
-      const rotationPrimary = Math.floor(Math.random() * 360);
-      const rotationSecondary = (Math.floor(Math.random() * 360) + 15) % 360;
-      document.documentElement.style.setProperty("--bg-rotation-primary", `${rotationPrimary}deg`);
-      document.documentElement.style.setProperty(
-        "--bg-rotation-secondary",
-        `${rotationSecondary}deg`
-      );
-      const scalePrimary = 1 + Math.random() * 0.2;
-      const scaleSecondary = 1.1 + Math.random() * 0.2;
-      document.documentElement.style.setProperty("--bg-scale-primary", `${scalePrimary}`);
-      document.documentElement.style.setProperty("--bg-scale-secondary", `${scaleSecondary}`);
-      const hueShift = Math.floor(Math.random() * 30);
-      document.documentElement.style.setProperty("--bg-hue-shift", `${hueShift}deg`);
+      setRandomCSSVariables();
     }
     return bgContainer;
-  }
-  function debounce2(fn, delay2) {
-    let timer;
-    return (...args) => {
-      if (timer)
-        clearTimeout(timer);
-      timer = window.setTimeout(() => fn(...args), delay2);
-    };
   }
   async function ApplyDynamicBackground(element) {
     if (!element)
       return;
-    let currentImgCover = await SpotifyPlayer.Artwork.Get("d");
-    if (currentImgCover.startsWith("spotify:image:")) {
-      const imageId = currentImgCover.replace("spotify:image:", "");
-      currentImgCover = `https://i.scdn.co/image/${imageId}`;
-    }
+    const rawCover = await SpotifyPlayer.Artwork.Get("d");
+    const currentImgCover = normalizeImageUrl(rawCover) ?? rawCover;
     const bgContainer = await setupDynamicBackground(element, currentImgCover);
     const displayedImg = bgContainer.getAttribute("current-img");
     if (displayedImg !== currentImgCover) {
@@ -8592,43 +8853,36 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var init_dynamicBackground = __esm({
     "src/components/DynamicBG/dynamicBackground.ts"() {
       init_SpotifyPlayer();
-      updateDynamicBackground = debounce2(
-        (bgContainer, newImageUrl) => {
-          const imgA = bgContainer.querySelector("#bg-img-a");
-          const imgB = bgContainer.querySelector("#bg-img-b");
-          if (!imgA || !imgB) {
-            console.error("Dynamic background image elements not found!");
+      init_debounce2();
+      init_utils();
+      updateDynamicBackground = debounce2((bgContainer, newImageUrl) => {
+        const imgA = bgContainer.querySelector("#bg-img-a");
+        const imgB = bgContainer.querySelector("#bg-img-b");
+        if (!imgA || !imgB) {
+          console.error("Dynamic background image elements not found!");
+          return;
+        }
+        const activeImg = imgA.classList.contains("active") ? imgA : imgB;
+        const inactiveImg = activeImg === imgA ? imgB : imgA;
+        if (inactiveImg.src === newImageUrl)
+          return;
+        inactiveImg.onload = null;
+        inactiveImg.onerror = null;
+        inactiveImg.src = newImageUrl;
+        inactiveImg.onload = () => {
+          if (inactiveImg.src !== newImageUrl)
             return;
-          }
-          const activeImg = imgA.classList.contains("active") ? imgA : imgB;
-          const inactiveImg = activeImg === imgA ? imgB : imgA;
-          if (inactiveImg.src === newImageUrl)
-            return;
-          inactiveImg.src = newImageUrl;
-          inactiveImg.onload = () => {
+          requestAnimationFrame(() => {
             activeImg.classList.remove("active");
             inactiveImg.classList.add("active");
-            const rotationPrimary = Math.floor(Math.random() * 360);
-            const rotationSecondary = (Math.floor(Math.random() * 360) + 15) % 360;
-            document.documentElement.style.setProperty("--bg-rotation-primary", `${rotationPrimary}deg`);
-            document.documentElement.style.setProperty(
-              "--bg-rotation-secondary",
-              `${rotationSecondary}deg`
-            );
-            const scalePrimary = 1 + Math.random() * 0.2;
-            const scaleSecondary = 1.1 + Math.random() * 0.2;
-            document.documentElement.style.setProperty("--bg-scale-primary", `${scalePrimary}`);
-            document.documentElement.style.setProperty("--bg-scale-secondary", `${scaleSecondary}`);
-            const hueShift = Math.floor(Math.random() * 30);
-            document.documentElement.style.setProperty("--bg-hue-shift", `${hueShift}deg`);
-          };
-          inactiveImg.onerror = () => {
-            console.error("Error loading new background image:", newImageUrl);
-          };
-          bgContainer.setAttribute("current-img", newImageUrl);
-        },
-        100
-      );
+            bgContainer.setAttribute("current-img", newImageUrl);
+            setRandomCSSVariables();
+          });
+        };
+        inactiveImg.onerror = () => {
+          console.error("Error loading new background image:", newImageUrl);
+        };
+      }, 100);
     }
   });
 
@@ -8745,6 +8999,31 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
+  // src/utils/sanitize.ts
+  function escapeHtml(text) {
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  function sanitizeRubyHtml(html) {
+    const escaped = escapeHtml(html);
+    return escaped.split(RUBY_ROMAJA_OPEN).join('<ruby class="romaja">').split(RUBY_OPEN).join("<ruby>").split(RUBY_CLOSE).join("</ruby>").split(RT_OPEN).join("<rt>").split(RT_CLOSE).join("</rt>");
+  }
+  function createRubyFragment(html) {
+    const safe = sanitizeRubyHtml(html);
+    const tpl = document.createElement("template");
+    tpl.innerHTML = safe;
+    return tpl.content;
+  }
+  var RUBY_OPEN, RUBY_CLOSE, RUBY_ROMAJA_OPEN, RT_OPEN, RT_CLOSE;
+  var init_sanitize = __esm({
+    "src/utils/sanitize.ts"() {
+      RUBY_OPEN = "&lt;ruby&gt;";
+      RUBY_CLOSE = "&lt;/ruby&gt;";
+      RUBY_ROMAJA_OPEN = "&lt;ruby class=&quot;romaja&quot;&gt;";
+      RT_OPEN = "&lt;rt&gt;";
+      RT_CLOSE = "&lt;/rt&gt;";
+    }
+  });
+
   // src/utils/Lyrics/Applyer/Static.ts
   function ApplyStaticLyrics(data) {
     if (!Defaults_default.LyricsContainerExists)
@@ -8788,9 +9067,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       mainTextContainer.classList.add("main-lyrics-text");
       if (line.Text?.includes("[DEF=font_size:small]")) {
         lineElem.style.fontSize = "35px";
-        mainTextContainer.innerHTML = line.Text.replace("[DEF=font_size:small]", "");
+        mainTextContainer.appendChild(
+          createRubyFragment(line.Text.replace("[DEF=font_size:small]", ""))
+        );
       } else {
-        mainTextContainer.innerHTML = line.Text;
+        mainTextContainer.appendChild(createRubyFragment(line.Text));
       }
       lineElem.appendChild(mainTextContainer);
       if (line.Translation && line.Translation.trim() !== "" && (!data.Raw || line.Translation.trim() !== data.Raw[index]?.trim())) {
@@ -8844,6 +9125,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_ApplyInfo();
       init_isRtl();
       init_storage();
+      init_sanitize();
     }
   });
 
@@ -8853,6 +9135,69 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   var init_ConvertTime = __esm({
     "src/utils/Lyrics/ConvertTime.ts"() {
+    }
+  });
+
+  // src/utils/Lyrics/Applyer/Utils/createMusicalLine.ts
+  function createDotGroup(lineType, startTime, endTime) {
+    const dotGroup = document.createElement("div");
+    dotGroup.classList.add("dotGroup");
+    const totalTime = endTime - startTime;
+    const dotTime = totalTime / 3;
+    for (let i = 0; i < 3; i++) {
+      const dot = document.createElement("span");
+      dot.classList.add("word", "dot");
+      dot.textContent = lineType === "Syllable" ? BULLET_GLYPH : NOTE_GLYPHS[i % NOTE_GLYPHS.length];
+      const target = lineType === "Syllable" ? LyricsObject.Types.Syllable.Lines : LyricsObject.Types.Line.Lines;
+      const idx = lineType === "Syllable" ? LyricsObject.Types.Syllable.Lines.length - 1 : LyricsObject.Types.Line.Lines.length - 1;
+      if (idx >= 0 && target[idx]?.Syllables?.Lead) {
+        target[idx].Syllables.Lead.push({
+          HTMLElement: dot,
+          StartTime: startTime + dotTime * i,
+          EndTime: i === 2 ? endTime - 400 : startTime + dotTime * (i + 1),
+          TotalTime: dotTime,
+          Dot: true
+        });
+      }
+      dotGroup.appendChild(dot);
+    }
+    return dotGroup;
+  }
+  function createMusicalLineMs(type, startMs, endMs, oppositeAligned) {
+    const line = document.createElement("div");
+    line.classList.add("line", "musical-line");
+    if (oppositeAligned)
+      line.classList.add("OppositeAligned");
+    if (type === "Syllable") {
+      LyricsObject.Types.Syllable.Lines.push({
+        HTMLElement: line,
+        StartTime: startMs,
+        EndTime: endMs,
+        TotalTime: endMs - startMs,
+        DotLine: true
+      });
+      SetWordArrayInCurentLine();
+    } else {
+      LyricsObject.Types.Line.Lines.push({
+        HTMLElement: line,
+        StartTime: startMs,
+        EndTime: endMs,
+        TotalTime: endMs - startMs,
+        DotLine: true
+      });
+      SetWordArrayInCurentLine_LINE_SYNCED();
+    }
+    const dots = createDotGroup(type, startMs, endMs);
+    line.appendChild(dots);
+    return line;
+  }
+  var NOTE_GLYPHS, BULLET_GLYPH;
+  var init_createMusicalLine = __esm({
+    "src/utils/Lyrics/Applyer/Utils/createMusicalLine.ts"() {
+      init_ConvertTime();
+      init_lyrics();
+      NOTE_GLYPHS = ["\u266A", "\u266B", "\u2669"];
+      BULLET_GLYPH = "\u2022";
     }
   });
 
@@ -8873,45 +9218,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     TOP_ApplyLyricsSpacer(LyricsContainer);
     const fragment = document.createDocumentFragment();
     const convertStartTime = ConvertTime(data.StartTime);
-    function createDotGroup(startTime, endTime) {
-      const dotGroup = document.createElement("div");
-      dotGroup.classList.add("dotGroup");
-      const totalTime = endTime - startTime;
-      const dotTime = totalTime / 3;
-      const NOTE_GLYPHS = ["\u266A", "\u266B", "\u2669"];
-      const dots = [];
-      for (let i = 0; i < 3; i++) {
-        const dot = document.createElement("span");
-        dot.classList.add("word", "dot");
-        dot.textContent = NOTE_GLYPHS[i % NOTE_GLYPHS.length];
-        LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables.Lead.push({
-          HTMLElement: dot,
-          StartTime: startTime + dotTime * i,
-          EndTime: i === 2 ? endTime - 400 : startTime + dotTime * (i + 1),
-          TotalTime: dotTime,
-          Dot: true
-        });
-        dots.push(dot);
-      }
-      dots.forEach((d) => dotGroup.appendChild(d));
-      return dotGroup;
-    }
     if (data.StartTime >= lyricsBetweenShow) {
-      const musicalLine = document.createElement("div");
-      musicalLine.classList.add("line", "musical-line");
-      LyricsObject.Types.Line.Lines.push({
-        HTMLElement: musicalLine,
-        StartTime: 0,
-        EndTime: convertStartTime,
-        TotalTime: convertStartTime,
-        DotLine: true
-      });
-      SetWordArrayInCurentLine_LINE_SYNCED();
-      if (data.Content[0]?.OppositeAligned) {
-        musicalLine.classList.add("OppositeAligned");
-      }
-      const dotGroup = createDotGroup(0, convertStartTime);
-      musicalLine.appendChild(dotGroup);
+      const musicalLine = createMusicalLineMs(
+        "Line",
+        0,
+        convertStartTime,
+        !!data.Content[0]?.OppositeAligned
+      );
       fragment.appendChild(musicalLine);
     }
     data.Content.forEach((line, index, arr) => {
@@ -8944,7 +9257,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       const mainTextContainer = document.createElement("span");
       mainTextContainer.classList.add("main-lyrics-text");
       mainTextContainer.classList.add("line");
-      mainTextContainer.innerHTML = line.Text;
+      mainTextContainer.appendChild(createRubyFragment(line.Text));
       lineElem.appendChild(mainTextContainer);
       const hasDistinctTranslation = line.Translation && line.Translation.trim() !== "" && (!data.Raw || line.Translation.trim() !== data.Raw[index]?.trim());
       if (hasDistinctTranslation) {
@@ -8974,23 +9287,14 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       const nextLine = arr[index + 1];
       const hasMusicalBreak = nextLine && nextLine.StartTime - line.EndTime >= lyricsBetweenShow;
       if (hasMusicalBreak) {
-        const musicalLine = document.createElement("div");
-        musicalLine.classList.add("line", "musical-line");
         const nextStartTime = ConvertTime(nextLine.StartTime);
         const curEndTime = endTime;
-        LyricsObject.Types.Line.Lines.push({
-          HTMLElement: musicalLine,
-          StartTime: curEndTime,
-          EndTime: nextStartTime,
-          TotalTime: nextStartTime - curEndTime,
-          DotLine: true
-        });
-        SetWordArrayInCurentLine_LINE_SYNCED();
-        if (nextLine.OppositeAligned) {
-          musicalLine.classList.add("OppositeAligned");
-        }
-        const dotGroup = createDotGroup(curEndTime, nextStartTime);
-        musicalLine.appendChild(dotGroup);
+        const musicalLine = createMusicalLineMs(
+          "Line",
+          curEndTime,
+          nextStartTime,
+          !!nextLine.OppositeAligned
+        );
         fragment.appendChild(musicalLine);
       }
     });
@@ -9027,7 +9331,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_ApplyLyricsCredits();
       init_ApplyInfo();
       init_isRtl();
+      init_createMusicalLine();
       init_storage();
+      init_sanitize();
     }
   });
 
@@ -9119,61 +9425,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ClearScrollSimplebar();
     TOP_ApplyLyricsSpacer(LyricsContainer);
     if (data.StartTime >= lyricsBetweenShow && !SpotifyPlayer.IsPodcast) {
-      const musicalLine = document.createElement("div");
-      musicalLine.classList.add("line");
-      musicalLine.classList.add("musical-line");
-      LyricsObject.Types.Syllable.Lines.push({
-        HTMLElement: musicalLine,
-        StartTime: 0,
-        EndTime: ConvertTime(data.StartTime),
-        TotalTime: ConvertTime(data.StartTime),
-        DotLine: true
-      });
-      SetWordArrayInCurentLine();
-      if (data.Content[0].OppositeAligned) {
-        musicalLine.classList.add("OppositeAligned");
-      }
-      const dotGroup = document.createElement("div");
-      dotGroup.classList.add("dotGroup");
-      const musicalDots1 = document.createElement("span");
-      const musicalDots2 = document.createElement("span");
-      const musicalDots3 = document.createElement("span");
-      const totalTime = ConvertTime(data.StartTime);
-      const dotTime = totalTime / 3;
-      musicalDots1.classList.add("word");
-      musicalDots1.classList.add("dot");
-      musicalDots1.textContent = "\u2022";
-      LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables.Lead.push({
-        HTMLElement: musicalDots1,
-        StartTime: 0,
-        EndTime: dotTime,
-        TotalTime: dotTime,
-        Dot: true
-      });
-      musicalDots2.classList.add("word");
-      musicalDots2.classList.add("dot");
-      musicalDots2.textContent = "\u2022";
-      LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables.Lead.push({
-        HTMLElement: musicalDots2,
-        StartTime: dotTime,
-        EndTime: dotTime * 2,
-        TotalTime: dotTime,
-        Dot: true
-      });
-      musicalDots3.classList.add("word");
-      musicalDots3.classList.add("dot");
-      musicalDots3.textContent = "\u2022";
-      LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables.Lead.push({
-        HTMLElement: musicalDots3,
-        StartTime: dotTime * 2,
-        EndTime: ConvertTime(data.StartTime) - 400,
-        TotalTime: dotTime,
-        Dot: true
-      });
-      dotGroup.appendChild(musicalDots1);
-      dotGroup.appendChild(musicalDots2);
-      dotGroup.appendChild(musicalDots3);
-      musicalLine.appendChild(dotGroup);
+      const musicalLine = createMusicalLineMs(
+        "Syllable",
+        0,
+        ConvertTime(data.StartTime),
+        data.Content[0]?.OppositeAligned ? true : false
+      );
       LyricsContainer.appendChild(musicalLine);
     }
     data.Content.forEach((line, index, arr) => {
@@ -9309,61 +9566,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         });
       }
       if (arr[index + 1] && arr[index + 1].Lead.StartTime - line.Lead.EndTime >= lyricsBetweenShow && !SpotifyPlayer.IsPodcast) {
-        const musicalLine = document.createElement("div");
-        musicalLine.classList.add("line");
-        musicalLine.classList.add("musical-line");
-        LyricsObject.Types.Syllable.Lines.push({
-          HTMLElement: musicalLine,
-          StartTime: ConvertTime(line.Lead.EndTime),
-          EndTime: ConvertTime(arr[index + 1].Lead.StartTime),
-          TotalTime: ConvertTime(arr[index + 1].Lead.StartTime) - ConvertTime(line.Lead.EndTime),
-          DotLine: true
-        });
-        SetWordArrayInCurentLine();
-        if (arr[index + 1].OppositeAligned) {
-          musicalLine.classList.add("OppositeAligned");
-        }
-        const dotGroup = document.createElement("div");
-        dotGroup.classList.add("dotGroup");
-        const musicalDots1 = document.createElement("span");
-        const musicalDots2 = document.createElement("span");
-        const musicalDots3 = document.createElement("span");
-        const totalTime = ConvertTime(arr[index + 1].Lead.StartTime) - ConvertTime(line.Lead.EndTime);
-        const dotTime = totalTime / 3;
-        musicalDots1.classList.add("word");
-        musicalDots1.classList.add("dot");
-        musicalDots1.textContent = "\u2022";
-        LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables.Lead.push({
-          HTMLElement: musicalDots1,
-          StartTime: ConvertTime(line.Lead.EndTime),
-          EndTime: ConvertTime(line.Lead.EndTime) + dotTime,
-          TotalTime: dotTime,
-          Dot: true
-        });
-        musicalDots2.classList.add("word");
-        musicalDots2.classList.add("dot");
-        musicalDots2.textContent = "\u2022";
-        LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables.Lead.push({
-          HTMLElement: musicalDots2,
-          StartTime: ConvertTime(line.Lead.EndTime) + dotTime,
-          EndTime: ConvertTime(line.Lead.EndTime) + dotTime * 2,
-          TotalTime: dotTime,
-          Dot: true
-        });
-        musicalDots3.classList.add("word");
-        musicalDots3.classList.add("dot");
-        musicalDots3.textContent = "\u2022";
-        LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables.Lead.push({
-          HTMLElement: musicalDots3,
-          StartTime: ConvertTime(line.Lead.EndTime) + dotTime * 2,
-          EndTime: ConvertTime(arr[index + 1].Lead.StartTime) - 400,
-          TotalTime: dotTime,
-          Dot: true
-        });
-        dotGroup.appendChild(musicalDots1);
-        dotGroup.appendChild(musicalDots2);
-        dotGroup.appendChild(musicalDots3);
-        musicalLine.appendChild(dotGroup);
+        const musicalLine = createMusicalLineMs(
+          "Syllable",
+          ConvertTime(line.Lead.EndTime),
+          ConvertTime(arr[index + 1].Lead.StartTime),
+          !!arr[index + 1].OppositeAligned
+        );
         LyricsContainer.appendChild(musicalLine);
       }
     });
@@ -9399,6 +9607,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_IsLetterCapable();
       init_Emphasize();
       init_Shared();
+      init_createMusicalLine();
       init_isRtl();
     }
   });
@@ -9474,22 +9683,30 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (!savedLyricsData)
       return null;
     try {
-      if (savedLyricsData.includes("NO_LYRICS")) {
-        const split = savedLyricsData.split(":");
-        const id = split[1];
-        if (id === trackId) {
-          return await noLyricsMessage();
+      const parsed = JSON.parse(savedLyricsData);
+      if (parsed?.status === "NO_LYRICS") {
+        if (!parsed.id || parsed.id === trackId) {
+          return await noLyricsMessage(parsed.id ?? trackId);
         }
-      } else {
-        const lyricsData = JSON.parse(savedLyricsData);
-        if (lyricsData?.id === trackId) {
-          HideLoaderContainer();
-          ClearLyricsPageContainer();
-          Defaults_default.CurrentLyricsType = lyricsData.Type;
-          return lyricsData;
-        }
+        return null;
+      }
+      if (parsed?.id === trackId) {
+        HideLoaderContainer();
+        ClearLyricsPageContainer();
+        Defaults_default.CurrentLyricsType = parsed.Type;
+        return parsed;
       }
     } catch (error) {
+      if (savedLyricsData.includes("NO_LYRICS")) {
+        try {
+          const legacySplit = savedLyricsData.split(":");
+          const legacyId = legacySplit[1]?.replace(/[^a-zA-Z0-9]/g, "");
+          if (!legacyId || legacyId === trackId) {
+            return await noLyricsMessage(legacyId ?? trackId);
+          }
+        } catch {
+        }
+      }
       console.error("Error parsing saved lyrics data:", error);
       HideLoaderContainer();
       ClearLyricsPageContainer();
@@ -9649,11 +9866,17 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       }
     }
     setBlurringLastLine(null);
-    if (!lyrics || !lyrics?.id)
+    if (!lyrics || isNoLyricsResult(lyrics) || lyrics.status === "NO_LYRICS")
       return;
-    const currentTrackId = Spicetify.Player.data.item?.uri?.split(":")[2];
-    if (currentTrackId !== lyrics?.id) {
-      fetchLyrics(Spicetify.Player.data.item?.uri).then(ApplyLyrics);
+    const typedLyrics = lyrics;
+    if (!typedLyrics?.id)
+      return;
+    const currentTrackId = Spicetify.Player.data?.item?.uri?.split(":")[2];
+    if (currentTrackId !== typedLyrics?.id) {
+      const uri = Spicetify.Player.data?.item?.uri;
+      if (uri) {
+        fetchLyrics(uri).then(ApplyLyrics).catch((e) => console.error("[Amai Lyrics] Failed to re-fetch mismatched lyrics:", e));
+      }
       return;
     }
     const lyricsHandlers = {
@@ -9661,9 +9884,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       Line: ApplyLineLyrics,
       Static: ApplyStaticLyrics
     };
-    const applyHandler = lyricsHandlers[lyrics.Type];
+    const applyHandler = lyricsHandlers[typedLyrics.Type];
     if (applyHandler) {
-      applyHandler(lyrics);
+      applyHandler(typedLyrics);
       showRefreshButton();
       addLinesEvListener();
     }
@@ -9755,19 +9978,31 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (imageElement._setupImageLoading)
       return;
     imageElement._setupImageLoading = true;
+    let highResImage = null;
     const onloadHandler = () => {
+      if (!imageElement.isConnected)
+        return;
       import_fastdom4.default.mutate(() => {
+        if (!imageElement.isConnected)
+          return;
         imageElement.classList.add("loaded");
       });
       const highResUrl = imageElement.getAttribute("data-high-res");
       if (highResUrl) {
-        const highResImage = new Image();
+        highResImage = new Image();
         highResImage.onload = () => {
+          if (!imageElement.isConnected)
+            return;
           import_fastdom4.default.mutate(() => {
+            if (!imageElement.isConnected)
+              return;
             if (imageElement.src !== highResUrl) {
               imageElement.src = highResUrl;
             }
           });
+        };
+        highResImage.onerror = () => {
+          highResImage = null;
         };
         highResImage.src = highResUrl;
       }
@@ -9775,6 +10010,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     imageElement.onload = onloadHandler;
     maid2?.Give(() => {
       imageElement.onload = null;
+      imageElement.onerror = null;
+      if (highResImage) {
+        highResImage.onload = null;
+        highResImage.onerror = null;
+        try {
+          highResImage.src = "";
+        } catch {
+        }
+        highResImage = null;
+      }
     });
   }
   async function UpdatePageContent(isOpened) {
@@ -10138,7 +10383,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     await PageView.UpdatePageContent();
     const currentUri = Spicetify.Player.data?.item?.uri;
     if (currentUri) {
-      fetchLyrics(currentUri).then(ApplyLyrics);
+      fetchLyrics(currentUri).then(ApplyLyrics).catch((e) => console.error("[Amai Lyrics] PageView fetch failed:", e));
     }
     Session_OpenNowBar();
     Session_NowBar_SetSide();
@@ -10177,15 +10422,17 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     Defaults_default.LyricsContainerExists = false;
     removeLinesEvListener();
     Object.values(Tooltips).forEach((a) => a?.destroy());
+    Object.keys(Tooltips).forEach((k) => Tooltips[k] = null);
     ResetLastLine();
-    ScrollSimplebar?.unMount();
-    maid?.CleanUp();
+    ClearScrollSimplebar();
+    try {
+      maid?.CleanUp();
+      maid?.Destroy?.();
+    } catch {
+    }
     maid = null;
     PageView.IsOpened = false;
-    if (window.ProcessingIndicatorTimeout) {
-      clearTimeout(window.ProcessingIndicatorTimeout);
-      window.ProcessingIndicatorTimeout = null;
-    }
+    clearLyricsUiTimeouts();
   }
   var import_fastdom6, maid, PageView, PageRoot, PageView_default;
   var init_PageView = __esm({
@@ -10198,6 +10445,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_Defaults();
       init_ScrollSimplebar();
       init_Applyer();
+      init_ui();
       init_NowBar2();
       init_Fullscreen();
       init_ScrollToActiveLine();
@@ -10222,6 +10470,22 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   });
 
   // src/components/Utils/Fullscreen.ts
+  function ensureGlobalFullscreenListeners() {
+    if (windowRef4.__amaiFullscreenHandlers)
+      return;
+    const onFullscreenChange = () => {
+      const wasFullscreen = Fullscreen.IsOpen;
+      const isNowFullscreen = !!document.fullscreenElement;
+      Fullscreen.IsOpen = isNowFullscreen;
+      if (wasFullscreen && !isNowFullscreen) {
+        Fullscreen.Close();
+      }
+    };
+    const onKeyDown = (e) => Fullscreen.handleEscapeKey(e);
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    document.addEventListener("keydown", onKeyDown);
+    windowRef4.__amaiFullscreenHandlers = { onFullscreenChange, onKeyDown };
+  }
   function Open() {
     const SpicyPage = document.querySelector(".Root__main-view #SpicyLyricsPage");
     const Root = document.body;
@@ -10253,7 +10517,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           setupFullscreenUI();
         }).catch((err2) => {
           setupFullscreenUI();
-          alert(`Error attempting to enable fullscreen mode: ${err2.message} (${err2.name})`);
+          console.error("Fullscreen error:", err2);
+          Spicetify.showNotification(`Fullscreen failed: ${err2.message}`, true, 2e3);
         });
       } else {
         setupFullscreenUI();
@@ -10269,7 +10534,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         Fullscreen.IsOpen = false;
         PageView_default.AppendViewControls();
         const currentLyrics = storage_default.get("currentLyricsData");
-        const NoLyrics = typeof currentLyrics === "string" && currentLyrics.includes("NO_LYRICS");
+        let NoLyrics = false;
+        if (typeof currentLyrics === "string" && currentLyrics.includes("NO_LYRICS")) {
+          NoLyrics = true;
+        } else if (currentLyrics) {
+          try {
+            const parsed = JSON.parse(currentLyrics);
+            NoLyrics = parsed?.status === "NO_LYRICS";
+          } catch {
+          }
+        }
         if (NoLyrics) {
           OpenNowBar();
           const lyricsContainer = document.querySelector(
@@ -10325,7 +10599,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       }, 1e3);
     }
   }
-  var Fullscreen, MediaBox_Data, Fullscreen_default;
+  var Fullscreen, windowRef4, MediaBox_Data, Fullscreen_default;
   var init_Fullscreen = __esm({
     "src/components/Utils/Fullscreen.ts"() {
       init_Animator();
@@ -10346,15 +10620,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           }
         }
       };
-      document.addEventListener("fullscreenchange", () => {
-        const wasFullscreen = Fullscreen.IsOpen;
-        const isNowFullscreen = !!document.fullscreenElement;
-        Fullscreen.IsOpen = isNowFullscreen;
-        if (wasFullscreen && !isNowFullscreen) {
-          Fullscreen.Close();
-        }
-      });
-      document.addEventListener("keydown", Fullscreen.handleEscapeKey.bind(Fullscreen));
+      windowRef4 = window;
+      ensureGlobalFullscreenListeners();
       MediaBox_Data = {
         Eventified: false,
         Functions: {
@@ -10554,6 +10821,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     );
     if (!nowBarTeardownTracked) {
       nowBarTeardownTracked = true;
+      sharedNowBarState.teardownTracked = true;
       lifecycle_default.trackCallback(teardownNowBarListeners);
     }
   }
@@ -10698,7 +10966,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         MediaBox.removeChild(songProgressBar);
     }
   }
-  var nowBarListenerIds, nowBarInitWhen, nowBarTeardownTracked, fullscreenPositionClient;
+  var windowRef5, sharedNowBarState, nowBarListenerIds, nowBarInitWhen, nowBarTeardownTracked, fullscreenPositionClient;
   var init_EventListeners = __esm({
     "src/components/NowBar/EventListeners.ts"() {
       init_Global();
@@ -10709,9 +10977,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_lifecycle();
       init_GetProgress();
       init_state();
+      windowRef5 = window;
+      sharedNowBarState = windowRef5.__amaiNowBarState ?? (windowRef5.__amaiNowBarState = { teardownTracked: false });
       nowBarListenerIds = [];
       nowBarInitWhen = null;
-      nowBarTeardownTracked = false;
+      nowBarTeardownTracked = sharedNowBarState.teardownTracked;
       fullscreenPositionClient = null;
     }
   });
@@ -11203,13 +11473,17 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           const ArtistNameElement = document.createElement("div");
           ArtistNameElement.classList.add("ArtistData");
           const artistNames = SpotifyPlayer.JoinArtists(await SpotifyPlayer.GetArtists());
-          ArtistNameElement.innerHTML = `<span>${artistNames}</span>`;
+          const artistSpan = document.createElement("span");
+          artistSpan.textContent = artistNames;
+          ArtistNameElement.appendChild(artistSpan);
           AppendQueue.push(ArtistNameElement);
         }
         {
           const AlbumNameElement = document.createElement("div");
           AlbumNameElement.classList.add("AlbumData");
-          AlbumNameElement.innerHTML = `<span>${SpotifyPlayer.GetAlbumName()}</span>`;
+          const albumSpan = document.createElement("span");
+          albumSpan.textContent = SpotifyPlayer.GetAlbumName();
+          AlbumNameElement.appendChild(albumSpan);
           AppendQueue.push(AlbumNameElement);
         }
         const playbackControlsInstance = SetupPlaybackControls(AppendQueue);
@@ -11393,6 +11667,28 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   });
 
   // src/utils/Lyrics/ui.ts
+  var ui_exports = {};
+  __export(ui_exports, {
+    ClearLyricsPageContainer: () => ClearLyricsPageContainer,
+    EnsureProcessingIndicatorHidden: () => EnsureProcessingIndicatorHidden,
+    HideLoaderContainer: () => HideLoaderContainer,
+    HideProcessingIndicator: () => HideProcessingIndicator,
+    ShowLoaderContainer: () => ShowLoaderContainer,
+    ShowProcessingIndicator: () => ShowProcessingIndicator,
+    clearLyricsUiTimeouts: () => clearLyricsUiTimeouts,
+    noLyricsMessage: () => noLyricsMessage,
+    resetLyricsUI: () => resetLyricsUI
+  });
+  function clearLyricsUiTimeouts() {
+    if (ContainerShowLoaderTimeout !== null) {
+      clearTimeout(ContainerShowLoaderTimeout);
+      ContainerShowLoaderTimeout = null;
+    }
+    if (window.ProcessingIndicatorTimeout) {
+      clearTimeout(window.ProcessingIndicatorTimeout);
+      window.ProcessingIndicatorTimeout = null;
+    }
+  }
   function resetLyricsUI() {
     const lyricsContent = document.querySelector("#SpicyLyricsPage .LyricsContainer .LyricsContent");
     if (lyricsContent?.classList.contains("offline")) {
@@ -11404,7 +11700,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   async function noLyricsMessage(trackId) {
     try {
-      if (Spicetify.Player.data.item.uri?.split(":")[2] === trackId) {
+      const currentId = Spicetify.Player.data?.item?.uri?.split(":")[2];
+      const isForCurrentTrack = !trackId || currentId === trackId;
+      if (isForCurrentTrack) {
         HideLoaderContainer();
         Defaults_default.CurrentLyricsType = "None";
         document.querySelector("#SpicyLyricsPage .ContentBox .LyricsContainer")?.classList.add("Hidden");
@@ -11412,11 +11710,18 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         OpenNowBar();
         DeregisterNowBarBtn();
         showRefreshButton();
+        if (trackId) {
+          try {
+            const { default: storage } = await Promise.resolve().then(() => (init_storage(), storage_exports));
+            storage.set("currentLyricsData", JSON.stringify({ status: "NO_LYRICS", id: trackId }));
+          } catch {
+          }
+        }
       }
     } catch (error) {
       console.error("Amai Lyrics: Error showing no lyrics message", error);
     }
-    return "1";
+    return { status: "NO_LYRICS", id: trackId };
   }
   function ShowLoaderContainer() {
     const loaderContainer = document.querySelector(
@@ -12925,8 +13230,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       throw new Error(`Invalid batch job name: ${nameString}.`);
     }
   }
-  function tJobState(state) {
-    const stateString = state;
+  function tJobState(state2) {
+    const stateString = state2;
     if (stateString === "BATCH_STATE_UNSPECIFIED") {
       return "JOB_STATE_UNSPECIFIED";
     } else if (stateString === "BATCH_STATE_PENDING") {
@@ -22522,7 +22827,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return null;
   }
-  function parseMessage(chunk, parse, state, dataRequired) {
+  function parseMessage(chunk, parse, state2, dataRequired) {
     const text = new TextDecoder().decode(chunk);
     const lines = text.split(/\r\n|\r|\n/);
     const dataLines = [];
@@ -22544,14 +22849,14 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       else if (field === "event")
         ret.event = value;
       else if (field === "id" && !value.includes("\0"))
-        state.eventId = value;
+        state2.eventId = value;
       else if (field === "retry" && /^\d+$/.test(value)) {
         ret.retry = Number(value);
       }
     }
     if (ignore)
       return;
-    ret.id = state.eventId;
+    ret.id = state2.eventId;
     if (dataLines.length)
       ret.data = dataLines.join("\n");
     else if (dataRequired)
@@ -22681,7 +22986,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return out;
   }
   function resolveSecurity(...options) {
-    const state = {
+    const state2 = {
       basic: {},
       headers: {},
       queryParams: {},
@@ -22720,46 +23025,46 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       const { type } = spec;
       switch (type) {
         case "apiKey:header":
-          state.headers[spec.fieldName] = spec.value;
+          state2.headers[spec.fieldName] = spec.value;
           break;
         case "apiKey:query":
-          state.queryParams[spec.fieldName] = spec.value;
+          state2.queryParams[spec.fieldName] = spec.value;
           break;
         case "apiKey:cookie":
-          state.cookies[spec.fieldName] = spec.value;
+          state2.cookies[spec.fieldName] = spec.value;
           break;
         case "http:basic":
-          applyBasic(state, spec);
+          applyBasic(state2, spec);
           break;
         case "http:custom":
           break;
         case "http:bearer":
-          applyBearer(state, spec);
+          applyBearer(state2, spec);
           break;
         case "oauth2":
-          applyBearer(state, spec);
+          applyBearer(state2, spec);
           break;
         case "oauth2:password":
-          applyBearer(state, spec);
+          applyBearer(state2, spec);
           break;
         case "oauth2:client_credentials":
           break;
         case "openIdConnect":
-          applyBearer(state, spec);
+          applyBearer(state2, spec);
           break;
         default:
           throw SecurityError.unrecognizedType(type);
       }
     });
-    return state;
+    return state2;
   }
-  function applyBasic(state, spec) {
+  function applyBasic(state2, spec) {
     if (spec.value == null) {
       return;
     }
-    state.basic = spec.value;
+    state2.basic = spec.value;
   }
-  function applyBearer(state, spec) {
+  function applyBearer(state2, spec) {
     if (typeof spec.value !== "string" || !spec.value) {
       return;
     }
@@ -22768,7 +23073,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       value = `Bearer ${value}`;
     }
     if (spec.fieldName !== void 0) {
-      state.headers[spec.fieldName] = value;
+      state2.headers[spec.fieldName] = value;
     }
   }
   function resolveGlobalSecurity(security, allowedFields) {
@@ -31504,7 +31809,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           let buffer = new Uint8Array(4096);
           let bufferLen = 0;
           let searchStart = 0;
-          const state = { eventId: void 0 };
+          const state2 = { eventId: void 0 };
           const dataRequired = (_a3 = opts === null || opts === void 0 ? void 0 : opts.dataRequired) !== null && _a3 !== void 0 ? _a3 : true;
           super({
             async pull(downstream) {
@@ -31534,7 +31839,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
                     buffer = shrunk;
                   }
                   searchStart = 0;
-                  const item = parseMessage(message, parse, state, dataRequired);
+                  const item = parseMessage(message, parse, state2, dataRequired);
                   if (item && !item.done)
                     return downstream.enqueue(item.value);
                   if (item === null || item === void 0 ? void 0 : item.done) {
@@ -32585,57 +32890,36 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return await fetchGeminiTranslations(lyricsOnly, prompt);
   }
-  async function fetchAmaiTranslations(lyricsOnly, prompt) {
+  async function fetchFromAmai(url, body, resultKey) {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 5e3);
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5e3);
-      const response = await fetch(Defaults_default.lyrics.api.translationUrl, {
+      const response = await fetch(url, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          lyrics: lyricsOnly,
-          prompt
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
         signal: controller.signal
       });
-      clearTimeout(timeoutId);
-      if (!response.ok) {
+      if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
-      }
       const data = await response.json();
-      return data.translation || [];
+      return data[resultKey] || [];
     } catch (error) {
-      console.error("Error fetching translations from Amai Worker:", error);
+      console.error(`Error fetching ${resultKey} from Amai Worker:`, error);
       return [];
+    } finally {
+      window.clearTimeout(timeoutId);
     }
   }
+  async function fetchAmaiTranslations(lyricsOnly, prompt) {
+    return fetchFromAmai(
+      Defaults_default.lyrics.api.translationUrl,
+      { lyrics: lyricsOnly, prompt },
+      "translation"
+    );
+  }
   async function fetchAmaiPhonetic(lyricsOnly, prompt) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5e3);
-      const response = await fetch(Defaults_default.lyrics.api.phoneticUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          lyrics: lyricsOnly,
-          prompt
-        }),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      return data.phonetic || [];
-    } catch (error) {
-      console.error("Error fetching phonetic lyrics from Amai Worker:", error);
-      return [];
-    }
+    return fetchFromAmai(Defaults_default.lyrics.api.phoneticUrl, { lyrics: lyricsOnly, prompt }, "phonetic");
   }
   async function fetchGeminiTranslations(lyricsOnly, prompt) {
     try {
@@ -32819,10 +33103,35 @@ ${JSON.stringify(lyricsOnly)}`
   });
 
   // src/utils/Lyrics/conversion.ts
+  function collectSyllableText(syllables) {
+    let text = "";
+    let prevIsJapanese = null;
+    let i = 0;
+    while (i < syllables.length) {
+      let syl = syllables[i];
+      let word = syl.Text;
+      while (syl.IsPartOfWord && i + 1 < syllables.length) {
+        i++;
+        syl = syllables[i];
+        word += syl.Text;
+        if (!syl.IsPartOfWord)
+          break;
+      }
+      if (JAPANESE_REGEX.test(word)) {
+        if (prevIsJapanese === false && text)
+          text += " ";
+        text += word;
+        prevIsJapanese = true;
+      } else {
+        text += (text ? " " : "") + word;
+        prevIsJapanese = false;
+      }
+      i++;
+    }
+    return text;
+  }
   function convertLyrics(data) {
     return data.map((item) => {
-      let leadText = "";
-      let prevIsJapanese = null;
       if (!item.Lead || !item.Lead.Syllables || !Array.isArray(item.Lead.Syllables)) {
         console.error("Amai Lyrics: Invalid lyrics structure", item);
         return {
@@ -32833,29 +33142,7 @@ ${JSON.stringify(lyricsOnly)}`
           EndTime: 0
         };
       }
-      let i = 0;
-      while (i < item.Lead.Syllables.length) {
-        let syl = item.Lead.Syllables[i];
-        let word = syl.Text;
-        while (syl.IsPartOfWord && i + 1 < item.Lead.Syllables.length) {
-          i++;
-          syl = item.Lead.Syllables[i];
-          word += syl.Text;
-          if (!syl.IsPartOfWord)
-            break;
-        }
-        if (JAPANESE_REGEX.test(word)) {
-          if (prevIsJapanese === false && leadText) {
-            leadText += " ";
-          }
-          leadText += word;
-          prevIsJapanese = true;
-        } else {
-          leadText += (leadText ? " " : "") + word;
-          prevIsJapanese = false;
-        }
-        i++;
-      }
+      const leadText = collectSyllableText(item.Lead.Syllables);
       let startTime = item.Lead.StartTime;
       let endTime = item.Lead.EndTime;
       let fullText = leadText;
@@ -32867,35 +33154,9 @@ ${JSON.stringify(lyricsOnly)}`
           if (typeof bg.EndTime === "number") {
             endTime = Math.max(endTime, bg.EndTime);
           }
-          let bgText = "";
-          let prevIsJapanese2 = null;
-          if (!bg.Syllables || !Array.isArray(bg.Syllables)) {
+          if (!bg.Syllables || !Array.isArray(bg.Syllables))
             return "";
-          }
-          let i2 = 0;
-          while (i2 < bg.Syllables.length) {
-            let syl = bg.Syllables[i2];
-            let word = syl.Text;
-            while (syl.IsPartOfWord && i2 + 1 < bg.Syllables.length) {
-              i2++;
-              syl = bg.Syllables[i2];
-              word += syl.Text;
-              if (!syl.IsPartOfWord)
-                break;
-            }
-            if (JAPANESE_REGEX.test(word)) {
-              if (prevIsJapanese2 === false && bgText) {
-                bgText += " ";
-              }
-              bgText += word;
-              prevIsJapanese2 = true;
-            } else {
-              bgText += (bgText ? " " : "") + word;
-              prevIsJapanese2 = false;
-            }
-            i2++;
-          }
-          return bgText;
+          return collectSyllableText(bg.Syllables);
         });
         fullText += " (" + bgTexts.join(" ") + ")";
       }
@@ -33135,15 +33396,21 @@ ${JSON.stringify(lyricsOnly)}`
     text = text.replace("[DEF=font_size:small]", "");
     const processedText = processPhoneticText(text, enableRomaji);
     const existingTranslation = lineElement.querySelector(".translation");
-    if (existingTranslation) {
-      const translationText = existingTranslation.textContent || "";
-      lineElement.innerHTML = processedText;
+    const preservedText = existingTranslation?.textContent ?? null;
+    if (existingTranslation)
+      existingTranslation.remove();
+    lineElement.textContent = "";
+    lineElement.appendChild(createRubyFragment(processedText));
+    if (preservedText !== null && preservedText !== "") {
       const newTranslationElem = document.createElement("div");
       newTranslationElem.classList.add("translation");
-      newTranslationElem.textContent = translationText;
+      newTranslationElem.textContent = preservedText;
       lineElement.appendChild(newTranslationElem);
-    } else {
-      lineElement.innerHTML = processedText;
+    } else if (existingTranslation && preservedText === "") {
+      const empty = document.createElement("div");
+      empty.classList.add("translation");
+      empty.textContent = "";
+      lineElement.appendChild(empty);
     }
     const updatedTranslation = lineElement.querySelector(".translation");
     const hasDistinctTranslation = translation && translation.trim() !== "" && (!rawText || translation.trim() !== rawText.trim());
@@ -33202,6 +33469,7 @@ ${JSON.stringify(lyricsOnly)}`
       init_ai();
       init_conversion();
       init_EventManager();
+      init_sanitize();
       JAPANESE_REGEX2 = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
       KOREAN_REGEX = /[\uAC00-\uD7AF]/;
       JAPANESE_CHAR_REGEX = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/;
@@ -33285,13 +33553,25 @@ ${JSON.stringify(lyricsOnly)}`
   var fetchLyrics_exports = {};
   __export(fetchLyrics_exports, {
     default: () => fetchLyrics,
+    isNoLyricsResult: () => isNoLyricsResult,
     lyricsCache: () => lyricsCache
   });
+  function isNoLyricsResult(v) {
+    return typeof v === "object" && v !== null && v.status === "NO_LYRICS";
+  }
   async function fetchLyrics(uri, flush = false) {
+    if (!uri || typeof uri !== "string" || !uri.includes(":")) {
+      const { noLyricsMessage: noLyricsMessage2 } = await Promise.resolve().then(() => (init_ui(), ui_exports));
+      return noLyricsMessage2();
+    }
     resetLyricsUI();
     ClearLyricsPageContainer();
     document.querySelector("#SpicyLyricsPage .ContentBox")?.classList.remove("LyricsHidden");
-    const trackId = uri.split(":")[2];
+    const trackId = uri.split(":")[2] ?? "";
+    if (!trackId) {
+      const { noLyricsMessage: noLyricsMessage2 } = await Promise.resolve().then(() => (init_ui(), ui_exports));
+      return noLyricsMessage2();
+    }
     const localLyrics = await getLyricsFromLocalStorage(trackId);
     if (localLyrics)
       return localLyrics;
@@ -33396,6 +33676,12 @@ ${JSON.stringify(lyricsOnly)}`
     }
   }
   async function extractArtworkColors(imageUrl) {
+    const cached = artworkColorCache.get(imageUrl);
+    if (cached) {
+      artworkColorCache.delete(imageUrl);
+      artworkColorCache.set(imageUrl, cached);
+      return cached;
+    }
     let blob;
     try {
       const response = await fetch(imageUrl, {
@@ -33428,9 +33714,15 @@ ${JSON.stringify(lyricsOnly)}`
     if (colors.length < 2) {
       colors = quantizePixels(data, width, height, true);
     }
+    artworkColorCache.set(imageUrl, colors);
+    if (artworkColorCache.size > ARTWORK_COLOR_CACHE_MAX) {
+      const oldest = artworkColorCache.keys().next().value;
+      if (oldest !== void 0)
+        artworkColorCache.delete(oldest);
+    }
     return colors;
   }
-  var BITMAP_SIZE, QUANTIZE_BITS, RESULT_COUNT, MIN_SATURATION, MIN_LIGHTNESS, MAX_LIGHTNESS, ArtworkColors_default;
+  var BITMAP_SIZE, QUANTIZE_BITS, RESULT_COUNT, MIN_SATURATION, MIN_LIGHTNESS, MAX_LIGHTNESS, ARTWORK_COLOR_CACHE_MAX, artworkColorCache, ArtworkColors_default;
   var init_ArtworkColors = __esm({
     "src/utils/ArtworkColors.ts"() {
       BITMAP_SIZE = 40;
@@ -33439,6 +33731,8 @@ ${JSON.stringify(lyricsOnly)}`
       MIN_SATURATION = 30;
       MIN_LIGHTNESS = 35;
       MAX_LIGHTNESS = 235;
+      ARTWORK_COLOR_CACHE_MAX = 30;
+      artworkColorCache = /* @__PURE__ */ new Map();
       ArtworkColors_default = extractArtworkColors;
     }
   });
@@ -33561,7 +33855,8 @@ ${JSON.stringify(lyricsOnly)}`
       inner.className = "amai-playbar-lyrics-inner";
       lyricsElement.appendChild(inner);
     }
-    inner.innerHTML = html;
+    inner.textContent = "";
+    inner.appendChild(createRubyFragment(html));
     requestAnimationFrame(() => {
       const cw = lyricsElement.clientWidth;
       if (inner.scrollWidth > cw) {
@@ -33774,6 +34069,7 @@ ${JSON.stringify(lyricsOnly)}`
       init_GetProgress();
       init_processing();
       init_conversion();
+      init_sanitize();
       init_Whentil();
       init_lifecycle();
       init_ArtworkColors();
@@ -34047,7 +34343,7 @@ ${JSON.stringify(lyricsOnly)}`
   function devSettings() {
     const settings = new SettingsSection("Amai - Dev Settings", "amai-dev-settings");
     settings.addButton("remove-cached-lyrics", "Remove Cached Lyrics", "Remove Cached Lyrics", () => {
-      lyricsCache.destroy();
+      void lyricsCache.destroy();
       storage_default.set("currentLyricsData", null);
       Spicetify.showNotification("Cache Destroyed Successfully!", false, 2e3);
     });
@@ -34060,13 +34356,13 @@ ${JSON.stringify(lyricsOnly)}`
     const settings = new SettingsSection("Amai - Settings", "amai-settings");
     settings.addInput("gemini-api-key", "Gemini API Key", "", () => {
       storage_default.set("GEMINI_API_KEY", settings.getFieldValue("gemini-api-key"));
-      lyricsCache.destroy();
+      void lyricsCache.destroy();
       storage_default.set("currentLyricsData", null);
       const playerData = Spicetify.Player.data;
       if (!playerData?.item?.uri)
         return;
       const currentUri = playerData.item.uri;
-      fetchLyrics(currentUri).then(ApplyLyrics);
+      fetchLyrics(currentUri).then(ApplyLyrics).catch((e) => console.error("[Amai Lyrics] Refetch after API key change failed:", e));
     });
     settings.addButton("get-gemini-api", "Get your own Gemini API here", "get API Key", () => {
       window.location.href = "https://aistudio.google.com/app/apikey/";
@@ -34076,7 +34372,7 @@ ${JSON.stringify(lyricsOnly)}`
       "Enable Romaji for Japanese Lyrics",
       Defaults_default.enableRomaji,
       () => {
-        lyricsCache.destroy();
+        void lyricsCache.destroy();
         storage_default.set("currentLyricsData", null);
         storage_default.set("enable_romaji", settings.getFieldValue("enableRomaji"));
       }
@@ -34120,7 +34416,7 @@ ${JSON.stringify(lyricsOnly)}`
       () => {
         const selected = settings.getFieldValue("translation-language");
         storage_default.set("translation_language", selected);
-        lyricsCache.destroy();
+        void lyricsCache.destroy();
         storage_default.set("currentLyricsData", null);
       }
     );
@@ -34129,7 +34425,7 @@ ${JSON.stringify(lyricsOnly)}`
       "Disable Translation",
       Defaults_default.disableTranslation,
       () => {
-        lyricsCache.destroy();
+        void lyricsCache.destroy();
         storage_default.set("currentLyricsData", null);
         storage_default.set("disable_translation", settings.getFieldValue("disableTranslation"));
       }
@@ -34211,19 +34507,22 @@ ${JSON.stringify(lyricsOnly)}`
   init_lifecycle();
   var AppInitializer = class {
     static async initializeCore() {
-      const windowRef3 = window;
-      if (!windowRef3.__amaiCoreInitialized) {
+      const windowRef6 = window;
+      if (!windowRef6.__amaiCoreInitialized) {
         lyricsCache.destroy();
-        windowRef3.__amaiCoreInitialized = true;
+        windowRef6.__amaiCoreInitialized = true;
       }
       await this.injectGoogleFonts();
       await this.initializePlatformAndSettings();
     }
     static async injectGoogleFonts() {
+      const href = "https://fonts.googleapis.com/css2?family=Noto+Sans+Display:ital,wght@0,100..900;1,100..900&display=swap";
+      if (document.querySelector(`link[href="${href}"]`))
+        return;
       const fontLink = document.createElement("link");
       fontLink.rel = "preload";
       fontLink.as = "style";
-      fontLink.href = "https://fonts.googleapis.com/css2?family=Noto+Sans+Display:ital,wght@0,100..900;1,100..900&display=swap";
+      fontLink.href = href;
       document.head.appendChild(fontLink);
       fontLink.onload = () => {
         fontLink.rel = "stylesheet";
@@ -34255,15 +34554,16 @@ ${JSON.stringify(lyricsOnly)}`
       lifecycle_default.trackWindow("load", onLoad);
     }
     static setupSkeletonStyles() {
+      if (document.getElementById("amai-skeleton-style"))
+        return;
       const skeletonStyle = document.createElement("style");
-      skeletonStyle.innerHTML = `
-      <style>
+      skeletonStyle.id = "amai-skeleton-style";
+      skeletonStyle.textContent = `
         @keyframes skeleton {
           to {
             background-position-x: 0
           }
         }
-      </style>
     `;
       document.head.appendChild(skeletonStyle);
     }
@@ -34486,33 +34786,28 @@ ${JSON.stringify(lyricsOnly)}`
 
   // src/managers/SongChangeManager.ts
   init_ui();
+  init_debounce2();
   var SongChangeManager = class {
     constructor(buttonManager, backgroundManager) {
       this.latestUri = null;
-      this.bgDebounceTimer = null;
-      this.pageBgDebounceTimer = null;
       this.buttonManager = buttonManager;
       this.backgroundManager = backgroundManager;
-    }
-    debouncedBgApply(coverUrl) {
-      if (this.bgDebounceTimer !== null)
-        clearTimeout(this.bgDebounceTimer);
-      this.bgDebounceTimer = window.setTimeout(() => {
+      this.debouncedBgApply = debounce2((coverUrl) => {
         this.backgroundManager.apply(coverUrl);
-        this.bgDebounceTimer = null;
+      }, 500);
+      this.debouncedPageBgApply = debounce2(() => {
+        void Promise.resolve().then(() => (init_dynamicBackground(), dynamicBackground_exports)).then(
+          ({ default: ApplyDynamicBackground2 }) => {
+            const el = document.querySelector("#SpicyLyricsPage .ContentBox");
+            if (el)
+              ApplyDynamicBackground2(el);
+          }
+        );
       }, 500);
     }
-    async debouncedPageBgApply() {
-      if (this.pageBgDebounceTimer !== null)
-        clearTimeout(this.pageBgDebounceTimer);
-      return new Promise((resolve) => {
-        this.pageBgDebounceTimer = window.setTimeout(async () => {
-          const { default: ApplyDynamicBackground2 } = await Promise.resolve().then(() => (init_dynamicBackground(), dynamicBackground_exports));
-          ApplyDynamicBackground2(document.querySelector("#SpicyLyricsPage .ContentBox"));
-          this.pageBgDebounceTimer = null;
-          resolve();
-        }, 500);
-      });
+    dispose() {
+      this.debouncedBgApply.cancel();
+      this.debouncedPageBgApply.cancel();
     }
     async handleSongChange(event) {
       let attempts = 0;
@@ -34533,7 +34828,7 @@ ${JSON.stringify(lyricsOnly)}`
         if (this.latestUri === currentUri) {
           ApplyLyrics2(lyrics);
         }
-      });
+      }).catch((e) => console.error("[Amai Lyrics] SongChange fetch failed:", e));
       this.buttonManager.updateRegistration();
       this.debouncedBgApply(Spicetify.Player.data?.item?.metadata?.image_url);
       if (Spicetify.Player.data.item?.type === "track") {
@@ -34552,6 +34847,7 @@ ${JSON.stringify(lyricsOnly)}`
 
   // src/components/DynamicBG/NowPlayingBarBackground.ts
   var import_fastdom7 = __toESM(require_fastdom());
+  init_utils();
   var NowPlayingBarBackground = class {
     constructor() {
       this.cached = {
@@ -34561,12 +34857,10 @@ ${JSON.stringify(lyricsOnly)}`
       };
     }
     apply(coverUrl) {
-      if (!coverUrl)
+      const normalized = normalizeImageUrl(coverUrl);
+      if (!normalized)
         return;
-      if (coverUrl.startsWith("spotify:image:")) {
-        const imageId = coverUrl.replace("spotify:image:", "");
-        coverUrl = `https://i.scdn.co/image/${imageId}`;
-      }
+      coverUrl = normalized;
       try {
         if (coverUrl === this.cached.lastImgUrl && this.cached.dynamicBg)
           return;
@@ -34607,21 +34901,16 @@ ${JSON.stringify(lyricsOnly)}`
       this.cached.nowPlayingBar = null;
     }
     createNewBackground(nowPlayingBar, coverUrl) {
-      this.setRandomCSSVariables();
+      setRandomCSSVariables();
       const dynamicBackground = document.createElement("div");
       dynamicBackground.className = "sweet-dynamic-bg";
       dynamicBackground.setAttribute("current-img", coverUrl);
       const placeholder = document.createElement("div");
       placeholder.className = "placeholder";
       dynamicBackground.appendChild(placeholder);
-      const imgA = this.createBackgroundImage(
-        "bg-img-a",
-        "bg-image primary active",
-        coverUrl,
-        "eager"
-      );
+      const imgA = createBackgroundImage("bg-img-a", "bg-image primary active", coverUrl, "eager");
       dynamicBackground.appendChild(imgA);
-      const imgB = this.createBackgroundImage("bg-img-b", "bg-image secondary", "", "lazy");
+      const imgB = createBackgroundImage("bg-img-b", "bg-image secondary", "", "lazy");
       dynamicBackground.appendChild(imgB);
       nowPlayingBar.classList.add("sweet-dynamic-bg-in-this");
       nowPlayingBar.appendChild(dynamicBackground);
@@ -34636,39 +34925,24 @@ ${JSON.stringify(lyricsOnly)}`
       const { imgA, imgB } = images;
       const activeImg = imgA.classList.contains("active") ? imgA : imgB;
       const inactiveImg = activeImg === imgA ? imgB : imgA;
+      inactiveImg.onload = null;
+      inactiveImg.onerror = null;
       inactiveImg.src = coverUrl;
       inactiveImg.onload = () => {
+        if (inactiveImg.src !== coverUrl)
+          return;
         requestAnimationFrame(() => {
           activeImg.classList.remove("active");
           inactiveImg.classList.add("active");
           this.cached.dynamicBg?.setAttribute("current-img", coverUrl);
         });
       };
+      inactiveImg.onerror = () => {
+        console.error("Error loading new background image:", coverUrl);
+      };
     }
-    createBackgroundImage(id, className, src, loading) {
-      const img = document.createElement("img");
-      img.id = id;
-      img.className = className;
-      img.decoding = "async";
-      img.loading = loading;
-      if (src)
-        img.src = src;
-      return img;
-    }
-    setRandomCSSVariables() {
-      const rotationPrimary = Math.floor(Math.random() * 360);
-      const rotationSecondary = Math.floor(Math.random() * 360);
-      document.documentElement.style.setProperty("--bg-rotation-primary", `${rotationPrimary}deg`);
-      document.documentElement.style.setProperty(
-        "--bg-rotation-secondary",
-        `${rotationSecondary}deg`
-      );
-      const scalePrimary = 0.9 + Math.random() * 0.3;
-      const scaleSecondary = 0.9 + Math.random() * 0.3;
-      document.documentElement.style.setProperty("--bg-scale-primary", `${scalePrimary}`);
-      document.documentElement.style.setProperty("--bg-scale-secondary", `${scaleSecondary}`);
-      const hueShift = Math.floor(Math.random() * 30);
-      document.documentElement.style.setProperty("--bg-hue-shift", `${hueShift}deg`);
+    destroy() {
+      this.clearCache();
     }
   };
 
@@ -34802,9 +35076,9 @@ ${JSON.stringify(lyricsOnly)}`
     lifecycle_default.track(() => clearInterval(timer));
   }
   function installBlankToastSuppressor() {
-    const windowRef3 = window;
-    if (!windowRef3.__amaiToastInstalled) {
-      windowRef3.__amaiToastInstalled = true;
+    const windowRef6 = window;
+    if (!windowRef6.__amaiToastInstalled) {
+      windowRef6.__amaiToastInstalled = true;
       overrideShowNotification();
       if (!overrideSnackbar()) {
         let tries = 0;
@@ -34829,14 +35103,17 @@ ${JSON.stringify(lyricsOnly)}`
   async function initializeAmaiLyrics(buttonManager) {
     const [{ requestPositionSync: requestPositionSync2 }] = await Promise.all([Promise.resolve().then(() => (init_GetProgress(), GetProgress_exports))]);
     const { ScrollToActiveLine: ScrollToActiveLine2 } = await Promise.resolve().then(() => (init_ScrollToActiveLine(), ScrollToActiveLine_exports));
-    Whentil_default.When(
+    const playbackWhen = Whentil_default.When(
       () => Spicetify.Platform.PlaybackAPI,
       () => {
         requestPositionSync2();
       }
     );
+    lifecycle_default.trackWhentil(playbackWhen);
     const backgroundManager = new NowPlayingBarBackground();
     const songChangeManager = new SongChangeManager(buttonManager, backgroundManager);
+    lifecycle_default.trackCallback(() => songChangeManager.dispose());
+    lifecycle_default.trackCallback(() => backgroundManager.destroy());
     new PageManager(buttonManager);
     const dynamicBgInterval = new IntervalManager(INTERVALS.DYNAMIC_BG_UPDATE, () => {
       if (!document.querySelector(".Root__right-sidebar aside.NowPlayingView"))
@@ -34859,7 +35136,7 @@ ${JSON.stringify(lyricsOnly)}`
     if (currentUri) {
       const { default: fetchLyrics2 } = await Promise.resolve().then(() => (init_fetchLyrics(), fetchLyrics_exports));
       const { default: ApplyLyrics2 } = await Promise.resolve().then(() => (init_Applyer(), Applyer_exports));
-      fetchLyrics2(currentUri).then(ApplyLyrics2);
+      fetchLyrics2(currentUri).then(ApplyLyrics2).catch((e) => console.error("[Amai Lyrics] Failed to fetch initial lyrics:", e));
     }
     const onOnline = async () => {
       storage_default.set("lastFetchedUri", null);
@@ -34867,7 +35144,7 @@ ${JSON.stringify(lyricsOnly)}`
       if (currentUri2) {
         const { default: fetchLyrics2 } = await Promise.resolve().then(() => (init_fetchLyrics(), fetchLyrics_exports));
         const { default: ApplyLyrics2 } = await Promise.resolve().then(() => (init_Applyer(), Applyer_exports));
-        fetchLyrics2(currentUri2).then(ApplyLyrics2);
+        fetchLyrics2(currentUri2).then(ApplyLyrics2).catch((e) => console.error("[Amai Lyrics] Failed to re-fetch on online:", e));
       }
     };
     lifecycle_default.trackWindow("online", onOnline);
@@ -34877,6 +35154,9 @@ ${JSON.stringify(lyricsOnly)}`
     );
     scrollingInterval.Start();
     lifecycle_default.trackInterval(scrollingInterval);
+    const { ensureLyricsRenderLoop: ensureLyricsRenderLoop2, destroyLyricsRenderLoop: destroyLyricsRenderLoop2 } = await Promise.resolve().then(() => (init_lyrics(), lyrics_exports));
+    ensureLyricsRenderLoop2();
+    lifecycle_default.trackCallback(() => destroyLyricsRenderLoop2());
     SpotifyPlayer.IsPlaying = IsPlaying();
     EventManager.initialize(buttonManager.getButton());
     const { InitializePlaybarLyrics: InitializePlaybarLyrics2 } = await Promise.resolve().then(() => (init_PlaybarLyrics(), PlaybarLyrics_exports));
@@ -34926,7 +35206,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa4889/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22840-yeW9NolhNqZ2/1a0424c3e409/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -34952,7 +35232,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa49fa/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22840-yeW9NolhNqZ2/1a0424c3e57a/ProcessingIndicator.css */
 #SpicyLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -35032,7 +35312,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa4220/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22840-yeW9NolhNqZ2/1a0424c3dd70/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -35181,7 +35461,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa44d1/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22840-yeW9NolhNqZ2/1a0424c3e001/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -35389,7 +35669,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa4532/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22840-yeW9NolhNqZ2/1a0424c3e072/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -35990,7 +36270,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa45f3/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22840-yeW9NolhNqZ2/1a0424c3e133/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -36169,7 +36449,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa4654/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22840-yeW9NolhNqZ2/1a0424c3e184/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -36442,7 +36722,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa46c5/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22840-yeW9NolhNqZ2/1a0424c3e1f5/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -36741,7 +37021,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa4706/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22840-yeW9NolhNqZ2/1a0424c3e246/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -36763,7 +37043,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa4737/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22840-yeW9NolhNqZ2/1a0424c3e277/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -36790,7 +37070,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa4768/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22840-yeW9NolhNqZ2/1a0424c3e298/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
