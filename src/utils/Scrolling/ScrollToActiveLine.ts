@@ -6,6 +6,7 @@ import SimpleBar from 'simplebar';
 import fastdom from 'fastdom';
 
 let lastLine: HTMLElement | null = null;
+let activeScrollController: { cancel: () => void } | null = null;
 
 export function ScrollToActiveLine(ScrollSimplebar: SimpleBar) {
   if (!SpotifyPlayer.IsPlaying) return;
@@ -36,6 +37,12 @@ export function ScrollToActiveLine(ScrollSimplebar: SimpleBar) {
       // Already scrolled to this exact line -> skip all DOM work this tick
       if (lastLine === LineElem) return;
 
+      // Cancel any in-flight scroll animation so seeks don't stack competing rAF loops.
+      if (activeScrollController) {
+        activeScrollController.cancel();
+        activeScrollController = null;
+      }
+
       // Use closure variables to pass data from measure to mutate
       fastdom.measure(() => {
         const container = ScrollSimplebar?.getScrollElement() as HTMLElement;
@@ -53,7 +60,7 @@ export function ScrollToActiveLine(ScrollSimplebar: SimpleBar) {
 
           lastLine = LineElem;
 
-          scrollIntoCenterView(container, LineElem, 270, -50);
+          activeScrollController = scrollIntoCenterView(container, LineElem, 270, -50);
           LineElem.classList.add('Active', 'OverridenByScroller');
         });
       });
@@ -62,5 +69,9 @@ export function ScrollToActiveLine(ScrollSimplebar: SimpleBar) {
 }
 
 export function ResetLastLine() {
+  if (activeScrollController) {
+    activeScrollController.cancel();
+    activeScrollController = null;
+  }
   lastLine = null;
 }

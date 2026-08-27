@@ -18,21 +18,54 @@ const Fullscreen = {
   },
 };
 
-// Keep IsOpen in sync with actual fullscreen state
-document.addEventListener('fullscreenchange', () => {
-  const wasFullscreen = Fullscreen.IsOpen;
-  const isNowFullscreen = !!document.fullscreenElement;
+// Keep IsOpen in sync with actual fullscreen state. Guarded to avoid
+// duplicate listeners on Spicetify watch re-injection (each re-eval would
+// otherwise stack another document listener).
+const windowRef = window as unknown as {
+  __amaiFullscreenHandlers?: {
+    onFullscreenChange: () => void;
+    onKeyDown: (e: KeyboardEvent) => void;
+  };
+};
 
-  Fullscreen.IsOpen = isNowFullscreen;
+function ensureGlobalFullscreenListeners(): void {
+  if (windowRef.__amaiFullscreenHandlers) return;
 
-  // If browser exited fullscreen but our state didn't update, call Close()
-  if (wasFullscreen && !isNowFullscreen) {
-    Fullscreen.Close();
+  const onFullscreenChange = () => {
+    const wasFullscreen = Fullscreen.IsOpen;
+    const isNowFullscreen = !!document.fullscreenElement;
+
+    Fullscreen.IsOpen = isNowFullscreen;
+
+    // If browser exited fullscreen but our state didn't update, call Close()
+    if (wasFullscreen && !isNowFullscreen) {
+      Fullscreen.Close();
+    }
+  };
+
+  const onKeyDown = (e: KeyboardEvent) => Fullscreen.handleEscapeKey(e as unknown as KeyboardEvent);
+
+  document.addEventListener('fullscreenchange', onFullscreenChange);
+  document.addEventListener('keydown', onKeyDown);
+  windowRef.__amaiFullscreenHandlers = { onFullscreenChange, onKeyDown };
+}
+
+ensureGlobalFullscreenListeners();
+
+export function destroyFullscreenGlobalListeners(): void {
+  const h = windowRef.__amaiFullscreenHandlers;
+  if (!h) return;
+  document.removeEventListener('fullscreenchange', h.onFullscreenChange);
+  document.removeEventListener('keydown', h.onKeyDown);
+  delete windowRef.__amaiFullscreenHandlers;
+  // Destroy hover animators so their rAF loops don't retain closed fullscreen state.
+  try {
+    MediaBox_Data.Animators.brightness.Destroy();
+    MediaBox_Data.Animators.blur.Destroy();
+  } catch {
+    /* already destroyed */
   }
-});
-
-// Add keyboard shortcut to exit fullscreen mode when Escape key is pressed
-document.addEventListener('keydown', Fullscreen.handleEscapeKey.bind(Fullscreen));
+}
 
 const MediaBox_Data = {
   Eventified: false,

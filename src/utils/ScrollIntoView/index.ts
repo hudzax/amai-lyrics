@@ -29,8 +29,12 @@ export function smoothScrollIntoView(options: ScrollIntoViewOptions): ScrollCont
     axis = 'vertical',
   } = options;
 
-  // Create a controller object that will be returned immediately
-  let cancelAnimation = () => {};
+  // Create a controller object that will be returned immediately.
+  // Track cancellation so detached containers don't keep animating.
+  let cancelled = false;
+  let cancelAnimation = () => {
+    cancelled = true;
+  };
   const controller: ScrollController = {
     cancel: () => cancelAnimation(),
   };
@@ -72,17 +76,23 @@ export function smoothScrollIntoView(options: ScrollIntoViewOptions): ScrollCont
       resolve({ startScroll, distance });
     });
   }).then(({ startScroll, distance }) => {
+    if (cancelled) return;
+    // If container detached before measure->mutate handoff, abort.
+    if (!container.isConnected) return;
     fastdom.mutate(() => {
+      if (cancelled || !container.isConnected) return;
       const startTime = performance.now();
       let animationFrameId: number;
 
       function animate(currentTime: number) {
+        if (cancelled || !container.isConnected) return;
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
         const easedProgress = cubicEaseInOut(progress);
         const newScroll = startScroll + distance * easedProgress;
 
         fastdom.mutate(() => {
+          if (cancelled || !container.isConnected) return;
           if (axis === 'vertical') {
             container.scrollTop = newScroll;
           } else {
@@ -98,6 +108,7 @@ export function smoothScrollIntoView(options: ScrollIntoViewOptions): ScrollCont
       animationFrameId = requestAnimationFrame(animate);
 
       cancelAnimation = () => {
+        cancelled = true;
         cancelAnimationFrame(animationFrameId);
       };
     });

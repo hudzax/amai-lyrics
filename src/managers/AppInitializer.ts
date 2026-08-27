@@ -17,11 +17,15 @@ export class AppInitializer {
   }
 
   private static async injectGoogleFonts() {
+    const href =
+      'https://fonts.googleapis.com/css2?family=Noto+Sans+Display:ital,wght@0,100..900;1,100..900&display=swap';
+    // Dedup: hot-reload re-runs main() → don't pile identical <link>s in <head>.
+    if (document.querySelector(`link[href="${href}"]`)) return;
+
     const fontLink = document.createElement('link');
     fontLink.rel = 'preload';
     fontLink.as = 'style';
-    fontLink.href =
-      'https://fonts.googleapis.com/css2?family=Noto+Sans+Display:ital,wght@0,100..900;1,100..900&display=swap';
+    fontLink.href = href;
     document.head.appendChild(fontLink);
 
     fontLink.onload = () => {
@@ -58,7 +62,10 @@ export class AppInitializer {
   }
 
   public static setupSkeletonStyles() {
+    // Dedup: same keyframe name re-injected on every hot-reload would grow <head> forever.
+    if (document.getElementById('amai-skeleton-style')) return;
     const skeletonStyle = document.createElement('style');
+    skeletonStyle.id = 'amai-skeleton-style';
     skeletonStyle.textContent = `
         @keyframes skeleton {
           to {

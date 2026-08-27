@@ -59,8 +59,13 @@ const updateDynamicBackground = debounce((bgContainer: HTMLDivElement, newImageU
 
   if (inactiveImg.src === newImageUrl) return;
 
+  // Null out previous handlers so a rapid skip doesn't fire stale onload for the wrong URL.
+  inactiveImg.onload = null;
+  inactiveImg.onerror = null;
   inactiveImg.src = newImageUrl;
   inactiveImg.onload = () => {
+    // Ignore if src changed since this load was initiated (race from fast skip).
+    if (inactiveImg.src !== newImageUrl) return;
     requestAnimationFrame(() => {
       activeImg.classList.remove('active');
       inactiveImg.classList.add('active');

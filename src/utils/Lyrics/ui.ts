@@ -10,6 +10,18 @@ import { showRefreshButton } from '../../components/Pages/pageButtons';
 
 let ContainerShowLoaderTimeout: number | null = null;
 
+/** Called on teardown to avoid orphan timeout holding detached DOM. */
+export function clearLyricsUiTimeouts(): void {
+  if (ContainerShowLoaderTimeout !== null) {
+    clearTimeout(ContainerShowLoaderTimeout);
+    ContainerShowLoaderTimeout = null;
+  }
+  if (window.ProcessingIndicatorTimeout) {
+    clearTimeout(window.ProcessingIndicatorTimeout);
+    window.ProcessingIndicatorTimeout = null;
+  }
+}
+
 /**
  * Resets the lyrics UI
  */

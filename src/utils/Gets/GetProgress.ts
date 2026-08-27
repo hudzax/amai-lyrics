@@ -18,16 +18,39 @@ interface SpotifyPlatformType {
 }
 
 const syncTimings = [0.05, 0.1, 0.15, 0.75];
-let canSyncNonLocalTimestamp = Spicetify.Player.isPlaying() ? syncTimings.length : 0;
 
-// Reusable synced position object to reduce allocations
-const syncedPosition: {
-  StartedSyncAt: number;
-  Position: number;
-} = {
-  StartedSyncAt: 0,
-  Position: 0,
+// Hot-reload safe state: Spicetify re-injects the script and re-evaluates modules,
+// creating a *new* copy of every module-scoped variable. Without window persistence,
+// the old runLoop keeps polling with stale closures while the new module spawns a
+// second loop — doubling RPC/CPU each reload. Backing mutable state on window
+// keeps a single shared loop across reloads.
+type GetProgressState = {
+  canSyncNonLocalTimestamp: number;
+  syncedPosition: { StartedSyncAt: number; Position: number };
+  activePositionClients: number;
+  syncNow: boolean;
+  loopScheduled: boolean;
+  cachedPosition: number | null;
+  cachedPositionTime: number;
+  cachedIsPlaying: boolean | null;
 };
+
+const windowRef = window as unknown as { __amaiGetProgressState?: GetProgressState };
+
+const state: GetProgressState =
+  windowRef.__amaiGetProgressState ??
+  (windowRef.__amaiGetProgressState = {
+    canSyncNonLocalTimestamp: Spicetify.Player.isPlaying() ? syncTimings.length : 0,
+    syncedPosition: { StartedSyncAt: 0, Position: 0 },
+    activePositionClients: 0,
+    syncNow: false,
+    loopScheduled: false,
+    cachedPosition: null,
+    cachedPositionTime: 0,
+    cachedIsPlaying: null,
+  });
+
+const syncedPosition = state.syncedPosition;
 
 async function getLocalPosition(startedAt: number, SpotifyPlatform: SpotifyPlatformType) {
   const { position } = await SpotifyPlatform.PlayerAPI._contextPlayer.getPositionState({});
@@ -38,10 +61,10 @@ async function getLocalPosition(startedAt: number, SpotifyPlatform: SpotifyPlatf
 }
 
 async function getNonLocalPosition(startedAt: number, SpotifyPlatform: SpotifyPlatformType) {
-  if (canSyncNonLocalTimestamp > 0) {
+  if (state.canSyncNonLocalTimestamp > 0) {
     await SpotifyPlatform.PlayerAPI._contextPlayer.resume({});
   }
-  canSyncNonLocalTimestamp = Math.max(0, canSyncNonLocalTimestamp - 1);
+  state.canSyncNonLocalTimestamp = Math.max(0, state.canSyncNonLocalTimestamp - 1);
   return {
     StartedSyncAt: startedAt,
     Position:
@@ -70,9 +93,7 @@ const ACTIVE_SYNC_MS = 250;
 const IDLE_HEARTBEAT_MS = 1000;
 
 // Reference-counted consumers that need an accurate playback position.
-let activePositionClients = 0;
-let syncNow = false;
-let loopScheduled = false;
+// All mutable scheduling flags live on `state` so re-evaluated modules share them.
 
 /**
  * Registers a consumer of the playback position and returns a release function.
@@ -82,21 +103,21 @@ let loopScheduled = false;
  * frame uses a fresh anchor.
  */
 export function requestPositionTracking(): () => void {
-  activePositionClients++;
-  if (activePositionClients === 1) {
-    syncNow = true;
+  state.activePositionClients++;
+  if (state.activePositionClients === 1) {
+    state.syncNow = true;
     scheduleLoop(0);
   }
   return () => {
-    activePositionClients = Math.max(0, activePositionClients - 1);
+    state.activePositionClients = Math.max(0, state.activePositionClients - 1);
   };
 }
 
 function scheduleLoop(delay: number): void {
-  if (loopScheduled) return;
-  loopScheduled = true;
+  if (state.loopScheduled) return;
+  state.loopScheduled = true;
   window.setTimeout(() => {
-    loopScheduled = false;
+    state.loopScheduled = false;
     void runLoop();
   }, delay);
 }
@@ -113,7 +134,10 @@ async function doSync(): Promise<void> {
     pos = await getNonLocalPosition(startedAt, SpotifyPlatform);
   }
 
-  // Update the existing object to reduce allocations
+  // Update the shared object to reduce allocations and keep hot-reload clones in sync.
+  state.syncedPosition.StartedSyncAt = pos.StartedSyncAt;
+  state.syncedPosition.Position = pos.Position;
+  // Also sync local alias if state was swapped.
   syncedPosition.StartedSyncAt = pos.StartedSyncAt;
   syncedPosition.Position = pos.Position;
 }
@@ -124,18 +148,18 @@ async function runLoop(): Promise<void> {
 
     // Only do the (potentially RPC-heavy) anchor sync while something actually
     // needs a fresh position. Otherwise stay idle and do zero RPC work.
-    if (isPlaying && (activePositionClients > 0 || syncNow)) {
-      syncNow = false;
+    if (isPlaying && (state.activePositionClients > 0 || state.syncNow)) {
+      state.syncNow = false;
       await doSync();
     } else {
-      syncNow = false;
+      state.syncNow = false;
     }
 
     const nowPlaying = Spicetify.Player.isPlaying();
     // Paused: stay in a cheap idle poll, no getPositionState/resume calls.
     if (!nowPlaying) {
       scheduleLoop(PAUSED_POLL_MS);
-    } else if (activePositionClients > 0) {
+    } else if (state.activePositionClients > 0) {
       scheduleLoop(ACTIVE_SYNC_MS);
     } else {
       scheduleLoop(IDLE_HEARTBEAT_MS);
@@ -168,21 +192,23 @@ export function reanchorPosition(): void {
   const platform = Spicetify.Platform as unknown as {
     PlayerAPI?: { _state?: { positionAsOfTimestamp?: number; timestamp?: number } };
   };
-  const state = platform?.PlayerAPI?._state;
-  if (!state) return;
+  const platformState = platform?.PlayerAPI?._state;
+  if (!platformState) return;
   const positionAsOfTimestamp =
-    typeof state.positionAsOfTimestamp === 'number' ? state.positionAsOfTimestamp : 0;
-  const timestamp = typeof state.timestamp === 'number' ? state.timestamp : Date.now();
-  syncedPosition.StartedSyncAt = performance.now();
-  syncedPosition.Position = positionAsOfTimestamp + (Date.now() - timestamp);
+    typeof platformState.positionAsOfTimestamp === 'number'
+      ? platformState.positionAsOfTimestamp
+      : 0;
+  const timestamp =
+    typeof platformState.timestamp === 'number' ? platformState.timestamp : Date.now();
+  state.syncedPosition.StartedSyncAt = performance.now();
+  state.syncedPosition.Position = positionAsOfTimestamp + (Date.now() - timestamp);
+  syncedPosition.StartedSyncAt = state.syncedPosition.StartedSyncAt;
+  syncedPosition.Position = state.syncedPosition.Position;
 }
 
 // Per-frame position cache — all per-frame loops (render, scroll, playbar)
 // within the same rAF tick share one position value instead of each calling
-// GetProgress independently.
-let cachedPosition: number | null = null;
-let cachedPositionTime = 0;
-let cachedIsPlaying: boolean | null = null;
+// GetProgress independently. Backed on window so hot-reload shares the entry.
 const POSITION_CACHE_TTL = 15; // ms (~1 frame at 60fps)
 
 // Function to get the current progress
@@ -190,15 +216,15 @@ export default function GetProgress() {
   const now = performance.now();
   const isPlaying = Spicetify.Player.isPlaying();
   if (
-    cachedPosition !== null &&
-    cachedIsPlaying === isPlaying &&
-    now - cachedPositionTime < POSITION_CACHE_TTL
+    state.cachedPosition !== null &&
+    state.cachedIsPlaying === isPlaying &&
+    now - state.cachedPositionTime < POSITION_CACHE_TTL
   ) {
-    return cachedPosition;
+    return state.cachedPosition;
   }
 
   // Fast path: no sync data, fallback
-  if (!syncedPosition.StartedSyncAt && !syncedPosition.Position) {
+  if (!state.syncedPosition.StartedSyncAt && !state.syncedPosition.Position) {
     if (SpotifyPlayer?._DEPRECATED_?.GetTrackPosition) {
       return SpotifyPlayer._DEPRECATED_.GetTrackPosition();
     }
@@ -209,8 +235,8 @@ export default function GetProgress() {
   const platform = Spicetify.Platform;
   const isLocal = platform.PlaybackAPI._isLocal;
 
-  const startedAt = syncedPosition.StartedSyncAt;
-  const basePosition = syncedPosition.Position;
+  const startedAt = state.syncedPosition.StartedSyncAt;
+  const basePosition = state.syncedPosition.Position;
   const delta = performance.now() - startedAt;
 
   let result: number;
@@ -221,9 +247,9 @@ export default function GetProgress() {
     result = isLocal ? calculated : calculated + Global.NonLocalTimeOffset;
   }
 
-  cachedPosition = result;
-  cachedPositionTime = now;
-  cachedIsPlaying = isPlaying;
+  state.cachedPosition = result;
+  state.cachedPositionTime = now;
+  state.cachedIsPlaying = isPlaying;
   return result;
 }
 

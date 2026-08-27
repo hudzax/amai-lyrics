@@ -114,11 +114,15 @@ export class NowPlayingBarBackground {
     const activeImg = imgA.classList.contains('active') ? imgA : imgB;
     const inactiveImg = activeImg === imgA ? imgB : imgA;
 
+    // Clear previous handlers so fast skips don't fire stale onloads.
+    inactiveImg.onload = null;
+    inactiveImg.onerror = null;
     // Update the inactive image source
     inactiveImg.src = coverUrl;
 
     // Once inactive image loads, start crossfade
     inactiveImg.onload = () => {
+      if (inactiveImg.src !== coverUrl) return;
       requestAnimationFrame(() => {
         // Swap active classes
         activeImg.classList.remove('active');
@@ -127,6 +131,9 @@ export class NowPlayingBarBackground {
         // Update container attribute
         this.cached.dynamicBg?.setAttribute('current-img', coverUrl);
       });
+    };
+    inactiveImg.onerror = () => {
+      console.error('Error loading new background image:', coverUrl);
     };
   }
 

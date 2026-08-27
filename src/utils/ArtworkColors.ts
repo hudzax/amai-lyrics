@@ -141,18 +141,32 @@ function readBitmapPixels(
   }
 }
 
+// Bounded LRU cache — artwork color extraction is fairly heavy (fetch + decode
+// + canvas read). Without caching, the same album fetched via playbar + NowBar
+// + dynamic-background would be decoded 3× per skip.
+const ARTWORK_COLOR_CACHE_MAX = 30;
+const artworkColorCache = new Map<string, string[]>();
+
 /**
  * Extracts dominant colors from an artwork image URL.
  *
  * Fetches the image as a Blob with explicit `mode: 'cors'`, decodes it at a
  * tiny size (40×40) via `createImageBitmap`, then reads RGBA data from a
  * same-origin canvas (the Blob URL is treated as same-origin so there are no
- * CORS taint issues).
+ * CORS taint issues). Results are LRU-cached so repeated requests for the
+ * same URL are instant and allocation-free.
  *
  * @param imageUrl - HTTP(S) URL of the album/artwork image
  * @returns Promise resolving to an array of hex colour strings (e.g. "#aabbcc")
  */
 export async function extractArtworkColors(imageUrl: string): Promise<string[]> {
+  const cached = artworkColorCache.get(imageUrl);
+  if (cached) {
+    // Promote for LRU ordering
+    artworkColorCache.delete(imageUrl);
+    artworkColorCache.set(imageUrl, cached);
+    return cached;
+  }
   let blob: Blob;
   try {
     const response = await fetch(imageUrl, {
@@ -191,6 +205,13 @@ export async function extractArtworkColors(imageUrl: string): Promise<string[]> 
   // If we didn't get enough colours, retry with loose filtering
   if (colors.length < 2) {
     colors = quantizePixels(data, width, height, true);
+  }
+
+  // Cache result (LRU eviction)
+  artworkColorCache.set(imageUrl, colors);
+  if (artworkColorCache.size > ARTWORK_COLOR_CACHE_MAX) {
+    const oldest = artworkColorCache.keys().next().value as string | undefined;
+    if (oldest !== undefined) artworkColorCache.delete(oldest);
   }
 
   return colors;

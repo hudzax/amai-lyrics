@@ -12,10 +12,19 @@ let isDragging = false;
 
 const ElementEventQuery = '#SpicyLyricsPage .ContentBox .LyricsContainer';
 
+// Stored handler refs so removeEventListener actually matches addEventListener.
+let onMouseEnter: (() => void) | null = null;
+let onMouseLeave: (() => void) | null = null;
+let onDragStart: (() => void) | null = null;
+let onDragEnd: (() => void) | null = null;
+let boundContainer: HTMLElement | null = null;
+let boundLyricsContainer: HTMLElement | null = null;
+
 export function MountScrollSimplebar() {
   const LyricsContainer = document.querySelector<HTMLElement>(
     '#SpicyLyricsPage .LyricsContainer .LyricsContent',
   );
+  if (!LyricsContainer) return;
 
   LyricsContainer.style.height = `${GetElementHeight(LyricsContainer)}px`;
 
@@ -23,43 +32,61 @@ export function MountScrollSimplebar() {
 
   const container = document.querySelector<HTMLElement>(ElementEventQuery);
 
-  container?.addEventListener('mouseenter', () => {
+  // Create stable handler refs so they can be removed in ClearScrollSimplebar.
+  onMouseEnter = () => {
     LyricsPageMouseEnter();
     updateScrollbarVisibility();
-  });
-
-  container?.addEventListener('mouseleave', () => {
+  };
+  onMouseLeave = () => {
     LyricsPageMouseLeave();
     updateScrollbarVisibility();
-  });
-
-  // Listen for SimpleBar drag events
-  LyricsContainer.addEventListener('simplebar-dragstart', () => {
+  };
+  onDragStart = () => {
     isDragging = true;
     updateScrollbarVisibility();
-  });
-
-  LyricsContainer.addEventListener('simplebar-dragend', () => {
+  };
+  onDragEnd = () => {
     isDragging = false;
     updateScrollbarVisibility();
-  });
+  };
+
+  boundContainer = container;
+  boundLyricsContainer = LyricsContainer;
+
+  container?.addEventListener('mouseenter', onMouseEnter);
+  container?.addEventListener('mouseleave', onMouseLeave);
+
+  // Listen for SimpleBar drag events
+  LyricsContainer.addEventListener('simplebar-dragstart', onDragStart);
+  LyricsContainer.addEventListener('simplebar-dragend', onDragEnd);
 }
 
 export function ClearScrollSimplebar() {
-  const LyricsContainer = document.querySelector<HTMLElement>(
-    '#SpicyLyricsPage .LyricsContainer .LyricsContent',
-  );
-  const container = document.querySelector<HTMLElement>(ElementEventQuery);
+  // Use bound element refs when available (elements may already be detached
+  // from DOM, so re-querying can miss them and leave listeners on detached
+  // nodes).
+  const LyricsContainer =
+    boundLyricsContainer ??
+    document.querySelector<HTMLElement>('#SpicyLyricsPage .LyricsContainer .LyricsContent');
+  const container = boundContainer ?? document.querySelector<HTMLElement>(ElementEventQuery);
 
   ScrollSimplebar?.unMount();
   ScrollSimplebar = null;
   SetIsMouseInLyricsPage(false);
 
-  container?.removeEventListener('mouseenter', LyricsPageMouseEnter);
-  container?.removeEventListener('mouseleave', LyricsPageMouseLeave);
+  if (container && onMouseEnter) container.removeEventListener('mouseenter', onMouseEnter);
+  if (container && onMouseLeave) container.removeEventListener('mouseleave', onMouseLeave);
+  if (LyricsContainer && onDragStart)
+    LyricsContainer.removeEventListener('simplebar-dragstart', onDragStart);
+  if (LyricsContainer && onDragEnd)
+    LyricsContainer.removeEventListener('simplebar-dragend', onDragEnd);
 
-  LyricsContainer?.removeEventListener('simplebar-dragstart', () => {});
-  LyricsContainer?.removeEventListener('simplebar-dragend', () => {});
+  onMouseEnter = null;
+  onMouseLeave = null;
+  onDragStart = null;
+  onDragEnd = null;
+  boundContainer = null;
+  boundLyricsContainer = null;
 }
 
 export function RecalculateScrollSimplebar() {

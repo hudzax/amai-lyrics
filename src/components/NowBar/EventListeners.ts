@@ -16,9 +16,17 @@ import { PlaybackPlayPauseEvent } from './types';
 
 // Tracked subscriptions created per NowBar open so they can be removed on
 // close (and on plugin teardown) instead of accumulating on every open.
+// Window-persisted so hot-reload doesn't double-register teardown callbacks.
+const windowRef = window as unknown as {
+  __amaiNowBarState?: {
+    teardownTracked: boolean;
+  };
+};
+const sharedNowBarState = (windowRef.__amaiNowBarState ??= { teardownTracked: false });
+
 let nowBarListenerIds: number[] = [];
 let nowBarInitWhen: ReturnType<typeof Whentil.When> | null = null;
-let nowBarTeardownTracked = false;
+let nowBarTeardownTracked = sharedNowBarState.teardownTracked;
 
 // Registers the fullscreen NowBar (custom progress bar) as a position consumer
 // so the sync loop only does RPC work while it's actually on screen.
@@ -117,6 +125,7 @@ export function setupEventListeners() {
   // grow the registry with redundant no-op removals.
   if (!nowBarTeardownTracked) {
     nowBarTeardownTracked = true;
+    sharedNowBarState.teardownTracked = true;
     lifecycle.trackCallback(teardownNowBarListeners);
   }
 }

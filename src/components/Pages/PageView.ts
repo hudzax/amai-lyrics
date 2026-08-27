@@ -4,8 +4,9 @@ import '../../css/Loaders/ProcessingIndicator.css';
 import { removeLinesEvListener } from '../../utils/Lyrics/lyrics';
 import ApplyDynamicBackground from '../DynamicBG/dynamicBackground';
 import Defaults from '../Global/Defaults';
-import { ScrollSimplebar } from '../../utils/Scrolling/Simplebar/ScrollSimplebar';
+import { ClearScrollSimplebar } from '../../utils/Scrolling/Simplebar/ScrollSimplebar';
 import ApplyLyrics from '../../utils/Lyrics/Global/Applyer';
+import { clearLyricsUiTimeouts } from '../../utils/Lyrics/ui';
 import { Session_NowBar_SetSide, Session_OpenNowBar } from '../Utils/NowBar';
 import Fullscreen from '../Utils/Fullscreen';
 import { ResetLastLine } from '../../utils/Scrolling/ScrollToActiveLine';
@@ -107,17 +108,26 @@ async function DestroyPage() {
   Defaults.LyricsContainerExists = false;
   removeLinesEvListener();
   Object.values(Tooltips).forEach((a) => a?.destroy());
+  Object.keys(Tooltips).forEach((k) => (Tooltips[k] = null));
   ResetLastLine();
-  ScrollSimplebar?.unMount();
-  maid?.CleanUp();
+  // Use the leak-safe clear helper — directly unMounting here would bypass
+  // the stored removeEventListener refs and leave listeners on the detached
+  // SimpleBar container.
+  ClearScrollSimplebar();
+  try {
+    maid?.CleanUp();
+    // Maid.Destroy is idempotent; CleanUp alone would leave Maid reusable but
+    // we null the ref anyway so next Open gets a fresh instance.
+    (maid as unknown as { Destroy?: () => void })?.Destroy?.();
+  } catch {
+    /* ignore maid cleanup error */
+  }
   maid = null;
   PageView.IsOpened = false;
 
-  // Clean up processing indicator timeout if it exists
-  if (window.ProcessingIndicatorTimeout) {
-    clearTimeout(window.ProcessingIndicatorTimeout);
-    window.ProcessingIndicatorTimeout = null;
-  }
+  // Clean up any orphan loader / indicator timeouts that would otherwise hold
+  // detached DOM refs until they fire.
+  clearLyricsUiTimeouts();
 }
 
 export default PageView;
