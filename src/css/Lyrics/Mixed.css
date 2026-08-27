@@ -117,7 +117,7 @@
 
   --DefaultTransitionDuration: var(--content-duration, 0.15s);
   --TransitionDuration: var(--DefaultTransitionDuration);
-  --TransitionDefinition: all var(--TransitionDuration) cubic-bezier(0.61, 1, 0.88, 1);
+  --TransitionDefinition: transform var(--TransitionDuration) cubic-bezier(0.61, 1, 0.88, 1), opacity var(--TransitionDuration) cubic-bezier(0.61, 1, 0.88, 1), scale var(--TransitionDuration) cubic-bezier(0.61, 1, 0.88, 1), filter var(--TransitionDuration) cubic-bezier(0.61, 1, 0.88, 1);
 }
 
 /* #SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .word {
@@ -223,7 +223,7 @@
 }
 
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line .letterGroup {
-  transition: all 0.24s cubic-bezier(0.61, 1, 0.88, 1);
+  transition: transform 0.24s cubic-bezier(0.61, 1, 0.88, 1), opacity 0.24s cubic-bezier(0.61, 1, 0.88, 1), scale 0.24s cubic-bezier(0.61, 1, 0.88, 1);
 }
 
 

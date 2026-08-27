@@ -118,7 +118,10 @@ export async function processAndEnhanceLyrics(
   const { hasKanji, hasKorean } = detectLanguages(preparedLyricsJson);
 
   // STEP 1: Display lyrics immediately (without translations)
-  const lyricsToDisplay = structuredClone(preparedLyricsJson);
+  // Perf: avoid structuredClone on the critical display path — preparedLyricsJson
+  // is freshly allocated by prepareLyricsForGemini and not shared, so we can
+  // reuse it directly. Clone only for the async enhancement branch.
+  const lyricsToDisplay = preparedLyricsJson as LyricsData;
 
   // Cache and display the initial lyrics
   await cacheLyrics(trackId, { ...lyricsToDisplay, id: id });

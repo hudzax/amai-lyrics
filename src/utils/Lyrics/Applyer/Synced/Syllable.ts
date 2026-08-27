@@ -39,6 +39,7 @@ export function ApplySyllableLyrics(data) {
   ClearLyricsContentArrays();
   ClearScrollSimplebar();
   TOP_ApplyLyricsSpacer(LyricsContainer);
+  const fragment = document.createDocumentFragment();
   if (data.StartTime >= lyricsBetweenShow && !SpotifyPlayer.IsPodcast) {
     const musicalLine = createMusicalLineMs(
       'Syllable',
@@ -46,7 +47,7 @@ export function ApplySyllableLyrics(data) {
       ConvertTime(data.StartTime),
       data.Content[0]?.OppositeAligned ? true : false,
     );
-    LyricsContainer.appendChild(musicalLine);
+    fragment.appendChild(musicalLine);
   }
   data.Content.forEach((line, index, arr) => {
     const lineElem = document.createElement('div');
@@ -65,7 +66,7 @@ export function ApplySyllableLyrics(data) {
       lineElem.classList.add('OppositeAligned');
     }
 
-    LyricsContainer.appendChild(lineElem);
+    fragment.appendChild(lineElem);
 
     line.Lead.Syllables.forEach((lead, iL, aL) => {
       let word = document.createElement('span');
@@ -153,7 +154,7 @@ export function ApplySyllableLyrics(data) {
         if (line.OppositeAligned) {
           lineE.classList.add('OppositeAligned');
         }
-        LyricsContainer.appendChild(lineE);
+        fragment.appendChild(lineE);
         bg.Syllables.forEach((bw, bI, bA) => {
           let bwE = document.createElement('span');
 
@@ -234,9 +235,11 @@ export function ApplySyllableLyrics(data) {
         ConvertTime(arr[index + 1].Lead.StartTime),
         !!arr[index + 1].OppositeAligned,
       );
-      LyricsContainer.appendChild(musicalLine);
+      fragment.appendChild(musicalLine);
     }
   });
+
+  LyricsContainer.appendChild(fragment);
 
   ApplyInfo(data);
 
