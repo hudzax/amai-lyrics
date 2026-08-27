@@ -341,7 +341,7 @@
       IntervalManager = class {
         constructor(duration, callback) {
           this.timerId = null;
-          this.hiddenPaused = false;
+          this.autoPaused = false;
           if (isNaN(duration)) {
             throw new Error("Duration cannot be NaN.");
           }
@@ -354,17 +354,23 @@
             if (this.Destroyed)
               return;
             if (document.hidden) {
-              this.hiddenPaused = this.Running;
-              this.Stop();
-            } else {
-              const wasHiddenPaused = this.hiddenPaused;
-              this.hiddenPaused = false;
-              if (wasHiddenPaused && !this.Running)
-                this.Start();
+              if (this.Running) {
+                this.autoPaused = true;
+                this.pauseTimer();
+              }
+              return;
+            }
+            if (this.autoPaused) {
+              this.autoPaused = false;
+              if (!this.Running) {
+                this.Running = true;
+                this.scheduleTick();
+              }
             }
           };
           document.addEventListener("visibilitychange", onVisibilityChange);
           this.maid.Give(() => document.removeEventListener("visibilitychange", onVisibilityChange));
+          this.maid.Give(() => this.Stop());
         }
         Start() {
           if (this.Destroyed) {
@@ -376,17 +382,11 @@
             return;
           }
           this.Running = true;
-          this.hiddenPaused = document.hidden;
-          const tick = () => {
-            if (!this.Running || this.Destroyed)
-              return;
-            this.callback();
-            this.timerId = window.setTimeout(tick, this.duration);
-          };
-          this.timerId = window.setTimeout(tick, this.duration);
-          this.maid.Give(() => this.Stop());
+          this.autoPaused = false;
+          this.scheduleTick();
         }
         Stop() {
+          this.autoPaused = false;
           if (this.timerId !== null) {
             window.clearTimeout(this.timerId);
             this.timerId = null;
@@ -411,6 +411,22 @@
           this.Destroyed = true;
           this.Running = false;
         }
+        pauseTimer() {
+          if (this.timerId !== null) {
+            window.clearTimeout(this.timerId);
+            this.timerId = null;
+            this.Running = false;
+          }
+        }
+        scheduleTick() {
+          const tick = () => {
+            if (!this.Running || this.Destroyed)
+              return;
+            this.callback();
+            this.timerId = window.setTimeout(tick, this.duration);
+          };
+          this.timerId = window.setTimeout(tick, this.duration);
+        }
       };
     }
   });
@@ -419,7 +435,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.4.18";
+      version = "1.4.19";
     }
   });
 
@@ -6287,13 +6303,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             if (line.HTMLElement.classList.contains("Active") && !line.HTMLElement.classList.contains("OverridenByScroller")) {
               line.HTMLElement.classList.remove("Active");
             }
-            line.HTMLElement.style.setProperty("--gradient-position", `0%`);
+            setStyleIfChanged(line.HTMLElement, "--gradient-position", `0%`);
           }
         } else if (line.Status === "Sung") {
           if (!SKIP_IF_STATUS_UNCHANGED || prevStatus !== "Sung") {
             line.HTMLElement.classList.add("Sung");
             line.HTMLElement.classList.remove("Active", "NotSung");
-            line.HTMLElement.style.setProperty("--gradient-position", `100%`);
+            setStyleIfChanged(line.HTMLElement, "--gradient-position", `100%`);
           }
         }
         line.lastStatus = line.Status;
@@ -8460,6 +8476,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
               return;
             if (lastLine === LineElem)
               return;
+            if (lastLine && lastLine.classList.contains("OverridenByScroller")) {
+              lastLine.classList.remove("OverridenByScroller");
+            }
             lastLine = LineElem;
             scrollIntoCenterView(container, LineElem, 270, -50);
             LineElem.classList.add("Active", "OverridenByScroller");
@@ -8483,15 +8502,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d057f9/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa4889/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d057f9/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa4889/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d0584a/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa49fa/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d0584a/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa49fa/ProcessingIndicator.css"() {
     }
   });
 
@@ -10989,6 +11008,19 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
+  // src/constants/intervals.ts
+  var INTERVALS;
+  var init_intervals = __esm({
+    "src/constants/intervals.ts"() {
+      INTERVALS = {
+        POSITION_SYNC: 0.5,
+        DYNAMIC_BG_UPDATE: 1,
+        SLEEP_RETRY: 0.1,
+        PROGRESS_BAR_UPDATE: 0.1
+      };
+    }
+  });
+
   // src/components/NowBar/ProgressBar.ts
   function createProgressBarElements() {
     const songProgressBar = new SongProgressBar();
@@ -11069,8 +11101,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     progressBarState.lastUpdateTime = performance.now();
   }
   function setupUpdateInterval(updateTimelineState) {
-    return setInterval(() => {
-      if (document.hidden || !SpotifyPlayer.IsPlaying) {
+    const updateInterval = new IntervalManager(INTERVALS.PROGRESS_BAR_UPDATE, () => {
+      if (!SpotifyPlayer.IsPlaying) {
         return;
       }
       const { lastKnownPosition, lastUpdateTime } = progressBarState;
@@ -11086,16 +11118,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         progressBarState.lastInterpolationUpdate = now2;
         updateTimelineState(interpolatedPosition);
       }
-    }, 100);
+    });
+    updateInterval.Start();
+    return updateInterval;
   }
   function cleanupProgressBar(sliderBar, sliderBarHandler) {
     if (sliderBar) {
       sliderBar.removeEventListener("click", sliderBarHandler);
     }
     const { updateInterval, SongProgressBar_ClassInstance, TimeLineElement } = progressBarState;
-    if (updateInterval) {
-      clearInterval(updateInterval);
-    }
+    updateInterval?.Destroy();
     if (SongProgressBar_ClassInstance) {
       SongProgressBar_ClassInstance.Destroy();
     }
@@ -11112,6 +11144,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var init_ProgressBar = __esm({
     "src/components/NowBar/ProgressBar.ts"() {
       init_SongProgressBar();
+      init_IntervalManager();
+      init_intervals();
       init_SpotifyPlayer();
       init_Fullscreen();
       init_state();
@@ -34728,18 +34762,30 @@ ${JSON.stringify(lyricsOnly)}`
       containersObserved = containersObserved || found;
       return found;
     };
-    attachObservers();
-    const initialTimer = window.setInterval(() => {
-      if (attachObservers())
-        window.clearInterval(initialTimer);
-    }, 250);
-    window.setTimeout(() => window.clearInterval(initialTimer), 5e3);
-    const slowTimer = window.setInterval(() => {
-      if (!containersObserved && attachObservers())
+    let fastTimer;
+    let fastCapTimeout;
+    let slowTimer;
+    const stopRetries = () => {
+      if (fastTimer !== void 0)
+        window.clearInterval(fastTimer);
+      if (fastCapTimeout !== void 0)
+        window.clearTimeout(fastCapTimeout);
+      if (slowTimer !== void 0)
         window.clearInterval(slowTimer);
-    }, 4e3);
-    lifecycle_default.track(() => window.clearInterval(initialTimer));
-    lifecycle_default.track(() => window.clearInterval(slowTimer));
+      fastTimer = fastCapTimeout = slowTimer = void 0;
+    };
+    const hookContainers = () => {
+      if (attachObservers())
+        stopRetries();
+    };
+    fastTimer = window.setInterval(hookContainers, 250);
+    fastCapTimeout = window.setTimeout(() => {
+      if (fastTimer !== void 0)
+        window.clearInterval(fastTimer);
+      fastTimer = void 0;
+    }, 5e3);
+    slowTimer = window.setInterval(hookContainers, 4e3);
+    lifecycle_default.track(() => stopRetries());
     lifecycle_default.trackObserver(observer);
   }
   function startStartupPoll(durationMs = 3e3, intervalMs = 250) {
@@ -34775,15 +34821,7 @@ ${JSON.stringify(lyricsOnly)}`
 
   // src/app.tsx
   init_lifecycle();
-
-  // src/constants/intervals.ts
-  var INTERVALS = {
-    POSITION_SYNC: 0.5,
-    DYNAMIC_BG_UPDATE: 1,
-    SLEEP_RETRY: 0.1
-  };
-
-  // src/app.tsx
+  init_intervals();
   function setupUI() {
     AppInitializer.setupSkeletonStyles();
     return new ButtonManager();
@@ -34888,7 +34926,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d057f9/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa4889/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -34914,7 +34952,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d0584a/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa49fa/ProcessingIndicator.css */
 #SpicyLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -34994,7 +35032,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d05170/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa4220/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -35143,7 +35181,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d05411/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa44d1/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -35351,7 +35389,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d05482/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa4532/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -35952,7 +35990,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d05573/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa45f3/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -36131,7 +36169,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d055c4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa4654/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -36404,7 +36442,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d05635/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa46c5/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -36703,7 +36741,7 @@ ruby > rt {
   padding-left: 15cqw;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d05686/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa4706/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -36725,7 +36763,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d056b7/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa4737/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -36752,7 +36790,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16480-vSOk8L8hxkli/1a03f1d056d8/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22444-8hc6jWBwzCDs/1a041cfa4768/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
