@@ -60,9 +60,10 @@ const updateDynamicBackground = debounce((bgContainer: HTMLDivElement, newImageU
   if (inactiveImg.src === newImageUrl) return;
 
   // Null out previous handlers so a rapid skip doesn't fire stale onload for the wrong URL.
+  // Assign handlers BEFORE setting src — if image is cached, load may fire synchronously
+  // in some engines and would be missed if src is set first.
   inactiveImg.onload = null;
   inactiveImg.onerror = null;
-  inactiveImg.src = newImageUrl;
   inactiveImg.onload = () => {
     // Ignore if src changed since this load was initiated (race from fast skip).
     if (inactiveImg.src !== newImageUrl) return;
@@ -76,6 +77,7 @@ const updateDynamicBackground = debounce((bgContainer: HTMLDivElement, newImageU
   inactiveImg.onerror = () => {
     console.error('Error loading new background image:', newImageUrl);
   };
+  inactiveImg.src = newImageUrl;
 }, 100);
 
 /**

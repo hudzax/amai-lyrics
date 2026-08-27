@@ -115,12 +115,9 @@ export class NowPlayingBarBackground {
     const inactiveImg = activeImg === imgA ? imgB : imgA;
 
     // Clear previous handlers so fast skips don't fire stale onloads.
+    // Assign handlers BEFORE setting src — cached images may fire load synchronously.
     inactiveImg.onload = null;
     inactiveImg.onerror = null;
-    // Update the inactive image source
-    inactiveImg.src = coverUrl;
-
-    // Once inactive image loads, start crossfade
     inactiveImg.onload = () => {
       if (inactiveImg.src !== coverUrl) return;
       requestAnimationFrame(() => {
@@ -135,6 +132,8 @@ export class NowPlayingBarBackground {
     inactiveImg.onerror = () => {
       console.error('Error loading new background image:', coverUrl);
     };
+    // Update the inactive image source after handlers are in place
+    inactiveImg.src = coverUrl;
   }
 
   /** Clear cached state when the NowPlayingView is no longer mounted. */

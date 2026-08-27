@@ -17,15 +17,20 @@ export class AppInitializer {
   }
 
   private static async injectGoogleFonts() {
+    // Dedup: hot-reload re-runs main() → don't pile identical <link>s in <head>.
+    // Use id rather than href match — href encoding variations would miss.
+    if (document.getElementById('amai-google-fonts')) return;
+
     const href =
       'https://fonts.googleapis.com/css2?family=Noto+Sans+Display:ital,wght@0,100..900;1,100..900&display=swap';
-    // Dedup: hot-reload re-runs main() → don't pile identical <link>s in <head>.
-    if (document.querySelector(`link[href="${href}"]`)) return;
 
     const fontLink = document.createElement('link');
+    fontLink.id = 'amai-google-fonts';
     fontLink.rel = 'preload';
     fontLink.as = 'style';
     fontLink.href = href;
+    // Preload without crossOrigin may warn; fonts are CORS-enabled.
+    fontLink.crossOrigin = 'anonymous';
     document.head.appendChild(fontLink);
 
     fontLink.onload = () => {

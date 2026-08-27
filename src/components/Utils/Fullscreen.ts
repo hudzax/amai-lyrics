@@ -5,6 +5,7 @@ import Global from '../Global/Global';
 import PageView, { PageRoot } from '../Pages/PageView';
 import { DeregisterNowBarBtn, OpenNowBar } from './NowBar';
 import TransferElement from './TransferElement';
+import lifecycle from '../../utils/lifecycle';
 
 const Fullscreen = {
   Open,
@@ -20,16 +21,24 @@ const Fullscreen = {
 
 // Keep IsOpen in sync with actual fullscreen state. Guarded to avoid
 // duplicate listeners on Spicetify watch re-injection (each re-eval would
-// otherwise stack another document listener).
+// otherwise stack another document listener). On hot-reload we remove stale
+// handlers that close over the previous Fullscreen object and replace them
+// with fresh closures that reference the new module's Fullscreen.
 const windowRef = window as unknown as {
   __amaiFullscreenHandlers?: {
     onFullscreenChange: () => void;
     onKeyDown: (e: KeyboardEvent) => void;
   };
+  __amaiFullscreenLifecycleTracked?: boolean;
 };
 
 function ensureGlobalFullscreenListeners(): void {
-  if (windowRef.__amaiFullscreenHandlers) return;
+  // Remove stale handlers from previous injection (they capture old Fullscreen closure).
+  const existing = windowRef.__amaiFullscreenHandlers;
+  if (existing) {
+    document.removeEventListener('fullscreenchange', existing.onFullscreenChange);
+    document.removeEventListener('keydown', existing.onKeyDown);
+  }
 
   const onFullscreenChange = () => {
     const wasFullscreen = Fullscreen.IsOpen;
@@ -65,6 +74,16 @@ export function destroyFullscreenGlobalListeners(): void {
   } catch {
     /* already destroyed */
   }
+  windowRef.__amaiFullscreenLifecycleTracked = false;
+}
+
+// Register teardown exactly once per page-load — window-persisted so hot-reload
+// doesn't stack trackers. Previous instance's teardown (via __amaiLyricsTeardown)
+// disposes its own handler; new instance replaces it eagerly above and tracks
+// its own destroy for the next reload.
+if (!windowRef.__amaiFullscreenLifecycleTracked) {
+  windowRef.__amaiFullscreenLifecycleTracked = true;
+  lifecycle.trackCallback(destroyFullscreenGlobalListeners);
 }
 
 const MediaBox_Data = {

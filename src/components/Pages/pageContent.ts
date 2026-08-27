@@ -47,8 +47,10 @@ export function setupImageLoading(imageElement: ImageElementWithSetup, maid: Mai
     if (highResImage) {
       highResImage.onload = null;
       highResImage.onerror = null;
-      // Abort load by clearing src (best-effort).
+      // Abort load by clearing src (best-effort). Remove attribute first to
+      // avoid requesting "" as a URL in some browsers.
       try {
+        highResImage.removeAttribute('src');
         highResImage.src = '';
       } catch {
         /* ignore */

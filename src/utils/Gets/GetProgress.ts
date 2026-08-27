@@ -1,5 +1,6 @@
 import Global from '../../components/Global/Global';
 import { SpotifyPlayer } from '../../components/Global/SpotifyPlayer';
+import lifecycle from '../lifecycle';
 
 interface SpotifyPlatformType {
   PlayerAPI: {
@@ -30,12 +31,17 @@ type GetProgressState = {
   activePositionClients: number;
   syncNow: boolean;
   loopScheduled: boolean;
+  loopTimeoutId: number | null;
+  teardownRequested: boolean;
   cachedPosition: number | null;
   cachedPositionTime: number;
   cachedIsPlaying: boolean | null;
 };
 
-const windowRef = window as unknown as { __amaiGetProgressState?: GetProgressState };
+const windowRef = window as unknown as {
+  __amaiGetProgressState?: GetProgressState;
+  __amaiGetProgressLifecycleTracked?: boolean;
+};
 
 const state: GetProgressState =
   windowRef.__amaiGetProgressState ??
@@ -45,10 +51,20 @@ const state: GetProgressState =
     activePositionClients: 0,
     syncNow: false,
     loopScheduled: false,
+    loopTimeoutId: null,
+    teardownRequested: false,
     cachedPosition: null,
     cachedPositionTime: 0,
     cachedIsPlaying: null,
   });
+
+// Patch state shape from versions before this fix (hot-reload in the same session).
+if ((state as unknown as { loopTimeoutId?: unknown }).loopTimeoutId === undefined) {
+  (state as unknown as { loopTimeoutId: number | null }).loopTimeoutId = null;
+}
+if ((state as unknown as { teardownRequested?: unknown }).teardownRequested === undefined) {
+  (state as unknown as { teardownRequested: boolean }).teardownRequested = false;
+}
 
 const syncedPosition = state.syncedPosition;
 
@@ -104,6 +120,9 @@ const IDLE_HEARTBEAT_MS = 1000;
  */
 export function requestPositionTracking(): () => void {
   state.activePositionClients++;
+  if (state.teardownRequested && state.activePositionClients > 0) {
+    state.teardownRequested = false;
+  }
   if (state.activePositionClients === 1) {
     state.syncNow = true;
     scheduleLoop(0);
@@ -114,12 +133,30 @@ export function requestPositionTracking(): () => void {
 }
 
 function scheduleLoop(delay: number): void {
+  if (state.teardownRequested && state.activePositionClients === 0) return;
+  if (state.teardownRequested && state.activePositionClients > 0) {
+    state.teardownRequested = false;
+  }
   if (state.loopScheduled) return;
   state.loopScheduled = true;
-  window.setTimeout(() => {
+  const id = window.setTimeout(() => {
     state.loopScheduled = false;
+    state.loopTimeoutId = null;
     void runLoop();
   }, delay);
+  state.loopTimeoutId = id;
+}
+
+export function destroyGetProgressLoop(): void {
+  if (state.loopTimeoutId !== null) {
+    clearTimeout(state.loopTimeoutId);
+    state.loopTimeoutId = null;
+  }
+  state.loopScheduled = false;
+  state.syncNow = false;
+  state.activePositionClients = 0;
+  state.teardownRequested = true;
+  windowRef.__amaiGetProgressLifecycleTracked = false;
 }
 
 async function doSync(): Promise<void> {
@@ -144,6 +181,7 @@ async function doSync(): Promise<void> {
 
 async function runLoop(): Promise<void> {
   try {
+    if (state.teardownRequested && state.activePositionClients === 0) return;
     const isPlaying = Spicetify.Player.isPlaying();
 
     // Only do the (potentially RPC-heavy) anchor sync while something actually
@@ -154,6 +192,8 @@ async function runLoop(): Promise<void> {
     } else {
       state.syncNow = false;
     }
+
+    if (state.teardownRequested && state.activePositionClients === 0) return;
 
     const nowPlaying = Spicetify.Player.isPlaying();
     // Paused: stay in a cheap idle poll, no getPositionState/resume calls.
@@ -166,6 +206,7 @@ async function runLoop(): Promise<void> {
     }
   } catch (error) {
     console.error('Sync Position: Fail, More Details:', error);
+    if (state.teardownRequested && state.activePositionClients === 0) return;
     // Keep polling on error so we recover as soon as playback state allows.
     scheduleLoop(PAUSED_POLL_MS);
   }
@@ -251,6 +292,13 @@ export default function GetProgress() {
   state.cachedPositionTime = now;
   state.cachedIsPlaying = isPlaying;
   return result;
+}
+
+// Register teardown exactly once per page-load — window-persisted so hot-reload
+// doesn't stack trackers. Previous instance's loop is torn down via __amaiLyricsTeardown.
+if (!windowRef.__amaiGetProgressLifecycleTracked) {
+  windowRef.__amaiGetProgressLifecycleTracked = true;
+  lifecycle.trackCallback(destroyGetProgressLoop);
 }
 
 // DEPRECATED

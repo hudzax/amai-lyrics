@@ -5,8 +5,31 @@ import { scrollIntoCenterView } from '../ScrollIntoView';
 import SimpleBar from 'simplebar';
 import fastdom from 'fastdom';
 
-let lastLine: HTMLElement | null = null;
-let activeScrollController: { cancel: () => void } | null = null;
+// Window-persisted so hot-reload doesn't orphan in-flight rAF scroll loop
+const windowRef = window as unknown as {
+  __amaiScrollState?: {
+    lastLine: HTMLElement | null;
+    activeScrollController: { cancel: () => void } | null;
+  };
+};
+const sharedScrollState = (windowRef.__amaiScrollState ??= {
+  lastLine: null,
+  activeScrollController: null,
+});
+
+let lastLine: HTMLElement | null = sharedScrollState.lastLine;
+let activeScrollController: { cancel: () => void } | null =
+  sharedScrollState.activeScrollController;
+
+function setLastLine(value: HTMLElement | null): void {
+  lastLine = value;
+  sharedScrollState.lastLine = value;
+}
+
+function setActiveController(value: { cancel: () => void } | null): void {
+  activeScrollController = value;
+  sharedScrollState.activeScrollController = value;
+}
 
 export function ScrollToActiveLine(ScrollSimplebar: SimpleBar) {
   if (!SpotifyPlayer.IsPlaying) return;
@@ -40,7 +63,7 @@ export function ScrollToActiveLine(ScrollSimplebar: SimpleBar) {
       // Cancel any in-flight scroll animation so seeks don't stack competing rAF loops.
       if (activeScrollController) {
         activeScrollController.cancel();
-        activeScrollController = null;
+        setActiveController(null);
       }
 
       // Use closure variables to pass data from measure to mutate
@@ -58,9 +81,9 @@ export function ScrollToActiveLine(ScrollSimplebar: SimpleBar) {
             lastLine.classList.remove('OverridenByScroller');
           }
 
-          lastLine = LineElem;
+          setLastLine(LineElem);
 
-          activeScrollController = scrollIntoCenterView(container, LineElem, 270, -50);
+          setActiveController(scrollIntoCenterView(container, LineElem, 270, -50));
           LineElem.classList.add('Active', 'OverridenByScroller');
         });
       });
@@ -71,7 +94,7 @@ export function ScrollToActiveLine(ScrollSimplebar: SimpleBar) {
 export function ResetLastLine() {
   if (activeScrollController) {
     activeScrollController.cancel();
-    activeScrollController = null;
+    setActiveController(null);
   }
-  lastLine = null;
+  setLastLine(null);
 }

@@ -146,6 +146,9 @@ function readBitmapPixels(
 // + dynamic-background would be decoded 3× per skip.
 const ARTWORK_COLOR_CACHE_MAX = 30;
 const artworkColorCache = new Map<string, string[]>();
+// Promise cache to dedup concurrent fetches for the same URL (e.g. playbar +
+// dynamic BG requesting same artwork in same tick).
+const artworkColorPromiseCache = new Map<string, Promise<string[]>>();
 
 /**
  * Extracts dominant colors from an artwork image URL.
@@ -167,54 +170,67 @@ export async function extractArtworkColors(imageUrl: string): Promise<string[]> 
     artworkColorCache.set(imageUrl, cached);
     return cached;
   }
-  let blob: Blob;
-  try {
-    const response = await fetch(imageUrl, {
-      mode: 'cors',
-      credentials: 'omit',
-      referrerPolicy: 'no-referrer',
-    });
-    if (!response.ok) return [];
-    blob = await response.blob();
-  } catch {
-    // Fetch or CORS failed
-    return [];
-  }
+  const pending = artworkColorPromiseCache.get(imageUrl);
+  if (pending) return pending;
 
-  // Decode at a tiny size for speed
-  let bitmap: ImageBitmap;
-  try {
-    bitmap = await createImageBitmap(blob, {
-      resizeWidth: BITMAP_SIZE,
-      resizeHeight: BITMAP_SIZE,
-      resizeQuality: 'pixelated',
-    });
-  } catch {
-    return [];
-  }
+  const promise = (async (): Promise<string[]> => {
+    let blob: Blob;
+    try {
+      const response = await fetch(imageUrl, {
+        mode: 'cors',
+        credentials: 'omit',
+        referrerPolicy: 'no-referrer',
+      });
+      if (!response.ok) return [];
+      blob = await response.blob();
+    } catch {
+      // Fetch or CORS failed
+      return [];
+    }
 
-  const result = readBitmapPixels(bitmap);
-  bitmap.close(); // free memory
-  if (!result) return [];
+    // Decode at a tiny size for speed
+    let bitmap: ImageBitmap;
+    try {
+      bitmap = await createImageBitmap(blob, {
+        resizeWidth: BITMAP_SIZE,
+        resizeHeight: BITMAP_SIZE,
+        resizeQuality: 'pixelated',
+      });
+    } catch {
+      return [];
+    }
 
-  const { data, width, height } = result;
+    const result = readBitmapPixels(bitmap);
+    bitmap.close(); // free memory
+    if (!result) return [];
 
-  // Primary pass — strict filtering
-  let colors = quantizePixels(data, width, height, false);
+    const { data, width, height } = result;
 
-  // If we didn't get enough colours, retry with loose filtering
-  if (colors.length < 2) {
-    colors = quantizePixels(data, width, height, true);
-  }
+    // Primary pass — strict filtering
+    let colors = quantizePixels(data, width, height, false);
 
-  // Cache result (LRU eviction)
-  artworkColorCache.set(imageUrl, colors);
-  if (artworkColorCache.size > ARTWORK_COLOR_CACHE_MAX) {
-    const oldest = artworkColorCache.keys().next().value as string | undefined;
-    if (oldest !== undefined) artworkColorCache.delete(oldest);
-  }
+    // If we didn't get enough colours, retry with loose filtering
+    if (colors.length < 2) {
+      colors = quantizePixels(data, width, height, true);
+    }
 
-  return colors;
+    // Cache result (LRU eviction)
+    artworkColorCache.set(imageUrl, colors);
+    if (artworkColorCache.size > ARTWORK_COLOR_CACHE_MAX) {
+      const oldest = artworkColorCache.keys().next().value as string | undefined;
+      if (oldest !== undefined) artworkColorCache.delete(oldest);
+    }
+
+    return colors;
+  })();
+
+  artworkColorPromiseCache.set(imageUrl, promise);
+  // Clean up dedup entry once settled so failures don't stick forever
+  promise.then(
+    () => artworkColorPromiseCache.delete(imageUrl),
+    () => artworkColorPromiseCache.delete(imageUrl),
+  );
+  return promise;
 }
 
 /**

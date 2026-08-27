@@ -52,6 +52,13 @@ export function teardownNowBarListeners() {
   }
 }
 
+/** Lifecycle teardown — also resets window-persisted flag so next hot-reload can re-register. */
+function destroyNowBarGlobalState(): void {
+  teardownNowBarListeners();
+  nowBarTeardownTracked = false;
+  sharedNowBarState.teardownTracked = false;
+}
+
 /**
  * Set up all event listeners for playback events
  */
@@ -126,7 +133,7 @@ export function setupEventListeners() {
   if (!nowBarTeardownTracked) {
     nowBarTeardownTracked = true;
     sharedNowBarState.teardownTracked = true;
-    lifecycle.trackCallback(teardownNowBarListeners);
+    lifecycle.trackCallback(destroyNowBarGlobalState);
   }
 }
 

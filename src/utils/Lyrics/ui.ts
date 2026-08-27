@@ -8,13 +8,27 @@ import PageView from '../../components/Pages/PageView';
 import Fullscreen from '../../components/Utils/Fullscreen';
 import { showRefreshButton } from '../../components/Pages/pageButtons';
 
-let ContainerShowLoaderTimeout: number | null = null;
+// Window-persisted so hot-reload doesn't orphan timeout holding detached DOM.
+const windowRef = window as unknown as {
+  __amaiLyricsUiState?: { containerShowLoaderTimeout: number | null };
+};
+const uiState = (windowRef.__amaiLyricsUiState ??= { containerShowLoaderTimeout: null });
+
+// Keep module variable in sync with window state for backward compat
+let ContainerShowLoaderTimeout: number | null = uiState.containerShowLoaderTimeout;
+
+function syncLoaderTimeout(value: number | null): void {
+  ContainerShowLoaderTimeout = value;
+  uiState.containerShowLoaderTimeout = value;
+}
 
 /** Called on teardown to avoid orphan timeout holding detached DOM. */
 export function clearLyricsUiTimeouts(): void {
-  if (ContainerShowLoaderTimeout !== null) {
-    clearTimeout(ContainerShowLoaderTimeout);
-    ContainerShowLoaderTimeout = null;
+  // Check both module var and window state (covers timeout set by previous injection)
+  const timeoutId = ContainerShowLoaderTimeout ?? uiState.containerShowLoaderTimeout;
+  if (timeoutId !== null) {
+    clearTimeout(timeoutId);
+    syncLoaderTimeout(null);
   }
   if (window.ProcessingIndicatorTimeout) {
     clearTimeout(window.ProcessingIndicatorTimeout);
@@ -93,10 +107,8 @@ export function ShowLoaderContainer(): void {
     '#SpicyLyricsPage .LyricsContainer .loaderContainer',
   );
   if (loaderContainer) {
-    ContainerShowLoaderTimeout = window.setTimeout(
-      () => loaderContainer.classList.add('active'),
-      1000,
-    );
+    const id = window.setTimeout(() => loaderContainer.classList.add('active'), 1000);
+    syncLoaderTimeout(id as unknown as number);
   }
 }
 
@@ -108,9 +120,10 @@ export function HideLoaderContainer(): void {
     '#SpicyLyricsPage .LyricsContainer .loaderContainer',
   );
   if (loaderContainer) {
-    if (ContainerShowLoaderTimeout) {
-      clearTimeout(ContainerShowLoaderTimeout);
-      ContainerShowLoaderTimeout = null;
+    const timeoutId = ContainerShowLoaderTimeout ?? uiState.containerShowLoaderTimeout;
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      syncLoaderTimeout(null);
     }
     loaderContainer.classList.remove('active');
   }
