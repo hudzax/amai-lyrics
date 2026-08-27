@@ -27,9 +27,8 @@ export class SongChangeManager {
     if (this.pageBgDebounceTimer !== null) clearTimeout(this.pageBgDebounceTimer);
     return new Promise((resolve) => {
       this.pageBgDebounceTimer = window.setTimeout(async () => {
-        const { default: ApplyDynamicBackground } = await import(
-          '../components/DynamicBG/dynamicBackground'
-        );
+        const { default: ApplyDynamicBackground } =
+          await import('../components/DynamicBG/dynamicBackground');
         ApplyDynamicBackground(document.querySelector('#SpicyLyricsPage .ContentBox'));
         this.pageBgDebounceTimer = null;
         resolve();

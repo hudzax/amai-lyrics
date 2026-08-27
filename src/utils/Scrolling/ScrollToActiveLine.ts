@@ -5,7 +5,7 @@ import { scrollIntoCenterView } from '../ScrollIntoView';
 import SimpleBar from 'simplebar';
 import fastdom from 'fastdom';
 
-let lastLine = null;
+let lastLine: HTMLElement | null = null;
 
 export function ScrollToActiveLine(ScrollSimplebar: SimpleBar) {
   if (!SpotifyPlayer.IsPlaying) return;
@@ -42,6 +42,14 @@ export function ScrollToActiveLine(ScrollSimplebar: SimpleBar) {
         fastdom.mutate(() => {
           if (!container || !LineElem) return;
           if (lastLine === LineElem) return;
+
+          // Release the previous pre-highlight target: Animate only keeps the
+          // Active class on a NotSung line while OverridenByScroller is
+          // present, so leaving it on a line we no longer target (e.g. after
+          // a seek) would stick the highlight there.
+          if (lastLine && lastLine.classList.contains('OverridenByScroller')) {
+            lastLine.classList.remove('OverridenByScroller');
+          }
 
           lastLine = LineElem;
 

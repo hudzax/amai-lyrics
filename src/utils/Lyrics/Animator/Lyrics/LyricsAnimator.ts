@@ -435,13 +435,17 @@ export function Animate(position) {
           ) {
             line.HTMLElement.classList.remove('Active');
           }
-          line.HTMLElement.style.setProperty('--gradient-position', `0%`);
+          // These writes must go through setStyleIfChanged like the Active
+          // branch above: a direct write here changes the DOM without updating
+          // the write-cache, so the next Active write of the same value would
+          // be skipped as a no-op and the line's white fill would stay stale.
+          setStyleIfChanged(line.HTMLElement, '--gradient-position', `0%`);
         }
       } else if (line.Status === 'Sung') {
         if (!SKIP_IF_STATUS_UNCHANGED || prevStatus !== 'Sung') {
           line.HTMLElement.classList.add('Sung');
           line.HTMLElement.classList.remove('Active', 'NotSung');
-          line.HTMLElement.style.setProperty('--gradient-position', `100%`);
+          setStyleIfChanged(line.HTMLElement, '--gradient-position', `100%`);
         }
       }
       line.lastStatus = line.Status;
