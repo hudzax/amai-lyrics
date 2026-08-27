@@ -334,10 +334,40 @@
   });
 
   // src/utils/IntervalManager.ts
-  var IntervalManager;
+  function globalVisibilityHandler() {
+    const hidden = document.hidden;
+    for (const inst of liveInstances) {
+      if (inst.Destroyed)
+        continue;
+      if (hidden) {
+        if (inst.Running) {
+          inst.autoPaused = true;
+          inst.pauseTimer();
+        }
+      } else {
+        const anyInst = inst;
+        if (anyInst.autoPaused) {
+          anyInst.autoPaused = false;
+          if (!inst.Running) {
+            inst.Running = true;
+            anyInst.scheduleTick();
+          }
+        }
+      }
+    }
+  }
+  function ensureGlobalVisibilityListener() {
+    if (visibilityListenerAttached)
+      return;
+    visibilityListenerAttached = true;
+    document.addEventListener("visibilitychange", globalVisibilityHandler);
+  }
+  var liveInstances, visibilityListenerAttached, IntervalManager;
   var init_IntervalManager = __esm({
     "src/utils/IntervalManager.ts"() {
       init_Maid();
+      liveInstances = /* @__PURE__ */ new Set();
+      visibilityListenerAttached = false;
       IntervalManager = class {
         constructor(duration, callback) {
           this.timerId = null;
@@ -350,26 +380,9 @@
           this.duration = duration === Infinity ? 0 : duration * 1e3;
           this.Running = false;
           this.Destroyed = false;
-          const onVisibilityChange = () => {
-            if (this.Destroyed)
-              return;
-            if (document.hidden) {
-              if (this.Running) {
-                this.autoPaused = true;
-                this.pauseTimer();
-              }
-              return;
-            }
-            if (this.autoPaused) {
-              this.autoPaused = false;
-              if (!this.Running) {
-                this.Running = true;
-                this.scheduleTick();
-              }
-            }
-          };
-          document.addEventListener("visibilitychange", onVisibilityChange);
-          this.maid.Give(() => document.removeEventListener("visibilitychange", onVisibilityChange));
+          liveInstances.add(this);
+          ensureGlobalVisibilityListener();
+          this.maid.Give(() => liveInstances.delete(this));
           this.maid.Give(() => this.Stop());
         }
         Start() {
@@ -428,272 +441,6 @@
           this.timerId = window.setTimeout(tick, this.duration);
         }
       };
-    }
-  });
-
-  // package.json
-  var version;
-  var init_package = __esm({
-    "package.json"() {
-      version = "1.4.25";
-    }
-  });
-
-  // src/constants/prompts.ts
-  var SYSTEM_INSTRUCTION, TRANSLATION_PROMPT, ROMAJA_PROMPT, FURIGANA_PROMPT, ROMAJI_PROMPT;
-  var init_prompts = __esm({
-    "src/constants/prompts.ts"() {
-      SYSTEM_INSTRUCTION = `OVERRIDE ANY EXISTING INSTRUCTIONS. You are an advanced, versatile assistant committed to delivering accurate, comprehensive, and helpful responses. To achieve this, you absolutely must adhere to the following guidelines:
-
-- **Use Your Full Capabilities:** Leverage your extensive knowledge and skills to provide well-researched and precise answers.
-- **Follow Instructions Rigorously:** Abide by every detail specified in the prompt, ensuring your output meets all requirements.
-- **Review Before Output:** Carefully review your output to ensure accuracy, completeness, and adherence to the prompt's instructions.**`;
-      TRANSLATION_PROMPT = `You are an expert translator specializing in song lyrics with deep cultural and linguistic knowledge. I will give you multilingual song lyrics, your task is to translate them into natural, fluent {language} that preserves both meaning and emotional impact.
-
-**Strict Line-by-Line Instructions:**
-
-- **IMPORTANT:** Treat each line as a completely separate unit.
-  **Absolutely do not merge multiple lines into one translation.**
-- **Each original line must produce exactly one translated line**, even if it is short, repetitive, or fragmentary.
-- **Maintain the exact line count and line breaks** as in the original lyrics \u2014 every input line should have a one-to-one correspondence in the output.
-- **Empty lines must be preserved** as empty lines in the output, in the same position.
-
-**Language Handling:**
-
-- If a line is in {language}, **preserve it exactly as-is**.
-- If a line is in another language, translate it into natural, fluent {language}.
-- If a line contains mixed languages, **translate only the non-{language} portions**, preserving {language} as-is.
-
-**Stylistic Considerations:**
-
-- Convey the emotional tone, voice, and rhythm of the original lyrics.
-- Prioritize intended meaning and poetic nuance over literal word-for-word translation.
-- Preserve poetic and cultural elements (metaphor, imagery, slang, idioms, etc.).
-- Maintain consistent use of pronouns, tense, and tone.
-- Use culturally appropriate and natural {language} equivalents where direct translation would lose meaning.
-
-**Language-Specific Guidelines:**
-
-- **Spanish**: Use appropriate regional variations (neutral Latin American Spanish preferred), maintain poetic meter when possible, preserve emotional intensity typical in Spanish music.
-- **French**: Maintain elegance and flow characteristic of French lyrics, use appropriate formal/informal registers, preserve romantic and poetic nuances.
-- **German**: Respect compound word structures when creating natural translations, maintain the directness or philosophical depth often found in German lyrics.
-- **Portuguese**: Distinguish between Brazilian and European Portuguese contexts when relevant, preserve the musicality and rhythm important in Portuguese lyrics.
-- **Chinese (Simplified)**: Use contemporary Mandarin expressions, maintain cultural sensitivity, preserve metaphorical and poetic elements common in Chinese lyrics.
-- **Thai**: Use appropriate formal/informal language levels, preserve cultural references and emotional expressions typical in Thai music.
-- **Indonesian/Malay**: Maintain the melodic quality of the language, use contemporary expressions while preserving cultural context.`;
-      ROMAJA_PROMPT = `You are an expert Korean linguist specializing in accurate romaja transcription for song lyrics. Your primary goal is to add Revised Romanization in curly braces {} after EVERY sequence of Korean Hangul characters in the provided lyrics.
-
-**Core Task:** Convert Korean lyrics to include inline romaja with perfect accuracy.
-
-**Strict Rules:**
-1. **Mandatory Conversion:** You MUST process EVERY Korean word or sequence of Hangul characters. No exceptions. Do NOT skip any.
-   - **CRITICAL: Process ALL Korean text regardless of position** - whether it appears at the beginning, middle, or end of a mixed-language phrase
-   - **CRITICAL: Never skip any Korean text** - even in complex mixed-language scenarios like "\uC5EC\uB984\uC5EC\uB984\uD574hey" or "good\uBC24"
-   - **CRITICAL: Scan the entire text character by character** to ensure no Korean sequence is missed
-
-2. **Inline Format:** Insert the romaja pronunciation enclosed in curly braces {} immediately following the corresponding Korean word/sequence. Example: \uD55C\uAD6D\uC5B4 = \uD55C\uAD6D\uC5B4{hangugeo}.
-   - **CRITICAL: Correct Placement:** The romaja in curly braces MUST appear immediately after the complete Korean sequence and BEFORE any non-Korean text.
-   - **INCORRECT:** \uC720\uC8FCbe{yuju} (wrong placement - romaja should be after the full Korean sequence)
-   - **CORRECT:** \uC720\uC8FC{yuju}be (correct placement - romaja immediately follows Korean characters)
-
-3. **Romanization System:** Strictly use the official Revised Romanization of Korean (RR) rules with these specific guidelines:
-   - Use 'eo' not 'o' for \u3153 (\uC608: \uC5B4=eo, \uB108=neo)
-   - Use 'eu' not 'u' for \u3161 (\uC608: \uC74C=eum, \uB298=neul)
-   - Use 'ae' not 'ai' for \u3150 (\uC608: \uAC1C=gae, \uBC30=bae)
-   - Follow official RR consonant rules: \u3131=g/k, \u3137=d/t, \u3142=b/p, etc.
-   - Distinguish between \u3145=s and \u3146=ss
-   - Proper handling of \u3139: initial \u3139=r, medial \u3139=l, final \u3139=l
-   - Proper handling of assimilation: \uD569\uB2C8\uB2E4=hamnida (not hapnida)
-
-4. **Linguistic Accuracy:**
-   - Process word by word, not character by character
-   - Correctly handle syllable-final consonants (\uBC1B\uCE68)
-   - Apply proper sound change rules for connected speech
-   - Account for consonant assimilation and liaison between words when needed
-
-5. **Preserve Everything Else:** Keep all non-Korean text (English, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are.
-
-6. **Completeness Check:** Before outputting, methodically verify that every single Korean word/sequence has its romaja pair.
-   - **CRITICAL: Double-check mixed-language phrases** to ensure no Korean text was missed
-   - **CRITICAL: Verify that Korean text at the beginning, middle, or end of phrases** all have romaja
-
-7. **Mixed Text Handling:** For text that mixes Korean with other scripts or characters:
-   - First identify ALL consecutive Korean Hangul characters, regardless of their position in the text
-   - Add romaja ONLY after the complete Korean sequence
-   - Leave all non-Korean characters in their original positions
-   - **CRITICAL: Process Korean text at the end of mixed phrases** (e.g., "good\uBC24" = "good\uBC24{bam}")
-   - **CRITICAL: Process Korean text in the middle of mixed phrases** (e.g., "hello\uC548\uB155hi" = "hello\uC548\uB155{annyeong}hi")
-
-**Examples with Sound Change Rules:**
-* \uC815\uB9D0 = \uC815\uB9D0{jeongmal}
-* \uC88B\uC544\uD574 = \uC88B\uC544\uD574{joahae}
-* \uAC19\uC774 = \uAC19\uC774{gachi} (Note assimilation)
-* \uC77D\uB2E4 = \uC77D\uB2E4{ikda} (Note syllable-final consonant rule)
-* \uBC25 \uBA39\uC5B4 = \uBC25{bap} \uBA39\uC5B4{meogeo} (Note final consonant pronunciation)
-* \uAF43\uC78E = \uAF43\uC78E{kkonip} (Note assimilation at morpheme boundary)
-* \uC5C6\uC5B4 = \uC5C6\uC5B4{eopseo} (Note complex consonant cluster)
-* \uC549\uC544 = \uC549\uC544{anja} (Note complex consonant rules)
-* \uAC14\uB2E4 \uC654\uB2E4 = \uAC14\uB2E4{gatda} \uC654\uB2E4{watda} (Note past tense pronunciation)
-* \uC0AC\uB791\uD574\uC694 = \uC0AC\uB791\uD574\uC694{saranghaeyo} (Note aspirated consonant)
-
-**Special Cases:**
-* Numbers mixed with Korean: 2\uC0B4\uC774\uC5D0\uC694 = 2\uC0B4\uC774\uC5D0\uC694{salieyo}
-* Parentheses: (\uB0B4\uAC00 \uC544\uB2C8\uC796\uC544) = (\uB0B4\uAC00{naega} \uC544\uB2C8\uC796\uC544{anijana})
-* Particles: \uCC45\uC774 = \uCC45\uC774{chaegi}, \uC9D1\uC5D0 = \uC9D1\uC5D0{jibe} (Note sound changes)
-* Long words: \uAC00\uB098\uB2E4\uB77C\uB9C8\uBC14\uC0AC = \uAC00\uB098\uB2E4\uB77C\uB9C8\uBC14\uC0AC{ganadaramabasa}
-* Words with suffixes: \uAF43\uC78E\uCC98\uB7FC = \uAF43\uC78E\uCC98\uB7FC{konnipcheorom}
-* Mixed script: \uC720\uC8FCbeat = \uC720\uC8FC{yuju}beat (romaja only for Korean part)
-* Mixed script: \uC544\uC774love\uB178\uB798 = \uC544\uC774{ai}love\uB178\uB798{norae} (separate Korean sequences)
-* Korean at end: good\uBC24 = good\uBC24{bam} (Korean at end of phrase)
-* Korean in middle: hello\uC548\uB155hi = hello\uC548\uB155{annyeong}hi (Korean in middle)
-* Complex mix: \uC5EC\uB984\uC5EC\uB984\uD574hey = \uC5EC\uB984\uC5EC\uB984\uD574{yeoreumyeoreumhae}hey (Korean followed by English)
-* Multiple Korean segments: \uC548\uB155hello\uC5EC\uBCF4\uC138\uC694 = \uC548\uB155{annyeong}hello\uC5EC\uBCF4\uC138\uC694{yeoboseyo} (Korean-English-Korean)
-
-**Input:** You will receive lines of song lyrics.
-**Output:** Return the lyrics with romaja added inline according to the rules above. Ensure the output maintains the original line structure.`;
-      FURIGANA_PROMPT = `You are an expert Japanese linguist specializing in accurate furigana transcription for song lyrics. Your primary goal is to add Hiragana readings in curly braces {} after EVERY Kanji character or compound Kanji sequence in the provided lyrics.
-
-**Core Task:** Convert Japanese lyrics to include inline furigana for all Kanji.
-
-**Strict Rules:**
-1.  **Mandatory Conversion:** You MUST process EVERY Kanji character and compound Kanji sequence. No exceptions. Do NOT skip any.
-2.  **Inline Format:** Insert the correct Hiragana reading enclosed in curly braces {} immediately following the corresponding Kanji character or sequence. Example: \u6F22\u5B57 = \u6F22\u5B57{\u304B\u3093\u3058}.
-3.  **Contextual Readings:** Use the contextually appropriate reading (kun'yomi or on'yomi). For compound words (jukugo), provide the reading for the entire compound. Example: \u65E5\u672C\u8A9E = \u65E5\u672C\u8A9E{\u306B\u307B\u3093\u3054}. For single Kanji followed by okurigana, provide the reading for the Kanji part only. Example: \u98DF{\u305F}\u3079\u308B.
-4.  **Preserve Everything Else:** Keep all non-Kanji text (Hiragana, Katakana, English, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are.
-5.  **Completeness Check:** Before outputting, double-check that every single Kanji character/sequence has its furigana pair.
-
-**Examples:**
-*   \u9858\u3044 = \u9858{\u306D\u304C}\u3044
-*   \u53EF\u611B\u3044 = \u53EF\u611B{\u304B\u308F\u3044}\u3044
-*   5\u4EBA = 5\u4EBA{\u306B\u3093} (Number preserved, Kanji romanized)
-*   \u660E\u5F8C\u65E5 = \u660E\u5F8C\u65E5{\u3042\u3055\u3063\u3066} (Compound word)
-*   \u795E\u69D8 = \u795E\u69D8{\u304B\u307F\u3055\u307E} (Compound word)
-*   \u805E\u304D = \u805E{\u304D}\u304D (Kanji with okurigana)
-*   \u98DF\u3079\u308B = \u98DF{\u305F}\u3079\u308B
-*   \u7F8E\u3057\u3044 = \u7F8E{\u3046\u3064\u304F}\u3057\u3044
-*   \u6771\u4EAC\u30BF\u30EF\u30FC = \u6771\u4EAC{\u3068\u3046\u304D\u3087\u3046}\u30BF\u30EF\u30FC (Mixed script, Katakana preserved)
-*   (\u5927\u4E08\u592B\u3060\u3088) = (\u5927\u4E08\u592B{\u3060\u3044\u3058\u3087\u3046\u3076}\u3060\u3088) (Parentheses and Hiragana preserved)
-
-**Input:** You will receive lines of song lyrics.
-**Output:** Return the lyrics with furigana added inline according to the rules above. Ensure the output maintains the original line structure.
-`;
-      ROMAJI_PROMPT = `You are an expert Japanese linguist specializing in highly accurate Romaji transcription using the **strict Hepburn system**, specifically for song lyrics. Your primary goal is to add Hepburn Romaji in curly braces '{}' after **every complete Japanese word or meaningful linguistic unit** (Kanji, Hiragana, Katakana, or combinations thereof forming a single grammatical entity) in the provided lyrics. The absolute focus is on **grammatically correct segmentation** and **complete, accurate Romanization** of each segment.
-
-#### Core Task
-Accurately convert Japanese song lyrics to strict Hepburn Romaji, ensuring each word, particle, conjugated form, verb phrase, or katakana term (regardless of length) is treated as a single, indivisible unit for Romanization. The text within the braces '{}' must **always be the Hepburn Romaji conversion**, never the original Japanese script. Do not skip any Japanese text elements, especially long katakana words.
-
-#### Strict Rules
-
-1. **Unit-Level Conversion**
-   - Identify and process each meaningful Japanese linguistic unit. A "unit" is defined as the smallest sequence of characters that functions as a single grammatical entity, including:
-     - Nouns (e.g., \u65E5\u672C\u8A9E{Nihongo})
-     - Verbs (including **all** conjugated forms and combinations with auxiliary verbs\u2014see Rule 2)
-     - Adjectives (including **all** conjugated forms)
-     - Adverbs
-     - Particles (e.g., \u306F{wa}, \u3092{o}, \u304C{ga}, \u306E{no}, \u306B{ni}, \u3078{e}, \u3068{to})
-     - Compound particles (e.g., \u306B\u306F{niwa}, \u3068\u306F{towa}, \u307E\u3067\u3082{mademo})
-     - Katakana words of any length (e.g., \u30B3\u30FC\u30D2\u30FC{k\u014Dh\u012B}, \u30A4\u30F3\u30D5\u30A7\u30EB\u30CE\u30E9\u30D6\u30EC\u30BF\u30FC{inferuno raburet\u0101})
-     - Numbers with counters (e.g., 5\u4EBA{go-nin})
-     - Compound words (e.g., \u6771\u4EAC\u30BF\u30EF\u30FC{T\u014Dky\u014D Taw\u0101})
-     - Interjections and short phrases (e.g., \u305B\u30FC\u306E{s\u0113 no}, \u3088\u30FC\u3044{y\u014D i}, \u3042\u3063{a'}, \u3048\u3063\u3068{etto})
-   - Romanize each identified unit **as a whole**.
-
-2. **CRITICAL: Correct Segmentation & Indivisibility**
-   - **Do not split functional grammatical units:** This is the most critical rule. Any sequence of characters functioning together as a single word, conjugated form, or verb phrase **must** remain indivisible.
-   - **Conjugated Verbs/Adjectives:** Treat the **entire** conjugated form (base + endings, okurigana, auxiliary verbs grammatically attached) as **indivisible**.
-   - **Kanji + Okurigana Integrity:** A unit often includes Kanji followed by Hiragana (okurigana), forming a single word (e.g., \u98DF\u3079\u308B{taberu}, not \u98DF{tabe}\u3079\u308B{ru}).
-   - **Verb (Te-form) + Auxiliary Verb Combinations:** Treat combinations like Verb-\u3066 + \u3044\u308B/\u3042\u308B/\u304A\u304F/\u3057\u307E\u3046/\u3044\u304F/\u304F\u308B and their conjugations or contractions (e.g., -te iru = -teru, -te ita = -teta, -te shimau = -chau) as **single verb phrases** that **must not be split**.
-   - **Correct Examples:**
-     - \u7B11\u3063\u3066{waratte}
-     - \u5C4A\u3044\u3066{todoite}
-     - \u5C45\u308C\u306A\u3044{irenai}
-     - \u75C5\u3093\u3067\u304D\u305F{yandekita}
-     - \u611B\u3057\u304D{itoshiki}
-     - \u4E57\u3063\u304B\u3063\u3066{nokkatte}
-     - \u8D70\u308A\u51FA\u3057\u305F{hashiridashita}
-     - \u98DF\u3079\u3066\u3057\u307E\u3046{tabeteshimau}
-     - \u7F8E\u3057\u3055{utsukushsa}
-     - \u898B\u3066\u305F{miteta}
-     - \u8AAD\u3093\u3067\u308B{yonderu}
-     - \u77E5\u3063\u3066\u3044\u308B{shitteiru}
-     - \u8A00\u3063\u3066\u304A\u304F{itteoku}
-     - \u98DF\u3079\u3061\u3083\u3063\u305F{tabechatta}
-     - \u62B1\u3048{kakae}
-     - \u898B\u3066\u3082{mitemo}
-     - \u30E1\u30ED\u30C7\u30A3\u30FC{merod\u012B}
-     - \u30B5\u30FC\u30AD\u30E5\u30EC\u30FC\u30B7\u30E7\u30F3{s\u0101kyur\u0113shon}
-
-3. **Inline Format & Content**
-   - Insert the **Hepburn Romaji pronunciation** in curly braces '{}' immediately following the **complete** Japanese unit, with **no space** between the unit and the opening brace.
-   - The content inside the braces '{}' must be the **Hepburn Romaji result**, not the original Japanese script (e.g., \u62B1\u3048{kakae}, not \u62B1\u3048{\u62B1\u3048}).
-   - Pay special attention to short, easily overlooked expressions like \u305B\u30FC\u306E{s\u0113 no} or \u306D\u3047{n\u0113} that might be missed despite being meaningful linguistic units.
-
-4. **Romanization System: Strict Hepburn**
-   - Adhere strictly to the Hepburn system:
-     - Basic sounds: \u3057=shi, \u3061=chi, \u3064=tsu, \u3075=fu, \u3058=ji, \u3062=ji, \u3065=zu
-     - **Long vowels:** Use macrons consistently: \u304A\u3046/\u304A\u304A = \u014D, \u3048\u3044/\u3048\u3048 = \u0113, \u3046\u3046 = \u016B, \u3044\u3044 = \u012B, \u3042\u3042 = \u0101 (e.g., \u6771\u4EAC{T\u014Dky\u014D}, \u3042\u308A\u304C\u3068\u3046{arigat\u014D}, \u7F8E\u5473\u3057\u3044{oishii})
-     - **Extended vowels in casual speech**: Properly romanize extended vowels in casual expressions, including those marked with "\u30FC" (e.g., \u305B\u30FC\u306E{s\u0113 no}, \u3088\u30FC\u3044{y\u014D i})
-     - Particles: \u306F = wa, \u3078 = e, \u3092 = o
-     - Sokuon (\u3063): Double the following consonant (e.g., \u3061\u3087\u3063\u3068{chotto}, \u7B11\u3063\u3066{waratte})
-     - N (\u3093): Use n before most consonants, m before b/m/p, and n' before vowels or y (e.g., \u6848\u5185{annai}, \u6563\u6B69{sampo}, \u539F\u56E0{gen'in}, \u672C\u5C4B{hon'ya})
-
-5. **Completeness & Accuracy of Romanization**
-   - Ensure **every** Japanese linguistic unit has its corresponding Hepburn Romaji in braces.
-   - The Romaji must be **accurate and complete**, reflecting the pronunciation of the **entire** unit, with attention to long vowels, double consonants, and particle usage.
-   - **Pay special attention to long katakana words**: Never skip romanization for long katakana sequences like "\u30A4\u30F3\u30D5\u30A7\u30EB\u30CE\u30E9\u30D6\u30EC\u30BF\u30FC{inferuno raburet\u0101}" or "\u30B5\u30FC\u30AD\u30E5\u30EC\u30FC\u30B7\u30E7\u30F3{s\u0101kyur\u0113shon}", even if they appear complex. These should be fully romanized as single units.
-   - **Do not overlook short expressions**: Be particularly vigilant about romanizing short expressions that might be overlooked, such as \u305B\u30FC\u306E{s\u0113 no}, \u3088\u3057{yoshi}, \u307B\u3089{hora}, etc. Even single kana or short utterances like \u3042\u3063{a'} or \u3048\u3063{e'} must be romanized.
-
-6. **Preserve Non-Japanese Text and Punctuation**
-   - Keep all non-Japanese text (English words, numbers, symbols) unchanged, with no Romaji added for these elements.
-   - **Do not add Romaji transcription for any punctuation marks, including commas (,), periods (.), question marks (?), exclamation points (!), etc.**
-   - Maintain original spaces and line breaks as they appear in the lyrics.
-
-7. **Punctuation Handling**
-   - Treat punctuation marks separately from Japanese text. For example:
-     - "\u4ECA\u65E5\u306F{ky\u014D wa}, \u6674\u308C{hare}" (correct)
-     - "\u4ECA\u65E5\u306F{ky\u014D wa}\u3001\u6674\u308C{hare}" (correct)
-     - "\u4ECA\u65E5\u306F\u3001{ky\u014D wa,}\u6674\u308C{hare}" (incorrect - comma included in Romaji)
-   - **Special Delimiters (\u300C\u300D, \uFF08\uFF09):** For Japanese text enclosed within full-width quotation marks (\u300C\u300D) or full-width parentheses \uFF08\uFF09, the Romaji should be inserted *inside* these delimiters. Example: \u300C\u904B\u547D\u300D = \u300C\u904B\u547D{unmei}\u300D.
-
-#### Input
-Song lyrics containing Japanese text.
-
-#### Output
-The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to every complete Japanese word, particle, conjugated form, or verb phrase, respecting the strict segmentation and indivisibility rules, ensuring **only Romaji appears within the braces**, and excluding all punctuation marks from Romanization. Respond in JSON.`;
-    }
-  });
-
-  // src/components/Global/Defaults.ts
-  var Defaults, Defaults_default;
-  var init_Defaults = __esm({
-    "src/components/Global/Defaults.ts"() {
-      init_package();
-      init_prompts();
-      Defaults = {
-        Version: version,
-        lyrics: {
-          api: {
-            url: "https://amai-worker-production.nandemo.workers.dev/lyrics",
-            translationUrl: "https://amai-worker-production.nandemo.workers.dev/translations",
-            phoneticUrl: "https://amai-worker-production.nandemo.workers.dev/phonetic"
-          }
-        },
-        CurrentLyricsType: "None",
-        LyricsContainerExists: false,
-        lyrics_spacing: 2,
-        enableRomaji: false,
-        disableRomajiToggleNotification: false,
-        disableTranslation: false,
-        translationFontSize: "0.575",
-        defaultLyricsSize: "",
-        translationLanguage: "English",
-        systemInstruction: SYSTEM_INSTRUCTION,
-        translationPrompt: TRANSLATION_PROMPT,
-        romajaPrompt: ROMAJA_PROMPT,
-        furiganaPrompt: FURIGANA_PROMPT,
-        romajiPrompt: ROMAJI_PROMPT
-      };
-      Defaults_default = Defaults;
     }
   });
 
@@ -871,7 +618,476 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
+  // node_modules/spark-md5/spark-md5.js
+  var require_spark_md5 = __commonJS({
+    "node_modules/spark-md5/spark-md5.js"(exports, module) {
+      (function(factory) {
+        if (typeof exports === "object") {
+          module.exports = factory();
+        } else if (typeof define === "function" && define.amd) {
+          define(factory);
+        } else {
+          var glob;
+          try {
+            glob = window;
+          } catch (e) {
+            glob = self;
+          }
+          glob.SparkMD5 = factory();
+        }
+      })(function(undefined2) {
+        "use strict";
+        var add32 = function(a, b) {
+          return a + b & 4294967295;
+        }, hex_chr = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"];
+        function cmn(q, a, b, x, s, t) {
+          a = add32(add32(a, q), add32(x, t));
+          return add32(a << s | a >>> 32 - s, b);
+        }
+        function md5cycle(x, k) {
+          var a = x[0], b = x[1], c = x[2], d = x[3];
+          a += (b & c | ~b & d) + k[0] - 680876936 | 0;
+          a = (a << 7 | a >>> 25) + b | 0;
+          d += (a & b | ~a & c) + k[1] - 389564586 | 0;
+          d = (d << 12 | d >>> 20) + a | 0;
+          c += (d & a | ~d & b) + k[2] + 606105819 | 0;
+          c = (c << 17 | c >>> 15) + d | 0;
+          b += (c & d | ~c & a) + k[3] - 1044525330 | 0;
+          b = (b << 22 | b >>> 10) + c | 0;
+          a += (b & c | ~b & d) + k[4] - 176418897 | 0;
+          a = (a << 7 | a >>> 25) + b | 0;
+          d += (a & b | ~a & c) + k[5] + 1200080426 | 0;
+          d = (d << 12 | d >>> 20) + a | 0;
+          c += (d & a | ~d & b) + k[6] - 1473231341 | 0;
+          c = (c << 17 | c >>> 15) + d | 0;
+          b += (c & d | ~c & a) + k[7] - 45705983 | 0;
+          b = (b << 22 | b >>> 10) + c | 0;
+          a += (b & c | ~b & d) + k[8] + 1770035416 | 0;
+          a = (a << 7 | a >>> 25) + b | 0;
+          d += (a & b | ~a & c) + k[9] - 1958414417 | 0;
+          d = (d << 12 | d >>> 20) + a | 0;
+          c += (d & a | ~d & b) + k[10] - 42063 | 0;
+          c = (c << 17 | c >>> 15) + d | 0;
+          b += (c & d | ~c & a) + k[11] - 1990404162 | 0;
+          b = (b << 22 | b >>> 10) + c | 0;
+          a += (b & c | ~b & d) + k[12] + 1804603682 | 0;
+          a = (a << 7 | a >>> 25) + b | 0;
+          d += (a & b | ~a & c) + k[13] - 40341101 | 0;
+          d = (d << 12 | d >>> 20) + a | 0;
+          c += (d & a | ~d & b) + k[14] - 1502002290 | 0;
+          c = (c << 17 | c >>> 15) + d | 0;
+          b += (c & d | ~c & a) + k[15] + 1236535329 | 0;
+          b = (b << 22 | b >>> 10) + c | 0;
+          a += (b & d | c & ~d) + k[1] - 165796510 | 0;
+          a = (a << 5 | a >>> 27) + b | 0;
+          d += (a & c | b & ~c) + k[6] - 1069501632 | 0;
+          d = (d << 9 | d >>> 23) + a | 0;
+          c += (d & b | a & ~b) + k[11] + 643717713 | 0;
+          c = (c << 14 | c >>> 18) + d | 0;
+          b += (c & a | d & ~a) + k[0] - 373897302 | 0;
+          b = (b << 20 | b >>> 12) + c | 0;
+          a += (b & d | c & ~d) + k[5] - 701558691 | 0;
+          a = (a << 5 | a >>> 27) + b | 0;
+          d += (a & c | b & ~c) + k[10] + 38016083 | 0;
+          d = (d << 9 | d >>> 23) + a | 0;
+          c += (d & b | a & ~b) + k[15] - 660478335 | 0;
+          c = (c << 14 | c >>> 18) + d | 0;
+          b += (c & a | d & ~a) + k[4] - 405537848 | 0;
+          b = (b << 20 | b >>> 12) + c | 0;
+          a += (b & d | c & ~d) + k[9] + 568446438 | 0;
+          a = (a << 5 | a >>> 27) + b | 0;
+          d += (a & c | b & ~c) + k[14] - 1019803690 | 0;
+          d = (d << 9 | d >>> 23) + a | 0;
+          c += (d & b | a & ~b) + k[3] - 187363961 | 0;
+          c = (c << 14 | c >>> 18) + d | 0;
+          b += (c & a | d & ~a) + k[8] + 1163531501 | 0;
+          b = (b << 20 | b >>> 12) + c | 0;
+          a += (b & d | c & ~d) + k[13] - 1444681467 | 0;
+          a = (a << 5 | a >>> 27) + b | 0;
+          d += (a & c | b & ~c) + k[2] - 51403784 | 0;
+          d = (d << 9 | d >>> 23) + a | 0;
+          c += (d & b | a & ~b) + k[7] + 1735328473 | 0;
+          c = (c << 14 | c >>> 18) + d | 0;
+          b += (c & a | d & ~a) + k[12] - 1926607734 | 0;
+          b = (b << 20 | b >>> 12) + c | 0;
+          a += (b ^ c ^ d) + k[5] - 378558 | 0;
+          a = (a << 4 | a >>> 28) + b | 0;
+          d += (a ^ b ^ c) + k[8] - 2022574463 | 0;
+          d = (d << 11 | d >>> 21) + a | 0;
+          c += (d ^ a ^ b) + k[11] + 1839030562 | 0;
+          c = (c << 16 | c >>> 16) + d | 0;
+          b += (c ^ d ^ a) + k[14] - 35309556 | 0;
+          b = (b << 23 | b >>> 9) + c | 0;
+          a += (b ^ c ^ d) + k[1] - 1530992060 | 0;
+          a = (a << 4 | a >>> 28) + b | 0;
+          d += (a ^ b ^ c) + k[4] + 1272893353 | 0;
+          d = (d << 11 | d >>> 21) + a | 0;
+          c += (d ^ a ^ b) + k[7] - 155497632 | 0;
+          c = (c << 16 | c >>> 16) + d | 0;
+          b += (c ^ d ^ a) + k[10] - 1094730640 | 0;
+          b = (b << 23 | b >>> 9) + c | 0;
+          a += (b ^ c ^ d) + k[13] + 681279174 | 0;
+          a = (a << 4 | a >>> 28) + b | 0;
+          d += (a ^ b ^ c) + k[0] - 358537222 | 0;
+          d = (d << 11 | d >>> 21) + a | 0;
+          c += (d ^ a ^ b) + k[3] - 722521979 | 0;
+          c = (c << 16 | c >>> 16) + d | 0;
+          b += (c ^ d ^ a) + k[6] + 76029189 | 0;
+          b = (b << 23 | b >>> 9) + c | 0;
+          a += (b ^ c ^ d) + k[9] - 640364487 | 0;
+          a = (a << 4 | a >>> 28) + b | 0;
+          d += (a ^ b ^ c) + k[12] - 421815835 | 0;
+          d = (d << 11 | d >>> 21) + a | 0;
+          c += (d ^ a ^ b) + k[15] + 530742520 | 0;
+          c = (c << 16 | c >>> 16) + d | 0;
+          b += (c ^ d ^ a) + k[2] - 995338651 | 0;
+          b = (b << 23 | b >>> 9) + c | 0;
+          a += (c ^ (b | ~d)) + k[0] - 198630844 | 0;
+          a = (a << 6 | a >>> 26) + b | 0;
+          d += (b ^ (a | ~c)) + k[7] + 1126891415 | 0;
+          d = (d << 10 | d >>> 22) + a | 0;
+          c += (a ^ (d | ~b)) + k[14] - 1416354905 | 0;
+          c = (c << 15 | c >>> 17) + d | 0;
+          b += (d ^ (c | ~a)) + k[5] - 57434055 | 0;
+          b = (b << 21 | b >>> 11) + c | 0;
+          a += (c ^ (b | ~d)) + k[12] + 1700485571 | 0;
+          a = (a << 6 | a >>> 26) + b | 0;
+          d += (b ^ (a | ~c)) + k[3] - 1894986606 | 0;
+          d = (d << 10 | d >>> 22) + a | 0;
+          c += (a ^ (d | ~b)) + k[10] - 1051523 | 0;
+          c = (c << 15 | c >>> 17) + d | 0;
+          b += (d ^ (c | ~a)) + k[1] - 2054922799 | 0;
+          b = (b << 21 | b >>> 11) + c | 0;
+          a += (c ^ (b | ~d)) + k[8] + 1873313359 | 0;
+          a = (a << 6 | a >>> 26) + b | 0;
+          d += (b ^ (a | ~c)) + k[15] - 30611744 | 0;
+          d = (d << 10 | d >>> 22) + a | 0;
+          c += (a ^ (d | ~b)) + k[6] - 1560198380 | 0;
+          c = (c << 15 | c >>> 17) + d | 0;
+          b += (d ^ (c | ~a)) + k[13] + 1309151649 | 0;
+          b = (b << 21 | b >>> 11) + c | 0;
+          a += (c ^ (b | ~d)) + k[4] - 145523070 | 0;
+          a = (a << 6 | a >>> 26) + b | 0;
+          d += (b ^ (a | ~c)) + k[11] - 1120210379 | 0;
+          d = (d << 10 | d >>> 22) + a | 0;
+          c += (a ^ (d | ~b)) + k[2] + 718787259 | 0;
+          c = (c << 15 | c >>> 17) + d | 0;
+          b += (d ^ (c | ~a)) + k[9] - 343485551 | 0;
+          b = (b << 21 | b >>> 11) + c | 0;
+          x[0] = a + x[0] | 0;
+          x[1] = b + x[1] | 0;
+          x[2] = c + x[2] | 0;
+          x[3] = d + x[3] | 0;
+        }
+        function md5blk(s) {
+          var md5blks = [], i;
+          for (i = 0; i < 64; i += 4) {
+            md5blks[i >> 2] = s.charCodeAt(i) + (s.charCodeAt(i + 1) << 8) + (s.charCodeAt(i + 2) << 16) + (s.charCodeAt(i + 3) << 24);
+          }
+          return md5blks;
+        }
+        function md5blk_array(a) {
+          var md5blks = [], i;
+          for (i = 0; i < 64; i += 4) {
+            md5blks[i >> 2] = a[i] + (a[i + 1] << 8) + (a[i + 2] << 16) + (a[i + 3] << 24);
+          }
+          return md5blks;
+        }
+        function md51(s) {
+          var n = s.length, state2 = [1732584193, -271733879, -1732584194, 271733878], i, length, tail, tmp, lo, hi;
+          for (i = 64; i <= n; i += 64) {
+            md5cycle(state2, md5blk(s.substring(i - 64, i)));
+          }
+          s = s.substring(i - 64);
+          length = s.length;
+          tail = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+          for (i = 0; i < length; i += 1) {
+            tail[i >> 2] |= s.charCodeAt(i) << (i % 4 << 3);
+          }
+          tail[i >> 2] |= 128 << (i % 4 << 3);
+          if (i > 55) {
+            md5cycle(state2, tail);
+            for (i = 0; i < 16; i += 1) {
+              tail[i] = 0;
+            }
+          }
+          tmp = n * 8;
+          tmp = tmp.toString(16).match(/(.*?)(.{0,8})$/);
+          lo = parseInt(tmp[2], 16);
+          hi = parseInt(tmp[1], 16) || 0;
+          tail[14] = lo;
+          tail[15] = hi;
+          md5cycle(state2, tail);
+          return state2;
+        }
+        function md51_array(a) {
+          var n = a.length, state2 = [1732584193, -271733879, -1732584194, 271733878], i, length, tail, tmp, lo, hi;
+          for (i = 64; i <= n; i += 64) {
+            md5cycle(state2, md5blk_array(a.subarray(i - 64, i)));
+          }
+          a = i - 64 < n ? a.subarray(i - 64) : new Uint8Array(0);
+          length = a.length;
+          tail = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+          for (i = 0; i < length; i += 1) {
+            tail[i >> 2] |= a[i] << (i % 4 << 3);
+          }
+          tail[i >> 2] |= 128 << (i % 4 << 3);
+          if (i > 55) {
+            md5cycle(state2, tail);
+            for (i = 0; i < 16; i += 1) {
+              tail[i] = 0;
+            }
+          }
+          tmp = n * 8;
+          tmp = tmp.toString(16).match(/(.*?)(.{0,8})$/);
+          lo = parseInt(tmp[2], 16);
+          hi = parseInt(tmp[1], 16) || 0;
+          tail[14] = lo;
+          tail[15] = hi;
+          md5cycle(state2, tail);
+          return state2;
+        }
+        function rhex(n) {
+          var s = "", j;
+          for (j = 0; j < 4; j += 1) {
+            s += hex_chr[n >> j * 8 + 4 & 15] + hex_chr[n >> j * 8 & 15];
+          }
+          return s;
+        }
+        function hex(x) {
+          var i;
+          for (i = 0; i < x.length; i += 1) {
+            x[i] = rhex(x[i]);
+          }
+          return x.join("");
+        }
+        if (hex(md51("hello")) !== "5d41402abc4b2a76b9719d911017c592") {
+          add32 = function(x, y) {
+            var lsw = (x & 65535) + (y & 65535), msw = (x >> 16) + (y >> 16) + (lsw >> 16);
+            return msw << 16 | lsw & 65535;
+          };
+        }
+        if (typeof ArrayBuffer !== "undefined" && !ArrayBuffer.prototype.slice) {
+          (function() {
+            function clamp(val, length) {
+              val = val | 0 || 0;
+              if (val < 0) {
+                return Math.max(val + length, 0);
+              }
+              return Math.min(val, length);
+            }
+            ArrayBuffer.prototype.slice = function(from, to) {
+              var length = this.byteLength, begin = clamp(from, length), end = length, num, target, targetArray, sourceArray;
+              if (to !== undefined2) {
+                end = clamp(to, length);
+              }
+              if (begin > end) {
+                return new ArrayBuffer(0);
+              }
+              num = end - begin;
+              target = new ArrayBuffer(num);
+              targetArray = new Uint8Array(target);
+              sourceArray = new Uint8Array(this, begin, num);
+              targetArray.set(sourceArray);
+              return target;
+            };
+          })();
+        }
+        function toUtf8(str) {
+          if (/[\u0080-\uFFFF]/.test(str)) {
+            str = unescape(encodeURIComponent(str));
+          }
+          return str;
+        }
+        function utf8Str2ArrayBuffer(str, returnUInt8Array) {
+          var length = str.length, buff = new ArrayBuffer(length), arr = new Uint8Array(buff), i;
+          for (i = 0; i < length; i += 1) {
+            arr[i] = str.charCodeAt(i);
+          }
+          return returnUInt8Array ? arr : buff;
+        }
+        function arrayBuffer2Utf8Str(buff) {
+          return String.fromCharCode.apply(null, new Uint8Array(buff));
+        }
+        function concatenateArrayBuffers(first, second, returnUInt8Array) {
+          var result = new Uint8Array(first.byteLength + second.byteLength);
+          result.set(new Uint8Array(first));
+          result.set(new Uint8Array(second), first.byteLength);
+          return returnUInt8Array ? result : result.buffer;
+        }
+        function hexToBinaryString(hex2) {
+          var bytes = [], length = hex2.length, x;
+          for (x = 0; x < length - 1; x += 2) {
+            bytes.push(parseInt(hex2.substr(x, 2), 16));
+          }
+          return String.fromCharCode.apply(String, bytes);
+        }
+        function SparkMD52() {
+          this.reset();
+        }
+        SparkMD52.prototype.append = function(str) {
+          this.appendBinary(toUtf8(str));
+          return this;
+        };
+        SparkMD52.prototype.appendBinary = function(contents) {
+          this._buff += contents;
+          this._length += contents.length;
+          var length = this._buff.length, i;
+          for (i = 64; i <= length; i += 64) {
+            md5cycle(this._hash, md5blk(this._buff.substring(i - 64, i)));
+          }
+          this._buff = this._buff.substring(i - 64);
+          return this;
+        };
+        SparkMD52.prototype.end = function(raw) {
+          var buff = this._buff, length = buff.length, i, tail = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], ret;
+          for (i = 0; i < length; i += 1) {
+            tail[i >> 2] |= buff.charCodeAt(i) << (i % 4 << 3);
+          }
+          this._finish(tail, length);
+          ret = hex(this._hash);
+          if (raw) {
+            ret = hexToBinaryString(ret);
+          }
+          this.reset();
+          return ret;
+        };
+        SparkMD52.prototype.reset = function() {
+          this._buff = "";
+          this._length = 0;
+          this._hash = [1732584193, -271733879, -1732584194, 271733878];
+          return this;
+        };
+        SparkMD52.prototype.getState = function() {
+          return {
+            buff: this._buff,
+            length: this._length,
+            hash: this._hash.slice()
+          };
+        };
+        SparkMD52.prototype.setState = function(state2) {
+          this._buff = state2.buff;
+          this._length = state2.length;
+          this._hash = state2.hash;
+          return this;
+        };
+        SparkMD52.prototype.destroy = function() {
+          delete this._hash;
+          delete this._buff;
+          delete this._length;
+        };
+        SparkMD52.prototype._finish = function(tail, length) {
+          var i = length, tmp, lo, hi;
+          tail[i >> 2] |= 128 << (i % 4 << 3);
+          if (i > 55) {
+            md5cycle(this._hash, tail);
+            for (i = 0; i < 16; i += 1) {
+              tail[i] = 0;
+            }
+          }
+          tmp = this._length * 8;
+          tmp = tmp.toString(16).match(/(.*?)(.{0,8})$/);
+          lo = parseInt(tmp[2], 16);
+          hi = parseInt(tmp[1], 16) || 0;
+          tail[14] = lo;
+          tail[15] = hi;
+          md5cycle(this._hash, tail);
+        };
+        SparkMD52.hash = function(str, raw) {
+          return SparkMD52.hashBinary(toUtf8(str), raw);
+        };
+        SparkMD52.hashBinary = function(content, raw) {
+          var hash = md51(content), ret = hex(hash);
+          return raw ? hexToBinaryString(ret) : ret;
+        };
+        SparkMD52.ArrayBuffer = function() {
+          this.reset();
+        };
+        SparkMD52.ArrayBuffer.prototype.append = function(arr) {
+          var buff = concatenateArrayBuffers(this._buff.buffer, arr, true), length = buff.length, i;
+          this._length += arr.byteLength;
+          for (i = 64; i <= length; i += 64) {
+            md5cycle(this._hash, md5blk_array(buff.subarray(i - 64, i)));
+          }
+          this._buff = i - 64 < length ? new Uint8Array(buff.buffer.slice(i - 64)) : new Uint8Array(0);
+          return this;
+        };
+        SparkMD52.ArrayBuffer.prototype.end = function(raw) {
+          var buff = this._buff, length = buff.length, tail = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], i, ret;
+          for (i = 0; i < length; i += 1) {
+            tail[i >> 2] |= buff[i] << (i % 4 << 3);
+          }
+          this._finish(tail, length);
+          ret = hex(this._hash);
+          if (raw) {
+            ret = hexToBinaryString(ret);
+          }
+          this.reset();
+          return ret;
+        };
+        SparkMD52.ArrayBuffer.prototype.reset = function() {
+          this._buff = new Uint8Array(0);
+          this._length = 0;
+          this._hash = [1732584193, -271733879, -1732584194, 271733878];
+          return this;
+        };
+        SparkMD52.ArrayBuffer.prototype.getState = function() {
+          var state2 = SparkMD52.prototype.getState.call(this);
+          state2.buff = arrayBuffer2Utf8Str(state2.buff);
+          return state2;
+        };
+        SparkMD52.ArrayBuffer.prototype.setState = function(state2) {
+          state2.buff = utf8Str2ArrayBuffer(state2.buff, true);
+          return SparkMD52.prototype.setState.call(this, state2);
+        };
+        SparkMD52.ArrayBuffer.prototype.destroy = SparkMD52.prototype.destroy;
+        SparkMD52.ArrayBuffer.prototype._finish = SparkMD52.prototype._finish;
+        SparkMD52.ArrayBuffer.hash = function(arr, raw) {
+          var hash = md51_array(new Uint8Array(arr)), ret = hex(hash);
+          return raw ? hexToBinaryString(ret) : ret;
+        };
+        return SparkMD52;
+      });
+    }
+  });
+
+  // src/utils/Hasher.ts
+  function md5(input) {
+    return import_spark_md5.default.hash(input);
+  }
+  function spotifyHex(base62) {
+    let num = BigInt(0);
+    for (const char of base62) {
+      const index = BASE62_MAP.get(char);
+      if (index === void 0)
+        throw new Error(`Invalid character in base62 string: ${char}`);
+      num = num * BigInt(62) + BigInt(index);
+    }
+    return num.toString(16).padStart(32, "0");
+  }
+  var import_spark_md5, BASE62_CHARS, BASE62_MAP;
+  var init_Hasher = __esm({
+    "src/utils/Hasher.ts"() {
+      import_spark_md5 = __toESM(require_spark_md5());
+      BASE62_CHARS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      BASE62_MAP = new Map([...BASE62_CHARS].map((c, i) => [c, i]));
+    }
+  });
+
   // node_modules/pako/dist/pako.esm.mjs
+  var pako_esm_exports = {};
+  __export(pako_esm_exports, {
+    Deflate: () => Deflate_1,
+    Inflate: () => Inflate_1,
+    constants: () => constants_1,
+    default: () => pako,
+    deflate: () => deflate_1,
+    deflateRaw: () => deflateRaw_1,
+    gzip: () => gzip_1,
+    inflate: () => inflate_1,
+    inflateRaw: () => inflateRaw_1,
+    ungzip: () => ungzip_1
+  });
   function zero$1(buf) {
     let len = buf.length;
     while (--len >= 0) {
@@ -4999,463 +5215,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // node_modules/spark-md5/spark-md5.js
-  var require_spark_md5 = __commonJS({
-    "node_modules/spark-md5/spark-md5.js"(exports, module) {
-      (function(factory) {
-        if (typeof exports === "object") {
-          module.exports = factory();
-        } else if (typeof define === "function" && define.amd) {
-          define(factory);
-        } else {
-          var glob;
-          try {
-            glob = window;
-          } catch (e) {
-            glob = self;
-          }
-          glob.SparkMD5 = factory();
-        }
-      })(function(undefined2) {
-        "use strict";
-        var add32 = function(a, b) {
-          return a + b & 4294967295;
-        }, hex_chr = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"];
-        function cmn(q, a, b, x, s, t) {
-          a = add32(add32(a, q), add32(x, t));
-          return add32(a << s | a >>> 32 - s, b);
-        }
-        function md5cycle(x, k) {
-          var a = x[0], b = x[1], c = x[2], d = x[3];
-          a += (b & c | ~b & d) + k[0] - 680876936 | 0;
-          a = (a << 7 | a >>> 25) + b | 0;
-          d += (a & b | ~a & c) + k[1] - 389564586 | 0;
-          d = (d << 12 | d >>> 20) + a | 0;
-          c += (d & a | ~d & b) + k[2] + 606105819 | 0;
-          c = (c << 17 | c >>> 15) + d | 0;
-          b += (c & d | ~c & a) + k[3] - 1044525330 | 0;
-          b = (b << 22 | b >>> 10) + c | 0;
-          a += (b & c | ~b & d) + k[4] - 176418897 | 0;
-          a = (a << 7 | a >>> 25) + b | 0;
-          d += (a & b | ~a & c) + k[5] + 1200080426 | 0;
-          d = (d << 12 | d >>> 20) + a | 0;
-          c += (d & a | ~d & b) + k[6] - 1473231341 | 0;
-          c = (c << 17 | c >>> 15) + d | 0;
-          b += (c & d | ~c & a) + k[7] - 45705983 | 0;
-          b = (b << 22 | b >>> 10) + c | 0;
-          a += (b & c | ~b & d) + k[8] + 1770035416 | 0;
-          a = (a << 7 | a >>> 25) + b | 0;
-          d += (a & b | ~a & c) + k[9] - 1958414417 | 0;
-          d = (d << 12 | d >>> 20) + a | 0;
-          c += (d & a | ~d & b) + k[10] - 42063 | 0;
-          c = (c << 17 | c >>> 15) + d | 0;
-          b += (c & d | ~c & a) + k[11] - 1990404162 | 0;
-          b = (b << 22 | b >>> 10) + c | 0;
-          a += (b & c | ~b & d) + k[12] + 1804603682 | 0;
-          a = (a << 7 | a >>> 25) + b | 0;
-          d += (a & b | ~a & c) + k[13] - 40341101 | 0;
-          d = (d << 12 | d >>> 20) + a | 0;
-          c += (d & a | ~d & b) + k[14] - 1502002290 | 0;
-          c = (c << 17 | c >>> 15) + d | 0;
-          b += (c & d | ~c & a) + k[15] + 1236535329 | 0;
-          b = (b << 22 | b >>> 10) + c | 0;
-          a += (b & d | c & ~d) + k[1] - 165796510 | 0;
-          a = (a << 5 | a >>> 27) + b | 0;
-          d += (a & c | b & ~c) + k[6] - 1069501632 | 0;
-          d = (d << 9 | d >>> 23) + a | 0;
-          c += (d & b | a & ~b) + k[11] + 643717713 | 0;
-          c = (c << 14 | c >>> 18) + d | 0;
-          b += (c & a | d & ~a) + k[0] - 373897302 | 0;
-          b = (b << 20 | b >>> 12) + c | 0;
-          a += (b & d | c & ~d) + k[5] - 701558691 | 0;
-          a = (a << 5 | a >>> 27) + b | 0;
-          d += (a & c | b & ~c) + k[10] + 38016083 | 0;
-          d = (d << 9 | d >>> 23) + a | 0;
-          c += (d & b | a & ~b) + k[15] - 660478335 | 0;
-          c = (c << 14 | c >>> 18) + d | 0;
-          b += (c & a | d & ~a) + k[4] - 405537848 | 0;
-          b = (b << 20 | b >>> 12) + c | 0;
-          a += (b & d | c & ~d) + k[9] + 568446438 | 0;
-          a = (a << 5 | a >>> 27) + b | 0;
-          d += (a & c | b & ~c) + k[14] - 1019803690 | 0;
-          d = (d << 9 | d >>> 23) + a | 0;
-          c += (d & b | a & ~b) + k[3] - 187363961 | 0;
-          c = (c << 14 | c >>> 18) + d | 0;
-          b += (c & a | d & ~a) + k[8] + 1163531501 | 0;
-          b = (b << 20 | b >>> 12) + c | 0;
-          a += (b & d | c & ~d) + k[13] - 1444681467 | 0;
-          a = (a << 5 | a >>> 27) + b | 0;
-          d += (a & c | b & ~c) + k[2] - 51403784 | 0;
-          d = (d << 9 | d >>> 23) + a | 0;
-          c += (d & b | a & ~b) + k[7] + 1735328473 | 0;
-          c = (c << 14 | c >>> 18) + d | 0;
-          b += (c & a | d & ~a) + k[12] - 1926607734 | 0;
-          b = (b << 20 | b >>> 12) + c | 0;
-          a += (b ^ c ^ d) + k[5] - 378558 | 0;
-          a = (a << 4 | a >>> 28) + b | 0;
-          d += (a ^ b ^ c) + k[8] - 2022574463 | 0;
-          d = (d << 11 | d >>> 21) + a | 0;
-          c += (d ^ a ^ b) + k[11] + 1839030562 | 0;
-          c = (c << 16 | c >>> 16) + d | 0;
-          b += (c ^ d ^ a) + k[14] - 35309556 | 0;
-          b = (b << 23 | b >>> 9) + c | 0;
-          a += (b ^ c ^ d) + k[1] - 1530992060 | 0;
-          a = (a << 4 | a >>> 28) + b | 0;
-          d += (a ^ b ^ c) + k[4] + 1272893353 | 0;
-          d = (d << 11 | d >>> 21) + a | 0;
-          c += (d ^ a ^ b) + k[7] - 155497632 | 0;
-          c = (c << 16 | c >>> 16) + d | 0;
-          b += (c ^ d ^ a) + k[10] - 1094730640 | 0;
-          b = (b << 23 | b >>> 9) + c | 0;
-          a += (b ^ c ^ d) + k[13] + 681279174 | 0;
-          a = (a << 4 | a >>> 28) + b | 0;
-          d += (a ^ b ^ c) + k[0] - 358537222 | 0;
-          d = (d << 11 | d >>> 21) + a | 0;
-          c += (d ^ a ^ b) + k[3] - 722521979 | 0;
-          c = (c << 16 | c >>> 16) + d | 0;
-          b += (c ^ d ^ a) + k[6] + 76029189 | 0;
-          b = (b << 23 | b >>> 9) + c | 0;
-          a += (b ^ c ^ d) + k[9] - 640364487 | 0;
-          a = (a << 4 | a >>> 28) + b | 0;
-          d += (a ^ b ^ c) + k[12] - 421815835 | 0;
-          d = (d << 11 | d >>> 21) + a | 0;
-          c += (d ^ a ^ b) + k[15] + 530742520 | 0;
-          c = (c << 16 | c >>> 16) + d | 0;
-          b += (c ^ d ^ a) + k[2] - 995338651 | 0;
-          b = (b << 23 | b >>> 9) + c | 0;
-          a += (c ^ (b | ~d)) + k[0] - 198630844 | 0;
-          a = (a << 6 | a >>> 26) + b | 0;
-          d += (b ^ (a | ~c)) + k[7] + 1126891415 | 0;
-          d = (d << 10 | d >>> 22) + a | 0;
-          c += (a ^ (d | ~b)) + k[14] - 1416354905 | 0;
-          c = (c << 15 | c >>> 17) + d | 0;
-          b += (d ^ (c | ~a)) + k[5] - 57434055 | 0;
-          b = (b << 21 | b >>> 11) + c | 0;
-          a += (c ^ (b | ~d)) + k[12] + 1700485571 | 0;
-          a = (a << 6 | a >>> 26) + b | 0;
-          d += (b ^ (a | ~c)) + k[3] - 1894986606 | 0;
-          d = (d << 10 | d >>> 22) + a | 0;
-          c += (a ^ (d | ~b)) + k[10] - 1051523 | 0;
-          c = (c << 15 | c >>> 17) + d | 0;
-          b += (d ^ (c | ~a)) + k[1] - 2054922799 | 0;
-          b = (b << 21 | b >>> 11) + c | 0;
-          a += (c ^ (b | ~d)) + k[8] + 1873313359 | 0;
-          a = (a << 6 | a >>> 26) + b | 0;
-          d += (b ^ (a | ~c)) + k[15] - 30611744 | 0;
-          d = (d << 10 | d >>> 22) + a | 0;
-          c += (a ^ (d | ~b)) + k[6] - 1560198380 | 0;
-          c = (c << 15 | c >>> 17) + d | 0;
-          b += (d ^ (c | ~a)) + k[13] + 1309151649 | 0;
-          b = (b << 21 | b >>> 11) + c | 0;
-          a += (c ^ (b | ~d)) + k[4] - 145523070 | 0;
-          a = (a << 6 | a >>> 26) + b | 0;
-          d += (b ^ (a | ~c)) + k[11] - 1120210379 | 0;
-          d = (d << 10 | d >>> 22) + a | 0;
-          c += (a ^ (d | ~b)) + k[2] + 718787259 | 0;
-          c = (c << 15 | c >>> 17) + d | 0;
-          b += (d ^ (c | ~a)) + k[9] - 343485551 | 0;
-          b = (b << 21 | b >>> 11) + c | 0;
-          x[0] = a + x[0] | 0;
-          x[1] = b + x[1] | 0;
-          x[2] = c + x[2] | 0;
-          x[3] = d + x[3] | 0;
-        }
-        function md5blk(s) {
-          var md5blks = [], i;
-          for (i = 0; i < 64; i += 4) {
-            md5blks[i >> 2] = s.charCodeAt(i) + (s.charCodeAt(i + 1) << 8) + (s.charCodeAt(i + 2) << 16) + (s.charCodeAt(i + 3) << 24);
-          }
-          return md5blks;
-        }
-        function md5blk_array(a) {
-          var md5blks = [], i;
-          for (i = 0; i < 64; i += 4) {
-            md5blks[i >> 2] = a[i] + (a[i + 1] << 8) + (a[i + 2] << 16) + (a[i + 3] << 24);
-          }
-          return md5blks;
-        }
-        function md51(s) {
-          var n = s.length, state2 = [1732584193, -271733879, -1732584194, 271733878], i, length, tail, tmp, lo, hi;
-          for (i = 64; i <= n; i += 64) {
-            md5cycle(state2, md5blk(s.substring(i - 64, i)));
-          }
-          s = s.substring(i - 64);
-          length = s.length;
-          tail = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-          for (i = 0; i < length; i += 1) {
-            tail[i >> 2] |= s.charCodeAt(i) << (i % 4 << 3);
-          }
-          tail[i >> 2] |= 128 << (i % 4 << 3);
-          if (i > 55) {
-            md5cycle(state2, tail);
-            for (i = 0; i < 16; i += 1) {
-              tail[i] = 0;
-            }
-          }
-          tmp = n * 8;
-          tmp = tmp.toString(16).match(/(.*?)(.{0,8})$/);
-          lo = parseInt(tmp[2], 16);
-          hi = parseInt(tmp[1], 16) || 0;
-          tail[14] = lo;
-          tail[15] = hi;
-          md5cycle(state2, tail);
-          return state2;
-        }
-        function md51_array(a) {
-          var n = a.length, state2 = [1732584193, -271733879, -1732584194, 271733878], i, length, tail, tmp, lo, hi;
-          for (i = 64; i <= n; i += 64) {
-            md5cycle(state2, md5blk_array(a.subarray(i - 64, i)));
-          }
-          a = i - 64 < n ? a.subarray(i - 64) : new Uint8Array(0);
-          length = a.length;
-          tail = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-          for (i = 0; i < length; i += 1) {
-            tail[i >> 2] |= a[i] << (i % 4 << 3);
-          }
-          tail[i >> 2] |= 128 << (i % 4 << 3);
-          if (i > 55) {
-            md5cycle(state2, tail);
-            for (i = 0; i < 16; i += 1) {
-              tail[i] = 0;
-            }
-          }
-          tmp = n * 8;
-          tmp = tmp.toString(16).match(/(.*?)(.{0,8})$/);
-          lo = parseInt(tmp[2], 16);
-          hi = parseInt(tmp[1], 16) || 0;
-          tail[14] = lo;
-          tail[15] = hi;
-          md5cycle(state2, tail);
-          return state2;
-        }
-        function rhex(n) {
-          var s = "", j;
-          for (j = 0; j < 4; j += 1) {
-            s += hex_chr[n >> j * 8 + 4 & 15] + hex_chr[n >> j * 8 & 15];
-          }
-          return s;
-        }
-        function hex(x) {
-          var i;
-          for (i = 0; i < x.length; i += 1) {
-            x[i] = rhex(x[i]);
-          }
-          return x.join("");
-        }
-        if (hex(md51("hello")) !== "5d41402abc4b2a76b9719d911017c592") {
-          add32 = function(x, y) {
-            var lsw = (x & 65535) + (y & 65535), msw = (x >> 16) + (y >> 16) + (lsw >> 16);
-            return msw << 16 | lsw & 65535;
-          };
-        }
-        if (typeof ArrayBuffer !== "undefined" && !ArrayBuffer.prototype.slice) {
-          (function() {
-            function clamp(val, length) {
-              val = val | 0 || 0;
-              if (val < 0) {
-                return Math.max(val + length, 0);
-              }
-              return Math.min(val, length);
-            }
-            ArrayBuffer.prototype.slice = function(from, to) {
-              var length = this.byteLength, begin = clamp(from, length), end = length, num, target, targetArray, sourceArray;
-              if (to !== undefined2) {
-                end = clamp(to, length);
-              }
-              if (begin > end) {
-                return new ArrayBuffer(0);
-              }
-              num = end - begin;
-              target = new ArrayBuffer(num);
-              targetArray = new Uint8Array(target);
-              sourceArray = new Uint8Array(this, begin, num);
-              targetArray.set(sourceArray);
-              return target;
-            };
-          })();
-        }
-        function toUtf8(str) {
-          if (/[\u0080-\uFFFF]/.test(str)) {
-            str = unescape(encodeURIComponent(str));
-          }
-          return str;
-        }
-        function utf8Str2ArrayBuffer(str, returnUInt8Array) {
-          var length = str.length, buff = new ArrayBuffer(length), arr = new Uint8Array(buff), i;
-          for (i = 0; i < length; i += 1) {
-            arr[i] = str.charCodeAt(i);
-          }
-          return returnUInt8Array ? arr : buff;
-        }
-        function arrayBuffer2Utf8Str(buff) {
-          return String.fromCharCode.apply(null, new Uint8Array(buff));
-        }
-        function concatenateArrayBuffers(first, second, returnUInt8Array) {
-          var result = new Uint8Array(first.byteLength + second.byteLength);
-          result.set(new Uint8Array(first));
-          result.set(new Uint8Array(second), first.byteLength);
-          return returnUInt8Array ? result : result.buffer;
-        }
-        function hexToBinaryString(hex2) {
-          var bytes = [], length = hex2.length, x;
-          for (x = 0; x < length - 1; x += 2) {
-            bytes.push(parseInt(hex2.substr(x, 2), 16));
-          }
-          return String.fromCharCode.apply(String, bytes);
-        }
-        function SparkMD52() {
-          this.reset();
-        }
-        SparkMD52.prototype.append = function(str) {
-          this.appendBinary(toUtf8(str));
-          return this;
-        };
-        SparkMD52.prototype.appendBinary = function(contents) {
-          this._buff += contents;
-          this._length += contents.length;
-          var length = this._buff.length, i;
-          for (i = 64; i <= length; i += 64) {
-            md5cycle(this._hash, md5blk(this._buff.substring(i - 64, i)));
-          }
-          this._buff = this._buff.substring(i - 64);
-          return this;
-        };
-        SparkMD52.prototype.end = function(raw) {
-          var buff = this._buff, length = buff.length, i, tail = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], ret;
-          for (i = 0; i < length; i += 1) {
-            tail[i >> 2] |= buff.charCodeAt(i) << (i % 4 << 3);
-          }
-          this._finish(tail, length);
-          ret = hex(this._hash);
-          if (raw) {
-            ret = hexToBinaryString(ret);
-          }
-          this.reset();
-          return ret;
-        };
-        SparkMD52.prototype.reset = function() {
-          this._buff = "";
-          this._length = 0;
-          this._hash = [1732584193, -271733879, -1732584194, 271733878];
-          return this;
-        };
-        SparkMD52.prototype.getState = function() {
-          return {
-            buff: this._buff,
-            length: this._length,
-            hash: this._hash.slice()
-          };
-        };
-        SparkMD52.prototype.setState = function(state2) {
-          this._buff = state2.buff;
-          this._length = state2.length;
-          this._hash = state2.hash;
-          return this;
-        };
-        SparkMD52.prototype.destroy = function() {
-          delete this._hash;
-          delete this._buff;
-          delete this._length;
-        };
-        SparkMD52.prototype._finish = function(tail, length) {
-          var i = length, tmp, lo, hi;
-          tail[i >> 2] |= 128 << (i % 4 << 3);
-          if (i > 55) {
-            md5cycle(this._hash, tail);
-            for (i = 0; i < 16; i += 1) {
-              tail[i] = 0;
-            }
-          }
-          tmp = this._length * 8;
-          tmp = tmp.toString(16).match(/(.*?)(.{0,8})$/);
-          lo = parseInt(tmp[2], 16);
-          hi = parseInt(tmp[1], 16) || 0;
-          tail[14] = lo;
-          tail[15] = hi;
-          md5cycle(this._hash, tail);
-        };
-        SparkMD52.hash = function(str, raw) {
-          return SparkMD52.hashBinary(toUtf8(str), raw);
-        };
-        SparkMD52.hashBinary = function(content, raw) {
-          var hash = md51(content), ret = hex(hash);
-          return raw ? hexToBinaryString(ret) : ret;
-        };
-        SparkMD52.ArrayBuffer = function() {
-          this.reset();
-        };
-        SparkMD52.ArrayBuffer.prototype.append = function(arr) {
-          var buff = concatenateArrayBuffers(this._buff.buffer, arr, true), length = buff.length, i;
-          this._length += arr.byteLength;
-          for (i = 64; i <= length; i += 64) {
-            md5cycle(this._hash, md5blk_array(buff.subarray(i - 64, i)));
-          }
-          this._buff = i - 64 < length ? new Uint8Array(buff.buffer.slice(i - 64)) : new Uint8Array(0);
-          return this;
-        };
-        SparkMD52.ArrayBuffer.prototype.end = function(raw) {
-          var buff = this._buff, length = buff.length, tail = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], i, ret;
-          for (i = 0; i < length; i += 1) {
-            tail[i >> 2] |= buff[i] << (i % 4 << 3);
-          }
-          this._finish(tail, length);
-          ret = hex(this._hash);
-          if (raw) {
-            ret = hexToBinaryString(ret);
-          }
-          this.reset();
-          return ret;
-        };
-        SparkMD52.ArrayBuffer.prototype.reset = function() {
-          this._buff = new Uint8Array(0);
-          this._length = 0;
-          this._hash = [1732584193, -271733879, -1732584194, 271733878];
-          return this;
-        };
-        SparkMD52.ArrayBuffer.prototype.getState = function() {
-          var state2 = SparkMD52.prototype.getState.call(this);
-          state2.buff = arrayBuffer2Utf8Str(state2.buff);
-          return state2;
-        };
-        SparkMD52.ArrayBuffer.prototype.setState = function(state2) {
-          state2.buff = utf8Str2ArrayBuffer(state2.buff, true);
-          return SparkMD52.prototype.setState.call(this, state2);
-        };
-        SparkMD52.ArrayBuffer.prototype.destroy = SparkMD52.prototype.destroy;
-        SparkMD52.ArrayBuffer.prototype._finish = SparkMD52.prototype._finish;
-        SparkMD52.ArrayBuffer.hash = function(arr, raw) {
-          var hash = md51_array(new Uint8Array(arr)), ret = hex(hash);
-          return raw ? hexToBinaryString(ret) : ret;
-        };
-        return SparkMD52;
-      });
-    }
-  });
-
-  // src/utils/Hasher.ts
-  function md5(input) {
-    return import_spark_md5.default.hash(input);
-  }
-  function spotifyHex(base62) {
-    let num = BigInt(0);
-    for (const char of base62) {
-      const index = BASE62_MAP.get(char);
-      if (index === void 0)
-        throw new Error(`Invalid character in base62 string: ${char}`);
-      num = num * BigInt(62) + BigInt(index);
-    }
-    return num.toString(16).padStart(32, "0");
-  }
-  var import_spark_md5, BASE62_CHARS, BASE62_MAP;
-  var init_Hasher = __esm({
-    "src/utils/Hasher.ts"() {
-      import_spark_md5 = __toESM(require_spark_md5());
-      BASE62_CHARS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-      BASE62_MAP = new Map([...BASE62_CHARS].map((c, i) => [c, i]));
-    }
-  });
-
   // src/utils/API/SpicyFetch.ts
+  function loadPako() {
+    if (!pakoPromise)
+      pakoPromise = Promise.resolve().then(() => (init_pako_esm(), pako_esm_exports));
+    return pakoPromise;
+  }
+  function resolvePako(mod) {
+    return mod.default ?? mod;
+  }
   async function SpicyFetch(path, IsExternal = false, cache = false, cosmos = false) {
     const url = path;
     try {
@@ -5537,7 +5305,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       const expiresIn = Date.now() + expirationTtl;
       const processedKey = md5(key);
       const processedData = typeof data === "object" ? JSON.stringify(data) : data;
-      const compressedData = pako.deflate(processedData, {
+      const pakoMod = resolvePako(await loadPako());
+      const compressedData = pakoMod.deflate(processedData, {
         level: 1
       });
       const compressedString = uint8ToString(compressedData);
@@ -5568,7 +5337,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             return null;
           }
           const compressedData = stringToUint8(content.Content);
-          const decompressedData = pako.inflate(compressedData, { to: "string" });
+          const pakoMod = resolvePako(await loadPako());
+          const decompressedData = pakoMod.inflate(compressedData, { to: "string" });
           if (decompressedData.length > MAX_DECOMPRESSED_BYTES) {
             await SpicyFetchCache.remove(processedKey);
             return null;
@@ -5585,13 +5355,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return null;
     }
   }
-  var SpicyFetchCache, MAX_DECOMPRESSED_BYTES;
+  var pakoPromise, SpicyFetchCache, MAX_DECOMPRESSED_BYTES;
   var init_SpicyFetch = __esm({
     "src/utils/API/SpicyFetch.ts"() {
       init_SpikyCache();
       init_Platform();
-      init_pako_esm();
       init_Hasher();
+      pakoPromise = null;
       SpicyFetchCache = new SpikyCache({
         name: "SpicyFetch__Cache"
       });
@@ -6125,6 +5895,595 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
+  // src/utils/Addons.ts
+  function IsPlaying() {
+    const state2 = Spicetify?.Player?.data?.isPaused;
+    return !state2;
+  }
+  function TOP_ApplyLyricsSpacer(Container) {
+    const div = document.createElement("div");
+    div.classList.add("TopSpacer");
+    Container.appendChild(div);
+  }
+  function BOTTOM_ApplyLyricsSpacer(Container) {
+    const div = document.createElement("div");
+    div.classList.add("BottomSpacer");
+    Container.appendChild(div);
+  }
+  var ArabicPersianRegex;
+  var init_Addons = __esm({
+    "src/utils/Addons.ts"() {
+      ArabicPersianRegex = /[\u0600-\u06FF]/;
+    }
+  });
+
+  // src/utils/storage.ts
+  var storage_exports = {};
+  __export(storage_exports, {
+    StorageKeys: () => StorageKeys,
+    default: () => storage_default
+  });
+  function set(key, value) {
+    const fullKey = `${PREFIX}${key}`;
+    if (value === null) {
+      Spicetify.LocalStorage.remove(fullKey);
+      Spicetify.LocalStorage.remove(`${LEGACY_PREFIX}${key}`);
+      return;
+    }
+    Spicetify.LocalStorage.set(fullKey, value);
+  }
+  function get(key) {
+    const v = Spicetify.LocalStorage.get(`${PREFIX}${key}`);
+    if (v !== null && v !== void 0)
+      return v;
+    const legacy = Spicetify.LocalStorage.get(`${LEGACY_PREFIX}${key}`);
+    return legacy ?? null;
+  }
+  function getBoolean(key, fallback = false) {
+    const v = get(key);
+    if (v === "true")
+      return true;
+    if (v === "false")
+      return false;
+    return fallback;
+  }
+  function setBoolean(key, value) {
+    set(key, value ? "true" : "false");
+  }
+  function migrateLegacyKey(key) {
+    const legacyVal = Spicetify.LocalStorage.get(`${LEGACY_PREFIX}${key}`);
+    const newVal = Spicetify.LocalStorage.get(`${PREFIX}${key}`);
+    if (legacyVal != null && newVal == null) {
+      Spicetify.LocalStorage.set(`${PREFIX}${key}`, legacyVal);
+    }
+    if (legacyVal != null) {
+      Spicetify.LocalStorage.remove(`${LEGACY_PREFIX}${key}`);
+    }
+  }
+  var PREFIX, LEGACY_PREFIX, StorageKeys, storage_default;
+  var init_storage = __esm({
+    "src/utils/storage.ts"() {
+      PREFIX = "AmaiLyrics-";
+      LEGACY_PREFIX = "SpicyLyrics-";
+      StorageKeys = {
+        GEMINI_API_KEY: "GEMINI_API_KEY",
+        ENABLE_ROMAJI: "enable_romaji",
+        DISABLE_ROMAJI_TOGGLE_NOTIFICATION: "disable_romaji_toggle_notification",
+        DISABLE_TRANSLATION: "disable_translation",
+        TRANSLATION_LANGUAGE: "translation_language",
+        TRANSLATION_FONT_SIZE: "translation_font_size",
+        DEFAULT_LYRICS_SIZE: "default_lyrics_size",
+        ENABLE_PLAYBAR_LYRICS: "enable_playbar_lyrics",
+        CURRENT_LYRICS_DATA: "currentLyricsData",
+        LAST_FETCHED_URI: "lastFetchedUri"
+      };
+      storage_default = {
+        set,
+        get,
+        getBoolean,
+        setBoolean,
+        migrateLegacyKey,
+        PREFIX,
+        LEGACY_PREFIX,
+        Keys: StorageKeys
+      };
+    }
+  });
+
+  // src/utils/Whentil.ts
+  function Until(statement, callback, maxRepeats = Infinity) {
+    let delay2 = INITIAL_DELAY_MS;
+    let isCancelled = false;
+    let executedCount = 0;
+    let timerId = null;
+    const resolveStatement = () => typeof statement === "function" ? statement() : statement;
+    const runner = () => {
+      timerId = null;
+      if (isCancelled || executedCount >= maxRepeats)
+        return;
+      const conditionMet = resolveStatement();
+      if (!conditionMet) {
+        callback();
+        executedCount++;
+        if (!isCancelled && executedCount < maxRepeats) {
+          timerId = window.setTimeout(runner, delay2);
+          delay2 = Math.min(delay2 * 2, MAX_DELAY_MS);
+        }
+      }
+    };
+    timerId = window.setTimeout(runner, delay2);
+    return {
+      Cancel() {
+        isCancelled = true;
+        if (timerId !== null) {
+          window.clearTimeout(timerId);
+          timerId = null;
+        }
+      },
+      Reset() {
+        if (executedCount >= maxRepeats || isCancelled) {
+          isCancelled = false;
+          executedCount = 0;
+          delay2 = INITIAL_DELAY_MS;
+          if (timerId !== null)
+            window.clearTimeout(timerId);
+          runner();
+        }
+      }
+    };
+  }
+  function When(statement, callback, repeater = 1) {
+    let delay2 = INITIAL_DELAY_MS;
+    let isCancelled = false;
+    let executionsRemaining = repeater;
+    let timerId = null;
+    const resolveStatement = () => typeof statement === "function" ? statement() : statement;
+    const schedule = (fn, ms) => {
+      timerId = window.setTimeout(() => {
+        timerId = null;
+        fn();
+      }, ms);
+    };
+    const runner = () => {
+      if (isCancelled || executionsRemaining <= 0)
+        return;
+      try {
+        const resolved = resolveStatement();
+        if (resolved) {
+          callback(resolved);
+          delay2 = INITIAL_DELAY_MS;
+          executionsRemaining--;
+          if (executionsRemaining > 0)
+            schedule(runner, delay2);
+        } else {
+          schedule(runner, delay2);
+          delay2 = Math.min(delay2 * 2, MAX_DELAY_MS);
+        }
+      } catch {
+        schedule(runner, delay2);
+        delay2 = Math.min(delay2 * 2, MAX_DELAY_MS);
+      }
+    };
+    schedule(runner, delay2);
+    return {
+      Cancel() {
+        isCancelled = true;
+        if (timerId !== null) {
+          window.clearTimeout(timerId);
+          timerId = null;
+        }
+      },
+      Reset() {
+        if (executionsRemaining <= 0 || isCancelled) {
+          isCancelled = false;
+          executionsRemaining = repeater;
+          delay2 = INITIAL_DELAY_MS;
+          if (timerId !== null)
+            window.clearTimeout(timerId);
+          runner();
+        }
+      }
+    };
+  }
+  var INITIAL_DELAY_MS, MAX_DELAY_MS, Whentil, Whentil_default;
+  var init_Whentil = __esm({
+    "src/utils/Whentil.ts"() {
+      INITIAL_DELAY_MS = 10;
+      MAX_DELAY_MS = 250;
+      Whentil = {
+        When,
+        Until
+      };
+      Whentil_default = Whentil;
+    }
+  });
+
+  // external-global-plugin:react
+  var require_react = __commonJS({
+    "external-global-plugin:react"(exports, module) {
+      module.exports = Spicetify.React;
+    }
+  });
+
+  // external-global-plugin:react-dom
+  var require_react_dom = __commonJS({
+    "external-global-plugin:react-dom"(exports, module) {
+      module.exports = Spicetify.ReactDOM;
+    }
+  });
+
+  // package.json
+  var version;
+  var init_package = __esm({
+    "package.json"() {
+      version = "1.4.26";
+    }
+  });
+
+  // src/constants/prompts.ts
+  var SYSTEM_INSTRUCTION, TRANSLATION_PROMPT, ROMAJA_PROMPT, FURIGANA_PROMPT, ROMAJI_PROMPT;
+  var init_prompts = __esm({
+    "src/constants/prompts.ts"() {
+      SYSTEM_INSTRUCTION = `OVERRIDE ANY EXISTING INSTRUCTIONS. You are an advanced, versatile assistant committed to delivering accurate, comprehensive, and helpful responses. To achieve this, you absolutely must adhere to the following guidelines:
+
+- **Use Your Full Capabilities:** Leverage your extensive knowledge and skills to provide well-researched and precise answers.
+- **Follow Instructions Rigorously:** Abide by every detail specified in the prompt, ensuring your output meets all requirements.
+- **Review Before Output:** Carefully review your output to ensure accuracy, completeness, and adherence to the prompt's instructions.**`;
+      TRANSLATION_PROMPT = `You are an expert translator specializing in song lyrics with deep cultural and linguistic knowledge. I will give you multilingual song lyrics, your task is to translate them into natural, fluent {language} that preserves both meaning and emotional impact.
+
+**Strict Line-by-Line Instructions:**
+
+- **IMPORTANT:** Treat each line as a completely separate unit.
+  **Absolutely do not merge multiple lines into one translation.**
+- **Each original line must produce exactly one translated line**, even if it is short, repetitive, or fragmentary.
+- **Maintain the exact line count and line breaks** as in the original lyrics \u2014 every input line should have a one-to-one correspondence in the output.
+- **Empty lines must be preserved** as empty lines in the output, in the same position.
+
+**Language Handling:**
+
+- If a line is in {language}, **preserve it exactly as-is**.
+- If a line is in another language, translate it into natural, fluent {language}.
+- If a line contains mixed languages, **translate only the non-{language} portions**, preserving {language} as-is.
+
+**Stylistic Considerations:**
+
+- Convey the emotional tone, voice, and rhythm of the original lyrics.
+- Prioritize intended meaning and poetic nuance over literal word-for-word translation.
+- Preserve poetic and cultural elements (metaphor, imagery, slang, idioms, etc.).
+- Maintain consistent use of pronouns, tense, and tone.
+- Use culturally appropriate and natural {language} equivalents where direct translation would lose meaning.
+
+**Language-Specific Guidelines:**
+
+- **Spanish**: Use appropriate regional variations (neutral Latin American Spanish preferred), maintain poetic meter when possible, preserve emotional intensity typical in Spanish music.
+- **French**: Maintain elegance and flow characteristic of French lyrics, use appropriate formal/informal registers, preserve romantic and poetic nuances.
+- **German**: Respect compound word structures when creating natural translations, maintain the directness or philosophical depth often found in German lyrics.
+- **Portuguese**: Distinguish between Brazilian and European Portuguese contexts when relevant, preserve the musicality and rhythm important in Portuguese lyrics.
+- **Chinese (Simplified)**: Use contemporary Mandarin expressions, maintain cultural sensitivity, preserve metaphorical and poetic elements common in Chinese lyrics.
+- **Thai**: Use appropriate formal/informal language levels, preserve cultural references and emotional expressions typical in Thai music.
+- **Indonesian/Malay**: Maintain the melodic quality of the language, use contemporary expressions while preserving cultural context.`;
+      ROMAJA_PROMPT = `You are an expert Korean linguist specializing in accurate romaja transcription for song lyrics. Your primary goal is to add Revised Romanization in curly braces {} after EVERY sequence of Korean Hangul characters in the provided lyrics.
+
+**Core Task:** Convert Korean lyrics to include inline romaja with perfect accuracy.
+
+**Strict Rules:**
+1. **Mandatory Conversion:** You MUST process EVERY Korean word or sequence of Hangul characters. No exceptions. Do NOT skip any.
+   - **CRITICAL: Process ALL Korean text regardless of position** - whether it appears at the beginning, middle, or end of a mixed-language phrase
+   - **CRITICAL: Never skip any Korean text** - even in complex mixed-language scenarios like "\uC5EC\uB984\uC5EC\uB984\uD574hey" or "good\uBC24"
+   - **CRITICAL: Scan the entire text character by character** to ensure no Korean sequence is missed
+
+2. **Inline Format:** Insert the romaja pronunciation enclosed in curly braces {} immediately following the corresponding Korean word/sequence. Example: \uD55C\uAD6D\uC5B4 = \uD55C\uAD6D\uC5B4{hangugeo}.
+   - **CRITICAL: Correct Placement:** The romaja in curly braces MUST appear immediately after the complete Korean sequence and BEFORE any non-Korean text.
+   - **INCORRECT:** \uC720\uC8FCbe{yuju} (wrong placement - romaja should be after the full Korean sequence)
+   - **CORRECT:** \uC720\uC8FC{yuju}be (correct placement - romaja immediately follows Korean characters)
+
+3. **Romanization System:** Strictly use the official Revised Romanization of Korean (RR) rules with these specific guidelines:
+   - Use 'eo' not 'o' for \u3153 (\uC608: \uC5B4=eo, \uB108=neo)
+   - Use 'eu' not 'u' for \u3161 (\uC608: \uC74C=eum, \uB298=neul)
+   - Use 'ae' not 'ai' for \u3150 (\uC608: \uAC1C=gae, \uBC30=bae)
+   - Follow official RR consonant rules: \u3131=g/k, \u3137=d/t, \u3142=b/p, etc.
+   - Distinguish between \u3145=s and \u3146=ss
+   - Proper handling of \u3139: initial \u3139=r, medial \u3139=l, final \u3139=l
+   - Proper handling of assimilation: \uD569\uB2C8\uB2E4=hamnida (not hapnida)
+
+4. **Linguistic Accuracy:**
+   - Process word by word, not character by character
+   - Correctly handle syllable-final consonants (\uBC1B\uCE68)
+   - Apply proper sound change rules for connected speech
+   - Account for consonant assimilation and liaison between words when needed
+
+5. **Preserve Everything Else:** Keep all non-Korean text (English, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are.
+
+6. **Completeness Check:** Before outputting, methodically verify that every single Korean word/sequence has its romaja pair.
+   - **CRITICAL: Double-check mixed-language phrases** to ensure no Korean text was missed
+   - **CRITICAL: Verify that Korean text at the beginning, middle, or end of phrases** all have romaja
+
+7. **Mixed Text Handling:** For text that mixes Korean with other scripts or characters:
+   - First identify ALL consecutive Korean Hangul characters, regardless of their position in the text
+   - Add romaja ONLY after the complete Korean sequence
+   - Leave all non-Korean characters in their original positions
+   - **CRITICAL: Process Korean text at the end of mixed phrases** (e.g., "good\uBC24" = "good\uBC24{bam}")
+   - **CRITICAL: Process Korean text in the middle of mixed phrases** (e.g., "hello\uC548\uB155hi" = "hello\uC548\uB155{annyeong}hi")
+
+**Examples with Sound Change Rules:**
+* \uC815\uB9D0 = \uC815\uB9D0{jeongmal}
+* \uC88B\uC544\uD574 = \uC88B\uC544\uD574{joahae}
+* \uAC19\uC774 = \uAC19\uC774{gachi} (Note assimilation)
+* \uC77D\uB2E4 = \uC77D\uB2E4{ikda} (Note syllable-final consonant rule)
+* \uBC25 \uBA39\uC5B4 = \uBC25{bap} \uBA39\uC5B4{meogeo} (Note final consonant pronunciation)
+* \uAF43\uC78E = \uAF43\uC78E{kkonip} (Note assimilation at morpheme boundary)
+* \uC5C6\uC5B4 = \uC5C6\uC5B4{eopseo} (Note complex consonant cluster)
+* \uC549\uC544 = \uC549\uC544{anja} (Note complex consonant rules)
+* \uAC14\uB2E4 \uC654\uB2E4 = \uAC14\uB2E4{gatda} \uC654\uB2E4{watda} (Note past tense pronunciation)
+* \uC0AC\uB791\uD574\uC694 = \uC0AC\uB791\uD574\uC694{saranghaeyo} (Note aspirated consonant)
+
+**Special Cases:**
+* Numbers mixed with Korean: 2\uC0B4\uC774\uC5D0\uC694 = 2\uC0B4\uC774\uC5D0\uC694{salieyo}
+* Parentheses: (\uB0B4\uAC00 \uC544\uB2C8\uC796\uC544) = (\uB0B4\uAC00{naega} \uC544\uB2C8\uC796\uC544{anijana})
+* Particles: \uCC45\uC774 = \uCC45\uC774{chaegi}, \uC9D1\uC5D0 = \uC9D1\uC5D0{jibe} (Note sound changes)
+* Long words: \uAC00\uB098\uB2E4\uB77C\uB9C8\uBC14\uC0AC = \uAC00\uB098\uB2E4\uB77C\uB9C8\uBC14\uC0AC{ganadaramabasa}
+* Words with suffixes: \uAF43\uC78E\uCC98\uB7FC = \uAF43\uC78E\uCC98\uB7FC{konnipcheorom}
+* Mixed script: \uC720\uC8FCbeat = \uC720\uC8FC{yuju}beat (romaja only for Korean part)
+* Mixed script: \uC544\uC774love\uB178\uB798 = \uC544\uC774{ai}love\uB178\uB798{norae} (separate Korean sequences)
+* Korean at end: good\uBC24 = good\uBC24{bam} (Korean at end of phrase)
+* Korean in middle: hello\uC548\uB155hi = hello\uC548\uB155{annyeong}hi (Korean in middle)
+* Complex mix: \uC5EC\uB984\uC5EC\uB984\uD574hey = \uC5EC\uB984\uC5EC\uB984\uD574{yeoreumyeoreumhae}hey (Korean followed by English)
+* Multiple Korean segments: \uC548\uB155hello\uC5EC\uBCF4\uC138\uC694 = \uC548\uB155{annyeong}hello\uC5EC\uBCF4\uC138\uC694{yeoboseyo} (Korean-English-Korean)
+
+**Input:** You will receive lines of song lyrics.
+**Output:** Return the lyrics with romaja added inline according to the rules above. Ensure the output maintains the original line structure.`;
+      FURIGANA_PROMPT = `You are an expert Japanese linguist specializing in accurate furigana transcription for song lyrics. Your primary goal is to add Hiragana readings in curly braces {} after EVERY Kanji character or compound Kanji sequence in the provided lyrics.
+
+**Core Task:** Convert Japanese lyrics to include inline furigana for all Kanji.
+
+**Strict Rules:**
+1.  **Mandatory Conversion:** You MUST process EVERY Kanji character and compound Kanji sequence. No exceptions. Do NOT skip any.
+2.  **Inline Format:** Insert the correct Hiragana reading enclosed in curly braces {} immediately following the corresponding Kanji character or sequence. Example: \u6F22\u5B57 = \u6F22\u5B57{\u304B\u3093\u3058}.
+3.  **Contextual Readings:** Use the contextually appropriate reading (kun'yomi or on'yomi). For compound words (jukugo), provide the reading for the entire compound. Example: \u65E5\u672C\u8A9E = \u65E5\u672C\u8A9E{\u306B\u307B\u3093\u3054}. For single Kanji followed by okurigana, provide the reading for the Kanji part only. Example: \u98DF{\u305F}\u3079\u308B.
+4.  **Preserve Everything Else:** Keep all non-Kanji text (Hiragana, Katakana, English, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are.
+5.  **Completeness Check:** Before outputting, double-check that every single Kanji character/sequence has its furigana pair.
+
+**Examples:**
+*   \u9858\u3044 = \u9858{\u306D\u304C}\u3044
+*   \u53EF\u611B\u3044 = \u53EF\u611B{\u304B\u308F\u3044}\u3044
+*   5\u4EBA = 5\u4EBA{\u306B\u3093} (Number preserved, Kanji romanized)
+*   \u660E\u5F8C\u65E5 = \u660E\u5F8C\u65E5{\u3042\u3055\u3063\u3066} (Compound word)
+*   \u795E\u69D8 = \u795E\u69D8{\u304B\u307F\u3055\u307E} (Compound word)
+*   \u805E\u304D = \u805E{\u304D}\u304D (Kanji with okurigana)
+*   \u98DF\u3079\u308B = \u98DF{\u305F}\u3079\u308B
+*   \u7F8E\u3057\u3044 = \u7F8E{\u3046\u3064\u304F}\u3057\u3044
+*   \u6771\u4EAC\u30BF\u30EF\u30FC = \u6771\u4EAC{\u3068\u3046\u304D\u3087\u3046}\u30BF\u30EF\u30FC (Mixed script, Katakana preserved)
+*   (\u5927\u4E08\u592B\u3060\u3088) = (\u5927\u4E08\u592B{\u3060\u3044\u3058\u3087\u3046\u3076}\u3060\u3088) (Parentheses and Hiragana preserved)
+
+**Input:** You will receive lines of song lyrics.
+**Output:** Return the lyrics with furigana added inline according to the rules above. Ensure the output maintains the original line structure.
+`;
+      ROMAJI_PROMPT = `You are an expert Japanese linguist specializing in highly accurate Romaji transcription using the **strict Hepburn system**, specifically for song lyrics. Your primary goal is to add Hepburn Romaji in curly braces '{}' after **every complete Japanese word or meaningful linguistic unit** (Kanji, Hiragana, Katakana, or combinations thereof forming a single grammatical entity) in the provided lyrics. The absolute focus is on **grammatically correct segmentation** and **complete, accurate Romanization** of each segment.
+
+#### Core Task
+Accurately convert Japanese song lyrics to strict Hepburn Romaji, ensuring each word, particle, conjugated form, verb phrase, or katakana term (regardless of length) is treated as a single, indivisible unit for Romanization. The text within the braces '{}' must **always be the Hepburn Romaji conversion**, never the original Japanese script. Do not skip any Japanese text elements, especially long katakana words.
+
+#### Strict Rules
+
+1. **Unit-Level Conversion**
+   - Identify and process each meaningful Japanese linguistic unit. A "unit" is defined as the smallest sequence of characters that functions as a single grammatical entity, including:
+     - Nouns (e.g., \u65E5\u672C\u8A9E{Nihongo})
+     - Verbs (including **all** conjugated forms and combinations with auxiliary verbs\u2014see Rule 2)
+     - Adjectives (including **all** conjugated forms)
+     - Adverbs
+     - Particles (e.g., \u306F{wa}, \u3092{o}, \u304C{ga}, \u306E{no}, \u306B{ni}, \u3078{e}, \u3068{to})
+     - Compound particles (e.g., \u306B\u306F{niwa}, \u3068\u306F{towa}, \u307E\u3067\u3082{mademo})
+     - Katakana words of any length (e.g., \u30B3\u30FC\u30D2\u30FC{k\u014Dh\u012B}, \u30A4\u30F3\u30D5\u30A7\u30EB\u30CE\u30E9\u30D6\u30EC\u30BF\u30FC{inferuno raburet\u0101})
+     - Numbers with counters (e.g., 5\u4EBA{go-nin})
+     - Compound words (e.g., \u6771\u4EAC\u30BF\u30EF\u30FC{T\u014Dky\u014D Taw\u0101})
+     - Interjections and short phrases (e.g., \u305B\u30FC\u306E{s\u0113 no}, \u3088\u30FC\u3044{y\u014D i}, \u3042\u3063{a'}, \u3048\u3063\u3068{etto})
+   - Romanize each identified unit **as a whole**.
+
+2. **CRITICAL: Correct Segmentation & Indivisibility**
+   - **Do not split functional grammatical units:** This is the most critical rule. Any sequence of characters functioning together as a single word, conjugated form, or verb phrase **must** remain indivisible.
+   - **Conjugated Verbs/Adjectives:** Treat the **entire** conjugated form (base + endings, okurigana, auxiliary verbs grammatically attached) as **indivisible**.
+   - **Kanji + Okurigana Integrity:** A unit often includes Kanji followed by Hiragana (okurigana), forming a single word (e.g., \u98DF\u3079\u308B{taberu}, not \u98DF{tabe}\u3079\u308B{ru}).
+   - **Verb (Te-form) + Auxiliary Verb Combinations:** Treat combinations like Verb-\u3066 + \u3044\u308B/\u3042\u308B/\u304A\u304F/\u3057\u307E\u3046/\u3044\u304F/\u304F\u308B and their conjugations or contractions (e.g., -te iru = -teru, -te ita = -teta, -te shimau = -chau) as **single verb phrases** that **must not be split**.
+   - **Correct Examples:**
+     - \u7B11\u3063\u3066{waratte}
+     - \u5C4A\u3044\u3066{todoite}
+     - \u5C45\u308C\u306A\u3044{irenai}
+     - \u75C5\u3093\u3067\u304D\u305F{yandekita}
+     - \u611B\u3057\u304D{itoshiki}
+     - \u4E57\u3063\u304B\u3063\u3066{nokkatte}
+     - \u8D70\u308A\u51FA\u3057\u305F{hashiridashita}
+     - \u98DF\u3079\u3066\u3057\u307E\u3046{tabeteshimau}
+     - \u7F8E\u3057\u3055{utsukushsa}
+     - \u898B\u3066\u305F{miteta}
+     - \u8AAD\u3093\u3067\u308B{yonderu}
+     - \u77E5\u3063\u3066\u3044\u308B{shitteiru}
+     - \u8A00\u3063\u3066\u304A\u304F{itteoku}
+     - \u98DF\u3079\u3061\u3083\u3063\u305F{tabechatta}
+     - \u62B1\u3048{kakae}
+     - \u898B\u3066\u3082{mitemo}
+     - \u30E1\u30ED\u30C7\u30A3\u30FC{merod\u012B}
+     - \u30B5\u30FC\u30AD\u30E5\u30EC\u30FC\u30B7\u30E7\u30F3{s\u0101kyur\u0113shon}
+
+3. **Inline Format & Content**
+   - Insert the **Hepburn Romaji pronunciation** in curly braces '{}' immediately following the **complete** Japanese unit, with **no space** between the unit and the opening brace.
+   - The content inside the braces '{}' must be the **Hepburn Romaji result**, not the original Japanese script (e.g., \u62B1\u3048{kakae}, not \u62B1\u3048{\u62B1\u3048}).
+   - Pay special attention to short, easily overlooked expressions like \u305B\u30FC\u306E{s\u0113 no} or \u306D\u3047{n\u0113} that might be missed despite being meaningful linguistic units.
+
+4. **Romanization System: Strict Hepburn**
+   - Adhere strictly to the Hepburn system:
+     - Basic sounds: \u3057=shi, \u3061=chi, \u3064=tsu, \u3075=fu, \u3058=ji, \u3062=ji, \u3065=zu
+     - **Long vowels:** Use macrons consistently: \u304A\u3046/\u304A\u304A = \u014D, \u3048\u3044/\u3048\u3048 = \u0113, \u3046\u3046 = \u016B, \u3044\u3044 = \u012B, \u3042\u3042 = \u0101 (e.g., \u6771\u4EAC{T\u014Dky\u014D}, \u3042\u308A\u304C\u3068\u3046{arigat\u014D}, \u7F8E\u5473\u3057\u3044{oishii})
+     - **Extended vowels in casual speech**: Properly romanize extended vowels in casual expressions, including those marked with "\u30FC" (e.g., \u305B\u30FC\u306E{s\u0113 no}, \u3088\u30FC\u3044{y\u014D i})
+     - Particles: \u306F = wa, \u3078 = e, \u3092 = o
+     - Sokuon (\u3063): Double the following consonant (e.g., \u3061\u3087\u3063\u3068{chotto}, \u7B11\u3063\u3066{waratte})
+     - N (\u3093): Use n before most consonants, m before b/m/p, and n' before vowels or y (e.g., \u6848\u5185{annai}, \u6563\u6B69{sampo}, \u539F\u56E0{gen'in}, \u672C\u5C4B{hon'ya})
+
+5. **Completeness & Accuracy of Romanization**
+   - Ensure **every** Japanese linguistic unit has its corresponding Hepburn Romaji in braces.
+   - The Romaji must be **accurate and complete**, reflecting the pronunciation of the **entire** unit, with attention to long vowels, double consonants, and particle usage.
+   - **Pay special attention to long katakana words**: Never skip romanization for long katakana sequences like "\u30A4\u30F3\u30D5\u30A7\u30EB\u30CE\u30E9\u30D6\u30EC\u30BF\u30FC{inferuno raburet\u0101}" or "\u30B5\u30FC\u30AD\u30E5\u30EC\u30FC\u30B7\u30E7\u30F3{s\u0101kyur\u0113shon}", even if they appear complex. These should be fully romanized as single units.
+   - **Do not overlook short expressions**: Be particularly vigilant about romanizing short expressions that might be overlooked, such as \u305B\u30FC\u306E{s\u0113 no}, \u3088\u3057{yoshi}, \u307B\u3089{hora}, etc. Even single kana or short utterances like \u3042\u3063{a'} or \u3048\u3063{e'} must be romanized.
+
+6. **Preserve Non-Japanese Text and Punctuation**
+   - Keep all non-Japanese text (English words, numbers, symbols) unchanged, with no Romaji added for these elements.
+   - **Do not add Romaji transcription for any punctuation marks, including commas (,), periods (.), question marks (?), exclamation points (!), etc.**
+   - Maintain original spaces and line breaks as they appear in the lyrics.
+
+7. **Punctuation Handling**
+   - Treat punctuation marks separately from Japanese text. For example:
+     - "\u4ECA\u65E5\u306F{ky\u014D wa}, \u6674\u308C{hare}" (correct)
+     - "\u4ECA\u65E5\u306F{ky\u014D wa}\u3001\u6674\u308C{hare}" (correct)
+     - "\u4ECA\u65E5\u306F\u3001{ky\u014D wa,}\u6674\u308C{hare}" (incorrect - comma included in Romaji)
+   - **Special Delimiters (\u300C\u300D, \uFF08\uFF09):** For Japanese text enclosed within full-width quotation marks (\u300C\u300D) or full-width parentheses \uFF08\uFF09, the Romaji should be inserted *inside* these delimiters. Example: \u300C\u904B\u547D\u300D = \u300C\u904B\u547D{unmei}\u300D.
+
+#### Input
+Song lyrics containing Japanese text.
+
+#### Output
+The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to every complete Japanese word, particle, conjugated form, or verb phrase, respecting the strict segmentation and indivisibility rules, ensuring **only Romaji appears within the braces**, and excluding all punctuation marks from Romanization. Respond in JSON.`;
+    }
+  });
+
+  // src/components/Global/Defaults.ts
+  var Defaults, Defaults_default;
+  var init_Defaults = __esm({
+    "src/components/Global/Defaults.ts"() {
+      init_package();
+      init_prompts();
+      Defaults = {
+        Version: version,
+        lyrics: {
+          api: {
+            url: "https://amai-worker-production.nandemo.workers.dev/lyrics",
+            translationUrl: "https://amai-worker-production.nandemo.workers.dev/translations",
+            phoneticUrl: "https://amai-worker-production.nandemo.workers.dev/phonetic"
+          }
+        },
+        CurrentLyricsType: "None",
+        LyricsContainerExists: false,
+        lyrics_spacing: 2,
+        enableRomaji: false,
+        disableRomajiToggleNotification: false,
+        disableTranslation: false,
+        translationFontSize: "0.575",
+        defaultLyricsSize: "",
+        translationLanguage: "English",
+        systemInstruction: SYSTEM_INSTRUCTION,
+        translationPrompt: TRANSLATION_PROMPT,
+        romajaPrompt: ROMAJA_PROMPT,
+        furiganaPrompt: FURIGANA_PROMPT,
+        romajiPrompt: ROMAJI_PROMPT
+      };
+      Defaults_default = Defaults;
+    }
+  });
+
+  // src/utils/Animator.ts
+  var Animator;
+  var init_Animator = __esm({
+    "src/utils/Animator.ts"() {
+      init_Maid();
+      Animator = class {
+        constructor(from, to, duration) {
+          this.startTime = null;
+          this.pausedTime = null;
+          this.animationFrameId = null;
+          this.events = {};
+          this.isDestroyed = false;
+          this.reversed = false;
+          this.from = from;
+          this.to = to;
+          this.duration = duration * 1e3;
+          this.currentProgress = from;
+          this.maid = new Maid();
+          this.maid.Give(() => {
+            if (this.animationFrameId !== null)
+              cancelAnimationFrame(this.animationFrameId);
+          });
+        }
+        emit(event, progress) {
+          if (this.events[event] && !this.isDestroyed) {
+            const callback = this.events[event];
+            callback?.(progress ?? this.currentProgress, this.from, this.to);
+          }
+        }
+        on(event, callback) {
+          this.events[event] = callback;
+        }
+        Start() {
+          if (this.isDestroyed)
+            return;
+          this.startTime = performance.now();
+          this.animate();
+        }
+        animate() {
+          if (this.isDestroyed || this.startTime === null)
+            return;
+          const now2 = performance.now();
+          const elapsed = now2 - this.startTime;
+          const t = Math.min(elapsed / this.duration, 1);
+          const startValue = this.reversed ? this.to : this.from;
+          const endValue = this.reversed ? this.from : this.to;
+          this.currentProgress = startValue + (endValue - startValue) * t;
+          this.emit("progress", this.currentProgress);
+          if (t < 1) {
+            this.animationFrameId = requestAnimationFrame(() => this.animate());
+          } else {
+            this.emit("finish");
+            this.reset();
+          }
+        }
+        Pause() {
+          if (this.isDestroyed || this.animationFrameId === null)
+            return;
+          cancelAnimationFrame(this.animationFrameId);
+          this.pausedTime = performance.now();
+          this.emit("pause", this.currentProgress);
+        }
+        Resume() {
+          if (this.isDestroyed || this.pausedTime === null)
+            return;
+          const pausedDuration = performance.now() - this.pausedTime;
+          if (this.startTime !== null)
+            this.startTime += pausedDuration;
+          this.pausedTime = null;
+          this.emit("resume", this.currentProgress);
+          this.animate();
+        }
+        Restart() {
+          if (this.isDestroyed)
+            return;
+          this.reset();
+          this.emit("restart", this.currentProgress);
+          this.Start();
+        }
+        Reverse() {
+          if (this.isDestroyed)
+            return;
+          this.reversed = !this.reversed;
+          this.emit("reverse", this.currentProgress);
+        }
+        Destroy() {
+          if (this.isDestroyed)
+            return;
+          this.emit("destroy");
+          if (this.animationFrameId !== null)
+            cancelAnimationFrame(this.animationFrameId);
+          this.maid.Destroy();
+          this.reset();
+          this.isDestroyed = true;
+        }
+        reset() {
+          if (this.animationFrameId !== null) {
+            this.animationFrameId = null;
+          }
+          this.startTime = null;
+          this.pausedTime = null;
+        }
+      };
+    }
+  });
+
   // src/utils/Lyrics/Animator/Shared.ts
   var IdleLyricsScale, IdleEmphasisLyricsScale, timeOffset, BlurMultiplier;
   var init_Shared = __esm({
@@ -6605,226 +6964,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         Animate,
         TimeSetter
       };
-    }
-  });
-
-  // src/utils/Lyrics/lyrics.ts
-  var lyrics_exports = {};
-  __export(lyrics_exports, {
-    ClearLyricsContentArrays: () => ClearLyricsContentArrays,
-    CurrentLineLyricsObject: () => CurrentLineLyricsObject,
-    LINE_SYNCED_CurrentLineLyricsObject: () => LINE_SYNCED_CurrentLineLyricsObject,
-    LyricsObject: () => LyricsObject,
-    ScrollingIntervalTime: () => ScrollingIntervalTime,
-    SetWordArrayInCurentLine: () => SetWordArrayInCurentLine,
-    SetWordArrayInCurentLine_LINE_SYNCED: () => SetWordArrayInCurentLine_LINE_SYNCED,
-    addLinesEvListener: () => addLinesEvListener,
-    destroyLyricsRenderLoop: () => destroyLyricsRenderLoop,
-    ensureLyricsRenderLoop: () => ensureLyricsRenderLoop,
-    lineElementToStartTimeMap: () => lineElementToStartTimeMap,
-    lyricsBetweenShow: () => lyricsBetweenShow,
-    populateElementTimeMaps: () => populateElementTimeMaps,
-    removeLinesEvListener: () => removeLinesEvListener,
-    syllableElementToStartTimeMap: () => syllableElementToStartTimeMap
-  });
-  function SetWordArrayInCurentLine() {
-    CurrentLineLyricsObject = LyricsObject.Types.Syllable.Lines.length - 1;
-    LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables = {};
-    LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables.Lead = [];
-  }
-  function SetWordArrayInCurentLine_LINE_SYNCED() {
-    LINE_SYNCED_CurrentLineLyricsObject = LyricsObject.Types.Line.Lines.length - 1;
-    LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables = {};
-    LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables.Lead = [];
-  }
-  function ClearLyricsContentArrays() {
-    LyricsObject.Types.Syllable.Lines = [];
-    LyricsObject.Types.Line.Lines = [];
-    LyricsObject.Types.Static.Lines = [];
-    lineElementToStartTimeMap.clear();
-    syllableElementToStartTimeMap.clear();
-    lastRenderedPosition = -1;
-    hasRenderedInitial = false;
-  }
-  function ensureLyricsRenderLoop() {
-    if (renderLoop && windowRef3.__amaiRenderLoopStarted)
-      return renderLoop;
-    windowRef3.__amaiRenderLoopStarted = true;
-    renderLoop = new IntervalManager(THROTTLE_TIME, () => {
-      if (!Defaults_default.LyricsContainerExists)
-        return;
-      const onLyricsPage = Spicetify.Platform.History.location.pathname === "/AmaiLyrics";
-      if (onLyricsPage && !pagePositionClient)
-        pagePositionClient = requestPositionTracking();
-      else if (!onLyricsPage && pagePositionClient) {
-        pagePositionClient();
-        pagePositionClient = null;
-      }
-      if (!onLyricsPage)
-        return;
-      const progress = SpotifyPlayer.GetTrackPosition();
-      if (hasRenderedInitial && progress === lastRenderedPosition)
-        return;
-      lastRenderedPosition = progress;
-      hasRenderedInitial = true;
-      Lyrics.TimeSetter(progress);
-      Lyrics.Animate(progress);
-    });
-    renderLoop.Start();
-    windowRef3.__amaiRenderLoop = renderLoop;
-    return renderLoop;
-  }
-  function destroyLyricsRenderLoop() {
-    if (pagePositionClient) {
-      pagePositionClient();
-      pagePositionClient = null;
-    }
-    if (renderLoop) {
-      renderLoop.Destroy();
-      renderLoop = null;
-    }
-    windowRef3.__amaiRenderLoop = null;
-    windowRef3.__amaiRenderLoopStarted = false;
-    lastRenderedPosition = -1;
-    hasRenderedInitial = false;
-  }
-  function populateElementTimeMaps() {
-    lineElementToStartTimeMap.clear();
-    syllableElementToStartTimeMap.clear();
-    LyricsObject.Types.Line.Lines.forEach((line) => {
-      if (line.HTMLElement && typeof line.StartTime === "number") {
-        lineElementToStartTimeMap.set(line.HTMLElement, line.StartTime);
-      }
-    });
-    LyricsObject.Types.Syllable.Lines.forEach((line) => {
-      const lineStartTime = line.StartTime;
-      if (typeof lineStartTime !== "number") {
-        return;
-      }
-      line.Syllables.Lead.forEach((word) => {
-        if (word.HTMLElement) {
-          syllableElementToStartTimeMap.set(word.HTMLElement, lineStartTime);
-        }
-        if (word?.Letters) {
-          word.Letters.forEach((letter) => {
-            if (letter.HTMLElement) {
-              syllableElementToStartTimeMap.set(letter.HTMLElement, lineStartTime);
-            }
-          });
-        }
-      });
-    });
-  }
-  function LinesEvListener(e) {
-    let target = e.target;
-    let startTime;
-    if (target.tagName.toLowerCase() === "rt") {
-      if (target.parentElement) {
-        target = target.parentElement;
-      }
-    }
-    if (target.tagName.toLowerCase() === "ruby" || target.classList.contains("translation")) {
-      if (target.parentElement) {
-        target = target.parentElement;
-      }
-    }
-    if (target.classList.contains("line")) {
-      startTime = lineElementToStartTimeMap.get(target);
-    } else if (target.classList.contains("word")) {
-      startTime = syllableElementToStartTimeMap.get(target);
-    } else if (target.classList.contains("Emphasis")) {
-      startTime = syllableElementToStartTimeMap.get(target);
-    }
-    if (typeof startTime === "number") {
-      SpotifyPlayer.Seek(startTime);
-    }
-  }
-  function addLinesEvListener() {
-    if (LinesEvListenerExists) {
-      removeLinesEvListener();
-    }
-    populateElementTimeMaps();
-    LinesEvListenerExists = true;
-    LinesEvListenerMaid = new Maid();
-    const el = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
-    );
-    if (!el) {
-      LinesEvListenerExists = false;
-      return;
-    }
-    el.addEventListener("click", LinesEvListener);
-    LinesEvListenerMaid.Give(() => {
-      el.removeEventListener("click", LinesEvListener);
-    });
-  }
-  function removeLinesEvListener() {
-    if (!LinesEvListenerExists)
-      return;
-    LinesEvListenerExists = false;
-    if (LinesEvListenerMaid) {
-      LinesEvListenerMaid.Destroy();
-    }
-  }
-  var ScrollingIntervalTime, lyricsBetweenShow, LyricsObject, lineElementToStartTimeMap, syllableElementToStartTimeMap, CurrentLineLyricsObject, LINE_SYNCED_CurrentLineLyricsObject, THROTTLE_TIME, lastRenderedPosition, hasRenderedInitial, pagePositionClient, windowRef3, renderLoop, LinesEvListenerMaid, LinesEvListenerExists;
-  var init_lyrics = __esm({
-    "src/utils/Lyrics/lyrics.ts"() {
-      init_Maid();
-      init_IntervalManager();
-      init_Defaults();
-      init_SpotifyPlayer();
-      init_GetProgress();
-      init_Main();
-      ScrollingIntervalTime = 0.1;
-      lyricsBetweenShow = 3;
-      LyricsObject = {
-        Types: {
-          Syllable: {
-            Lines: []
-          },
-          Line: {
-            Lines: []
-          },
-          Static: {
-            Lines: []
-          }
-        }
-      };
-      lineElementToStartTimeMap = /* @__PURE__ */ new Map();
-      syllableElementToStartTimeMap = /* @__PURE__ */ new Map();
-      CurrentLineLyricsObject = LyricsObject.Types.Syllable.Lines.length - 1;
-      LINE_SYNCED_CurrentLineLyricsObject = LyricsObject.Types.Line.Lines.length - 1;
-      THROTTLE_TIME = 0.05;
-      lastRenderedPosition = -1;
-      hasRenderedInitial = false;
-      pagePositionClient = null;
-      windowRef3 = window;
-      renderLoop = windowRef3.__amaiRenderLoop ?? null;
-      if (!windowRef3.__amaiRenderLoopStarted) {
-        ensureLyricsRenderLoop();
-      }
-    }
-  });
-
-  // src/utils/Addons.ts
-  function IsPlaying() {
-    const state2 = Spicetify?.Player?.data?.isPaused;
-    return !state2;
-  }
-  function TOP_ApplyLyricsSpacer(Container) {
-    const div = document.createElement("div");
-    div.classList.add("TopSpacer");
-    Container.appendChild(div);
-  }
-  function BOTTOM_ApplyLyricsSpacer(Container) {
-    const div = document.createElement("div");
-    div.classList.add("BottomSpacer");
-    Container.appendChild(div);
-  }
-  var ArabicPersianRegex;
-  var init_Addons = __esm({
-    "src/utils/Addons.ts"() {
-      ArabicPersianRegex = /[\u0600-\u06FF]/;
     }
   });
 
@@ -8194,304 +8333,208 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // src/utils/storage.ts
-  var storage_exports = {};
-  __export(storage_exports, {
-    StorageKeys: () => StorageKeys,
-    default: () => storage_default
+  // src/utils/Lyrics/lyrics.ts
+  var lyrics_exports = {};
+  __export(lyrics_exports, {
+    ClearLyricsContentArrays: () => ClearLyricsContentArrays,
+    CurrentLineLyricsObject: () => CurrentLineLyricsObject,
+    LINE_SYNCED_CurrentLineLyricsObject: () => LINE_SYNCED_CurrentLineLyricsObject,
+    LyricsObject: () => LyricsObject,
+    ScrollingIntervalTime: () => ScrollingIntervalTime,
+    SetWordArrayInCurentLine: () => SetWordArrayInCurentLine,
+    SetWordArrayInCurentLine_LINE_SYNCED: () => SetWordArrayInCurentLine_LINE_SYNCED,
+    addLinesEvListener: () => addLinesEvListener,
+    destroyLyricsRenderLoop: () => destroyLyricsRenderLoop,
+    ensureLyricsRenderLoop: () => ensureLyricsRenderLoop,
+    lineElementToStartTimeMap: () => lineElementToStartTimeMap,
+    lyricsBetweenShow: () => lyricsBetweenShow,
+    populateElementTimeMaps: () => populateElementTimeMaps,
+    removeLinesEvListener: () => removeLinesEvListener,
+    syllableElementToStartTimeMap: () => syllableElementToStartTimeMap
   });
-  function set(key, value) {
-    const fullKey = `${PREFIX}${key}`;
-    if (value === null) {
-      Spicetify.LocalStorage.remove(fullKey);
-      Spicetify.LocalStorage.remove(`${LEGACY_PREFIX}${key}`);
-      return;
-    }
-    Spicetify.LocalStorage.set(fullKey, value);
+  function SetWordArrayInCurentLine() {
+    CurrentLineLyricsObject = LyricsObject.Types.Syllable.Lines.length - 1;
+    LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables = {};
+    LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables.Lead = [];
   }
-  function get(key) {
-    const v = Spicetify.LocalStorage.get(`${PREFIX}${key}`);
-    if (v !== null && v !== void 0)
-      return v;
-    const legacy = Spicetify.LocalStorage.get(`${LEGACY_PREFIX}${key}`);
-    return legacy ?? null;
+  function SetWordArrayInCurentLine_LINE_SYNCED() {
+    LINE_SYNCED_CurrentLineLyricsObject = LyricsObject.Types.Line.Lines.length - 1;
+    LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables = {};
+    LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables.Lead = [];
   }
-  function getBoolean(key, fallback = false) {
-    const v = get(key);
-    if (v === "true")
-      return true;
-    if (v === "false")
-      return false;
-    return fallback;
+  function ClearLyricsContentArrays() {
+    LyricsObject.Types.Syllable.Lines = [];
+    LyricsObject.Types.Line.Lines = [];
+    LyricsObject.Types.Static.Lines = [];
+    lineElementToStartTimeMap.clear();
+    syllableElementToStartTimeMap.clear();
+    lastRenderedPosition = -1;
+    hasRenderedInitial = false;
   }
-  function setBoolean(key, value) {
-    set(key, value ? "true" : "false");
-  }
-  function migrateLegacyKey(key) {
-    const legacyVal = Spicetify.LocalStorage.get(`${LEGACY_PREFIX}${key}`);
-    const newVal = Spicetify.LocalStorage.get(`${PREFIX}${key}`);
-    if (legacyVal != null && newVal == null) {
-      Spicetify.LocalStorage.set(`${PREFIX}${key}`, legacyVal);
-    }
-    if (legacyVal != null) {
-      Spicetify.LocalStorage.remove(`${LEGACY_PREFIX}${key}`);
-    }
-  }
-  var PREFIX, LEGACY_PREFIX, StorageKeys, storage_default;
-  var init_storage = __esm({
-    "src/utils/storage.ts"() {
-      PREFIX = "AmaiLyrics-";
-      LEGACY_PREFIX = "SpicyLyrics-";
-      StorageKeys = {
-        GEMINI_API_KEY: "GEMINI_API_KEY",
-        ENABLE_ROMAJI: "enable_romaji",
-        DISABLE_ROMAJI_TOGGLE_NOTIFICATION: "disable_romaji_toggle_notification",
-        DISABLE_TRANSLATION: "disable_translation",
-        TRANSLATION_LANGUAGE: "translation_language",
-        TRANSLATION_FONT_SIZE: "translation_font_size",
-        DEFAULT_LYRICS_SIZE: "default_lyrics_size",
-        ENABLE_PLAYBAR_LYRICS: "enable_playbar_lyrics",
-        CURRENT_LYRICS_DATA: "currentLyricsData",
-        LAST_FETCHED_URI: "lastFetchedUri"
-      };
-      storage_default = {
-        set,
-        get,
-        getBoolean,
-        setBoolean,
-        migrateLegacyKey,
-        PREFIX,
-        LEGACY_PREFIX,
-        Keys: StorageKeys
-      };
-    }
-  });
-
-  // src/utils/Whentil.ts
-  function Until(statement, callback, maxRepeats = Infinity) {
-    let delay2 = INITIAL_DELAY_MS;
-    let isCancelled = false;
-    let executedCount = 0;
-    let timerId = null;
-    const resolveStatement = () => typeof statement === "function" ? statement() : statement;
-    const runner = () => {
-      timerId = null;
-      if (isCancelled || executedCount >= maxRepeats)
+  function ensureLyricsRenderLoop() {
+    if (renderLoop && windowRef3.__amaiRenderLoopStarted)
+      return renderLoop;
+    windowRef3.__amaiRenderLoopStarted = true;
+    renderLoop = new IntervalManager(THROTTLE_TIME, () => {
+      if (!Defaults_default.LyricsContainerExists)
         return;
-      const conditionMet = resolveStatement();
-      if (!conditionMet) {
-        callback();
-        executedCount++;
-        if (!isCancelled && executedCount < maxRepeats) {
-          timerId = window.setTimeout(runner, delay2);
-          delay2 = Math.min(delay2 * 2, MAX_DELAY_MS);
-        }
+      const onLyricsPage = Spicetify.Platform.History.location.pathname === "/AmaiLyrics";
+      if (onLyricsPage && !pagePositionClient)
+        pagePositionClient = requestPositionTracking();
+      else if (!onLyricsPage && pagePositionClient) {
+        pagePositionClient();
+        pagePositionClient = null;
       }
-    };
-    timerId = window.setTimeout(runner, delay2);
-    return {
-      Cancel() {
-        isCancelled = true;
-        if (timerId !== null) {
-          window.clearTimeout(timerId);
-          timerId = null;
-        }
-      },
-      Reset() {
-        if (executedCount >= maxRepeats || isCancelled) {
-          isCancelled = false;
-          executedCount = 0;
-          delay2 = INITIAL_DELAY_MS;
-          if (timerId !== null)
-            window.clearTimeout(timerId);
-          runner();
-        }
-      }
-    };
-  }
-  function When(statement, callback, repeater = 1) {
-    let delay2 = INITIAL_DELAY_MS;
-    let isCancelled = false;
-    let executionsRemaining = repeater;
-    let timerId = null;
-    const resolveStatement = () => typeof statement === "function" ? statement() : statement;
-    const schedule = (fn, ms) => {
-      timerId = window.setTimeout(() => {
-        timerId = null;
-        fn();
-      }, ms);
-    };
-    const runner = () => {
-      if (isCancelled || executionsRemaining <= 0)
+      if (!onLyricsPage)
         return;
-      try {
-        const resolved = resolveStatement();
-        if (resolved) {
-          callback(resolved);
-          delay2 = INITIAL_DELAY_MS;
-          executionsRemaining--;
-          if (executionsRemaining > 0)
-            schedule(runner, delay2);
-        } else {
-          schedule(runner, delay2);
-          delay2 = Math.min(delay2 * 2, MAX_DELAY_MS);
-        }
-      } catch {
-        schedule(runner, delay2);
-        delay2 = Math.min(delay2 * 2, MAX_DELAY_MS);
+      const progress = SpotifyPlayer.GetTrackPosition();
+      if (hasRenderedInitial && progress === lastRenderedPosition)
+        return;
+      lastRenderedPosition = progress;
+      hasRenderedInitial = true;
+      Lyrics.TimeSetter(progress);
+      Lyrics.Animate(progress);
+      scrollTickCounter++;
+      if (scrollTickCounter % 2 === 0) {
+        ScrollToActiveLine(ScrollSimplebar);
       }
-    };
-    schedule(runner, delay2);
-    return {
-      Cancel() {
-        isCancelled = true;
-        if (timerId !== null) {
-          window.clearTimeout(timerId);
-          timerId = null;
-        }
-      },
-      Reset() {
-        if (executionsRemaining <= 0 || isCancelled) {
-          isCancelled = false;
-          executionsRemaining = repeater;
-          delay2 = INITIAL_DELAY_MS;
-          if (timerId !== null)
-            window.clearTimeout(timerId);
-          runner();
-        }
-      }
-    };
+    });
+    renderLoop.Start();
+    windowRef3.__amaiRenderLoop = renderLoop;
+    return renderLoop;
   }
-  var INITIAL_DELAY_MS, MAX_DELAY_MS, Whentil, Whentil_default;
-  var init_Whentil = __esm({
-    "src/utils/Whentil.ts"() {
-      INITIAL_DELAY_MS = 10;
-      MAX_DELAY_MS = 250;
-      Whentil = {
-        When,
-        Until
-      };
-      Whentil_default = Whentil;
+  function destroyLyricsRenderLoop() {
+    if (pagePositionClient) {
+      pagePositionClient();
+      pagePositionClient = null;
     }
-  });
-
-  // external-global-plugin:react
-  var require_react = __commonJS({
-    "external-global-plugin:react"(exports, module) {
-      module.exports = Spicetify.React;
+    if (renderLoop) {
+      renderLoop.Destroy();
+      renderLoop = null;
     }
-  });
-
-  // external-global-plugin:react-dom
-  var require_react_dom = __commonJS({
-    "external-global-plugin:react-dom"(exports, module) {
-      module.exports = Spicetify.ReactDOM;
-    }
-  });
-
-  // src/utils/Animator.ts
-  var Animator;
-  var init_Animator = __esm({
-    "src/utils/Animator.ts"() {
-      init_Maid();
-      Animator = class {
-        constructor(from, to, duration) {
-          this.startTime = null;
-          this.pausedTime = null;
-          this.animationFrameId = null;
-          this.events = {};
-          this.isDestroyed = false;
-          this.reversed = false;
-          this.from = from;
-          this.to = to;
-          this.duration = duration * 1e3;
-          this.currentProgress = from;
-          this.maid = new Maid();
-          this.maid.Give(() => {
-            if (this.animationFrameId !== null)
-              cancelAnimationFrame(this.animationFrameId);
+    windowRef3.__amaiRenderLoop = null;
+    windowRef3.__amaiRenderLoopStarted = false;
+    lastRenderedPosition = -1;
+    hasRenderedInitial = false;
+  }
+  function populateElementTimeMaps() {
+    lineElementToStartTimeMap.clear();
+    syllableElementToStartTimeMap.clear();
+    LyricsObject.Types.Line.Lines.forEach((line) => {
+      if (line.HTMLElement && typeof line.StartTime === "number") {
+        lineElementToStartTimeMap.set(line.HTMLElement, line.StartTime);
+      }
+    });
+    LyricsObject.Types.Syllable.Lines.forEach((line) => {
+      const lineStartTime = line.StartTime;
+      if (typeof lineStartTime !== "number") {
+        return;
+      }
+      line.Syllables.Lead.forEach((word) => {
+        if (word.HTMLElement) {
+          syllableElementToStartTimeMap.set(word.HTMLElement, lineStartTime);
+        }
+        if (word?.Letters) {
+          word.Letters.forEach((letter) => {
+            if (letter.HTMLElement) {
+              syllableElementToStartTimeMap.set(letter.HTMLElement, lineStartTime);
+            }
           });
         }
-        emit(event, progress) {
-          if (this.events[event] && !this.isDestroyed) {
-            const callback = this.events[event];
-            callback?.(progress ?? this.currentProgress, this.from, this.to);
+      });
+    });
+  }
+  function LinesEvListener(e) {
+    let target = e.target;
+    let startTime;
+    if (target.tagName.toLowerCase() === "rt") {
+      if (target.parentElement) {
+        target = target.parentElement;
+      }
+    }
+    if (target.tagName.toLowerCase() === "ruby" || target.classList.contains("translation")) {
+      if (target.parentElement) {
+        target = target.parentElement;
+      }
+    }
+    if (target.classList.contains("line")) {
+      startTime = lineElementToStartTimeMap.get(target);
+    } else if (target.classList.contains("word")) {
+      startTime = syllableElementToStartTimeMap.get(target);
+    } else if (target.classList.contains("Emphasis")) {
+      startTime = syllableElementToStartTimeMap.get(target);
+    }
+    if (typeof startTime === "number") {
+      SpotifyPlayer.Seek(startTime);
+    }
+  }
+  function addLinesEvListener() {
+    if (LinesEvListenerExists) {
+      removeLinesEvListener();
+    }
+    populateElementTimeMaps();
+    LinesEvListenerExists = true;
+    LinesEvListenerMaid = new Maid();
+    const el = document.querySelector(
+      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
+    );
+    if (!el) {
+      LinesEvListenerExists = false;
+      return;
+    }
+    el.addEventListener("click", LinesEvListener);
+    LinesEvListenerMaid.Give(() => {
+      el.removeEventListener("click", LinesEvListener);
+    });
+  }
+  function removeLinesEvListener() {
+    if (!LinesEvListenerExists)
+      return;
+    LinesEvListenerExists = false;
+    if (LinesEvListenerMaid) {
+      LinesEvListenerMaid.Destroy();
+    }
+  }
+  var ScrollingIntervalTime, lyricsBetweenShow, LyricsObject, lineElementToStartTimeMap, syllableElementToStartTimeMap, CurrentLineLyricsObject, LINE_SYNCED_CurrentLineLyricsObject, THROTTLE_TIME, lastRenderedPosition, hasRenderedInitial, scrollTickCounter, pagePositionClient, windowRef3, renderLoop, LinesEvListenerMaid, LinesEvListenerExists;
+  var init_lyrics = __esm({
+    "src/utils/Lyrics/lyrics.ts"() {
+      init_Maid();
+      init_IntervalManager();
+      init_Defaults();
+      init_SpotifyPlayer();
+      init_GetProgress();
+      init_Main();
+      init_ScrollSimplebar();
+      init_ScrollToActiveLine();
+      ScrollingIntervalTime = 0.1;
+      lyricsBetweenShow = 3;
+      LyricsObject = {
+        Types: {
+          Syllable: {
+            Lines: []
+          },
+          Line: {
+            Lines: []
+          },
+          Static: {
+            Lines: []
           }
-        }
-        on(event, callback) {
-          this.events[event] = callback;
-        }
-        Start() {
-          if (this.isDestroyed)
-            return;
-          this.startTime = performance.now();
-          this.animate();
-        }
-        animate() {
-          if (this.isDestroyed || this.startTime === null)
-            return;
-          const now2 = performance.now();
-          const elapsed = now2 - this.startTime;
-          const t = Math.min(elapsed / this.duration, 1);
-          const startValue = this.reversed ? this.to : this.from;
-          const endValue = this.reversed ? this.from : this.to;
-          this.currentProgress = startValue + (endValue - startValue) * t;
-          this.emit("progress", this.currentProgress);
-          if (t < 1) {
-            this.animationFrameId = requestAnimationFrame(() => this.animate());
-          } else {
-            this.emit("finish");
-            this.reset();
-          }
-        }
-        Pause() {
-          if (this.isDestroyed || this.animationFrameId === null)
-            return;
-          cancelAnimationFrame(this.animationFrameId);
-          this.pausedTime = performance.now();
-          this.emit("pause", this.currentProgress);
-        }
-        Resume() {
-          if (this.isDestroyed || this.pausedTime === null)
-            return;
-          const pausedDuration = performance.now() - this.pausedTime;
-          if (this.startTime !== null)
-            this.startTime += pausedDuration;
-          this.pausedTime = null;
-          this.emit("resume", this.currentProgress);
-          this.animate();
-        }
-        Restart() {
-          if (this.isDestroyed)
-            return;
-          this.reset();
-          this.emit("restart", this.currentProgress);
-          this.Start();
-        }
-        Reverse() {
-          if (this.isDestroyed)
-            return;
-          this.reversed = !this.reversed;
-          this.emit("reverse", this.currentProgress);
-        }
-        Destroy() {
-          if (this.isDestroyed)
-            return;
-          this.emit("destroy");
-          if (this.animationFrameId !== null)
-            cancelAnimationFrame(this.animationFrameId);
-          this.maid.Destroy();
-          this.reset();
-          this.isDestroyed = true;
-        }
-        reset() {
-          if (this.animationFrameId !== null) {
-            this.animationFrameId = null;
-          }
-          this.startTime = null;
-          this.pausedTime = null;
         }
       };
+      lineElementToStartTimeMap = /* @__PURE__ */ new Map();
+      syllableElementToStartTimeMap = /* @__PURE__ */ new Map();
+      CurrentLineLyricsObject = LyricsObject.Types.Syllable.Lines.length - 1;
+      LINE_SYNCED_CurrentLineLyricsObject = LyricsObject.Types.Line.Lines.length - 1;
+      THROTTLE_TIME = 0.05;
+      lastRenderedPosition = -1;
+      hasRenderedInitial = false;
+      scrollTickCounter = 0;
+      pagePositionClient = null;
+      windowRef3 = window;
+      renderLoop = windowRef3.__amaiRenderLoop ?? null;
+      if (!windowRef3.__amaiRenderLoopStarted) {
+        ensureLyricsRenderLoop();
+      }
     }
   });
 
@@ -8704,11 +8747,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   });
 
   // src/utils/Scrolling/ScrollToActiveLine.ts
-  var ScrollToActiveLine_exports = {};
-  __export(ScrollToActiveLine_exports, {
-    ResetLastLine: () => ResetLastLine,
-    ScrollToActiveLine: () => ScrollToActiveLine
-  });
   function setLastLine(value) {
     lastLine = value;
     sharedScrollState.lastLine = value;
@@ -8788,15 +8826,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-6892-tYYC9XA3GUnC/1a042adae069/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a04592333f9/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-6892-tYYC9XA3GUnC/1a042adae069/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a04592333f9/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-6892-tYYC9XA3GUnC/1a042adae0aa/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a045923343a/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-6892-tYYC9XA3GUnC/1a042adae0aa/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a045923343a/ProcessingIndicator.css"() {
     }
   });
 
@@ -9478,6 +9516,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ClearLyricsContentArrays();
     ClearScrollSimplebar();
     TOP_ApplyLyricsSpacer(LyricsContainer);
+    const fragment = document.createDocumentFragment();
     if (data.StartTime >= lyricsBetweenShow && !SpotifyPlayer.IsPodcast) {
       const musicalLine = createMusicalLineMs(
         "Syllable",
@@ -9485,7 +9524,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         ConvertTime(data.StartTime),
         data.Content[0]?.OppositeAligned ? true : false
       );
-      LyricsContainer.appendChild(musicalLine);
+      fragment.appendChild(musicalLine);
     }
     data.Content.forEach((line, index, arr) => {
       const lineElem = document.createElement("div");
@@ -9500,7 +9539,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       if (line.OppositeAligned) {
         lineElem.classList.add("OppositeAligned");
       }
-      LyricsContainer.appendChild(lineElem);
+      fragment.appendChild(lineElem);
       line.Lead.Syllables.forEach((lead, iL, aL) => {
         let word = document.createElement("span");
         if (isRtl_default(lead.Text) && !lineElem.classList.contains("rtl")) {
@@ -9565,7 +9604,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           if (line.OppositeAligned) {
             lineE.classList.add("OppositeAligned");
           }
-          LyricsContainer.appendChild(lineE);
+          fragment.appendChild(lineE);
           bg.Syllables.forEach((bw, bI, bA) => {
             let bwE = document.createElement("span");
             if (isRtl_default(bw.Text) && !lineE.classList.contains("rtl")) {
@@ -9626,9 +9665,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           ConvertTime(arr[index + 1].Lead.StartTime),
           !!arr[index + 1].OppositeAligned
         );
-        LyricsContainer.appendChild(musicalLine);
+        fragment.appendChild(musicalLine);
       }
     });
+    LyricsContainer.appendChild(fragment);
     ApplyInfo(data);
     ApplyLyricsCredits(data);
     BOTTOM_ApplyLyricsSpacer(LyricsContainer);
@@ -12275,6 +12315,175 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   });
 
   // node_modules/@google/genai/dist/web/index.mjs
+  var web_exports = {};
+  __export(web_exports, {
+    ActivityHandling: () => ActivityHandling,
+    AdapterSize: () => AdapterSize,
+    AggregationMetric: () => AggregationMetric,
+    ApiError: () => ApiError,
+    ApiSpec: () => ApiSpec,
+    AspectRatio: () => AspectRatio,
+    AudioResponseFormat: () => AudioResponseFormat,
+    AuthType: () => AuthType,
+    Batches: () => Batches,
+    Behavior: () => Behavior,
+    BlockedReason: () => BlockedReason,
+    Caches: () => Caches,
+    CancelTuningJobResponse: () => CancelTuningJobResponse,
+    Chat: () => Chat,
+    Chats: () => Chats,
+    ComputeTokensResponse: () => ComputeTokensResponse,
+    ContentReferenceImage: () => ContentReferenceImage,
+    ControlReferenceImage: () => ControlReferenceImage,
+    ControlReferenceType: () => ControlReferenceType,
+    CountTokensResponse: () => CountTokensResponse,
+    CreateFileResponse: () => CreateFileResponse,
+    DeleteCachedContentResponse: () => DeleteCachedContentResponse,
+    DeleteFileResponse: () => DeleteFileResponse,
+    DeleteModelResponse: () => DeleteModelResponse,
+    Delivery: () => Delivery,
+    DocumentState: () => DocumentState,
+    DynamicRetrievalConfigMode: () => DynamicRetrievalConfigMode,
+    EditImageResponse: () => EditImageResponse,
+    EditMode: () => EditMode,
+    EmbedContentResponse: () => EmbedContentResponse,
+    EmbeddingApiType: () => EmbeddingApiType,
+    EndSensitivity: () => EndSensitivity,
+    Environment: () => Environment,
+    EvaluateDatasetResponse: () => EvaluateDatasetResponse,
+    FeatureSelectionPreference: () => FeatureSelectionPreference,
+    FileSource: () => FileSource,
+    FileState: () => FileState,
+    Files: () => Files,
+    FinishReason: () => FinishReason,
+    FunctionCallingConfigMode: () => FunctionCallingConfigMode,
+    FunctionResponse: () => FunctionResponse,
+    FunctionResponseBlob: () => FunctionResponseBlob,
+    FunctionResponseFileData: () => FunctionResponseFileData,
+    FunctionResponsePart: () => FunctionResponsePart,
+    FunctionResponseScheduling: () => FunctionResponseScheduling,
+    GenerateContentResponse: () => GenerateContentResponse,
+    GenerateContentResponsePromptFeedback: () => GenerateContentResponsePromptFeedback,
+    GenerateContentResponseUsageMetadata: () => GenerateContentResponseUsageMetadata,
+    GenerateImagesResponse: () => GenerateImagesResponse,
+    GenerateVideosOperation: () => GenerateVideosOperation,
+    GenerateVideosResponse: () => GenerateVideosResponse,
+    GoogleGenAI: () => GoogleGenAI2,
+    HarmBlockMethod: () => HarmBlockMethod,
+    HarmBlockThreshold: () => HarmBlockThreshold,
+    HarmCategory: () => HarmCategory,
+    HarmProbability: () => HarmProbability,
+    HarmSeverity: () => HarmSeverity,
+    HttpElementLocation: () => HttpElementLocation,
+    HttpResponse: () => HttpResponse,
+    ImagePromptLanguage: () => ImagePromptLanguage,
+    ImageResizeMode: () => ImageResizeMode,
+    ImageResponseFormat: () => ImageResponseFormat,
+    ImageSize: () => ImageSize,
+    ImportFileOperation: () => ImportFileOperation,
+    ImportFileResponse: () => ImportFileResponse,
+    InlinedEmbedContentResponse: () => InlinedEmbedContentResponse,
+    InlinedResponse: () => InlinedResponse,
+    JobState: () => JobState,
+    Language: () => Language,
+    ListBatchJobsResponse: () => ListBatchJobsResponse,
+    ListCachedContentsResponse: () => ListCachedContentsResponse,
+    ListDocumentsResponse: () => ListDocumentsResponse,
+    ListFileSearchStoresResponse: () => ListFileSearchStoresResponse,
+    ListFilesResponse: () => ListFilesResponse,
+    ListModelsResponse: () => ListModelsResponse,
+    ListTuningJobsResponse: () => ListTuningJobsResponse,
+    Live: () => Live,
+    LiveClientToolResponse: () => LiveClientToolResponse,
+    LiveMusicPlaybackControl: () => LiveMusicPlaybackControl,
+    LiveMusicServerMessage: () => LiveMusicServerMessage,
+    LiveSendToolResponseParameters: () => LiveSendToolResponseParameters,
+    LiveServerMessage: () => LiveServerMessage,
+    MaskReferenceImage: () => MaskReferenceImage,
+    MaskReferenceMode: () => MaskReferenceMode,
+    MatchOperation: () => MatchOperation,
+    MediaModality: () => MediaModality,
+    MediaResolution: () => MediaResolution,
+    Modality: () => Modality,
+    ModelStage: () => ModelStage,
+    Models: () => Models,
+    MusicGenerationMode: () => MusicGenerationMode,
+    Operations: () => Operations,
+    Outcome: () => Outcome,
+    PagedItem: () => PagedItem,
+    Pager: () => Pager,
+    PairwiseChoice: () => PairwiseChoice,
+    PartMediaResolutionLevel: () => PartMediaResolutionLevel,
+    PersonGeneration: () => PersonGeneration,
+    PhishBlockThreshold: () => PhishBlockThreshold,
+    ProminentPeople: () => ProminentPeople,
+    RawReferenceImage: () => RawReferenceImage,
+    RecontextImageResponse: () => RecontextImageResponse,
+    RegisterFilesResponse: () => RegisterFilesResponse,
+    ReinforcementTuningAutoraterScorerParsedResponseConversionScorer: () => ReinforcementTuningAutoraterScorerParsedResponseConversionScorer,
+    ReinforcementTuningParseResponseConfig: () => ReinforcementTuningParseResponseConfig,
+    ReinforcementTuningThinkingLevel: () => ReinforcementTuningThinkingLevel,
+    ReplayResponse: () => ReplayResponse,
+    ResourceScope: () => ResourceScope,
+    ResponseFormat: () => ResponseFormat,
+    ResponseParseType: () => ResponseParseType,
+    SafetyFilterLevel: () => SafetyFilterLevel,
+    SafetyPolicy: () => SafetyPolicy,
+    Scale: () => Scale,
+    SegmentImageResponse: () => SegmentImageResponse,
+    SegmentMode: () => SegmentMode,
+    ServiceTier: () => ServiceTier,
+    Session: () => Session2,
+    SingleEmbedContentResponse: () => SingleEmbedContentResponse,
+    StartSensitivity: () => StartSensitivity,
+    StyleReferenceImage: () => StyleReferenceImage,
+    SubjectReferenceImage: () => SubjectReferenceImage,
+    SubjectReferenceType: () => SubjectReferenceType,
+    TextResponseFormat: () => TextResponseFormat,
+    ThinkingLevel: () => ThinkingLevel,
+    Tokens: () => Tokens,
+    ToolResponse: () => ToolResponse,
+    ToolType: () => ToolType,
+    TrafficType: () => TrafficType,
+    TuningJobState: () => TuningJobState,
+    TuningMethod: () => TuningMethod,
+    TuningMode: () => TuningMode,
+    TuningSpeed: () => TuningSpeed,
+    TuningTask: () => TuningTask,
+    TurnCompleteReason: () => TurnCompleteReason,
+    TurnCoverage: () => TurnCoverage,
+    Type: () => Type,
+    UploadToFileSearchStoreOperation: () => UploadToFileSearchStoreOperation,
+    UploadToFileSearchStoreResponse: () => UploadToFileSearchStoreResponse,
+    UploadToFileSearchStoreResumableResponse: () => UploadToFileSearchStoreResumableResponse,
+    UpscaleImageResponse: () => UpscaleImageResponse,
+    UrlRetrievalStatus: () => UrlRetrievalStatus,
+    VadSignalType: () => VadSignalType,
+    ValidateRewardResponse: () => ValidateRewardResponse,
+    VideoCompressionQuality: () => VideoCompressionQuality,
+    VideoGenerationMaskMode: () => VideoGenerationMaskMode,
+    VideoGenerationReferenceType: () => VideoGenerationReferenceType,
+    VideoOrientation: () => VideoOrientation,
+    VideoResponseFormat: () => VideoResponseFormat,
+    VoiceActivityType: () => VoiceActivityType,
+    createFunctionResponsePartFromBase64: () => createFunctionResponsePartFromBase64,
+    createFunctionResponsePartFromUri: () => createFunctionResponsePartFromUri,
+    createModelContent: () => createModelContent,
+    createPartFromBase64: () => createPartFromBase64,
+    createPartFromCodeExecutionResult: () => createPartFromCodeExecutionResult,
+    createPartFromExecutableCode: () => createPartFromExecutableCode,
+    createPartFromFunctionCall: () => createPartFromFunctionCall,
+    createPartFromFunctionResponse: () => createPartFromFunctionResponse,
+    createPartFromText: () => createPartFromText,
+    createPartFromUri: () => createPartFromUri,
+    createUserContent: () => createUserContent,
+    mcpToTool: () => mcpToTool,
+    setDefaultBaseUrls: () => setDefaultBaseUrls
+  });
+  function setDefaultBaseUrls(baseUrlParams) {
+    _defaultBaseGeminiUrl = baseUrlParams.geminiUrl;
+    _defaultBaseVertexUrl = baseUrlParams.vertexUrl;
+  }
   function getDefaultBaseUrls() {
     return {
       geminiUrl: _defaultBaseGeminiUrl,
@@ -12747,6 +12956,110 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       setValueByPath(toObject, ["mimeType"], fromMimeType);
     }
     return toObject;
+  }
+  function createFunctionResponsePartFromBase64(data, mimeType) {
+    return {
+      inlineData: {
+        data,
+        mimeType
+      }
+    };
+  }
+  function createFunctionResponsePartFromUri(uri, mimeType) {
+    return {
+      fileData: {
+        fileUri: uri,
+        mimeType
+      }
+    };
+  }
+  function createPartFromUri(uri, mimeType, mediaResolution) {
+    return Object.assign({ fileData: {
+      fileUri: uri,
+      mimeType
+    } }, mediaResolution && { mediaResolution: { level: mediaResolution } });
+  }
+  function createPartFromText(text) {
+    return {
+      text
+    };
+  }
+  function createPartFromFunctionCall(name, args) {
+    return {
+      functionCall: {
+        name,
+        args
+      }
+    };
+  }
+  function createPartFromFunctionResponse(id, name, response, parts = []) {
+    return {
+      functionResponse: Object.assign({ id, name, response }, parts.length > 0 && { parts })
+    };
+  }
+  function createPartFromBase64(data, mimeType, mediaResolution) {
+    return Object.assign({ inlineData: {
+      data,
+      mimeType
+    } }, mediaResolution && { mediaResolution: { level: mediaResolution } });
+  }
+  function createPartFromCodeExecutionResult(outcome, output) {
+    return {
+      codeExecutionResult: {
+        outcome,
+        output
+      }
+    };
+  }
+  function createPartFromExecutableCode(code, language) {
+    return {
+      executableCode: {
+        code,
+        language
+      }
+    };
+  }
+  function _isPart(obj) {
+    if (typeof obj === "object" && obj !== null) {
+      return "fileData" in obj || "text" in obj || "functionCall" in obj || "functionResponse" in obj || "inlineData" in obj || "videoMetadata" in obj || "codeExecutionResult" in obj || "executableCode" in obj;
+    }
+    return false;
+  }
+  function _toParts(partOrString) {
+    const parts = [];
+    if (typeof partOrString === "string") {
+      parts.push(createPartFromText(partOrString));
+    } else if (_isPart(partOrString)) {
+      parts.push(partOrString);
+    } else if (Array.isArray(partOrString)) {
+      if (partOrString.length === 0) {
+        throw new Error("partOrString cannot be an empty array");
+      }
+      for (const part of partOrString) {
+        if (typeof part === "string") {
+          parts.push(createPartFromText(part));
+        } else if (_isPart(part)) {
+          parts.push(part);
+        } else {
+          throw new Error("element in PartUnion must be a Part object or string");
+        }
+      }
+    } else {
+      throw new Error("partOrString must be a Part object, string, or array");
+    }
+    return parts;
+  }
+  function createUserContent(partOrString) {
+    return {
+      role: "user",
+      parts: _toParts(partOrString)
+    };
+  }
+  function createModelContent(partOrString) {
+    return {
+      role: "model",
+      parts: _toParts(partOrString)
+    };
   }
   function tModel(apiClient, model) {
     if (!model || typeof model !== "string") {
@@ -21356,6 +21669,20 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       }
     });
   }
+  function isMcpClient(client) {
+    return client !== null && typeof client === "object" && "listTools" in client && typeof client.listTools === "function";
+  }
+  function mcpToTool(...args) {
+    hasMcpToolUsageFromMcpToTool = true;
+    if (args.length === 0) {
+      throw new Error("No MCP clients provided");
+    }
+    const maybeConfig = args[args.length - 1];
+    if (isMcpClient(maybeConfig)) {
+      return McpCallableTool.create(args, {});
+    }
+    return McpCallableTool.create(args.slice(0, args.length - 1), maybeConfig);
+  }
   async function handleWebSocketMessage$1(apiClient, onmessage, event) {
     const serverMessage = new LiveMusicServerMessage();
     let data;
@@ -26914,7 +27241,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   function sleep(ms) {
     return new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
   }
-  var import_p_retry, _defaultBaseGeminiUrl, _defaultBaseVertexUrl, BaseModule, Outcome, Language, FunctionResponseScheduling, Type, AuthType, HttpElementLocation, ApiSpec, Environment, SafetyPolicy, PhishBlockThreshold, Behavior, DynamicRetrievalConfigMode, ThinkingLevel, PersonGeneration, ProminentPeople, HarmCategory, HarmBlockMethod, HarmBlockThreshold, FunctionCallingConfigMode, FinishReason, HarmProbability, HarmSeverity, UrlRetrievalStatus, BlockedReason, TrafficType, MediaModality, ModelStage, MediaResolution, Modality, Delivery, AspectRatio, ImageSize, TuningMode, AdapterSize, ResponseParseType, MatchOperation, ReinforcementTuningThinkingLevel, JobState, TuningJobState, AggregationMetric, PairwiseChoice, VideoOrientation, TuningSpeed, TuningTask, DocumentState, ServiceTier, PartMediaResolutionLevel, ToolType, ResourceScope, FeatureSelectionPreference, EmbeddingApiType, SafetyFilterLevel, ImagePromptLanguage, MaskReferenceMode, ControlReferenceType, SubjectReferenceType, EditMode, SegmentMode, VideoGenerationReferenceType, VideoGenerationMaskMode, VideoCompressionQuality, ImageResizeMode, TuningMethod, FileState, FileSource, TurnCompleteReason, VadSignalType, VoiceActivityType, StartSensitivity, EndSensitivity, ActivityHandling, TurnCoverage, Scale, MusicGenerationMode, LiveMusicPlaybackControl, HttpResponse, GenerateContentResponse, EmbedContentResponse, GenerateImagesResponse, EditImageResponse, UpscaleImageResponse, RecontextImageResponse, SegmentImageResponse, ListModelsResponse, DeleteModelResponse, CountTokensResponse, ComputeTokensResponse, GenerateVideosOperation, ListTuningJobsResponse, CancelTuningJobResponse, ValidateRewardResponse, DeleteCachedContentResponse, ListCachedContentsResponse, ListDocumentsResponse, ListFileSearchStoresResponse, UploadToFileSearchStoreResumableResponse, ImportFileOperation, ListFilesResponse, CreateFileResponse, DeleteFileResponse, RegisterFilesResponse, ListBatchJobsResponse, LiveServerMessage, LiveMusicServerMessage, UploadToFileSearchStoreOperation, PagedItem, Pager, Batches, Caches, Chats, Chat, ApiError, Files, CONTENT_TYPE_HEADER, SERVER_TIMEOUT_HEADER, USER_AGENT_HEADER, GOOGLE_API_CLIENT_HEADER, SDK_VERSION, LIBRARY_LABEL, VERTEX_AI_API_DEFAULT_VERSION, GOOGLE_AI_API_DEFAULT_VERSION, MULTI_REGIONAL_LOCATIONS, DEFAULT_RETRY_ATTEMPTS, DEFAULT_RETRY_INITIAL_DELAY, DEFAULT_RETRY_MAX_DELAY, DEFAULT_RETRY_EXP_BASE, DEFAULT_RETRY_JITTER, DEFAULT_RETRY_HTTP_STATUS_CODES, ApiClient, MCP_LABEL, hasMcpToolUsageFromMcpToTool, McpCallableTool, LiveMusic, LiveMusicSession, FUNCTION_RESPONSE_REQUIRES_ID, Live, defaultLiveSendClientContentParamerters, Session2, DEFAULT_MAX_REMOTE_CALLS, Models, Operations, Tokens, Documents, FileSearchStores, envMemo, GoogleGenAISecurityProvider, GoogleGenAIAuthHook, HTTPClientError, UnexpectedClientError, InvalidRequestError, RequestAbortedError, RequestTimeoutError, ConnectionError, GoogleGenAiError, GeminiNextGenAPIClientError, APIError, APIUserAbortError, APIConnectionError, APIConnectionTimeoutError, BadRequestError, AuthenticationError, PermissionDeniedError, NotFoundError, ConflictError, UnprocessableEntityError, RateLimitError, InternalServerError, SDKHooks, hasOwn, ServerList, SDK_METADATA, encodeForm, encodeSimple, encodeFormQuery, DEFAULT_FETCHER, HTTPClient, mediaParamSeparator, codeRangeRE$1, defaultBackoff, PermanentError, TemporaryError, codeRangeRE, gt, webWorkerLike, isBrowserLike, ClientSDK, jsonLikeContentTypeRE, jsonlLikeContentTypeRE, GoogleGenAiDefaultError, Stream, CR, LF, BOUNDARIES, MAX_BOUNDARY_LEN, DEFAULT_CONTENT_TYPES, headerValRE, SecurityErrorCode, SecurityError, _a2, APIPromise, Agents, Environments, CancelInteractionByIdServerError, CancelInteractionByIdClientError, CreateInteractionServerError, CreateInteractionClientError, DeleteInteractionServerError, DeleteInteractionClientError, GetInteractionByIdServerError, GetInteractionByIdClientError, Interactions, Triggers, Webhooks, GoogleGenAI$1, LEGACY_LYRIA_MODELS, GeminiNextGenInteractions, GeminiNextGenAgents, GeminiNextGenWebhooks, GeminiNextGenTriggers, GeminiNextGenEnvironments, Tunings, BrowserDownloader, MAX_CHUNK_SIZE, MAX_RETRY_COUNT, INITIAL_RETRY_DELAY_MS, DELAY_MULTIPLIER, X_GOOG_UPLOAD_STATUS_HEADER_FIELD, BrowserUploader, BrowserWebSocketFactory, BrowserWebSocket, GOOGLE_API_KEY_HEADER, WebAuth, LANGUAGE_LABEL_PREFIX, GoogleGenAI2;
+  var import_p_retry, _defaultBaseGeminiUrl, _defaultBaseVertexUrl, BaseModule, Outcome, Language, FunctionResponseScheduling, Type, AuthType, HttpElementLocation, ApiSpec, Environment, SafetyPolicy, PhishBlockThreshold, Behavior, DynamicRetrievalConfigMode, ThinkingLevel, PersonGeneration, ProminentPeople, HarmCategory, HarmBlockMethod, HarmBlockThreshold, FunctionCallingConfigMode, FinishReason, HarmProbability, HarmSeverity, UrlRetrievalStatus, BlockedReason, TrafficType, MediaModality, ModelStage, MediaResolution, Modality, Delivery, AspectRatio, ImageSize, TuningMode, AdapterSize, ResponseParseType, MatchOperation, ReinforcementTuningThinkingLevel, JobState, TuningJobState, AggregationMetric, PairwiseChoice, VideoOrientation, TuningSpeed, TuningTask, DocumentState, ServiceTier, PartMediaResolutionLevel, ToolType, ResourceScope, FeatureSelectionPreference, EmbeddingApiType, SafetyFilterLevel, ImagePromptLanguage, MaskReferenceMode, ControlReferenceType, SubjectReferenceType, EditMode, SegmentMode, VideoGenerationReferenceType, VideoGenerationMaskMode, VideoCompressionQuality, ImageResizeMode, TuningMethod, FileState, FileSource, TurnCompleteReason, VadSignalType, VoiceActivityType, StartSensitivity, EndSensitivity, ActivityHandling, TurnCoverage, Scale, MusicGenerationMode, LiveMusicPlaybackControl, ToolResponse, FunctionResponseFileData, FunctionResponseBlob, FunctionResponsePart, FunctionResponse, HttpResponse, GenerateContentResponsePromptFeedback, GenerateContentResponseUsageMetadata, GenerateContentResponse, EmbedContentResponse, GenerateImagesResponse, EditImageResponse, UpscaleImageResponse, RecontextImageResponse, SegmentImageResponse, ListModelsResponse, DeleteModelResponse, AudioResponseFormat, ImageResponseFormat, TextResponseFormat, VideoResponseFormat, ResponseFormat, CountTokensResponse, ComputeTokensResponse, GenerateVideosResponse, GenerateVideosOperation, ReinforcementTuningParseResponseConfig, ReinforcementTuningAutoraterScorerParsedResponseConversionScorer, EvaluateDatasetResponse, ListTuningJobsResponse, CancelTuningJobResponse, ValidateRewardResponse, DeleteCachedContentResponse, ListCachedContentsResponse, ListDocumentsResponse, ListFileSearchStoresResponse, UploadToFileSearchStoreResumableResponse, ImportFileResponse, ImportFileOperation, ListFilesResponse, CreateFileResponse, DeleteFileResponse, RegisterFilesResponse, InlinedResponse, SingleEmbedContentResponse, InlinedEmbedContentResponse, ListBatchJobsResponse, ReplayResponse, RawReferenceImage, MaskReferenceImage, ControlReferenceImage, StyleReferenceImage, SubjectReferenceImage, ContentReferenceImage, LiveServerMessage, LiveClientToolResponse, LiveSendToolResponseParameters, LiveMusicServerMessage, UploadToFileSearchStoreResponse, UploadToFileSearchStoreOperation, PagedItem, Pager, Batches, Caches, Chats, Chat, ApiError, Files, CONTENT_TYPE_HEADER, SERVER_TIMEOUT_HEADER, USER_AGENT_HEADER, GOOGLE_API_CLIENT_HEADER, SDK_VERSION, LIBRARY_LABEL, VERTEX_AI_API_DEFAULT_VERSION, GOOGLE_AI_API_DEFAULT_VERSION, MULTI_REGIONAL_LOCATIONS, DEFAULT_RETRY_ATTEMPTS, DEFAULT_RETRY_INITIAL_DELAY, DEFAULT_RETRY_MAX_DELAY, DEFAULT_RETRY_EXP_BASE, DEFAULT_RETRY_JITTER, DEFAULT_RETRY_HTTP_STATUS_CODES, ApiClient, MCP_LABEL, hasMcpToolUsageFromMcpToTool, McpCallableTool, LiveMusic, LiveMusicSession, FUNCTION_RESPONSE_REQUIRES_ID, Live, defaultLiveSendClientContentParamerters, Session2, DEFAULT_MAX_REMOTE_CALLS, Models, Operations, Tokens, Documents, FileSearchStores, envMemo, GoogleGenAISecurityProvider, GoogleGenAIAuthHook, HTTPClientError, UnexpectedClientError, InvalidRequestError, RequestAbortedError, RequestTimeoutError, ConnectionError, GoogleGenAiError, GeminiNextGenAPIClientError, APIError, APIUserAbortError, APIConnectionError, APIConnectionTimeoutError, BadRequestError, AuthenticationError, PermissionDeniedError, NotFoundError, ConflictError, UnprocessableEntityError, RateLimitError, InternalServerError, SDKHooks, hasOwn, ServerList, SDK_METADATA, encodeForm, encodeSimple, encodeFormQuery, DEFAULT_FETCHER, HTTPClient, mediaParamSeparator, codeRangeRE$1, defaultBackoff, PermanentError, TemporaryError, codeRangeRE, gt, webWorkerLike, isBrowserLike, ClientSDK, jsonLikeContentTypeRE, jsonlLikeContentTypeRE, GoogleGenAiDefaultError, Stream, CR, LF, BOUNDARIES, MAX_BOUNDARY_LEN, DEFAULT_CONTENT_TYPES, headerValRE, SecurityErrorCode, SecurityError, _a2, APIPromise, Agents, Environments, CancelInteractionByIdServerError, CancelInteractionByIdClientError, CreateInteractionServerError, CreateInteractionClientError, DeleteInteractionServerError, DeleteInteractionClientError, GetInteractionByIdServerError, GetInteractionByIdClientError, Interactions, Triggers, Webhooks, GoogleGenAI$1, LEGACY_LYRIA_MODELS, GeminiNextGenInteractions, GeminiNextGenAgents, GeminiNextGenWebhooks, GeminiNextGenTriggers, GeminiNextGenEnvironments, Tunings, BrowserDownloader, MAX_CHUNK_SIZE, MAX_RETRY_COUNT, INITIAL_RETRY_DELAY_MS, DELAY_MULTIPLIER, X_GOOG_UPLOAD_STATUS_HEADER_FIELD, BrowserUploader, BrowserWebSocketFactory, BrowserWebSocket, GOOGLE_API_KEY_HEADER, WebAuth, LANGUAGE_LABEL_PREFIX, GoogleGenAI2;
   var init_web = __esm({
     "node_modules/@google/genai/dist/web/index.mjs"() {
       import_p_retry = __toESM(require_p_retry(), 1);
@@ -27476,6 +27803,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         LiveMusicPlaybackControl2["STOP"] = "STOP";
         LiveMusicPlaybackControl2["RESET_CONTEXT"] = "RESET_CONTEXT";
       })(LiveMusicPlaybackControl || (LiveMusicPlaybackControl = {}));
+      ToolResponse = class {
+      };
+      FunctionResponseFileData = class {
+      };
+      FunctionResponseBlob = class {
+      };
+      FunctionResponsePart = class {
+      };
+      FunctionResponse = class {
+      };
       HttpResponse = class {
         constructor(response) {
           const headers = {};
@@ -27488,6 +27825,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         json() {
           return this.responseInternal.json();
         }
+      };
+      GenerateContentResponsePromptFeedback = class {
+      };
+      GenerateContentResponseUsageMetadata = class {
       };
       GenerateContentResponse = class {
         get text() {
@@ -27604,9 +27945,21 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       };
       DeleteModelResponse = class {
       };
+      AudioResponseFormat = class {
+      };
+      ImageResponseFormat = class {
+      };
+      TextResponseFormat = class {
+      };
+      VideoResponseFormat = class {
+      };
+      ResponseFormat = class {
+      };
       CountTokensResponse = class {
       };
       ComputeTokensResponse = class {
+      };
+      GenerateVideosResponse = class {
       };
       GenerateVideosOperation = class {
         _fromAPIResponse({ apiResponse, _isVertexAI }) {
@@ -27621,6 +27974,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           Object.assign(operation, response);
           return operation;
         }
+      };
+      ReinforcementTuningParseResponseConfig = class {
+      };
+      ReinforcementTuningAutoraterScorerParsedResponseConversionScorer = class {
+      };
+      EvaluateDatasetResponse = class {
       };
       ListTuningJobsResponse = class {
       };
@@ -27637,6 +27996,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       ListFileSearchStoresResponse = class {
       };
       UploadToFileSearchStoreResumableResponse = class {
+      };
+      ImportFileResponse = class {
       };
       ImportFileOperation = class {
         _fromAPIResponse({ apiResponse, _isVertexAI }) {
@@ -27655,7 +28016,79 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       };
       RegisterFilesResponse = class {
       };
+      InlinedResponse = class {
+      };
+      SingleEmbedContentResponse = class {
+      };
+      InlinedEmbedContentResponse = class {
+      };
       ListBatchJobsResponse = class {
+      };
+      ReplayResponse = class {
+      };
+      RawReferenceImage = class {
+        toReferenceImageAPI() {
+          const referenceImageAPI = {
+            referenceType: "REFERENCE_TYPE_RAW",
+            referenceImage: this.referenceImage,
+            referenceId: this.referenceId
+          };
+          return referenceImageAPI;
+        }
+      };
+      MaskReferenceImage = class {
+        toReferenceImageAPI() {
+          const referenceImageAPI = {
+            referenceType: "REFERENCE_TYPE_MASK",
+            referenceImage: this.referenceImage,
+            referenceId: this.referenceId,
+            maskImageConfig: this.config
+          };
+          return referenceImageAPI;
+        }
+      };
+      ControlReferenceImage = class {
+        toReferenceImageAPI() {
+          const referenceImageAPI = {
+            referenceType: "REFERENCE_TYPE_CONTROL",
+            referenceImage: this.referenceImage,
+            referenceId: this.referenceId,
+            controlImageConfig: this.config
+          };
+          return referenceImageAPI;
+        }
+      };
+      StyleReferenceImage = class {
+        toReferenceImageAPI() {
+          const referenceImageAPI = {
+            referenceType: "REFERENCE_TYPE_STYLE",
+            referenceImage: this.referenceImage,
+            referenceId: this.referenceId,
+            styleImageConfig: this.config
+          };
+          return referenceImageAPI;
+        }
+      };
+      SubjectReferenceImage = class {
+        toReferenceImageAPI() {
+          const referenceImageAPI = {
+            referenceType: "REFERENCE_TYPE_SUBJECT",
+            referenceImage: this.referenceImage,
+            referenceId: this.referenceId,
+            subjectImageConfig: this.config
+          };
+          return referenceImageAPI;
+        }
+      };
+      ContentReferenceImage = class {
+        toReferenceImageAPI() {
+          const referenceImageAPI = {
+            referenceType: "REFERENCE_TYPE_CONTENT",
+            referenceImage: this.referenceImage,
+            referenceId: this.referenceId
+          };
+          return referenceImageAPI;
+        }
       };
       LiveServerMessage = class {
         get text() {
@@ -27702,6 +28135,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           return data.length > 0 ? btoa(data) : void 0;
         }
       };
+      LiveClientToolResponse = class {
+      };
+      LiveSendToolResponseParameters = class {
+        constructor() {
+          this.functionResponses = [];
+        }
+      };
       LiveMusicServerMessage = class {
         get audioChunk() {
           if (this.serverContent && this.serverContent.audioChunks && this.serverContent.audioChunks.length > 0) {
@@ -27709,6 +28149,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           }
           return void 0;
         }
+      };
+      UploadToFileSearchStoreResponse = class {
       };
       UploadToFileSearchStoreOperation = class {
         _fromAPIResponse({ apiResponse, _isVertexAI }) {
@@ -32943,6 +33385,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   });
 
   // src/utils/Lyrics/ai.ts
+  function loadGenAI() {
+    if (!genAIModulePromise)
+      genAIModulePromise = Promise.resolve().then(() => (init_web(), web_exports));
+    return genAIModulePromise;
+  }
   async function fetchPhoneticLyrics(lyricsJson, hasKanji, hasKorean, lyricsOnly) {
     if (hasKanji) {
       if (storage_default.get("enable_romaji") === "true") {
@@ -33017,7 +33464,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         console.error("Amai Lyrics: Gemini API Key missing for translation");
         return lyricsOnly.map(() => "");
       }
-      const ai = new GoogleGenAI2({ apiKey: geminiApiKey });
+      const { GoogleGenAI: GoogleGenAI3 } = await loadGenAI();
+      const ai = new GoogleGenAI3({ apiKey: geminiApiKey });
       const generationConfig = buildGeminiConfig(Defaults_default.systemInstruction, 0.85);
       const response = await ai.models.generateContent({
         config: generationConfig,
@@ -33050,12 +33498,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       responseModalities: [],
       responseMimeType: "application/json",
       responseSchema: {
-        type: Type.OBJECT,
+        type: "OBJECT",
         properties: {
           lines: {
-            type: Type.ARRAY,
+            type: "ARRAY",
             items: {
-              type: Type.STRING
+              type: "STRING"
             }
           }
         }
@@ -33121,7 +33569,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   async function processLyricsUsingGemini(lyricsJson, lyricsOnly, systemInstruction, prompt) {
     try {
       const geminiApiKey = storage_default.get("GEMINI_API_KEY")?.toString();
-      const ai = new GoogleGenAI2({ apiKey: geminiApiKey });
+      const { GoogleGenAI: GoogleGenAI3 } = await loadGenAI();
+      const ai = new GoogleGenAI3({ apiKey: geminiApiKey });
       const generationConfig = buildGeminiConfig(systemInstruction, 0.258);
       if (lyricsOnly.length === 0)
         return lyricsJson;
@@ -33177,12 +33626,12 @@ ${JSON.stringify(lyricsOnly)}`
       }));
     }
   }
-  var AI_MODELS;
+  var genAIModulePromise, AI_MODELS;
   var init_ai = __esm({
     "src/utils/Lyrics/ai.ts"() {
       init_storage();
       init_Defaults();
-      init_web();
+      genAIModulePromise = null;
       AI_MODELS = {
         TRANSLATION: "gemini-flash-lite-latest",
         PHONETIC: "gemini-flash-lite-latest"
@@ -33294,7 +33743,7 @@ ${JSON.stringify(lyricsOnly)}`
     }
     const { lyricsJson: preparedLyricsJson, lyricsOnly } = await prepareLyricsForGemini(initialLyricsData);
     const { hasKanji, hasKorean } = detectLanguages(preparedLyricsJson);
-    const lyricsToDisplay = structuredClone(preparedLyricsJson);
+    const lyricsToDisplay = preparedLyricsJson;
     await cacheLyrics(trackId, { ...lyricsToDisplay, id });
     if (Spicetify.Player.data.item.uri?.split(":")[2] === trackId) {
       Defaults_default.CurrentLyricsType = lyricsToDisplay.Type;
@@ -34196,11 +34645,9 @@ ${JSON.stringify(lyricsOnly)}`
   });
 
   // src/app.tsx
-  init_lyrics();
   init_IntervalManager();
   init_SpotifyPlayer();
   init_Addons();
-  init_ScrollSimplebar();
   init_storage();
   init_Whentil();
 
@@ -34740,6 +35187,7 @@ ${JSON.stringify(lyricsOnly)}`
   init_Session();
   init_Whentil();
   init_lifecycle();
+  init_Fullscreen();
   var _EventManager = class {
     static initialize(button) {
       this.button = button;
@@ -34757,6 +35205,8 @@ ${JSON.stringify(lyricsOnly)}`
       Global_default.Event.evoke("playback:shuffle", SpotifyPlayer.ShuffleType);
       let lastPosition = 0;
       const positionInterval = new IntervalManager(0.5, () => {
+        if (!Fullscreen_default.IsOpen)
+          return;
         const pos = SpotifyPlayer.GetTrackPosition();
         if (pos !== lastPosition) {
           Global_default.Event.evoke("playback:position", pos);
@@ -35204,7 +35654,6 @@ ${JSON.stringify(lyricsOnly)}`
   }
   async function initializeAmaiLyrics(buttonManager) {
     const [{ requestPositionSync: requestPositionSync2 }] = await Promise.all([Promise.resolve().then(() => (init_GetProgress(), GetProgress_exports))]);
-    const { ScrollToActiveLine: ScrollToActiveLine2 } = await Promise.resolve().then(() => (init_ScrollToActiveLine(), ScrollToActiveLine_exports));
     const playbackWhen = Whentil_default.When(
       () => Spicetify.Platform.PlaybackAPI,
       () => {
@@ -35250,12 +35699,6 @@ ${JSON.stringify(lyricsOnly)}`
       }
     };
     lifecycle_default.trackWindow("online", onOnline);
-    const scrollingInterval = new IntervalManager(
-      ScrollingIntervalTime,
-      () => ScrollToActiveLine2(ScrollSimplebar)
-    );
-    scrollingInterval.Start();
-    lifecycle_default.trackInterval(scrollingInterval);
     const { ensureLyricsRenderLoop: ensureLyricsRenderLoop2, destroyLyricsRenderLoop: destroyLyricsRenderLoop2 } = await Promise.resolve().then(() => (init_lyrics(), lyrics_exports));
     ensureLyricsRenderLoop2();
     lifecycle_default.trackCallback(() => destroyLyricsRenderLoop2());
@@ -35308,7 +35751,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6892-tYYC9XA3GUnC/1a042adae069/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a04592333f9/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -35334,7 +35777,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6892-tYYC9XA3GUnC/1a042adae0aa/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a045923343a/ProcessingIndicator.css */
 #SpicyLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -35414,7 +35857,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6892-tYYC9XA3GUnC/1a042adad890/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a0459232cb0/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -35563,7 +36006,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6892-tYYC9XA3GUnC/1a042adadb91/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a0459232fd1/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -35771,7 +36214,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6892-tYYC9XA3GUnC/1a042adadc02/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a0459233052/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -36372,7 +36815,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6892-tYYC9XA3GUnC/1a042adadce3/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a0459233153/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -36551,7 +36994,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6892-tYYC9XA3GUnC/1a042adadd44/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a04592331b4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -36824,7 +37267,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6892-tYYC9XA3GUnC/1a042adaddb5/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a0459233245/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -36910,7 +37353,11 @@ ruby > rt {
   display: inline-block;
   --DefaultTransitionDuration: var(--content-duration, 0.15s);
   --TransitionDuration: var(--DefaultTransitionDuration);
-  --TransitionDefinition: all var(--TransitionDuration) cubic-bezier(0.61, 1, 0.88, 1);
+  --TransitionDefinition:
+    transform var(--TransitionDuration) cubic-bezier(0.61, 1, 0.88, 1),
+    opacity var(--TransitionDuration) cubic-bezier(0.61, 1, 0.88, 1),
+    scale var(--TransitionDuration) cubic-bezier(0.61, 1, 0.88, 1),
+    filter var(--TransitionDuration) cubic-bezier(0.61, 1, 0.88, 1);
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line:is(.Active, .Sung) .word,
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line:is(.Active, .Sung) .letter,
@@ -36976,7 +37423,10 @@ ruby > rt {
   scale: var(--DefaultEmphasisLyricsScale);
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line .letterGroup {
-  transition: all 0.24s cubic-bezier(0.61, 1, 0.88, 1);
+  transition:
+    transform 0.24s cubic-bezier(0.61, 1, 0.88, 1),
+    opacity 0.24s cubic-bezier(0.61, 1, 0.88, 1),
+    scale 0.24s cubic-bezier(0.61, 1, 0.88, 1);
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line .word-group {
   display: inline-flex;
@@ -37122,8 +37572,18 @@ ruby > rt {
 #SpicyLyricsPage .LyricsContainer .LyricsContent:has(.OppositeAligned.rtl) .line:not(.OppositeAligned) {
   padding-left: 15cqw;
 }
+@media (prefers-reduced-motion: reduce) {
+  #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
+    filter: none !important;
+  }
+  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .word,
+  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .letter,
+  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .letterGroup {
+    will-change: auto !important;
+  }
+}
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6892-tYYC9XA3GUnC/1a042adade16/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a04592332a6/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -37145,7 +37605,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6892-tYYC9XA3GUnC/1a042adade37/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a04592332d7/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -37172,7 +37632,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6892-tYYC9XA3GUnC/1a042adade68/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a0459233308/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
