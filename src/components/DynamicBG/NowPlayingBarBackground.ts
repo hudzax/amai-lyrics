@@ -1,4 +1,5 @@
 import fastdom from 'fastdom';
+import { normalizeImageUrl, setRandomCSSVariables, createBackgroundImage } from './utils';
 
 interface BackgroundCache {
   nowPlayingBar: Element | null;
@@ -18,13 +19,9 @@ export class NowPlayingBarBackground {
    * Uses dual-image crossfade approach for smooth transitions
    */
   public apply(coverUrl: string | undefined) {
-    if (!coverUrl) return;
-
-    // Convert Spotify URI to proper URL if needed
-    if (coverUrl.startsWith('spotify:image:')) {
-      const imageId = coverUrl.replace('spotify:image:', '');
-      coverUrl = `https://i.scdn.co/image/${imageId}`;
-    }
+    const normalized = normalizeImageUrl(coverUrl);
+    if (!normalized) return;
+    coverUrl = normalized;
 
     try {
       // Quick check for cached values to avoid unnecessary work
@@ -79,30 +76,20 @@ export class NowPlayingBarBackground {
   }
 
   private createNewBackground(nowPlayingBar: Element, coverUrl: string) {
-    // Set random CSS variables for variety
-    this.setRandomCSSVariables();
+    setRandomCSSVariables();
 
-    // Create new dynamic background container
     const dynamicBackground = document.createElement('div');
     dynamicBackground.className = 'sweet-dynamic-bg';
     dynamicBackground.setAttribute('current-img', coverUrl);
 
-    // Create placeholder
     const placeholder = document.createElement('div');
     placeholder.className = 'placeholder';
     dynamicBackground.appendChild(placeholder);
 
-    // Create image A (active)
-    const imgA = this.createBackgroundImage(
-      'bg-img-a',
-      'bg-image primary active',
-      coverUrl,
-      'eager',
-    );
+    const imgA = createBackgroundImage('bg-img-a', 'bg-image primary active', coverUrl, 'eager');
     dynamicBackground.appendChild(imgA);
 
-    // Create image B (inactive)
-    const imgB = this.createBackgroundImage('bg-img-b', 'bg-image secondary', '', 'lazy');
+    const imgB = createBackgroundImage('bg-img-b', 'bg-image secondary', '', 'lazy');
     dynamicBackground.appendChild(imgB);
 
     // Add container to DOM
@@ -143,36 +130,8 @@ export class NowPlayingBarBackground {
     };
   }
 
-  private createBackgroundImage(
-    id: string,
-    className: string,
-    src: string,
-    loading: 'eager' | 'lazy',
-  ): HTMLImageElement {
-    const img = document.createElement('img');
-    img.id = id;
-    img.className = className;
-    img.decoding = 'async';
-    img.loading = loading;
-    if (src) img.src = src;
-    return img;
-  }
-
-  private setRandomCSSVariables() {
-    const rotationPrimary = Math.floor(Math.random() * 360);
-    const rotationSecondary = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty('--bg-rotation-primary', `${rotationPrimary}deg`);
-    document.documentElement.style.setProperty(
-      '--bg-rotation-secondary',
-      `${rotationSecondary}deg`,
-    );
-
-    const scalePrimary = 0.9 + Math.random() * 0.3;
-    const scaleSecondary = 0.9 + Math.random() * 0.3;
-    document.documentElement.style.setProperty('--bg-scale-primary', `${scalePrimary}`);
-    document.documentElement.style.setProperty('--bg-scale-secondary', `${scaleSecondary}`);
-
-    const hueShift = Math.floor(Math.random() * 30);
-    document.documentElement.style.setProperty('--bg-hue-shift', `${hueShift}deg`);
+  /** Clear cached state when the NowPlayingView is no longer mounted. */
+  public destroy(): void {
+    this.clearCache();
   }
 }

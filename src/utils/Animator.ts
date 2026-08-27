@@ -31,6 +31,10 @@ export default class Animator {
     this.duration = duration * 1000; // Convert to milliseconds
     this.currentProgress = from;
     this.maid = new Maid();
+    // Single disposer for the active rAF — per-tick Give() leaked unbounded disposers.
+    this.maid.Give(() => {
+      if (this.animationFrameId !== null) cancelAnimationFrame(this.animationFrameId);
+    });
   }
 
   private emit(event: keyof EventMap, progress?: number): void {
@@ -64,7 +68,6 @@ export default class Animator {
 
     if (t < 1) {
       this.animationFrameId = requestAnimationFrame(() => this.animate());
-      this.maid.Give(() => cancelAnimationFrame(this.animationFrameId!));
     } else {
       this.emit('finish');
       this.reset();
@@ -108,14 +111,18 @@ export default class Animator {
     if (this.isDestroyed) return;
 
     this.emit('destroy');
+    if (this.animationFrameId !== null) cancelAnimationFrame(this.animationFrameId);
     this.maid.Destroy();
     this.reset();
     this.isDestroyed = true;
   }
 
   private reset(): void {
+    if (this.animationFrameId !== null) {
+      // Clear without extra Maid churn; Destroy() already handles the final cancel.
+      this.animationFrameId = null;
+    }
     this.startTime = null;
     this.pausedTime = null;
-    this.animationFrameId = null;
   }
 }

@@ -34,16 +34,27 @@ const OnSpotifyReady = new Promise<void>((resolve) => {
 let tokenProviderResponse: TokenProviderResponse | undefined;
 let accessTokenPromise: Promise<string> | undefined;
 
+/** Returns a cached token if still valid (>2s ttl), otherwise fetches a fresh one. */
 const GetSpotifyAccessToken = (): Promise<string> => {
+  // Fast path: cached token still valid
   if (tokenProviderResponse) {
-    const timeUntilRefresh = (tokenProviderResponse.expiresAtTime - Date.now()) / 1000;
-    if (timeUntilRefresh <= 2) {
+    const ttlSec = (tokenProviderResponse.expiresAtTime - Date.now()) / 1000;
+    if (ttlSec > 2) {
+      return Promise.resolve(tokenProviderResponse.accessToken);
+    }
+    // Expiring imminently: drop it and fall through to fetch
+    if (ttlSec <= 2) {
       tokenProviderResponse = undefined;
-      accessTokenPromise = new Promise((resolve) => Timeout(timeUntilRefresh, resolve)).then(() => {
-        accessTokenPromise = undefined;
-        return GetSpotifyAccessToken();
-      });
-      return accessTokenPromise;
+      // If token is already expired (ttl <= 0) fetch immediately; otherwise wait until expiry
+      // but never block negative durations.
+      const waitSec = Math.max(0, ttlSec);
+      if (waitSec > 0) {
+        accessTokenPromise = new Promise<void>((resolve) => Timeout(waitSec, resolve)).then(() => {
+          accessTokenPromise = undefined;
+          return GetSpotifyAccessToken();
+        }) as unknown as Promise<string>;
+        return accessTokenPromise;
+      }
     }
   }
 
@@ -53,27 +64,38 @@ const GetSpotifyAccessToken = (): Promise<string> => {
 
   accessTokenPromise = SpotifyInternalFetch.get('sp://oauth/v2/token')
     .then((result: TokenProviderResponse) => {
-      tokenProviderResponse = result;
-      accessTokenPromise = Promise.resolve(result.accessToken);
-      return GetSpotifyAccessToken();
+      if (result?.accessToken && typeof result.expiresAtTime === 'number') {
+        tokenProviderResponse = result;
+        return result.accessToken;
+      }
+      throw new Error('Invalid token response');
     })
     .catch((error: Error) => {
-      if (error.message.includes('Resolver not found')) {
+      // Cosmos resolver not yet registered — fallback to Session token
+      if (error?.message?.includes('Resolver not found')) {
         if (!SpotifyPlatform.Session) {
           console.warn('Failed to find SpotifyPlatform.Session for fetching token');
-        } else {
-          tokenProviderResponse = {
-            accessToken: SpotifyPlatform.Session.accessToken,
-            expiresAtTime: SpotifyPlatform.Session.accessTokenExpirationTimestampMs,
-            tokenType: 'Bearer',
-          };
-          accessTokenPromise = Promise.resolve(tokenProviderResponse.accessToken);
+          throw error;
         }
+        tokenProviderResponse = {
+          accessToken: SpotifyPlatform.Session.accessToken,
+          expiresAtTime: SpotifyPlatform.Session.accessTokenExpirationTimestampMs,
+          tokenType: 'Bearer',
+        };
+        return tokenProviderResponse.accessToken;
       }
-      return GetSpotifyAccessToken();
+      throw error;
     });
 
-  return accessTokenPromise;
+  // Clear the in-flight guard after settlement while still returning the same promise to all concurrent callers
+  const inflight = accessTokenPromise;
+  inflight
+    .catch(() => undefined)
+    .finally(() => {
+      if (accessTokenPromise === inflight) accessTokenPromise = undefined;
+    });
+
+  return inflight;
 };
 
 const Platform = {

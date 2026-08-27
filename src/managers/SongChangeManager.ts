@@ -2,38 +2,41 @@ import sleep from '../utils/sleep';
 import { ButtonManager } from './ButtonManager';
 import { NowPlayingBarBackground } from '../components/DynamicBG/NowPlayingBarBackground';
 import { EnsureProcessingIndicatorHidden } from '../utils/Lyrics/ui';
+import { debounce } from '../utils/debounce';
 
 export class SongChangeManager {
   private buttonManager: ButtonManager;
   private backgroundManager: NowPlayingBarBackground;
   private latestUri: string | null = null;
-  private bgDebounceTimer: number | null = null;
-  private pageBgDebounceTimer: number | null = null;
+
+  private readonly debouncedBgApply: ((coverUrl: string | undefined) => void) & {
+    cancel: () => void;
+  };
+  private readonly debouncedPageBgApply: (() => void) & { cancel: () => void };
 
   constructor(buttonManager: ButtonManager, backgroundManager: NowPlayingBarBackground) {
     this.buttonManager = buttonManager;
     this.backgroundManager = backgroundManager;
-  }
 
-  private debouncedBgApply(coverUrl: string | undefined): void {
-    if (this.bgDebounceTimer !== null) clearTimeout(this.bgDebounceTimer);
-    this.bgDebounceTimer = window.setTimeout(() => {
+    // Coalesce rapid skip events — only the settled track triggers work.
+    this.debouncedBgApply = debounce((coverUrl: string | undefined) => {
       this.backgroundManager.apply(coverUrl);
-      this.bgDebounceTimer = null;
+    }, 500);
+
+    this.debouncedPageBgApply = debounce(() => {
+      void import('../components/DynamicBG/dynamicBackground').then(
+        ({ default: ApplyDynamicBackground }) => {
+          const el = document.querySelector<HTMLElement>('#SpicyLyricsPage .ContentBox');
+          if (el) ApplyDynamicBackground(el);
+        },
+      );
     }, 500);
   }
 
-  private async debouncedPageBgApply(): Promise<void> {
-    if (this.pageBgDebounceTimer !== null) clearTimeout(this.pageBgDebounceTimer);
-    return new Promise((resolve) => {
-      this.pageBgDebounceTimer = window.setTimeout(async () => {
-        const { default: ApplyDynamicBackground } =
-          await import('../components/DynamicBG/dynamicBackground');
-        ApplyDynamicBackground(document.querySelector('#SpicyLyricsPage .ContentBox'));
-        this.pageBgDebounceTimer = null;
-        resolve();
-      }, 500);
-    });
+  /** Cancel pending debounced work — call on teardown to avoid leaks. */
+  public dispose(): void {
+    this.debouncedBgApply.cancel();
+    this.debouncedPageBgApply.cancel();
   }
 
   public async handleSongChange(event: { data?: { item?: { uri?: string } } }) {

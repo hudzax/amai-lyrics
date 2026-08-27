@@ -1,5 +1,6 @@
 import { IntervalManager } from './IntervalManager';
 import Whentil from './Whentil';
+import Event from './EventManager';
 
 type Disposer = () => void;
 
@@ -32,10 +33,7 @@ class Lifecycle {
 
   /** Register a Global.Event bus listener id and its removal. */
   trackGlobalEvent(id: number): void {
-    this.track(() => {
-      // Lazy import avoids a circular dependency at module load.
-      import('./EventManager').then(({ default: Event }) => Event.unListen(id)).catch(() => {});
-    });
+    this.track(() => Event.unListen(id));
   }
 
   /** Register a History.listen unsubscribe function. */

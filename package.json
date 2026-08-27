@@ -15,6 +15,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
+    "typecheck:strict": "tsc --noEmit -p tsconfig.strict.json",
     "postinstall": "node -e \"try{const fs=require('fs');const p='node_modules/@hudzax/web-modules/Scheduler.ts';let t=fs.readFileSync(p,'utf8');const o=t;t=t.replace(/return \\[0, setTimeout/g,'return [0, window.setTimeout').replace(/return \\[1, setInterval/g,'return [1, window.setInterval').replace(/scheduled\\[1\\] = setTimeout/g,'scheduled[1] = window.setTimeout');if(t!==o){fs.writeFileSync(p,t);console.log('[postinstall] Patched Scheduler.ts for DOM setTimeout types')} }catch(e){}\"",
     "prepare": "npm run postinstall"
   },

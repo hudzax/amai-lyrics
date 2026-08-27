@@ -91,6 +91,24 @@ export default async function SpicyFetch(
   }
 }
 
+const MAX_DECOMPRESSED_BYTES = 2 * 1024 * 1024; // 2 MB guard against cache-bomb inflate
+
+/** Chunked Uint8Array → string to avoid spread stack overflow on large payloads. */
+function uint8ToString(bytes: Uint8Array): string {
+  const CHUNK = 0x8000;
+  let out = '';
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    out += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  }
+  return out;
+}
+
+function stringToUint8(str: string): Uint8Array {
+  const out = new Uint8Array(str.length);
+  for (let i = 0; i < str.length; i++) out[i] = str.charCodeAt(i) & 0xff;
+  return out;
+}
+
 async function CacheContent(
   key: string,
   data: [object, number],
@@ -105,7 +123,7 @@ async function CacheContent(
     const compressedData = pako.deflate(processedData, {
       level: 1,
     });
-    const compressedString = String.fromCharCode(...new Uint8Array(compressedData));
+    const compressedString = uint8ToString(compressedData);
 
     await SpicyFetchCache.set(processedKey, {
       Content: compressedString,
@@ -134,8 +152,19 @@ async function GetCachedContent(key: string): Promise<[object, number] | null> {
           return content.Content as [object, number];
         }
 
-        const compressedData = Uint8Array.from(content.Content, (c: string) => c.charCodeAt(0));
+        // Guard: reject absurdly large entries before inflating
+        if (content.Content.length > MAX_DECOMPRESSED_BYTES) {
+          await SpicyFetchCache.remove(processedKey);
+          return null;
+        }
+
+        const compressedData = stringToUint8(content.Content);
         const decompressedData = pako.inflate(compressedData, { to: 'string' });
+
+        if (decompressedData.length > MAX_DECOMPRESSED_BYTES) {
+          await SpicyFetchCache.remove(processedKey);
+          return null;
+        }
 
         return JSON.parse(decompressedData) as [object, number];
       } else {

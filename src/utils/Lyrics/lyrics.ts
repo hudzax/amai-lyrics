@@ -84,13 +84,21 @@ let hasRenderedInitial = false;
 // only does RPC work while lyrics are actually on screen.
 let pagePositionClient: (() => void) | null = null;
 
-// This module-level loop runs for the plugin's lifetime. Guard it with a
-// window-persisted flag so a re-init (script re-injection) does not start a
-// second concurrent loop.
-const windowRef = window as unknown as { __amaiRenderLoopStarted?: boolean };
-if (!windowRef.__amaiRenderLoopStarted) {
+// Render loop is window-persisted so re-injection (spicetify watch) doesn't
+// spawn duplicate loops. Exposed via ensureLyricsRenderLoop() for explicit
+// init and for lifecycle teardown; auto-starts on first import for backward
+// compat but can also be started explicitly from app.tsx.
+const windowRef = window as unknown as {
+  __amaiRenderLoopStarted?: boolean;
+  __amaiRenderLoop?: IntervalManager | null;
+};
+
+let renderLoop: IntervalManager | null = windowRef.__amaiRenderLoop ?? null;
+
+export function ensureLyricsRenderLoop(): IntervalManager {
+  if (renderLoop && windowRef.__amaiRenderLoopStarted) return renderLoop;
   windowRef.__amaiRenderLoopStarted = true;
-  new IntervalManager(THROTTLE_TIME, () => {
+  renderLoop = new IntervalManager(THROTTLE_TIME, () => {
     if (!Defaults.LyricsContainerExists) return;
     // Skip work entirely when the lyrics page isn't visible
     const onLyricsPage = Spicetify.Platform.History.location.pathname === '/AmaiLyrics';
@@ -109,7 +117,30 @@ if (!windowRef.__amaiRenderLoopStarted) {
     hasRenderedInitial = true;
     Lyrics.TimeSetter(progress);
     Lyrics.Animate(progress);
-  }).Start();
+  });
+  renderLoop.Start();
+  windowRef.__amaiRenderLoop = renderLoop;
+  return renderLoop;
+}
+
+export function destroyLyricsRenderLoop(): void {
+  if (pagePositionClient) {
+    pagePositionClient();
+    pagePositionClient = null;
+  }
+  if (renderLoop) {
+    renderLoop.Destroy();
+    renderLoop = null;
+  }
+  windowRef.__amaiRenderLoop = null;
+  windowRef.__amaiRenderLoopStarted = false;
+  lastRenderedPosition = -1;
+  hasRenderedInitial = false;
+}
+
+// Auto-start for backward compat (existing entry points rely on import side-effect).
+if (!windowRef.__amaiRenderLoopStarted) {
+  ensureLyricsRenderLoop();
 }
 let LinesEvListenerMaid: Maid;
 let LinesEvListenerExists: boolean;

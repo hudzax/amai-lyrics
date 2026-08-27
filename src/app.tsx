@@ -41,16 +41,19 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
   const { ScrollToActiveLine } = await import('./utils/Scrolling/ScrollToActiveLine');
 
   // Initialize position sync
-  Whentil.When(
+  const playbackWhen = Whentil.When(
     () => Spicetify.Platform.PlaybackAPI,
     () => {
       requestPositionSync();
     },
   );
+  lifecycle.trackWhentil(playbackWhen);
 
   // Set up managers
   const backgroundManager = new NowPlayingBarBackground();
   const songChangeManager = new SongChangeManager(buttonManager, backgroundManager);
+  lifecycle.trackCallback(() => songChangeManager.dispose());
+  lifecycle.trackCallback(() => backgroundManager.destroy());
   new PageManager(buttonManager); // Used for side effects (navigation setup)
 
   // Set up dynamic background updates
@@ -108,6 +111,11 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
   );
   scrollingInterval.Start();
   lifecycle.trackInterval(scrollingInterval);
+
+  // Ensure lyric render loop is tracked for teardown (auto-started on import but now explicit)
+  const { ensureLyricsRenderLoop, destroyLyricsRenderLoop } = await import('./utils/Lyrics/lyrics');
+  ensureLyricsRenderLoop();
+  lifecycle.trackCallback(() => destroyLyricsRenderLoop());
 
   // Initialize player state and events
   SpotifyPlayer.IsPlaying = IsPlaying();
