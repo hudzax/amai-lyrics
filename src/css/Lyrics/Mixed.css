@@ -432,3 +432,15 @@
 #SpicyLyricsPage .LyricsContainer .LyricsContent:has(.OppositeAligned.rtl) .line:not(.OppositeAligned) {
   padding-left: 15cqw;
 }
+/* Perf: respect reduced-motion - disable blur filter which is GPU heavy */
+@media (prefers-reduced-motion: reduce) {
+  #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
+    filter: none !important;
+  }
+  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .word,
+  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .letter,
+  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .letterGroup {
+    will-change: auto !important;
+  }
+}
+

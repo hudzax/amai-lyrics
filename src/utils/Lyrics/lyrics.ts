@@ -4,6 +4,8 @@ import Defaults from '../../components/Global/Defaults';
 import { SpotifyPlayer } from '../../components/Global/SpotifyPlayer';
 import { requestPositionTracking } from '../Gets/GetProgress';
 import { Lyrics } from './Animator/Main';
+import { ScrollSimplebar } from '../Scrolling/Simplebar/ScrollSimplebar';
+import { ScrollToActiveLine } from '../Scrolling/ScrollToActiveLine';
 
 export const ScrollingIntervalTime = 0.1;
 
@@ -79,6 +81,7 @@ export function ClearLyricsContentArrays() {
 const THROTTLE_TIME = 0.05;
 let lastRenderedPosition = -1;
 let hasRenderedInitial = false;
+let scrollTickCounter = 0;
 
 // Registers/unregisters the lyrics page as a position consumer so the sync loop
 // only does RPC work while lyrics are actually on screen.
@@ -117,6 +120,10 @@ export function ensureLyricsRenderLoop(): IntervalManager {
     hasRenderedInitial = true;
     Lyrics.TimeSetter(progress);
     Lyrics.Animate(progress);
+    scrollTickCounter++;
+    if (scrollTickCounter % 2 === 0) {
+      ScrollToActiveLine(ScrollSimplebar);
+    }
   });
   renderLoop.Start();
   windowRef.__amaiRenderLoop = renderLoop;

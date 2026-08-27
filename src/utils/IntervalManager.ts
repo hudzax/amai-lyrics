@@ -1,5 +1,36 @@
 import { Maid, Giveable } from '@hudzax/web-modules/Maid';
 
+const liveInstances = new Set<IntervalManager>();
+let visibilityListenerAttached = false;
+
+function globalVisibilityHandler(): void {
+  const hidden = document.hidden;
+  for (const inst of liveInstances) {
+    if (inst.Destroyed) continue;
+    if (hidden) {
+      if (inst.Running) {
+        (inst as unknown as { autoPaused: boolean }).autoPaused = true;
+        (inst as unknown as { pauseTimer: () => void }).pauseTimer();
+      }
+    } else {
+      const anyInst = inst as unknown as { autoPaused: boolean; scheduleTick: () => void };
+      if (anyInst.autoPaused) {
+        anyInst.autoPaused = false;
+        if (!inst.Running) {
+          inst.Running = true;
+          anyInst.scheduleTick();
+        }
+      }
+    }
+  }
+}
+
+function ensureGlobalVisibilityListener(): void {
+  if (visibilityListenerAttached) return;
+  visibilityListenerAttached = true;
+  document.addEventListener('visibilitychange', globalVisibilityHandler);
+}
+
 class IntervalManager implements Giveable {
   private maid: Maid;
   private readonly callback: () => void;
@@ -21,38 +52,9 @@ class IntervalManager implements Giveable {
     this.Running = false;
     this.Destroyed = false;
 
-    // All intervals this extension runs are UI-side work (lyrics highlight,
-    // progress bars, background checks). None of them have any effect while the
-    // Spotify window is hidden/minimized-to-tray, so pause the whole fleet then
-    // and let the renderer actually idle between song changes.
-    const onVisibilityChange = (): void => {
-      if (this.Destroyed) return;
-
-      if (document.hidden) {
-        // Mark that WE are stopping this instance, then halt it without going
-        // through Stop() (which would cancel that marker as an owner action).
-        // An already-stopped timer marks nothing, so an explicit owner Stop()
-        // while hidden can never be overridden later.
-        if (this.Running) {
-          this.autoPaused = true;
-          this.pauseTimer();
-        }
-        return;
-      }
-
-      // Visible again: resume only if we were the ones who paused it. Any
-      // owner-initiated Start()/Stop() along the way clears this flag, so
-      // their intent survives the round trip.
-      if (this.autoPaused) {
-        this.autoPaused = false;
-        if (!this.Running) {
-          this.Running = true;
-          this.scheduleTick();
-        }
-      }
-    };
-    document.addEventListener('visibilitychange', onVisibilityChange);
-    this.maid.Give(() => document.removeEventListener('visibilitychange', onVisibilityChange));
+    liveInstances.add(this);
+    ensureGlobalVisibilityListener();
+    this.maid.Give(() => liveInstances.delete(this));
 
     // Register cleanup ONCE here instead of inside Start(): Maid.Give() keys
     // each item uniquely, so per-start registration kept appending disposers

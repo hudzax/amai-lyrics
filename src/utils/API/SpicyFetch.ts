@@ -1,7 +1,16 @@
 import { SpikyCache } from '@hudzax/web-modules/SpikyCache';
 import Platform from '../../components/Global/Platform';
-import pako from 'pako';
 import { md5 } from '../Hasher';
+
+type PakoModule = typeof import('pako');
+let pakoPromise: Promise<PakoModule> | null = null;
+function loadPako(): Promise<PakoModule> {
+  if (!pakoPromise) pakoPromise = import('pako') as Promise<PakoModule>;
+  return pakoPromise;
+}
+function resolvePako(mod: PakoModule): PakoModule {
+  return (mod as unknown as { default?: PakoModule }).default ?? mod;
+}
 
 export const SpicyFetchCache = new SpikyCache({
   name: 'SpicyFetch__Cache',
@@ -120,7 +129,8 @@ async function CacheContent(
 
     const processedData = typeof data === 'object' ? JSON.stringify(data) : data;
 
-    const compressedData = pako.deflate(processedData, {
+    const pakoMod = resolvePako(await loadPako());
+    const compressedData = pakoMod.deflate(processedData, {
       level: 1,
     });
     const compressedString = uint8ToString(compressedData);
@@ -159,7 +169,8 @@ async function GetCachedContent(key: string): Promise<[object, number] | null> {
         }
 
         const compressedData = stringToUint8(content.Content);
-        const decompressedData = pako.inflate(compressedData, { to: 'string' });
+        const pakoMod = resolvePako(await loadPako());
+        const decompressedData = pakoMod.inflate(compressedData, { to: 'string' });
 
         if (decompressedData.length > MAX_DECOMPRESSED_BYTES) {
           await SpicyFetchCache.remove(processedKey);

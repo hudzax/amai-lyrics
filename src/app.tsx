@@ -1,9 +1,7 @@
 // Core imports
-import { ScrollingIntervalTime } from './utils/Lyrics/lyrics';
 import { IntervalManager } from './utils/IntervalManager';
 import { SpotifyPlayer } from './components/Global/SpotifyPlayer';
 import { IsPlaying } from './utils/Addons';
-import { ScrollSimplebar } from './utils/Scrolling/Simplebar/ScrollSimplebar';
 import storage from './utils/storage';
 import Whentil from './utils/Whentil';
 
@@ -38,7 +36,6 @@ function setupUI(): ButtonManager {
 
 async function initializeAmaiLyrics(buttonManager: ButtonManager) {
   const [{ requestPositionSync }] = await Promise.all([import('./utils/Gets/GetProgress')]);
-  const { ScrollToActiveLine } = await import('./utils/Scrolling/ScrollToActiveLine');
 
   // Initialize position sync
   const playbackWhen = Whentil.When(
@@ -104,13 +101,6 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
     }
   };
   lifecycle.trackWindow('online', onOnline as never);
-
-  // Set up scrolling
-  const scrollingInterval = new IntervalManager(ScrollingIntervalTime, () =>
-    ScrollToActiveLine(ScrollSimplebar),
-  );
-  scrollingInterval.Start();
-  lifecycle.trackInterval(scrollingInterval);
 
   // Ensure lyric render loop is tracked for teardown (auto-started on import but now explicit)
   const { ensureLyricsRenderLoop, destroyLyricsRenderLoop } = await import('./utils/Lyrics/lyrics');

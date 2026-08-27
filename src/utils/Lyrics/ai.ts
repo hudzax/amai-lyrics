@@ -4,9 +4,16 @@
 
 import storage from '../storage';
 import Defaults from '../../components/Global/Defaults';
-import { GoogleGenAI, GenerateContentConfig, Schema, Type } from '@google/genai';
-import { LyricsData } from './processing'; // Import LyricsData
-import { LineBasedLyricItem, LyricsLine } from './conversion'; // Import LineBasedLyricItem and LyricsLine
+import type { GenerateContentConfig, Schema, Type } from '@google/genai';
+import { LyricsData } from './processing';
+import { LineBasedLyricItem, LyricsLine } from './conversion';
+
+type GenAILoader = typeof import('@google/genai');
+let genAIModulePromise: Promise<GenAILoader> | null = null;
+function loadGenAI(): Promise<GenAILoader> {
+  if (!genAIModulePromise) genAIModulePromise = import('@google/genai');
+  return genAIModulePromise;
+}
 
 /**
  * AI Model Constants
@@ -158,6 +165,7 @@ export async function fetchGeminiTranslations(
       return lyricsOnly.map(() => '');
     }
 
+    const { GoogleGenAI } = await loadGenAI();
     const ai = new GoogleGenAI({ apiKey: geminiApiKey });
     const generationConfig = buildGeminiConfig(Defaults.systemInstruction, 0.85);
     const response = await ai.models.generateContent({
@@ -207,14 +215,14 @@ export function buildGeminiConfig(
     responseModalities: [],
     responseMimeType: 'application/json',
     responseSchema: {
-      type: Type.OBJECT,
+      type: 'OBJECT' as unknown as Type.OBJECT,
       properties: {
         lines: {
-          type: Type.ARRAY,
+          type: 'ARRAY' as unknown as Type.ARRAY,
           items: {
-            type: Type.STRING,
+            type: 'STRING' as unknown as Type.STRING,
           },
-        } as Schema, // Cast to Schema
+        } as Schema,
       },
     },
     systemInstruction,
@@ -330,6 +338,7 @@ export async function processLyricsUsingGemini(
   try {
     const geminiApiKey = storage.get('GEMINI_API_KEY')?.toString();
 
+    const { GoogleGenAI } = await loadGenAI();
     const ai = new GoogleGenAI({ apiKey: geminiApiKey });
 
     const generationConfig = buildGeminiConfig(systemInstruction, 0.258);
