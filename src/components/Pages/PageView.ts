@@ -1,7 +1,8 @@
 import fetchLyrics from '../../utils/Lyrics/fetchLyrics';
 import '../../css/Loaders/DotLoader.css';
 import '../../css/Loaders/ProcessingIndicator.css';
-import { removeLinesEvListener } from '../../utils/Lyrics/lyrics';
+import { ClearLyricsContentArrays, removeLinesEvListener } from '../../utils/Lyrics/lyrics';
+import { clearApplyInfoTimeout } from '../../utils/Lyrics/Applyer/Info/ApplyInfo';
 import ApplyDynamicBackground from '../DynamicBG/dynamicBackground';
 import Defaults from '../Global/Defaults';
 import { ClearScrollSimplebar } from '../../utils/Scrolling/Simplebar/ScrollSimplebar';
@@ -107,6 +108,8 @@ async function DestroyPage() {
   });
   Defaults.LyricsContainerExists = false;
   removeLinesEvListener();
+  ClearLyricsContentArrays();
+  clearApplyInfoTimeout();
   Object.values(Tooltips).forEach((a) => a?.destroy());
   Object.keys(Tooltips).forEach((k) => (Tooltips[k] = null));
   ResetLastLine();

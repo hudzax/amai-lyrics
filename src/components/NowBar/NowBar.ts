@@ -2,6 +2,7 @@ import storage from '../../utils/storage';
 import Whentil from '../../utils/Whentil';
 import { SpotifyPlayer } from '../Global/SpotifyPlayer';
 import Fullscreen from '../Utils/Fullscreen';
+import lifecycle from '../../utils/lifecycle';
 import { setupDragAndDrop } from './DragAndDrop';
 import { CleanUpActiveComponents, setupEventListeners } from './EventListeners';
 import { SetupPlaybackControls } from './PlaybackControls';
@@ -12,6 +13,26 @@ import {
   setActivePlaybackControlsInstance,
   setActiveSetupSongProgressBarInstance,
 } from './state';
+
+// Tracked so rapid open/close or page destroy doesn't leave orphan polling task holding AppendQueue closure
+let viewControlsWhen: ReturnType<typeof Whentil.When> | null = null;
+const nowBarWhenWindowRef = window as unknown as { __amaiNowBarWhenTracked?: boolean };
+
+function cancelViewControlsWhen(): void {
+  if (viewControlsWhen) {
+    viewControlsWhen.Cancel();
+    viewControlsWhen = null;
+  }
+}
+
+if (!nowBarWhenWindowRef.__amaiNowBarWhenTracked) {
+  nowBarWhenWindowRef.__amaiNowBarWhenTracked = true;
+  lifecycle.trackCallback(cancelViewControlsWhen);
+  // Reset flag on teardown so hot-reload can re-register
+  lifecycle.trackCallback(() => {
+    nowBarWhenWindowRef.__amaiNowBarWhenTracked = false;
+  });
+}
 
 /**
  * Opens the NowBar and initializes its components
@@ -74,10 +95,18 @@ async function OpenNowBar() {
         ActiveSetupSongProgressBarInstance.Apply();
       }
 
-      // Use a more reliable approach to add elements
-      Whentil.When(
+      // Use a more reliable approach to add elements — tracked for teardown so rapid
+      // open/close or hot-reload doesn't leave orphan Whentil polls holding AppendQueue closures
+      if (viewControlsWhen) {
+        viewControlsWhen.Cancel();
+        viewControlsWhen = null;
+      }
+      viewControlsWhen = Whentil.When(
         () => document.querySelector('#SpicyLyricsPage .ContentBox .NowBar .Header .ViewControls'),
         () => {
+          viewControlsWhen = null;
+          // Abort if page was destroyed while waiting (prevents appending to detached MediaBox)
+          if (!MediaBox.isConnected || !document.querySelector('#SpicyLyricsPage')) return;
           // Ensure there's no duplicate elements before appending
           const viewControls = MediaBox.querySelector('.ViewControls');
 
@@ -106,6 +135,7 @@ async function OpenNowBar() {
  * Closes the NowBar and cleans up its components
  */
 function CloseNowBar() {
+  cancelViewControlsWhen();
   const NowBar = document.querySelector('#SpicyLyricsPage .ContentBox .NowBar');
   if (!NowBar) return;
   NowBar.classList.remove('Active');

@@ -68,9 +68,15 @@ export function ScrollToActiveLine(ScrollSimplebar: SimpleBar) {
 
       // Use closure variables to pass data from measure to mutate
       fastdom.measure(() => {
+        // Abort if page was destroyed while this tick was queued (orphan rAF leak)
+        if (!Defaults.LyricsContainerExists) return;
+        if (!document.querySelector('#SpicyLyricsPage')) return;
         const container = ScrollSimplebar?.getScrollElement() as HTMLElement;
+        if (!container || !container.isConnected) return;
+        if (!LineElem || !LineElem.isConnected) return;
         fastdom.mutate(() => {
-          if (!container || !LineElem) return;
+          if (!Defaults.LyricsContainerExists) return;
+          if (!container.isConnected || !LineElem.isConnected) return;
           if (lastLine === LineElem) return;
 
           // Release the previous pre-highlight target: Animate only keeps the

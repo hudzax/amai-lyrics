@@ -95,6 +95,8 @@ async function fetchLyricsData(
   headers: Record<string, string>,
   flush = false,
 ): Promise<{ data: LyricsResult; status: number }> {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 10_000);
   try {
     const res = await fetch(`${API_URL}/${id}${flush ? '?flush=true' : ''}`, {
       method: 'POST',
@@ -108,6 +110,7 @@ async function fetchLyricsData(
         images: JSON.stringify(userData?.images),
         ...trackDetails,
       }),
+      signal: controller.signal,
     });
 
     const status = res.status;
@@ -133,7 +136,13 @@ async function fetchLyricsData(
 
     return { data, status };
   } catch (error) {
-    console.error('Error fetching lyrics:', error);
+    if ((error as DOMException)?.name === 'AbortError') {
+      console.error('Error fetching lyrics: request timed out after 10s', id);
+    } else {
+      console.error('Error fetching lyrics:', error);
+    }
     throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
   }
 }

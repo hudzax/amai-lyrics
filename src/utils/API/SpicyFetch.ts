@@ -16,6 +16,22 @@ export const SpicyFetchCache = new SpikyCache({
   name: 'SpicyFetch__Cache',
 });
 
+// Bounded LRU for Cache API disk entries — prevents unbounded growth during long sessions
+const MAX_SPICY_FETCH_ENTRIES = 150;
+const spicyWindowRef = window as unknown as { __amaiSpicyFetchKeys?: string[] };
+const spicyFetchKeyOrder: string[] = spicyWindowRef.__amaiSpicyFetchKeys ?? [];
+spicyWindowRef.__amaiSpicyFetchKeys = spicyFetchKeyOrder;
+
+function trackSpicyFetchKey(processedKey: string): void {
+  const idx = spicyFetchKeyOrder.indexOf(processedKey);
+  if (idx !== -1) spicyFetchKeyOrder.splice(idx, 1);
+  spicyFetchKeyOrder.push(processedKey);
+  if (spicyFetchKeyOrder.length > MAX_SPICY_FETCH_ENTRIES) {
+    const oldest = spicyFetchKeyOrder.shift();
+    if (oldest) SpicyFetchCache.remove(oldest).catch(() => {});
+  }
+}
+
 export default async function SpicyFetch(
   path: string,
   IsExternal: boolean = false,
@@ -139,6 +155,7 @@ async function CacheContent(
       Content: compressedString,
       expiresIn,
     });
+    trackSpicyFetchKey(processedKey);
   } catch (error) {
     console.error('ERR CC', error);
     // Remove only the failing entry instead of wiping the entire cache

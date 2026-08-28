@@ -1,9 +1,38 @@
+import lifecycle from '../../../lifecycle';
+
+const windowRef = window as unknown as {
+  __amaiInfoTimeout?: number | null;
+  __amaiInfoLifecycleTracked?: boolean;
+};
+let infoTimeout: number | null = windowRef.__amaiInfoTimeout ?? null;
+
+if (!windowRef.__amaiInfoLifecycleTracked) {
+  windowRef.__amaiInfoLifecycleTracked = true;
+  lifecycle.trackCallback(clearApplyInfoTimeout);
+}
+
+/** Clear pending ApplyInfo removal timer — call on page destroy / teardown to avoid detached-DOM retain. */
+export function clearApplyInfoTimeout(): void {
+  if (infoTimeout !== null) {
+    clearTimeout(infoTimeout);
+    infoTimeout = null;
+    windowRef.__amaiInfoTimeout = null;
+  }
+}
+
 export function ApplyInfo(data: { Info?: string; InfoDuration?: number }) {
   const DEFAULT_WPM = 200;
   const DEFAULT_DURATION = 8000; // 8 seconds fallback
 
   const TopBarContainer = document.querySelector('header.main-topBar-container');
   if (!data?.Info || !TopBarContainer) return;
+
+  // Cancel previous pending removal so rapid Info updates don't stack timers holding detached DOM
+  if (infoTimeout !== null) {
+    clearTimeout(infoTimeout);
+    infoTimeout = null;
+    windowRef.__amaiInfoTimeout = null;
+  }
 
   // Remove existing info elements to avoid duplicates
   TopBarContainer.querySelectorAll('.amai-info').forEach((el) => el.remove());
@@ -30,9 +59,12 @@ export function ApplyInfo(data: { Info?: string; InfoDuration?: number }) {
     duration = readingTimeSeconds * 1000 || DEFAULT_DURATION;
   }
 
-  setTimeout(() => {
+  infoTimeout = window.setTimeout(() => {
+    infoTimeout = null;
+    windowRef.__amaiInfoTimeout = null;
     if (TopBarContainer.contains(infoElement)) {
       TopBarContainer.removeChild(infoElement);
     }
-  }, duration);
+  }, duration) as unknown as number;
+  windowRef.__amaiInfoTimeout = infoTimeout;
 }

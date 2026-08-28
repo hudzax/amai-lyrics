@@ -424,7 +424,7 @@ function inject(): void {
 }
 
 function cleanup(): void {
-  intervalManager?.Stop();
+  intervalManager?.Destroy();
   intervalManager = null;
   if (playbarPositionClient) {
     playbarPositionClient();

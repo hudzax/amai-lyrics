@@ -27,6 +27,26 @@ export const lyricsCache = new SpikyCache({
   name: 'Cache_Lyrics',
 });
 
+// Bounded LRU for Cache_API disk entries — prevents unbounded growth during long sessions
+// (Cache_API is persistent disk, not RAM, but thousands of entries still bloat storage)
+const MAX_LYRICS_CACHE_ENTRIES = 200;
+const windowCacheRef = window as unknown as { __amaiLyricsCacheKeys?: string[] };
+const lyricsCacheKeyOrder: string[] = windowCacheRef.__amaiLyricsCacheKeys ?? [];
+windowCacheRef.__amaiLyricsCacheKeys = lyricsCacheKeyOrder;
+
+function trackLyricsCacheKey(trackId: string): void {
+  const idx = lyricsCacheKeyOrder.indexOf(trackId);
+  if (idx !== -1) lyricsCacheKeyOrder.splice(idx, 1);
+  lyricsCacheKeyOrder.push(trackId);
+  if (lyricsCacheKeyOrder.length > MAX_LYRICS_CACHE_ENTRIES) {
+    const oldest = lyricsCacheKeyOrder.shift();
+    if (oldest) {
+      // Fire-and-forget eviction — don't block the critical cache-write path
+      lyricsCache.remove(oldest).catch(() => {});
+    }
+  }
+}
+
 /**
  * Caches processed lyrics for future use
  *
@@ -42,6 +62,7 @@ export async function cacheLyrics(trackId: string, lyricsJson: LyricsData): Prom
       ...lyricsJson,
       expiresAt,
     });
+    trackLyricsCacheKey(trackId);
   } catch (error) {
     console.error('Error saving lyrics to cache:', error);
   }
