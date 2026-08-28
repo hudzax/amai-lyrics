@@ -5224,6 +5224,18 @@
   function resolvePako(mod) {
     return mod.default ?? mod;
   }
+  function trackSpicyFetchKey(processedKey) {
+    const idx = spicyFetchKeyOrder.indexOf(processedKey);
+    if (idx !== -1)
+      spicyFetchKeyOrder.splice(idx, 1);
+    spicyFetchKeyOrder.push(processedKey);
+    if (spicyFetchKeyOrder.length > MAX_SPICY_FETCH_ENTRIES) {
+      const oldest = spicyFetchKeyOrder.shift();
+      if (oldest)
+        SpicyFetchCache.remove(oldest).catch(() => {
+        });
+    }
+  }
   async function SpicyFetch(path, IsExternal = false, cache = false, cosmos = false) {
     const url = path;
     try {
@@ -5314,6 +5326,7 @@
         Content: compressedString,
         expiresIn
       });
+      trackSpicyFetchKey(processedKey);
     } catch (error) {
       console.error("ERR CC", error);
       try {
@@ -5355,7 +5368,7 @@
       return null;
     }
   }
-  var pakoPromise, SpicyFetchCache, MAX_DECOMPRESSED_BYTES;
+  var pakoPromise, SpicyFetchCache, MAX_SPICY_FETCH_ENTRIES, spicyWindowRef, spicyFetchKeyOrder, MAX_DECOMPRESSED_BYTES;
   var init_SpicyFetch = __esm({
     "src/utils/API/SpicyFetch.ts"() {
       init_SpikyCache();
@@ -5365,6 +5378,10 @@
       SpicyFetchCache = new SpikyCache({
         name: "SpicyFetch__Cache"
       });
+      MAX_SPICY_FETCH_ENTRIES = 150;
+      spicyWindowRef = window;
+      spicyFetchKeyOrder = spicyWindowRef.__amaiSpicyFetchKeys ?? [];
+      spicyWindowRef.__amaiSpicyFetchKeys = spicyFetchKeyOrder;
       MAX_DECOMPRESSED_BYTES = 2 * 1024 * 1024;
     }
   });
@@ -6116,7 +6133,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.4.26";
+      version = "1.4.27";
     }
   });
 
@@ -8784,9 +8801,19 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           setActiveController(null);
         }
         import_fastdom2.default.measure(() => {
+          if (!Defaults_default.LyricsContainerExists)
+            return;
+          if (!document.querySelector("#SpicyLyricsPage"))
+            return;
           const container = ScrollSimplebar2?.getScrollElement();
+          if (!container || !container.isConnected)
+            return;
+          if (!LineElem || !LineElem.isConnected)
+            return;
           import_fastdom2.default.mutate(() => {
-            if (!container || !LineElem)
+            if (!Defaults_default.LyricsContainerExists)
+              return;
+            if (!container.isConnected || !LineElem.isConnected)
               return;
             if (lastLine === LineElem)
               return;
@@ -8826,15 +8853,76 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a04592333f9/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e02699/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a04592333f9/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e02699/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a045923343a/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e026da/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a045923343a/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e026da/ProcessingIndicator.css"() {
+    }
+  });
+
+  // src/utils/Lyrics/Applyer/Info/ApplyInfo.ts
+  function clearApplyInfoTimeout() {
+    if (infoTimeout !== null) {
+      clearTimeout(infoTimeout);
+      infoTimeout = null;
+      windowRef5.__amaiInfoTimeout = null;
+    }
+  }
+  function ApplyInfo(data) {
+    const DEFAULT_WPM = 200;
+    const DEFAULT_DURATION = 8e3;
+    const TopBarContainer = document.querySelector("header.main-topBar-container");
+    if (!data?.Info || !TopBarContainer)
+      return;
+    if (infoTimeout !== null) {
+      clearTimeout(infoTimeout);
+      infoTimeout = null;
+      windowRef5.__amaiInfoTimeout = null;
+    }
+    TopBarContainer.querySelectorAll(".amai-info").forEach((el) => el.remove());
+    const infoElement = document.createElement("a");
+    infoElement.className = "amai-info";
+    infoElement.textContent = data.Info;
+    infoElement.role = "menuitem";
+    infoElement.href = "/preferences";
+    infoElement.addEventListener("click", (event) => {
+      event.preventDefault();
+      Spicetify.Platform.History.push({
+        pathname: "/preferences",
+        hash: "#amai-settings"
+      });
+    });
+    TopBarContainer.appendChild(infoElement);
+    let duration = data.InfoDuration;
+    if (!duration) {
+      const words = data.Info.split(/\s+/).length;
+      const readingTimeSeconds = words / DEFAULT_WPM * 60;
+      duration = readingTimeSeconds * 1e3 || DEFAULT_DURATION;
+    }
+    infoTimeout = window.setTimeout(() => {
+      infoTimeout = null;
+      windowRef5.__amaiInfoTimeout = null;
+      if (TopBarContainer.contains(infoElement)) {
+        TopBarContainer.removeChild(infoElement);
+      }
+    }, duration);
+    windowRef5.__amaiInfoTimeout = infoTimeout;
+  }
+  var windowRef5, infoTimeout;
+  var init_ApplyInfo = __esm({
+    "src/utils/Lyrics/Applyer/Info/ApplyInfo.ts"() {
+      init_lifecycle();
+      windowRef5 = window;
+      infoTimeout = windowRef5.__amaiInfoTimeout ?? null;
+      if (!windowRef5.__amaiInfoLifecycleTracked) {
+        windowRef5.__amaiInfoLifecycleTracked = true;
+        lifecycle_default.trackCallback(clearApplyInfoTimeout);
+      }
     }
   });
 
@@ -9029,44 +9117,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   var init_ApplyLyricsCredits = __esm({
     "src/utils/Lyrics/Applyer/Credits/ApplyLyricsCredits.ts"() {
-    }
-  });
-
-  // src/utils/Lyrics/Applyer/Info/ApplyInfo.ts
-  function ApplyInfo(data) {
-    const DEFAULT_WPM = 200;
-    const DEFAULT_DURATION = 8e3;
-    const TopBarContainer = document.querySelector("header.main-topBar-container");
-    if (!data?.Info || !TopBarContainer)
-      return;
-    TopBarContainer.querySelectorAll(".amai-info").forEach((el) => el.remove());
-    const infoElement = document.createElement("a");
-    infoElement.className = "amai-info";
-    infoElement.textContent = data.Info;
-    infoElement.role = "menuitem";
-    infoElement.href = "/preferences";
-    infoElement.addEventListener("click", (event) => {
-      event.preventDefault();
-      Spicetify.Platform.History.push({
-        pathname: "/preferences",
-        hash: "#amai-settings"
-      });
-    });
-    TopBarContainer.appendChild(infoElement);
-    let duration = data.InfoDuration;
-    if (!duration) {
-      const words = data.Info.split(/\s+/).length;
-      const readingTimeSeconds = words / DEFAULT_WPM * 60;
-      duration = readingTimeSeconds * 1e3 || DEFAULT_DURATION;
-    }
-    setTimeout(() => {
-      if (TopBarContainer.contains(infoElement)) {
-        TopBarContainer.removeChild(infoElement);
-      }
-    }, duration);
-  }
-  var init_ApplyInfo = __esm({
-    "src/utils/Lyrics/Applyer/Info/ApplyInfo.ts"() {
     }
   });
 
@@ -9734,6 +9784,19 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   });
 
   // src/utils/Lyrics/cache.ts
+  function trackLyricsCacheKey(trackId) {
+    const idx = lyricsCacheKeyOrder.indexOf(trackId);
+    if (idx !== -1)
+      lyricsCacheKeyOrder.splice(idx, 1);
+    lyricsCacheKeyOrder.push(trackId);
+    if (lyricsCacheKeyOrder.length > MAX_LYRICS_CACHE_ENTRIES) {
+      const oldest = lyricsCacheKeyOrder.shift();
+      if (oldest) {
+        lyricsCache.remove(oldest).catch(() => {
+        });
+      }
+    }
+  }
   async function cacheLyrics(trackId, lyricsJson) {
     if (!lyricsCache)
       return;
@@ -9743,6 +9806,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         ...lyricsJson,
         expiresAt
       });
+      trackLyricsCacheKey(trackId);
     } catch (error) {
       console.error("Error saving lyrics to cache:", error);
     }
@@ -9816,7 +9880,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       console.error("Error removing lyrics from cache:", error);
     }
   }
-  var CACHE_EXPIRATION_TIME, lyricsCache;
+  var CACHE_EXPIRATION_TIME, lyricsCache, MAX_LYRICS_CACHE_ENTRIES, windowCacheRef, lyricsCacheKeyOrder;
   var init_cache = __esm({
     "src/utils/Lyrics/cache.ts"() {
       init_SpikyCache();
@@ -9827,6 +9891,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       lyricsCache = new SpikyCache({
         name: "Cache_Lyrics"
       });
+      MAX_LYRICS_CACHE_ENTRIES = 200;
+      windowCacheRef = window;
+      lyricsCacheKeyOrder = windowCacheRef.__amaiLyricsCacheKeys ?? [];
+      windowCacheRef.__amaiLyricsCacheKeys = lyricsCacheKeyOrder;
     }
   });
 
@@ -10516,6 +10584,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     });
     Defaults_default.LyricsContainerExists = false;
     removeLinesEvListener();
+    ClearLyricsContentArrays();
+    clearApplyInfoTimeout();
     Object.values(Tooltips).forEach((a) => a?.destroy());
     Object.keys(Tooltips).forEach((k) => Tooltips[k] = null);
     ResetLastLine();
@@ -10536,6 +10606,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_();
       init_2();
       init_lyrics();
+      init_ApplyInfo();
       init_dynamicBackground();
       init_Defaults();
       init_ScrollSimplebar();
@@ -10566,7 +10637,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
 
   // src/components/Utils/Fullscreen.ts
   function ensureGlobalFullscreenListeners() {
-    const existing = windowRef5.__amaiFullscreenHandlers;
+    const existing = windowRef6.__amaiFullscreenHandlers;
     if (existing) {
       document.removeEventListener("fullscreenchange", existing.onFullscreenChange);
       document.removeEventListener("keydown", existing.onKeyDown);
@@ -10582,21 +10653,21 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const onKeyDown = (e) => Fullscreen.handleEscapeKey(e);
     document.addEventListener("fullscreenchange", onFullscreenChange);
     document.addEventListener("keydown", onKeyDown);
-    windowRef5.__amaiFullscreenHandlers = { onFullscreenChange, onKeyDown };
+    windowRef6.__amaiFullscreenHandlers = { onFullscreenChange, onKeyDown };
   }
   function destroyFullscreenGlobalListeners() {
-    const h = windowRef5.__amaiFullscreenHandlers;
+    const h = windowRef6.__amaiFullscreenHandlers;
     if (!h)
       return;
     document.removeEventListener("fullscreenchange", h.onFullscreenChange);
     document.removeEventListener("keydown", h.onKeyDown);
-    delete windowRef5.__amaiFullscreenHandlers;
+    delete windowRef6.__amaiFullscreenHandlers;
     try {
       MediaBox_Data.Animators.brightness.Destroy();
       MediaBox_Data.Animators.blur.Destroy();
     } catch {
     }
-    windowRef5.__amaiFullscreenLifecycleTracked = false;
+    windowRef6.__amaiFullscreenLifecycleTracked = false;
   }
   function Open() {
     const SpicyPage = document.querySelector(".Root__main-view #SpicyLyricsPage");
@@ -10711,7 +10782,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       }, 1e3);
     }
   }
-  var Fullscreen, windowRef5, MediaBox_Data, Fullscreen_default;
+  var Fullscreen, windowRef6, MediaBox_Data, Fullscreen_default;
   var init_Fullscreen = __esm({
     "src/components/Utils/Fullscreen.ts"() {
       init_Animator();
@@ -10733,10 +10804,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           }
         }
       };
-      windowRef5 = window;
+      windowRef6 = window;
       ensureGlobalFullscreenListeners();
-      if (!windowRef5.__amaiFullscreenLifecycleTracked) {
-        windowRef5.__amaiFullscreenLifecycleTracked = true;
+      if (!windowRef6.__amaiFullscreenLifecycleTracked) {
+        windowRef6.__amaiFullscreenLifecycleTracked = true;
         lifecycle_default.trackCallback(destroyFullscreenGlobalListeners);
       }
       MediaBox_Data = {
@@ -11088,7 +11159,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         MediaBox.removeChild(songProgressBar);
     }
   }
-  var windowRef6, sharedNowBarState, nowBarListenerIds, nowBarInitWhen, nowBarTeardownTracked, fullscreenPositionClient;
+  var windowRef7, sharedNowBarState, nowBarListenerIds, nowBarInitWhen, nowBarTeardownTracked, fullscreenPositionClient;
   var init_EventListeners = __esm({
     "src/components/NowBar/EventListeners.ts"() {
       init_Global();
@@ -11099,8 +11170,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_lifecycle();
       init_GetProgress();
       init_state();
-      windowRef6 = window;
-      sharedNowBarState = windowRef6.__amaiNowBarState ?? (windowRef6.__amaiNowBarState = { teardownTracked: false });
+      windowRef7 = window;
+      sharedNowBarState = windowRef7.__amaiNowBarState ?? (windowRef7.__amaiNowBarState = { teardownTracked: false });
       nowBarListenerIds = [];
       nowBarInitWhen = null;
       nowBarTeardownTracked = sharedNowBarState.teardownTracked;
@@ -11569,6 +11640,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   });
 
   // src/components/NowBar/NowBar.ts
+  function cancelViewControlsWhen() {
+    if (viewControlsWhen) {
+      viewControlsWhen.Cancel();
+      viewControlsWhen = null;
+    }
+  }
   async function OpenNowBar() {
     const NowBar = document.querySelector("#SpicyLyricsPage .ContentBox .NowBar");
     if (!NowBar)
@@ -11616,9 +11693,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         if (ActiveSetupSongProgressBarInstance) {
           ActiveSetupSongProgressBarInstance.Apply();
         }
-        Whentil_default.When(
+        if (viewControlsWhen) {
+          viewControlsWhen.Cancel();
+          viewControlsWhen = null;
+        }
+        viewControlsWhen = Whentil_default.When(
           () => document.querySelector("#SpicyLyricsPage .ContentBox .NowBar .Header .ViewControls"),
           () => {
+            viewControlsWhen = null;
+            if (!MediaBox.isConnected || !document.querySelector("#SpicyLyricsPage"))
+              return;
             const viewControls = MediaBox.querySelector(".ViewControls");
             const fragment = document.createDocumentFragment();
             AppendQueue.forEach((element) => {
@@ -11638,6 +11722,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     setupEventListeners();
   }
   function CloseNowBar() {
+    cancelViewControlsWhen();
     const NowBar = document.querySelector("#SpicyLyricsPage .ContentBox .NowBar");
     if (!NowBar)
       return;
@@ -11757,17 +11842,28 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       nowBarButton.remove();
     }
   }
+  var viewControlsWhen, nowBarWhenWindowRef;
   var init_NowBar = __esm({
     "src/components/NowBar/NowBar.ts"() {
       init_storage();
       init_Whentil();
       init_SpotifyPlayer();
       init_Fullscreen();
+      init_lifecycle();
       init_DragAndDrop();
       init_EventListeners();
       init_PlaybackControls();
       init_ProgressBar();
       init_state();
+      viewControlsWhen = null;
+      nowBarWhenWindowRef = window;
+      if (!nowBarWhenWindowRef.__amaiNowBarWhenTracked) {
+        nowBarWhenWindowRef.__amaiNowBarWhenTracked = true;
+        lifecycle_default.trackCallback(cancelViewControlsWhen);
+        lifecycle_default.trackCallback(() => {
+          nowBarWhenWindowRef.__amaiNowBarWhenTracked = false;
+        });
+      }
     }
   });
 
@@ -11916,7 +12012,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       window.ProcessingIndicatorTimeout = null;
     }, 5e3);
   }
-  var windowRef7, uiState, ContainerShowLoaderTimeout;
+  var windowRef8, uiState, ContainerShowLoaderTimeout;
   var init_ui = __esm({
     "src/utils/Lyrics/ui.ts"() {
       init_Defaults();
@@ -11924,8 +12020,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_PageView();
       init_Fullscreen();
       init_pageButtons();
-      windowRef7 = window;
-      uiState = windowRef7.__amaiLyricsUiState ?? (windowRef7.__amaiLyricsUiState = { containerShowLoaderTimeout: null });
+      windowRef8 = window;
+      uiState = windowRef8.__amaiLyricsUiState ?? (windowRef8.__amaiLyricsUiState = { containerShowLoaderTimeout: null });
       ContainerShowLoaderTimeout = uiState.containerShowLoaderTimeout;
     }
   });
@@ -11966,6 +12062,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   }
   async function fetchLyricsData(id, userData, trackDetails, headers, flush = false) {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 1e4);
     try {
       const res = await fetch(`${API_URL}/${id}${flush ? "?flush=true" : ""}`, {
         method: "POST",
@@ -11978,7 +12076,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           product: userData?.product,
           images: JSON.stringify(userData?.images),
           ...trackDetails
-        })
+        }),
+        signal: controller.signal
       });
       const status = res.status;
       if (!res.ok) {
@@ -11998,8 +12097,14 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       }
       return { data, status };
     } catch (error) {
-      console.error("Error fetching lyrics:", error);
+      if (error?.name === "AbortError") {
+        console.error("Error fetching lyrics: request timed out after 10s", id);
+      } else {
+        console.error("Error fetching lyrics:", error);
+      }
       throw error;
+    } finally {
+      window.clearTimeout(timeoutId);
     }
   }
   var API_URL;
@@ -34563,7 +34668,7 @@ ${JSON.stringify(lyricsOnly)}`
     refreshArtworkColors();
   }
   function cleanup() {
-    intervalManager?.Stop();
+    intervalManager?.Destroy();
     intervalManager = null;
     if (playbarPositionClient) {
       playbarPositionClient();
@@ -35054,10 +35159,10 @@ ${JSON.stringify(lyricsOnly)}`
   init_lifecycle();
   var AppInitializer = class {
     static async initializeCore() {
-      const windowRef8 = window;
-      if (!windowRef8.__amaiCoreInitialized) {
+      const windowRef9 = window;
+      if (!windowRef9.__amaiCoreInitialized) {
         lyricsCache.destroy();
-        windowRef8.__amaiCoreInitialized = true;
+        windowRef9.__amaiCoreInitialized = true;
       }
       await this.injectGoogleFonts();
       await this.initializePlatformAndSettings();
@@ -35628,9 +35733,9 @@ ${JSON.stringify(lyricsOnly)}`
     lifecycle_default.track(() => clearInterval(timer));
   }
   function installBlankToastSuppressor() {
-    const windowRef8 = window;
-    if (!windowRef8.__amaiToastInstalled) {
-      windowRef8.__amaiToastInstalled = true;
+    const windowRef9 = window;
+    if (!windowRef9.__amaiToastInstalled) {
+      windowRef9.__amaiToastInstalled = true;
       overrideShowNotification();
       if (!overrideSnackbar()) {
         let tries = 0;
@@ -35751,7 +35856,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a04592333f9/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e02699/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -35777,7 +35882,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a045923343a/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e026da/ProcessingIndicator.css */
 #SpicyLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -35857,7 +35962,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a0459232cb0/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e02050/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -36006,7 +36111,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a0459232fd1/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e02311/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -36214,7 +36319,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a0459233052/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e02382/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -36815,7 +36920,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a0459233153/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e02453/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -36994,7 +37099,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a04592331b4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e024a4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -37267,7 +37372,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a0459233245/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e02515/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -37583,7 +37688,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a04592332a6/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e02566/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -37605,7 +37710,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a04592332d7/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e02597/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -37632,7 +37737,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-10244-8Sc4gAy00TbN/1a0459233308/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e025b8/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
