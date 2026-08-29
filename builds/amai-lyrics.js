@@ -6133,7 +6133,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.4.28";
+      version = "1.4.29";
     }
   });
 
@@ -6502,11 +6502,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   });
 
   // src/utils/Lyrics/Animator/Shared.ts
-  var IdleLyricsScale, IdleEmphasisLyricsScale, timeOffset, BlurMultiplier;
+  var timeOffset, BlurMultiplier;
   var init_Shared = __esm({
     "src/utils/Lyrics/Animator/Shared.ts"() {
-      IdleLyricsScale = 0.95;
-      IdleEmphasisLyricsScale = 0.95;
       timeOffset = 0;
       BlurMultiplier = 1;
     }
@@ -6515,74 +6513,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   // src/utils/Lyrics/Animator/Lyrics/LyricsAnimator.ts
   function setBlurringLastLine(c) {
     Blurring_LastLine = c;
-  }
-  function getCredits() {
-    if (cachedCredits && cachedCredits.isConnected)
-      return cachedCredits;
-    cachedCredits = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .LyricsContent .Credits"
-    );
-    return cachedCredits;
-  }
-  function resetLetterStyles(letter, status, scaleValue, gradientPosition) {
-    if (status === "NotSung") {
-      setStyleIfChanged(
-        letter.HTMLElement,
-        "transform",
-        "translateY(calc(var(--DefaultLyricsSize) * 0.02))"
-      );
-      setStyleIfChanged(letter.HTMLElement, "scale", scaleValue);
-      setStyleIfChanged(letter.HTMLElement, "--text-shadow-blur-radius", "4px");
-      setStyleIfChanged(letter.HTMLElement, "--text-shadow-opacity", "0%");
-      setStyleIfChanged(letter.HTMLElement, "--gradient-position", gradientPosition);
-    } else if (status === "Sung") {
-      setStyleIfChanged(
-        letter.HTMLElement,
-        "transform",
-        `translateY(calc(var(--DefaultLyricsSize) * 0))`
-      );
-      setStyleIfChanged(letter.HTMLElement, "scale", "1");
-      setStyleIfChanged(letter.HTMLElement, "--text-shadow-blur-radius", "4px");
-      setStyleIfChanged(letter.HTMLElement, "--text-shadow-opacity", "0%");
-      setStyleIfChanged(letter.HTMLElement, "--gradient-position", gradientPosition);
-    }
-  }
-  function animateWord(word, totalDuration, percentage, gradientPosition, translateY, scale, blurRadius, textShadowOpacity) {
-    setStyleIfChanged(word.HTMLElement, "--gradient-position", `${gradientPosition}%`);
-    if (totalDuration > 230) {
-      setStyleIfChanged(
-        word.HTMLElement,
-        "transform",
-        `translateY(calc(var(--DefaultLyricsSize) * ${translateY}))`
-      );
-      setStyleIfChanged(word.HTMLElement, "scale", `${scale}`);
-      setStyleIfChanged(word.HTMLElement, "--text-shadow-blur-radius", `${blurRadius}px`);
-      setStyleIfChanged(word.HTMLElement, "--text-shadow-opacity", `${textShadowOpacity}%`);
-      word.scale = scale;
-      word.glow = textShadowOpacity / 100;
-      word.translateY = translateY;
-    } else {
-      const blurRadiusShort = 4 + (0 - 4) * percentage;
-      const textShadowOpacityShort = 0;
-      const translateYShort = 0.01 + (0 - 0.01) * percentage;
-      const scaleShort = IdleLyricsScale + (1 - IdleLyricsScale) * percentage;
-      setStyleIfChanged(
-        word.HTMLElement,
-        "transform",
-        `translateY(calc(var(--DefaultLyricsSize) * ${translateYShort}))`
-      );
-      setStyleIfChanged(word.HTMLElement, "scale", `${scaleShort}`);
-      setStyleIfChanged(word.HTMLElement, "--text-shadow-blur-radius", `${blurRadiusShort}px`);
-      setStyleIfChanged(word.HTMLElement, "--text-shadow-opacity", `${textShadowOpacityShort}%`);
-      word.scale = scaleShort;
-      word.glow = textShadowOpacityShort;
-      word.translateY = 0;
-    }
-  }
-  function resetWordAnimationTracking(word) {
-    word.AnimatorStoreTime_glow = void 0;
-    word.AnimatorStoreTime_translateY = void 0;
-    word.AnimatorStoreTime_scale = void 0;
   }
   function activateDot(word) {
     if (!word.HTMLElement.classList.contains("dot-active")) {
@@ -6614,195 +6544,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     setStyleIfChanged(word.HTMLElement, "--text-shadow-opacity", "50%");
     word.scale = 1.2;
     word.glow = 0.5;
-  }
-  function handleActiveWord(word, edtrackpos, isLetterGroup, isDot) {
-    if (isLetterGroup) {
-      const totalDuration2 = word.EndTime - word.StartTime;
-      const elapsed = edtrackpos - word.StartTime;
-      const pct = Math.max(0, Math.min(elapsed / totalDuration2, 1));
-      const emphasisTranslateY = 0.02 + (-0.065 - 0.02) * pct;
-      const emphasisScale = IdleEmphasisLyricsScale + (1.023 - IdleEmphasisLyricsScale) * pct;
-      for (let k = 0; k < word.Letters.length; k++) {
-        const letter = word.Letters[k];
-        if (letter.Status === "Active")
-          resetLetterStyles(letter, "NotSung", IdleEmphasisLyricsScale, "-20%");
-        else if (letter.Status === "Sung")
-          resetLetterStyles(word.Letters[k], "Sung", "1", "100%");
-      }
-      setStyleIfChanged(word.HTMLElement, "scale", `${emphasisScale}`);
-      setStyleIfChanged(
-        word.HTMLElement,
-        "transform",
-        `translateY(calc(var(--DefaultLyricsSize) * ${emphasisTranslateY}))`
-      );
-      word.scale = emphasisScale;
-      word.glow = 0;
-      return;
-    }
-    if (isDot) {
-      activateDot(word);
-      return;
-    }
-    const totalDuration = word.EndTime - word.StartTime;
-    const elapsedDuration = edtrackpos - word.StartTime;
-    const percentage = Math.max(0, Math.min(elapsedDuration / totalDuration, 1));
-    const blurRadius = 4 + (16 - 4) * percentage;
-    const textShadowOpacity = calculateOpacity(percentage, word) * 0.4;
-    const translateY = 0.01 + (-0.038 - 0.01) * percentage;
-    const scale = IdleLyricsScale + (1.017 - IdleLyricsScale) * percentage;
-    const gradientPosition = percentage * 100;
-    animateWord(
-      word,
-      totalDuration,
-      percentage,
-      gradientPosition,
-      translateY,
-      scale,
-      blurRadius,
-      textShadowOpacity
-    );
-    resetWordAnimationTracking(word);
-  }
-  function handleNotSungWord(word, isLetterGroup, isDot) {
-    if (isLetterGroup) {
-      for (let k = 0; k < word.Letters.length; k++)
-        resetLetterStyles(word.Letters[k], "NotSung", IdleEmphasisLyricsScale, "-20%");
-      setStyleIfChanged(
-        word.HTMLElement,
-        "transform",
-        "translateY(calc(var(--DefaultLyricsSize) * 0.02))"
-      );
-      word.translateY = 0.02;
-    } else if (!isDot) {
-      setStyleIfChanged(
-        word.HTMLElement,
-        "transform",
-        "translateY(calc(var(--DefaultLyricsSize) * 0.01))"
-      );
-      word.translateY = 0.01;
-    }
-    if (isDot) {
-      resetDotNotSung(word);
-    } else {
-      setStyleIfChanged(
-        word.HTMLElement,
-        "scale",
-        `${isLetterGroup ? IdleEmphasisLyricsScale : IdleLyricsScale}`
-      );
-      word.scale = isLetterGroup ? IdleEmphasisLyricsScale : IdleLyricsScale;
-      setStyleIfChanged(word.HTMLElement, "--gradient-position", "-20%");
-    }
-    resetWordAnimationTracking(word);
-    setStyleIfChanged(word.HTMLElement, "--text-shadow-blur-radius", "4px");
-    setStyleIfChanged(word.HTMLElement, "--text-shadow-opacity", "0%");
-    word.glow = 0;
-  }
-  function handleSungWord(word, isLetterGroup, isDot) {
-    if (isLetterGroup) {
-      for (let k = 0; k < word.Letters.length; k++)
-        resetLetterStyles(word.Letters[k], "Sung", "1", "100%");
-      setStyleIfChanged(
-        word.HTMLElement,
-        "transform",
-        `translateY(calc(var(--DefaultLyricsSize) * 0))`
-      );
-      setStyleIfChanged(word.HTMLElement, "scale", "1");
-    }
-    if (isDot) {
-      resetDotSung(word);
-      return;
-    }
-    if (!isLetterGroup) {
-      setStyleIfChanged(word.HTMLElement, "--text-shadow-blur-radius", "4px");
-      const element = word.HTMLElement;
-      const currentTranslateY = word.translateY;
-      const currentScale = word.scale;
-      const currentGlow = word.glow;
-      if (!word.AnimatorStoreTime_translateY)
-        word.AnimatorStoreTime_translateY = performance.now();
-      if (!word.AnimatorStoreTime_scale)
-        word.AnimatorStoreTime_scale = performance.now();
-      if (!word.AnimatorStoreTime_glow)
-        word.AnimatorStoreTime_glow = performance.now();
-      const now2 = performance.now();
-      const elapsed_translateY = now2 - word.AnimatorStoreTime_translateY;
-      const elapsed_scale = now2 - word.AnimatorStoreTime_scale;
-      const elapsed_glow = now2 - word.AnimatorStoreTime_glow;
-      const progress_translateY = Math.min(elapsed_translateY / 550, 1);
-      const progress_scale = Math.min(elapsed_scale / 1100, 1);
-      const progress_glow = Math.min(elapsed_glow / 250, 1);
-      const interpolate = (s, e, p) => s + (e - s) * p;
-      const newTranslateY = interpolate(currentTranslateY, 5e-4, progress_translateY);
-      const newScale = interpolate(currentScale, 1, progress_scale);
-      const newGlow = interpolate(currentGlow, 0, progress_glow);
-      setStyleIfChanged(element, "--text-shadow-opacity", `${newGlow * 100}%`);
-      setStyleIfChanged(
-        element,
-        "transform",
-        `translateY(calc(var(--DefaultLyricsSize) * ${newTranslateY}))`
-      );
-      setStyleIfChanged(element, "scale", `${newScale}`);
-      if (progress_glow === 1) {
-        word.AnimatorStoreTime_glow = void 0;
-        word.glow = 0;
-      }
-      if (progress_translateY === 1) {
-        word.AnimatorStoreTime_translateY = void 0;
-        word.translateY = 0;
-      }
-      if (progress_scale === 1) {
-        word.AnimatorStoreTime_scale = void 0;
-        word.scale = 1;
-      }
-    }
-    setStyleIfChanged(word.HTMLElement, "--gradient-position", "100%");
-  }
-  function animateSyllableLines(arr, edtrackpos, Credits) {
-    for (let index = 0; index < arr.length; index++) {
-      const line = arr[index];
-      const prevStatus = line.lastStatus;
-      if (line.Status === "Active") {
-        if (SpotifyPlayer.IsPlaying !== lastIsPlaying) {
-          Blurring_LastLine = null;
-          lastIsPlaying = SpotifyPlayer.IsPlaying;
-        }
-        if (Blurring_LastLine !== index) {
-          applyBlur(arr, index, BlurMultiplier);
-          Blurring_LastLine = index;
-        }
-        line.HTMLElement.classList.add("Active");
-        line.HTMLElement.classList.remove("NotSung", "Sung", "OverridenByScroller");
-        const words = line.Syllables.Lead;
-        for (let wi = 0; wi < words.length; wi++) {
-          const word = words[wi];
-          const isLetterGroup = word?.LetterGroup;
-          const isDot = word?.Dot;
-          if (word.Status === "Active")
-            handleActiveWord(word, edtrackpos, isLetterGroup, isDot);
-          else if (word.Status === "NotSung")
-            handleNotSungWord(word, isLetterGroup, isDot);
-          else if (word.Status === "Sung")
-            handleSungWord(word, isLetterGroup, isDot);
-        }
-        if (Credits)
-          Credits.classList.remove("Active");
-      } else if (line.Status === "NotSung") {
-        if (prevStatus !== "NotSung") {
-          line.HTMLElement.classList.add("NotSung");
-          line.HTMLElement.classList.remove("Sung");
-          if (line.HTMLElement.classList.contains("Active") && !line.HTMLElement.classList.contains("OverridenByScroller"))
-            line.HTMLElement.classList.remove("Active");
-        }
-      } else if (line.Status === "Sung") {
-        if (prevStatus !== "Sung") {
-          line.HTMLElement.classList.add("Sung");
-          line.HTMLElement.classList.remove("Active", "NotSung");
-          if (arr.length === index + 1 && Credits)
-            Credits.classList.add("Active");
-        }
-      }
-      line.lastStatus = line.Status;
-    }
   }
   function animateLineLines(arr) {
     for (let index = 0; index < arr.length; index++) {
@@ -6851,19 +6592,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       line.lastStatus = line.Status;
     }
   }
-  function Animate(position) {
+  function Animate() {
     const CurrentLyricsType = Defaults_default.CurrentLyricsType;
-    const edtrackpos = position + timeOffset;
     if (!CurrentLyricsType || CurrentLyricsType === "None")
       return;
-    const Credits = getCredits();
-    if (CurrentLyricsType === "Syllable") {
-      animateSyllableLines(LyricsObject.Types.Syllable.Lines, edtrackpos, Credits);
-    } else if (CurrentLyricsType === "Line") {
+    if (CurrentLyricsType === "Line") {
       animateLineLines(LyricsObject.Types.Line.Lines);
     }
   }
-  var Blurring_LastLine, lastIsPlaying, cachedCredits, styleWriteCache, setStyleIfChanged, applyBlur, calculateOpacity;
+  var Blurring_LastLine, lastIsPlaying, styleWriteCache, setStyleIfChanged, applyBlur;
   var init_LyricsAnimator = __esm({
     "src/utils/Lyrics/Animator/Lyrics/LyricsAnimator.ts"() {
       init_Defaults();
@@ -6872,7 +6609,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_Shared();
       Blurring_LastLine = null;
       lastIsPlaying = null;
-      cachedCredits = null;
       styleWriteCache = /* @__PURE__ */ new WeakMap();
       setStyleIfChanged = (element, property, value) => {
         let props = styleWriteCache.get(element);
@@ -6895,15 +6631,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           setStyleIfChanged(arr[i].HTMLElement, "--BlurAmount", blurValue);
         }
       };
-      calculateOpacity = (percentage, word) => {
-        if (word?.BGWord)
-          return 0;
-        if (percentage <= 0.5) {
-          return percentage * 100;
-        } else {
-          return (1 - percentage) * 100;
-        }
-      };
     }
   });
 
@@ -6917,14 +6644,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return "Sung";
     }
   }
-  function updateCollectionStatus(collection, current, deep = false) {
+  function updateCollectionStatus(collection, current) {
     for (const item of collection) {
       item.Status = getStatus(item.StartTime, item.EndTime, current);
-      if (deep && item?.LetterGroup && Array.isArray(item.Letters)) {
-        for (const letter of item.Letters) {
-          letter.Status = getStatus(letter.StartTime, letter.EndTime, current);
-        }
-      }
     }
   }
   function TimeSetter(PreCurrentPosition) {
@@ -6932,21 +6654,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const CurrentLyricsType = Defaults_default.CurrentLyricsType;
     if (CurrentLyricsType && CurrentLyricsType === "None")
       return;
-    const lines = LyricsObject.Types[CurrentLyricsType].Lines;
-    if (CurrentLyricsType === "Syllable") {
-      for (const line of lines) {
-        const start = line.StartTime;
-        const end = line.EndTime;
-        if (start <= CurrentPosition && CurrentPosition <= end) {
-          line.Status = "Active";
-          updateCollectionStatus(line.Syllables.Lead, CurrentPosition, true);
-        } else if (start >= CurrentPosition) {
-          line.Status = "NotSung";
-        } else if (end <= CurrentPosition) {
-          line.Status = "Sung";
-        }
-      }
-    } else if (CurrentLyricsType === "Line") {
+    const lines = LyricsObject.Types[CurrentLyricsType]?.Lines;
+    if (!lines)
+      return;
+    if (CurrentLyricsType === "Line") {
       for (const line of lines) {
         const start = line.StartTime;
         const end = line.EndTime;
@@ -8354,11 +8065,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var lyrics_exports = {};
   __export(lyrics_exports, {
     ClearLyricsContentArrays: () => ClearLyricsContentArrays,
-    CurrentLineLyricsObject: () => CurrentLineLyricsObject,
     LINE_SYNCED_CurrentLineLyricsObject: () => LINE_SYNCED_CurrentLineLyricsObject,
     LyricsObject: () => LyricsObject,
     ScrollingIntervalTime: () => ScrollingIntervalTime,
-    SetWordArrayInCurentLine: () => SetWordArrayInCurentLine,
     SetWordArrayInCurentLine_LINE_SYNCED: () => SetWordArrayInCurentLine_LINE_SYNCED,
     addLinesEvListener: () => addLinesEvListener,
     destroyLyricsRenderLoop: () => destroyLyricsRenderLoop,
@@ -8366,25 +8075,17 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     lineElementToStartTimeMap: () => lineElementToStartTimeMap,
     lyricsBetweenShow: () => lyricsBetweenShow,
     populateElementTimeMaps: () => populateElementTimeMaps,
-    removeLinesEvListener: () => removeLinesEvListener,
-    syllableElementToStartTimeMap: () => syllableElementToStartTimeMap
+    removeLinesEvListener: () => removeLinesEvListener
   });
-  function SetWordArrayInCurentLine() {
-    CurrentLineLyricsObject = LyricsObject.Types.Syllable.Lines.length - 1;
-    LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables = {};
-    LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables.Lead = [];
-  }
   function SetWordArrayInCurentLine_LINE_SYNCED() {
     LINE_SYNCED_CurrentLineLyricsObject = LyricsObject.Types.Line.Lines.length - 1;
     LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables = {};
     LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables.Lead = [];
   }
   function ClearLyricsContentArrays() {
-    LyricsObject.Types.Syllable.Lines = [];
     LyricsObject.Types.Line.Lines = [];
     LyricsObject.Types.Static.Lines = [];
     lineElementToStartTimeMap.clear();
-    syllableElementToStartTimeMap.clear();
     lastRenderedPosition = -1;
     hasRenderedInitial = false;
   }
@@ -8410,7 +8111,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       lastRenderedPosition = progress;
       hasRenderedInitial = true;
       Lyrics.TimeSetter(progress);
-      Lyrics.Animate(progress);
+      Lyrics.Animate();
       scrollTickCounter++;
       if (scrollTickCounter % 2 === 0) {
         ScrollToActiveLine(ScrollSimplebar);
@@ -8436,29 +8137,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   function populateElementTimeMaps() {
     lineElementToStartTimeMap.clear();
-    syllableElementToStartTimeMap.clear();
     LyricsObject.Types.Line.Lines.forEach((line) => {
       if (line.HTMLElement && typeof line.StartTime === "number") {
         lineElementToStartTimeMap.set(line.HTMLElement, line.StartTime);
       }
-    });
-    LyricsObject.Types.Syllable.Lines.forEach((line) => {
-      const lineStartTime = line.StartTime;
-      if (typeof lineStartTime !== "number") {
-        return;
-      }
-      line.Syllables.Lead.forEach((word) => {
-        if (word.HTMLElement) {
-          syllableElementToStartTimeMap.set(word.HTMLElement, lineStartTime);
-        }
-        if (word?.Letters) {
-          word.Letters.forEach((letter) => {
-            if (letter.HTMLElement) {
-              syllableElementToStartTimeMap.set(letter.HTMLElement, lineStartTime);
-            }
-          });
-        }
-      });
     });
   }
   function LinesEvListener(e) {
@@ -8476,10 +8158,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     if (target.classList.contains("line")) {
       startTime = lineElementToStartTimeMap.get(target);
-    } else if (target.classList.contains("word")) {
-      startTime = syllableElementToStartTimeMap.get(target);
-    } else if (target.classList.contains("Emphasis")) {
-      startTime = syllableElementToStartTimeMap.get(target);
     }
     if (typeof startTime === "number") {
       SpotifyPlayer.Seek(startTime);
@@ -8512,7 +8190,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       LinesEvListenerMaid.Destroy();
     }
   }
-  var ScrollingIntervalTime, lyricsBetweenShow, LyricsObject, lineElementToStartTimeMap, syllableElementToStartTimeMap, CurrentLineLyricsObject, LINE_SYNCED_CurrentLineLyricsObject, THROTTLE_TIME, lastRenderedPosition, hasRenderedInitial, scrollTickCounter, pagePositionClient, windowRef3, renderLoop, LinesEvListenerMaid, LinesEvListenerExists;
+  var ScrollingIntervalTime, lyricsBetweenShow, LyricsObject, lineElementToStartTimeMap, LINE_SYNCED_CurrentLineLyricsObject, THROTTLE_TIME, lastRenderedPosition, hasRenderedInitial, scrollTickCounter, pagePositionClient, windowRef3, renderLoop, LinesEvListenerMaid, LinesEvListenerExists;
   var init_lyrics = __esm({
     "src/utils/Lyrics/lyrics.ts"() {
       init_Maid();
@@ -8527,9 +8205,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       lyricsBetweenShow = 3;
       LyricsObject = {
         Types: {
-          Syllable: {
-            Lines: []
-          },
           Line: {
             Lines: []
           },
@@ -8539,8 +8214,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         }
       };
       lineElementToStartTimeMap = /* @__PURE__ */ new Map();
-      syllableElementToStartTimeMap = /* @__PURE__ */ new Map();
-      CurrentLineLyricsObject = LyricsObject.Types.Syllable.Lines.length - 1;
       LINE_SYNCED_CurrentLineLyricsObject = LyricsObject.Types.Line.Lines.length - 1;
       THROTTLE_TIME = 0.05;
       lastRenderedPosition = -1;
@@ -8853,15 +8526,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e1638609/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e5727379/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e1638609/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e5727379/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e163866a/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e57273fa/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e163866a/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e57273fa/ProcessingIndicator.css"() {
     }
   });
 
@@ -9281,7 +8954,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   });
 
   // src/utils/Lyrics/Applyer/Utils/createMusicalLine.ts
-  function createDotGroup(lineType, startTime, endTime) {
+  function createDotGroup(startTime, endTime) {
     const dotGroup = document.createElement("div");
     dotGroup.classList.add("dotGroup");
     const totalTime = endTime - startTime;
@@ -9289,9 +8962,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     for (let i = 0; i < 3; i++) {
       const dot = document.createElement("span");
       dot.classList.add("word", "dot");
-      dot.textContent = lineType === "Syllable" ? BULLET_GLYPH : NOTE_GLYPHS[i % NOTE_GLYPHS.length];
-      const target = lineType === "Syllable" ? LyricsObject.Types.Syllable.Lines : LyricsObject.Types.Line.Lines;
-      const idx = lineType === "Syllable" ? LyricsObject.Types.Syllable.Lines.length - 1 : LyricsObject.Types.Line.Lines.length - 1;
+      dot.textContent = NOTE_GLYPHS[i % NOTE_GLYPHS.length];
+      const target = LyricsObject.Types.Line.Lines;
+      const idx = target.length - 1;
       if (idx >= 0 && target[idx]?.Syllables?.Lead) {
         target[idx].Syllables.Lead.push({
           HTMLElement: dot,
@@ -9305,41 +8978,33 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return dotGroup;
   }
-  function createMusicalLineMs(type, startMs, endMs, oppositeAligned) {
+  function registerMusicalLine(startMs, endMs) {
     const line = document.createElement("div");
     line.classList.add("line", "musical-line");
+    LyricsObject.Types.Line.Lines.push({
+      HTMLElement: line,
+      StartTime: startMs,
+      EndTime: endMs,
+      TotalTime: endMs - startMs,
+      DotLine: true
+    });
+    SetWordArrayInCurentLine_LINE_SYNCED();
+    return line;
+  }
+  function createMusicalLineMs(startMs, endMs, oppositeAligned) {
+    const line = registerMusicalLine(startMs, endMs);
     if (oppositeAligned)
       line.classList.add("OppositeAligned");
-    if (type === "Syllable") {
-      LyricsObject.Types.Syllable.Lines.push({
-        HTMLElement: line,
-        StartTime: startMs,
-        EndTime: endMs,
-        TotalTime: endMs - startMs,
-        DotLine: true
-      });
-      SetWordArrayInCurentLine();
-    } else {
-      LyricsObject.Types.Line.Lines.push({
-        HTMLElement: line,
-        StartTime: startMs,
-        EndTime: endMs,
-        TotalTime: endMs - startMs,
-        DotLine: true
-      });
-      SetWordArrayInCurentLine_LINE_SYNCED();
-    }
-    const dots = createDotGroup(type, startMs, endMs);
+    const dots = createDotGroup(startMs, endMs);
     line.appendChild(dots);
     return line;
   }
-  var NOTE_GLYPHS, BULLET_GLYPH;
+  var NOTE_GLYPHS;
   var init_createMusicalLine = __esm({
     "src/utils/Lyrics/Applyer/Utils/createMusicalLine.ts"() {
       init_ConvertTime();
       init_lyrics();
       NOTE_GLYPHS = ["\u266A", "\u266B", "\u2669"];
-      BULLET_GLYPH = "\u2022";
     }
   });
 
@@ -9362,7 +9027,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const convertStartTime = ConvertTime(data.StartTime);
     if (data.StartTime >= lyricsBetweenShow) {
       const musicalLine = createMusicalLineMs(
-        "Line",
         0,
         convertStartTime,
         !!data.Content[0]?.OppositeAligned
@@ -9432,7 +9096,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         const nextStartTime = ConvertTime(nextLine.StartTime);
         const curEndTime = endTime;
         const musicalLine = createMusicalLineMs(
-          "Line",
           curEndTime,
           nextStartTime,
           !!nextLine.OppositeAligned
@@ -9476,283 +9139,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_createMusicalLine();
       init_storage();
       init_sanitize();
-    }
-  });
-
-  // src/utils/Lyrics/Applyer/Utils/IsLetterCapable.ts
-  function IsLetterCapable(letterLength, totalDuration) {
-    if (letterLength > 12) {
-      return false;
-    }
-    const minDuration = 1500 + (letterLength - 1) / 1 * 25;
-    return totalDuration >= minDuration;
-  }
-  var init_IsLetterCapable = __esm({
-    "src/utils/Lyrics/Applyer/Utils/IsLetterCapable.ts"() {
-    }
-  });
-
-  // src/utils/Lyrics/Applyer/Utils/Emphasize.ts
-  function Emphasize(letters, applyTo, lead, isBgWord = false) {
-    const totalDuration = ConvertTime(lead.EndTime) - ConvertTime(lead.StartTime);
-    const letterDuration = totalDuration / letters.length;
-    const word = applyTo;
-    let Letters = [];
-    letters.forEach((letter, index, lA) => {
-      const letterElem = document.createElement("span");
-      letterElem.textContent = letter;
-      letterElem.classList.add("letter");
-      letterElem.classList.add("Emphasis");
-      const letterStartTime = ConvertTime(lead.StartTime) + index * letterDuration;
-      const letterEndTime = letterStartTime + letterDuration;
-      const contentDuration = letterDuration > 150 ? letterDuration : 150;
-      letterElem.style.setProperty("--content-duration", `${contentDuration}ms`);
-      if (index === lA.length - 1) {
-        letterElem.classList.add("LastLetterInWord");
-      }
-      if (ArabicPersianRegex.test(lead.Text)) {
-        word.setAttribute("font", "Vazirmatn");
-      }
-      const mcont2 = isBgWord ? {
-        BGLetter: true
-      } : {};
-      Letters.push({
-        HTMLElement: letterElem,
-        StartTime: letterStartTime,
-        EndTime: letterEndTime,
-        TotalTime: letterDuration,
-        Emphasis: true,
-        ...mcont2
-      });
-      letterElem.style.setProperty("--gradient-position", `-20%`);
-      letterElem.style.setProperty("--text-shadow-opacity", `0%`);
-      letterElem.style.setProperty("--text-shadow-blur-radius", `4px`);
-      letterElem.style.scale = IdleEmphasisLyricsScale.toString();
-      letterElem.style.transform = `translateY(calc(var(--DefaultLyricsSize) * 0.02))`;
-      word.appendChild(letterElem);
-    });
-    word.classList.add("letterGroup");
-    const mcont = isBgWord ? {
-      BGWord: true
-    } : {};
-    LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables.Lead.push({
-      HTMLElement: word,
-      StartTime: ConvertTime(lead.StartTime),
-      EndTime: ConvertTime(lead.EndTime),
-      TotalTime: totalDuration,
-      LetterGroup: true,
-      Letters,
-      ...mcont
-    });
-    Letters = [];
-  }
-  var init_Emphasize = __esm({
-    "src/utils/Lyrics/Applyer/Utils/Emphasize.ts"() {
-      init_Addons();
-      init_Shared();
-      init_ConvertTime();
-      init_lyrics();
-    }
-  });
-
-  // src/utils/Lyrics/Applyer/Synced/Syllable.ts
-  function ApplySyllableLyrics(data) {
-    if (!Defaults_default.LyricsContainerExists)
-      return;
-    const LyricsContainer = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
-    );
-    LyricsContainer.setAttribute("data-lyrics-type", "Syllable");
-    ClearLyricsContentArrays();
-    ClearScrollSimplebar();
-    TOP_ApplyLyricsSpacer(LyricsContainer);
-    const fragment = document.createDocumentFragment();
-    if (data.StartTime >= lyricsBetweenShow && !SpotifyPlayer.IsPodcast) {
-      const musicalLine = createMusicalLineMs(
-        "Syllable",
-        0,
-        ConvertTime(data.StartTime),
-        data.Content[0]?.OppositeAligned ? true : false
-      );
-      fragment.appendChild(musicalLine);
-    }
-    data.Content.forEach((line, index, arr) => {
-      const lineElem = document.createElement("div");
-      lineElem.classList.add("line");
-      LyricsObject.Types.Syllable.Lines.push({
-        HTMLElement: lineElem,
-        StartTime: ConvertTime(line.Lead.StartTime),
-        EndTime: ConvertTime(line.Lead.EndTime),
-        TotalTime: ConvertTime(line.Lead.EndTime) - ConvertTime(line.Lead.StartTime)
-      });
-      SetWordArrayInCurentLine();
-      if (line.OppositeAligned) {
-        lineElem.classList.add("OppositeAligned");
-      }
-      fragment.appendChild(lineElem);
-      line.Lead.Syllables.forEach((lead, iL, aL) => {
-        let word = document.createElement("span");
-        if (isRtl_default(lead.Text) && !lineElem.classList.contains("rtl")) {
-          lineElem.classList.add("rtl");
-        }
-        const totalDuration = ConvertTime(lead.EndTime) - ConvertTime(lead.StartTime);
-        const letterLength = lead.Text.split("").length;
-        const IfLetterCapable = IsLetterCapable(letterLength, totalDuration) && !SpotifyPlayer.IsPodcast;
-        if (IfLetterCapable) {
-          word = document.createElement("div");
-          const letters = lead.Text.split("");
-          Emphasize(letters, word, lead);
-          if (iL === aL.length - 1) {
-            word.classList.add("LastWordInLine");
-          } else if (lead.IsPartOfWord) {
-            word.classList.add("PartOfWord");
-          }
-          word.style.setProperty("--text-shadow-opacity", `0%`);
-          word.style.setProperty("--text-shadow-blur-radius", `4px`);
-          word.style.scale = IdleEmphasisLyricsScale.toString();
-          word.style.transform = `translateY(calc(var(--DefaultLyricsSize) * 0.02))`;
-          const contentDuration = totalDuration > 200 ? totalDuration : 200;
-          word.style.setProperty("--content-duration", `${contentDuration}ms`);
-          lineElem.appendChild(word);
-        } else {
-          word.textContent = lead.Text;
-          word.style.setProperty("--gradient-position", `-20%`);
-          word.style.setProperty("--text-shadow-opacity", `0%`);
-          word.style.setProperty("--text-shadow-blur-radius", `4px`);
-          word.style.scale = SpotifyPlayer.IsPodcast ? "1" : IdleLyricsScale.toString();
-          word.style.transform = SpotifyPlayer.IsPodcast ? null : `translateY(calc(var(--DefaultLyricsSize) * 0.01))`;
-          if (ArabicPersianRegex.test(lead.Text)) {
-            word.setAttribute("font", "Vazirmatn");
-          }
-          word.classList.add("word");
-          if (iL === aL.length - 1) {
-            word.classList.add("LastWordInLine");
-          } else if (lead.IsPartOfWord) {
-            word.classList.add("PartOfWord");
-          }
-          lineElem.appendChild(word);
-          LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables.Lead.push({
-            HTMLElement: word,
-            StartTime: ConvertTime(lead.StartTime),
-            EndTime: ConvertTime(lead.EndTime),
-            TotalTime: totalDuration
-          });
-        }
-      });
-      if (line.Background) {
-        line.Background.forEach((bg) => {
-          const lineE = document.createElement("div");
-          lineE.classList.add("line", "bg-line");
-          LyricsObject.Types.Syllable.Lines.push({
-            HTMLElement: lineE,
-            StartTime: ConvertTime(bg.StartTime),
-            EndTime: ConvertTime(bg.EndTime),
-            TotalTime: ConvertTime(bg.EndTime) - ConvertTime(bg.StartTime),
-            BGLine: true
-          });
-          SetWordArrayInCurentLine();
-          if (line.OppositeAligned) {
-            lineE.classList.add("OppositeAligned");
-          }
-          fragment.appendChild(lineE);
-          bg.Syllables.forEach((bw, bI, bA) => {
-            let bwE = document.createElement("span");
-            if (isRtl_default(bw.Text) && !lineE.classList.contains("rtl")) {
-              lineE.classList.add("rtl");
-            }
-            const totalDuration = ConvertTime(bw.EndTime) - ConvertTime(bw.StartTime);
-            const letterLength = bw.Text.split("").length;
-            const IfLetterCapable = IsLetterCapable(letterLength, totalDuration);
-            if (IfLetterCapable) {
-              bwE = document.createElement("div");
-              const letters = bw.Text.split("");
-              Emphasize(letters, bwE, bw, true);
-              if (bI === bA.length - 1) {
-                bwE.classList.add("LastWordInLine");
-              } else if (bw.IsPartOfWord) {
-                bwE.classList.add("PartOfWord");
-              }
-              bwE.style.setProperty("--text-shadow-opacity", `0%`);
-              bwE.style.setProperty("--text-shadow-blur-radius", `4px`);
-              bwE.style.scale = IdleEmphasisLyricsScale.toString();
-              bwE.style.transform = `translateY(calc(var(--font-size) * 0.02))`;
-              const contentDuration = totalDuration > 200 ? totalDuration : 200;
-              bwE.style.setProperty("--content-duration", `${contentDuration}ms`);
-              lineE.appendChild(bwE);
-            } else {
-              bwE.textContent = bw.Text;
-              bwE.style.setProperty("--gradient-position", `0%`);
-              bwE.style.setProperty("--text-shadow-opacity", `0%`);
-              bwE.style.setProperty("--text-shadow-blur-radius", `4px`);
-              bwE.style.scale = IdleLyricsScale.toString();
-              bwE.style.transform = `translateY(calc(var(--font-size) * 0.01))`;
-              if (ArabicPersianRegex.test(bw.Text)) {
-                bwE.setAttribute("font", "Vazirmatn");
-              }
-              LyricsObject.Types.Syllable.Lines[CurrentLineLyricsObject].Syllables.Lead.push({
-                HTMLElement: bwE,
-                StartTime: ConvertTime(bw.StartTime),
-                EndTime: ConvertTime(bw.EndTime),
-                TotalTime: ConvertTime(bw.EndTime) - ConvertTime(bw.StartTime),
-                BGWord: true
-              });
-              bwE.classList.add("bg-word");
-              bwE.classList.add("word");
-              if (bI === bA.length - 1) {
-                bwE.classList.add("LastWordInLine");
-              } else if (bw.IsPartOfWord) {
-                bwE.classList.add("PartOfWord");
-              }
-              lineE.appendChild(bwE);
-            }
-          });
-        });
-      }
-      if (arr[index + 1] && arr[index + 1].Lead.StartTime - line.Lead.EndTime >= lyricsBetweenShow && !SpotifyPlayer.IsPodcast) {
-        const musicalLine = createMusicalLineMs(
-          "Syllable",
-          ConvertTime(line.Lead.EndTime),
-          ConvertTime(arr[index + 1].Lead.StartTime),
-          !!arr[index + 1].OppositeAligned
-        );
-        fragment.appendChild(musicalLine);
-      }
-    });
-    LyricsContainer.appendChild(fragment);
-    ApplyInfo(data);
-    ApplyLyricsCredits(data);
-    BOTTOM_ApplyLyricsSpacer(LyricsContainer);
-    if (ScrollSimplebar)
-      RecalculateScrollSimplebar();
-    else
-      MountScrollSimplebar();
-    const LyricsStylingContainer = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .LyricsContent .simplebar-content"
-    );
-    removeAllStyles(LyricsStylingContainer);
-    if (data.classes) {
-      LyricsStylingContainer.className = data.classes;
-    }
-    if (data.styles) {
-      applyStyles(LyricsStylingContainer, data.styles);
-    }
-  }
-  var init_Syllable = __esm({
-    "src/utils/Lyrics/Applyer/Synced/Syllable.ts"() {
-      init_SpotifyPlayer();
-      init_Addons();
-      init_Defaults();
-      init_Styles();
-      init_ScrollSimplebar();
-      init_ConvertTime();
-      init_lyrics();
-      init_ApplyLyricsCredits();
-      init_ApplyInfo();
-      init_IsLetterCapable();
-      init_Emphasize();
-      init_Shared();
-      init_createMusicalLine();
-      init_isRtl();
     }
   });
 
@@ -10042,7 +9428,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return;
     }
     const lyricsHandlers = {
-      Syllable: ApplySyllableLyrics,
       Line: ApplyLineLyrics,
       Static: ApplyStaticLyrics
     };
@@ -10058,7 +9443,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_LyricsAnimator();
       init_Static();
       init_Line();
-      init_Syllable();
       init_fetchLyrics();
       init_pageButtons();
       init_lyrics();
@@ -33826,8 +33210,8 @@ ${JSON.stringify(lyricsOnly)}`
     if (type === "Syllable") {
       initialLyricsData = {
         id,
-        Type: type,
-        Content: lyricsJson.Content || [],
+        Type: "Line",
+        Content: convertLyrics(lyricsJson.Content || []),
         Raw: lyricsJson.Raw || []
       };
     } else if (type === "Line") {
@@ -33841,7 +33225,7 @@ ${JSON.stringify(lyricsOnly)}`
     } else {
       initialLyricsData = {
         id,
-        Type: type,
+        Type: "Static",
         Lines: lyricsJson.Lines || [],
         Raw: lyricsJson.Raw || []
       };
@@ -33892,18 +33276,7 @@ ${JSON.stringify(lyricsOnly)}`
   function detectLanguages(lyricsJson) {
     let hasKanji = false;
     let hasKorean = false;
-    if (lyricsJson.Type === "Syllable" && lyricsJson.Content) {
-      for (const item of lyricsJson.Content) {
-        if (!hasKanji && item.Lead?.Syllables?.some((syl) => JAPANESE_REGEX2.test(syl.Text))) {
-          hasKanji = true;
-        }
-        if (!hasKorean && item.Lead?.Syllables?.some((syl) => KOREAN_REGEX.test(syl.Text))) {
-          hasKorean = true;
-        }
-        if (hasKanji && hasKorean)
-          break;
-      }
-    } else if (lyricsJson.Type === "Line" && lyricsJson.Content) {
+    if (lyricsJson.Type === "Line" && lyricsJson.Content) {
       for (const item of lyricsJson.Content) {
         if (!hasKanji && JAPANESE_REGEX2.test(item.Text))
           hasKanji = true;
@@ -33936,15 +33309,6 @@ ${JSON.stringify(lyricsOnly)}`
     }
   }
   function prepareLyricsForGemini(lyricsJson) {
-    if (lyricsJson.Type === "Syllable") {
-      const syllableData = lyricsJson;
-      const convertedContent = convertLyrics(syllableData.Content || []);
-      lyricsJson = {
-        ...lyricsJson,
-        Type: "Line",
-        Content: convertedContent
-      };
-    }
     const lyricsOnly = extractLyrics(lyricsJson);
     if (lyricsOnly.length > 0) {
       lyricsJson.Raw = lyricsOnly;
@@ -35876,7 +35240,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e1638609/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e5727379/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -35902,7 +35266,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e163866a/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e57273fa/ProcessingIndicator.css */
 #SpicyLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -35982,7 +35346,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e1637d20/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e57269a0/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -36131,7 +35495,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e1638141/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e5726e41/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -36339,7 +35703,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e16381b2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e5726ef2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -36940,7 +36304,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e16382a3/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e5727043/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -37119,7 +36483,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e16382f4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e57270b4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -37392,7 +36756,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e1638395/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e5727185/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -37401,7 +36765,6 @@ ruby > rt {
   font-size: var(--font-size);
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .letter,
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   cursor: pointer;
   font-weight: 700;
@@ -37411,8 +36774,7 @@ ruby > rt {
   position: relative;
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .letter {
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line .word {
   --gradient-position: -20%;
   --gradient-alpha: 0.85;
   --gradient-alpha-end: 0.5;
@@ -37426,7 +36788,6 @@ ruby > rt {
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --BlurAmount: 0px;
   --DefaultLyricsScale: 0.95;
-  --DefaultEmphasisLyricsScale: 0.95;
   --DefaultLineScale: 1;
   --Vocal-NotSung-opacity: 1;
   --Vocal-Active-opacity: 1;
@@ -37448,33 +36809,21 @@ ruby > rt {
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line .word {
   transform-origin: center center;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .word.PartOfWord + :is(.word, .letterGroup) {
-  transform-origin: left center;
-}
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .word.PartOfWord {
-  transform-origin: right center;
-}
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .dotGroup,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .letter,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .letterGroup {
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line .dotGroup {
   --text-shadow-blur-radius: 4px;
   --text-shadow-opacity: 0%;
   --TextShadowDefinition: 0 0 var(--text-shadow-blur-radius) rgba(255,255,255,var(--text-shadow-opacity));
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .dotGroup,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .letter,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .letterGroup {
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .dotGroup {
   will-change:
     transform,
     opacity,
     text-shadow,
     scale;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line:not(.musical-line) .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .letter,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .letterGroup {
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line:not(.musical-line) .word {
   display: inline-block;
   --DefaultTransitionDuration: var(--content-duration, 0.15s);
   --TransitionDuration: var(--DefaultTransitionDuration);
@@ -37484,19 +36833,8 @@ ruby > rt {
     scale var(--TransitionDuration) cubic-bezier(0.61, 1, 0.88, 1),
     filter var(--TransitionDuration) cubic-bezier(0.61, 1, 0.88, 1);
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line:is(.Active, .Sung) .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line:is(.Active, .Sung) .letter,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line:is(.Active, .Sung) .letterGroup {
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line:is(.Active, .Sung) .word {
   text-shadow: var(--TextShadowDefinition);
-}
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line:is(.Active, .Sung) .letter,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line:is(.Active, .Sung) .letterGroup {
-  transition: var(--TransitionDefinition);
-}
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.bg-line .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.bg-line .letterGroup .letter {
-  --gradient-alpha: 0.6;
-  --gradient-alpha-end: 0.3;
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.OppositeAligned {
   justify-content: flex-end;
@@ -37515,21 +36853,17 @@ ruby > rt {
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung:hover,
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung:hover .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung:hover .letter,
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Sung:hover,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Sung:hover .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Sung:hover .letter {
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Sung:hover .word {
   text-shadow: none;
   opacity: var(--Vocal-Hover-opacity, 1) !important;
   filter: none;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .word:not(.PartOfWord, .dot, .LastWordInLine)::after,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .letterGroup:not(.PartOfWord, .dot, .LastWordInLine)::after {
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line .word:not(.dot)::after {
   content: "";
   margin-right: .3ch;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung .letter {
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung .word {
   --text-shadow-blur-radius: 4px !important;
   --text-shadow-opacity: 0% !important;
   --gradient-position: -20% !important;
@@ -37539,25 +36873,7 @@ ruby > rt {
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung .word {
   transform: translateY(calc(var(--DefaultLyricsSize) * 0.01)) !important;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung .letterGroup,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung .letter {
-  transform: translateY(calc(var(--DefaultLyricsSize) * 0.02)) !important;
-}
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung .letter,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung .letterGroup {
-  scale: var(--DefaultEmphasisLyricsScale);
-}
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .letterGroup {
-  transition:
-    transform 0.24s cubic-bezier(0.61, 1, 0.88, 1),
-    opacity 0.24s cubic-bezier(0.61, 1, 0.88, 1),
-    scale 0.24s cubic-bezier(0.61, 1, 0.88, 1);
-}
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .word-group {
-  display: inline-flex;
-}
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Sung .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Sung .letter {
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Sung .word {
   --gradient-position: 100% !important;
   --text-shadow-blur-radius: 4px !important;
   --text-shadow-opacity: 0% !important;
@@ -37565,21 +36881,6 @@ ruby > rt {
   text-shadow: var(--TextShadowDefinition) !important;
   transform: translateY(0) !important;
   scale: 1 !important;
-}
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Sung .letterGroup {
-  transform: translateY(0) !important;
-}
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .letterGroup {
-  display: inline-flex;
-}
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.bg-line,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.bg-line .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.bg-line .letterGroup,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.bg-line .letterGroup .letter {
-  --font-size: calc(var(--DefaultLyricsSize)*0.75);
-  font-size: var(--font-size);
-  font-family: SpicyLyrics, sans-serif;
-  font-weight: 500;
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line {
   position: relative;
@@ -37589,9 +36890,6 @@ ruby > rt {
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .dotGroup {
   scale: 1;
   transform-origin: center center;
-}
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.bg-line {
-  margin: -1.3cqw 0 1.5cqw !important;
 }
 @property --text-shadow-blur-radius { syntax: "<length>"; initial-value: 4px; inherits: false; }
 @property --text-shadow-opacity { syntax: "<percentage>"; initial-value: 0%; inherits: false; }
@@ -37635,9 +36933,7 @@ ruby > rt {
   opacity: 1;
   filter: none;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .letterGroup,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .letterGroup .letter {
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .word {
   opacity: 1;
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.static {
@@ -37701,14 +36997,12 @@ ruby > rt {
   #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
     filter: none !important;
   }
-  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .word,
-  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .letter,
-  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .letterGroup {
+  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .word {
     will-change: auto !important;
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e16383f6/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e5727206/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -37730,7 +37024,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e1638447/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e5727237/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -37757,7 +37051,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e1638478/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e5727278/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
