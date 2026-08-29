@@ -6133,7 +6133,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.4.27";
+      version = "1.4.28";
     }
   });
 
@@ -8853,15 +8853,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e02699/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e1638609/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e02699/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e1638609/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e026da/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e163866a/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e026da/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e163866a/ProcessingIndicator.css"() {
     }
   });
 
@@ -34010,6 +34010,17 @@ ${JSON.stringify(lyricsOnly)}`
     phoneticTextCache.set(key, result);
     return result;
   }
+  function applyScrollReanchor(scrollEl, activeLine, activeLineTopBefore, fallbackScrollTop) {
+    if (!scrollEl)
+      return;
+    if (activeLine && activeLine.isConnected && activeLineTopBefore !== null) {
+      const delta = activeLine.getBoundingClientRect().top - activeLineTopBefore;
+      if (delta !== 0)
+        scrollEl.scrollTop += delta;
+    } else {
+      scrollEl.scrollTop = fallbackScrollTop;
+    }
+  }
   function updateDisplayedLyricsWithTranslations(lyricsData) {
     try {
       if (!Defaults_default.LyricsContainerExists)
@@ -34019,17 +34030,22 @@ ${JSON.stringify(lyricsOnly)}`
       );
       if (!lyricsContainer)
         return;
-      const simplebarContent = lyricsContainer.querySelector(".simplebar-content-wrapper");
-      const scrollTop = simplebarContent?.scrollTop || 0;
+      const simplebarContent = lyricsContainer.querySelector(
+        ".simplebar-content-wrapper"
+      );
+      const fallbackScrollTop = simplebarContent?.scrollTop || 0;
+      const activeLine = LyricsObject.Types.Line.Lines.find(
+        (line) => line.Status === "Active" && line.HTMLElement?.isConnected
+      )?.HTMLElement ?? lyricsContainer.querySelector(".main-lyrics-text.line.Active");
+      const activeLineTopBefore = activeLine ? activeLine.getBoundingClientRect().top : null;
       const enableRomaji = storage_default.get("enable_romaji") === "true";
       if (lyricsData.Type === "Line" && lyricsData.Content) {
         updateLineLyricsTranslations(lyricsData.Content, enableRomaji, lyricsData.Raw);
       } else if (lyricsData.Type === "Static" && lyricsData.Lines) {
         updateStaticLyricsTranslations(lyricsData.Lines, enableRomaji, lyricsData.Raw);
       }
-      if (simplebarContent) {
-        simplebarContent.scrollTop = scrollTop;
-      }
+      applyScrollReanchor(simplebarContent, activeLine, activeLineTopBefore, fallbackScrollTop);
+      RecalculateScrollSimplebar();
     } catch (error) {
       console.error("Amai Lyrics: Error updating translations", error);
     }
@@ -34037,37 +34053,38 @@ ${JSON.stringify(lyricsOnly)}`
   function updateLineElement(lineElement, text, translation, enableRomaji, rawText) {
     text = text.replace("[DEF=font_size:small]", "");
     const processedText = processPhoneticText(text, enableRomaji);
-    const existingTranslation = lineElement.querySelector(".translation");
-    const preservedText = existingTranslation?.textContent ?? null;
-    if (existingTranslation)
-      existingTranslation.remove();
+    const hasDistinctTranslation = !!translation && translation.trim() !== "" && (!rawText || translation.trim() !== rawText.trim());
+    const appliedTranslation = hasDistinctTranslation ? translation : "";
+    const previous = appliedLineState.get(lineElement);
+    if (previous && previous.text === processedText && previous.translation === appliedTranslation) {
+      return;
+    }
+    if (previous && previous.text === processedText) {
+      const updatedTranslation = lineElement.querySelector(".translation");
+      if (appliedTranslation) {
+        if (updatedTranslation) {
+          updatedTranslation.textContent = appliedTranslation;
+        } else {
+          const translationElem = document.createElement("div");
+          translationElem.classList.add("translation");
+          translationElem.textContent = appliedTranslation;
+          lineElement.appendChild(translationElem);
+        }
+      } else if (updatedTranslation) {
+        updatedTranslation.remove();
+      }
+      appliedLineState.set(lineElement, { text: processedText, translation: appliedTranslation });
+      return;
+    }
     lineElement.textContent = "";
     lineElement.appendChild(createRubyFragment(processedText));
-    if (preservedText !== null && preservedText !== "") {
-      const newTranslationElem = document.createElement("div");
-      newTranslationElem.classList.add("translation");
-      newTranslationElem.textContent = preservedText;
-      lineElement.appendChild(newTranslationElem);
-    } else if (existingTranslation && preservedText === "") {
-      const empty = document.createElement("div");
-      empty.classList.add("translation");
-      empty.textContent = "";
-      lineElement.appendChild(empty);
+    if (appliedTranslation) {
+      const translationElem = document.createElement("div");
+      translationElem.classList.add("translation");
+      translationElem.textContent = appliedTranslation;
+      lineElement.appendChild(translationElem);
     }
-    const updatedTranslation = lineElement.querySelector(".translation");
-    const hasDistinctTranslation = translation && translation.trim() !== "" && (!rawText || translation.trim() !== rawText.trim());
-    if (hasDistinctTranslation) {
-      if (updatedTranslation) {
-        updatedTranslation.textContent = translation;
-      } else {
-        const translationElem = document.createElement("div");
-        translationElem.classList.add("translation");
-        translationElem.textContent = translation;
-        lineElement.appendChild(translationElem);
-      }
-    } else if (updatedTranslation && !hasDistinctTranslation) {
-      updatedTranslation.remove();
-    }
+    appliedLineState.set(lineElement, { text: processedText, translation: appliedTranslation });
   }
   function updateLineLyricsTranslations(content, enableRomaji, rawLyrics) {
     const lineElements = document.querySelectorAll(
@@ -34101,7 +34118,7 @@ ${JSON.stringify(lyricsOnly)}`
       );
     });
   }
-  var JAPANESE_REGEX2, KOREAN_REGEX, JAPANESE_CHAR_REGEX, JAPANESE_ROMAJI_REGEX, JAPANESE_FURIGANA_REGEX, KOREAN_ROMAJA_REGEX, LYRICS_TIMING_OFFSET, phoneticTextCache, PHONETIC_CACHE_MAX;
+  var JAPANESE_REGEX2, KOREAN_REGEX, JAPANESE_CHAR_REGEX, JAPANESE_ROMAJI_REGEX, JAPANESE_FURIGANA_REGEX, KOREAN_ROMAJA_REGEX, LYRICS_TIMING_OFFSET, phoneticTextCache, PHONETIC_CACHE_MAX, appliedLineState;
   var init_processing = __esm({
     "src/utils/Lyrics/processing.ts"() {
       init_storage();
@@ -34111,6 +34128,8 @@ ${JSON.stringify(lyricsOnly)}`
       init_ai();
       init_conversion();
       init_EventManager();
+      init_ScrollSimplebar();
+      init_lyrics();
       init_sanitize();
       JAPANESE_REGEX2 = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
       KOREAN_REGEX = /[\uAC00-\uD7AF]/;
@@ -34121,6 +34140,7 @@ ${JSON.stringify(lyricsOnly)}`
       LYRICS_TIMING_OFFSET = 0.55;
       phoneticTextCache = /* @__PURE__ */ new Map();
       PHONETIC_CACHE_MAX = 100;
+      appliedLineState = /* @__PURE__ */ new WeakMap();
     }
   });
 
@@ -35856,7 +35876,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e02699/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e1638609/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -35882,7 +35902,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e026da/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e163866a/ProcessingIndicator.css */
 #SpicyLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -35962,7 +35982,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e02050/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e1637d20/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -36111,7 +36131,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e02311/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e1638141/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -36319,7 +36339,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e02382/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e16381b2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -36920,7 +36940,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e02453/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e16382a3/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -37099,7 +37119,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e024a4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e16382f4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -37372,7 +37392,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e02515/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e1638395/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -37688,7 +37708,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e02566/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e16383f6/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -37710,7 +37730,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e02597/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e1638447/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -37737,7 +37757,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21316-UDlolMXPUwZq/1a0489e025b8/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16852-laiFn8ZdCpZI/1a04e1638478/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
