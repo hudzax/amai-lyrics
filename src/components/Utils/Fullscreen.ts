@@ -29,7 +29,6 @@ const windowRef = window as unknown as {
     onFullscreenChange: () => void;
     onKeyDown: (e: KeyboardEvent) => void;
   };
-  __amaiFullscreenLifecycleTracked?: boolean;
 };
 
 function ensureGlobalFullscreenListeners(): void {
@@ -74,17 +73,13 @@ export function destroyFullscreenGlobalListeners(): void {
   } catch {
     /* already destroyed */
   }
-  windowRef.__amaiFullscreenLifecycleTracked = false;
 }
 
-// Register teardown exactly once per page-load — window-persisted so hot-reload
-// doesn't stack trackers. Previous instance's teardown (via __amaiLyricsTeardown)
-// disposes its own handler; new instance replaces it eagerly above and tracks
-// its own destroy for the next reload.
-if (!windowRef.__amaiFullscreenLifecycleTracked) {
-  windowRef.__amaiFullscreenLifecycleTracked = true;
-  lifecycle.trackCallback(destroyFullscreenGlobalListeners);
-}
+// Register teardown for this instance. The module re-evaluates on every
+// hot-reload (fresh closure), and `ensureGlobalFullscreenListeners` above
+// already removes the previous instance's stale handlers, so we register
+// unconditionally; lifecycle disposes it on the next reload.
+lifecycle.trackCallback(destroyFullscreenGlobalListeners);
 
 const MediaBox_Data = {
   Eventified: false,

@@ -82,6 +82,13 @@ async function OpenPage() {
 async function createPageElement() {
   return new Promise<void>((resolve) => {
     fastdom.mutate(() => {
+      // Remove any pre-existing page node (e.g. one left behind by a hot-reload
+      // before the previous instance's teardown ran) to avoid duplicate
+      // #SpicyLyricsPage nodes — ~75 selectors throughout the app resolve the
+      // stale node otherwise.
+      const existing = document.getElementById('SpicyLyricsPage');
+      if (existing) existing.remove();
+
       const elem = document.createElement('div');
       elem.id = 'SpicyLyricsPage';
       elem.innerHTML = PageHTML;

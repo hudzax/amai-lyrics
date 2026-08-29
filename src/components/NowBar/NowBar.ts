@@ -16,7 +16,6 @@ import {
 
 // Tracked so rapid open/close or page destroy doesn't leave orphan polling task holding AppendQueue closure
 let viewControlsWhen: ReturnType<typeof Whentil.When> | null = null;
-const nowBarWhenWindowRef = window as unknown as { __amaiNowBarWhenTracked?: boolean };
 
 function cancelViewControlsWhen(): void {
   if (viewControlsWhen) {
@@ -25,14 +24,10 @@ function cancelViewControlsWhen(): void {
   }
 }
 
-if (!nowBarWhenWindowRef.__amaiNowBarWhenTracked) {
-  nowBarWhenWindowRef.__amaiNowBarWhenTracked = true;
-  lifecycle.trackCallback(cancelViewControlsWhen);
-  // Reset flag on teardown so hot-reload can re-register
-  lifecycle.trackCallback(() => {
-    nowBarWhenWindowRef.__amaiNowBarWhenTracked = false;
-  });
-}
+// Register teardown for this instance. The module re-evaluates on every
+// hot-reload (fresh closure), so we register unconditionally; lifecycle
+// disposes it on the next reload via __amaiLyricsTeardown.
+lifecycle.trackCallback(cancelViewControlsWhen);
 
 /**
  * Opens the NowBar and initializes its components

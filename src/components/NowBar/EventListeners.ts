@@ -16,17 +16,14 @@ import { PlaybackPlayPauseEvent } from './types';
 
 // Tracked subscriptions created per NowBar open so they can be removed on
 // close (and on plugin teardown) instead of accumulating on every open.
-// Window-persisted so hot-reload doesn't double-register teardown callbacks.
-const windowRef = window as unknown as {
-  __amaiNowBarState?: {
-    teardownTracked: boolean;
-  };
-};
-const sharedNowBarState = (windowRef.__amaiNowBarState ??= { teardownTracked: false });
-
 let nowBarListenerIds: number[] = [];
 let nowBarInitWhen: ReturnType<typeof Whentil.When> | null = null;
-let nowBarTeardownTracked = sharedNowBarState.teardownTracked;
+
+// Whether this instance's teardown has been registered. Module-local (not
+// window-persisted): each hot-reload re-evaluates the module to a fresh
+// `false`, so we re-register. The old window-flag version read the previous
+// instance's already-set flag and silently skipped registration.
+let nowBarTeardownTracked = false;
 
 // Registers the fullscreen NowBar (custom progress bar) as a position consumer
 // so the sync loop only does RPC work while it's actually on screen.
@@ -52,11 +49,9 @@ export function teardownNowBarListeners() {
   }
 }
 
-/** Lifecycle teardown — also resets window-persisted flag so next hot-reload can re-register. */
+/** Lifecycle teardown — removes every NowBar listener registered by this instance. */
 function destroyNowBarGlobalState(): void {
   teardownNowBarListeners();
-  nowBarTeardownTracked = false;
-  sharedNowBarState.teardownTracked = false;
 }
 
 /**
@@ -127,13 +122,17 @@ export function setupEventListeners() {
     }),
   );
 
-  // Register teardown once. `teardownNowBarListeners` already removes every
-  // bus listener and cancels the Whentil task, so per-open tracking would only
-  // grow the registry with redundant no-op removals.
+  // Register teardown once per instance. `teardownNowBarListeners` already
+  // removes every bus listener and cancels the Whentil task, so per-open
+  // tracking would only grow the registry with redundant no-op removals.
   if (!nowBarTeardownTracked) {
     nowBarTeardownTracked = true;
-    sharedNowBarState.teardownTracked = true;
     lifecycle.trackCallback(destroyNowBarGlobalState);
+    // Also tear down active fullscreen components (e.g. the 100ms progress
+    // bar interval and playback controls) on plugin teardown, not just on
+    // fullscreen:exit/close — otherwise a teardown while fullscreen is open
+    // leaks a permanent timer writing into detached DOM.
+    lifecycle.trackCallback(CleanUpActiveComponents);
   }
 }
 

@@ -2,14 +2,13 @@ import lifecycle from '../../../lifecycle';
 
 const windowRef = window as unknown as {
   __amaiInfoTimeout?: number | null;
-  __amaiInfoLifecycleTracked?: boolean;
 };
 let infoTimeout: number | null = windowRef.__amaiInfoTimeout ?? null;
 
-if (!windowRef.__amaiInfoLifecycleTracked) {
-  windowRef.__amaiInfoLifecycleTracked = true;
-  lifecycle.trackCallback(clearApplyInfoTimeout);
-}
+// Register teardown for this instance. The module re-evaluates on every
+// hot-reload (fresh closure), so we register unconditionally; lifecycle
+// disposes it on the next reload via __amaiLyricsTeardown.
+lifecycle.trackCallback(clearApplyInfoTimeout);
 
 /** Clear pending ApplyInfo removal timer — call on page destroy / teardown to avoid detached-DOM retain. */
 export function clearApplyInfoTimeout(): void {

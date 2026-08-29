@@ -40,7 +40,6 @@ type GetProgressState = {
 
 const windowRef = window as unknown as {
   __amaiGetProgressState?: GetProgressState;
-  __amaiGetProgressLifecycleTracked?: boolean;
 };
 
 const state: GetProgressState =
@@ -156,7 +155,6 @@ export function destroyGetProgressLoop(): void {
   state.syncNow = false;
   state.activePositionClients = 0;
   state.teardownRequested = true;
-  windowRef.__amaiGetProgressLifecycleTracked = false;
 }
 
 async function doSync(): Promise<void> {
@@ -294,12 +292,10 @@ export default function GetProgress() {
   return result;
 }
 
-// Register teardown exactly once per page-load — window-persisted so hot-reload
-// doesn't stack trackers. Previous instance's loop is torn down via __amaiLyricsTeardown.
-if (!windowRef.__amaiGetProgressLifecycleTracked) {
-  windowRef.__amaiGetProgressLifecycleTracked = true;
-  lifecycle.trackCallback(destroyGetProgressLoop);
-}
+// Register teardown for this instance. Each hot-reload re-evaluates the module
+// (fresh closure), so we register unconditionally — lifecycle disposes it on the
+// next reload via __amaiLyricsTeardown.
+lifecycle.trackCallback(destroyGetProgressLoop);
 
 // DEPRECATED
 export function _DEPRECATED___GetProgress() {

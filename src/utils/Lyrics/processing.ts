@@ -123,7 +123,7 @@ export async function processAndEnhanceLyrics(
   // Cache and display the initial lyrics
   await cacheLyrics(trackId, { ...lyricsToDisplay, id: id });
 
-  if (Spicetify.Player.data.item.uri?.split(':')[2] === trackId) {
+  if (Spicetify.Player.data?.item?.uri?.split(':')[2] === trackId) {
     Defaults.CurrentLyricsType = lyricsToDisplay.Type;
     const serialized = JSON.stringify(lyricsToDisplay);
     storage.set('currentLyricsData', serialized);
@@ -183,7 +183,7 @@ async function processLyricsEnhancementsAsync(
     await cacheLyrics(trackId, { ...processedLyricsJson, id: trackId });
 
     // Only update UI if this is still the current track
-    if (Spicetify.Player.data.item.uri?.split(':')[2] === trackId) {
+    if (Spicetify.Player.data?.item?.uri?.split(':')[2] === trackId) {
       // Update the displayed lyrics with translations
       updateDisplayedLyricsWithTranslations(processedLyricsJson);
 

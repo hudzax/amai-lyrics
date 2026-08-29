@@ -12,6 +12,7 @@ import { EventManager } from './managers/EventManager';
 import { PageManager } from './managers/PageManager';
 import { SongChangeManager } from './managers/SongChangeManager';
 import { NowPlayingBarBackground } from './components/DynamicBG/NowPlayingBarBackground';
+import PageView from './components/Pages/PageView';
 import { installBlankToastSuppressor } from './utils/suppressBlankToasts';
 import lifecycle from './utils/lifecycle';
 
@@ -52,6 +53,10 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
   lifecycle.trackCallback(() => songChangeManager.dispose());
   lifecycle.trackCallback(() => backgroundManager.destroy());
   new PageManager(buttonManager); // Used for side effects (navigation setup)
+
+  // Tear down the lyrics page (and its SimpleBar observers / tippy instances)
+  // on plugin teardown so a hot-reload doesn't leave a stale #SpicyLyricsPage.
+  lifecycle.trackCallback(() => PageView.Destroy());
 
   // Set up dynamic background updates
   const dynamicBgInterval = new IntervalManager(INTERVALS.DYNAMIC_BG_UPDATE, () => {
@@ -129,17 +134,28 @@ async function main() {
     }
   }
 
+  // Register this instance's teardown handle BEFORE any async work. Otherwise a
+  // failure or hang during initialization (e.g. Platform.OnSpotifyReady polling
+  // forever) leaves no handle for the next reload, which then silently
+  // double-initializes (duplicate render loops, overlays, handlers, intervals).
+  lifecycle.registerGlobalTeardown();
+
   installBlankToastSuppressor();
 
-  await AppInitializer.initializeCore();
+  try {
+    await AppInitializer.initializeCore();
 
-  const buttonManager = setupUI();
-  lifecycle.trackCallback(() => buttonManager.dispose());
-  await initializeAmaiLyrics(buttonManager);
+    const buttonManager = setupUI();
+    lifecycle.trackCallback(() => buttonManager.dispose());
+    await initializeAmaiLyrics(buttonManager);
 
-  AppInitializer.setupPostLoadOptimizations();
-
-  lifecycle.registerGlobalTeardown();
+    AppInitializer.setupPostLoadOptimizations();
+  } catch (error) {
+    // If init fails partway, tear everything down so the next reload starts clean.
+    console.error('[Amai Lyrics] Initialization failed; tearing down:', error);
+    lifecycle.disposeAll();
+    throw error;
+  }
 }
 
 export default main;
