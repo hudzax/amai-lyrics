@@ -14,6 +14,8 @@ import { cacheLyrics } from './cache';
 import { fetchPhoneticLyrics, fetchLyricTranslations } from './ai';
 import { convertLyrics } from './conversion';
 import Event from '../EventManager';
+import { RecalculateScrollSimplebar } from '../Scrolling/Simplebar/ScrollSimplebar';
+import { LyricsObject } from './lyrics';
 import { LyricsResult } from '../API/Lyrics';
 import { createRubyFragment } from '../sanitize';
 import { Syllable, LineBasedLyricItem, SyllableBasedLyricItem, LyricsLine } from './conversion';
@@ -395,6 +397,37 @@ export function processPhoneticText(text: string, enableRomaji: boolean): string
   return result;
 }
 
+// Tracks the last (processedText, translation) applied per line element so
+// updateLineElement can skip DOM rebuilds when nothing changed — rebuilding the
+// active line's content mid-animation causes visible churn.
+const appliedLineState = new WeakMap<HTMLElement, { text: string; translation: string }>();
+
+/**
+ * Re-anchors the scroll container after line heights changed (e.g. translation
+ * nodes were inserted). Keeps the active line at the same viewport position it
+ * had before the update; falls back to preserving the raw scrollTop when there
+ * is no active-line anchor (Static lyrics, or playback between lines).
+ *
+ * Without this, translations arriving mid-line change every line's height and
+ * the raw scrollTop restore leaves the sung line drifted out of view — and
+ * ScrollToActiveLine cannot correct it because the active *element* didn't
+ * change, so it early-returns until the next line transition.
+ */
+export function applyScrollReanchor(
+  scrollEl: HTMLElement | null | undefined,
+  activeLine: HTMLElement | null | undefined,
+  activeLineTopBefore: number | null,
+  fallbackScrollTop: number,
+): void {
+  if (!scrollEl) return;
+  if (activeLine && activeLine.isConnected && activeLineTopBefore !== null) {
+    const delta = activeLine.getBoundingClientRect().top - activeLineTopBefore;
+    if (delta !== 0) scrollEl.scrollTop += delta;
+  } else {
+    scrollEl.scrollTop = fallbackScrollTop;
+  }
+}
+
 /**
  * Updates the currently displayed lyrics with translations and phonetics
  * This function preserves scroll position and animation state
@@ -411,9 +444,20 @@ export function updateDisplayedLyricsWithTranslations(lyricsData: LyricsData): v
 
     if (!lyricsContainer) return;
 
-    // Preserve current scroll position
-    const simplebarContent = lyricsContainer.querySelector('.simplebar-content-wrapper');
-    const scrollTop = simplebarContent?.scrollTop || 0;
+    const simplebarContent = lyricsContainer.querySelector<HTMLElement>(
+      '.simplebar-content-wrapper',
+    );
+    // Fallback anchor for Static lyrics / gaps between lines: preserve the raw
+    // scroll position.
+    const fallbackScrollTop = simplebarContent?.scrollTop || 0;
+
+    // Capture the currently sung line so the scroll can be re-anchored on it
+    // after the update (translation nodes change every line's height).
+    const activeLine =
+      (LyricsObject.Types.Line.Lines as { Status?: string; HTMLElement?: HTMLElement }[]).find(
+        (line) => line.Status === 'Active' && line.HTMLElement?.isConnected,
+      )?.HTMLElement ?? lyricsContainer.querySelector<HTMLElement>('.main-lyrics-text.line.Active');
+    const activeLineTopBefore = activeLine ? activeLine.getBoundingClientRect().top : null;
 
     // Get romaji setting
     const enableRomaji = storage.get('enable_romaji') === 'true';
@@ -425,10 +469,11 @@ export function updateDisplayedLyricsWithTranslations(lyricsData: LyricsData): v
       updateStaticLyricsTranslations(lyricsData.Lines, enableRomaji, lyricsData.Raw);
     }
 
-    // Restore scroll position
-    if (simplebarContent) {
-      simplebarContent.scrollTop = scrollTop;
-    }
+    // Re-anchor scroll on the active line (or fall back to raw preservation)
+    applyScrollReanchor(simplebarContent, activeLine, activeLineTopBefore, fallbackScrollTop);
+
+    // Content height changed — refresh SimpleBar's scrollbar geometry
+    RecalculateScrollSimplebar();
   } catch (error) {
     console.error('Amai Lyrics: Error updating translations', error);
   }
@@ -456,48 +501,55 @@ function updateLineElement(
   // Update phonetics by re-processing the text with the latest data
   const processedText = processPhoneticText(text, enableRomaji);
 
-  // Update the main text content (excluding translation) — sanitized
-  const existingTranslation = lineElement.querySelector('.translation');
-  const preservedText = existingTranslation?.textContent ?? null;
-  if (existingTranslation) existingTranslation.remove();
-  // Clear and insert sanitized ruby fragment
+  // Only treat a translation as real when it's non-empty and differs from the
+  // original line text
+  const hasDistinctTranslation =
+    !!translation &&
+    translation.trim() !== '' &&
+    (!rawText || translation.trim() !== rawText.trim());
+  const appliedTranslation = hasDistinctTranslation ? (translation as string) : '';
+
+  const previous = appliedLineState.get(lineElement);
+
+  // Nothing changed for this line -> skip the DOM rebuild entirely. Important
+  // for the currently active line, whose content the animator is mid-flight on.
+  if (previous && previous.text === processedText && previous.translation === appliedTranslation) {
+    return;
+  }
+
+  if (previous && previous.text === processedText) {
+    // Text unchanged — sync only the translation node instead of rebuilding
+    const updatedTranslation = lineElement.querySelector('.translation');
+    if (appliedTranslation) {
+      if (updatedTranslation) {
+        updatedTranslation.textContent = appliedTranslation;
+      } else {
+        const translationElem = document.createElement('div');
+        translationElem.classList.add('translation');
+        translationElem.textContent = appliedTranslation;
+        lineElement.appendChild(translationElem);
+      }
+    } else if (updatedTranslation) {
+      // Remove translation if it's empty or same as original
+      updatedTranslation.remove();
+    }
+    appliedLineState.set(lineElement, { text: processedText, translation: appliedTranslation });
+    return;
+  }
+
+  // Text changed (or first update for this element) — rebuild the main text
+  // content with the sanitized ruby fragment
   lineElement.textContent = '';
   lineElement.appendChild(createRubyFragment(processedText));
-  if (preservedText !== null && preservedText !== '') {
-    const newTranslationElem = document.createElement('div');
-    newTranslationElem.classList.add('translation');
-    newTranslationElem.textContent = preservedText;
-    lineElement.appendChild(newTranslationElem);
-  } else if (existingTranslation && preservedText === '') {
-    // Preserve empty translation node parity with previous logic
-    const empty = document.createElement('div');
-    empty.classList.add('translation');
-    empty.textContent = '';
-    lineElement.appendChild(empty);
+
+  if (appliedTranslation) {
+    const translationElem = document.createElement('div');
+    translationElem.classList.add('translation');
+    translationElem.textContent = appliedTranslation;
+    lineElement.appendChild(translationElem);
   }
 
-  // Now handle translation updates
-  const updatedTranslation = lineElement.querySelector('.translation');
-
-  // Check if translation is different from original and not empty
-  const hasDistinctTranslation =
-    translation && translation.trim() !== '' && (!rawText || translation.trim() !== rawText.trim());
-
-  if (hasDistinctTranslation) {
-    if (updatedTranslation) {
-      // Update existing translation
-      updatedTranslation.textContent = translation;
-    } else {
-      // Create new translation element
-      const translationElem = document.createElement('div');
-      translationElem.classList.add('translation');
-      translationElem.textContent = translation;
-      lineElement.appendChild(translationElem);
-    }
-  } else if (updatedTranslation && !hasDistinctTranslation) {
-    // Remove translation if it's empty or same as original
-    updatedTranslation.remove();
-  }
+  appliedLineState.set(lineElement, { text: processedText, translation: appliedTranslation });
 }
 
 /**

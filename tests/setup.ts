@@ -71,3 +71,12 @@ if (!g.Spicetify.CosmosAsync) {
 if (typeof window !== 'undefined' && !(window as unknown as { Spicetify: unknown }).Spicetify) {
   (window as unknown as { Spicetify: unknown }).Spicetify = g.Spicetify;
 }
+
+// jsdom has no ResizeObserver; Maid teardown and layout observers reference it.
+if (typeof g.ResizeObserver === 'undefined') {
+  g.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
