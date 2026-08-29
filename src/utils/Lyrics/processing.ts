@@ -18,18 +18,7 @@ import { RecalculateScrollSimplebar } from '../Scrolling/Simplebar/ScrollSimpleb
 import { LyricsObject } from './lyrics';
 import { LyricsResult } from '../API/Lyrics';
 import { createRubyFragment } from '../sanitize';
-import { Syllable, LineBasedLyricItem, SyllableBasedLyricItem, LyricsLine } from './conversion';
-
-export interface LyricsDataSyllable {
-  id?: string;
-  Type: 'Syllable';
-  Content?: SyllableBasedLyricItem[];
-  Raw?: string[];
-  Info?: string;
-  status?: string;
-  expiresAt?: number;
-  fromCache?: boolean;
-}
+import { LineBasedLyricItem, SyllableBasedLyricItem, LyricsLine } from './conversion';
 
 export interface LyricsDataLine {
   id?: string;
@@ -54,7 +43,9 @@ export interface LyricsDataStatic {
   fromCache?: boolean;
 }
 
-export type LyricsData = LyricsDataSyllable | LyricsDataLine | LyricsDataStatic;
+// Syllable-based lyrics are normalized to Line on ingest — the word-by-word
+// karaoke renderer has been removed from the extension.
+export type LyricsData = LyricsDataLine | LyricsDataStatic;
 
 // Regular expressions for language detection
 const JAPANESE_REGEX = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
@@ -84,16 +75,20 @@ export async function processAndEnhanceLyrics(
   isCurrent = true,
 ): Promise<LyricsData> {
   const id = lyricsJson.id || trackId;
-  const type = (lyricsJson.Type || 'Static') as LyricsData['Type'];
+  // Type is kept as a plain string: the API can still return 'Syllable', which
+  // is normalized to 'Line' below (the syllable renderer has been removed).
+  const type = (lyricsJson.Type || 'Static') as string;
 
   // Create a LyricsData object from LyricsResult, assuming validation has passed
   // We need to cast based on the initial type to satisfy the discriminated union
   let initialLyricsData: LyricsData;
   if (type === 'Syllable') {
+    // Normalize syllable-based lyrics to line-synced on ingest; the syllable
+    // renderer was removed. Users still get lyrics, just line-synced.
     initialLyricsData = {
       id: id,
-      Type: type,
-      Content: (lyricsJson.Content || []) as SyllableBasedLyricItem[],
+      Type: 'Line',
+      Content: convertLyrics((lyricsJson.Content || []) as SyllableBasedLyricItem[]),
       Raw: (lyricsJson.Raw || []) as string[],
     };
   } else if (type === 'Line') {
@@ -108,7 +103,7 @@ export async function processAndEnhanceLyrics(
     // Static
     initialLyricsData = {
       id: id,
-      Type: type,
+      Type: 'Static',
       Lines: (lyricsJson.Lines || []) as LyricsLine[],
       Raw: (lyricsJson.Raw || []) as string[],
     };
@@ -218,23 +213,7 @@ export function detectLanguages(lyricsJson: LyricsData): {
   let hasKanji = false;
   let hasKorean = false;
 
-  if (lyricsJson.Type === 'Syllable' && lyricsJson.Content) {
-    for (const item of lyricsJson.Content) {
-      if (
-        !hasKanji &&
-        item.Lead?.Syllables?.some((syl: Syllable) => JAPANESE_REGEX.test(syl.Text))
-      ) {
-        hasKanji = true;
-      }
-      if (
-        !hasKorean &&
-        item.Lead?.Syllables?.some((syl: Syllable) => KOREAN_REGEX.test(syl.Text))
-      ) {
-        hasKorean = true;
-      }
-      if (hasKanji && hasKorean) break;
-    }
-  } else if (lyricsJson.Type === 'Line' && lyricsJson.Content) {
+  if (lyricsJson.Type === 'Line' && lyricsJson.Content) {
     for (const item of lyricsJson.Content) {
       if (!hasKanji && JAPANESE_REGEX.test(item.Text)) hasKanji = true;
       if (!hasKorean && KOREAN_REGEX.test(item.Text)) hasKorean = true;
@@ -279,19 +258,6 @@ export function prepareLyricsForGemini(lyricsJson: LyricsData): {
   lyricsJson: LyricsData;
   lyricsOnly: string[];
 } {
-  if (lyricsJson.Type === 'Syllable') {
-    // Cast lyricsJson to LyricsDataSyllable to access Content with correct type
-    const syllableData = lyricsJson as LyricsDataSyllable;
-    const convertedContent = convertLyrics(syllableData.Content || []) as LineBasedLyricItem[];
-
-    // Create a new object with the updated type and content
-    lyricsJson = {
-      ...lyricsJson,
-      Type: 'Line',
-      Content: convertedContent,
-    } as LyricsDataLine; // Cast to LyricsDataLine
-  }
-
   const lyricsOnly = extractLyrics(lyricsJson);
 
   if (lyricsOnly.length > 0) {

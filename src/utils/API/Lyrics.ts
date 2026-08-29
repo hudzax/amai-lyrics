@@ -25,8 +25,10 @@ interface ImageObject {
 
 export interface LyricsResult {
   lyrics?: string;
+  // 'Syllable' payloads are normalized to 'Line' on ingest (see processing.ts);
+  // the syllable renderer has been removed.
   Type?: 'Syllable' | 'Line' | 'Static';
-  Content?: SyllableBasedLyricItem[] | LineBasedLyricItem[]; // Can be either syllable or line based
+  Content?: SyllableBasedLyricItem[] | LineBasedLyricItem[]; // Syllable- or line-based before ingest normalization
   Lines?: LyricsLine[]; // For Line or Static types after processing
   id?: string;
   Raw?: string[];

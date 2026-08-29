@@ -9,7 +9,6 @@
 }
 
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .letter,
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   cursor: pointer;
   font-weight: 700;
@@ -20,8 +19,7 @@
 
 
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .letter {
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line .word {
   --gradient-position: -20%;
   --gradient-alpha: 0.85;
   --gradient-alpha-end: 0.5;
@@ -53,7 +51,6 @@
   --BlurAmount: 0px;
   
   --DefaultLyricsScale: 0.95;
-  --DefaultEmphasisLyricsScale: 0.95;
   --DefaultLineScale: 1;
 
   --Vocal-NotSung-opacity: 1;
@@ -82,18 +79,8 @@
   transform-origin: center center;
 }
 
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .word.PartOfWord + :is(.word, .letterGroup) {
-  transform-origin: left center;
-}
-
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .word.PartOfWord {
-  transform-origin: right center;
-}
-
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .word, 
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .dotGroup, 
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .letter,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .letterGroup {
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line .word,
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line .dotGroup {
   --text-shadow-blur-radius: 4px;
   --text-shadow-opacity: 0%;
   --TextShadowDefinition: 0 0 var(--text-shadow-blur-radius) rgba(255,255,255,var(--text-shadow-opacity));
@@ -103,16 +90,12 @@
    the only ones animated per frame. Promoting every word/letter caused a layer
    explosion (GPU memory blowup + dropped frames). Visually identical. */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .dotGroup,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .letter,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .letterGroup {
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .dotGroup {
   will-change: transform, opacity, text-shadow, scale;
 }
 
 
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line:not(.musical-line) .word, 
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .letter,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .letterGroup {
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line:not(.musical-line) .word {
   display: inline-block;
 
   --DefaultTransitionDuration: var(--content-duration, 0.15s);
@@ -124,27 +107,8 @@
   --DefaultTransitionDuration: 0.38s;
 } */
 
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line:is(.Active, .Sung) .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line:is(.Active, .Sung) .letter,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line:is(.Active, .Sung) .letterGroup {
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line:is(.Active, .Sung) .word {
   text-shadow: var(--TextShadowDefinition);
-}
-
-/* #SpicyLyricsPage .LyricsContainer .LyricsContent .line:is(.Active, .Sung) .word:not(.dot), */
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line:is(.Active, .Sung) .letter,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line:is(.Active, .Sung) .letterGroup {
-  transition: var(--TransitionDefinition);
-}
-
-/* #SpicyLyricsPage .LyricsContainer .LyricsContent .line:is(.Active, .Sung) .word:not(.dot) {
-  --TransitionDefinition: text-shadow 0.2s cubic-bezier(0.61, 1, 0.88, 1);
-  transition: var(--TransitionDefinition);
-} */
-
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.bg-line .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.bg-line .letterGroup .letter {
-  --gradient-alpha: 0.6;
-  --gradient-alpha-end: 0.3;
 }
 
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.OppositeAligned {
@@ -179,10 +143,8 @@
 
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung:hover,
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung:hover .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung:hover .letter,
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Sung:hover,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Sung:hover .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Sung:hover .letter {
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Sung:hover .word {
   text-shadow: none;
 /*   --gradient-alpha: 1;
   --gradient-alpha-end: 1; */
@@ -191,15 +153,13 @@
 }
 
 
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .word:not(.PartOfWord, .dot, .LastWordInLine)::after,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .letterGroup:not(.PartOfWord, .dot, .LastWordInLine)::after {
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line .word:not(.dot)::after {
   content: "";
   margin-right: .3ch;
 }
 
 
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung .letter {
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung .word {
   --text-shadow-blur-radius: 4px !important;
   --text-shadow-opacity: 0% !important;
   --gradient-position: -20% !important;
@@ -212,27 +172,7 @@
   transform: translateY(calc(var(--DefaultLyricsSize) * 0.01)) !important;
 }
 
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung .letterGroup,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung .letter {
-  transform: translateY(calc(var(--DefaultLyricsSize) * 0.02)) !important;
-}
-
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung .letter,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung .letterGroup {
-  scale: var(--DefaultEmphasisLyricsScale);
-}
-
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .letterGroup {
-  transition: transform 0.24s cubic-bezier(0.61, 1, 0.88, 1), opacity 0.24s cubic-bezier(0.61, 1, 0.88, 1), scale 0.24s cubic-bezier(0.61, 1, 0.88, 1);
-}
-
-
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .word-group {
-  display: inline-flex;
-}
-
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Sung .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Sung .letter {
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Sung .word {
   --gradient-position: 100% !important;
   --text-shadow-blur-radius: 4px !important;
   --text-shadow-opacity: 0% !important;
@@ -241,24 +181,6 @@
   text-shadow: var(--TextShadowDefinition) !important;
   transform: translateY(0) !important;
   scale: 1 !important;
-}
-
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Sung .letterGroup {
-  transform: translateY(0) !important;
-}
-
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .letterGroup {
-  display: inline-flex ;
-}
-
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.bg-line,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.bg-line .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.bg-line .letterGroup,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.bg-line .letterGroup .letter {
-  --font-size: calc(var(--DefaultLyricsSize)*0.75);
-  font-size: var(--font-size);
-  font-family: SpicyLyrics, sans-serif;
-  font-weight: 500;
 }
 
 /* 
@@ -279,11 +201,6 @@
   scale: 1;
   transform-origin: center center;
 }
-
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.bg-line {
-  margin: -1.3cqw 0 1.5cqw !important;
-}
-
 
 @property --text-shadow-blur-radius {
   syntax: '<length>';
@@ -341,9 +258,7 @@
   filter: none;
 }
 
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .letterGroup,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .letterGroup .letter {
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .word {
   opacity: 1;
 }
 
@@ -437,9 +352,7 @@
   #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
     filter: none !important;
   }
-  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .word,
-  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .letter,
-  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .letterGroup {
+  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .word {
     will-change: auto !important;
   }
 }

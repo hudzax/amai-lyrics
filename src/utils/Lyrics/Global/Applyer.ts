@@ -1,7 +1,6 @@
 import { setBlurringLastLine } from '../Animator/Lyrics/LyricsAnimator';
 import { ApplyStaticLyrics } from '../Applyer/Static';
 import { ApplyLineLyrics } from '../Applyer/Synced/Line';
-import { ApplySyllableLyrics } from '../Applyer/Synced/Syllable';
 import fetchLyrics, { isNoLyricsResult } from '../fetchLyrics';
 import { showRefreshButton } from '../../../components/Pages/pageButtons';
 import { addLinesEvListener } from '../lyrics';
@@ -59,8 +58,9 @@ export default function ApplyLyrics(lyrics: LyricsData | NoLyricsResult | null |
   }
 
   // Apply lyrics based on type
+  // NOTE: 'Syllable' lyrics are normalized to 'Line' on ingest (processing.ts);
+  // the word-by-word karaoke renderer has been removed.
   const lyricsHandlers = {
-    Syllable: ApplySyllableLyrics,
     Line: ApplyLineLyrics,
     Static: ApplyStaticLyrics,
   };

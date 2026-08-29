@@ -68,7 +68,6 @@ export function ApplyLineLyrics(data: LyricsData): void {
   // Add initial dot group if there's a sufficient gap before the first line
   if (data.StartTime >= lyricsBetweenShow) {
     const musicalLine = createMusicalLineMs(
-      'Line',
       0,
       convertStartTime,
       !!data.Content[0]?.OppositeAligned,
@@ -168,7 +167,6 @@ export function ApplyLineLyrics(data: LyricsData): void {
       const nextStartTime = ConvertTime(nextLine.StartTime);
       const curEndTime = endTime;
       const musicalLine = createMusicalLineMs(
-        'Line',
         curEndTime,
         nextStartTime,
         !!nextLine.OppositeAligned,

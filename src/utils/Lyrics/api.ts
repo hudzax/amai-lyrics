@@ -95,6 +95,8 @@ function isValidLyricsResponse(lyricsJson: LyricsResult): boolean {
     }
 
     // Check for content based on lyrics type
+    // NOTE: 'Syllable' responses are accepted here and converted to 'Line' on
+    // ingest in processing.ts — the syllable renderer has been removed.
     const type = lyricsJson.Type as string;
 
     if (type === 'Syllable' || type === 'Line') {
@@ -108,7 +110,6 @@ function isValidLyricsResponse(lyricsJson: LyricsResult): boolean {
         return false;
       }
     }
-    // If type is not Syllable, Line, or Static, or if content/lines are valid, return true
     return true;
   }
 
