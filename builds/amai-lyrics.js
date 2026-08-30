@@ -5608,7 +5608,6 @@
     state.syncNow = false;
     state.activePositionClients = 0;
     state.teardownRequested = true;
-    windowRef2.__amaiGetProgressLifecycleTracked = false;
   }
   async function doSync() {
     const SpotifyPlatform2 = Spicetify.Platform;
@@ -5747,10 +5746,7 @@
       ACTIVE_SYNC_MS = 250;
       IDLE_HEARTBEAT_MS = 1e3;
       POSITION_CACHE_TTL = 15;
-      if (!windowRef2.__amaiGetProgressLifecycleTracked) {
-        windowRef2.__amaiGetProgressLifecycleTracked = true;
-        lifecycle_default.trackCallback(destroyGetProgressLoop);
-      }
+      lifecycle_default.trackCallback(destroyGetProgressLoop);
     }
   });
 
@@ -6133,7 +6129,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.4.29";
+      version = "1.4.30";
     }
   });
 
@@ -8526,15 +8522,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e5727379/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053cc39/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e5727379/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053cc39/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e57273fa/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053cc7a/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e57273fa/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053cc7a/ProcessingIndicator.css"() {
     }
   });
 
@@ -8592,10 +8588,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_lifecycle();
       windowRef5 = window;
       infoTimeout = windowRef5.__amaiInfoTimeout ?? null;
-      if (!windowRef5.__amaiInfoLifecycleTracked) {
-        windowRef5.__amaiInfoLifecycleTracked = true;
-        lifecycle_default.trackCallback(clearApplyInfoTimeout);
-      }
+      lifecycle_default.trackCallback(clearApplyInfoTimeout);
     }
   });
 
@@ -9941,6 +9934,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   async function createPageElement() {
     return new Promise((resolve) => {
       import_fastdom6.default.mutate(() => {
+        const existing = document.getElementById("SpicyLyricsPage");
+        if (existing)
+          existing.remove();
         const elem = document.createElement("div");
         elem.id = "SpicyLyricsPage";
         elem.innerHTML = PageHTML;
@@ -10051,7 +10047,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       MediaBox_Data.Animators.blur.Destroy();
     } catch {
     }
-    windowRef6.__amaiFullscreenLifecycleTracked = false;
   }
   function Open() {
     const SpicyPage = document.querySelector(".Root__main-view #SpicyLyricsPage");
@@ -10190,10 +10185,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       };
       windowRef6 = window;
       ensureGlobalFullscreenListeners();
-      if (!windowRef6.__amaiFullscreenLifecycleTracked) {
-        windowRef6.__amaiFullscreenLifecycleTracked = true;
-        lifecycle_default.trackCallback(destroyFullscreenGlobalListeners);
-      }
+      lifecycle_default.trackCallback(destroyFullscreenGlobalListeners);
       MediaBox_Data = {
         Eventified: false,
         Functions: {
@@ -10348,8 +10340,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   function destroyNowBarGlobalState() {
     teardownNowBarListeners();
-    nowBarTeardownTracked = false;
-    sharedNowBarState.teardownTracked = false;
   }
   function setupEventListeners() {
     teardownNowBarListeners();
@@ -10398,8 +10388,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     );
     if (!nowBarTeardownTracked) {
       nowBarTeardownTracked = true;
-      sharedNowBarState.teardownTracked = true;
       lifecycle_default.trackCallback(destroyNowBarGlobalState);
+      lifecycle_default.trackCallback(CleanUpActiveComponents);
     }
   }
   function updateVinylSpinState() {
@@ -10543,7 +10533,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         MediaBox.removeChild(songProgressBar);
     }
   }
-  var windowRef7, sharedNowBarState, nowBarListenerIds, nowBarInitWhen, nowBarTeardownTracked, fullscreenPositionClient;
+  var nowBarListenerIds, nowBarInitWhen, nowBarTeardownTracked, fullscreenPositionClient;
   var init_EventListeners = __esm({
     "src/components/NowBar/EventListeners.ts"() {
       init_Global();
@@ -10554,11 +10544,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_lifecycle();
       init_GetProgress();
       init_state();
-      windowRef7 = window;
-      sharedNowBarState = windowRef7.__amaiNowBarState ?? (windowRef7.__amaiNowBarState = { teardownTracked: false });
       nowBarListenerIds = [];
       nowBarInitWhen = null;
-      nowBarTeardownTracked = sharedNowBarState.teardownTracked;
+      nowBarTeardownTracked = false;
       fullscreenPositionClient = null;
     }
   });
@@ -11226,7 +11214,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       nowBarButton.remove();
     }
   }
-  var viewControlsWhen, nowBarWhenWindowRef;
+  var viewControlsWhen;
   var init_NowBar = __esm({
     "src/components/NowBar/NowBar.ts"() {
       init_storage();
@@ -11240,14 +11228,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_ProgressBar();
       init_state();
       viewControlsWhen = null;
-      nowBarWhenWindowRef = window;
-      if (!nowBarWhenWindowRef.__amaiNowBarWhenTracked) {
-        nowBarWhenWindowRef.__amaiNowBarWhenTracked = true;
-        lifecycle_default.trackCallback(cancelViewControlsWhen);
-        lifecycle_default.trackCallback(() => {
-          nowBarWhenWindowRef.__amaiNowBarWhenTracked = false;
-        });
-      }
+      lifecycle_default.trackCallback(cancelViewControlsWhen);
     }
   });
 
@@ -11396,7 +11377,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       window.ProcessingIndicatorTimeout = null;
     }, 5e3);
   }
-  var windowRef8, uiState, ContainerShowLoaderTimeout;
+  var windowRef7, uiState, ContainerShowLoaderTimeout;
   var init_ui = __esm({
     "src/utils/Lyrics/ui.ts"() {
       init_Defaults();
@@ -11404,8 +11385,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_PageView();
       init_Fullscreen();
       init_pageButtons();
-      windowRef8 = window;
-      uiState = windowRef8.__amaiLyricsUiState ?? (windowRef8.__amaiLyricsUiState = { containerShowLoaderTimeout: null });
+      windowRef7 = window;
+      uiState = windowRef7.__amaiLyricsUiState ?? (windowRef7.__amaiLyricsUiState = { containerShowLoaderTimeout: null });
       ContainerShowLoaderTimeout = uiState.containerShowLoaderTimeout;
     }
   });
@@ -11813,6 +11794,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ApiSpec: () => ApiSpec,
     AspectRatio: () => AspectRatio,
     AudioResponseFormat: () => AudioResponseFormat,
+    AudioTranscriptionConfigMode: () => AudioTranscriptionConfigMode,
     AuthType: () => AuthType,
     Batches: () => Batches,
     Behavior: () => Behavior,
@@ -11843,7 +11825,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     FeatureSelectionPreference: () => FeatureSelectionPreference,
     FileSource: () => FileSource,
     FileState: () => FileState,
-    Files: () => Files,
+    Files: () => Files$1,
     FinishReason: () => FinishReason,
     FunctionCallingConfigMode: () => FunctionCallingConfigMode,
     FunctionResponse: () => FunctionResponse,
@@ -11873,6 +11855,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ImportFileResponse: () => ImportFileResponse,
     InlinedEmbedContentResponse: () => InlinedEmbedContentResponse,
     InlinedResponse: () => InlinedResponse,
+    InteractionStatus: () => InteractionStatus,
     JobState: () => JobState,
     Language: () => Language,
     ListBatchJobsResponse: () => ListBatchJobsResponse,
@@ -11892,6 +11875,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     MaskReferenceMode: () => MaskReferenceMode,
     MatchOperation: () => MatchOperation,
     MediaModality: () => MediaModality,
+    MediaProcessing: () => MediaProcessing,
     MediaResolution: () => MediaResolution,
     Modality: () => Modality,
     ModelStage: () => ModelStage,
@@ -14356,6 +14340,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (fromPartMetadata != null) {
       setValueByPath(toObject, ["partMetadata"], fromPartMetadata);
     }
+    const fromMediaProcessing = getValueByPath(fromObject, [
+      "mediaProcessing"
+    ]);
+    if (fromMediaProcessing != null) {
+      setValueByPath(toObject, ["mediaProcessing"], fromMediaProcessing);
+    }
     return toObject;
   }
   function safetySettingToMldev$3(fromObject) {
@@ -14530,21 +14520,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const fromMimeType = getValueByPath(fromObject, ["mimeType"]);
     if (fromMimeType != null) {
       setValueByPath(toObject, ["mimeType"], fromMimeType);
-    }
-    return toObject;
-  }
-  function codeExecutionResultToVertex$3(fromObject) {
-    const toObject = {};
-    const fromOutcome = getValueByPath(fromObject, ["outcome"]);
-    if (fromOutcome != null) {
-      setValueByPath(toObject, ["outcome"], fromOutcome);
-    }
-    const fromOutput = getValueByPath(fromObject, ["output"]);
-    if (fromOutput != null) {
-      setValueByPath(toObject, ["output"], fromOutput);
-    }
-    if (getValueByPath(fromObject, ["id"]) !== void 0) {
-      throw new Error("id parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
     }
     return toObject;
   }
@@ -14763,21 +14738,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ]);
     if (fromSdkHttpResponse != null) {
       setValueByPath(toObject, ["sdkHttpResponse"], fromSdkHttpResponse);
-    }
-    return toObject;
-  }
-  function executableCodeToVertex$3(fromObject) {
-    const toObject = {};
-    const fromCode = getValueByPath(fromObject, ["code"]);
-    if (fromCode != null) {
-      setValueByPath(toObject, ["code"], fromCode);
-    }
-    const fromLanguage = getValueByPath(fromObject, ["language"]);
-    if (fromLanguage != null) {
-      setValueByPath(toObject, ["language"], fromLanguage);
-    }
-    if (getValueByPath(fromObject, ["id"]) !== void 0) {
-      throw new Error("id parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
     }
     return toObject;
   }
@@ -15068,6 +15028,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (fromPartMetadata != null) {
       setValueByPath(toObject, ["partMetadata"], fromPartMetadata);
     }
+    const fromMediaProcessing = getValueByPath(fromObject, [
+      "mediaProcessing"
+    ]);
+    if (fromMediaProcessing != null) {
+      setValueByPath(toObject, ["mediaProcessing"], fromMediaProcessing);
+    }
     return toObject;
   }
   function partToVertex$3(fromObject) {
@@ -15094,13 +15060,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       "codeExecutionResult"
     ]);
     if (fromCodeExecutionResult != null) {
-      setValueByPath(toObject, ["codeExecutionResult"], codeExecutionResultToVertex$3(fromCodeExecutionResult));
+      setValueByPath(toObject, ["codeExecutionResult"], fromCodeExecutionResult);
     }
     const fromExecutableCode = getValueByPath(fromObject, [
       "executableCode"
     ]);
     if (fromExecutableCode != null) {
-      setValueByPath(toObject, ["executableCode"], executableCodeToVertex$3(fromExecutableCode));
+      setValueByPath(toObject, ["executableCode"], fromExecutableCode);
     }
     const fromFileData = getValueByPath(fromObject, ["fileData"]);
     if (fromFileData != null) {
@@ -15142,6 +15108,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     if (getValueByPath(fromObject, ["partMetadata"]) !== void 0) {
       throw new Error("partMetadata parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
+    }
+    const fromMediaProcessing = getValueByPath(fromObject, [
+      "mediaProcessing"
+    ]);
+    if (fromMediaProcessing != null) {
+      setValueByPath(toObject, ["mediaProcessing"], fromMediaProcessing);
     }
     return toObject;
   }
@@ -15693,21 +15665,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
-  function codeExecutionResultToVertex$2(fromObject) {
-    const toObject = {};
-    const fromOutcome = getValueByPath(fromObject, ["outcome"]);
-    if (fromOutcome != null) {
-      setValueByPath(toObject, ["outcome"], fromOutcome);
-    }
-    const fromOutput = getValueByPath(fromObject, ["output"]);
-    if (fromOutput != null) {
-      setValueByPath(toObject, ["output"], fromOutput);
-    }
-    if (getValueByPath(fromObject, ["id"]) !== void 0) {
-      throw new Error("id parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
-    }
-    return toObject;
-  }
   function computerUseToVertex$1(fromObject) {
     const toObject = {};
     const fromEnablePromptInjectionDetection = getValueByPath(fromObject, [
@@ -15764,21 +15721,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const fromRole = getValueByPath(fromObject, ["role"]);
     if (fromRole != null) {
       setValueByPath(toObject, ["role"], fromRole);
-    }
-    return toObject;
-  }
-  function executableCodeToVertex$2(fromObject) {
-    const toObject = {};
-    const fromCode = getValueByPath(fromObject, ["code"]);
-    if (fromCode != null) {
-      setValueByPath(toObject, ["code"], fromCode);
-    }
-    const fromLanguage = getValueByPath(fromObject, ["language"]);
-    if (fromLanguage != null) {
-      setValueByPath(toObject, ["language"], fromLanguage);
-    }
-    if (getValueByPath(fromObject, ["id"]) !== void 0) {
-      throw new Error("id parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
     }
     return toObject;
   }
@@ -16562,6 +16504,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (fromPartMetadata != null) {
       setValueByPath(toObject, ["partMetadata"], fromPartMetadata);
     }
+    const fromMediaProcessing = getValueByPath(fromObject, [
+      "mediaProcessing"
+    ]);
+    if (fromMediaProcessing != null) {
+      setValueByPath(toObject, ["mediaProcessing"], fromMediaProcessing);
+    }
     return toObject;
   }
   function partToVertex$2(fromObject) {
@@ -16588,13 +16536,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       "codeExecutionResult"
     ]);
     if (fromCodeExecutionResult != null) {
-      setValueByPath(toObject, ["codeExecutionResult"], codeExecutionResultToVertex$2(fromCodeExecutionResult));
+      setValueByPath(toObject, ["codeExecutionResult"], fromCodeExecutionResult);
     }
     const fromExecutableCode = getValueByPath(fromObject, [
       "executableCode"
     ]);
     if (fromExecutableCode != null) {
-      setValueByPath(toObject, ["executableCode"], executableCodeToVertex$2(fromExecutableCode));
+      setValueByPath(toObject, ["executableCode"], fromExecutableCode);
     }
     const fromFileData = getValueByPath(fromObject, ["fileData"]);
     if (fromFileData != null) {
@@ -16636,6 +16584,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     if (getValueByPath(fromObject, ["partMetadata"]) !== void 0) {
       throw new Error("partMetadata parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
+    }
+    const fromMediaProcessing = getValueByPath(fromObject, [
+      "mediaProcessing"
+    ]);
+    if (fromMediaProcessing != null) {
+      setValueByPath(toObject, ["mediaProcessing"], fromMediaProcessing);
     }
     return toObject;
   }
@@ -17094,21 +17048,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         });
       }
       setValueByPath(toObject, ["citations"], transformedList);
-    }
-    return toObject;
-  }
-  function codeExecutionResultToVertex$1(fromObject, _rootObject) {
-    const toObject = {};
-    const fromOutcome = getValueByPath(fromObject, ["outcome"]);
-    if (fromOutcome != null) {
-      setValueByPath(toObject, ["outcome"], fromOutcome);
-    }
-    const fromOutput = getValueByPath(fromObject, ["output"]);
-    if (fromOutput != null) {
-      setValueByPath(toObject, ["output"], fromOutput);
-    }
-    if (getValueByPath(fromObject, ["id"]) !== void 0) {
-      throw new Error("id parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
     }
     return toObject;
   }
@@ -17856,21 +17795,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
-  function executableCodeToVertex$1(fromObject, _rootObject) {
-    const toObject = {};
-    const fromCode = getValueByPath(fromObject, ["code"]);
-    if (fromCode != null) {
-      setValueByPath(toObject, ["code"], fromCode);
-    }
-    const fromLanguage = getValueByPath(fromObject, ["language"]);
-    if (fromLanguage != null) {
-      setValueByPath(toObject, ["language"], fromLanguage);
-    }
-    if (getValueByPath(fromObject, ["id"]) !== void 0) {
-      throw new Error("id parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
-    }
-    return toObject;
-  }
   function fileDataToMldev$1(fromObject, _rootObject) {
     const toObject = {};
     if (getValueByPath(fromObject, ["displayName"]) !== void 0) {
@@ -18413,88 +18337,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
-  function generateImagesConfigToMldev(fromObject, parentObject, _rootObject) {
-    const toObject = {};
-    if (getValueByPath(fromObject, ["outputGcsUri"]) !== void 0) {
-      throw new Error("outputGcsUri parameter is only supported in Gemini Enterprise Agent Platform mode, not in Gemini Developer API mode.");
-    }
-    if (getValueByPath(fromObject, ["negativePrompt"]) !== void 0) {
-      throw new Error("negativePrompt parameter is only supported in Gemini Enterprise Agent Platform mode, not in Gemini Developer API mode.");
-    }
-    const fromNumberOfImages = getValueByPath(fromObject, [
-      "numberOfImages"
-    ]);
-    if (parentObject !== void 0 && fromNumberOfImages != null) {
-      setValueByPath(parentObject, ["parameters", "sampleCount"], fromNumberOfImages);
-    }
-    const fromAspectRatio = getValueByPath(fromObject, ["aspectRatio"]);
-    if (parentObject !== void 0 && fromAspectRatio != null) {
-      setValueByPath(parentObject, ["parameters", "aspectRatio"], fromAspectRatio);
-    }
-    const fromGuidanceScale = getValueByPath(fromObject, [
-      "guidanceScale"
-    ]);
-    if (parentObject !== void 0 && fromGuidanceScale != null) {
-      setValueByPath(parentObject, ["parameters", "guidanceScale"], fromGuidanceScale);
-    }
-    if (getValueByPath(fromObject, ["seed"]) !== void 0) {
-      throw new Error("seed parameter is only supported in Gemini Enterprise Agent Platform mode, not in Gemini Developer API mode.");
-    }
-    const fromSafetyFilterLevel = getValueByPath(fromObject, [
-      "safetyFilterLevel"
-    ]);
-    if (parentObject !== void 0 && fromSafetyFilterLevel != null) {
-      setValueByPath(parentObject, ["parameters", "safetySetting"], fromSafetyFilterLevel);
-    }
-    const fromPersonGeneration = getValueByPath(fromObject, [
-      "personGeneration"
-    ]);
-    if (parentObject !== void 0 && fromPersonGeneration != null) {
-      setValueByPath(parentObject, ["parameters", "personGeneration"], fromPersonGeneration);
-    }
-    const fromIncludeSafetyAttributes = getValueByPath(fromObject, [
-      "includeSafetyAttributes"
-    ]);
-    if (parentObject !== void 0 && fromIncludeSafetyAttributes != null) {
-      setValueByPath(parentObject, ["parameters", "includeSafetyAttributes"], fromIncludeSafetyAttributes);
-    }
-    const fromIncludeRaiReason = getValueByPath(fromObject, [
-      "includeRaiReason"
-    ]);
-    if (parentObject !== void 0 && fromIncludeRaiReason != null) {
-      setValueByPath(parentObject, ["parameters", "includeRaiReason"], fromIncludeRaiReason);
-    }
-    const fromLanguage = getValueByPath(fromObject, ["language"]);
-    if (parentObject !== void 0 && fromLanguage != null) {
-      setValueByPath(parentObject, ["parameters", "language"], fromLanguage);
-    }
-    const fromOutputMimeType = getValueByPath(fromObject, [
-      "outputMimeType"
-    ]);
-    if (parentObject !== void 0 && fromOutputMimeType != null) {
-      setValueByPath(parentObject, ["parameters", "outputOptions", "mimeType"], fromOutputMimeType);
-    }
-    const fromOutputCompressionQuality = getValueByPath(fromObject, [
-      "outputCompressionQuality"
-    ]);
-    if (parentObject !== void 0 && fromOutputCompressionQuality != null) {
-      setValueByPath(parentObject, ["parameters", "outputOptions", "compressionQuality"], fromOutputCompressionQuality);
-    }
-    if (getValueByPath(fromObject, ["addWatermark"]) !== void 0) {
-      throw new Error("addWatermark parameter is only supported in Gemini Enterprise Agent Platform mode, not in Gemini Developer API mode.");
-    }
-    if (getValueByPath(fromObject, ["labels"]) !== void 0) {
-      throw new Error("labels parameter is only supported in Gemini Enterprise Agent Platform mode, not in Gemini Developer API mode.");
-    }
-    const fromImageSize = getValueByPath(fromObject, ["imageSize"]);
-    if (parentObject !== void 0 && fromImageSize != null) {
-      setValueByPath(parentObject, ["parameters", "sampleImageSize"], fromImageSize);
-    }
-    if (getValueByPath(fromObject, ["enhancePrompt"]) !== void 0) {
-      throw new Error("enhancePrompt parameter is only supported in Gemini Enterprise Agent Platform mode, not in Gemini Developer API mode.");
-    }
-    return toObject;
-  }
   function generateImagesConfigToVertex(fromObject, parentObject, _rootObject) {
     const toObject = {};
     const fromOutputGcsUri = getValueByPath(fromObject, ["outputGcsUri"]);
@@ -18587,22 +18429,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
-  function generateImagesParametersToMldev(apiClient, fromObject, rootObject) {
-    const toObject = {};
-    const fromModel = getValueByPath(fromObject, ["model"]);
-    if (fromModel != null) {
-      setValueByPath(toObject, ["_url", "model"], tModel(apiClient, fromModel));
-    }
-    const fromPrompt = getValueByPath(fromObject, ["prompt"]);
-    if (fromPrompt != null) {
-      setValueByPath(toObject, ["instances[0]", "prompt"], fromPrompt);
-    }
-    const fromConfig = getValueByPath(fromObject, ["config"]);
-    if (fromConfig != null) {
-      generateImagesConfigToMldev(fromConfig, toObject);
-    }
-    return toObject;
-  }
   function generateImagesParametersToVertex(apiClient, fromObject, rootObject) {
     const toObject = {};
     const fromModel = getValueByPath(fromObject, ["model"]);
@@ -18616,34 +18442,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const fromConfig = getValueByPath(fromObject, ["config"]);
     if (fromConfig != null) {
       generateImagesConfigToVertex(fromConfig, toObject);
-    }
-    return toObject;
-  }
-  function generateImagesResponseFromMldev(fromObject, rootObject) {
-    const toObject = {};
-    const fromSdkHttpResponse = getValueByPath(fromObject, [
-      "sdkHttpResponse"
-    ]);
-    if (fromSdkHttpResponse != null) {
-      setValueByPath(toObject, ["sdkHttpResponse"], fromSdkHttpResponse);
-    }
-    const fromGeneratedImages = getValueByPath(fromObject, [
-      "predictions"
-    ]);
-    if (fromGeneratedImages != null) {
-      let transformedList = fromGeneratedImages;
-      if (Array.isArray(transformedList)) {
-        transformedList = transformedList.map((item) => {
-          return generatedImageFromMldev(item);
-        });
-      }
-      setValueByPath(toObject, ["generatedImages"], transformedList);
-    }
-    const fromPositivePromptSafetyAttributes = getValueByPath(fromObject, [
-      "positivePromptSafetyAttributes"
-    ]);
-    if (fromPositivePromptSafetyAttributes != null) {
-      setValueByPath(toObject, ["positivePromptSafetyAttributes"], safetyAttributesFromMldev(fromPositivePromptSafetyAttributes));
     }
     return toObject;
   }
@@ -19060,24 +18858,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
-  function generatedImageFromMldev(fromObject, rootObject) {
-    const toObject = {};
-    const fromImage = getValueByPath(fromObject, ["_self"]);
-    if (fromImage != null) {
-      setValueByPath(toObject, ["image"], imageFromMldev(fromImage));
-    }
-    const fromRaiFilteredReason = getValueByPath(fromObject, [
-      "raiFilteredReason"
-    ]);
-    if (fromRaiFilteredReason != null) {
-      setValueByPath(toObject, ["raiFilteredReason"], fromRaiFilteredReason);
-    }
-    const fromSafetyAttributes = getValueByPath(fromObject, ["_self"]);
-    if (fromSafetyAttributes != null) {
-      setValueByPath(toObject, ["safetyAttributes"], safetyAttributesFromMldev(fromSafetyAttributes));
-    }
-    return toObject;
-  }
   function generatedImageFromVertex(fromObject, rootObject) {
     const toObject = {};
     const fromImage = getValueByPath(fromObject, ["_self"]);
@@ -19399,20 +19179,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ]);
     if (fromProminentPeople != null) {
       setValueByPath(toObject, ["prominentPeople"], fromProminentPeople);
-    }
-    return toObject;
-  }
-  function imageFromMldev(fromObject, _rootObject) {
-    const toObject = {};
-    const fromImageBytes = getValueByPath(fromObject, [
-      "bytesBase64Encoded"
-    ]);
-    if (fromImageBytes != null) {
-      setValueByPath(toObject, ["imageBytes"], tBytes(fromImageBytes));
-    }
-    const fromMimeType = getValueByPath(fromObject, ["mimeType"]);
-    if (fromMimeType != null) {
-      setValueByPath(toObject, ["mimeType"], fromMimeType);
     }
     return toObject;
   }
@@ -19811,9 +19577,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (fromPartMetadata != null) {
       setValueByPath(toObject, ["partMetadata"], fromPartMetadata);
     }
+    const fromMediaProcessing = getValueByPath(fromObject, [
+      "mediaProcessing"
+    ]);
+    if (fromMediaProcessing != null) {
+      setValueByPath(toObject, ["mediaProcessing"], fromMediaProcessing);
+    }
     return toObject;
   }
-  function partToVertex$1(fromObject, rootObject) {
+  function partToVertex$1(fromObject, _rootObject) {
     const toObject = {};
     const fromMediaResolution = getValueByPath(fromObject, [
       "mediaResolution"
@@ -19837,13 +19609,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       "codeExecutionResult"
     ]);
     if (fromCodeExecutionResult != null) {
-      setValueByPath(toObject, ["codeExecutionResult"], codeExecutionResultToVertex$1(fromCodeExecutionResult));
+      setValueByPath(toObject, ["codeExecutionResult"], fromCodeExecutionResult);
     }
     const fromExecutableCode = getValueByPath(fromObject, [
       "executableCode"
     ]);
     if (fromExecutableCode != null) {
-      setValueByPath(toObject, ["executableCode"], executableCodeToVertex$1(fromExecutableCode));
+      setValueByPath(toObject, ["executableCode"], fromExecutableCode);
     }
     const fromFileData = getValueByPath(fromObject, ["fileData"]);
     if (fromFileData != null) {
@@ -19885,6 +19657,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     if (getValueByPath(fromObject, ["partMetadata"]) !== void 0) {
       throw new Error("partMetadata parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
+    }
+    const fromMediaProcessing = getValueByPath(fromObject, [
+      "mediaProcessing"
+    ]);
+    if (fromMediaProcessing != null) {
+      setValueByPath(toObject, ["mediaProcessing"], fromMediaProcessing);
     }
     return toObject;
   }
@@ -20073,28 +19851,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     if (getValueByPath(fromObject, ["voiceConsentSignature"]) !== void 0) {
       throw new Error("voiceConsentSignature parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
-    }
-    return toObject;
-  }
-  function safetyAttributesFromMldev(fromObject, _rootObject) {
-    const toObject = {};
-    const fromCategories = getValueByPath(fromObject, [
-      "safetyAttributes",
-      "categories"
-    ]);
-    if (fromCategories != null) {
-      setValueByPath(toObject, ["categories"], fromCategories);
-    }
-    const fromScores = getValueByPath(fromObject, [
-      "safetyAttributes",
-      "scores"
-    ]);
-    if (fromScores != null) {
-      setValueByPath(toObject, ["scores"], fromScores);
-    }
-    const fromContentType = getValueByPath(fromObject, ["contentType"]);
-    if (fromContentType != null) {
-      setValueByPath(toObject, ["contentType"], fromContentType);
     }
     return toObject;
   }
@@ -21673,6 +21429,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (fromPartMetadata != null) {
       setValueByPath(toObject, ["partMetadata"], fromPartMetadata);
     }
+    const fromMediaProcessing = getValueByPath(fromObject, [
+      "mediaProcessing"
+    ]);
+    if (fromMediaProcessing != null) {
+      setValueByPath(toObject, ["mediaProcessing"], fromMediaProcessing);
+    }
     return toObject;
   }
   function safetySettingToMldev(fromObject) {
@@ -22985,14 +22747,14 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     let inputs = [
       [
         {
-          fieldName: "apiKey",
-          type: "http:custom",
-          value: (_a3 = security === null || security === void 0 ? void 0 : security.api_key) !== null && _a3 !== void 0 ? _a3 : env().GOOGLE_GENAI_API_KEY
-        },
-        {
           fieldName: "accessToken",
           type: "http:custom",
-          value: (_b = security === null || security === void 0 ? void 0 : security.access_token) !== null && _b !== void 0 ? _b : env().GOOGLE_GENAI_ACCESS_TOKEN
+          value: (_a3 = security === null || security === void 0 ? void 0 : security.access_token) !== null && _a3 !== void 0 ? _a3 : env().GOOGLE_GENAI_ACCESS_TOKEN
+        },
+        {
+          fieldName: "apiKey",
+          type: "http:custom",
+          value: (_b = security === null || security === void 0 ? void 0 : security.api_key) !== null && _b !== void 0 ? _b : env().GOOGLE_GENAI_API_KEY
         },
         {
           fieldName: "defaultHeaders",
@@ -23031,9 +22793,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return new APIPromise(data, callSource);
   }
   function agentsCreate(client, body, api_version, options) {
-    return new APIPromise($do$p(client, body, api_version, options));
+    return new APIPromise($do$q(client, body, api_version, options));
   }
-  async function $do$p(client, body, api_version, options) {
+  async function $do$q(client, body, api_version, options) {
     var _a3, _b, _c;
     const input = {
       body,
@@ -23102,9 +22864,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return [result, { status: "complete", request: req, response }];
   }
   function agentsDelete(client, id, api_version, options) {
-    return new APIPromise($do$o(client, id, api_version, options));
+    return new APIPromise($do$p(client, id, api_version, options));
   }
-  async function $do$o(client, id, api_version, options) {
+  async function $do$p(client, id, api_version, options) {
     var _a3, _b, _c;
     const input = {
       id,
@@ -23176,9 +22938,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return [result, { status: "complete", request: req, response }];
   }
   function agentsGet(client, id, api_version, options) {
-    return new APIPromise($do$n(client, id, api_version, options));
+    return new APIPromise($do$o(client, id, api_version, options));
   }
-  async function $do$n(client, id, api_version, options) {
+  async function $do$o(client, id, api_version, options) {
     var _a3, _b, _c;
     const input = {
       id,
@@ -23250,9 +23012,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return [result, { status: "complete", request: req, response }];
   }
   function agentsList(client, api_version, page_size, page_token, parent, options) {
-    return new APIPromise($do$m(client, api_version, page_size, page_token, parent, options));
+    return new APIPromise($do$n(client, api_version, page_size, page_token, parent, options));
   }
-  async function $do$m(client, api_version, page_size, page_token, parent, options) {
+  async function $do$n(client, api_version, page_size, page_token, parent, options) {
     var _a3, _b, _c;
     const input = {
       api_version,
@@ -23328,9 +23090,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return [result, { status: "complete", request: req, response }];
   }
   function environmentsCreateEnvironment(client, body, api_version, options) {
-    return new APIPromise($do$l(client, body, api_version, options));
+    return new APIPromise($do$m(client, body, api_version, options));
   }
-  async function $do$l(client, body, api_version, options) {
+  async function $do$m(client, body, api_version, options) {
     var _a3, _b, _c;
     const input = {
       body,
@@ -23399,9 +23161,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return [result, { status: "complete", request: req, response }];
   }
   function environmentsDeleteEnvironment(client, id, api_version, options) {
-    return new APIPromise($do$k(client, id, api_version, options));
+    return new APIPromise($do$l(client, id, api_version, options));
   }
-  async function $do$k(client, id, api_version, options) {
+  async function $do$l(client, id, api_version, options) {
     var _a3, _b, _c;
     const input = {
       id,
@@ -23473,9 +23235,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return [result, { status: "complete", request: req, response }];
   }
   function environmentsGetEnvironment(client, id, api_version, options) {
-    return new APIPromise($do$j(client, id, api_version, options));
+    return new APIPromise($do$k(client, id, api_version, options));
   }
-  async function $do$j(client, id, api_version, options) {
+  async function $do$k(client, id, api_version, options) {
     var _a3, _b, _c;
     const input = {
       id,
@@ -23547,9 +23309,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return [result, { status: "complete", request: req, response }];
   }
   function environmentsListEnvironments(client, api_version, page_size, page_token, options) {
-    return new APIPromise($do$i(client, api_version, page_size, page_token, options));
+    return new APIPromise($do$j(client, api_version, page_size, page_token, options));
   }
-  async function $do$i(client, api_version, page_size, page_token, options) {
+  async function $do$j(client, api_version, page_size, page_token, options) {
     var _a3, _b, _c;
     const input = {
       api_version,
@@ -23617,6 +23379,94 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     const response = doResult.value;
     const [result] = await match(fail("4XX"), fail("5XX"), json("default"))(response, req);
+    if (!result.ok) {
+      return [result, { status: "complete", request: req, response }];
+    }
+    return [result, { status: "complete", request: req, response }];
+  }
+  function environmentsFilesList(client, environment, path, api_version, page_size, page_token, recursive, options) {
+    return new APIPromise($do$i(client, environment, path, api_version, page_size, page_token, recursive, options));
+  }
+  async function $do$i(client, environment, path, api_version, page_size, page_token, recursive, options) {
+    var _a3, _b, _c;
+    const input = {
+      environment,
+      path,
+      api_version,
+      page_size,
+      page_token,
+      recursive
+    };
+    const payload = input;
+    const body = null;
+    const pathParams = {
+      api_version: encodeSimple("api_version", (_a3 = payload.api_version) !== null && _a3 !== void 0 ? _a3 : client._options.api_version, { explode: false, charEncoding: "percent" }),
+      environment: encodeSimple("environment", payload.environment, {
+        explode: false,
+        charEncoding: "percent"
+      }),
+      path: encodeSimple("path", payload.path, {
+        explode: false,
+        charEncoding: "percent"
+      })
+    };
+    const path$ = pathToFunc("/{api_version}/environments/{environment}/files/{path}")(pathParams);
+    const query = encodeFormQuery({
+      "page_size": payload.page_size,
+      "page_token": payload.page_token,
+      "recursive": payload.recursive
+    });
+    const headers = new Headers(compactMap({
+      Accept: "application/json"
+    }));
+    const securityInput = await extractSecurity(client._options.security);
+    const requestSecurity = resolveGlobalSecurity(securityInput);
+    const context = {
+      options: client._options,
+      base_url: (_c = (_b = options === null || options === void 0 ? void 0 : options.server_url) !== null && _b !== void 0 ? _b : client._baseURL) !== null && _c !== void 0 ? _c : "",
+      operation_id: "GetEnvironmentFiles",
+      o_auth2_scopes: null,
+      resolved_security: requestSecurity,
+      security_source: client._options.security,
+      retry_config: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retry_config || {
+        strategy: "attempt-count-backoff",
+        backoff: {
+          initialInterval: 500,
+          maxInterval: 8e3,
+          exponent: 2,
+          maxElapsedTime: 3e4
+        },
+        retryConnectionErrors: true,
+        maxRetries: 4
+      },
+      retry_codes: (options === null || options === void 0 ? void 0 : options.retry_codes) || ["408", "409", "429", "5XX"]
+    };
+    const requestRes = client._createRequest(context, {
+      security: requestSecurity,
+      method: "GET",
+      baseURL: options === null || options === void 0 ? void 0 : options.server_url,
+      path: path$,
+      headers,
+      query,
+      body,
+      userAgent: client._options.user_agent,
+      timeout_ms: (options === null || options === void 0 ? void 0 : options.timeout_ms) || client._options.timeout_ms || -1
+    }, options);
+    if (!requestRes.ok) {
+      return [requestRes, { status: "invalid" }];
+    }
+    const req = requestRes.value;
+    const doResult = await client._do(req, {
+      context,
+      isErrorStatusCode: (statusCode) => matchStatusCode({ status: statusCode }, ["4XX", "5XX"]),
+      retryConfig: context.retry_config,
+      retryCodes: context.retry_codes
+    });
+    if (!doResult.ok) {
+      return [doResult, { status: "request-error", request: req }];
+    }
+    const response = doResult.value;
+    const [result] = await match(json(200), fail("4XX"), fail("5XX"))(response, req);
     if (!result.ok) {
       return [result, { status: "complete", request: req, response }];
     }
@@ -23853,17 +23703,17 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return [result, { status: "complete", request: req, response }];
   }
-  function interactionsGet(client, id, stream, last_event_id, include_input, api_version, options) {
-    return new APIPromise($do$e(client, id, stream, last_event_id, include_input, api_version, options));
+  function interactionsGet(client, id, api_version, include_input, last_event_id, stream, options) {
+    return new APIPromise($do$e(client, id, api_version, include_input, last_event_id, stream, options));
   }
-  async function $do$e(client, id, stream, last_event_id, include_input, api_version, options) {
+  async function $do$e(client, id, api_version, include_input, last_event_id, stream, options) {
     var _a3, _b, _c;
     const input = {
       id,
-      stream,
-      last_event_id,
+      api_version,
       include_input,
-      api_version
+      last_event_id,
+      stream
     };
     const payload = input;
     const body = null;
@@ -25277,21 +25127,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
-  function codeExecutionResultToVertex(fromObject, _rootObject) {
-    const toObject = {};
-    const fromOutcome = getValueByPath(fromObject, ["outcome"]);
-    if (fromOutcome != null) {
-      setValueByPath(toObject, ["outcome"], fromOutcome);
-    }
-    const fromOutput = getValueByPath(fromObject, ["output"]);
-    if (fromOutput != null) {
-      setValueByPath(toObject, ["output"], fromOutput);
-    }
-    if (getValueByPath(fromObject, ["id"]) !== void 0) {
-      throw new Error("id parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
-    }
-    return toObject;
-  }
   function contentToVertex(fromObject, rootObject) {
     const toObject = {};
     const fromParts = getValueByPath(fromObject, ["parts"]);
@@ -25899,21 +25734,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
-  function executableCodeToVertex(fromObject, _rootObject) {
-    const toObject = {};
-    const fromCode = getValueByPath(fromObject, ["code"]);
-    if (fromCode != null) {
-      setValueByPath(toObject, ["code"], fromCode);
-    }
-    const fromLanguage = getValueByPath(fromObject, ["language"]);
-    if (fromLanguage != null) {
-      setValueByPath(toObject, ["language"], fromLanguage);
-    }
-    if (getValueByPath(fromObject, ["id"]) !== void 0) {
-      throw new Error("id parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
-    }
-    return toObject;
-  }
   function generationConfigFromVertex(fromObject, _rootObject) {
     const toObject = {};
     const fromModelSelectionConfig = getValueByPath(fromObject, [
@@ -26122,7 +25942,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
-  function partToVertex(fromObject, rootObject) {
+  function partToVertex(fromObject, _rootObject) {
     const toObject = {};
     const fromMediaResolution = getValueByPath(fromObject, [
       "mediaResolution"
@@ -26146,13 +25966,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       "codeExecutionResult"
     ]);
     if (fromCodeExecutionResult != null) {
-      setValueByPath(toObject, ["codeExecutionResult"], codeExecutionResultToVertex(fromCodeExecutionResult));
+      setValueByPath(toObject, ["codeExecutionResult"], fromCodeExecutionResult);
     }
     const fromExecutableCode = getValueByPath(fromObject, [
       "executableCode"
     ]);
     if (fromExecutableCode != null) {
-      setValueByPath(toObject, ["executableCode"], executableCodeToVertex(fromExecutableCode));
+      setValueByPath(toObject, ["executableCode"], fromExecutableCode);
     }
     const fromFileData = getValueByPath(fromObject, ["fileData"]);
     if (fromFileData != null) {
@@ -26194,6 +26014,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     if (getValueByPath(fromObject, ["partMetadata"]) !== void 0) {
       throw new Error("partMetadata parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
+    }
+    const fromMediaProcessing = getValueByPath(fromObject, [
+      "mediaProcessing"
+    ]);
+    if (fromMediaProcessing != null) {
+      setValueByPath(toObject, ["mediaProcessing"], fromMediaProcessing);
     }
     return toObject;
   }
@@ -26730,7 +26556,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   function sleep(ms) {
     return new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
   }
-  var import_p_retry, _defaultBaseGeminiUrl, _defaultBaseVertexUrl, BaseModule, Outcome, Language, FunctionResponseScheduling, Type, AuthType, HttpElementLocation, ApiSpec, Environment, SafetyPolicy, PhishBlockThreshold, Behavior, DynamicRetrievalConfigMode, ThinkingLevel, PersonGeneration, ProminentPeople, HarmCategory, HarmBlockMethod, HarmBlockThreshold, FunctionCallingConfigMode, FinishReason, HarmProbability, HarmSeverity, UrlRetrievalStatus, BlockedReason, TrafficType, MediaModality, ModelStage, MediaResolution, Modality, Delivery, AspectRatio, ImageSize, TuningMode, AdapterSize, ResponseParseType, MatchOperation, ReinforcementTuningThinkingLevel, JobState, TuningJobState, AggregationMetric, PairwiseChoice, VideoOrientation, TuningSpeed, TuningTask, DocumentState, ServiceTier, PartMediaResolutionLevel, ToolType, ResourceScope, FeatureSelectionPreference, EmbeddingApiType, SafetyFilterLevel, ImagePromptLanguage, MaskReferenceMode, ControlReferenceType, SubjectReferenceType, EditMode, SegmentMode, VideoGenerationReferenceType, VideoGenerationMaskMode, VideoCompressionQuality, ImageResizeMode, TuningMethod, FileState, FileSource, TurnCompleteReason, VadSignalType, VoiceActivityType, StartSensitivity, EndSensitivity, ActivityHandling, TurnCoverage, Scale, MusicGenerationMode, LiveMusicPlaybackControl, ToolResponse, FunctionResponseFileData, FunctionResponseBlob, FunctionResponsePart, FunctionResponse, HttpResponse, GenerateContentResponsePromptFeedback, GenerateContentResponseUsageMetadata, GenerateContentResponse, EmbedContentResponse, GenerateImagesResponse, EditImageResponse, UpscaleImageResponse, RecontextImageResponse, SegmentImageResponse, ListModelsResponse, DeleteModelResponse, AudioResponseFormat, ImageResponseFormat, TextResponseFormat, VideoResponseFormat, ResponseFormat, CountTokensResponse, ComputeTokensResponse, GenerateVideosResponse, GenerateVideosOperation, ReinforcementTuningParseResponseConfig, ReinforcementTuningAutoraterScorerParsedResponseConversionScorer, EvaluateDatasetResponse, ListTuningJobsResponse, CancelTuningJobResponse, ValidateRewardResponse, DeleteCachedContentResponse, ListCachedContentsResponse, ListDocumentsResponse, ListFileSearchStoresResponse, UploadToFileSearchStoreResumableResponse, ImportFileResponse, ImportFileOperation, ListFilesResponse, CreateFileResponse, DeleteFileResponse, RegisterFilesResponse, InlinedResponse, SingleEmbedContentResponse, InlinedEmbedContentResponse, ListBatchJobsResponse, ReplayResponse, RawReferenceImage, MaskReferenceImage, ControlReferenceImage, StyleReferenceImage, SubjectReferenceImage, ContentReferenceImage, LiveServerMessage, LiveClientToolResponse, LiveSendToolResponseParameters, LiveMusicServerMessage, UploadToFileSearchStoreResponse, UploadToFileSearchStoreOperation, PagedItem, Pager, Batches, Caches, Chats, Chat, ApiError, Files, CONTENT_TYPE_HEADER, SERVER_TIMEOUT_HEADER, USER_AGENT_HEADER, GOOGLE_API_CLIENT_HEADER, SDK_VERSION, LIBRARY_LABEL, VERTEX_AI_API_DEFAULT_VERSION, GOOGLE_AI_API_DEFAULT_VERSION, MULTI_REGIONAL_LOCATIONS, DEFAULT_RETRY_ATTEMPTS, DEFAULT_RETRY_INITIAL_DELAY, DEFAULT_RETRY_MAX_DELAY, DEFAULT_RETRY_EXP_BASE, DEFAULT_RETRY_JITTER, DEFAULT_RETRY_HTTP_STATUS_CODES, ApiClient, MCP_LABEL, hasMcpToolUsageFromMcpToTool, McpCallableTool, LiveMusic, LiveMusicSession, FUNCTION_RESPONSE_REQUIRES_ID, Live, defaultLiveSendClientContentParamerters, Session2, DEFAULT_MAX_REMOTE_CALLS, Models, Operations, Tokens, Documents, FileSearchStores, envMemo, GoogleGenAISecurityProvider, GoogleGenAIAuthHook, HTTPClientError, UnexpectedClientError, InvalidRequestError, RequestAbortedError, RequestTimeoutError, ConnectionError, GoogleGenAiError, GeminiNextGenAPIClientError, APIError, APIUserAbortError, APIConnectionError, APIConnectionTimeoutError, BadRequestError, AuthenticationError, PermissionDeniedError, NotFoundError, ConflictError, UnprocessableEntityError, RateLimitError, InternalServerError, SDKHooks, hasOwn, ServerList, SDK_METADATA, encodeForm, encodeSimple, encodeFormQuery, DEFAULT_FETCHER, HTTPClient, mediaParamSeparator, codeRangeRE$1, defaultBackoff, PermanentError, TemporaryError, codeRangeRE, gt, webWorkerLike, isBrowserLike, ClientSDK, jsonLikeContentTypeRE, jsonlLikeContentTypeRE, GoogleGenAiDefaultError, Stream, CR, LF, BOUNDARIES, MAX_BOUNDARY_LEN, DEFAULT_CONTENT_TYPES, headerValRE, SecurityErrorCode, SecurityError, _a2, APIPromise, Agents, Environments, CancelInteractionByIdServerError, CancelInteractionByIdClientError, CreateInteractionServerError, CreateInteractionClientError, DeleteInteractionServerError, DeleteInteractionClientError, GetInteractionByIdServerError, GetInteractionByIdClientError, Interactions, Triggers, Webhooks, GoogleGenAI$1, LEGACY_LYRIA_MODELS, GeminiNextGenInteractions, GeminiNextGenAgents, GeminiNextGenWebhooks, GeminiNextGenTriggers, GeminiNextGenEnvironments, Tunings, BrowserDownloader, MAX_CHUNK_SIZE, MAX_RETRY_COUNT, INITIAL_RETRY_DELAY_MS, DELAY_MULTIPLIER, X_GOOG_UPLOAD_STATUS_HEADER_FIELD, BrowserUploader, BrowserWebSocketFactory, BrowserWebSocket, GOOGLE_API_KEY_HEADER, WebAuth, LANGUAGE_LABEL_PREFIX, GoogleGenAI2;
+  var import_p_retry, _defaultBaseGeminiUrl, _defaultBaseVertexUrl, BaseModule, Outcome, Language, FunctionResponseScheduling, Type, AuthType, HttpElementLocation, ApiSpec, Environment, SafetyPolicy, PhishBlockThreshold, Behavior, DynamicRetrievalConfigMode, ThinkingLevel, PersonGeneration, ProminentPeople, HarmCategory, HarmBlockMethod, HarmBlockThreshold, FunctionCallingConfigMode, FinishReason, HarmProbability, HarmSeverity, UrlRetrievalStatus, BlockedReason, TrafficType, MediaModality, ModelStage, MediaResolution, Modality, Delivery, AspectRatio, ImageSize, TuningMode, AdapterSize, ResponseParseType, MatchOperation, ReinforcementTuningThinkingLevel, JobState, TuningJobState, AggregationMetric, PairwiseChoice, VideoOrientation, TuningSpeed, TuningTask, DocumentState, ServiceTier, MediaProcessing, PartMediaResolutionLevel, ToolType, ResourceScope, FeatureSelectionPreference, EmbeddingApiType, SafetyFilterLevel, ImagePromptLanguage, MaskReferenceMode, ControlReferenceType, SubjectReferenceType, EditMode, SegmentMode, VideoGenerationReferenceType, VideoGenerationMaskMode, VideoCompressionQuality, ImageResizeMode, TuningMethod, FileState, FileSource, TurnCompleteReason, InteractionStatus, VadSignalType, VoiceActivityType, StartSensitivity, EndSensitivity, ActivityHandling, TurnCoverage, AudioTranscriptionConfigMode, Scale, MusicGenerationMode, LiveMusicPlaybackControl, ToolResponse, FunctionResponseFileData, FunctionResponseBlob, FunctionResponsePart, FunctionResponse, HttpResponse, GenerateContentResponsePromptFeedback, GenerateContentResponseUsageMetadata, GenerateContentResponse, EmbedContentResponse, GenerateImagesResponse, EditImageResponse, UpscaleImageResponse, RecontextImageResponse, SegmentImageResponse, ListModelsResponse, DeleteModelResponse, AudioResponseFormat, ImageResponseFormat, TextResponseFormat, VideoResponseFormat, ResponseFormat, CountTokensResponse, ComputeTokensResponse, GenerateVideosResponse, GenerateVideosOperation, ReinforcementTuningParseResponseConfig, ReinforcementTuningAutoraterScorerParsedResponseConversionScorer, EvaluateDatasetResponse, ListTuningJobsResponse, CancelTuningJobResponse, ValidateRewardResponse, DeleteCachedContentResponse, ListCachedContentsResponse, ListDocumentsResponse, ListFileSearchStoresResponse, UploadToFileSearchStoreResumableResponse, ImportFileResponse, ImportFileOperation, ListFilesResponse, CreateFileResponse, DeleteFileResponse, RegisterFilesResponse, InlinedResponse, SingleEmbedContentResponse, InlinedEmbedContentResponse, ListBatchJobsResponse, ReplayResponse, RawReferenceImage, MaskReferenceImage, ControlReferenceImage, StyleReferenceImage, SubjectReferenceImage, ContentReferenceImage, LiveServerMessage, LiveClientToolResponse, LiveSendToolResponseParameters, LiveMusicServerMessage, UploadToFileSearchStoreResponse, UploadToFileSearchStoreOperation, PagedItem, Pager, Batches, Caches, Chats, Chat, ApiError, Files$1, CONTENT_TYPE_HEADER, SERVER_TIMEOUT_HEADER, USER_AGENT_HEADER, GOOGLE_API_CLIENT_HEADER, SDK_VERSION, LIBRARY_LABEL, VERTEX_AI_API_DEFAULT_VERSION, GOOGLE_AI_API_DEFAULT_VERSION, MULTI_REGIONAL_LOCATIONS, DEFAULT_RETRY_ATTEMPTS, DEFAULT_RETRY_INITIAL_DELAY, DEFAULT_RETRY_MAX_DELAY, DEFAULT_RETRY_EXP_BASE, DEFAULT_RETRY_JITTER, DEFAULT_RETRY_HTTP_STATUS_CODES, ApiClient, MCP_LABEL, hasMcpToolUsageFromMcpToTool, McpCallableTool, LiveMusic, LiveMusicSession, FUNCTION_RESPONSE_REQUIRES_ID, Live, defaultLiveSendClientContentParamerters, Session2, DEFAULT_MAX_REMOTE_CALLS, Models, Operations, Tokens, Documents, FileSearchStores, envMemo, GoogleGenAISecurityProvider, GoogleGenAIAuthHook, HTTPClientError, UnexpectedClientError, InvalidRequestError, RequestAbortedError, RequestTimeoutError, ConnectionError, GoogleGenAiError, GeminiNextGenAPIClientError, APIError, APIUserAbortError, APIConnectionError, APIConnectionTimeoutError, BadRequestError, AuthenticationError, PermissionDeniedError, NotFoundError, ConflictError, UnprocessableEntityError, RateLimitError, InternalServerError, SDKHooks, hasOwn, ServerList, SDK_METADATA, encodeForm, encodeSimple, encodeFormQuery, DEFAULT_FETCHER, HTTPClient, mediaParamSeparator, codeRangeRE$1, defaultBackoff, PermanentError, TemporaryError, codeRangeRE, gt, webWorkerLike, isBrowserLike, ClientSDK, jsonLikeContentTypeRE, jsonlLikeContentTypeRE, GoogleGenAiDefaultError, Stream, CR, LF, BOUNDARIES, MAX_BOUNDARY_LEN, DEFAULT_CONTENT_TYPES, headerValRE, SecurityErrorCode, SecurityError, _a2, APIPromise, Agents, Files2, Environments, CancelInteractionByIdServerError, CancelInteractionByIdClientError, CreateInteractionServerError, CreateInteractionClientError, DeleteInteractionServerError, DeleteInteractionClientError, GetInteractionByIdServerError, GetInteractionByIdClientError, Interactions, Triggers, Webhooks, GoogleGenAI$1, LEGACY_LYRIA_MODELS, GeminiNextGenInteractions, GeminiNextGenAgents, GeminiNextGenWebhooks, GeminiNextGenTriggers, GeminiNextGenEnvironmentFiles, GeminiNextGenEnvironments, Tunings, BrowserDownloader, MAX_CHUNK_SIZE, MAX_RETRY_COUNT, INITIAL_RETRY_DELAY_MS, DELAY_MULTIPLIER, X_GOOG_UPLOAD_STATUS_HEADER_FIELD, BrowserUploader, BrowserWebSocketFactory, BrowserWebSocket, GOOGLE_API_KEY_HEADER, WebAuth, LANGUAGE_LABEL_PREFIX, GoogleGenAI2;
   var init_web = __esm({
     "node_modules/@google/genai/dist/web/index.mjs"() {
       import_p_retry = __toESM(require_p_retry(), 1);
@@ -26844,11 +26670,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         HarmCategory2["HARM_CATEGORY_SEXUALLY_EXPLICIT"] = "HARM_CATEGORY_SEXUALLY_EXPLICIT";
         HarmCategory2["HARM_CATEGORY_DANGEROUS_CONTENT"] = "HARM_CATEGORY_DANGEROUS_CONTENT";
         HarmCategory2["HARM_CATEGORY_CIVIC_INTEGRITY"] = "HARM_CATEGORY_CIVIC_INTEGRITY";
+        HarmCategory2["HARM_CATEGORY_JAILBREAK"] = "HARM_CATEGORY_JAILBREAK";
         HarmCategory2["HARM_CATEGORY_IMAGE_HATE"] = "HARM_CATEGORY_IMAGE_HATE";
         HarmCategory2["HARM_CATEGORY_IMAGE_DANGEROUS_CONTENT"] = "HARM_CATEGORY_IMAGE_DANGEROUS_CONTENT";
         HarmCategory2["HARM_CATEGORY_IMAGE_HARASSMENT"] = "HARM_CATEGORY_IMAGE_HARASSMENT";
         HarmCategory2["HARM_CATEGORY_IMAGE_SEXUALLY_EXPLICIT"] = "HARM_CATEGORY_IMAGE_SEXUALLY_EXPLICIT";
-        HarmCategory2["HARM_CATEGORY_JAILBREAK"] = "HARM_CATEGORY_JAILBREAK";
       })(HarmCategory || (HarmCategory = {}));
       (function(HarmBlockMethod2) {
         HarmBlockMethod2["HARM_BLOCK_METHOD_UNSPECIFIED"] = "HARM_BLOCK_METHOD_UNSPECIFIED";
@@ -27087,6 +26913,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         ServiceTier2["STANDARD"] = "standard";
         ServiceTier2["PRIORITY"] = "priority";
       })(ServiceTier || (ServiceTier = {}));
+      (function(MediaProcessing2) {
+        MediaProcessing2["MEDIA_PROCESSING_UNSPECIFIED"] = "MEDIA_PROCESSING_UNSPECIFIED";
+        MediaProcessing2["STATIC"] = "STATIC";
+        MediaProcessing2["AGENTIC"] = "AGENTIC";
+      })(MediaProcessing || (MediaProcessing = {}));
       (function(PartMediaResolutionLevel2) {
         PartMediaResolutionLevel2["MEDIA_RESOLUTION_UNSPECIFIED"] = "MEDIA_RESOLUTION_UNSPECIFIED";
         PartMediaResolutionLevel2["MEDIA_RESOLUTION_LOW"] = "MEDIA_RESOLUTION_LOW";
@@ -27101,6 +26932,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         ToolType2["URL_CONTEXT"] = "URL_CONTEXT";
         ToolType2["GOOGLE_MAPS"] = "GOOGLE_MAPS";
         ToolType2["FILE_SEARCH"] = "FILE_SEARCH";
+        ToolType2["MEDIA_PROCESSING"] = "MEDIA_PROCESSING";
       })(ToolType || (ToolType = {}));
       (function(ResourceScope2) {
         ResourceScope2["COLLECTION"] = "COLLECTION";
@@ -27233,6 +27065,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         TurnCompleteReason2["GENERATED_OTHER"] = "GENERATED_OTHER";
         TurnCompleteReason2["MAX_REGENERATION_REACHED"] = "MAX_REGENERATION_REACHED";
       })(TurnCompleteReason || (TurnCompleteReason = {}));
+      (function(InteractionStatus2) {
+        InteractionStatus2["INTERACTION_STATUS_UNSPECIFIED"] = "INTERACTION_STATUS_UNSPECIFIED";
+        InteractionStatus2["IN_PROGRESS"] = "IN_PROGRESS";
+        InteractionStatus2["REQUIRES_ACTION"] = "REQUIRES_ACTION";
+        InteractionStatus2["IDLE"] = "IDLE";
+      })(InteractionStatus || (InteractionStatus = {}));
       (function(VadSignalType2) {
         VadSignalType2["VAD_SIGNAL_TYPE_UNSPECIFIED"] = "VAD_SIGNAL_TYPE_UNSPECIFIED";
         VadSignalType2["VAD_SIGNAL_TYPE_SOS"] = "VAD_SIGNAL_TYPE_SOS";
@@ -27264,6 +27102,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         TurnCoverage2["TURN_INCLUDES_ALL_INPUT"] = "TURN_INCLUDES_ALL_INPUT";
         TurnCoverage2["TURN_INCLUDES_AUDIO_ACTIVITY_AND_ALL_VIDEO"] = "TURN_INCLUDES_AUDIO_ACTIVITY_AND_ALL_VIDEO";
       })(TurnCoverage || (TurnCoverage = {}));
+      (function(AudioTranscriptionConfigMode2) {
+        AudioTranscriptionConfigMode2["MODE_UNSPECIFIED"] = "MODE_UNSPECIFIED";
+        AudioTranscriptionConfigMode2["VERBATIM"] = "VERBATIM";
+        AudioTranscriptionConfigMode2["SMART"] = "SMART";
+      })(AudioTranscriptionConfigMode || (AudioTranscriptionConfigMode = {}));
       (function(Scale2) {
         Scale2["SCALE_UNSPECIFIED"] = "SCALE_UNSPECIFIED";
         Scale2["C_MAJOR_A_MINOR"] = "C_MAJOR_A_MINOR";
@@ -28516,7 +28359,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           Object.setPrototypeOf(this, ApiError.prototype);
         }
       };
-      Files = class extends BaseModule {
+      Files$1 = class Files extends BaseModule {
         constructor(apiClient) {
           super();
           this.apiClient = apiClient;
@@ -28710,7 +28553,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       SERVER_TIMEOUT_HEADER = "X-Server-Timeout";
       USER_AGENT_HEADER = "User-Agent";
       GOOGLE_API_CLIENT_HEADER = "x-goog-api-client";
-      SDK_VERSION = "2.16.0";
+      SDK_VERSION = "2.19.0";
       LIBRARY_LABEL = `google-genai-sdk/${SDK_VERSION}`;
       VERTEX_AI_API_DEFAULT_VERSION = "v1beta1";
       GOOGLE_AI_API_DEFAULT_VERSION = "v1beta";
@@ -30146,7 +29989,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           }
         }
         async generateImagesInternal(params) {
-          var _a3, _b, _c, _d;
+          var _a3, _b;
           let response;
           let path = "";
           let queryParams = {};
@@ -30179,33 +30022,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
               return typedResp;
             });
           } else {
-            const body = generateImagesParametersToMldev(this.apiClient, params);
-            path = formatMap("{model}:predict", body["_url"]);
-            queryParams = body["_query"];
-            delete body["_url"];
-            delete body["_query"];
-            response = this.apiClient.request({
-              path,
-              queryParams,
-              body: JSON.stringify(body),
-              httpMethod: "POST",
-              httpOptions: (_c = params.config) === null || _c === void 0 ? void 0 : _c.httpOptions,
-              abortSignal: (_d = params.config) === null || _d === void 0 ? void 0 : _d.abortSignal
-            }).then((httpResponse) => {
-              return httpResponse.json().then((jsonResponse) => {
-                const response2 = jsonResponse;
-                response2.sdkHttpResponse = {
-                  headers: httpResponse.headers
-                };
-                return response2;
-              });
-            });
-            return response.then((apiResponse) => {
-              const resp = generateImagesResponseFromMldev(apiResponse);
-              const typedResp = new GenerateImagesResponse();
-              Object.assign(typedResp, resp);
-              return typedResp;
-            });
+            throw new Error("This method is only supported by the Gemini Enterprise Agent Platform (previously known as Vertex AI).");
           }
         }
         async editImageInternal(params) {
@@ -31457,7 +31274,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         "https://generativelanguage.googleapis.com"
       ];
       SDK_METADATA = {
-        userAgent: "speakeasy-sdk/typescript 2.4.1-preview.4 2.924.0 v1beta @google/genai"
+        userAgent: "speakeasy-sdk/typescript 2.4.1-preview.4 internal v1beta @google/genai"
       };
       encodeForm = formEncoder(",");
       encodeSimple = (key, value, options) => {
@@ -32006,32 +31823,41 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       };
       _a2 = Symbol.toStringTag;
       Agents = class extends ClientSDK {
+        list(params, options) {
+          return unwrapAsAPIPromise(agentsList(this, params === null || params === void 0 ? void 0 : params.api_version, params === null || params === void 0 ? void 0 : params.page_size, params === null || params === void 0 ? void 0 : params.page_token, params === null || params === void 0 ? void 0 : params.parent, options));
+        }
         create(params, options) {
           const { api_version } = params, body = __rest(params, ["api_version"]);
           return unwrapAsAPIPromise(agentsCreate(this, body, api_version, options));
         }
-        list(params, options) {
-          return unwrapAsAPIPromise(agentsList(this, params === null || params === void 0 ? void 0 : params.api_version, params === null || params === void 0 ? void 0 : params.page_size, params === null || params === void 0 ? void 0 : params.page_token, params === null || params === void 0 ? void 0 : params.parent, options));
+        delete(id, params, options) {
+          return unwrapAsAPIPromise(agentsDelete(this, id, params === null || params === void 0 ? void 0 : params.api_version, options));
         }
         get(id, params, options) {
           return unwrapAsAPIPromise(agentsGet(this, id, params === null || params === void 0 ? void 0 : params.api_version, options));
         }
-        delete(id, params, options) {
-          return unwrapAsAPIPromise(agentsDelete(this, id, params === null || params === void 0 ? void 0 : params.api_version, options));
+      };
+      Files2 = class extends ClientSDK {
+        list(environment, path, params, options) {
+          return unwrapAsAPIPromise(environmentsFilesList(this, environment, path, params === null || params === void 0 ? void 0 : params.api_version, params === null || params === void 0 ? void 0 : params.page_size, params === null || params === void 0 ? void 0 : params.page_token, params === null || params === void 0 ? void 0 : params.recursive, options));
         }
       };
       Environments = class extends ClientSDK {
-        createEnvironment(body, api_version, options) {
-          return unwrapAsAPIPromise(environmentsCreateEnvironment(this, body, api_version, options));
+        get files() {
+          var _a3;
+          return (_a3 = this._files) !== null && _a3 !== void 0 ? _a3 : this._files = new Files2(this._options);
         }
         listEnvironments(params, options) {
           return unwrapAsAPIPromise(environmentsListEnvironments(this, params === null || params === void 0 ? void 0 : params.api_version, params === null || params === void 0 ? void 0 : params.page_size, params === null || params === void 0 ? void 0 : params.page_token, options));
         }
-        getEnvironment(id, params, options) {
-          return unwrapAsAPIPromise(environmentsGetEnvironment(this, id, params === null || params === void 0 ? void 0 : params.api_version, options));
+        createEnvironment(body, api_version, options) {
+          return unwrapAsAPIPromise(environmentsCreateEnvironment(this, body, api_version, options));
         }
         deleteEnvironment(id, params, options) {
           return unwrapAsAPIPromise(environmentsDeleteEnvironment(this, id, params === null || params === void 0 ? void 0 : params.api_version, options));
+        }
+        getEnvironment(id, params, options) {
+          return unwrapAsAPIPromise(environmentsGetEnvironment(this, id, params === null || params === void 0 ? void 0 : params.api_version, options));
         }
       };
       CancelInteractionByIdServerError = class extends GoogleGenAiError {
@@ -32119,23 +31945,26 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           const { api_version } = params, body = __rest(params, ["api_version"]);
           return unwrapAsAPIPromise(interactionsCreate(this, body, api_version, options));
         }
-        get(id, params, options) {
-          return unwrapAsAPIPromise(interactionsGet(this, id, params === null || params === void 0 ? void 0 : params.stream, params === null || params === void 0 ? void 0 : params.last_event_id, params === null || params === void 0 ? void 0 : params.include_input, params === null || params === void 0 ? void 0 : params.api_version, options));
-        }
         delete(id, params, options) {
           return unwrapAsAPIPromise(interactionsDelete(this, id, params === null || params === void 0 ? void 0 : params.api_version, options));
+        }
+        get(id, params, options) {
+          return unwrapAsAPIPromise(interactionsGet(this, id, params === null || params === void 0 ? void 0 : params.api_version, params === null || params === void 0 ? void 0 : params.include_input, params === null || params === void 0 ? void 0 : params.last_event_id, params === null || params === void 0 ? void 0 : params.stream, options));
         }
         cancel(id, params, options) {
           return unwrapAsAPIPromise(interactionsCancel(this, id, params === null || params === void 0 ? void 0 : params.api_version, options));
         }
       };
       Triggers = class extends ClientSDK {
+        list(params, options) {
+          return unwrapAsAPIPromise(triggersList(this, params === null || params === void 0 ? void 0 : params.api_version, params === null || params === void 0 ? void 0 : params.filter, params === null || params === void 0 ? void 0 : params.page_size, params === null || params === void 0 ? void 0 : params.page_token, options));
+        }
         create(params, options) {
           const { api_version } = params, body = __rest(params, ["api_version"]);
           return unwrapAsAPIPromise(triggersCreate(this, body, api_version, options));
         }
-        list(params, options) {
-          return unwrapAsAPIPromise(triggersList(this, params === null || params === void 0 ? void 0 : params.api_version, params === null || params === void 0 ? void 0 : params.filter, params === null || params === void 0 ? void 0 : params.page_size, params === null || params === void 0 ? void 0 : params.page_token, options));
+        delete(id, params, options) {
+          return unwrapAsAPIPromise(triggersDelete(this, id, params === null || params === void 0 ? void 0 : params.api_version, options));
         }
         get(id, params, options) {
           return unwrapAsAPIPromise(triggersGet(this, id, params === null || params === void 0 ? void 0 : params.api_version, options));
@@ -32144,23 +31973,23 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           const { api_version } = params, body = __rest(params, ["api_version"]);
           return unwrapAsAPIPromise(triggersUpdate(this, id, body, api_version, options));
         }
-        delete(id, params, options) {
-          return unwrapAsAPIPromise(triggersDelete(this, id, params === null || params === void 0 ? void 0 : params.api_version, options));
+        listExecutions(trigger_id, params, options) {
+          return unwrapAsAPIPromise(triggersListExecutions(this, trigger_id, params === null || params === void 0 ? void 0 : params.api_version, params === null || params === void 0 ? void 0 : params.page_size, params === null || params === void 0 ? void 0 : params.page_token, options));
         }
         run(trigger_id, params, options) {
           return unwrapAsAPIPromise(triggersRun(this, trigger_id, params === null || params === void 0 ? void 0 : params.api_version, options));
         }
-        listExecutions(trigger_id, params, options) {
-          return unwrapAsAPIPromise(triggersListExecutions(this, trigger_id, params === null || params === void 0 ? void 0 : params.api_version, params === null || params === void 0 ? void 0 : params.page_size, params === null || params === void 0 ? void 0 : params.page_token, options));
-        }
       };
       Webhooks = class extends ClientSDK {
+        list(params, options) {
+          return unwrapAsAPIPromise(webhooksList(this, params === null || params === void 0 ? void 0 : params.api_version, params === null || params === void 0 ? void 0 : params.page_size, params === null || params === void 0 ? void 0 : params.page_token, options));
+        }
         create(params, options) {
           const { api_version } = params, body = __rest(params, ["api_version"]);
           return unwrapAsAPIPromise(webhooksCreate(this, body, api_version, options));
         }
-        list(params, options) {
-          return unwrapAsAPIPromise(webhooksList(this, params === null || params === void 0 ? void 0 : params.api_version, params === null || params === void 0 ? void 0 : params.page_size, params === null || params === void 0 ? void 0 : params.page_token, options));
+        delete(id, params, options) {
+          return unwrapAsAPIPromise(webhooksDelete(this, id, params === null || params === void 0 ? void 0 : params.api_version, options));
         }
         get(id, params, options) {
           return unwrapAsAPIPromise(webhooksGet(this, id, params === null || params === void 0 ? void 0 : params.api_version, options));
@@ -32170,36 +31999,33 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           const body = params === void 0 || Object.keys(body$body).length === 0 ? void 0 : body$body;
           return unwrapAsAPIPromise(webhooksUpdate(this, id, api_version, update_mask, body, options));
         }
-        delete(id, params, options) {
-          return unwrapAsAPIPromise(webhooksDelete(this, id, params === null || params === void 0 ? void 0 : params.api_version, options));
+        ping(id, api_version, body, options) {
+          return unwrapAsAPIPromise(webhooksPing(this, id, api_version, body, options));
         }
         rotateSigningSecret(id, api_version, body, options) {
           return unwrapAsAPIPromise(webhooksRotateSigningSecret(this, id, api_version, body, options));
         }
-        ping(id, api_version, body, options) {
-          return unwrapAsAPIPromise(webhooksPing(this, id, api_version, body, options));
-        }
       };
       GoogleGenAI$1 = class GoogleGenAI extends ClientSDK {
-        get interactions() {
-          var _a3;
-          return (_a3 = this._interactions) !== null && _a3 !== void 0 ? _a3 : this._interactions = new Interactions(this._options);
-        }
-        get webhooks() {
-          var _a3;
-          return (_a3 = this._webhooks) !== null && _a3 !== void 0 ? _a3 : this._webhooks = new Webhooks(this._options);
-        }
         get agents() {
           var _a3;
           return (_a3 = this._agents) !== null && _a3 !== void 0 ? _a3 : this._agents = new Agents(this._options);
+        }
+        get environments() {
+          var _a3;
+          return (_a3 = this._environments) !== null && _a3 !== void 0 ? _a3 : this._environments = new Environments(this._options);
+        }
+        get interactions() {
+          var _a3;
+          return (_a3 = this._interactions) !== null && _a3 !== void 0 ? _a3 : this._interactions = new Interactions(this._options);
         }
         get triggers() {
           var _a3;
           return (_a3 = this._triggers) !== null && _a3 !== void 0 ? _a3 : this._triggers = new Triggers(this._options);
         }
-        get environments() {
+        get webhooks() {
           var _a3;
-          return (_a3 = this._environments) !== null && _a3 !== void 0 ? _a3 : this._environments = new Environments(this._options);
+          return (_a3 = this._webhooks) !== null && _a3 !== void 0 ? _a3 : this._webhooks = new Webhooks(this._options);
         }
       };
       LEGACY_LYRIA_MODELS = /* @__PURE__ */ new Set([
@@ -32225,7 +32051,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             const response2 = await wrapSDKCall(() => this.getClient(api_version).interactions.get(id, { stream, last_event_id, include_input, api_version }, toGoogleGenAIRequestOptions(options, true)));
             return wrapStreamErrors(response2);
           }
-          const response = await unwrapWithSdkHttpResponse(interactionsGet(this.getClient(api_version), id, stream, last_event_id, include_input, api_version, toGoogleGenAIRequestOptions(options)));
+          const response = await unwrapWithSdkHttpResponse(interactionsGet(this.getClient(api_version), id, api_version, include_input, last_event_id, stream, toGoogleGenAIRequestOptions(options)));
           return addOutputPropertiesIfInteraction(response);
         }
         async delete(id, params = {}, options) {
@@ -32350,9 +32176,19 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           return this.sdk;
         }
       };
+      GeminiNextGenEnvironmentFiles = class {
+        constructor(resolveClient) {
+          this.resolveClient = resolveClient;
+        }
+        async list(params, options) {
+          const { environment, path, page_size, page_token, recursive, api_version } = params;
+          return unwrapWithSdkHttpResponse(environmentsFilesList(this.resolveClient(api_version), environment, path, api_version, page_size, page_token, recursive, toGoogleGenAIRequestOptions(options)));
+        }
+      };
       GeminiNextGenEnvironments = class {
         constructor(parentClient) {
           this.parentClient = parentClient;
+          this.files = new GeminiNextGenEnvironmentFiles((apiVersion) => this.getClient(apiVersion));
         }
         async create(params, options) {
           const { api_version } = params, body = __rest(params, ["api_version"]);
@@ -32822,7 +32658,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           this._environments = new GeminiNextGenEnvironments(this.apiClient);
           return this._environments;
         }
-        constructor(options) {
+        constructor(options = {}) {
           var _a3;
           if (options.apiKey == null) {
             throw new Error("An API Key must be set when running in a browser");
@@ -32863,7 +32699,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           this.batches = new Batches(this.apiClient);
           this.chats = new Chats(this.models, this.apiClient);
           this.caches = new Caches(this.apiClient);
-          this.files = new Files(this.apiClient);
+          this.files = new Files$1(this.apiClient);
           this.operations = new Operations(this.apiClient);
           this.authTokens = new Tokens(this.apiClient);
           this.tunings = new Tunings(this.apiClient);
@@ -33234,7 +33070,7 @@ ${JSON.stringify(lyricsOnly)}`
     const { hasKanji, hasKorean } = detectLanguages(preparedLyricsJson);
     const lyricsToDisplay = preparedLyricsJson;
     await cacheLyrics(trackId, { ...lyricsToDisplay, id });
-    if (Spicetify.Player.data.item.uri?.split(":")[2] === trackId) {
+    if (Spicetify.Player.data?.item?.uri?.split(":")[2] === trackId) {
       Defaults_default.CurrentLyricsType = lyricsToDisplay.Type;
       const serialized = JSON.stringify(lyricsToDisplay);
       storage_default.set("currentLyricsData", serialized);
@@ -33261,7 +33097,7 @@ ${JSON.stringify(lyricsOnly)}`
       ]);
       attachTranslations(processedLyricsJson, translations);
       await cacheLyrics(trackId, { ...processedLyricsJson, id: trackId });
-      if (Spicetify.Player.data.item.uri?.split(":")[2] === trackId) {
+      if (Spicetify.Player.data?.item?.uri?.split(":")[2] === trackId) {
         updateDisplayedLyricsWithTranslations(processedLyricsJson);
         const serialized = JSON.stringify(processedLyricsJson);
         storage_default.set("currentLyricsData", serialized);
@@ -33900,7 +33736,7 @@ ${JSON.stringify(lyricsOnly)}`
       if (inner.scrollWidth > cw) {
         const dist = cw - inner.scrollWidth - 20;
         inner.style.setProperty("--scroll-dist", `${dist}px`);
-        inner.style.setProperty("--scroll-dur", `${Math.max(6, Math.abs(dist) / 30)}s`);
+        inner.style.setProperty("--scroll-dur", `${Math.max(3, Math.abs(dist) / 75)}s`);
         inner.classList.add("amai-marquee");
       } else {
         inner.classList.remove("amai-marquee");
@@ -34543,10 +34379,10 @@ ${JSON.stringify(lyricsOnly)}`
   init_lifecycle();
   var AppInitializer = class {
     static async initializeCore() {
-      const windowRef9 = window;
-      if (!windowRef9.__amaiCoreInitialized) {
+      const windowRef8 = window;
+      if (!windowRef8.__amaiCoreInitialized) {
         lyricsCache.destroy();
-        windowRef9.__amaiCoreInitialized = true;
+        windowRef8.__amaiCoreInitialized = true;
       }
       await this.injectGoogleFonts();
       await this.initializePlatformAndSettings();
@@ -34987,6 +34823,9 @@ ${JSON.stringify(lyricsOnly)}`
     }
   };
 
+  // src/app.tsx
+  init_PageView();
+
   // src/utils/suppressBlankToasts.ts
   init_lifecycle();
   var LETTER = /[A-Za-z]/;
@@ -35117,9 +34956,9 @@ ${JSON.stringify(lyricsOnly)}`
     lifecycle_default.track(() => clearInterval(timer));
   }
   function installBlankToastSuppressor() {
-    const windowRef9 = window;
-    if (!windowRef9.__amaiToastInstalled) {
-      windowRef9.__amaiToastInstalled = true;
+    const windowRef8 = window;
+    if (!windowRef8.__amaiToastInstalled) {
+      windowRef8.__amaiToastInstalled = true;
       overrideShowNotification();
       if (!overrideSnackbar()) {
         let tries = 0;
@@ -35155,6 +34994,7 @@ ${JSON.stringify(lyricsOnly)}`
     lifecycle_default.trackCallback(() => songChangeManager.dispose());
     lifecycle_default.trackCallback(() => backgroundManager.destroy());
     new PageManager(buttonManager);
+    lifecycle_default.trackCallback(() => PageView_default.Destroy());
     const dynamicBgInterval = new IntervalManager(INTERVALS.DYNAMIC_BG_UPDATE, () => {
       if (!document.querySelector(".Root__right-sidebar aside.NowPlayingView"))
         return;
@@ -35205,13 +35045,19 @@ ${JSON.stringify(lyricsOnly)}`
         console.error("[Amai Lyrics] Error tearing down previous instance:", error);
       }
     }
-    installBlankToastSuppressor();
-    await AppInitializer.initializeCore();
-    const buttonManager = setupUI();
-    lifecycle_default.trackCallback(() => buttonManager.dispose());
-    await initializeAmaiLyrics(buttonManager);
-    AppInitializer.setupPostLoadOptimizations();
     lifecycle_default.registerGlobalTeardown();
+    installBlankToastSuppressor();
+    try {
+      await AppInitializer.initializeCore();
+      const buttonManager = setupUI();
+      lifecycle_default.trackCallback(() => buttonManager.dispose());
+      await initializeAmaiLyrics(buttonManager);
+      AppInitializer.setupPostLoadOptimizations();
+    } catch (error) {
+      console.error("[Amai Lyrics] Initialization failed; tearing down:", error);
+      lifecycle_default.disposeAll();
+      throw error;
+    }
   }
   var app_default = main;
 
@@ -35240,7 +35086,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e5727379/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053cc39/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -35266,7 +35112,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e57273fa/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053cc7a/ProcessingIndicator.css */
 #SpicyLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -35346,7 +35192,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e57269a0/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053c300/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -35495,7 +35341,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e5726e41/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053c701/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -35703,7 +35549,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e5726ef2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053c7a2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -36304,7 +36150,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e5727043/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053c8f3/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -36483,7 +36329,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e57270b4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053c964/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -36756,7 +36602,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e5727185/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053c9f5/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -37002,7 +36848,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e5727206/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053ca56/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -37024,7 +36870,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e5727237/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053ca87/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -37051,7 +36897,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17924-vDsXMUS6OdZT/1a04e5727278/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053cac8/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
@@ -37107,26 +36953,21 @@ ruby > rt {
   animation-name: playbar-lyrics-color-shift, playbar-lyrics-marquee;
   animation-duration: 12s, var(--scroll-dur, 8s);
   animation-timing-function: linear, ease-in-out;
-  animation-iteration-count: infinite;
+  animation-iteration-count: infinite, 1;
+  animation-fill-mode: none, forwards;
 }
 @keyframes playbar-lyrics-marquee {
   0% {
     transform: translateX(0);
   }
-  20% {
+  15% {
     transform: translateX(0);
   }
-  45% {
+  85% {
     transform: translateX(var(--scroll-dist, -50px));
-  }
-  55% {
-    transform: translateX(var(--scroll-dist, -50px));
-  }
-  80% {
-    transform: translateX(0);
   }
   100% {
-    transform: translateX(0);
+    transform: translateX(var(--scroll-dist, -50px));
   }
 }
 .amai-playbar-lyrics ruby {
