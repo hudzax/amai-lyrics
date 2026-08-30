@@ -63,18 +63,25 @@ function createProgressBarElements() {
     position: SpotifyPlayer.GetTrackPosition() ?? 0,
   });
 
-  // Create the timeline element
+  // Create the timeline element — built with DOM APIs to avoid innerHTML
   const timelineElement = document.createElement('div');
   timelineElement.classList.add('Timeline');
-  timelineElement.innerHTML = `
-          <span class="Time Position">${songProgressBar.GetFormattedPosition() ?? '0:00'}</span>
-          <div class="SliderBar" style="--SliderProgress: ${
-            songProgressBar.GetProgressPercentage() ?? 0
-          }">
-            <div class="Handle"></div>
-          </div>
-          <span class="Time Duration">${songProgressBar.GetFormattedDuration() ?? '0:00'}</span>
-        `;
+  const positionSpan = document.createElement('span');
+  positionSpan.className = 'Time Position';
+  positionSpan.textContent = songProgressBar.GetFormattedPosition() ?? '0:00';
+  const sliderBarDiv = document.createElement('div');
+  sliderBarDiv.className = 'SliderBar';
+  sliderBarDiv.style.setProperty(
+    '--SliderProgress',
+    String(songProgressBar.GetProgressPercentage() ?? 0),
+  );
+  const handleDiv = document.createElement('div');
+  handleDiv.className = 'Handle';
+  sliderBarDiv.appendChild(handleDiv);
+  const durationSpan = document.createElement('span');
+  durationSpan.className = 'Time Duration';
+  durationSpan.textContent = songProgressBar.GetFormattedDuration() ?? '0:00';
+  timelineElement.append(positionSpan, sliderBarDiv, durationSpan);
 
   // Get the slider bar element
   const sliderBar = timelineElement.querySelector<HTMLElement>('.SliderBar');
@@ -199,6 +206,9 @@ function initializeTrackingVariables() {
  */
 function setupUpdateInterval(updateTimelineState: (position?: number) => void): IntervalManager {
   const updateInterval = new IntervalManager(INTERVALS.PROGRESS_BAR_UPDATE, () => {
+    // Skip entirely when not visible: fullscreen is the only place this bar exists.
+    // Also skip while window is hidden (IntervalManager already pauses, but guard costs nothing).
+    if (!Fullscreen.IsOpen) return;
     if (!SpotifyPlayer.IsPlaying) {
       return;
     }

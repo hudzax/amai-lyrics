@@ -104,8 +104,25 @@ function liftToLuminance(hex: string, minLum: number): string {
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
+// Cached read for hot path — storage.get hits Spicetify.LocalStorage each tick.
+let cachedPlaybarEnabled: boolean | null = null;
+let cachedPlaybarEnabledAt = 0;
+const PLAYBAR_ENABLED_TTL_MS = 1500;
 function isEnabled(): boolean {
-  return storage.get('enable_playbar_lyrics') !== 'false';
+  const now = performance.now();
+  if (cachedPlaybarEnabled !== null && now - cachedPlaybarEnabledAt < PLAYBAR_ENABLED_TTL_MS) {
+    return cachedPlaybarEnabled;
+  }
+  const raw = storage.get('enable_playbar_lyrics');
+  cachedPlaybarEnabled = raw !== 'false';
+  cachedPlaybarEnabledAt = now;
+  return cachedPlaybarEnabled;
+}
+// Keep cache warm when settings change in this tab (storage event is cross-tab only)
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', () => {
+    cachedPlaybarEnabled = null;
+  });
 }
 
 interface StoredLyrics {
@@ -185,6 +202,7 @@ function onSongChange(): void {
   lastText = '';
   cachedLines = null;
   cachedLinesRaw = null;
+  cachedPlaybarEnabled = null;
   inMemoryLyricsData = storage.get('currentLyricsData');
   currentColors = [];
   lastArtworkUrl = '';
@@ -306,7 +324,33 @@ async function refreshArtworkColors(): Promise<void> {
 }
 
 function update(): void {
-  // Re-inject if Spotify re-rendered the playbar and removed our element
+  const enabled = isEnabled();
+  const onLyricsPage = Spicetify.Platform.History.location.pathname === '/AmaiLyrics';
+  const isPaused = !SpotifyPlayer.IsPlaying;
+
+  // Register/unregister as a position consumer based on whether the playbar is
+  // actually rendering lyrics (enabled, playing, and not on the lyrics page).
+  const needsPosition = enabled && !onLyricsPage && !isPaused;
+  if (needsPosition && !playbarPositionClient) {
+    playbarPositionClient = requestPositionTracking();
+  } else if (!needsPosition && playbarPositionClient) {
+    playbarPositionClient();
+    playbarPositionClient = null;
+  }
+
+  // Disabled, viewing the lyrics page, or paused -> restore native controls, hide overlay (no DOM query needed)
+  if (!enabled || onLyricsPage || isPaused) {
+    if (lyricsElement && centerWrapper) {
+      centerWrapper.classList.remove('amai-hide-controls');
+      if (lyricsElement.innerHTML !== '') {
+        lyricsElement.innerHTML = '';
+        lastText = '';
+      }
+    }
+    return;
+  }
+
+  // Re-inject if Spotify re-rendered the playbar and removed our element — only when we actually need to show lyrics
   if (
     !lyricsElement ||
     !lyricsElement.isConnected ||
@@ -321,20 +365,6 @@ function update(): void {
     }
   }
   if (!lyricsElement || !centerWrapper) return;
-
-  const enabled = isEnabled();
-  const onLyricsPage = Spicetify.Platform.History.location.pathname === '/AmaiLyrics';
-  const isPaused = !SpotifyPlayer.IsPlaying;
-
-  // Register/unregister as a position consumer based on whether the playbar is
-  // actually rendering lyrics (enabled, playing, and not on the lyrics page).
-  const needsPosition = enabled && !onLyricsPage && !isPaused;
-  if (needsPosition && !playbarPositionClient) {
-    playbarPositionClient = requestPositionTracking();
-  } else if (!needsPosition && playbarPositionClient) {
-    playbarPositionClient();
-    playbarPositionClient = null;
-  }
 
   // Disabled, viewing the lyrics page, or paused -> restore native controls, hide overlay
   if (!enabled || onLyricsPage || isPaused) {
@@ -364,11 +394,20 @@ function update(): void {
 
   const position = SpotifyPlayer.GetTrackPosition() + POSITION_OFFSET;
 
+  // Binary search — lines are sorted by startTime
   let active: LineEntry | null = null;
-  for (const line of lines) {
-    if (line.startTime <= position && line.endTime >= position) {
-      active = line;
-      break;
+  {
+    let lo = 0;
+    let hi = lines.length - 1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      const line = lines[mid]!;
+      if (line.startTime <= position && position <= line.endTime) {
+        active = line;
+        break;
+      }
+      if (position < line.startTime) hi = mid - 1;
+      else lo = mid + 1;
     }
   }
 
@@ -386,6 +425,7 @@ function update(): void {
 
   if (active.text !== lastText) {
     lastText = active.text;
+    // enable_romaji changes only via settings UI; reading here is per-lyric (every few seconds), not per-tick, so direct read is fine.
     const enableRomaji = storage.get('enable_romaji') === 'true';
     setLyricsText(processPhoneticText(active.text, enableRomaji));
   }

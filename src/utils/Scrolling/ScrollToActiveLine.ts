@@ -6,6 +6,7 @@ import SimpleBar from 'simplebar';
 import fastdom from 'fastdom';
 
 // Window-persisted so hot-reload doesn't orphan in-flight rAF scroll loop
+// SAFETY: window augmentation for hot-reload persistence is intentional; __amaiScrollState is our own namespace and never conflicts with Spotify
 const windowRef = window as unknown as {
   __amaiScrollState?: {
     lastLine: HTMLElement | null;
@@ -44,15 +45,25 @@ export function ScrollToActiveLine(ScrollSimplebar: SimpleBar) {
 
     if (!Lines) return;
 
-    // Find the active line - this is a memory operation, not DOM
-    let currentLine = null;
-    for (let i = 0; i < Lines.length; i++) {
-      const line = Lines[i];
-      if (line.StartTime <= ProcessedPosition && line.EndTime >= ProcessedPosition) {
-        currentLine = line;
-        break; // Exit the loop once a line is found
+    // Binary search for active line — O(log n) instead of O(n) scan.
+    let currentLine: (typeof Lines)[number] | null = null;
+    let activeIdx = -1;
+    {
+      let lo = 0;
+      let hi = Lines.length - 1;
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        const line = Lines[mid] as { StartTime: number; EndTime: number };
+        if (line.StartTime <= ProcessedPosition && ProcessedPosition <= line.EndTime) {
+          activeIdx = mid;
+          break;
+        }
+        if (ProcessedPosition < line.StartTime) hi = mid - 1;
+        else lo = mid + 1;
       }
     }
+    if (activeIdx !== -1) currentLine = Lines[activeIdx] as (typeof Lines)[number];
+    // Hint: if cachedIdx matches activeIdx and lastLine already equals target, ScrollToActiveLine will early-return via lastLine check below.
 
     // If we found an active line, process it with FastDOM
     if (currentLine) {

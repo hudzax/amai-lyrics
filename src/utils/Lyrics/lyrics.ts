@@ -6,6 +6,9 @@ import { requestPositionTracking } from '../Gets/GetProgress';
 import { Lyrics } from './Animator/Main';
 import { ScrollSimplebar } from '../Scrolling/Simplebar/ScrollSimplebar';
 import { ScrollToActiveLine } from '../Scrolling/ScrollToActiveLine';
+import { resetLyricsSetterCache } from './Animator/Lyrics/LyricsSetter';
+import { resetAnimatorCache } from './Animator/Lyrics/LyricsAnimator';
+import { ResetLastLine } from '../Scrolling/ScrollToActiveLine';
 
 export const ScrollingIntervalTime = 0.1;
 
@@ -42,6 +45,9 @@ export function ClearLyricsContentArrays() {
   // Force a fresh initial render on the next tick (e.g. when a new song loads)
   lastRenderedPosition = -1;
   hasRenderedInitial = false;
+  resetLyricsSetterCache();
+  resetAnimatorCache();
+  ResetLastLine();
 }
 
 const THROTTLE_TIME = 0.05;
@@ -57,6 +63,7 @@ let pagePositionClient: (() => void) | null = null;
 // spawn duplicate loops. Exposed via ensureLyricsRenderLoop() for explicit
 // init and for lifecycle teardown; auto-starts on first import for backward
 // compat but can also be started explicitly from app.tsx.
+// SAFETY: window augmentation for hot-reload persistence; __amaiRenderLoop* are our isolated keys
 const windowRef = window as unknown as {
   __amaiRenderLoopStarted?: boolean;
   __amaiRenderLoop?: IntervalManager | null;

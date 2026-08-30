@@ -38,8 +38,10 @@ type GetProgressState = {
   cachedIsPlaying: boolean | null;
 };
 
+// SAFETY: window augmentation for hot-reload persistence; __amaiGetProgressState is our isolated namespace
 const windowRef = window as unknown as {
   __amaiGetProgressState?: GetProgressState;
+  __amaiGetProgressVisHandlerAttached?: boolean;
 };
 
 const state: GetProgressState =
@@ -58,12 +60,35 @@ const state: GetProgressState =
   });
 
 // Patch state shape from versions before this fix (hot-reload in the same session).
-if ((state as unknown as { loopTimeoutId?: unknown }).loopTimeoutId === undefined) {
-  (state as unknown as { loopTimeoutId: number | null }).loopTimeoutId = null;
+if (!('loopTimeoutId' in state)) {
+  Object.assign(state, { loopTimeoutId: null });
 }
-if ((state as unknown as { teardownRequested?: unknown }).teardownRequested === undefined) {
-  (state as unknown as { teardownRequested: boolean }).teardownRequested = false;
+if (!('teardownRequested' in state)) {
+  Object.assign(state, { teardownRequested: false });
 }
+
+// Visibility-aware throttling: while hidden (minimized / tray) no position
+// consumer can be visible, so we stay at idle heartbeat and skip RPC.
+function isDocumentHidden(): boolean {
+  try {
+    return typeof document !== 'undefined' && document.hidden;
+  } catch {
+    return false;
+  }
+}
+
+function ensureVisibilityHandler(): void {
+  if (windowRef.__amaiGetProgressVisHandlerAttached) return;
+  windowRef.__amaiGetProgressVisHandlerAttached = true;
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && state.activePositionClients > 0) {
+      // Wake immediately so lyrics/playbar snap back without 1s delay
+      state.syncNow = true;
+      scheduleLoop(0);
+    }
+  });
+}
+if (typeof document !== 'undefined') ensureVisibilityHandler();
 
 const syncedPosition = state.syncedPosition;
 
@@ -180,6 +205,12 @@ async function doSync(): Promise<void> {
 async function runLoop(): Promise<void> {
   try {
     if (state.teardownRequested && state.activePositionClients === 0) return;
+    // While hidden (minimized/tray), skip RPC and stay at idle heartbeat.
+    if (isDocumentHidden()) {
+      state.syncNow = false;
+      scheduleLoop(IDLE_HEARTBEAT_MS);
+      return;
+    }
     const isPlaying = Spicetify.Player.isPlaying();
 
     // Only do the (potentially RPC-heavy) anchor sync while something actually
@@ -228,6 +259,7 @@ export function requestPositionSync(): void {
 // the next paused-poll tick. Re-anchoring here is instant and race-free; the
 // next scheduled doSync() refines it with an exact position read.
 export function reanchorPosition(): void {
+  // SAFETY: Spicetify.Platform is injected at runtime and untyped; we narrow optional _state safely
   const platform = Spicetify.Platform as unknown as {
     PlayerAPI?: { _state?: { positionAsOfTimestamp?: number; timestamp?: number } };
   };

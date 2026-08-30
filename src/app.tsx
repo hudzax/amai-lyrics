@@ -1,5 +1,4 @@
 // Core imports
-import { IntervalManager } from './utils/IntervalManager';
 import { SpotifyPlayer } from './components/Global/SpotifyPlayer';
 import { IsPlaying } from './utils/Addons';
 import storage from './utils/storage';
@@ -15,9 +14,6 @@ import { NowPlayingBarBackground } from './components/DynamicBG/NowPlayingBarBac
 import PageView from './components/Pages/PageView';
 import { installBlankToastSuppressor } from './utils/suppressBlankToasts';
 import lifecycle from './utils/lifecycle';
-
-// Constants
-import { INTERVALS } from './constants/intervals';
 
 // CSS Imports
 import './css/default.css';
@@ -58,16 +54,40 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
   // on plugin teardown so a hot-reload doesn't leave a stale #SpicyLyricsPage.
   lifecycle.trackCallback(() => PageView.Destroy());
 
-  // Set up dynamic background updates
-  const dynamicBgInterval = new IntervalManager(INTERVALS.DYNAMIC_BG_UPDATE, () => {
-    // Skip everything while the sidebar NowPlayingView isn't mounted: apply()
-    // would otherwise repeat its measure/mutate cycle every second forever.
+  // Set up dynamic background updates — event-driven instead of 1 Hz polling.
+  // Previous interval queried `.NowPlayingView` every second forever; now we
+  // observe DOM mount + song changes and only apply when actually needed.
+  const applyDynamicBg = () => {
     if (!document.querySelector('.Root__right-sidebar aside.NowPlayingView')) return;
     const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
     backgroundManager.apply(coverUrl);
+  };
+  applyDynamicBg();
+  lifecycle.trackPlayerEvent('songchange', () => applyDynamicBg());
+  // Observe sidebar mount/unmount so opening the Now Playing View triggers apply immediately
+  const sidebarObserver = new MutationObserver(() => {
+    // Only act when the NowPlayingView appears; hidden removal is handled by apply's early return + cache clear
+    if (document.querySelector('.Root__right-sidebar aside.NowPlayingView')) {
+      applyDynamicBg();
+    }
   });
-  dynamicBgInterval.Start();
-  lifecycle.trackInterval(dynamicBgInterval);
+  const observeRoot = document.querySelector('.Root__right-sidebar') ?? document.body;
+  sidebarObserver.observe(observeRoot, { childList: true, subtree: true });
+  lifecycle.trackObserver(sidebarObserver);
+  // Also handle late-mounted right sidebar container itself
+  if (!document.querySelector('.Root__right-sidebar')) {
+    const bodyObserver = new MutationObserver((_muts, obs) => {
+      const sb = document.querySelector('.Root__right-sidebar');
+      if (sb) {
+        obs.disconnect();
+        sidebarObserver.disconnect();
+        sidebarObserver.observe(sb, { childList: true, subtree: true });
+        applyDynamicBg();
+      }
+    });
+    bodyObserver.observe(document.body, { childList: true, subtree: false });
+    lifecycle.trackObserver(bodyObserver);
+  }
 
   // Mirror visibility onto <html> so pure-CSS animations (dynamic background
   // rotation etc.) can pause via .amai-hidden rules while the client is
@@ -124,6 +144,7 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
 async function main() {
   // Tear down any previous instance before re-initializing (spicetify-watch /
   // Reload UI re-injects the script and re-runs main from a fresh module).
+  // SAFETY: window augmentation for hot-reload teardown; our __amaiLyricsTeardown key is namespaced
   const previousTeardown = (window as unknown as { __amaiLyricsTeardown?: () => void })
     .__amaiLyricsTeardown;
   if (typeof previousTeardown === 'function') {

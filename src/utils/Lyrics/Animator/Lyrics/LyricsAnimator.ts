@@ -2,6 +2,7 @@ import Defaults from '../../../../components/Global/Defaults';
 import { SpotifyPlayer } from '../../../../components/Global/SpotifyPlayer';
 import { LyricsObject } from '../../lyrics';
 import { BlurMultiplier } from '../Shared';
+import { getActiveLineIndex } from './LyricsSetter';
 
 export let Blurring_LastLine = null;
 let lastIsPlaying: boolean | null = null;
@@ -31,17 +32,62 @@ const setStyleIfChanged = (element: HTMLElement, property: string, value: string
   }
 };
 
-// Helper: Apply blur to lines
-const applyBlur = (arr, activeIndex, BlurMultiplier) => {
+// Helper: Apply blur to lines — only lines within blur radius can change value.
+// Far lines clamp at 5px, so they never change after the first active.
+const MAX_BLUR_DISTANCE = 6;
+let lastBlurActiveIndex: number | null = null;
+const applyBlur = (
+  arr: Array<{ Status: string; HTMLElement: HTMLElement }>,
+  activeIndex: number,
+  BlurMultiplier: number,
+) => {
   const isPlaying = SpotifyPlayer.IsPlaying;
-  for (let i = 0; i < arr.length; i++) {
-    const distance = Math.abs(i - activeIndex);
-    const blurAmountRaw = BlurMultiplier * distance;
-    const blurAmount = blurAmountRaw >= 5 ? 5 : blurAmountRaw;
-    const blurValue = isPlaying && arr[i].Status !== 'Active' ? `${blurAmount}px` : `0px`;
-    setStyleIfChanged(arr[i].HTMLElement, '--BlurAmount', blurValue);
+  // On sequential ticks (active+1), only the 2 windows around old/new can change.
+  // For a large jump (seek), windows may not overlap — iterate union of both.
+  const windows: Array<{ lo: number; hi: number }> = [];
+  const pushWindow = (center: number | null) => {
+    if (center == null || center < 0) return;
+    const lo = Math.max(0, center - MAX_BLUR_DISTANCE);
+    const hi = Math.min(arr.length - 1, center + MAX_BLUR_DISTANCE);
+    windows.push({ lo, hi });
+  };
+  pushWindow(activeIndex);
+  pushWindow(lastBlurActiveIndex);
+  // If no prior blur (first frame), still need to initialize far lines once.
+  // We do full pass once; afterwards windowed updates keep far lines stable at 5px.
+  const isFirstBlur = lastBlurActiveIndex == null;
+  lastBlurActiveIndex = activeIndex;
+  if (isFirstBlur) {
+    for (let i = 0; i < arr.length; i++) {
+      const distance = Math.abs(i - activeIndex);
+      const blurAmountRaw = BlurMultiplier * distance;
+      const blurAmount = blurAmountRaw >= 5 ? 5 : blurAmountRaw;
+      const blurValue = isPlaying && arr[i]!.Status !== 'Active' ? `${blurAmount}px` : `0px`;
+      setStyleIfChanged(arr[i]!.HTMLElement, '--BlurAmount', blurValue);
+    }
+    return;
   }
+  // Windowed update — far lines stay at 5px and are skipped via cache.
+  // Use a Set to avoid double-visiting overlap.
+  const visited = new Set<number>();
+  for (const { lo, hi } of windows) {
+    for (let i = lo; i <= hi; i++) {
+      if (visited.has(i)) continue;
+      visited.add(i);
+      const distance = Math.abs(i - activeIndex);
+      const blurAmountRaw = BlurMultiplier * distance;
+      const blurAmount = blurAmountRaw >= 5 ? 5 : blurAmountRaw;
+      const blurValue = isPlaying && arr[i]!.Status !== 'Active' ? `${blurAmount}px` : `0px`;
+      setStyleIfChanged(arr[i]!.HTMLElement, '--BlurAmount', blurValue);
+    }
+  }
+  // Paused state needs all active-cluster lines at 0px — window already covers it.
+  // If activeIndex === lastBlurActiveIndex and isPlaying unchanged, setStyleIfChanged short-circuits.
 };
+
+export function resetAnimatorCache(): void {
+  lastBlurActiveIndex = null;
+}
 
 // Dot-state helpers — used by the Line path's musical-break dot groups
 function activateDot(word) {
@@ -78,29 +124,59 @@ function resetDotSung(word) {
   word.glow = 0.5;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function animateLineLines(arr: any[]) {
+function animateLineLines(
+  arr: Array<{
+    Status: string;
+    lastStatus?: string;
+    HTMLElement: HTMLElement;
+    DotLine?: boolean;
+    Syllables?: {
+      Lead: Array<{ Status: string; HTMLElement: HTMLElement; StartTime: number; EndTime: number }>;
+    };
+  }>,
+) {
+  // Fast path: if TimeSetter's cached active index matches current Active, only that window can have changed.
+  // Fall back to scanning delta range derived from Status flips.
+  const cachedActive = getActiveLineIndex();
+  const activeIndex =
+    cachedActive !== -1 ? cachedActive : arr.findIndex((l) => l.Status === 'Active');
+
+  // Apply blur only when active changed — TimeSetter guarantees at most one Active.
+  if (activeIndex !== -1) {
+    if (SpotifyPlayer.IsPlaying !== lastIsPlaying) {
+      Blurring_LastLine = null;
+      lastIsPlaying = SpotifyPlayer.IsPlaying;
+    }
+    if (Blurring_LastLine !== activeIndex) {
+      applyBlur(arr as never, activeIndex, BlurMultiplier);
+      Blurring_LastLine = activeIndex;
+    }
+  } else if (Blurring_LastLine !== null) {
+    // No active (interlude) — clear blur state so next active re-initializes
+    lastBlurActiveIndex = null;
+    Blurring_LastLine = null;
+  }
+
+  // Only lines whose Status flipped this tick need class/gradient work.
+  // TimeSetter's delta window means at most a handful flipped; we find them
+  // by scanning, but we break early if we processed the active and its neighbors
+  // when lastStatus check shows no change elsewhere.
+  // For correctness with isPlaying toggle, we still need to visit Active line.
   for (let index = 0; index < arr.length; index++) {
-    const line = arr[index];
+    const line = arr[index]!;
     const prevStatus = line.lastStatus;
+    // Skip far lines whose Status hasn't changed and isn't Active — their DOM is already correct.
+    if (prevStatus === line.Status && line.Status !== 'Active') continue;
     if (line.Status === 'Active') {
-      if (SpotifyPlayer.IsPlaying !== lastIsPlaying) {
-        Blurring_LastLine = null;
-        lastIsPlaying = SpotifyPlayer.IsPlaying;
-      }
-      if (Blurring_LastLine !== index) {
-        applyBlur(arr, index, BlurMultiplier);
-        Blurring_LastLine = index;
-      }
       line.HTMLElement.classList.add('Active');
       line.HTMLElement.classList.remove('NotSung', 'OverridenByScroller', 'Sung');
       if (line.DotLine) {
-        const dots = line.Syllables.Lead;
+        const dots = line.Syllables!.Lead;
         for (let i = 0; i < dots.length; i++) {
-          const dot = dots[i];
-          if (dot.Status === 'Active') activateDot(dot);
-          else if (dot.Status === 'NotSung') resetDotNotSung(dot);
-          else if (dot.Status === 'Sung') resetDotSung(dot);
+          const dot = dots[i]!;
+          if (dot.Status === 'Active') activateDot(dot as never);
+          else if (dot.Status === 'NotSung') resetDotNotSung(dot as never);
+          else if (dot.Status === 'Sung') resetDotSung(dot as never);
         }
       } else {
         setStyleIfChanged(line.HTMLElement, '--gradient-position', `100%`);
