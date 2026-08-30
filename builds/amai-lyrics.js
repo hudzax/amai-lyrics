@@ -32,418 +32,6 @@
     mod
   ));
 
-  // node_modules/@hudzax/web-modules/UniqueId.js
-  function GetUniqueId() {
-    while (true) {
-      const id = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
-        let r = Math.random() * 16 | 0, v = c == "x" ? r : r & 3 | 8;
-        return v.toString(16);
-      });
-      if (GeneratedIds.has(id) === false) {
-        GeneratedIds.add(id);
-        return id;
-      }
-    }
-  }
-  var GeneratedIds;
-  var init_UniqueId = __esm({
-    "node_modules/@hudzax/web-modules/UniqueId.js"() {
-      GeneratedIds = /* @__PURE__ */ new Set();
-    }
-  });
-
-  // node_modules/@hudzax/web-modules/FreeArray.js
-  var FreeArray;
-  var init_FreeArray = __esm({
-    "node_modules/@hudzax/web-modules/FreeArray.js"() {
-      init_UniqueId();
-      FreeArray = class {
-        Items;
-        DestroyedState;
-        constructor() {
-          this.Items = /* @__PURE__ */ new Map();
-          this.DestroyedState = false;
-        }
-        Push(item) {
-          const key = GetUniqueId();
-          this.Items.set(key, item);
-          return key;
-        }
-        Get(key) {
-          return this.Items.get(key);
-        }
-        Remove(key) {
-          const item = this.Items.get(key);
-          if (item !== void 0) {
-            this.Items.delete(key);
-            return item;
-          }
-        }
-        GetIterator() {
-          return this.Items.entries();
-        }
-        IsDestroyed() {
-          return this.DestroyedState;
-        }
-        Destroy() {
-          if (this.DestroyedState) {
-            return;
-          }
-          this.DestroyedState = true;
-        }
-      };
-    }
-  });
-
-  // node_modules/@hudzax/web-modules/Signal.js
-  var Connection, Event, Signal, IsConnection;
-  var init_Signal = __esm({
-    "node_modules/@hudzax/web-modules/Signal.js"() {
-      init_FreeArray();
-      Connection = class {
-        ConnectionReferences;
-        Location;
-        Disconnected;
-        constructor(connections, callback) {
-          this.ConnectionReferences = connections;
-          this.Disconnected = false;
-          this.Location = connections.Push({
-            Callback: callback,
-            Connection: this
-          });
-        }
-        Disconnect() {
-          if (this.Disconnected) {
-            return;
-          }
-          this.Disconnected = true;
-          this.ConnectionReferences.Remove(this.Location);
-        }
-        IsDisconnected() {
-          return this.Disconnected;
-        }
-      };
-      Event = class {
-        Signal;
-        constructor(signal) {
-          this.Signal = signal;
-        }
-        Connect(callback) {
-          return this.Signal.Connect(callback);
-        }
-        IsDestroyed() {
-          return this.Signal.IsDestroyed();
-        }
-      };
-      Signal = class {
-        ConnectionReferences;
-        DestroyedState;
-        constructor() {
-          this.ConnectionReferences = new FreeArray();
-          this.DestroyedState = false;
-        }
-        Connect(callback) {
-          if (this.DestroyedState) {
-            throw "Cannot connect to a Destroyed Signal";
-          }
-          return new Connection(this.ConnectionReferences, callback);
-        }
-        Fire(...args) {
-          if (this.DestroyedState) {
-            throw "Cannot fire a Destroyed Signal";
-          }
-          for (const [_, reference] of this.ConnectionReferences.GetIterator()) {
-            reference.Callback(...args);
-          }
-        }
-        GetEvent() {
-          return new Event(this);
-        }
-        IsDestroyed() {
-          return this.DestroyedState;
-        }
-        Destroy() {
-          if (this.DestroyedState) {
-            return;
-          }
-          for (const [_, reference] of this.ConnectionReferences.GetIterator()) {
-            reference.Connection.Disconnect();
-          }
-          this.DestroyedState = true;
-        }
-      };
-      IsConnection = (value) => {
-        return value instanceof Connection;
-      };
-    }
-  });
-
-  // node_modules/@hudzax/web-modules/Scheduler.js
-  var Cancel, Timeout, Defer, IsScheduled;
-  var init_Scheduler = __esm({
-    "node_modules/@hudzax/web-modules/Scheduler.js"() {
-      Cancel = (scheduled) => {
-        if (scheduled[2]) {
-          return;
-        }
-        scheduled[2] = true;
-        switch (scheduled[0]) {
-          case 0:
-            globalThis.clearTimeout(scheduled[1]);
-            break;
-          case 1:
-            globalThis.clearInterval(scheduled[1]);
-            break;
-          case 2:
-            globalThis.cancelAnimationFrame(scheduled[1]);
-            break;
-        }
-      };
-      Timeout = (seconds, callback) => {
-        return [
-          0,
-          setTimeout(callback, seconds * 1e3)
-        ];
-      };
-      Defer = (callback) => {
-        const scheduled = [
-          2,
-          0
-        ];
-        scheduled[1] = requestAnimationFrame(() => {
-          scheduled[0] = 0;
-          scheduled[1] = setTimeout(callback, 0);
-        });
-        return scheduled;
-      };
-      IsScheduled = (value) => {
-        return Array.isArray(value) && (value.length === 2 || value.length === 3) && typeof value[0] === "number" && typeof value[1] === "number" && (value[2] === void 0 || value[2] === true);
-      };
-    }
-  });
-
-  // node_modules/@hudzax/web-modules/Maid.js
-  var IsGiveable, Maid;
-  var init_Maid = __esm({
-    "node_modules/@hudzax/web-modules/Maid.js"() {
-      init_UniqueId();
-      init_Signal();
-      init_Scheduler();
-      IsGiveable = (item) => {
-        return "Destroy" in item;
-      };
-      Maid = class {
-        Items;
-        DestroyedState;
-        DestroyingSignal;
-        CleanedSignal;
-        DestroyedSignal;
-        Destroying;
-        Cleaned;
-        Destroyed;
-        constructor() {
-          this.Items = /* @__PURE__ */ new Map();
-          this.DestroyedState = false;
-          {
-            this.DestroyingSignal = new Signal();
-            this.CleanedSignal = new Signal();
-            this.DestroyedSignal = new Signal();
-            this.Destroying = this.DestroyingSignal.GetEvent();
-            this.Cleaned = this.CleanedSignal.GetEvent();
-            this.Destroyed = this.DestroyedSignal.GetEvent();
-          }
-        }
-        CleanItem(item) {
-          if (IsGiveable(item)) {
-            item.Destroy();
-          } else if (IsScheduled(item)) {
-            Cancel(item);
-          } else if (item instanceof MutationObserver || item instanceof ResizeObserver) {
-            item.disconnect();
-          } else if (IsConnection(item)) {
-            item.Disconnect();
-          } else if (item instanceof Element) {
-            item.remove();
-          } else if (typeof item === "function") {
-            item();
-          } else {
-            console.warn("UNSUPPORTED MAID ITEM", typeof item, item);
-          }
-        }
-        Give(item, key) {
-          if (this.DestroyedState) {
-            this.CleanItem(item);
-            return item;
-          }
-          const finalKey = key ?? GetUniqueId();
-          if (this.Has(finalKey)) {
-            this.Clean(finalKey);
-          }
-          this.Items.set(finalKey, item);
-          return item;
-        }
-        GiveItems(...args) {
-          for (const item of args) {
-            this.Give(item);
-          }
-          return args;
-        }
-        Get(key) {
-          return this.DestroyedState ? void 0 : this.Items.get(key);
-        }
-        Has(key) {
-          return this.DestroyedState ? false : this.Items.has(key);
-        }
-        Clean(key) {
-          if (this.DestroyedState) {
-            return;
-          }
-          const item = this.Items.get(key);
-          if (item !== void 0) {
-            this.Items.delete(key);
-            this.CleanItem(item);
-          }
-        }
-        CleanUp() {
-          if (this.DestroyedState) {
-            return;
-          }
-          for (const [key, _] of this.Items) {
-            this.Clean(key);
-          }
-          if (this.DestroyedState === false) {
-            this.CleanedSignal.Fire();
-          }
-        }
-        IsDestroyed() {
-          return this.DestroyedState;
-        }
-        Destroy() {
-          if (this.DestroyedState === false) {
-            this.DestroyingSignal.Fire();
-            this.CleanUp();
-            this.DestroyedState = true;
-            this.DestroyedSignal.Fire();
-            this.DestroyingSignal.Destroy();
-            this.CleanedSignal.Destroy();
-            this.DestroyedSignal.Destroy();
-          }
-        }
-      };
-    }
-  });
-
-  // src/utils/IntervalManager.ts
-  function globalVisibilityHandler() {
-    const hidden = document.hidden;
-    for (const inst of liveInstances) {
-      if (inst.Destroyed)
-        continue;
-      if (hidden) {
-        if (inst.Running) {
-          inst.autoPaused = true;
-          inst.pauseTimer();
-        }
-      } else {
-        const anyInst = inst;
-        if (anyInst.autoPaused) {
-          anyInst.autoPaused = false;
-          if (!inst.Running) {
-            inst.Running = true;
-            anyInst.scheduleTick();
-          }
-        }
-      }
-    }
-  }
-  function ensureGlobalVisibilityListener() {
-    if (visibilityListenerAttached)
-      return;
-    visibilityListenerAttached = true;
-    document.addEventListener("visibilitychange", globalVisibilityHandler);
-  }
-  var liveInstances, visibilityListenerAttached, IntervalManager;
-  var init_IntervalManager = __esm({
-    "src/utils/IntervalManager.ts"() {
-      init_Maid();
-      liveInstances = /* @__PURE__ */ new Set();
-      visibilityListenerAttached = false;
-      IntervalManager = class {
-        constructor(duration, callback) {
-          this.timerId = null;
-          this.autoPaused = false;
-          if (isNaN(duration)) {
-            throw new Error("Duration cannot be NaN.");
-          }
-          this.maid = new Maid();
-          this.callback = callback;
-          this.duration = duration === Infinity ? 0 : duration * 1e3;
-          this.Running = false;
-          this.Destroyed = false;
-          liveInstances.add(this);
-          ensureGlobalVisibilityListener();
-          this.maid.Give(() => liveInstances.delete(this));
-          this.maid.Give(() => this.Stop());
-        }
-        Start() {
-          if (this.Destroyed) {
-            console.warn("Cannot start; IntervalManager has been destroyed.");
-            return;
-          }
-          if (this.Running) {
-            console.warn("Interval is already running.");
-            return;
-          }
-          this.Running = true;
-          this.autoPaused = false;
-          this.scheduleTick();
-        }
-        Stop() {
-          this.autoPaused = false;
-          if (this.timerId !== null) {
-            window.clearTimeout(this.timerId);
-            this.timerId = null;
-            this.Running = false;
-          }
-        }
-        Restart() {
-          if (this.Destroyed) {
-            console.warn("Cannot restart; IntervalManager has been destroyed.");
-            return;
-          }
-          this.Stop();
-          this.Start();
-        }
-        Destroy() {
-          if (this.Destroyed) {
-            console.warn("IntervalManager is already destroyed.");
-            return;
-          }
-          this.Stop();
-          this.maid.CleanUp();
-          this.Destroyed = true;
-          this.Running = false;
-        }
-        pauseTimer() {
-          if (this.timerId !== null) {
-            window.clearTimeout(this.timerId);
-            this.timerId = null;
-            this.Running = false;
-          }
-        }
-        scheduleTick() {
-          const tick = () => {
-            if (!this.Running || this.Destroyed)
-              return;
-            this.callback();
-            this.timerId = window.setTimeout(tick, this.duration);
-          };
-          this.timerId = window.setTimeout(tick, this.duration);
-        }
-      };
-    }
-  });
-
   // node_modules/@hudzax/web-modules/SpikyCache.js
   var SpikyCache;
   var init_SpikyCache = __esm({
@@ -539,6 +127,50 @@
             throw error;
           }
         }
+      };
+    }
+  });
+
+  // node_modules/@hudzax/web-modules/Scheduler.js
+  var Cancel, Timeout, Defer, IsScheduled;
+  var init_Scheduler = __esm({
+    "node_modules/@hudzax/web-modules/Scheduler.js"() {
+      Cancel = (scheduled) => {
+        if (scheduled[2]) {
+          return;
+        }
+        scheduled[2] = true;
+        switch (scheduled[0]) {
+          case 0:
+            globalThis.clearTimeout(scheduled[1]);
+            break;
+          case 1:
+            globalThis.clearInterval(scheduled[1]);
+            break;
+          case 2:
+            globalThis.cancelAnimationFrame(scheduled[1]);
+            break;
+        }
+      };
+      Timeout = (seconds, callback) => {
+        return [
+          0,
+          setTimeout(callback, seconds * 1e3)
+        ];
+      };
+      Defer = (callback) => {
+        const scheduled = [
+          2,
+          0
+        ];
+        scheduled[1] = requestAnimationFrame(() => {
+          scheduled[0] = 0;
+          scheduled[1] = setTimeout(callback, 0);
+        });
+        return scheduled;
+      };
+      IsScheduled = (value) => {
+        return Array.isArray(value) && (value.length === 2 || value.length === 3) && typeof value[0] === "number" && typeof value[1] === "number" && (value[2] === void 0 || value[2] === true);
       };
     }
   });
@@ -5387,7 +5019,7 @@
   });
 
   // src/utils/EventManager.ts
-  var windowRef, eventRegistry, nextId, listen, unListen, evoke, Event2, EventManager_default;
+  var windowRef, eventRegistry, nextId, listen, unListen, evoke, Event, EventManager_default;
   var init_EventManager = __esm({
     "src/utils/EventManager.ts"() {
       windowRef = window;
@@ -5423,12 +5055,12 @@
           }
         }
       };
-      Event2 = {
+      Event = {
         listen,
         unListen,
         evoke
       };
-      EventManager_default = Event2;
+      EventManager_default = Event;
     }
   });
 
@@ -5553,6 +5185,24 @@
     requestPositionSync: () => requestPositionSync,
     requestPositionTracking: () => requestPositionTracking
   });
+  function isDocumentHidden() {
+    try {
+      return typeof document !== "undefined" && document.hidden;
+    } catch {
+      return false;
+    }
+  }
+  function ensureVisibilityHandler() {
+    if (windowRef2.__amaiGetProgressVisHandlerAttached)
+      return;
+    windowRef2.__amaiGetProgressVisHandlerAttached = true;
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden && state.activePositionClients > 0) {
+        state.syncNow = true;
+        scheduleLoop(0);
+      }
+    });
+  }
   async function getLocalPosition(startedAt, SpotifyPlatform2) {
     const { position } = await SpotifyPlatform2.PlayerAPI._contextPlayer.getPositionState({});
     return {
@@ -5628,6 +5278,11 @@
     try {
       if (state.teardownRequested && state.activePositionClients === 0)
         return;
+      if (isDocumentHidden()) {
+        state.syncNow = false;
+        scheduleLoop(IDLE_HEARTBEAT_MS);
+        return;
+      }
       const isPlaying = Spicetify.Player.isPlaying();
       if (isPlaying && (state.activePositionClients > 0 || state.syncNow)) {
         state.syncNow = false;
@@ -5735,12 +5390,14 @@
         cachedPositionTime: 0,
         cachedIsPlaying: null
       });
-      if (state.loopTimeoutId === void 0) {
-        state.loopTimeoutId = null;
+      if (!("loopTimeoutId" in state)) {
+        Object.assign(state, { loopTimeoutId: null });
       }
-      if (state.teardownRequested === void 0) {
-        state.teardownRequested = false;
+      if (!("teardownRequested" in state)) {
+        Object.assign(state, { teardownRequested: false });
       }
+      if (typeof document !== "undefined")
+        ensureVisibilityHandler();
       syncedPosition = state.syncedPosition;
       PAUSED_POLL_MS = 500;
       ACTIVE_SYNC_MS = 250;
@@ -6129,7 +5786,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.4.30";
+      version = "1.4.31";
     }
   });
 
@@ -6391,6 +6048,263 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
+  // node_modules/@hudzax/web-modules/UniqueId.js
+  function GetUniqueId() {
+    while (true) {
+      const id = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
+        let r = Math.random() * 16 | 0, v = c == "x" ? r : r & 3 | 8;
+        return v.toString(16);
+      });
+      if (GeneratedIds.has(id) === false) {
+        GeneratedIds.add(id);
+        return id;
+      }
+    }
+  }
+  var GeneratedIds;
+  var init_UniqueId = __esm({
+    "node_modules/@hudzax/web-modules/UniqueId.js"() {
+      GeneratedIds = /* @__PURE__ */ new Set();
+    }
+  });
+
+  // node_modules/@hudzax/web-modules/FreeArray.js
+  var FreeArray;
+  var init_FreeArray = __esm({
+    "node_modules/@hudzax/web-modules/FreeArray.js"() {
+      init_UniqueId();
+      FreeArray = class {
+        Items;
+        DestroyedState;
+        constructor() {
+          this.Items = /* @__PURE__ */ new Map();
+          this.DestroyedState = false;
+        }
+        Push(item) {
+          const key = GetUniqueId();
+          this.Items.set(key, item);
+          return key;
+        }
+        Get(key) {
+          return this.Items.get(key);
+        }
+        Remove(key) {
+          const item = this.Items.get(key);
+          if (item !== void 0) {
+            this.Items.delete(key);
+            return item;
+          }
+        }
+        GetIterator() {
+          return this.Items.entries();
+        }
+        IsDestroyed() {
+          return this.DestroyedState;
+        }
+        Destroy() {
+          if (this.DestroyedState) {
+            return;
+          }
+          this.DestroyedState = true;
+        }
+      };
+    }
+  });
+
+  // node_modules/@hudzax/web-modules/Signal.js
+  var Connection, Event2, Signal, IsConnection;
+  var init_Signal = __esm({
+    "node_modules/@hudzax/web-modules/Signal.js"() {
+      init_FreeArray();
+      Connection = class {
+        ConnectionReferences;
+        Location;
+        Disconnected;
+        constructor(connections, callback) {
+          this.ConnectionReferences = connections;
+          this.Disconnected = false;
+          this.Location = connections.Push({
+            Callback: callback,
+            Connection: this
+          });
+        }
+        Disconnect() {
+          if (this.Disconnected) {
+            return;
+          }
+          this.Disconnected = true;
+          this.ConnectionReferences.Remove(this.Location);
+        }
+        IsDisconnected() {
+          return this.Disconnected;
+        }
+      };
+      Event2 = class {
+        Signal;
+        constructor(signal) {
+          this.Signal = signal;
+        }
+        Connect(callback) {
+          return this.Signal.Connect(callback);
+        }
+        IsDestroyed() {
+          return this.Signal.IsDestroyed();
+        }
+      };
+      Signal = class {
+        ConnectionReferences;
+        DestroyedState;
+        constructor() {
+          this.ConnectionReferences = new FreeArray();
+          this.DestroyedState = false;
+        }
+        Connect(callback) {
+          if (this.DestroyedState) {
+            throw "Cannot connect to a Destroyed Signal";
+          }
+          return new Connection(this.ConnectionReferences, callback);
+        }
+        Fire(...args) {
+          if (this.DestroyedState) {
+            throw "Cannot fire a Destroyed Signal";
+          }
+          for (const [_, reference] of this.ConnectionReferences.GetIterator()) {
+            reference.Callback(...args);
+          }
+        }
+        GetEvent() {
+          return new Event2(this);
+        }
+        IsDestroyed() {
+          return this.DestroyedState;
+        }
+        Destroy() {
+          if (this.DestroyedState) {
+            return;
+          }
+          for (const [_, reference] of this.ConnectionReferences.GetIterator()) {
+            reference.Connection.Disconnect();
+          }
+          this.DestroyedState = true;
+        }
+      };
+      IsConnection = (value) => {
+        return value instanceof Connection;
+      };
+    }
+  });
+
+  // node_modules/@hudzax/web-modules/Maid.js
+  var IsGiveable, Maid;
+  var init_Maid = __esm({
+    "node_modules/@hudzax/web-modules/Maid.js"() {
+      init_UniqueId();
+      init_Signal();
+      init_Scheduler();
+      IsGiveable = (item) => {
+        return "Destroy" in item;
+      };
+      Maid = class {
+        Items;
+        DestroyedState;
+        DestroyingSignal;
+        CleanedSignal;
+        DestroyedSignal;
+        Destroying;
+        Cleaned;
+        Destroyed;
+        constructor() {
+          this.Items = /* @__PURE__ */ new Map();
+          this.DestroyedState = false;
+          {
+            this.DestroyingSignal = new Signal();
+            this.CleanedSignal = new Signal();
+            this.DestroyedSignal = new Signal();
+            this.Destroying = this.DestroyingSignal.GetEvent();
+            this.Cleaned = this.CleanedSignal.GetEvent();
+            this.Destroyed = this.DestroyedSignal.GetEvent();
+          }
+        }
+        CleanItem(item) {
+          if (IsGiveable(item)) {
+            item.Destroy();
+          } else if (IsScheduled(item)) {
+            Cancel(item);
+          } else if (item instanceof MutationObserver || item instanceof ResizeObserver) {
+            item.disconnect();
+          } else if (IsConnection(item)) {
+            item.Disconnect();
+          } else if (item instanceof Element) {
+            item.remove();
+          } else if (typeof item === "function") {
+            item();
+          } else {
+            console.warn("UNSUPPORTED MAID ITEM", typeof item, item);
+          }
+        }
+        Give(item, key) {
+          if (this.DestroyedState) {
+            this.CleanItem(item);
+            return item;
+          }
+          const finalKey = key ?? GetUniqueId();
+          if (this.Has(finalKey)) {
+            this.Clean(finalKey);
+          }
+          this.Items.set(finalKey, item);
+          return item;
+        }
+        GiveItems(...args) {
+          for (const item of args) {
+            this.Give(item);
+          }
+          return args;
+        }
+        Get(key) {
+          return this.DestroyedState ? void 0 : this.Items.get(key);
+        }
+        Has(key) {
+          return this.DestroyedState ? false : this.Items.has(key);
+        }
+        Clean(key) {
+          if (this.DestroyedState) {
+            return;
+          }
+          const item = this.Items.get(key);
+          if (item !== void 0) {
+            this.Items.delete(key);
+            this.CleanItem(item);
+          }
+        }
+        CleanUp() {
+          if (this.DestroyedState) {
+            return;
+          }
+          for (const [key, _] of this.Items) {
+            this.Clean(key);
+          }
+          if (this.DestroyedState === false) {
+            this.CleanedSignal.Fire();
+          }
+        }
+        IsDestroyed() {
+          return this.DestroyedState;
+        }
+        Destroy() {
+          if (this.DestroyedState === false) {
+            this.DestroyingSignal.Fire();
+            this.CleanUp();
+            this.DestroyedState = true;
+            this.DestroyedSignal.Fire();
+            this.DestroyingSignal.Destroy();
+            this.CleanedSignal.Destroy();
+            this.DestroyedSignal.Destroy();
+          }
+        }
+      };
+    }
+  });
+
   // src/utils/Animator.ts
   var Animator;
   var init_Animator = __esm({
@@ -6497,6 +6411,117 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
+  // src/utils/IntervalManager.ts
+  function globalVisibilityHandler() {
+    const hidden = document.hidden;
+    for (const inst of liveInstances) {
+      if (inst.Destroyed)
+        continue;
+      if (hidden) {
+        if (inst.Running) {
+          inst.autoPaused = true;
+          inst.pauseTimer();
+        }
+      } else {
+        const anyInst = inst;
+        if (anyInst.autoPaused) {
+          anyInst.autoPaused = false;
+          if (!inst.Running) {
+            inst.Running = true;
+            anyInst.scheduleTick();
+          }
+        }
+      }
+    }
+  }
+  function ensureGlobalVisibilityListener() {
+    if (visibilityListenerAttached)
+      return;
+    visibilityListenerAttached = true;
+    document.addEventListener("visibilitychange", globalVisibilityHandler);
+  }
+  var liveInstances, visibilityListenerAttached, IntervalManager;
+  var init_IntervalManager = __esm({
+    "src/utils/IntervalManager.ts"() {
+      init_Maid();
+      liveInstances = /* @__PURE__ */ new Set();
+      visibilityListenerAttached = false;
+      IntervalManager = class {
+        constructor(duration, callback) {
+          this.timerId = null;
+          this.autoPaused = false;
+          if (isNaN(duration)) {
+            throw new Error("Duration cannot be NaN.");
+          }
+          this.maid = new Maid();
+          this.callback = callback;
+          this.duration = duration === Infinity ? 0 : duration * 1e3;
+          this.Running = false;
+          this.Destroyed = false;
+          liveInstances.add(this);
+          ensureGlobalVisibilityListener();
+          this.maid.Give(() => liveInstances.delete(this));
+          this.maid.Give(() => this.Stop());
+        }
+        Start() {
+          if (this.Destroyed) {
+            console.warn("Cannot start; IntervalManager has been destroyed.");
+            return;
+          }
+          if (this.Running) {
+            console.warn("Interval is already running.");
+            return;
+          }
+          this.Running = true;
+          this.autoPaused = false;
+          this.scheduleTick();
+        }
+        Stop() {
+          this.autoPaused = false;
+          if (this.timerId !== null) {
+            window.clearTimeout(this.timerId);
+            this.timerId = null;
+            this.Running = false;
+          }
+        }
+        Restart() {
+          if (this.Destroyed) {
+            console.warn("Cannot restart; IntervalManager has been destroyed.");
+            return;
+          }
+          this.Stop();
+          this.Start();
+        }
+        Destroy() {
+          if (this.Destroyed) {
+            console.warn("IntervalManager is already destroyed.");
+            return;
+          }
+          this.Stop();
+          this.maid.CleanUp();
+          this.Destroyed = true;
+          this.Running = false;
+        }
+        pauseTimer() {
+          if (this.timerId !== null) {
+            window.clearTimeout(this.timerId);
+            this.timerId = null;
+            this.Running = false;
+          }
+        }
+        scheduleTick() {
+          const tick = () => {
+            if (!this.Running || this.Destroyed)
+              return;
+            this.callback();
+            this.timerId = window.setTimeout(tick, this.duration);
+          };
+          this.timerId = window.setTimeout(tick, this.duration);
+        }
+      };
+    }
+  });
+
   // src/utils/Lyrics/Animator/Shared.ts
   var timeOffset, BlurMultiplier;
   var init_Shared = __esm({
@@ -6506,9 +6531,135 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
+  // src/utils/Lyrics/Animator/Lyrics/LyricsSetter.ts
+  function getStatus(start, end, current) {
+    if (start <= current && current <= end) {
+      return "Active";
+    } else if (start >= current) {
+      return "NotSung";
+    } else {
+      return "Sung";
+    }
+  }
+  function updateCollectionStatus(collection, current) {
+    for (const item of collection) {
+      item.Status = getStatus(item.StartTime, item.EndTime, current);
+    }
+  }
+  function resetLyricsSetterCache() {
+    lastActiveIndex = -1;
+    lastCachedLength = -1;
+  }
+  function binarySearchActive(tLines, pos) {
+    let lo = 0;
+    let hi = tLines.length - 1;
+    while (lo <= hi) {
+      const mid = lo + hi >> 1;
+      const line = tLines[mid];
+      if (line.StartTime <= pos && pos <= line.EndTime)
+        return mid;
+      if (pos < line.StartTime)
+        hi = mid - 1;
+      else
+        lo = mid + 1;
+    }
+    return -1;
+  }
+  function applyNoActive(tLines, pos) {
+    for (const line of tLines) {
+      const next = line.StartTime <= pos && pos <= line.EndTime ? "Active" : line.StartTime >= pos ? "NotSung" : "Sung";
+      if (line.Status !== next)
+        line.Status = next;
+    }
+    lastActiveIndex = -1;
+  }
+  function applyDelta(tLines, activeIndex, pos) {
+    if (lastActiveIndex === -1) {
+      for (let i = 0; i < tLines.length; i++) {
+        const line = tLines[i];
+        const next = i === activeIndex ? "Active" : i < activeIndex ? "Sung" : "NotSung";
+        if (line.Status !== next)
+          line.Status = next;
+      }
+    } else if (activeIndex > lastActiveIndex) {
+      const prev = tLines[lastActiveIndex];
+      if (prev.Status !== "Sung")
+        prev.Status = "Sung";
+      for (let i = lastActiveIndex + 1; i < activeIndex; i++) {
+        const line = tLines[i];
+        if (line.Status !== "Sung")
+          line.Status = "Sung";
+      }
+      const cur = tLines[activeIndex];
+      if (cur.Status !== "Active")
+        cur.Status = "Active";
+    } else {
+      const prev = tLines[lastActiveIndex];
+      if (prev.Status !== "NotSung")
+        prev.Status = "NotSung";
+      for (let i = activeIndex + 1; i <= lastActiveIndex - 1; i++) {
+        const line = tLines[i];
+        const next = tLines[i].StartTime >= pos ? "NotSung" : "Sung";
+        if (line.Status !== next)
+          line.Status = next;
+      }
+      const cur = tLines[activeIndex];
+      if (cur.Status !== "Active")
+        cur.Status = "Active";
+    }
+    const activeLine = tLines[activeIndex];
+    if (activeLine.DotLine)
+      updateCollectionStatus(activeLine.Syllables.Lead, pos);
+    lastActiveIndex = activeIndex;
+  }
+  function TimeSetter(PreCurrentPosition) {
+    const CurrentPosition = PreCurrentPosition + timeOffset;
+    const CurrentLyricsType = Defaults_default.CurrentLyricsType;
+    if (CurrentLyricsType && CurrentLyricsType === "None")
+      return;
+    const lines = LyricsObject.Types[CurrentLyricsType]?.Lines;
+    if (!lines)
+      return;
+    if (CurrentLyricsType !== "Line")
+      return;
+    if (lines.length !== lastCachedLength) {
+      lastActiveIndex = -1;
+      lastCachedLength = lines.length;
+    }
+    const tLines = lines;
+    const activeIndex = binarySearchActive(tLines, CurrentPosition);
+    if (activeIndex !== -1 && activeIndex === lastActiveIndex) {
+      const al = tLines[activeIndex];
+      if (al.DotLine)
+        updateCollectionStatus(al.Syllables.Lead, CurrentPosition);
+      return;
+    }
+    if (activeIndex === -1) {
+      applyNoActive(tLines, CurrentPosition);
+      return;
+    }
+    applyDelta(tLines, activeIndex, CurrentPosition);
+  }
+  function getActiveLineIndex() {
+    return lastActiveIndex;
+  }
+  var lastActiveIndex, lastCachedLength;
+  var init_LyricsSetter = __esm({
+    "src/utils/Lyrics/Animator/Lyrics/LyricsSetter.ts"() {
+      init_Defaults();
+      init_lyrics();
+      init_Shared();
+      lastActiveIndex = -1;
+      lastCachedLength = -1;
+    }
+  });
+
   // src/utils/Lyrics/Animator/Lyrics/LyricsAnimator.ts
   function setBlurringLastLine(c) {
     Blurring_LastLine = c;
+  }
+  function resetAnimatorCache() {
+    lastBlurActiveIndex = null;
   }
   function activateDot(word) {
     if (!word.HTMLElement.classList.contains("dot-active")) {
@@ -6542,18 +6693,27 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     word.glow = 0.5;
   }
   function animateLineLines(arr) {
+    const cachedActive = getActiveLineIndex();
+    const activeIndex = cachedActive !== -1 ? cachedActive : arr.findIndex((l) => l.Status === "Active");
+    if (activeIndex !== -1) {
+      if (SpotifyPlayer.IsPlaying !== lastIsPlaying) {
+        Blurring_LastLine = null;
+        lastIsPlaying = SpotifyPlayer.IsPlaying;
+      }
+      if (Blurring_LastLine !== activeIndex) {
+        applyBlur(arr, activeIndex, BlurMultiplier);
+        Blurring_LastLine = activeIndex;
+      }
+    } else if (Blurring_LastLine !== null) {
+      lastBlurActiveIndex = null;
+      Blurring_LastLine = null;
+    }
     for (let index = 0; index < arr.length; index++) {
       const line = arr[index];
       const prevStatus = line.lastStatus;
+      if (prevStatus === line.Status && line.Status !== "Active")
+        continue;
       if (line.Status === "Active") {
-        if (SpotifyPlayer.IsPlaying !== lastIsPlaying) {
-          Blurring_LastLine = null;
-          lastIsPlaying = SpotifyPlayer.IsPlaying;
-        }
-        if (Blurring_LastLine !== index) {
-          applyBlur(arr, index, BlurMultiplier);
-          Blurring_LastLine = index;
-        }
         line.HTMLElement.classList.add("Active");
         line.HTMLElement.classList.remove("NotSung", "OverridenByScroller", "Sung");
         if (line.DotLine) {
@@ -6596,13 +6756,14 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       animateLineLines(LyricsObject.Types.Line.Lines);
     }
   }
-  var Blurring_LastLine, lastIsPlaying, styleWriteCache, setStyleIfChanged, applyBlur;
+  var Blurring_LastLine, lastIsPlaying, styleWriteCache, setStyleIfChanged, MAX_BLUR_DISTANCE, lastBlurActiveIndex, applyBlur;
   var init_LyricsAnimator = __esm({
     "src/utils/Lyrics/Animator/Lyrics/LyricsAnimator.ts"() {
       init_Defaults();
       init_SpotifyPlayer();
       init_lyrics();
       init_Shared();
+      init_LyricsSetter();
       Blurring_LastLine = null;
       lastIsPlaying = null;
       styleWriteCache = /* @__PURE__ */ new WeakMap();
@@ -6617,64 +6778,46 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           element.style.setProperty(property, value);
         }
       };
+      MAX_BLUR_DISTANCE = 6;
+      lastBlurActiveIndex = null;
       applyBlur = (arr, activeIndex, BlurMultiplier2) => {
         const isPlaying = SpotifyPlayer.IsPlaying;
-        for (let i = 0; i < arr.length; i++) {
-          const distance = Math.abs(i - activeIndex);
-          const blurAmountRaw = BlurMultiplier2 * distance;
-          const blurAmount = blurAmountRaw >= 5 ? 5 : blurAmountRaw;
-          const blurValue = isPlaying && arr[i].Status !== "Active" ? `${blurAmount}px` : `0px`;
-          setStyleIfChanged(arr[i].HTMLElement, "--BlurAmount", blurValue);
+        const windows = [];
+        const pushWindow = (center) => {
+          if (center == null || center < 0)
+            return;
+          const lo = Math.max(0, center - MAX_BLUR_DISTANCE);
+          const hi = Math.min(arr.length - 1, center + MAX_BLUR_DISTANCE);
+          windows.push({ lo, hi });
+        };
+        pushWindow(activeIndex);
+        pushWindow(lastBlurActiveIndex);
+        const isFirstBlur = lastBlurActiveIndex == null;
+        lastBlurActiveIndex = activeIndex;
+        if (isFirstBlur) {
+          for (let i = 0; i < arr.length; i++) {
+            const distance = Math.abs(i - activeIndex);
+            const blurAmountRaw = BlurMultiplier2 * distance;
+            const blurAmount = blurAmountRaw >= 5 ? 5 : blurAmountRaw;
+            const blurValue = isPlaying && arr[i].Status !== "Active" ? `${blurAmount}px` : `0px`;
+            setStyleIfChanged(arr[i].HTMLElement, "--BlurAmount", blurValue);
+          }
+          return;
+        }
+        const visited = /* @__PURE__ */ new Set();
+        for (const { lo, hi } of windows) {
+          for (let i = lo; i <= hi; i++) {
+            if (visited.has(i))
+              continue;
+            visited.add(i);
+            const distance = Math.abs(i - activeIndex);
+            const blurAmountRaw = BlurMultiplier2 * distance;
+            const blurAmount = blurAmountRaw >= 5 ? 5 : blurAmountRaw;
+            const blurValue = isPlaying && arr[i].Status !== "Active" ? `${blurAmount}px` : `0px`;
+            setStyleIfChanged(arr[i].HTMLElement, "--BlurAmount", blurValue);
+          }
         }
       };
-    }
-  });
-
-  // src/utils/Lyrics/Animator/Lyrics/LyricsSetter.ts
-  function getStatus(start, end, current) {
-    if (start <= current && current <= end) {
-      return "Active";
-    } else if (start >= current) {
-      return "NotSung";
-    } else {
-      return "Sung";
-    }
-  }
-  function updateCollectionStatus(collection, current) {
-    for (const item of collection) {
-      item.Status = getStatus(item.StartTime, item.EndTime, current);
-    }
-  }
-  function TimeSetter(PreCurrentPosition) {
-    const CurrentPosition = PreCurrentPosition + timeOffset;
-    const CurrentLyricsType = Defaults_default.CurrentLyricsType;
-    if (CurrentLyricsType && CurrentLyricsType === "None")
-      return;
-    const lines = LyricsObject.Types[CurrentLyricsType]?.Lines;
-    if (!lines)
-      return;
-    if (CurrentLyricsType === "Line") {
-      for (const line of lines) {
-        const start = line.StartTime;
-        const end = line.EndTime;
-        if (start <= CurrentPosition && CurrentPosition <= end) {
-          line.Status = "Active";
-          if (line.DotLine) {
-            updateCollectionStatus(line.Syllables.Lead, CurrentPosition);
-          }
-        } else if (start >= CurrentPosition) {
-          line.Status = "NotSung";
-        } else if (end <= CurrentPosition) {
-          line.Status = "Sung";
-        }
-      }
-    }
-  }
-  var init_LyricsSetter = __esm({
-    "src/utils/Lyrics/Animator/Lyrics/LyricsSetter.ts"() {
-      init_Defaults();
-      init_lyrics();
-      init_Shared();
     }
   });
 
@@ -8084,6 +8227,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     lineElementToStartTimeMap.clear();
     lastRenderedPosition = -1;
     hasRenderedInitial = false;
+    resetLyricsSetterCache();
+    resetAnimatorCache();
+    ResetLastLine();
   }
   function ensureLyricsRenderLoop() {
     if (renderLoop && windowRef3.__amaiRenderLoopStarted)
@@ -8196,6 +8342,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_GetProgress();
       init_Main();
       init_ScrollSimplebar();
+      init_ScrollToActiveLine();
+      init_LyricsSetter();
+      init_LyricsAnimator();
       init_ScrollToActiveLine();
       ScrollingIntervalTime = 0.1;
       lyricsBetweenShow = 3;
@@ -8454,13 +8603,25 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       if (!Lines)
         return;
       let currentLine = null;
-      for (let i = 0; i < Lines.length; i++) {
-        const line = Lines[i];
-        if (line.StartTime <= ProcessedPosition && line.EndTime >= ProcessedPosition) {
-          currentLine = line;
-          break;
+      let activeIdx = -1;
+      {
+        let lo = 0;
+        let hi = Lines.length - 1;
+        while (lo <= hi) {
+          const mid = lo + hi >> 1;
+          const line = Lines[mid];
+          if (line.StartTime <= ProcessedPosition && ProcessedPosition <= line.EndTime) {
+            activeIdx = mid;
+            break;
+          }
+          if (ProcessedPosition < line.StartTime)
+            hi = mid - 1;
+          else
+            lo = mid + 1;
         }
       }
+      if (activeIdx !== -1)
+        currentLine = Lines[activeIdx];
       if (currentLine) {
         const LineElem = currentLine.HTMLElement;
         if (lastLine === LineElem)
@@ -8522,15 +8683,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053cc39/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d6689/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053cc39/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d6689/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053cc7a/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d66ea/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053cc7a/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d66ea/ProcessingIndicator.css"() {
     }
   });
 
@@ -10865,13 +11026,22 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     });
     const timelineElement = document.createElement("div");
     timelineElement.classList.add("Timeline");
-    timelineElement.innerHTML = `
-          <span class="Time Position">${songProgressBar.GetFormattedPosition() ?? "0:00"}</span>
-          <div class="SliderBar" style="--SliderProgress: ${songProgressBar.GetProgressPercentage() ?? 0}">
-            <div class="Handle"></div>
-          </div>
-          <span class="Time Duration">${songProgressBar.GetFormattedDuration() ?? "0:00"}</span>
-        `;
+    const positionSpan = document.createElement("span");
+    positionSpan.className = "Time Position";
+    positionSpan.textContent = songProgressBar.GetFormattedPosition() ?? "0:00";
+    const sliderBarDiv = document.createElement("div");
+    sliderBarDiv.className = "SliderBar";
+    sliderBarDiv.style.setProperty(
+      "--SliderProgress",
+      String(songProgressBar.GetProgressPercentage() ?? 0)
+    );
+    const handleDiv = document.createElement("div");
+    handleDiv.className = "Handle";
+    sliderBarDiv.appendChild(handleDiv);
+    const durationSpan = document.createElement("span");
+    durationSpan.className = "Time Duration";
+    durationSpan.textContent = songProgressBar.GetFormattedDuration() ?? "0:00";
+    timelineElement.append(positionSpan, sliderBarDiv, durationSpan);
     const sliderBar = timelineElement.querySelector(".SliderBar");
     return { songProgressBar, timelineElement, sliderBar };
   }
@@ -10937,6 +11107,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   function setupUpdateInterval(updateTimelineState) {
     const updateInterval = new IntervalManager(INTERVALS.PROGRESS_BAR_UPDATE, () => {
+      if (!Fullscreen_default.IsOpen)
+        return;
       if (!SpotifyPlayer.IsPlaying) {
         return;
       }
@@ -33650,7 +33822,14 @@ ${JSON.stringify(lyricsOnly)}`
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
   }
   function isEnabled() {
-    return storage_default.get("enable_playbar_lyrics") !== "false";
+    const now2 = performance.now();
+    if (cachedPlaybarEnabled !== null && now2 - cachedPlaybarEnabledAt < PLAYBAR_ENABLED_TTL_MS) {
+      return cachedPlaybarEnabled;
+    }
+    const raw = storage_default.get("enable_playbar_lyrics");
+    cachedPlaybarEnabled = raw !== "false";
+    cachedPlaybarEnabledAt = now2;
+    return cachedPlaybarEnabled;
   }
   function getLinesFromStorage(rawOverride) {
     const raw = rawOverride ?? storage_default.get("currentLyricsData");
@@ -33706,6 +33885,7 @@ ${JSON.stringify(lyricsOnly)}`
     lastText = "";
     cachedLines = null;
     cachedLinesRaw = null;
+    cachedPlaybarEnabled = null;
     inMemoryLyricsData = storage_default.get("currentLyricsData");
     currentColors = [];
     lastArtworkUrl = "";
@@ -33795,16 +33975,6 @@ ${JSON.stringify(lyricsOnly)}`
     applyArtworkColors(colors);
   }
   function update() {
-    if (!lyricsElement || !lyricsElement.isConnected || !centerWrapper || !centerWrapper.isConnected) {
-      const controls = document.querySelector(".Root__now-playing-bar .player-controls");
-      if (controls?.parentElement) {
-        inject();
-      } else {
-        return;
-      }
-    }
-    if (!lyricsElement || !centerWrapper)
-      return;
     const enabled = isEnabled();
     const onLyricsPage = Spicetify.Platform.History.location.pathname === "/AmaiLyrics";
     const isPaused = !SpotifyPlayer.IsPlaying;
@@ -33815,6 +33985,26 @@ ${JSON.stringify(lyricsOnly)}`
       playbarPositionClient();
       playbarPositionClient = null;
     }
+    if (!enabled || onLyricsPage || isPaused) {
+      if (lyricsElement && centerWrapper) {
+        centerWrapper.classList.remove("amai-hide-controls");
+        if (lyricsElement.innerHTML !== "") {
+          lyricsElement.innerHTML = "";
+          lastText = "";
+        }
+      }
+      return;
+    }
+    if (!lyricsElement || !lyricsElement.isConnected || !centerWrapper || !centerWrapper.isConnected) {
+      const controls = document.querySelector(".Root__now-playing-bar .player-controls");
+      if (controls?.parentElement) {
+        inject();
+      } else {
+        return;
+      }
+    }
+    if (!lyricsElement || !centerWrapper)
+      return;
     if (!enabled || onLyricsPage || isPaused) {
       centerWrapper.classList.remove("amai-hide-controls");
       lyricsElement.innerHTML = "";
@@ -33840,10 +34030,20 @@ ${JSON.stringify(lyricsOnly)}`
     }
     const position = SpotifyPlayer.GetTrackPosition() + POSITION_OFFSET;
     let active = null;
-    for (const line of lines) {
-      if (line.startTime <= position && line.endTime >= position) {
-        active = line;
-        break;
+    {
+      let lo = 0;
+      let hi = lines.length - 1;
+      while (lo <= hi) {
+        const mid = lo + hi >> 1;
+        const line = lines[mid];
+        if (line.startTime <= position && position <= line.endTime) {
+          active = line;
+          break;
+        }
+        if (position < line.startTime)
+          hi = mid - 1;
+        else
+          lo = mid + 1;
       }
     }
     if (!active) {
@@ -33934,7 +34134,7 @@ ${JSON.stringify(lyricsOnly)}`
     lifecycle_default.trackCallback(cleanup);
     lifecycle_default.trackWhentil(initWhen);
   }
-  var POSITION_OFFSET, UPDATE_INTERVAL, lyricsElement, centerWrapper, intervalManager, resizeObserver, lastText, playbarPositionClient, initWhen, cachedLines, cachedLinesRaw, inMemoryLyricsData, lyricsDataListenerId, currentColors, lastArtworkUrl, artworkColorDebounceTimer, MIN_TEXT_COLOR_LUMINANCE, PlaybarLyrics_default;
+  var POSITION_OFFSET, UPDATE_INTERVAL, lyricsElement, centerWrapper, intervalManager, resizeObserver, lastText, playbarPositionClient, initWhen, cachedLines, cachedLinesRaw, inMemoryLyricsData, lyricsDataListenerId, currentColors, lastArtworkUrl, artworkColorDebounceTimer, MIN_TEXT_COLOR_LUMINANCE, cachedPlaybarEnabled, cachedPlaybarEnabledAt, PLAYBAR_ENABLED_TTL_MS, PlaybarLyrics_default;
   var init_PlaybarLyrics = __esm({
     "src/components/PlaybarLyrics/PlaybarLyrics.ts"() {
       init_storage();
@@ -33965,12 +34165,19 @@ ${JSON.stringify(lyricsOnly)}`
       lastArtworkUrl = "";
       artworkColorDebounceTimer = null;
       MIN_TEXT_COLOR_LUMINANCE = 140;
+      cachedPlaybarEnabled = null;
+      cachedPlaybarEnabledAt = 0;
+      PLAYBAR_ENABLED_TTL_MS = 1500;
+      if (typeof window !== "undefined") {
+        window.addEventListener("storage", () => {
+          cachedPlaybarEnabled = null;
+        });
+      }
       PlaybarLyrics_default = InitializePlaybarLyrics;
     }
   });
 
   // src/app.tsx
-  init_IntervalManager();
   init_SpotifyPlayer();
   init_Addons();
   init_storage();
@@ -34975,7 +35182,6 @@ ${JSON.stringify(lyricsOnly)}`
 
   // src/app.tsx
   init_lifecycle();
-  init_intervals();
   function setupUI() {
     AppInitializer.setupSkeletonStyles();
     return new ButtonManager();
@@ -34995,14 +35201,35 @@ ${JSON.stringify(lyricsOnly)}`
     lifecycle_default.trackCallback(() => backgroundManager.destroy());
     new PageManager(buttonManager);
     lifecycle_default.trackCallback(() => PageView_default.Destroy());
-    const dynamicBgInterval = new IntervalManager(INTERVALS.DYNAMIC_BG_UPDATE, () => {
+    const applyDynamicBg = () => {
       if (!document.querySelector(".Root__right-sidebar aside.NowPlayingView"))
         return;
       const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
       backgroundManager.apply(coverUrl);
+    };
+    applyDynamicBg();
+    lifecycle_default.trackPlayerEvent("songchange", () => applyDynamicBg());
+    const sidebarObserver = new MutationObserver(() => {
+      if (document.querySelector(".Root__right-sidebar aside.NowPlayingView")) {
+        applyDynamicBg();
+      }
     });
-    dynamicBgInterval.Start();
-    lifecycle_default.trackInterval(dynamicBgInterval);
+    const observeRoot = document.querySelector(".Root__right-sidebar") ?? document.body;
+    sidebarObserver.observe(observeRoot, { childList: true, subtree: true });
+    lifecycle_default.trackObserver(sidebarObserver);
+    if (!document.querySelector(".Root__right-sidebar")) {
+      const bodyObserver = new MutationObserver((_muts, obs) => {
+        const sb = document.querySelector(".Root__right-sidebar");
+        if (sb) {
+          obs.disconnect();
+          sidebarObserver.disconnect();
+          sidebarObserver.observe(sb, { childList: true, subtree: true });
+          applyDynamicBg();
+        }
+      });
+      bodyObserver.observe(document.body, { childList: true, subtree: false });
+      lifecycle_default.trackObserver(bodyObserver);
+    }
     const syncVisibilityClass = () => {
       document.documentElement.classList.toggle("amai-hidden", document.hidden);
     };
@@ -35086,7 +35313,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053cc39/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d6689/DotLoader.css */
 #DotLoader {
   width: 15px;
   aspect-ratio: 1;
@@ -35112,7 +35339,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053cc7a/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d66ea/ProcessingIndicator.css */
 #SpicyLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -35192,7 +35419,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053c300/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d5f20/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -35341,7 +35568,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053c701/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d6241/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -35549,7 +35776,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053c7a2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d62b2/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -36150,7 +36377,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053c8f3/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d6373/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -36329,7 +36556,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053c964/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d63c4/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -36602,7 +36829,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053c9f5/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d6435/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -36848,7 +37075,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053ca56/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d6486/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -36870,7 +37097,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053ca87/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d64b7/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -36897,7 +37124,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-20804-wQ72LGzdF4ie/1a050053cac8/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d64d8/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
