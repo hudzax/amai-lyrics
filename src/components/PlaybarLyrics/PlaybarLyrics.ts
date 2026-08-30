@@ -224,7 +224,7 @@ function setLyricsText(html: string): void {
     if (inner.scrollWidth > cw) {
       const dist = cw - inner.scrollWidth - 20;
       inner.style.setProperty('--scroll-dist', `${dist}px`);
-      inner.style.setProperty('--scroll-dur', `${Math.max(6, Math.abs(dist) / 30)}s`);
+      inner.style.setProperty('--scroll-dur', `${Math.max(3, Math.abs(dist) / 75)}s`);
       inner.classList.add('amai-marquee');
     } else {
       inner.classList.remove('amai-marquee');
