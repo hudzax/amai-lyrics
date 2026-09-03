@@ -5786,7 +5786,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.4.31";
+      version = "1.4.32";
     }
   });
 
@@ -6756,7 +6756,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       animateLineLines(LyricsObject.Types.Line.Lines);
     }
   }
-  var Blurring_LastLine, lastIsPlaying, styleWriteCache, setStyleIfChanged, MAX_BLUR_DISTANCE, lastBlurActiveIndex, applyBlur;
+  var Blurring_LastLine, lastIsPlaying, styleWriteCache, setStyleIfChanged, MAX_BLUR_DISTANCE, lastBlurActiveIndex, lastBlurIsPlaying, applyBlur;
   var init_LyricsAnimator = __esm({
     "src/utils/Lyrics/Animator/Lyrics/LyricsAnimator.ts"() {
       init_Defaults();
@@ -6780,8 +6780,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       };
       MAX_BLUR_DISTANCE = 6;
       lastBlurActiveIndex = null;
+      lastBlurIsPlaying = null;
       applyBlur = (arr, activeIndex, BlurMultiplier2) => {
         const isPlaying = SpotifyPlayer.IsPlaying;
+        const playStateChanged = isPlaying !== lastBlurIsPlaying;
+        lastBlurIsPlaying = isPlaying;
         const windows = [];
         const pushWindow = (center) => {
           if (center == null || center < 0)
@@ -6792,7 +6795,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         };
         pushWindow(activeIndex);
         pushWindow(lastBlurActiveIndex);
-        const isFirstBlur = lastBlurActiveIndex == null;
+        const isFirstBlur = lastBlurActiveIndex == null || playStateChanged;
         lastBlurActiveIndex = activeIndex;
         if (isFirstBlur) {
           for (let i = 0; i < arr.length; i++) {
@@ -8683,15 +8686,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d6689/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a062dba/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d6689/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a062dba/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d66ea/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a062dfb/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d66ea/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a062dfb/ProcessingIndicator.css"() {
     }
   });
 
@@ -33636,6 +33639,16 @@ ${JSON.stringify(lyricsOnly)}`
   });
 
   // src/utils/ArtworkColors.ts
+  var ArtworkColors_exports = {};
+  __export(ArtworkColors_exports, {
+    applyArtworkAccents: () => applyArtworkAccents,
+    default: () => ArtworkColors_default,
+    extractArtworkColors: () => extractArtworkColors,
+    hexLuminance: () => hexLuminance,
+    hexToRgb: () => hexToRgb,
+    liftToLuminance: () => liftToLuminance,
+    publishArtworkAccents: () => publishArtworkAccents
+  });
   function rgbToHex({ r, g, b }) {
     const toHex = (c) => Math.round(c).toString(16).padStart(2, "0");
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
@@ -33767,28 +33780,13 @@ ${JSON.stringify(lyricsOnly)}`
     );
     return promise;
   }
-  var BITMAP_SIZE, QUANTIZE_BITS, RESULT_COUNT, MIN_SATURATION, MIN_LIGHTNESS, MAX_LIGHTNESS, ARTWORK_COLOR_CACHE_MAX, artworkColorCache, artworkColorPromiseCache, ArtworkColors_default;
-  var init_ArtworkColors = __esm({
-    "src/utils/ArtworkColors.ts"() {
-      BITMAP_SIZE = 40;
-      QUANTIZE_BITS = 5;
-      RESULT_COUNT = 5;
-      MIN_SATURATION = 30;
-      MIN_LIGHTNESS = 35;
-      MAX_LIGHTNESS = 235;
-      ARTWORK_COLOR_CACHE_MAX = 30;
-      artworkColorCache = /* @__PURE__ */ new Map();
-      artworkColorPromiseCache = /* @__PURE__ */ new Map();
-      ArtworkColors_default = extractArtworkColors;
-    }
-  });
-
-  // src/components/PlaybarLyrics/PlaybarLyrics.ts
-  var PlaybarLyrics_exports = {};
-  __export(PlaybarLyrics_exports, {
-    InitializePlaybarLyrics: () => InitializePlaybarLyrics,
-    default: () => PlaybarLyrics_default
-  });
+  function hexToRgb(hex) {
+    const clean = hex.replace("#", "");
+    const r = parseInt(clean.substring(0, 2), 16);
+    const g = parseInt(clean.substring(2, 4), 16);
+    const b = parseInt(clean.substring(4, 6), 16);
+    return `${r}, ${g}, ${b}`;
+  }
   function hexLuminance(hex) {
     const clean = hex.replace("#", "");
     const r = parseInt(clean.substring(0, 2), 16);
@@ -33821,6 +33819,66 @@ ${JSON.stringify(lyricsOnly)}`
     const toHex = (c) => Math.round(c).toString(16).padStart(2, "0");
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
   }
+  async function publishArtworkAccents(imageUrl) {
+    if (!imageUrl) {
+      lastAccentArtworkUrl = null;
+      applyArtworkAccents([]);
+      return;
+    }
+    let url = imageUrl;
+    if (url.startsWith("spotify:image:")) {
+      url = `https://i.scdn.co/image/${url.replace("spotify:image:", "")}`;
+    }
+    if (url === lastAccentArtworkUrl)
+      return;
+    lastAccentArtworkUrl = url;
+    const colors = await extractArtworkColors(url);
+    applyArtworkAccents(colors);
+  }
+  function applyArtworkAccents(colors) {
+    const rootStyle = document.documentElement.style;
+    if (!colors.length) {
+      for (let i = 1; i <= ACCENT_COUNT; i++) {
+        rootStyle.removeProperty(`--amai-accent-${i}`);
+      }
+      rootStyle.removeProperty("--amai-accent-rgb");
+      return;
+    }
+    const lifted = colors.map((c) => liftToLuminance(c, ACCENT_LIFT_MIN_LUMINANCE));
+    const padded = [...lifted];
+    while (padded.length < ACCENT_COUNT) {
+      padded.push(padded[padded.length % padded.length]);
+    }
+    for (let i = 0; i < ACCENT_COUNT; i++) {
+      rootStyle.setProperty(`--amai-accent-${i + 1}`, padded[i]);
+    }
+    rootStyle.setProperty("--amai-accent-rgb", hexToRgb(padded[0]));
+  }
+  var BITMAP_SIZE, QUANTIZE_BITS, RESULT_COUNT, MIN_SATURATION, MIN_LIGHTNESS, MAX_LIGHTNESS, ARTWORK_COLOR_CACHE_MAX, artworkColorCache, artworkColorPromiseCache, ACCENT_LIFT_MIN_LUMINANCE, ACCENT_COUNT, lastAccentArtworkUrl, ArtworkColors_default;
+  var init_ArtworkColors = __esm({
+    "src/utils/ArtworkColors.ts"() {
+      BITMAP_SIZE = 40;
+      QUANTIZE_BITS = 5;
+      RESULT_COUNT = 5;
+      MIN_SATURATION = 30;
+      MIN_LIGHTNESS = 35;
+      MAX_LIGHTNESS = 235;
+      ARTWORK_COLOR_CACHE_MAX = 30;
+      artworkColorCache = /* @__PURE__ */ new Map();
+      artworkColorPromiseCache = /* @__PURE__ */ new Map();
+      ACCENT_LIFT_MIN_LUMINANCE = 140;
+      ACCENT_COUNT = 5;
+      lastAccentArtworkUrl = null;
+      ArtworkColors_default = extractArtworkColors;
+    }
+  });
+
+  // src/components/PlaybarLyrics/PlaybarLyrics.ts
+  var PlaybarLyrics_exports = {};
+  __export(PlaybarLyrics_exports, {
+    InitializePlaybarLyrics: () => InitializePlaybarLyrics,
+    default: () => PlaybarLyrics_default
+  });
   function isEnabled() {
     const now2 = performance.now();
     if (cachedPlaybarEnabled !== null && now2 - cachedPlaybarEnabledAt < PLAYBAR_ENABLED_TTL_MS) {
@@ -34888,10 +34946,16 @@ ${JSON.stringify(lyricsOnly)}`
           }
         );
       }, 500);
+      this.debouncedAccentPublish = debounce2((coverUrl) => {
+        void Promise.resolve().then(() => (init_ArtworkColors(), ArtworkColors_exports)).then(({ publishArtworkAccents: publishArtworkAccents2 }) => {
+          void publishArtworkAccents2(coverUrl ?? null);
+        });
+      }, 500);
     }
     dispose() {
       this.debouncedBgApply.cancel();
       this.debouncedPageBgApply.cancel();
+      this.debouncedAccentPublish.cancel();
     }
     async handleSongChange(event) {
       let attempts = 0;
@@ -34915,6 +34979,7 @@ ${JSON.stringify(lyricsOnly)}`
       }).catch((e) => console.error("[Amai Lyrics] SongChange fetch failed:", e));
       this.buttonManager.updateRegistration();
       this.debouncedBgApply(Spicetify.Player.data?.item?.metadata?.image_url);
+      this.debouncedAccentPublish(Spicetify.Player.data?.item?.metadata?.image_url);
       if (Spicetify.Player.data.item?.type === "track") {
         if (document.querySelector("#SpicyLyricsPage .ContentBox .NowBar")) {
           const { UpdateNowBar: UpdateNowBar2 } = await Promise.resolve().then(() => (init_NowBar2(), NowBar_exports));
@@ -35200,6 +35265,9 @@ ${JSON.stringify(lyricsOnly)}`
     lifecycle_default.trackCallback(() => songChangeManager.dispose());
     lifecycle_default.trackCallback(() => backgroundManager.destroy());
     new PageManager(buttonManager);
+    void Promise.resolve().then(() => (init_ArtworkColors(), ArtworkColors_exports)).then(({ publishArtworkAccents: publishArtworkAccents2 }) => {
+      void publishArtworkAccents2(Spicetify.Player.data?.item?.metadata?.image_url ?? null);
+    });
     lifecycle_default.trackCallback(() => PageView_default.Destroy());
     const applyDynamicBg = () => {
       if (!document.querySelector(".Root__right-sidebar aside.NowPlayingView"))
@@ -35313,43 +35381,53 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d6689/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a062dba/DotLoader.css */
 #DotLoader {
-  width: 15px;
+  --dot-color: var(--amai-accent-1);
+  --dot-color-dim: color-mix(in srgb, var(--amai-accent-1) 22%, transparent);
+  width: 18px;
   aspect-ratio: 1;
   border-radius: 50%;
+  background: var(--dot-color);
   animation: l5 1s infinite linear alternate;
 }
 @keyframes l5 {
   0% {
-    box-shadow: 20px 0 #FFF, -20px 0 #ffffff22;
-    background: #FFF;
+    box-shadow: 24px 0 var(--dot-color), -24px 0 var(--dot-color-dim);
+    background: var(--dot-color);
   }
   33% {
-    box-shadow: 20px 0 #FFF, -20px 0 #ffffff22;
-    background: #ffffff22;
+    box-shadow: 24px 0 var(--dot-color), -24px 0 var(--dot-color-dim);
+    background: var(--dot-color-dim);
   }
   66% {
-    box-shadow: 20px 0 #ffffff22, -20px 0 #FFF;
-    background: #ffffff22;
+    box-shadow: 24px 0 var(--dot-color-dim), -24px 0 var(--dot-color);
+    background: var(--dot-color-dim);
   }
   100% {
-    box-shadow: 20px 0 #ffffff22, -20px 0 #FFF;
-    background: #FFF;
+    box-shadow: 24px 0 var(--dot-color-dim), -24px 0 var(--dot-color);
+    background: var(--dot-color);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #DotLoader {
+    animation: none;
+    opacity: 0.85;
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d66ea/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a062dfb/ProcessingIndicator.css */
 #SpicyLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   height: 3px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--amai-fill-subtle);
+  border-radius: 999px;
   overflow: hidden;
   opacity: 0;
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: opacity 0.3s var(--amai-ease-standard), transform 0.3s var(--amai-ease-standard);
   transform: translateY(10px);
   z-index: 5;
   pointer-events: none;
@@ -35364,7 +35442,8 @@ ${JSON.stringify(lyricsOnly)}`
   left: 0;
   height: 100%;
   width: 100%;
-  background: linear-gradient(90deg, #1DB954 0%, #1ED760 100%);
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--amai-accent-3) 0%, var(--amai-accent-1) 100%);
   transform: translateX(-100%);
   animation: processingSlide 2s infinite ease-in-out;
 }
@@ -35373,10 +35452,10 @@ ${JSON.stringify(lyricsOnly)}`
   bottom: 25px;
   right: 15px;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--amai-text-muted);
   font-weight: 500;
   opacity: 0;
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: opacity 0.3s var(--amai-ease-standard), transform 0.3s var(--amai-ease-standard);
   transform: translateY(5px);
   pointer-events: none;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
@@ -35419,7 +35498,60 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d5f20/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a062090/tokens.css */
+:root {
+  --amai-accent-1: #1ed760;
+  --amai-accent-2: #1db954;
+  --amai-accent-3: #169c46;
+  --amai-accent-4: #1ed760;
+  --amai-accent-5: #1db954;
+  --amai-accent-rgb:
+    30,
+    215,
+    96;
+  --amai-fill-subtle: rgba(255, 255, 255, 0.08);
+  --amai-fill-glass: rgba(255, 255, 255, 0.1);
+  --amai-fill-raised: rgba(255, 255, 255, 0.15);
+  --amai-fill-control: #ffffff36;
+  --amai-fill-control-hover: rgba(0, 0, 0, 0.3);
+  --amai-scrim: rgba(0, 0, 0, 0.2);
+  --amai-scrim-strong: rgba(0, 0, 0, 0.55);
+  --amai-stroke-1: rgba(255, 255, 255, 0.15);
+  --amai-stroke-2: rgba(255, 255, 255, 0.2);
+  --amai-stroke-3: rgba(255, 255, 255, 0.4);
+  --amai-stroke-4: rgba(255, 255, 255, 0.65);
+  --amai-shadow-card: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --amai-shadow-panel: 0 4px 10px rgba(0, 0, 0, 0.1);
+  --amai-shadow-float: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --amai-shadow-vinyl: 0 9px 20px 0 rgba(0, 0, 0, 0.271);
+  --amai-shadow-media: 0 4px 12px 0 rgba(0, 0, 0, 0.4);
+  --amai-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --amai-ease-out-expo: cubic-bezier(0.22, 1, 0.36, 1);
+  --amai-ease-word: cubic-bezier(0.61, 1, 0.88, 1);
+  --amai-ease-spring: cubic-bezier(0.24, 0.01, 0.97, 1.41);
+  --amai-ease-io: cubic-bezier(0.37, 0, 0.63, 1);
+  --amai-dur-fast: 0.15s;
+  --amai-dur-base: 0.2s;
+  --amai-dur-slow: 0.3s;
+  --amai-dur-slower: 0.4s;
+  --amai-font-display:
+    "Manrope",
+    "Noto Sans JP",
+    "Noto Sans Display",
+    sans-serif;
+  --amai-font-cjk:
+    "Noto Sans JP",
+    "Noto Sans Display",
+    sans-serif;
+  --amai-text-hi: rgba(255, 255, 255, 0.95);
+  --amai-text-mid: rgba(255, 255, 255, 0.9);
+  --amai-text-low: rgba(255, 255, 255, 0.7);
+  --amai-text-faint: rgba(255, 255, 255, 0.5);
+  --amai-text-muted: rgba(255, 255, 255, 0.6);
+  --amai-scrollbar-thumb: rgba(255, 255, 255, 0.6);
+}
+
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a062501/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -35444,11 +35576,7 @@ ${JSON.stringify(lyricsOnly)}`
   user-select: none;
 }
 #SpicyLyricsPage {
-  font-family:
-    "Manrope",
-    "Noto Sans JP",
-    "Noto Sans Display",
-    sans-serif;
+  font-family: var(--amai-font-display);
 }
 [font=Vazirmatn] {
   font-family:
@@ -35483,7 +35611,7 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
 #SpicyLyricsPage .ViewControls .ViewControl {
   --ViewControlHeight: var(--ViewControlSize, 100cqh);
   aspect-ratio: 1;
-  background: #ffffff36;
+  background: var(--amai-fill-control);
   border: none;
   border-radius: 100rem;
   display: flex;
@@ -35496,9 +35624,22 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
   text-align: center;
   -webkit-box-align: center;
   -webkit-box-pack: center;
+  transition:
+    background-color var(--amai-dur-base) var(--amai-ease-standard),
+    transform var(--amai-dur-fast) var(--amai-ease-out-expo),
+    box-shadow var(--amai-dur-base) var(--amai-ease-standard);
 }
 #SpicyLyricsPage .ViewControls .ViewControl:hover {
-  background: rgba(0, 0, 0, .3);
+  background: color-mix(in srgb, var(--amai-accent-1) 18%, var(--amai-fill-control-hover));
+  transform: translateY(-1px);
+  box-shadow: var(--amai-shadow-panel);
+}
+#SpicyLyricsPage .ViewControls .ViewControl:active {
+  transform: translateY(0) scale(0.92);
+}
+#SpicyLyricsPage .ViewControls .ViewControl:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--amai-accent-1) 70%, white);
+  outline-offset: 2px;
 }
 #SpicyLyricsPage .ViewControls .ViewControl svg {
   fill: currentColor;
@@ -35568,7 +35709,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d6241/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a0625d2/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -35776,7 +35917,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d62b2/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a062673/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -35863,7 +36004,7 @@ button:has(#SpicyLyricsPageSvg):after {
     radial-gradient(circle at center, transparent 45%, rgba(255, 255, 255, 0.05) 45.5%, transparent 46%),
     radial-gradient(circle at center, #1a1a1a 0%, #0d0d0d 70%, #000000 100%);
   z-index: 1;
-  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 9px 20px 0 rgba(0, 0, 0, .271);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), var(--amai-shadow-vinyl);
 }
 #SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox::after {
   content: "";
@@ -35920,9 +36061,9 @@ button:has(#SpicyLyricsPageSvg):after {
   border-radius: 50%;
   width: 40%;
   height: 40%;
-  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, .4);
+  box-shadow: var(--amai-shadow-media);
   opacity: .95;
-  transition: opacity, scale .1s cubic-bezier(.24, .01, .97, 1.41);
+  transition: opacity, scale .1s var(--amai-ease-spring);
   cursor: grab;
   z-index: 3;
   position: absolute;
@@ -36007,6 +36148,7 @@ button:has(#SpicyLyricsPageSvg):after {
   color: white;
   text-align: center;
   opacity: .95;
+  letter-spacing: -0.01em;
 }
 #SpicyLyricsPage .ContentBox .NowBar .Header .Metadata .SongName span {
   white-space: nowrap;
@@ -36032,6 +36174,8 @@ button:has(#SpicyLyricsPageSvg):after {
   max-width: 20cqw;
   display: inline-block;
   text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 #SpicyLyricsPage .ContentBox .NowBar:is(.Active.LeftSide) + .LyricsContainer .loaderContainer {
   background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.2) 20%);
@@ -36377,7 +36521,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d6373/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a062784/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -36556,7 +36700,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d63c4/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a0627f5/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -36571,12 +36715,12 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent {
   --TextGlowDef: rgba(255,255,255,0.15) 0px 0px 6px;
-  --ActiveTextGlowDef: rgba(255,255,255,0.25) 0px 0px 16px;
+  --ActiveTextGlowDef: rgba(var(--amai-accent-rgb), 0.28) 0px 0px 16px;
   --StrongTextGlowDef: rgba(255,255,255,0.68) 0px 0px 16px;
   --StrongerTextGlowDef: rgba(255,255,255,0.74) 0px 0px 16px;
   --DefaultLyricsSize: clamp(1.5rem,calc(.425cqw * 7), 3rem);
   --DefaultLyricsSize-Small: clamp(1.1rem,calc(1cqw* 6), 1.5rem);
-  --Simplebar-Scrollbar-Color: rgba(255, 255, 255, 0.6);
+  --Simplebar-Scrollbar-Color: var(--amai-scrollbar-thumb);
   overflow-x: hidden !important;
   overflow-y: auto !important;
   height: 100cqh;
@@ -36623,15 +36767,20 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
 }
 #SpicyLyricsPage .AmaiPageButton {
   padding: 10px 24px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--amai-fill-subtle);
+  border: 1px solid var(--amai-stroke-1);
   border-radius: 500px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  color: rgba(255, 255, 255, 0.9);
+  transition:
+    background-color var(--amai-dur-slow) var(--amai-ease-standard),
+    border-color var(--amai-dur-slow) var(--amai-ease-standard),
+    color var(--amai-dur-slow) var(--amai-ease-standard),
+    box-shadow var(--amai-dur-slow) var(--amai-ease-standard),
+    transform var(--amai-dur-fast) var(--amai-ease-out-expo);
+  color: var(--amai-text-mid);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   font-size: 0.85rem;
@@ -36641,13 +36790,17 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   min-width: 160px;
 }
 #SpicyLyricsPage .AmaiPageButton:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.4);
+  background: var(--amai-fill-raised);
+  border-color: color-mix(in srgb, var(--amai-accent-1) 55%, transparent);
   color: rgba(255, 255, 255, 1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 16px rgba(var(--amai-accent-rgb), 0.18), var(--amai-shadow-card);
 }
 #SpicyLyricsPage .AmaiPageButton:active {
   transform: scale(0.95);
+}
+#SpicyLyricsPage .AmaiPageButton:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--amai-accent-1) 70%, white);
+  outline-offset: 2px;
 }
 #SpicyLyricsPage .AmaiPageButton.hidden {
   opacity: 0;
@@ -36662,7 +36815,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
 }
 #SpicyLyricsPage .amai-version-number {
   font-size: .85em;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--amai-text-faint);
   cursor: pointer;
   font-weight: normal;
 }
@@ -36674,12 +36827,12 @@ header.main-topBar-container .amai-info {
   top: 0;
   left: 0;
   width: 100%;
-  background-color: rgba(0, 0, 0, 0.55);
+  background-color: var(--amai-scrim-strong);
   padding: 8px;
   text-align: center;
   font-size: 13px;
   color: #fff;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--amai-shadow-float);
   text-decoration: none;
 }
 .simplebar-content .line {
@@ -36757,15 +36910,15 @@ header.main-topBar-container .amai-info {
 }
 #SpicyLyricsPage .ContentBox .NowBar.Active + .LyricsContainer .LyricsContent .simplebar-content-wrapper .simplebar-content {
   padding: 3cqh 3cqh 1.8cqh 3cqh;
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  background-color: var(--amai-fill-glass);
+  border: 1px solid var(--amai-stroke-2);
+  box-shadow: var(--amai-shadow-panel);
 }
 .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--amai-fill-glass);
   border-radius: 1cqh;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--amai-stroke-2);
+  box-shadow: var(--amai-shadow-panel);
 }
 .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section > button > div > div {
   background-color: transparent;
@@ -36782,6 +36935,8 @@ ruby.romaja {
 ruby > rt {
   margin-bottom: 0.15rem;
   font-size: 55%;
+  font-weight: 500;
+  letter-spacing: 0.02em;
 }
 .Button-buttonSecondary-small-useBrowserDefaultFocusStyle {
   border: 1px solid rgba(255, 255, 255, 0.65);
@@ -36829,7 +36984,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d6435/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a0628b6/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -36901,10 +37056,10 @@ ruby > rt {
   --DefaultTransitionDuration: var(--content-duration, 0.15s);
   --TransitionDuration: var(--DefaultTransitionDuration);
   --TransitionDefinition:
-    transform var(--TransitionDuration) cubic-bezier(0.61, 1, 0.88, 1),
-    opacity var(--TransitionDuration) cubic-bezier(0.61, 1, 0.88, 1),
-    scale var(--TransitionDuration) cubic-bezier(0.61, 1, 0.88, 1),
-    filter var(--TransitionDuration) cubic-bezier(0.61, 1, 0.88, 1);
+    transform var(--TransitionDuration) var(--amai-ease-word),
+    opacity var(--TransitionDuration) var(--amai-ease-word),
+    scale var(--TransitionDuration) var(--amai-ease-word),
+    filter var(--TransitionDuration) var(--amai-ease-word);
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line:is(.Active, .Sung) .word {
   text-shadow: var(--TextShadowDefinition);
@@ -36960,6 +37115,19 @@ ruby > rt {
   transform-origin: center center;
   margin: 0;
 }
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line {
+  animation: amai-line-enter 0.5s var(--amai-ease-word) backwards;
+}
+@keyframes amai-line-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.35em);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .dotGroup {
   scale: 1;
   transform-origin: center center;
@@ -36995,12 +37163,12 @@ ruby > rt {
   opacity: 0.2;
   --gradient-position: 100%;
   transition:
-    scale 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    scale 0.45s var(--amai-ease-out-expo),
+    opacity 0.45s var(--amai-ease-out-expo),
+    transform 0.45s var(--amai-ease-out-expo);
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .dotGroup .dot.dot-active {
-  animation: dot-pop var(--dot-duration, 1s) cubic-bezier(0.22, 1, 0.36, 1) 1 forwards;
+  animation: dot-pop var(--dot-duration, 1s) var(--amai-ease-out-expo) 1 forwards;
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active {
   opacity: 1;
@@ -37038,7 +37206,7 @@ ruby > rt {
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent[data-lyrics-type=Line] .line {
   transform-origin: left center;
-  transition: scale .2s cubic-bezier(.37, 0, .63, 1), opacity .2s cubic-bezier(.37, 0, .63, 1);
+  transition: scale .2s var(--amai-ease-io), opacity .2s var(--amai-ease-io);
   margin: 1cqw 0 0 0;
   display: inline-block;
 }
@@ -37074,8 +37242,13 @@ ruby > rt {
     will-change: auto !important;
   }
 }
+@media (prefers-reduced-motion: reduce) {
+  #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
+    animation: none !important;
+  }
+}
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d6486/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a062927/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -37084,7 +37257,7 @@ ruby > rt {
   height: 100%;
   width: 100%;
   inset: 0;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--amai-scrim);
   z-index: -1;
   opacity: 0;
   transition: all 0.4s ease-in-out;
@@ -37097,7 +37270,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d64b7/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a062968/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -37124,16 +37297,16 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7712-W8tAc4PuHZ4M/1a05349d64d8/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a0629a9/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
 .amai-playbar-lyrics {
-  --color-1: #1ed760;
-  --color-2: #1db954;
-  --color-3: #169c46;
-  --color-4: #1ed760;
-  --color-5: #1db954;
+  --color-1: var(--amai-accent-1);
+  --color-2: var(--amai-accent-2);
+  --color-3: var(--amai-accent-3);
+  --color-4: var(--amai-accent-4);
+  --color-5: var(--amai-accent-5);
   position: absolute;
   transform: translate(-50%, -50%);
   max-width: 60%;
@@ -37146,11 +37319,7 @@ ruby > rt {
   font-weight: 600;
   line-height: 1.3;
   padding-block: 0.12em;
-  font-family:
-    "Manrope",
-    "Noto Sans JP",
-    "Noto Sans Display",
-    sans-serif;
+  font-family: var(--amai-font-display);
   z-index: 2;
   text-shadow:
     0 0 12px rgba(0, 0, 0, 0.55),
@@ -37216,6 +37385,11 @@ ruby > rt {
 .amai-hide-controls:hover .amai-playbar-lyrics,
 .now-playing-bar__center:hover .amai-playbar-lyrics {
   opacity: 0 !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .amai-playbar-lyrics-inner {
+    animation-duration: 0s, var(--scroll-dur, 8s);
+  }
 }
 
       `).trim();
