@@ -36,12 +36,18 @@ const setStyleIfChanged = (element: HTMLElement, property: string, value: string
 // Far lines clamp at 5px, so they never change after the first active.
 const MAX_BLUR_DISTANCE = 6;
 let lastBlurActiveIndex: number | null = null;
+// Tracks the play state the blur values were last written under. Pausing must
+// unblur the WHOLE lyrics (not just the window around the active line), and
+// resuming must re-blur everything — both are full passes, not windowed ones.
+let lastBlurIsPlaying: boolean | null = null;
 const applyBlur = (
   arr: Array<{ Status: string; HTMLElement: HTMLElement }>,
   activeIndex: number,
   BlurMultiplier: number,
 ) => {
   const isPlaying = SpotifyPlayer.IsPlaying;
+  const playStateChanged = isPlaying !== lastBlurIsPlaying;
+  lastBlurIsPlaying = isPlaying;
   // On sequential ticks (active+1), only the 2 windows around old/new can change.
   // For a large jump (seek), windows may not overlap — iterate union of both.
   const windows: Array<{ lo: number; hi: number }> = [];
@@ -53,9 +59,10 @@ const applyBlur = (
   };
   pushWindow(activeIndex);
   pushWindow(lastBlurActiveIndex);
-  // If no prior blur (first frame), still need to initialize far lines once.
-  // We do full pass once; afterwards windowed updates keep far lines stable at 5px.
-  const isFirstBlur = lastBlurActiveIndex == null;
+  // If no prior blur (first frame) or the play state just flipped (pause/play),
+  // do a full pass — windowed updates would leave far lines stale (e.g. still
+  // blurred after pausing). Afterwards, windowed updates keep far lines stable.
+  const isFirstBlur = lastBlurActiveIndex == null || playStateChanged;
   lastBlurActiveIndex = activeIndex;
   if (isFirstBlur) {
     for (let i = 0; i < arr.length; i++) {
@@ -81,8 +88,10 @@ const applyBlur = (
       setStyleIfChanged(arr[i]!.HTMLElement, '--BlurAmount', blurValue);
     }
   }
-  // Paused state needs all active-cluster lines at 0px — window already covers it.
-  // If activeIndex === lastBlurActiveIndex and isPlaying unchanged, setStyleIfChanged short-circuits.
+  // Play-state flips are handled above via a full pass, so every line gets its
+  // correct --BlurAmount (0px while paused). Far lines clamp at 5px and are
+  // skipped via cache; if activeIndex and isPlaying are unchanged,
+  // setStyleIfChanged short-circuits.
 };
 
 export function resetAnimatorCache(): void {
