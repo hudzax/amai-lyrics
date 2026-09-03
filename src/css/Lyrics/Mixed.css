@@ -100,7 +100,7 @@
 
   --DefaultTransitionDuration: var(--content-duration, 0.15s);
   --TransitionDuration: var(--DefaultTransitionDuration);
-  --TransitionDefinition: transform var(--TransitionDuration) cubic-bezier(0.61, 1, 0.88, 1), opacity var(--TransitionDuration) cubic-bezier(0.61, 1, 0.88, 1), scale var(--TransitionDuration) cubic-bezier(0.61, 1, 0.88, 1), filter var(--TransitionDuration) cubic-bezier(0.61, 1, 0.88, 1);
+  --TransitionDefinition: transform var(--TransitionDuration) var(--amai-ease-word), opacity var(--TransitionDuration) var(--amai-ease-word), scale var(--TransitionDuration) var(--amai-ease-word), filter var(--TransitionDuration) var(--amai-ease-word);
 }
 
 /* #SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .word {
@@ -197,6 +197,25 @@
   margin: 0;
 }
 
+/* Gentle one-shot entrance: plays once per lyrics application (the elements
+   are re-created by the Applyer on every song/fetch), never per scroll or
+   per karaoke frame. Uses opacity + transform only, so it stays on the
+   compositor. */
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line {
+  animation: amai-line-enter 0.5s var(--amai-ease-word) backwards;
+}
+
+@keyframes amai-line-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.35em);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .dotGroup {
   scale: 1;
   transform-origin: center center;
@@ -244,13 +263,13 @@
   font-size: var(--font-size);
   opacity: 0.2;
   --gradient-position: 100%;
-  transition: scale 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: scale 0.45s var(--amai-ease-out-expo),
+    opacity 0.45s var(--amai-ease-out-expo),
+    transform 0.45s var(--amai-ease-out-expo);
 }
 
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .dotGroup .dot.dot-active {
-  animation: dot-pop var(--dot-duration, 1s) cubic-bezier(0.22, 1, 0.36, 1) 1 forwards;
+  animation: dot-pop var(--dot-duration, 1s) var(--amai-ease-out-expo) 1 forwards;
 }
 
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active {
@@ -303,7 +322,7 @@
 
 #SpicyLyricsPage .LyricsContainer .LyricsContent[data-lyrics-type="Line"] .line {
   transform-origin: left center;
-  transition: scale .2s cubic-bezier(.37,0,.63,1), opacity .2s cubic-bezier(.37,0,.63,1);
+  transition: scale .2s var(--amai-ease-io), opacity .2s var(--amai-ease-io);
   margin: 1cqw 0 0 0;
   display: inline-block;
 }
@@ -356,4 +375,11 @@
     will-change: auto !important;
   }
 }
+@media (prefers-reduced-motion: reduce) {
+  #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
+    /* Also suppress the one-shot entrance animation */
+    animation: none !important;
+  }
+}
+
 

@@ -7,7 +7,7 @@ import { convertLyrics } from '../../utils/Lyrics/conversion';
 import { createRubyFragment } from '../../utils/sanitize';
 import Whentil from '../../utils/Whentil';
 import lifecycle from '../../utils/lifecycle';
-import extractArtworkColors from '../../utils/ArtworkColors';
+import extractArtworkColors, { liftToLuminance } from '../../utils/ArtworkColors';
 import Event from '../../utils/EventManager';
 
 /**
@@ -58,51 +58,8 @@ let artworkColorDebounceTimer: number | null = null;
 // Spotify's dark playbar background.
 const MIN_TEXT_COLOR_LUMINANCE = 140;
 
-/**
- * Perceived sRGB luminance of a hex colour (0-255 scale).
- */
-function hexLuminance(hex: string): number {
-  const clean = hex.replace('#', '');
-  const r = parseInt(clean.substring(0, 2), 16);
-  const g = parseInt(clean.substring(2, 4), 16);
-  const b = parseInt(clean.substring(4, 6), 16);
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-/**
- * Lightens a hex colour by mixing it with white until its perceived luminance
- * reaches `minLum`.  Returns the adjusted hex string.
- */
-function liftToLuminance(hex: string, minLum: number): string {
-  if (hexLuminance(hex) >= minLum) return hex;
-
-  const clean = hex.replace('#', '');
-  let r = parseInt(clean.substring(0, 2), 16);
-  let g = parseInt(clean.substring(2, 4), 16);
-  let b = parseInt(clean.substring(4, 6), 16);
-
-  // Linearly interpolate toward white (255,255,255) until luminance is adequate
-  const steps = 8;
-  for (let i = 1; i <= steps; i++) {
-    const t = i / steps;
-    const nr = Math.round(r + (255 - r) * t);
-    const ng = Math.round(g + (255 - g) * t);
-    const nb = Math.round(b + (255 - b) * t);
-    if (
-      hexLuminance(
-        `#${nr.toString(16).padStart(2, '0')}${ng.toString(16).padStart(2, '0')}${nb.toString(16).padStart(2, '0')}`,
-      ) >= minLum
-    ) {
-      r = nr;
-      g = ng;
-      b = nb;
-      break;
-    }
-  }
-
-  const toHex = (c: number) => Math.round(c).toString(16).padStart(2, '0');
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-}
+// hexLuminance/liftToLuminance live in utils/ArtworkColors.ts (shared with the
+// page-wide accent publisher) and are imported above.
 
 // Cached read for hot path — storage.get hits Spicetify.LocalStorage each tick.
 let cachedPlaybarEnabled: boolean | null = null;

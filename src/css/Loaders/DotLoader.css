@@ -1,12 +1,23 @@
 #DotLoader {
-  width: 15px;
+  --dot-color: var(--amai-accent-1);
+  --dot-color-dim: color-mix(in srgb, var(--amai-accent-1) 22%, transparent);
+  width: 18px;
   aspect-ratio: 1;
   border-radius: 50%;
+  background: var(--dot-color);
   animation: l5 1s infinite linear alternate;
 }
 @keyframes l5 {
-    0%  {box-shadow: 20px 0 #FFF, -20px 0 #ffffff22;background: #FFF }
-    33% {box-shadow: 20px 0 #FFF, -20px 0 #ffffff22;background: #ffffff22}
-    66% {box-shadow: 20px 0 #ffffff22,-20px 0 #FFF; background: #ffffff22}
-    100%{box-shadow: 20px 0 #ffffff22,-20px 0 #FFF; background: #FFF }
+    0%  {box-shadow: 24px 0 var(--dot-color), -24px 0 var(--dot-color-dim);background: var(--dot-color) }
+    33% {box-shadow: 24px 0 var(--dot-color), -24px 0 var(--dot-color-dim);background: var(--dot-color-dim)}
+    66% {box-shadow: 24px 0 var(--dot-color-dim),-24px 0 var(--dot-color); background: var(--dot-color-dim)}
+    100%{box-shadow: 24px 0 var(--dot-color-dim),-24px 0 var(--dot-color); background: var(--dot-color) }
+}
+
+/* Reduced motion: settle to a calm, static accent dot */
+@media (prefers-reduced-motion: reduce) {
+  #DotLoader {
+    animation: none;
+    opacity: 0.85;
+  }
 }

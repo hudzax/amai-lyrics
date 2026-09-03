@@ -25,7 +25,7 @@
 }
 
 #SpicyLyricsPage {
-  font-family: "Manrope", "Noto Sans JP", "Noto Sans Display", sans-serif;
+  font-family: var(--amai-font-display);
 }
 
 [font="Vazirmatn"] {
@@ -62,7 +62,7 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
 #SpicyLyricsPage .ViewControls .ViewControl {
   --ViewControlHeight: var(--ViewControlSize, 100cqh);
   aspect-ratio: 1;
-  background: #ffffff36;
+  background: var(--amai-fill-control);
   border: none;
   border-radius: 100rem;
   display: flex;
@@ -74,11 +74,27 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
   justify-content: center;
   text-align: center;
   -webkit-box-align: center;
-  -webkit-box-pack: center
+  -webkit-box-pack: center;
+  transition:
+    background-color var(--amai-dur-base) var(--amai-ease-standard),
+    transform var(--amai-dur-fast) var(--amai-ease-out-expo),
+    box-shadow var(--amai-dur-base) var(--amai-ease-standard);
 }
 
 #SpicyLyricsPage .ViewControls .ViewControl:hover {
-  background:rgba(0,0,0,.3)
+  /* Accent-tinted glass: artwork hue over the dark glass base */
+  background: color-mix(in srgb, var(--amai-accent-1) 18%, var(--amai-fill-control-hover));
+  transform: translateY(-1px);
+  box-shadow: var(--amai-shadow-panel);
+}
+
+#SpicyLyricsPage .ViewControls .ViewControl:active {
+  transform: translateY(0) scale(0.92);
+}
+
+#SpicyLyricsPage .ViewControls .ViewControl:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--amai-accent-1) 70%, white);
+  outline-offset: 2px;
 }
 
 #SpicyLyricsPage .ViewControls .ViewControl svg {

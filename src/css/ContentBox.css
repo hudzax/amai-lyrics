@@ -98,9 +98,9 @@
         radial-gradient(circle at center, #1a1a1a 0%, #0d0d0d 70%, #000000 100%);
     z-index: 1;
 
-    box-shadow: 
+    box-shadow:
         inset 0 0 20px rgba(0,0,0,0.8),
-        0 9px 20px 0 rgba(0, 0, 0, .271);
+        var(--amai-shadow-vinyl);
 }
 
 #SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox::after {
@@ -170,9 +170,9 @@
     border-radius: 50%;
     width: 40%;
     height: 40%;
-    box-shadow: 0 4px 12px 0 rgba(0, 0, 0, .4);
+    box-shadow: var(--amai-shadow-media);
     opacity: .95;
-    transition: opacity, scale .1s cubic-bezier(.24,.01,.97,1.41);
+    transition: opacity, scale .1s var(--amai-ease-spring);
     cursor: grab;
     z-index: 3;
     position: absolute;
@@ -280,6 +280,7 @@
     color: white;
     text-align: center;           /* Fallback for child alignment */
     opacity: .95;
+    letter-spacing: -0.01em;      /* Slight display tightening at large sizes */
 }
 
 #SpicyLyricsPage .ContentBox .NowBar .Header .Metadata .SongName span {
@@ -308,6 +309,9 @@
     max-width: 20cqw;             /* Restricts span to the container width */
     display: inline-block;        /* Ensures width is respected */
     text-align: center;           /* Align text within the span */
+    /* Editorial contrast against the song title: quiet, tracked, uppercase */
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
 }
 
 #SpicyLyricsPage .ContentBox .NowBar:is(.Active.LeftSide) + .LyricsContainer .loaderContainer {

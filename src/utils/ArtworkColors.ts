@@ -244,4 +244,124 @@ export function hexToRgb(hex: string): string {
   return `${r}, ${g}, ${b}`;
 }
 
+/**
+ * Perceived sRGB luminance of a hex colour (0-255 scale).
+ */
+export function hexLuminance(hex: string): number {
+  const clean = hex.replace('#', '');
+  const r = parseInt(clean.substring(0, 2), 16);
+  const g = parseInt(clean.substring(2, 4), 16);
+  const b = parseInt(clean.substring(4, 6), 16);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/**
+ * Lightens a hex colour by mixing it with white until its perceived luminance
+ * reaches `minLum`.  Returns the adjusted hex string.
+ */
+export function liftToLuminance(hex: string, minLum: number): string {
+  if (hexLuminance(hex) >= minLum) return hex;
+
+  const clean = hex.replace('#', '');
+  let r = parseInt(clean.substring(0, 2), 16);
+  let g = parseInt(clean.substring(2, 4), 16);
+  let b = parseInt(clean.substring(4, 6), 16);
+
+  // Linearly interpolate toward white (255,255,255) until luminance is adequate
+  const steps = 8;
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps;
+    const nr = Math.round(r + (255 - r) * t);
+    const ng = Math.round(g + (255 - g) * t);
+    const nb = Math.round(b + (255 - b) * t);
+    if (
+      hexLuminance(
+        `#${nr.toString(16).padStart(2, '0')}${ng.toString(16).padStart(2, '0')}${nb.toString(16).padStart(2, '0')}`,
+      ) >= minLum
+    ) {
+      r = nr;
+      g = ng;
+      b = nb;
+      break;
+    }
+  }
+
+  const toHex = (c: number) => Math.round(c).toString(16).padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+// ---------------------------------------------------------------------------
+// Page-wide accent publishing
+//
+// Publishes the current artwork's dominant colours as --amai-accent-1..5 (plus
+// --amai-accent-rgb for rgba() usages) on <html>, so every surface (lyrics
+// glow, buttons, loaders) can pick up the album's palette. Colours are
+// luminance-lifted for readability on dark surfaces, matching the playbar's
+// behavior. Custom properties are written at most once per song change —
+// never per frame — so consuming them in CSS is compositing-safe.
+// ---------------------------------------------------------------------------
+
+const ACCENT_LIFT_MIN_LUMINANCE = 140; // same readability floor as the playbar
+const ACCENT_COUNT = 5;
+
+let lastAccentArtworkUrl: string | null = null;
+
+/**
+ * Extracts colours for the given artwork URL and publishes them as
+ * `--amai-accent-*` custom properties on `document.documentElement`.
+ * Passing an empty/null URL clears the accents, falling back to the
+ * Spotify-green defaults declared in `tokens.css`.
+ */
+export async function publishArtworkAccents(imageUrl: string | null | undefined): Promise<void> {
+  if (!imageUrl) {
+    lastAccentArtworkUrl = null;
+    applyArtworkAccents([]);
+    return;
+  }
+
+  // Resolve spotify:image: URIs the same way the playbar/dynamic bg do
+  let url = imageUrl;
+  if (url.startsWith('spotify:image:')) {
+    url = `https://i.scdn.co/image/${url.replace('spotify:image:', '')}`;
+  }
+
+  // Already published for this artwork — extraction is cached anyway, but the
+  // guard keeps repeat songchange events allocation-free.
+  if (url === lastAccentArtworkUrl) return;
+  lastAccentArtworkUrl = url;
+
+  const colors = await extractArtworkColors(url);
+  applyArtworkAccents(colors);
+}
+
+/**
+ * Writes the accent custom properties (or removes them when no colours are
+ * available, letting the CSS defaults apply).
+ */
+export function applyArtworkAccents(colors: string[]): void {
+  const rootStyle = document.documentElement.style;
+
+  if (!colors.length) {
+    for (let i = 1; i <= ACCENT_COUNT; i++) {
+      rootStyle.removeProperty(`--amai-accent-${i}`);
+    }
+    rootStyle.removeProperty('--amai-accent-rgb');
+    return;
+  }
+
+  // Boost dim colours so accents stay readable against dark surfaces.
+  const lifted = colors.map((c) => liftToLuminance(c, ACCENT_LIFT_MIN_LUMINANCE));
+
+  // Pad with repeats if fewer than 5 colours were extracted
+  const padded = [...lifted];
+  while (padded.length < ACCENT_COUNT) {
+    padded.push(padded[padded.length % padded.length]);
+  }
+
+  for (let i = 0; i < ACCENT_COUNT; i++) {
+    rootStyle.setProperty(`--amai-accent-${i + 1}`, padded[i]);
+  }
+  rootStyle.setProperty('--amai-accent-rgb', hexToRgb(padded[0]));
+}
+
 export default extractArtworkColors;

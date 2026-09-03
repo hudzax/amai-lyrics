@@ -13,6 +13,9 @@ export class SongChangeManager {
     cancel: () => void;
   };
   private readonly debouncedPageBgApply: (() => void) & { cancel: () => void };
+  private readonly debouncedAccentPublish: ((coverUrl: string | undefined) => void) & {
+    cancel: () => void;
+  };
 
   constructor(buttonManager: ButtonManager, backgroundManager: NowPlayingBarBackground) {
     this.buttonManager = buttonManager;
@@ -31,12 +34,22 @@ export class SongChangeManager {
         },
       );
     }, 500);
+
+    // Publish artwork-derived accent colors (--amai-accent-*) for the lyrics
+    // page UI. Same 500ms coalescing as the background applies so rapid skips
+    // only extract colors for the track the user settles on.
+    this.debouncedAccentPublish = debounce((coverUrl: string | undefined) => {
+      void import('../utils/ArtworkColors').then(({ publishArtworkAccents }) => {
+        void publishArtworkAccents(coverUrl ?? null);
+      });
+    }, 500);
   }
 
   /** Cancel pending debounced work — call on teardown to avoid leaks. */
   public dispose(): void {
     this.debouncedBgApply.cancel();
     this.debouncedPageBgApply.cancel();
+    this.debouncedAccentPublish.cancel();
   }
 
   public async handleSongChange(event: { data?: { item?: { uri?: string } } }) {
@@ -81,6 +94,9 @@ export class SongChangeManager {
     // fire once the user settles on a song for 500ms, keeping the main thread
     // free for the critical song-change work.
     this.debouncedBgApply(Spicetify.Player.data?.item?.metadata?.image_url);
+
+    // Publish artwork accent colors for the lyrics page (same coalescing)
+    this.debouncedAccentPublish(Spicetify.Player.data?.item?.metadata?.image_url);
 
     // Update UI elements directly without waiting for track info
     if (Spicetify.Player.data.item?.type === 'track') {

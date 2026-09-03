@@ -14,12 +14,13 @@
 
 #SpicyLyricsPage .LyricsContainer .LyricsContent {
   --TextGlowDef: rgba(255,255,255,0.15) 0px 0px 6px;
-  --ActiveTextGlowDef: rgba(255,255,255,0.25) 0px 0px 16px;
+  /* Active-line glow picks up the artwork accent hue (alpha ≈ original 0.25) */
+  --ActiveTextGlowDef: rgba(var(--amai-accent-rgb), 0.28) 0px 0px 16px;
   --StrongTextGlowDef: rgba(255,255,255,0.68) 0px 0px 16px;
   --StrongerTextGlowDef: rgba(255,255,255,0.74) 0px 0px 16px;
   --DefaultLyricsSize: clamp(1.5rem,calc(.425cqw * 7), 3rem);
   --DefaultLyricsSize-Small: clamp(1.1rem,calc(1cqw* 6), 1.5rem);
-  --Simplebar-Scrollbar-Color: rgba(255, 255, 255, 0.6);
+  --Simplebar-Scrollbar-Color: var(--amai-scrollbar-thumb);
 
   overflow-x: hidden !important;
   overflow-y: auto !important;
@@ -81,15 +82,20 @@
 
 #SpicyLyricsPage .AmaiPageButton {
   padding: 10px 24px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--amai-fill-subtle);
+  border: 1px solid var(--amai-stroke-1);
   border-radius: 500px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  color: rgba(255, 255, 255, 0.9);
+  transition:
+    background-color var(--amai-dur-slow) var(--amai-ease-standard),
+    border-color var(--amai-dur-slow) var(--amai-ease-standard),
+    color var(--amai-dur-slow) var(--amai-ease-standard),
+    box-shadow var(--amai-dur-slow) var(--amai-ease-standard),
+    transform var(--amai-dur-fast) var(--amai-ease-out-expo);
+  color: var(--amai-text-mid);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   font-size: 0.85rem;
@@ -99,14 +105,22 @@
 }
 
 #SpicyLyricsPage .AmaiPageButton:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.4);
+  background: var(--amai-fill-raised);
+  /* Artwork-tinted border + soft accent glow on hover */
+  border-color: color-mix(in srgb, var(--amai-accent-1) 55%, transparent);
   color: rgba(255, 255, 255, 1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow:
+    0 4px 16px rgba(var(--amai-accent-rgb), 0.18),
+    var(--amai-shadow-card);
 }
 
 #SpicyLyricsPage .AmaiPageButton:active {
   transform: scale(0.95);
+}
+
+#SpicyLyricsPage .AmaiPageButton:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--amai-accent-1) 70%, white);
+  outline-offset: 2px;
 }
 
 #SpicyLyricsPage .AmaiPageButton.hidden {
@@ -127,7 +141,7 @@
 
 #SpicyLyricsPage .amai-version-number {
   font-size: .85em;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--amai-text-faint);
   cursor: pointer;
   font-weight:normal;
 }
@@ -141,12 +155,12 @@ header.main-topBar-container .amai-info {
   top: 0;
   left: 0;
   width: 100%;
-  background-color: rgba(0, 0, 0, 0.55); /* Dark background */
+  background-color: var(--amai-scrim-strong); /* Dark background */
   padding: 8px;
   text-align: center; /* Centered text */
   font-size: 13px;
   color: #fff; /* White text */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Slightly stronger shadow */
+  box-shadow: var(--amai-shadow-float); /* Slightly stronger shadow */
   text-decoration: none;
 }
 
@@ -219,21 +233,21 @@ header.main-topBar-container .amai-info {
 
 #SpicyLyricsPage .ContentBox .NowBar.Active + .LyricsContainer .LyricsContent .simplebar-content-wrapper .simplebar-content {
   padding: 3cqh 3cqh 1.8cqh 3cqh;
-  background-color: rgba(255, 255, 255, 0.1); /* Lowered opacity for stronger acrylic effect */
+  background-color: var(--amai-fill-glass); /* Lowered opacity for stronger acrylic effect */
   /* No backdrop-filter here: this surface covers the whole lyrics area and sits
      directly on top of the always-animating dynamic background, so the blur
      would force a full-surface re-filter every frame. A translucent fill keeps
      the look at a fraction of the compositing cost. */
-  border: 1px solid rgba(255, 255, 255, 0.2); /* Optional: enhances the frosted look */
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Optional shadow */
+  border: 1px solid var(--amai-stroke-2); /* Optional: enhances the frosted look */
+  box-shadow: var(--amai-shadow-panel); /* Optional shadow */
 }
 
 .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section {
-  background-color: rgba(255, 255, 255, 0.1); /* Lowered opacity for stronger acrylic effect */
+  background-color: var(--amai-fill-glass); /* Lowered opacity for stronger acrylic effect */
   border-radius: 1cqh;
   /* No backdrop-filter — same reasoning as the lyrics content panel above. */
-  border: 1px solid rgba(255, 255, 255, 0.2); /* Optional: enhances the frosted look */
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Optional shadow */
+  border: 1px solid var(--amai-stroke-2); /* Optional: enhances the frosted look */
+  box-shadow: var(--amai-shadow-panel); /* Optional shadow */
 }
 
 .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section > button > div > div {
@@ -255,6 +269,9 @@ ruby.romaja {
 ruby > rt {
   margin-bottom:0.15rem;
   font-size:55%;
+  /* Furigana/romaji sit lighter and slightly tracked against the main line */
+  font-weight: 500;
+  letter-spacing: 0.02em;
 }
 
 .Button-buttonSecondary-small-useBrowserDefaultFocusStyle {

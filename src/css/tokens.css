@@ -1,0 +1,71 @@
+/* ============================================================
+   Amai Lyrics — Design Tokens
+   Single source of truth for color, glass, shadow, motion and
+   typography. Imported FIRST (before every other stylesheet) so
+   all files can consume var() references.
+
+   Accent tokens (--amai-accent-*) fall back to the Spotify-green
+   family below and are overridden per-track from JS
+   (ArtworkColors.publishArtworkAccents) with colors lifted from
+   the current album artwork. They change at most once per song —
+   never per frame — so consuming them in hover/glow styles is
+   compositing-safe.
+   ============================================================ */
+
+:root {
+  /* ---- Accents (overridden per-song by artwork extraction) ---- */
+  --amai-accent-1: #1ed760;
+  --amai-accent-2: #1db954;
+  --amai-accent-3: #169c46;
+  --amai-accent-4: #1ed760;
+  --amai-accent-5: #1db954;
+  /* rgb triplet of accent-1, for rgba(var(--amai-accent-rgb), a) usage */
+  --amai-accent-rgb: 30, 215, 96;
+
+  /* ---- Glass surfaces ---- */
+  --amai-fill-subtle: rgba(255, 255, 255, 0.08);
+  --amai-fill-glass: rgba(255, 255, 255, 0.1);
+  --amai-fill-raised: rgba(255, 255, 255, 0.15);
+  --amai-fill-control: #ffffff36;
+  --amai-fill-control-hover: rgba(0, 0, 0, 0.3);
+  --amai-scrim: rgba(0, 0, 0, 0.2);
+  --amai-scrim-strong: rgba(0, 0, 0, 0.55);
+
+  /* ---- Strokes ---- */
+  --amai-stroke-1: rgba(255, 255, 255, 0.15);
+  --amai-stroke-2: rgba(255, 255, 255, 0.2);
+  --amai-stroke-3: rgba(255, 255, 255, 0.4);
+  --amai-stroke-4: rgba(255, 255, 255, 0.65);
+
+  /* ---- Shadows ---- */
+  --amai-shadow-card: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --amai-shadow-panel: 0 4px 10px rgba(0, 0, 0, 0.1);
+  --amai-shadow-float: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --amai-shadow-vinyl: 0 9px 20px 0 rgba(0, 0, 0, 0.271);
+  --amai-shadow-media: 0 4px 12px 0 rgba(0, 0, 0, 0.4);
+
+  /* ---- Motion ---- */
+  --amai-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --amai-ease-out-expo: cubic-bezier(0.22, 1, 0.36, 1);
+  --amai-ease-word: cubic-bezier(0.61, 1, 0.88, 1);
+  --amai-ease-spring: cubic-bezier(0.24, 0.01, 0.97, 1.41);
+  --amai-ease-io: cubic-bezier(0.37, 0, 0.63, 1);
+  --amai-dur-fast: 0.15s;
+  --amai-dur-base: 0.2s;
+  --amai-dur-slow: 0.3s;
+  --amai-dur-slower: 0.4s;
+
+  /* ---- Typography ---- */
+  --amai-font-display: 'Manrope', 'Noto Sans JP', 'Noto Sans Display', sans-serif;
+  --amai-font-cjk: 'Noto Sans JP', 'Noto Sans Display', sans-serif;
+
+  /* ---- Text tints ---- */
+  --amai-text-hi: rgba(255, 255, 255, 0.95);
+  --amai-text-mid: rgba(255, 255, 255, 0.9);
+  --amai-text-low: rgba(255, 255, 255, 0.7);
+  --amai-text-faint: rgba(255, 255, 255, 0.5);
+  --amai-text-muted: rgba(255, 255, 255, 0.6);
+
+  /* ---- Scrollbar ---- */
+  --amai-scrollbar-thumb: rgba(255, 255, 255, 0.6);
+}

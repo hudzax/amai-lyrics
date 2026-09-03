@@ -16,6 +16,7 @@ import { installBlankToastSuppressor } from './utils/suppressBlankToasts';
 import lifecycle from './utils/lifecycle';
 
 // CSS Imports
+import './css/tokens.css'; // design tokens — must load before every other stylesheet
 import './css/default.css';
 import './css/Simplebar.css';
 import './css/ContentBox.css';
@@ -49,6 +50,12 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
   lifecycle.trackCallback(() => songChangeManager.dispose());
   lifecycle.trackCallback(() => backgroundManager.destroy());
   new PageManager(buttonManager); // Used for side effects (navigation setup)
+
+  // Seed the artwork-derived accent colors (--amai-accent-*) for the initial
+  // track. Subsequent updates happen via SongChangeManager's debounced publish.
+  void import('./utils/ArtworkColors').then(({ publishArtworkAccents }) => {
+    void publishArtworkAccents(Spicetify.Player.data?.item?.metadata?.image_url ?? null);
+  });
 
   // Tear down the lyrics page (and its SimpleBar observers / tippy instances)
   // on plugin teardown so a hot-reload doesn't leave a stale #SpicyLyricsPage.
