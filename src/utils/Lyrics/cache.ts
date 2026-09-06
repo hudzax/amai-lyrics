@@ -14,8 +14,6 @@ import {
 
 import { LyricsData } from './processing';
 
-export type LyricsFetchResult = LyricsData | NoLyricsResult;
-
 type CachedLyricsData = LyricsData & {
   expiresAt: number;
 };
@@ -30,6 +28,7 @@ export const lyricsCache = new SpikyCache({
 // Bounded LRU for Cache_API disk entries — prevents unbounded growth during long sessions
 // (Cache_API is persistent disk, not RAM, but thousands of entries still bloat storage)
 const MAX_LYRICS_CACHE_ENTRIES = 200;
+// SAFETY: window augmentation for hot-reload persistence; __amaiLyricsCacheKeys is our isolated namespace
 const windowCacheRef = window as unknown as { __amaiLyricsCacheKeys?: string[] };
 const lyricsCacheKeyOrder: string[] = windowCacheRef.__amaiLyricsCacheKeys ?? [];
 windowCacheRef.__amaiLyricsCacheKeys = lyricsCacheKeyOrder;

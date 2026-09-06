@@ -44,26 +44,3 @@ export function createBackgroundImage(
   if (src) img.src = src;
   return img;
 }
-
-/**
- * Perform crossfade swap once the inactive image has loaded.
- * Caller should set `inactiveImg.src` before invoking and handle `onerror` if needed.
- */
-export function crossfadeSwap(
-  activeImg: HTMLImageElement,
-  inactiveImg: HTMLImageElement,
-  container: HTMLElement,
-  newUrl: string,
-): void {
-  inactiveImg.onload = () => {
-    requestAnimationFrame(() => {
-      activeImg.classList.remove('active');
-      inactiveImg.classList.add('active');
-      container.setAttribute('current-img', newUrl);
-      setRandomCSSVariables();
-    });
-  };
-  inactiveImg.onerror = () => {
-    console.error('Error loading new background image:', newUrl);
-  };
-}

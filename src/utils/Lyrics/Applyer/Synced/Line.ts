@@ -91,7 +91,7 @@ export function ApplyLineLyrics(data: LyricsData): void {
       if (storage.get('enable_romaji') === 'true') {
         line.Text = line.Text?.replace(
           /(([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)|[(\uFF08]([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)[)\uFF09])(?:{|\uFF5B)([^}\uFF5D]+)(?:}|\uFF5D)/g,
-          (match, p1, p2, p3, p4) => {
+          (_match, _p1, p2, p3, p4) => {
             const text = p2 || p3;
             return `<ruby>${text}<rt>${p4}</rt></ruby>`;
           },

@@ -8,8 +8,6 @@ import lifecycle from '../utils/lifecycle';
 import Fullscreen from '../components/Utils/Fullscreen';
 
 export class EventManager {
-  private static button: Spicetify.Playbar.Button;
-
   // Stored handler references so they can be removed on teardown.
   private static onPlayPause = (e: { data?: { isPaused?: boolean } }) => {
     const isPaused = e?.data?.isPaused;
@@ -53,8 +51,7 @@ export class EventManager {
     }
   };
 
-  public static initialize(button: Spicetify.Playbar.Button) {
-    this.button = button;
+  public static initialize() {
     this.setupPlayerStateEvents();
     this.setupNavigationEvents();
     this.setupPlayerEvents();

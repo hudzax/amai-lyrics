@@ -10,8 +10,6 @@ import { resetLyricsSetterCache } from './Animator/Lyrics/LyricsSetter';
 import { resetAnimatorCache } from './Animator/Lyrics/LyricsAnimator';
 import { ResetLastLine } from '../Scrolling/ScrollToActiveLine';
 
-export const ScrollingIntervalTime = 0.1;
-
 export const lyricsBetweenShow = 3;
 
 export const LyricsObject = {

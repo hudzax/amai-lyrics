@@ -343,7 +343,7 @@ export function processPhoneticText(text: string, enableRomaji: boolean): string
   let result: string;
   if (JAPANESE_CHAR_REGEX.test(text)) {
     if (enableRomaji) {
-      result = text.replace(JAPANESE_ROMAJI_REGEX, (match, p1, p2, p3, p4) => {
+      result = text.replace(JAPANESE_ROMAJI_REGEX, (_match, _p1, p2, p3, p4) => {
         const textPart = p2 || p3;
         return `<ruby>${textPart}<rt>${p4}</rt></ruby>`;
       });

@@ -141,7 +141,7 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
 
   // Initialize player state and events
   SpotifyPlayer.IsPlaying = IsPlaying();
-  EventManager.initialize(buttonManager.getButton());
+  EventManager.initialize();
 
   // Show the active lyric line in the native bottom playbar
   const { InitializePlaybarLyrics } = await import('./components/PlaybarLyrics/PlaybarLyrics');
