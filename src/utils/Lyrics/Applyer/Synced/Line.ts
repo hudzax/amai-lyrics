@@ -19,6 +19,7 @@ import isRtl from '../../isRtl';
 import { createMusicalLineMs } from '../Utils/createMusicalLine';
 import storage from '../../../storage';
 import { createRubyFragment } from '../../../sanitize';
+import { applyPhoneticPatterns, isJapaneseText } from '../../phoneticPatterns';
 
 // Type definitions for better type safety
 interface LyricLine {
@@ -78,8 +79,7 @@ export function ApplyLineLyrics(data: LyricsData): void {
   data.Content.forEach((line, index, arr) => {
     const lineElem = document.createElement('div');
 
-    const JapaneseRegex = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/;
-    if (JapaneseRegex.test(line.Text)) {
+    if (isJapaneseText(line.Text)) {
       if (
         !data.Info &&
         (!storage.get('disable_romaji_toggle_notification') ||
@@ -88,25 +88,9 @@ export function ApplyLineLyrics(data: LyricsData): void {
         data.Info =
           'Toggle between Romaji or Furigana in settings. Disable this notification there as well.';
       }
-      if (storage.get('enable_romaji') === 'true') {
-        line.Text = line.Text?.replace(
-          /(([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)|[(\uFF08]([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)[)\uFF09])(?:{|\uFF5B)([^}\uFF5D]+)(?:}|\uFF5D)/g,
-          (_match, _p1, p2, p3, p4) => {
-            const text = p2 || p3;
-            return `<ruby>${text}<rt>${p4}</rt></ruby>`;
-          },
-        );
-      } else {
-        line.Text = line.Text?.replace(
-          /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^}]+)}/g,
-          '<ruby>$1<rt>$2</rt></ruby>',
-        );
-      }
+      line.Text = applyPhoneticPatterns(line.Text, storage.get('enable_romaji') === 'true');
     } else {
-      line.Text = line.Text?.replace(
-        /((?:\([0-9\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)(?:[a-zA-Z]*)[?.!,"']?){([^}]+)}/g,
-        '<ruby class="romaja">$1<rt>$2</rt></ruby>',
-      );
+      line.Text = applyPhoneticPatterns(line.Text, false);
     }
 
     // Create main text container — use sanitized ruby fragment to prevent XSS

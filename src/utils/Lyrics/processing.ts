@@ -18,6 +18,7 @@ import { RecalculateScrollSimplebar } from '../Scrolling/Simplebar/ScrollSimpleb
 import { LyricsObject } from './lyrics';
 import { LyricsResult } from '../API/Lyrics';
 import { createRubyFragment } from '../sanitize';
+import { applyPhoneticPatterns } from './phoneticPatterns';
 import { LineBasedLyricItem, SyllableBasedLyricItem, LyricsLine } from './conversion';
 
 export interface LyricsDataLine {
@@ -50,14 +51,6 @@ export type LyricsData = LyricsDataLine | LyricsDataStatic;
 // Regular expressions for language detection
 const JAPANESE_REGEX = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
 const KOREAN_REGEX = /[\uAC00-\uD7AF]/;
-
-// Regular expressions for phonetic text processing
-const JAPANESE_CHAR_REGEX = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/;
-const JAPANESE_ROMAJI_REGEX =
-  /(([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)|[(\uFF08]([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)[)\uFF09])(?:{|\uFF5B)([^}\uFF5D]+)(?:}|\uFF5D)/g;
-const JAPANESE_FURIGANA_REGEX = /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^}]+)}/g;
-const KOREAN_ROMAJA_REGEX =
-  /((?:\([0-9\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)(?:[a-zA-Z]*)[?.!,"']?){([^}]+)}/g;
 
 // Timing offset for lyrics synchronization
 const LYRICS_TIMING_OFFSET = 0.55;
@@ -328,8 +321,11 @@ function phoneticCacheKey(text: string, enableRomaji: boolean): string {
 }
 
 /**
- * Processes phonetic patterns in text and converts them to HTML ruby tags
- * This mirrors the logic from ApplyLineLyrics
+ * Processes phonetic patterns in text and converts them to HTML ruby tags.
+ *
+ * The pattern logic itself lives in ./phoneticPatterns (shared with the Applyers,
+ * which cannot import this module without closing an import cycle); this wrapper
+ * only adds memoisation, which the playbar's hot path benefits from.
  *
  * @param text - Text with phonetic patterns (e.g., {romaji} or {furigana})
  * @param enableRomaji - Whether romaji mode is enabled
@@ -340,20 +336,11 @@ export function processPhoneticText(text: string, enableRomaji: boolean): string
   const cached = phoneticTextCache.get(key);
   if (cached !== undefined) return cached;
 
-  let result: string;
-  if (JAPANESE_CHAR_REGEX.test(text)) {
-    if (enableRomaji) {
-      result = text.replace(JAPANESE_ROMAJI_REGEX, (_match, _p1, p2, p3, p4) => {
-        const textPart = p2 || p3;
-        return `<ruby>${textPart}<rt>${p4}</rt></ruby>`;
-      });
-    } else {
-      result = text.replace(JAPANESE_FURIGANA_REGEX, '<ruby>$1<rt>$2</rt></ruby>');
-    }
-  } else {
-    // Korean phonetics
-    result = text.replace(KOREAN_ROMAJA_REGEX, '<ruby class="romaja">$1<rt>$2</rt></ruby>');
-  }
+  // `text` is contractually a string. Previously an undefined argument threw a
+  // TypeError inside .replace(); the shared helper now returns undefined instead,
+  // which every caller already tolerates (they render through optional chaining).
+  const result = applyPhoneticPatterns(text, enableRomaji);
+  if (result === undefined) return text;
 
   if (phoneticTextCache.size >= PHONETIC_CACHE_MAX) {
     const firstKey = phoneticTextCache.keys().next().value;
