@@ -62,10 +62,6 @@ export class ButtonManager {
     }
   }
 
-  public getButton(): Spicetify.Playbar.Button {
-    return this.button;
-  }
-
   public setActive(active: boolean) {
     this.button.active = active;
   }
