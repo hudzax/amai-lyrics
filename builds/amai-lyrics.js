@@ -5786,7 +5786,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.4.32";
+      version = "1.4.33";
     }
   });
 
@@ -8209,7 +8209,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ClearLyricsContentArrays: () => ClearLyricsContentArrays,
     LINE_SYNCED_CurrentLineLyricsObject: () => LINE_SYNCED_CurrentLineLyricsObject,
     LyricsObject: () => LyricsObject,
-    ScrollingIntervalTime: () => ScrollingIntervalTime,
     SetWordArrayInCurentLine_LINE_SYNCED: () => SetWordArrayInCurentLine_LINE_SYNCED,
     addLinesEvListener: () => addLinesEvListener,
     destroyLyricsRenderLoop: () => destroyLyricsRenderLoop,
@@ -8335,7 +8334,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       LinesEvListenerMaid.Destroy();
     }
   }
-  var ScrollingIntervalTime, lyricsBetweenShow, LyricsObject, lineElementToStartTimeMap, LINE_SYNCED_CurrentLineLyricsObject, THROTTLE_TIME, lastRenderedPosition, hasRenderedInitial, scrollTickCounter, pagePositionClient, windowRef3, renderLoop, LinesEvListenerMaid, LinesEvListenerExists;
+  var lyricsBetweenShow, LyricsObject, lineElementToStartTimeMap, LINE_SYNCED_CurrentLineLyricsObject, THROTTLE_TIME, lastRenderedPosition, hasRenderedInitial, scrollTickCounter, pagePositionClient, windowRef3, renderLoop, LinesEvListenerMaid, LinesEvListenerExists;
   var init_lyrics = __esm({
     "src/utils/Lyrics/lyrics.ts"() {
       init_Maid();
@@ -8349,7 +8348,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_LyricsSetter();
       init_LyricsAnimator();
       init_ScrollToActiveLine();
-      ScrollingIntervalTime = 0.1;
       lyricsBetweenShow = 3;
       LyricsObject = {
         Types: {
@@ -8686,15 +8684,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a062dba/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-12632-PWc2TsN0Bler/1a07dfe8215a/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a062dba/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-12632-PWc2TsN0Bler/1a07dfe8215a/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a062dfb/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-12632-PWc2TsN0Bler/1a07dfe8219b/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a062dfb/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-12632-PWc2TsN0Bler/1a07dfe8219b/ProcessingIndicator.css"() {
     }
   });
 
@@ -8996,6 +8994,34 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
+  // src/utils/Lyrics/phoneticPatterns.ts
+  function isJapaneseText(text) {
+    return !!text && JAPANESE_CHAR_REGEX.test(text);
+  }
+  function applyPhoneticPatterns(text, enableRomaji) {
+    if (text === void 0)
+      return void 0;
+    if (JAPANESE_CHAR_REGEX.test(text)) {
+      if (enableRomaji) {
+        return text.replace(JAPANESE_ROMAJI_REGEX, (_match, _p1, p2, p3, p4) => {
+          const base = p2 || p3;
+          return `<ruby>${base}<rt>${p4}</rt></ruby>`;
+        });
+      }
+      return text.replace(JAPANESE_FURIGANA_REGEX, "<ruby>$1<rt>$2</rt></ruby>");
+    }
+    return text.replace(KOREAN_ROMAJA_REGEX, '<ruby class="romaja">$1<rt>$2</rt></ruby>');
+  }
+  var JAPANESE_CHAR_REGEX, JAPANESE_ROMAJI_REGEX, JAPANESE_FURIGANA_REGEX, KOREAN_ROMAJA_REGEX;
+  var init_phoneticPatterns = __esm({
+    "src/utils/Lyrics/phoneticPatterns.ts"() {
+      JAPANESE_CHAR_REGEX = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/;
+      JAPANESE_ROMAJI_REGEX = /(([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)|[(\uFF08]([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)[)\uFF09])(?:{|\uFF5B)([^}\uFF5D]+)(?:}|\uFF5D)/g;
+      JAPANESE_FURIGANA_REGEX = /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^}]+)}/g;
+      KOREAN_ROMAJA_REGEX = /((?:\([0-9\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)(?:[a-zA-Z]*)[?.!,"']?){([^}]+)}/g;
+    }
+  });
+
   // src/utils/Lyrics/Applyer/Static.ts
   function ApplyStaticLyrics(data) {
     if (!Defaults_default.LyricsContainerExists)
@@ -9010,30 +9036,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const fragment = document.createDocumentFragment();
     data.Lines.forEach((line, index) => {
       const lineElem = document.createElement("div");
-      const JapaneseRegex = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/;
-      if (JapaneseRegex.test(line.Text)) {
+      if (isJapaneseText(line.Text)) {
         if (!data.Info && (!storage_default.get("disable_romaji_toggle_notification") || storage_default.get("disable_romaji_toggle_notification") === "false")) {
           data.Info = "Toggle between Romaji or Furigana in settings. Disable this notification there as well.";
         }
-        if (storage_default.get("enable_romaji") === "true") {
-          line.Text = line.Text?.replace(
-            /(([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)|[(\uFF08]([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)[)\uFF09])(?:{|\uFF5B)([^}\uFF5D]+)(?:}|\uFF5D)/g,
-            (match2, p1, p2, p3, p4) => {
-              const text = p2 || p3;
-              return `<ruby>${text}<rt>${p4}</rt></ruby>`;
-            }
-          );
-        } else {
-          line.Text = line.Text?.replace(
-            /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^}]+)}/g,
-            "<ruby>$1<rt>$2</rt></ruby>"
-          );
-        }
+        line.Text = applyPhoneticPatterns(line.Text, storage_default.get("enable_romaji") === "true");
       } else {
-        line.Text = line.Text?.replace(
-          /((?:\([0-9\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)(?:[a-zA-Z]*)[?.!,"']?){([^}]+)}/g,
-          '<ruby class="romaja">$1<rt>$2</rt></ruby>'
-        );
+        line.Text = applyPhoneticPatterns(line.Text, false);
       }
       const mainTextContainer = document.createElement("span");
       mainTextContainer.classList.add("main-lyrics-text");
@@ -9098,6 +9107,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_isRtl();
       init_storage();
       init_sanitize();
+      init_phoneticPatterns();
     }
   });
 
@@ -9192,30 +9202,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     data.Content.forEach((line, index, arr) => {
       const lineElem = document.createElement("div");
-      const JapaneseRegex = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/;
-      if (JapaneseRegex.test(line.Text)) {
+      if (isJapaneseText(line.Text)) {
         if (!data.Info && (!storage_default.get("disable_romaji_toggle_notification") || storage_default.get("disable_romaji_toggle_notification") === "false")) {
           data.Info = "Toggle between Romaji or Furigana in settings. Disable this notification there as well.";
         }
-        if (storage_default.get("enable_romaji") === "true") {
-          line.Text = line.Text?.replace(
-            /(([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)|[(\uFF08]([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)[)\uFF09])(?:{|\uFF5B)([^}\uFF5D]+)(?:}|\uFF5D)/g,
-            (match2, p1, p2, p3, p4) => {
-              const text = p2 || p3;
-              return `<ruby>${text}<rt>${p4}</rt></ruby>`;
-            }
-          );
-        } else {
-          line.Text = line.Text?.replace(
-            /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^}]+)}/g,
-            "<ruby>$1<rt>$2</rt></ruby>"
-          );
-        }
+        line.Text = applyPhoneticPatterns(line.Text, storage_default.get("enable_romaji") === "true");
       } else {
-        line.Text = line.Text?.replace(
-          /((?:\([0-9\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)(?:[a-zA-Z]*)[?.!,"']?){([^}]+)}/g,
-          '<ruby class="romaja">$1<rt>$2</rt></ruby>'
-        );
+        line.Text = applyPhoneticPatterns(line.Text, false);
       }
       const mainTextContainer = document.createElement("span");
       mainTextContainer.classList.add("main-lyrics-text");
@@ -9296,6 +9289,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_createMusicalLine();
       init_storage();
       init_sanitize();
+      init_phoneticPatterns();
     }
   });
 
@@ -11012,9 +11006,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var init_intervals = __esm({
     "src/constants/intervals.ts"() {
       INTERVALS = {
-        POSITION_SYNC: 0.5,
-        DYNAMIC_BG_UPDATE: 1,
-        SLEEP_RETRY: 0.1,
         PROGRESS_BAR_UPDATE: 0.1
       };
     }
@@ -33364,19 +33355,9 @@ ${JSON.stringify(lyricsOnly)}`
     const cached = phoneticTextCache.get(key);
     if (cached !== void 0)
       return cached;
-    let result;
-    if (JAPANESE_CHAR_REGEX.test(text)) {
-      if (enableRomaji) {
-        result = text.replace(JAPANESE_ROMAJI_REGEX, (match2, p1, p2, p3, p4) => {
-          const textPart = p2 || p3;
-          return `<ruby>${textPart}<rt>${p4}</rt></ruby>`;
-        });
-      } else {
-        result = text.replace(JAPANESE_FURIGANA_REGEX, "<ruby>$1<rt>$2</rt></ruby>");
-      }
-    } else {
-      result = text.replace(KOREAN_ROMAJA_REGEX, '<ruby class="romaja">$1<rt>$2</rt></ruby>');
-    }
+    const result = applyPhoneticPatterns(text, enableRomaji);
+    if (result === void 0)
+      return text;
     if (phoneticTextCache.size >= PHONETIC_CACHE_MAX) {
       const firstKey = phoneticTextCache.keys().next().value;
       if (firstKey !== void 0)
@@ -33493,7 +33474,7 @@ ${JSON.stringify(lyricsOnly)}`
       );
     });
   }
-  var JAPANESE_REGEX2, KOREAN_REGEX, JAPANESE_CHAR_REGEX, JAPANESE_ROMAJI_REGEX, JAPANESE_FURIGANA_REGEX, KOREAN_ROMAJA_REGEX, LYRICS_TIMING_OFFSET, phoneticTextCache, PHONETIC_CACHE_MAX, appliedLineState;
+  var JAPANESE_REGEX2, KOREAN_REGEX, LYRICS_TIMING_OFFSET, phoneticTextCache, PHONETIC_CACHE_MAX, appliedLineState;
   var init_processing = __esm({
     "src/utils/Lyrics/processing.ts"() {
       init_storage();
@@ -33506,12 +33487,9 @@ ${JSON.stringify(lyricsOnly)}`
       init_ScrollSimplebar();
       init_lyrics();
       init_sanitize();
+      init_phoneticPatterns();
       JAPANESE_REGEX2 = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
       KOREAN_REGEX = /[\uAC00-\uD7AF]/;
-      JAPANESE_CHAR_REGEX = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/;
-      JAPANESE_ROMAJI_REGEX = /(([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)|[(\uFF08]([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)[)\uFF09])(?:{|\uFF5B)([^}\uFF5D]+)(?:}|\uFF5D)/g;
-      JAPANESE_FURIGANA_REGEX = /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^}]+)}/g;
-      KOREAN_ROMAJA_REGEX = /((?:\([0-9\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)(?:[a-zA-Z]*)[?.!,"']?){([^}]+)}/g;
       LYRICS_TIMING_OFFSET = 0.55;
       phoneticTextCache = /* @__PURE__ */ new Map();
       PHONETIC_CACHE_MAX = 100;
@@ -34761,9 +34739,6 @@ ${JSON.stringify(lyricsOnly)}`
         }
       }
     }
-    getButton() {
-      return this.button;
-    }
     setActive(active) {
       this.button.active = active;
     }
@@ -34779,8 +34754,7 @@ ${JSON.stringify(lyricsOnly)}`
   init_lifecycle();
   init_Fullscreen();
   var _EventManager = class {
-    static initialize(button) {
-      this.button = button;
+    static initialize() {
       this.setupPlayerStateEvents();
       this.setupNavigationEvents();
       this.setupPlayerEvents();
@@ -35327,7 +35301,7 @@ ${JSON.stringify(lyricsOnly)}`
     ensureLyricsRenderLoop2();
     lifecycle_default.trackCallback(() => destroyLyricsRenderLoop2());
     SpotifyPlayer.IsPlaying = IsPlaying();
-    EventManager.initialize(buttonManager.getButton());
+    EventManager.initialize();
     const { InitializePlaybarLyrics: InitializePlaybarLyrics2 } = await Promise.resolve().then(() => (init_PlaybarLyrics(), PlaybarLyrics_exports));
     InitializePlaybarLyrics2();
   }
@@ -35381,7 +35355,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a062dba/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-12632-PWc2TsN0Bler/1a07dfe8215a/DotLoader.css */
 #DotLoader {
   --dot-color: var(--amai-accent-1);
   --dot-color-dim: color-mix(in srgb, var(--amai-accent-1) 22%, transparent);
@@ -35416,7 +35390,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a062dfb/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-12632-PWc2TsN0Bler/1a07dfe8219b/ProcessingIndicator.css */
 #SpicyLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -35498,7 +35472,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a062090/tokens.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-12632-PWc2TsN0Bler/1a07dfe81a10/tokens.css */
 :root {
   --amai-accent-1: #1ed760;
   --amai-accent-2: #1db954;
@@ -35551,7 +35525,7 @@ ${JSON.stringify(lyricsOnly)}`
   --amai-scrollbar-thumb: rgba(255, 255, 255, 0.6);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a062501/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-12632-PWc2TsN0Bler/1a07dfe81cc1/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -35709,7 +35683,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a0625d2/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-12632-PWc2TsN0Bler/1a07dfe81d72/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -35917,7 +35891,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a062673/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-12632-PWc2TsN0Bler/1a07dfe81de3/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -36521,7 +36495,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a062784/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-12632-PWc2TsN0Bler/1a07dfe81eb4/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -36700,7 +36674,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a0627f5/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-12632-PWc2TsN0Bler/1a07dfe81f05/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -36984,7 +36958,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a0628b6/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-12632-PWc2TsN0Bler/1a07dfe81fa6/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -37248,7 +37222,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a062927/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-12632-PWc2TsN0Bler/1a07dfe81ff7/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -37270,7 +37244,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a062968/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-12632-PWc2TsN0Bler/1a07dfe82028/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -37297,7 +37271,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2544-Xq8dntofqKOF/1a069a0629a9/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-12632-PWc2TsN0Bler/1a07dfe82069/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
