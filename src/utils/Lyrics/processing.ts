@@ -327,20 +327,28 @@ function phoneticCacheKey(text: string, enableRomaji: boolean): string {
  * which cannot import this module without closing an import cycle); this wrapper
  * only adds memoisation, which the playbar's hot path benefits from.
  *
- * @param text - Text with phonetic patterns (e.g., {romaji} or {furigana})
+ * @param text - Text with phonetic patterns (e.g., {romaji} or {furigana}).
+ *   `undefined` passes straight through (never cached) so callers can assign the
+ *   result directly onto an optional `Text` field.
  * @param enableRomaji - Whether romaji mode is enabled
- * @returns Processed HTML string with ruby tags
+ * @returns Processed HTML string with ruby tags, or `undefined` for `undefined` input
  */
-export function processPhoneticText(text: string, enableRomaji: boolean): string {
+export function processPhoneticText(text: string, enableRomaji: boolean): string;
+export function processPhoneticText(text: undefined, enableRomaji: boolean): undefined;
+export function processPhoneticText(
+  text: string | undefined,
+  enableRomaji: boolean,
+): string | undefined {
+  // Guard before the cache key: `undefined` must never be cached, and
+  // `${...}\0${undefined}` would collide with the key for the literal string
+  // "undefined" (a lyric line could plausibly contain that word).
+  if (text === undefined) return undefined;
+
   const key = phoneticCacheKey(text, enableRomaji);
   const cached = phoneticTextCache.get(key);
   if (cached !== undefined) return cached;
 
-  // `text` is contractually a string. Previously an undefined argument threw a
-  // TypeError inside .replace(); the shared helper now returns undefined instead,
-  // which every caller already tolerates (they render through optional chaining).
   const result = applyPhoneticPatterns(text, enableRomaji);
-  if (result === undefined) return text;
 
   if (phoneticTextCache.size >= PHONETIC_CACHE_MAX) {
     const firstKey = phoneticTextCache.keys().next().value;

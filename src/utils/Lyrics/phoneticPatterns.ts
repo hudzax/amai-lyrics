@@ -17,6 +17,12 @@
  * Gate: text contains Japanese script — Hiragana, Katakana, CJK ideographs or
  * the ideographic iteration mark (々). Korean and Latin text fall through to the
  * romaja branch, so this must not be widened to include Hangul.
+ *
+ * NOTE: intentionally narrower than JAPANESE_REGEX in processing.ts (language
+ * detection for the AI enhancement path, which also covers CJK Ext-A and compat
+ * ideographs). A line matching only the wider set takes the Korean branch here
+ * and never renders romaji/furigana — pre-existing divergence, do not "fix" by
+ * widening this gate without checking the romaja branch and Info notification.
  */
 const JAPANESE_CHAR_REGEX = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/;
 
@@ -51,6 +57,8 @@ export function isJapaneseText(text: string | undefined): boolean {
  * NOT add a `.test()` on these three patterns without dropping /g or resetting
  * lastIndex first.
  */
+export function applyPhoneticPatterns(text: string, enableRomaji: boolean): string;
+export function applyPhoneticPatterns(text: undefined, enableRomaji: boolean): undefined;
 export function applyPhoneticPatterns(
   text: string | undefined,
   enableRomaji: boolean,

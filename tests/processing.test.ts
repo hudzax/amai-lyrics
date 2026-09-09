@@ -42,7 +42,7 @@ vi.mock('../src/utils/EventManager', () => ({
 };
 
 describe('processPhoneticText', () => {
-  let processPhoneticText: (text: string, enableRomaji: boolean) => string;
+  let processPhoneticText: (text: string | undefined, enableRomaji: boolean) => string | undefined;
 
   beforeAll(async () => {
     const mod = await import('../src/utils/Lyrics/processing');
@@ -81,5 +81,20 @@ describe('processPhoneticText', () => {
     const a = processPhoneticText(input, false);
     const b = processPhoneticText(input, false);
     expect(a).toBe(b);
+  });
+
+  it('passes undefined through without caching it', async () => {
+    expect(processPhoneticText(undefined, false)).toBeUndefined();
+    expect(processPhoneticText(undefined, true)).toBeUndefined();
+  });
+
+  it('does not collide with the literal string "undefined"', async () => {
+    // The cache key interpolates the text, so `undefined` input must be guarded
+    // before keying — otherwise it would share a key with this literal string.
+    expect(processPhoneticText('undefined', false)).toBe('undefined');
+    expect(processPhoneticText(undefined, false)).toBeUndefined();
+    expect(processPhoneticText('undefined', false)).toBe('undefined');
+    expect(processPhoneticText(undefined, true)).toBeUndefined();
+    expect(processPhoneticText('undefined', true)).toBe('undefined');
   });
 });
