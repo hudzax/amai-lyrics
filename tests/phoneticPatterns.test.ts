@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { applyPhoneticPatterns, isJapaneseText } from '../src/utils/Lyrics/phoneticPatterns';
+import {
+  applyPhoneticPatterns,
+  isJapaneseText,
+  processPhoneticText,
+} from '../src/utils/Lyrics/phoneticPatterns';
 
-// These mirror the expectations already proven for processPhoneticText in
-// tests/processing.test.ts, so the shared helper is held to the same contract.
+// applyPhoneticPatterns and processPhoneticText share the same rendering
+// contract — processPhoneticText is just the memoized wrapper — so both are held
+// to the same expectations here.
 describe('applyPhoneticPatterns', () => {
   it('converts furigana {hira} to ruby', () => {
     expect(applyPhoneticPatterns('漢字{かんじ}', false)).toBe('<ruby>漢字<rt>かんじ</rt></ruby>');
@@ -66,5 +71,51 @@ describe('isJapaneseText', () => {
     expect(isJapaneseText('hello world')).toBe(false);
     expect(isJapaneseText('')).toBe(false);
     expect(isJapaneseText(undefined)).toBe(false);
+  });
+});
+
+describe('processPhoneticText', () => {
+  it('converts furigana {hira} to ruby', () => {
+    expect(processPhoneticText('漢字{かんじ}', false)).toBe('<ruby>漢字<rt>かんじ</rt></ruby>');
+  });
+
+  it('converts romaji {romaji} to ruby when enableRomaji true', () => {
+    const out = processPhoneticText('東京{tokyo}', true) as string;
+    expect(out).toContain('<ruby>');
+    expect(out).toContain('<rt>');
+    expect(out).toContain('tokyo');
+  });
+
+  it('handles Korean romaja', () => {
+    const out = processPhoneticText('한글{hangeul}', false) as string;
+    expect(out).toContain('class="romaja"');
+    expect(out).toContain('hangeul');
+  });
+
+  it('returns plain text unchanged when no patterns', () => {
+    expect(processPhoneticText('hello world', false)).toBe('hello world');
+    expect(processPhoneticText('hello world', true)).toBe('hello world');
+  });
+
+  it('caches results (memoized wrapper)', () => {
+    const input = 'テスト{てすと}';
+    const a = processPhoneticText(input, false);
+    const b = processPhoneticText(input, false);
+    expect(a).toBe(b);
+  });
+
+  it('passes undefined through without caching it', () => {
+    expect(processPhoneticText(undefined, false)).toBeUndefined();
+    expect(processPhoneticText(undefined, true)).toBeUndefined();
+  });
+
+  it('does not collide with the literal string "undefined"', () => {
+    // The cache key interpolates the text, so `undefined` input must be guarded
+    // before keying — otherwise it would share a key with this literal string.
+    expect(processPhoneticText('undefined', false)).toBe('undefined');
+    expect(processPhoneticText(undefined, false)).toBeUndefined();
+    expect(processPhoneticText('undefined', false)).toBe('undefined');
+    expect(processPhoneticText(undefined, true)).toBeUndefined();
+    expect(processPhoneticText('undefined', true)).toBe('undefined');
   });
 });

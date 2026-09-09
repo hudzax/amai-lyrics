@@ -7,7 +7,7 @@ import { addLinesEvListener } from '../lyrics';
 import storage from '../../storage';
 import Defaults from '../../../components/Global/Defaults';
 import { NoLyricsResult } from '../ui';
-import { LyricsData } from '../processing';
+import { LyricsData } from '../conversion';
 
 /**
  * Applies lyrics to the UI based on the lyrics type

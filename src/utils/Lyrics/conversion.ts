@@ -132,3 +132,36 @@ export function convertLyrics(data: SyllableBasedLyricItem[]): LineBasedLyricIte
     };
   });
 }
+
+/**
+ * Domain model for a fetched/generated lyric payload, before it is applied to
+ * the DOM. Lives here (rather than in processing.ts or the Applyers) because it
+ * is the shared vocabulary for every stage of the pipeline: fetch, enhancement,
+ * cache, display-update and apply all pass this discriminated union around.
+ */
+export interface LyricsDataLine {
+  id?: string;
+  Type: 'Line';
+  Content?: LineBasedLyricItem[];
+  Lines?: LyricsLine[];
+  Raw?: string[];
+  Info?: string;
+  status?: string;
+  expiresAt?: number;
+  fromCache?: boolean;
+}
+
+export interface LyricsDataStatic {
+  id?: string;
+  Type: 'Static';
+  Lines?: LyricsLine[];
+  Raw?: string[];
+  Info?: string;
+  status?: string;
+  expiresAt?: number;
+  fromCache?: boolean;
+}
+
+// Syllable-based lyrics are normalized to Line on ingest — the word-by-word
+// karaoke renderer has been removed from the extension.
+export type LyricsData = LyricsDataLine | LyricsDataStatic;

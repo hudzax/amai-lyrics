@@ -11,6 +11,11 @@
  * importing anything heavier here — or importing processing.ts from the Applyers —
  * would add a back-edge to that cycle and risk a module-init/TDZ failure on the
  * render path. A leaf with no imports cannot create a cycle.
+ *
+ * Besides the pure pattern transform, this module hosts the memoized
+ * `processPhoneticText` wrapper (formerly in processing.ts): the playbar's hot
+ * path benefits from the cache, and a Map is a language built-in, so the leaf
+ * remains import-free.
  */
 
 /**
@@ -74,4 +79,45 @@ export function applyPhoneticPatterns(
     return text.replace(JAPANESE_FURIGANA_REGEX, '<ruby>$1<rt>$2</rt></ruby>');
   }
   return text.replace(KOREAN_ROMAJA_REGEX, '<ruby class="romaja">$1<rt>$2</rt></ruby>');
+}
+
+const phoneticTextCache = new Map<string, string>();
+const PHONETIC_CACHE_MAX = 100;
+
+function phoneticCacheKey(text: string, enableRomaji: boolean): string {
+  return `${enableRomaji ? 'r' : 'f'}\0${text}`;
+}
+
+/**
+ * Memoized wrapper around applyPhoneticPatterns, for the playbar's hot path.
+ *
+ * @param text - Text with phonetic patterns (e.g., {romaji} or {furigana}).
+ *   `undefined` passes straight through (never cached) so callers can assign the
+ *   result directly onto an optional `Text` field.
+ * @param enableRomaji - Whether romaji mode is enabled
+ * @returns Processed HTML string with ruby tags, or `undefined` for `undefined` input
+ */
+export function processPhoneticText(text: string, enableRomaji: boolean): string;
+export function processPhoneticText(text: undefined, enableRomaji: boolean): undefined;
+export function processPhoneticText(
+  text: string | undefined,
+  enableRomaji: boolean,
+): string | undefined {
+  // Guard before the cache key: `undefined` must never be cached, and
+  // `${...}\0${undefined}` would collide with the key for the literal string
+  // "undefined" (a lyric line could plausibly contain that word).
+  if (text === undefined) return undefined;
+
+  const key = phoneticCacheKey(text, enableRomaji);
+  const cached = phoneticTextCache.get(key);
+  if (cached !== undefined) return cached;
+
+  const result = applyPhoneticPatterns(text, enableRomaji);
+
+  if (phoneticTextCache.size >= PHONETIC_CACHE_MAX) {
+    const firstKey = phoneticTextCache.keys().next().value;
+    if (firstKey !== undefined) phoneticTextCache.delete(firstKey);
+  }
+  phoneticTextCache.set(key, result);
+  return result;
 }

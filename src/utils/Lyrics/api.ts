@@ -6,7 +6,8 @@ import Platform from '../../components/Global/Platform';
 import { SpotifyPlayer } from '../../components/Global/SpotifyPlayer';
 import { getLyrics, LyricsResult } from '../API/Lyrics';
 import { ClearLyricsPageContainer, noLyricsMessage, NoLyricsResult } from './ui';
-import { processAndEnhanceLyrics, LyricsData } from './processing';
+import { processAndEnhanceLyrics } from './processing';
+import { LyricsData } from './conversion';
 
 /**
  * Fetches lyrics from Spotify API and processes them

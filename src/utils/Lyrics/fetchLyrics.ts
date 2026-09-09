@@ -9,7 +9,7 @@ import { getLyricsFromLocalStorage, getLyricsFromCache, lyricsCache } from './ca
 import { fetchLyricsFromAPI } from './api';
 import { hideRefreshButton } from '../../components/Pages/pageButtons';
 
-import { LyricsData } from './processing';
+import { LyricsData } from './conversion';
 import { NoLyricsResult } from './ui';
 
 export type LyricsFetchResult = LyricsData | NoLyricsResult;

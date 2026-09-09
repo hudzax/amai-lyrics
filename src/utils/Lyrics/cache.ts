@@ -12,7 +12,7 @@ import {
   NoLyricsResult,
 } from './ui';
 
-import { LyricsData } from './processing';
+import { LyricsData } from './conversion';
 
 type CachedLyricsData = LyricsData & {
   expiresAt: number;

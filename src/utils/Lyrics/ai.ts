@@ -5,8 +5,7 @@
 import storage from '../storage';
 import Defaults from '../../components/Global/Defaults';
 import type { GenerateContentConfig, Schema, Type } from '@google/genai';
-import { LyricsData } from './processing';
-import { LineBasedLyricItem, LyricsLine } from './conversion';
+import { LyricsData, LineBasedLyricItem, LyricsLine } from './conversion';
 
 type GenAILoader = typeof import('@google/genai');
 let genAIModulePromise: Promise<GenAILoader> | null = null;

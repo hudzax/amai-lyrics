@@ -81,7 +81,7 @@ import { ApplyLineLyrics } from '../src/utils/Lyrics/Applyer/Synced/Line';
 import {
   updateDisplayedLyricsWithTranslations,
   applyScrollReanchor,
-} from '../src/utils/Lyrics/processing';
+} from '../src/utils/Lyrics/translationUpdater';
 import { TimeSetter } from '../src/utils/Lyrics/Animator/Lyrics/LyricsSetter';
 import {
   LyricsObject,

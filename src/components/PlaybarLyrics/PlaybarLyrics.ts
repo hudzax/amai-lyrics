@@ -2,7 +2,7 @@ import storage from '../../utils/storage';
 import { IntervalManager } from '../../utils/IntervalManager';
 import { SpotifyPlayer } from '../Global/SpotifyPlayer';
 import { requestPositionTracking } from '../../utils/Gets/GetProgress';
-import { processPhoneticText } from '../../utils/Lyrics/processing';
+import { processPhoneticText } from '../../utils/Lyrics/phoneticPatterns';
 import { convertLyrics } from '../../utils/Lyrics/conversion';
 import { createRubyFragment } from '../../utils/sanitize';
 import Whentil from '../../utils/Whentil';
