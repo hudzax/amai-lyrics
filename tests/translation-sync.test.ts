@@ -43,10 +43,6 @@ vi.mock('../src/utils/EventManager', () => ({
 vi.mock('../src/utils/Lyrics/ai', () => ({
   fetchPhoneticLyrics: vi.fn(),
   fetchLyricTranslations: vi.fn(),
-  fetchGeminiTranslations: vi.fn(),
-  fetchAmaiTranslations: vi.fn(),
-  fetchAmaiPhonetic: vi.fn(),
-  updateLyricsWithText: vi.fn(),
 }));
 
 vi.mock('../src/utils/Scrolling/Simplebar/ScrollSimplebar', () => ({

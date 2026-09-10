@@ -165,3 +165,22 @@ export interface LyricsDataStatic {
 // Syllable-based lyrics are normalized to Line on ingest — the word-by-word
 // karaoke renderer has been removed from the extension.
 export type LyricsData = LyricsDataLine | LyricsDataStatic;
+
+/**
+ * Replaces the Text of each line with the provided text array, falling back to
+ * the existing text when the incoming array is shorter. Used by the AI
+ * enhancement path to apply phonetic/romanized text to a LyricsData payload.
+ */
+export function updateLyricsWithText(lyricsJson: LyricsData, lines: string[]): void {
+  if (lyricsJson.Type === 'Line' && lyricsJson.Content) {
+    lyricsJson.Content = lyricsJson.Content.map((item: LineBasedLyricItem, index: number) => ({
+      ...item,
+      Text: lines[index] || item.Text,
+    }));
+  } else if (lyricsJson.Type === 'Static' && lyricsJson.Lines) {
+    lyricsJson.Lines = lyricsJson.Lines.map((item: LyricsLine, index: number) => ({
+      ...item,
+      Text: lines[index] || item.Text,
+    }));
+  }
+}
