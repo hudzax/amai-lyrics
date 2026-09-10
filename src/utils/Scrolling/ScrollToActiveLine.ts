@@ -1,6 +1,7 @@
 import Defaults from '../../components/Global/Defaults';
 import { SpotifyPlayer } from '../../components/Global/SpotifyPlayer';
 import { LyricsObject } from '../Lyrics/lyrics';
+import { findActiveIndex } from '../Lyrics/findActiveIndex';
 import { scrollIntoCenterView } from '../ScrollIntoView';
 import SimpleBar from 'simplebar';
 import fastdom from 'fastdom';
@@ -46,23 +47,11 @@ export function ScrollToActiveLine(ScrollSimplebar: SimpleBar) {
     if (!Lines) return;
 
     // Binary search for active line — O(log n) instead of O(n) scan.
-    let currentLine: (typeof Lines)[number] | null = null;
-    let activeIdx = -1;
-    {
-      let lo = 0;
-      let hi = Lines.length - 1;
-      while (lo <= hi) {
-        const mid = (lo + hi) >> 1;
-        const line = Lines[mid] as { StartTime: number; EndTime: number };
-        if (line.StartTime <= ProcessedPosition && ProcessedPosition <= line.EndTime) {
-          activeIdx = mid;
-          break;
-        }
-        if (ProcessedPosition < line.StartTime) hi = mid - 1;
-        else lo = mid + 1;
-      }
-    }
-    if (activeIdx !== -1) currentLine = Lines[activeIdx] as (typeof Lines)[number];
+    const activeIdx = findActiveIndex(
+      Lines as unknown as { StartTime: number; EndTime: number }[],
+      ProcessedPosition,
+    );
+    const currentLine = activeIdx !== -1 ? (Lines[activeIdx] as (typeof Lines)[number]) : null;
     // Hint: if cachedIdx matches activeIdx and lastLine already equals target, ScrollToActiveLine will early-return via lastLine check below.
 
     // If we found an active line, process it with FastDOM

@@ -1,6 +1,7 @@
 import { SpotifyPlayer } from '../components/Global/SpotifyPlayer';
 import { IntervalManager } from '../utils/IntervalManager';
 import { reanchorPosition, requestPositionSync } from '../utils/Gets/GetProgress';
+import { deriveLoopType, deriveShuffleType } from '../utils/playerState';
 import Global from '../components/Global/Global';
 import Session from '../components/Global/Session';
 import Whentil from '../utils/Whentil';
@@ -33,8 +34,7 @@ export class EventManager {
   };
 
   private static onRepeatModeChanged = () => {
-    const LoopState = Spicetify.Player.getRepeat();
-    const LoopType = LoopState === 1 ? 'context' : LoopState === 2 ? 'track' : 'none';
+    const LoopType = deriveLoopType(Spicetify.Player.getRepeat());
     if (SpotifyPlayer.LoopType !== LoopType) {
       SpotifyPlayer.LoopType = LoopType;
       Global.Event.evoke('playback:loop', LoopType);
@@ -42,9 +42,10 @@ export class EventManager {
   };
 
   private static onShuffleChanged = () => {
-    const shuffleState = Spicetify.Player.origin._state.shuffle;
-    const smartShuffleState = Spicetify.Player.origin._state.smartShuffle;
-    const ShuffleType = smartShuffleState ? 'smart' : shuffleState ? 'normal' : 'none';
+    const ShuffleType = deriveShuffleType(
+      Spicetify.Player.origin._state.shuffle,
+      Spicetify.Player.origin._state.smartShuffle,
+    );
     if (SpotifyPlayer.ShuffleType !== ShuffleType) {
       SpotifyPlayer.ShuffleType = ShuffleType;
       Global.Event.evoke('playback:shuffle', ShuffleType);
@@ -59,18 +60,13 @@ export class EventManager {
 
   private static setupPlayerStateEvents() {
     // Initialize LoopType and ShuffleType once at the start
-    const initialLoopState = Spicetify.Player.getRepeat();
-    SpotifyPlayer.LoopType =
-      initialLoopState === 1 ? 'context' : initialLoopState === 2 ? 'track' : 'none';
+    SpotifyPlayer.LoopType = deriveLoopType(Spicetify.Player.getRepeat());
     Global.Event.evoke('playback:loop', SpotifyPlayer.LoopType);
 
-    const initialShuffleState = Spicetify.Player.origin._state.shuffle;
-    const initialSmartShuffleState = Spicetify.Player.origin._state.smartShuffle;
-    SpotifyPlayer.ShuffleType = initialSmartShuffleState
-      ? 'smart'
-      : initialShuffleState
-        ? 'normal'
-        : 'none';
+    SpotifyPlayer.ShuffleType = deriveShuffleType(
+      Spicetify.Player.origin._state.shuffle,
+      Spicetify.Player.origin._state.smartShuffle,
+    );
     Global.Event.evoke('playback:shuffle', SpotifyPlayer.ShuffleType);
 
     // Position tracking - only needed for fullscreen progress bar. Skip tick entirely
@@ -99,21 +95,16 @@ export class EventManager {
 
   private static updatePlayerStatesOnSongChange() {
     // Update loop and shuffle states on song change as they can be part of context
-    const currentLoopState = Spicetify.Player.getRepeat();
-    const newLoopType =
-      currentLoopState === 1 ? 'context' : currentLoopState === 2 ? 'track' : 'none';
+    const newLoopType = deriveLoopType(Spicetify.Player.getRepeat());
     if (SpotifyPlayer.LoopType !== newLoopType) {
       SpotifyPlayer.LoopType = newLoopType;
       Global.Event.evoke('playback:loop', newLoopType);
     }
 
-    const currentShuffleState = Spicetify.Player.origin._state.shuffle;
-    const currentSmartShuffleState = Spicetify.Player.origin._state.smartShuffle;
-    const newShuffleType = currentSmartShuffleState
-      ? 'smart'
-      : currentShuffleState
-        ? 'normal'
-        : 'none';
+    const newShuffleType = deriveShuffleType(
+      Spicetify.Player.origin._state.shuffle,
+      Spicetify.Player.origin._state.smartShuffle,
+    );
     if (SpotifyPlayer.ShuffleType !== newShuffleType) {
       SpotifyPlayer.ShuffleType = newShuffleType;
       Global.Event.evoke('playback:shuffle', newShuffleType);

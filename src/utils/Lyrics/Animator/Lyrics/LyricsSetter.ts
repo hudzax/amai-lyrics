@@ -1,6 +1,7 @@
 import Defaults from '../../../../components/Global/Defaults';
 import { LyricsObject } from '../../lyrics';
 import { timeOffset } from '../Shared';
+import { findActiveIndex } from '../../findActiveIndex';
 
 function getStatus(start: number, end: number, current: number): 'Active' | 'NotSung' | 'Sung' {
   if (start <= current && current <= end) {
@@ -40,19 +41,6 @@ type LineLike = {
   DotLine?: boolean;
   Syllables?: { Lead: WordOrSyllable[] };
 };
-
-function binarySearchActive(tLines: LineLike[], pos: number): number {
-  let lo = 0;
-  let hi = tLines.length - 1;
-  while (lo <= hi) {
-    const mid = (lo + hi) >> 1;
-    const line = tLines[mid]!;
-    if (line.StartTime <= pos && pos <= line.EndTime) return mid;
-    if (pos < line.StartTime) hi = mid - 1;
-    else lo = mid + 1;
-  }
-  return -1;
-}
 
 function applyNoActive(tLines: LineLike[], pos: number): void {
   for (const line of tLines) {
@@ -112,7 +100,7 @@ export function TimeSetter(PreCurrentPosition: number) {
   }
   // SAFETY: Lines from SpikyCache/network JSON; conversion.ts guarantees StartTime/EndTime for Line type
   const tLines = lines as unknown as LineLike[];
-  const activeIndex = binarySearchActive(tLines, CurrentPosition);
+  const activeIndex = findActiveIndex(tLines, CurrentPosition);
   if (activeIndex !== -1 && activeIndex === lastActiveIndex) {
     const al = tLines[activeIndex]!;
     if (al.DotLine) updateCollectionStatus(al.Syllables!.Lead, CurrentPosition);

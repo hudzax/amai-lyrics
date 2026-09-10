@@ -3,6 +3,7 @@ import { IntervalManager } from '../../utils/IntervalManager';
 import { SpotifyPlayer } from '../Global/SpotifyPlayer';
 import { requestPositionTracking } from '../../utils/Gets/GetProgress';
 import { processPhoneticText } from '../../utils/Lyrics/phoneticPatterns';
+import { findActiveIndex } from '../../utils/Lyrics/findActiveIndex';
 import { convertLyrics } from '../../utils/Lyrics/conversion';
 import { createRubyFragment } from '../../utils/sanitize';
 import Whentil from '../../utils/Whentil';
@@ -22,8 +23,8 @@ const UPDATE_INTERVAL = 0.3; // seconds
 
 interface LineEntry {
   text: string;
-  startTime: number; // ms
-  endTime: number; // ms
+  StartTime: number; // ms
+  EndTime: number; // ms
 }
 
 let lyricsElement: HTMLElement | null = null;
@@ -131,8 +132,8 @@ function getLinesFromStorage(rawOverride?: string): LineEntry[] | null {
     if (!text) continue;
     lines.push({
       text,
-      startTime: item.StartTime * 1000,
-      endTime: item.EndTime * 1000,
+      StartTime: item.StartTime * 1000,
+      EndTime: item.EndTime * 1000,
     });
   }
   return lines.length ? lines : null;
@@ -351,22 +352,9 @@ function update(): void {
 
   const position = SpotifyPlayer.GetTrackPosition() + POSITION_OFFSET;
 
-  // Binary search — lines are sorted by startTime
-  let active: LineEntry | null = null;
-  {
-    let lo = 0;
-    let hi = lines.length - 1;
-    while (lo <= hi) {
-      const mid = (lo + hi) >> 1;
-      const line = lines[mid]!;
-      if (line.startTime <= position && position <= line.endTime) {
-        active = line;
-        break;
-      }
-      if (position < line.startTime) hi = mid - 1;
-      else lo = mid + 1;
-    }
-  }
+  // Binary search — lines are sorted by StartTime
+  const activeIdx = findActiveIndex(lines, position);
+  const active = activeIdx === -1 ? null : lines[activeIdx]!;
 
   if (!active) {
     centerWrapper.classList.remove('amai-hide-controls');
