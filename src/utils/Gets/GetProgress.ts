@@ -1,6 +1,7 @@
 import Global from '../../components/Global/Global';
 import { SpotifyPlayer } from '../../components/Global/SpotifyPlayer';
 import lifecycle from '../lifecycle';
+import { extrapolatePosition } from './extrapolatePosition';
 
 interface SpotifyPlatformType {
   PlayerAPI: {
@@ -105,11 +106,10 @@ async function getNonLocalPosition(startedAt: number, SpotifyPlatform: SpotifyPl
     await SpotifyPlatform.PlayerAPI._contextPlayer.resume({});
   }
   state.canSyncNonLocalTimestamp = Math.max(0, state.canSyncNonLocalTimestamp - 1);
+  const { positionAsOfTimestamp, timestamp } = SpotifyPlatform.PlayerAPI._state;
   return {
     StartedSyncAt: startedAt,
-    Position:
-      SpotifyPlatform.PlayerAPI._state.positionAsOfTimestamp +
-      (Date.now() - SpotifyPlatform.PlayerAPI._state.timestamp),
+    Position: extrapolatePosition(positionAsOfTimestamp, timestamp, Date.now()),
   };
 }
 
@@ -272,7 +272,7 @@ export function reanchorPosition(): void {
   const timestamp =
     typeof platformState.timestamp === 'number' ? platformState.timestamp : Date.now();
   state.syncedPosition.StartedSyncAt = performance.now();
-  state.syncedPosition.Position = positionAsOfTimestamp + (Date.now() - timestamp);
+  state.syncedPosition.Position = extrapolatePosition(positionAsOfTimestamp, timestamp, Date.now());
   syncedPosition.StartedSyncAt = state.syncedPosition.StartedSyncAt;
   syncedPosition.Position = state.syncedPosition.Position;
 }
@@ -308,13 +308,12 @@ export default function GetProgress() {
 
   const startedAt = state.syncedPosition.StartedSyncAt;
   const basePosition = state.syncedPosition.Position;
-  const delta = performance.now() - startedAt;
 
   let result: number;
   if (!isPlaying) {
     result = platform.PlayerAPI._state.positionAsOfTimestamp;
   } else {
-    const calculated = basePosition + delta;
+    const calculated = extrapolatePosition(basePosition, startedAt, performance.now());
     result = isLocal ? calculated : calculated + Global.NonLocalTimeOffset;
   }
 
@@ -348,6 +347,6 @@ export function _DEPRECATED___GetProgress() {
   if (isPaused) {
     return positionAsOfTimestamp;
   } else {
-    return positionAsOfTimestamp + (now - timestamp);
+    return extrapolatePosition(positionAsOfTimestamp, timestamp, now);
   }
 }
