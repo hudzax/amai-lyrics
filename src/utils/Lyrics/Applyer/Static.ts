@@ -1,4 +1,4 @@
-import { ArabicPersianRegex, BOTTOM_ApplyLyricsSpacer, TOP_ApplyLyricsSpacer } from '../../Addons';
+import { BOTTOM_ApplyLyricsSpacer, TOP_ApplyLyricsSpacer } from '../../Addons';
 import Defaults from '../../../components/Global/Defaults';
 import { applyStyles, removeAllStyles } from '../../CSS/Styles';
 import {
@@ -11,10 +11,8 @@ import { ClearLyricsContentArrays, LyricsObject } from '../lyrics';
 import { ApplyLyricsCredits } from './Credits/ApplyLyricsCredits';
 import { ApplyInfo } from './Info/ApplyInfo';
 // import { ApplyTranslation } from './Translation/ApplyTranslation';
-import isRtl from '../isRtl';
-import storage from '../../storage';
 import { createRubyFragment } from '../../sanitize';
-import { applyPhoneticPatterns, isJapaneseText } from '../phoneticPatterns';
+import { decorateLineElement, processLinePhonetics } from './Utils/decorateLine';
 
 export function ApplyStaticLyrics(data) {
   if (!Defaults.LyricsContainerExists) return;
@@ -33,19 +31,7 @@ export function ApplyStaticLyrics(data) {
   data.Lines.forEach((line, index) => {
     const lineElem = document.createElement('div');
 
-    if (isJapaneseText(line.Text)) {
-      if (
-        !data.Info &&
-        (!storage.get('disable_romaji_toggle_notification') ||
-          storage.get('disable_romaji_toggle_notification') === 'false')
-      ) {
-        data.Info =
-          'Toggle between Romaji or Furigana in settings. Disable this notification there as well.';
-      }
-      line.Text = applyPhoneticPatterns(line.Text, storage.get('enable_romaji') === 'true');
-    } else {
-      line.Text = applyPhoneticPatterns(line.Text, false);
-    }
+    processLinePhonetics(line, data);
 
     const mainTextContainer = document.createElement('span');
     mainTextContainer.classList.add('main-lyrics-text');
@@ -61,26 +47,9 @@ export function ApplyStaticLyrics(data) {
 
     lineElem.appendChild(mainTextContainer);
 
-    if (
-      line.Translation &&
-      line.Translation.trim() !== '' &&
-      (!data.Raw || line.Translation.trim() !== data.Raw[index]?.trim())
-    ) {
-      const translationElem = document.createElement('div');
-      translationElem.classList.add('translation');
-      translationElem.textContent = line.Translation;
-      mainTextContainer.appendChild(translationElem);
-    }
-
-    if (isRtl(line.Text) && !lineElem.classList.contains('rtl')) {
-      lineElem.classList.add('rtl');
-    }
+    decorateLineElement(lineElem, mainTextContainer, line, data.Raw?.[index]);
 
     lineElem.classList.add('line', 'static');
-
-    if (ArabicPersianRegex.test(line.Text)) {
-      lineElem.setAttribute('font', 'Vazirmatn');
-    }
 
     LyricsObject.Types.Static.Lines.push({
       HTMLElement: lineElem,

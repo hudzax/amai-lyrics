@@ -1,8 +1,4 @@
-import {
-  ArabicPersianRegex,
-  BOTTOM_ApplyLyricsSpacer,
-  TOP_ApplyLyricsSpacer,
-} from '../../../Addons';
+import { BOTTOM_ApplyLyricsSpacer, TOP_ApplyLyricsSpacer } from '../../../Addons';
 import Defaults from '../../../../components/Global/Defaults';
 import { applyStyles, removeAllStyles } from '../../../CSS/Styles';
 import {
@@ -15,11 +11,9 @@ import { ConvertTime } from '../../ConvertTime';
 import { ClearLyricsContentArrays, lyricsBetweenShow, LyricsObject } from '../../lyrics';
 import { ApplyLyricsCredits } from '../Credits/ApplyLyricsCredits';
 import { ApplyInfo } from '../Info/ApplyInfo';
-import isRtl from '../../isRtl';
 import { createMusicalLineMs } from '../Utils/createMusicalLine';
-import storage from '../../../storage';
 import { createRubyFragment } from '../../../sanitize';
-import { applyPhoneticPatterns, isJapaneseText } from '../../phoneticPatterns';
+import { decorateLineElement, processLinePhonetics } from '../Utils/decorateLine';
 
 // Type definitions for better type safety
 interface LyricLine {
@@ -79,19 +73,7 @@ export function ApplyLineLyrics(data: LyricsData): void {
   data.Content.forEach((line, index, arr) => {
     const lineElem = document.createElement('div');
 
-    if (isJapaneseText(line.Text)) {
-      if (
-        !data.Info &&
-        (!storage.get('disable_romaji_toggle_notification') ||
-          storage.get('disable_romaji_toggle_notification') === 'false')
-      ) {
-        data.Info =
-          'Toggle between Romaji or Furigana in settings. Disable this notification there as well.';
-      }
-      line.Text = applyPhoneticPatterns(line.Text, storage.get('enable_romaji') === 'true');
-    } else {
-      line.Text = applyPhoneticPatterns(line.Text, false);
-    }
+    processLinePhonetics(line, data);
 
     // Create main text container — use sanitized ruby fragment to prevent XSS
     const mainTextContainer = document.createElement('span');
@@ -101,28 +83,7 @@ export function ApplyLineLyrics(data: LyricsData): void {
     lineElem.appendChild(mainTextContainer);
     // Removed lineElem.classList.add('line'); as the span is the actual line element
 
-    // Add translation if available and different from original
-    const hasDistinctTranslation =
-      line.Translation &&
-      line.Translation.trim() !== '' &&
-      (!data.Raw || line.Translation.trim() !== data.Raw[index]?.trim());
-
-    if (hasDistinctTranslation) {
-      const translationElem = document.createElement('div');
-      translationElem.classList.add('translation');
-      translationElem.textContent = line.Translation;
-      mainTextContainer.appendChild(translationElem);
-    }
-
-    // Handle right-to-left text
-    if (isRtl(line.Text) && !lineElem.classList.contains('rtl')) {
-      lineElem.classList.add('rtl');
-    }
-
-    // Apply special font for Arabic/Persian text
-    if (ArabicPersianRegex.test(line.Text)) {
-      lineElem.setAttribute('font', 'Vazirmatn');
-    }
+    decorateLineElement(lineElem, mainTextContainer, line, data.Raw?.[index]);
 
     // Convert times to milliseconds
     const startTime = ConvertTime(line.StartTime);
