@@ -1,18 +1,15 @@
 /**
  * Lyrics caching and storage functions for Amai Lyrics
+ *
+ * Pure storage layer: these functions read and write lyrics data but never
+ * touch the DOM or app-wide UI state. The caller (fetchLyrics) owns turning a
+ * cache hit/miss into loader + page-container + CurrentLyricsType transitions.
  */
 
 import { SpikyCache } from '@hudzax/web-modules/SpikyCache';
 import storage from '../storage';
-import Defaults from '../../components/Global/Defaults';
-import {
-  HideLoaderContainer,
-  ClearLyricsPageContainer,
-  noLyricsMessage,
-  NoLyricsResult,
-} from './ui';
-
-import { LyricsData } from './conversion';
+import type { LyricsData } from './conversion';
+import type { NoLyricsResult } from './ui';
 
 type CachedLyricsData = LyricsData & {
   expiresAt: number;
@@ -68,10 +65,10 @@ export async function cacheLyrics(trackId: string, lyricsJson: LyricsData): Prom
 }
 
 /**
- * Gets lyrics from cache
+ * Gets lyrics from cache (pure read — no DOM/UI side effects).
  *
  * @param trackId - Spotify track ID
- * @returns Cached lyrics or null
+ * @returns Cached lyrics, an explicit NO_LYRICS sentinel, or null (miss)
  */
 export async function getLyricsFromCache(
   trackId: string,
@@ -88,27 +85,23 @@ export async function getLyricsFromCache(
     }
 
     if (lyricsFromCache.status === 'NO_LYRICS') {
-      return await noLyricsMessage();
+      return { status: 'NO_LYRICS', id: trackId };
     }
-
-    storage.set('currentLyricsData', JSON.stringify(lyricsFromCache));
-    HideLoaderContainer();
-    ClearLyricsPageContainer();
-    Defaults.CurrentLyricsType = lyricsFromCache.Type;
 
     return { ...lyricsFromCache, fromCache: true };
   } catch (error) {
-    ClearLyricsPageContainer();
+    // A corrupt entry is a miss, not "no lyrics": let the caller fall through
+    // to the API instead of pinning the page to an empty state.
     console.log('[Amai Lyrics] Error parsing saved lyrics data:', error);
-    return await noLyricsMessage();
+    return null;
   }
 }
 
 /**
- * Gets lyrics from local storage
+ * Gets lyrics from local storage (pure read — no DOM/UI side effects).
  *
  * @param trackId - Spotify track ID
- * @returns Stored lyrics or null
+ * @returns Stored lyrics, an explicit NO_LYRICS sentinel, or null (miss)
  */
 export async function getLyricsFromLocalStorage(
   trackId: string,
@@ -124,14 +117,11 @@ export async function getLyricsFromLocalStorage(
     };
     if (parsed?.status === 'NO_LYRICS') {
       if (!parsed.id || parsed.id === trackId) {
-        return await noLyricsMessage(parsed.id ?? trackId);
+        return { status: 'NO_LYRICS', id: parsed.id ?? trackId };
       }
       return null;
     }
     if (parsed?.id === trackId) {
-      HideLoaderContainer();
-      ClearLyricsPageContainer();
-      Defaults.CurrentLyricsType = parsed.Type as never;
       return parsed as LyricsData;
     }
   } catch (error) {
@@ -141,15 +131,13 @@ export async function getLyricsFromLocalStorage(
         const legacySplit = savedLyricsData.split(':');
         const legacyId = legacySplit[1]?.replace(/[^a-zA-Z0-9]/g, '');
         if (!legacyId || legacyId === trackId) {
-          return await noLyricsMessage(legacyId ?? trackId);
+          return { status: 'NO_LYRICS', id: legacyId ?? trackId };
         }
       } catch {
         /* ignore legacy parse failure */
       }
     }
     console.error('Error parsing saved lyrics data:', error);
-    HideLoaderContainer();
-    ClearLyricsPageContainer();
   }
 
   return null;

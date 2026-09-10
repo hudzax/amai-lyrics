@@ -4,10 +4,18 @@
  * This module handles fetching, processing, and displaying lyrics for Spotify tracks.
  */
 
-import { resetLyricsUI, ClearLyricsPageContainer, ShowLoaderContainer } from './ui';
+import {
+  resetLyricsUI,
+  ClearLyricsPageContainer,
+  ShowLoaderContainer,
+  HideLoaderContainer,
+  noLyricsMessage,
+} from './ui';
 import { getLyricsFromLocalStorage, getLyricsFromCache, lyricsCache } from './cache';
 import { fetchLyricsFromAPI } from './api';
 import { hideRefreshButton } from '../../components/Pages/pageButtons';
+import storage from '../storage';
+import Defaults from '../../components/Global/Defaults';
 
 import { LyricsData } from './conversion';
 import { NoLyricsResult } from './ui';
@@ -30,6 +38,24 @@ const inFlight = new Map<string, Promise<LyricsFetchResult>>();
 // ==============================
 
 /**
+ * Turns a freshly loaded lyrics payload (from cache, localStorage, or an
+ * explicit NO_LYRICS sentinel) into the app's UI + state transitions, then
+ * returns it. Centralizes what the cache reads used to do inline so the cache
+ * layer stays a pure read.
+ */
+async function applyLoadedLyrics(result: LyricsFetchResult): Promise<LyricsFetchResult> {
+  if (isNoLyricsResult(result)) {
+    return await noLyricsMessage(result.id);
+  }
+
+  Defaults.CurrentLyricsType = result.Type;
+  storage.set('currentLyricsData', JSON.stringify(result));
+  HideLoaderContainer();
+  ClearLyricsPageContainer();
+  return result;
+}
+
+/**
  * Main function to fetch lyrics for a given Spotify track URI
  *
  * @param uri - Spotify track URI
@@ -37,8 +63,7 @@ const inFlight = new Map<string, Promise<LyricsFetchResult>>();
  */
 export default async function fetchLyrics(uri: string, flush = false): Promise<LyricsFetchResult> {
   if (!uri || typeof uri !== 'string' || !uri.includes(':')) {
-    const { noLyricsMessage } = await import('./ui');
-    return noLyricsMessage();
+    return await noLyricsMessage();
   }
   resetLyricsUI();
   ClearLyricsPageContainer();
@@ -48,15 +73,14 @@ export default async function fetchLyrics(uri: string, flush = false): Promise<L
 
   const trackId = uri.split(':')[2] ?? '';
   if (!trackId) {
-    const { noLyricsMessage } = await import('./ui');
-    return noLyricsMessage();
+    return await noLyricsMessage();
   }
 
   const localLyrics = await getLyricsFromLocalStorage(trackId);
-  if (localLyrics) return localLyrics;
+  if (localLyrics) return applyLoadedLyrics(localLyrics);
 
   const cachedLyrics = await getLyricsFromCache(trackId);
-  if (cachedLyrics) return cachedLyrics;
+  if (cachedLyrics) return applyLoadedLyrics(cachedLyrics);
 
   // Hide refresh button during fetch
   hideRefreshButton();
