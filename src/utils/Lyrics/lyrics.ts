@@ -74,16 +74,48 @@ export function ensureLyricsRenderLoop(): IntervalManager {
   windowRef.__amaiRenderLoopStarted = true;
   renderLoop = new IntervalManager(THROTTLE_TIME, () => {
     if (!Defaults.LyricsContainerExists) return;
+    // Self-heal play state every tick: if the `onplaypause` payload shape
+    // changed after a Spotify client update, SpotifyPlayer.IsPlaying would go
+    // stale (frozen scroll/blur) even while GetProgress() keeps advancing.
+    // Reconciling here keeps the active line moving regardless of events.
+    try {
+      let livePlaying: boolean | null = null;
+      if (typeof Spicetify?.Player?.isPlaying === 'function') {
+        livePlaying = !!Spicetify.Player.isPlaying();
+      } else if (typeof Spicetify?.Player?.data?.isPaused === 'boolean') {
+        livePlaying = !Spicetify.Player.data.isPaused;
+      }
+      if (livePlaying !== null && SpotifyPlayer.IsPlaying !== livePlaying) {
+        SpotifyPlayer.IsPlaying = livePlaying;
+      }
+    } catch {
+      // ignore — keep last known play state
+    }
     // Skip work entirely when the lyrics page isn't visible
-    const onLyricsPage = Spicetify.Platform.History.location.pathname === '/AmaiLyrics';
-    if (onLyricsPage && !pagePositionClient) pagePositionClient = requestPositionTracking();
-    else if (!onLyricsPage && pagePositionClient) {
-      pagePositionClient();
-      pagePositionClient = null;
+    let onLyricsPage = false;
+    try {
+      onLyricsPage = Spicetify.Platform.History.location.pathname === '/AmaiLyrics';
+    } catch {
+      onLyricsPage = false;
+    }
+    try {
+      if (onLyricsPage && !pagePositionClient) pagePositionClient = requestPositionTracking();
+      else if (!onLyricsPage && pagePositionClient) {
+        pagePositionClient();
+        pagePositionClient = null;
+      }
+    } catch {
+      // tracking is best-effort; position reads below still work
     }
     if (!onLyricsPage) return;
 
-    const progress = SpotifyPlayer.GetTrackPosition();
+    let progress: number;
+    try {
+      progress = SpotifyPlayer.GetTrackPosition();
+    } catch {
+      return;
+    }
+    if (typeof progress !== 'number' || !Number.isFinite(progress) || progress < 0) return;
     // Nothing moved since the last frame -> no re-render needed
     if (hasRenderedInitial && progress === lastRenderedPosition) return;
 

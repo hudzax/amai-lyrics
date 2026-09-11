@@ -283,17 +283,39 @@ async function refreshArtworkColors(): Promise<void> {
 
 function update(): void {
   const enabled = isEnabled();
-  const onLyricsPage = Spicetify.Platform.History.location.pathname === '/AmaiLyrics';
+  // Self-heal play state (same rationale as the lyrics page loop): stale
+  // IsPlaying would hide the overlay even while audio advances.
+  try {
+    if (typeof Spicetify?.Player?.isPlaying === 'function') {
+      const live = !!Spicetify.Player.isPlaying();
+      if (SpotifyPlayer.IsPlaying !== live) SpotifyPlayer.IsPlaying = live;
+    } else if (typeof Spicetify?.Player?.data?.isPaused === 'boolean') {
+      const live = !Spicetify.Player.data.isPaused;
+      if (SpotifyPlayer.IsPlaying !== live) SpotifyPlayer.IsPlaying = live;
+    }
+  } catch {
+    // keep last known value
+  }
+  let onLyricsPage = false;
+  try {
+    onLyricsPage = Spicetify.Platform.History.location.pathname === '/AmaiLyrics';
+  } catch {
+    onLyricsPage = false;
+  }
   const isPaused = !SpotifyPlayer.IsPlaying;
 
   // Register/unregister as a position consumer based on whether the playbar is
   // actually rendering lyrics (enabled, playing, and not on the lyrics page).
   const needsPosition = enabled && !onLyricsPage && !isPaused;
-  if (needsPosition && !playbarPositionClient) {
-    playbarPositionClient = requestPositionTracking();
-  } else if (!needsPosition && playbarPositionClient) {
-    playbarPositionClient();
-    playbarPositionClient = null;
+  try {
+    if (needsPosition && !playbarPositionClient) {
+      playbarPositionClient = requestPositionTracking();
+    } else if (!needsPosition && playbarPositionClient) {
+      playbarPositionClient();
+      playbarPositionClient = null;
+    }
+  } catch {
+    // tracking is best-effort
   }
 
   // Disabled, viewing the lyrics page, or paused -> restore native controls, hide overlay (no DOM query needed)
@@ -350,7 +372,13 @@ function update(): void {
     return;
   }
 
-  const position = SpotifyPlayer.GetTrackPosition() + POSITION_OFFSET;
+  let position: number;
+  try {
+    position = SpotifyPlayer.GetTrackPosition() + POSITION_OFFSET;
+  } catch {
+    return;
+  }
+  if (typeof position !== 'number' || !Number.isFinite(position) || position < 0) return;
 
   // Binary search — lines are sorted by StartTime
   const activeIdx = findActiveIndex(lines, position);

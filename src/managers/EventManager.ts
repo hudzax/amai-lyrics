@@ -7,19 +7,106 @@ import Session from '../components/Global/Session';
 import Whentil from '../utils/Whentil';
 import lifecycle from '../utils/lifecycle';
 import Fullscreen from '../components/Utils/Fullscreen';
+import { IsPlaying as GetIsPlayingLive } from '../utils/Addons';
 
 export class EventManager {
+  private static safeGetRepeat(): number {
+    try {
+      if (typeof Spicetify?.Player?.getRepeat === 'function') {
+        const v = Spicetify.Player.getRepeat() as unknown;
+        if (typeof v === 'number' && Number.isFinite(v)) return v;
+      }
+    } catch {
+      // fall through
+    }
+    try {
+      const v = (Spicetify?.Player?.data as { repeat?: unknown } | undefined)?.repeat;
+      if (typeof v === 'number' && Number.isFinite(v)) return v;
+    } catch {
+      // ignore
+    }
+    return 0;
+  }
+
+  private static safeGetShuffle(): { shuffle: boolean; smartShuffle: boolean } {
+    try {
+      // SAFETY: origin._state is untyped runtime state; booleans validated before use
+      const st = (Spicetify?.Player as unknown as { origin?: { _state?: Record<string, unknown> } })
+        ?.origin?._state;
+      if (st && typeof st === 'object') {
+        const shuffle = st['shuffle'];
+        const smartShuffle = st['smartShuffle'];
+        return {
+          shuffle: shuffle === true,
+          smartShuffle: smartShuffle === true,
+        };
+      }
+    } catch {
+      // fall through
+    }
+    try {
+      const data = Spicetify?.Player?.data as { shuffle?: unknown } | undefined;
+      return { shuffle: data?.shuffle === true, smartShuffle: false };
+    } catch {
+      return { shuffle: false, smartShuffle: false };
+    }
+  }
+
+  private static resolveIsPaused(e: unknown): boolean | null {
+    try {
+      const evt = e as { data?: { isPaused?: unknown }; isPaused?: unknown } | null | undefined;
+      const fromData = evt?.data?.isPaused;
+      if (typeof fromData === 'boolean') return fromData;
+      const direct = evt?.isPaused;
+      if (typeof direct === 'boolean') return direct;
+    } catch {
+      // fall through to live query
+    }
+    // Payload shape changed after a client update — fall back to live state.
+    try {
+      if (typeof Spicetify?.Player?.isPlaying === 'function') {
+        return !Spicetify.Player.isPlaying();
+      }
+    } catch {
+      // ignore
+    }
+    try {
+      const paused = (Spicetify?.Player?.data as { isPaused?: unknown } | undefined)?.isPaused;
+      if (typeof paused === 'boolean') return paused;
+    } catch {
+      // ignore
+    }
+    return null;
+  }
+
   // Stored handler references so they can be removed on teardown.
   private static onPlayPause = (e: { data?: { isPaused?: boolean } }) => {
-    const isPaused = e?.data?.isPaused;
-    SpotifyPlayer.IsPlaying = !isPaused;
+    const isPaused = EventManager.resolveIsPaused(e);
+    if (isPaused !== null) {
+      SpotifyPlayer.IsPlaying = !isPaused;
+    } else {
+      // Unknown payload and unreadable live state — keep last known value.
+      try {
+        SpotifyPlayer.IsPlaying = GetIsPlayingLive();
+      } catch {
+        // keep existing value
+      }
+    }
     // Resuming after a pause: the position anchor was frozen during the pause, so
     // GetProgress() would otherwise keep adding the elapsed pause duration to the
     // stale anchor. Re-anchor locally and instantly (race-free) to the platform's
     // current position, then trigger an exact RPC sync to refine it.
-    if (!isPaused) {
-      reanchorPosition();
-      requestPositionSync();
+    if (isPaused === false) {
+      try {
+        reanchorPosition();
+      } catch {
+        // ignore
+      }
+      try {
+        requestPositionSync();
+      } catch {
+        // ignore
+      }
     }
     Global.Event.evoke('playback:playpause', e);
   };
@@ -34,7 +121,7 @@ export class EventManager {
   };
 
   private static onRepeatModeChanged = () => {
-    const LoopType = deriveLoopType(Spicetify.Player.getRepeat());
+    const LoopType = deriveLoopType(EventManager.safeGetRepeat());
     if (SpotifyPlayer.LoopType !== LoopType) {
       SpotifyPlayer.LoopType = LoopType;
       Global.Event.evoke('playback:loop', LoopType);
@@ -42,10 +129,8 @@ export class EventManager {
   };
 
   private static onShuffleChanged = () => {
-    const ShuffleType = deriveShuffleType(
-      Spicetify.Player.origin._state.shuffle,
-      Spicetify.Player.origin._state.smartShuffle,
-    );
+    const { shuffle, smartShuffle } = EventManager.safeGetShuffle();
+    const ShuffleType = deriveShuffleType(shuffle, smartShuffle);
     if (SpotifyPlayer.ShuffleType !== ShuffleType) {
       SpotifyPlayer.ShuffleType = ShuffleType;
       Global.Event.evoke('playback:shuffle', ShuffleType);
@@ -60,13 +145,11 @@ export class EventManager {
 
   private static setupPlayerStateEvents() {
     // Initialize LoopType and ShuffleType once at the start
-    SpotifyPlayer.LoopType = deriveLoopType(Spicetify.Player.getRepeat());
+    SpotifyPlayer.LoopType = deriveLoopType(EventManager.safeGetRepeat());
     Global.Event.evoke('playback:loop', SpotifyPlayer.LoopType);
 
-    SpotifyPlayer.ShuffleType = deriveShuffleType(
-      Spicetify.Player.origin._state.shuffle,
-      Spicetify.Player.origin._state.smartShuffle,
-    );
+    const { shuffle, smartShuffle } = EventManager.safeGetShuffle();
+    SpotifyPlayer.ShuffleType = deriveShuffleType(shuffle, smartShuffle);
     Global.Event.evoke('playback:shuffle', SpotifyPlayer.ShuffleType);
 
     // Position tracking - only needed for fullscreen progress bar. Skip tick entirely
@@ -95,16 +178,14 @@ export class EventManager {
 
   private static updatePlayerStatesOnSongChange() {
     // Update loop and shuffle states on song change as they can be part of context
-    const newLoopType = deriveLoopType(Spicetify.Player.getRepeat());
+    const newLoopType = deriveLoopType(EventManager.safeGetRepeat());
     if (SpotifyPlayer.LoopType !== newLoopType) {
       SpotifyPlayer.LoopType = newLoopType;
       Global.Event.evoke('playback:loop', newLoopType);
     }
 
-    const newShuffleType = deriveShuffleType(
-      Spicetify.Player.origin._state.shuffle,
-      Spicetify.Player.origin._state.smartShuffle,
-    );
+    const { shuffle, smartShuffle } = EventManager.safeGetShuffle();
+    const newShuffleType = deriveShuffleType(shuffle, smartShuffle);
     if (SpotifyPlayer.ShuffleType !== newShuffleType) {
       SpotifyPlayer.ShuffleType = newShuffleType;
       Global.Event.evoke('playback:shuffle', newShuffleType);

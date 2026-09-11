@@ -34,19 +34,33 @@ function setActiveController(value: { cancel: () => void } | null): void {
 }
 
 export function ScrollToActiveLine(ScrollSimplebar: SimpleBar) {
-  if (!SpotifyPlayer.IsPlaying) return;
-  if (!Defaults.LyricsContainerExists) return;
+  try {
+    if (!SpotifyPlayer.IsPlaying) return;
+    if (!Defaults.LyricsContainerExists) return;
 
-  if (Spicetify.Platform.History.location.pathname === '/AmaiLyrics') {
+    let onLyricsPage = false;
+    try {
+      onLyricsPage = Spicetify.Platform.History.location.pathname === '/AmaiLyrics';
+    } catch {
+      return;
+    }
+    if (!onLyricsPage) return;
     // These operations don't involve DOM reads, so they can be done synchronously
     const Lines = LyricsObject.Types[Defaults.CurrentLyricsType]?.Lines;
-    const Position = SpotifyPlayer.GetTrackPosition();
+    let Position: number;
+    try {
+      Position = SpotifyPlayer.GetTrackPosition();
+    } catch {
+      return;
+    }
+    if (typeof Position !== 'number' || !Number.isFinite(Position) || Position < 0) return;
     const PositionOffset = 370;
     const ProcessedPosition = Position + PositionOffset;
 
     if (!Lines) return;
 
     // Binary search for active line — O(log n) instead of O(n) scan.
+    // SAFETY: Lines are domain-timed objects; narrowed to StartTime/EndTime for the search helper
     const activeIdx = findActiveIndex(
       Lines as unknown as { StartTime: number; EndTime: number }[],
       ProcessedPosition,
@@ -94,6 +108,9 @@ export function ScrollToActiveLine(ScrollSimplebar: SimpleBar) {
         });
       });
     }
+  } catch {
+    // Never throw from a scroll tick — IntervalManager would log and continue,
+    // but silent skip keeps scroll self-healing across client updates.
   }
 }
 

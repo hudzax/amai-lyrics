@@ -9,10 +9,13 @@ function globalVisibilityHandler(): void {
     if (inst.Destroyed) continue;
     if (hidden) {
       if (inst.Running) {
+        // SAFETY: private members accessed for cross-instance visibility pause; shape is owned by IntervalManager
         (inst as unknown as { autoPaused: boolean }).autoPaused = true;
+        // SAFETY: private pauseTimer invoked from the shared visibility handler; same-class invariant
         (inst as unknown as { pauseTimer: () => void }).pauseTimer();
       }
     } else {
+      // SAFETY: private members accessed to resume auto-paused instances; shape is owned by IntervalManager
       const anyInst = inst as unknown as { autoPaused: boolean; scheduleTick: () => void };
       if (anyInst.autoPaused) {
         anyInst.autoPaused = false;
@@ -138,10 +141,23 @@ class IntervalManager implements Giveable {
     const tick = (): void => {
       // Bail if stopped/destroyed while a tick was already scheduled.
       if (!this.Running || this.Destroyed) return;
-      this.callback();
-      // Recursive setTimeout (rather than setInterval) so a slow callback can
-      // never stack multiple pending ticks.
-      this.timerId = window.setTimeout(tick, this.duration);
+      try {
+        this.callback();
+      } catch (error) {
+        // A single failing tick (e.g. a Spicetify internal API that changed
+        // shape after a client update) must never kill the whole loop — that
+        // manifests as a permanently frozen UI (lyrics, playbar, progress)
+        // until the next reload. Log and keep ticking so the loop self-heals
+        // as soon as the underlying API recovers or a fallback kicks in.
+        console.error('[Amai Lyrics] IntervalManager tick failed, continuing:', error);
+      } finally {
+        // Recursive setTimeout (rather than setInterval) so a slow callback can
+        // never stack multiple pending ticks. Always re-arm unless stopped /
+        // destroyed inside the callback.
+        if (this.Running && !this.Destroyed) {
+          this.timerId = window.setTimeout(tick, this.duration);
+        }
+      }
     };
     this.timerId = window.setTimeout(tick, this.duration);
   }
