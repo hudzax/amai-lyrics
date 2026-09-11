@@ -5194,6 +5194,165 @@
     requestPositionSync: () => requestPositionSync,
     requestPositionTracking: () => requestPositionTracking
   });
+  function safeInitialPlaying() {
+    try {
+      if (typeof Spicetify?.Player?.isPlaying === "function") {
+        return !!Spicetify.Player.isPlaying();
+      }
+    } catch {
+    }
+    try {
+      const paused = Spicetify?.Player?.data?.isPaused;
+      if (typeof paused === "boolean")
+        return !paused;
+    } catch {
+    }
+    return false;
+  }
+  function safeFiniteNumber(value) {
+    return typeof value === "number" && Number.isFinite(value) ? value : null;
+  }
+  function safeIsPlaying() {
+    try {
+      if (typeof Spicetify?.Player?.isPlaying === "function") {
+        return !!Spicetify.Player.isPlaying();
+      }
+    } catch {
+    }
+    try {
+      const data = Spicetify?.Player?.data;
+      if (data && typeof data.isPaused === "boolean")
+        return !data.isPaused;
+    } catch {
+    }
+    return false;
+  }
+  function getPublicProgress() {
+    try {
+      const fn = Spicetify?.Player?.getProgress;
+      if (typeof fn === "function") {
+        const value = fn.call(Spicetify.Player);
+        const n = safeFiniteNumber(value);
+        if (n !== null && n >= 0 && n < 10 * 3600 * 1e3)
+          return n;
+      }
+    } catch {
+    }
+    return null;
+  }
+  function readPlayerDataPosition() {
+    try {
+      const data = Spicetify?.Player?.data;
+      if (!data)
+        return null;
+      const pos = safeFiniteNumber(data.positionAsOfTimestamp);
+      if (pos === null)
+        return null;
+      const ts = safeFiniteNumber(data.timestamp);
+      const paused = typeof data.isPaused === "boolean" ? data.isPaused : !safeIsPlaying();
+      return { pos, ts, paused };
+    } catch {
+      return null;
+    }
+  }
+  function readOriginPosition() {
+    try {
+      const originState = Spicetify?.Player?.origin?._state;
+      if (!originState || typeof originState !== "object")
+        return null;
+      const pos = safeFiniteNumber(originState["positionAsOfTimestamp"]);
+      if (pos === null)
+        return null;
+      const ts = safeFiniteNumber(originState["timestamp"]);
+      const rawPaused = originState["isPaused"];
+      const paused = typeof rawPaused === "boolean" ? rawPaused : !safeIsPlaying();
+      return { pos, ts, paused };
+    } catch {
+      return null;
+    }
+  }
+  function readPlatformPosition() {
+    try {
+      const platformState = Spicetify?.Platform?.PlayerAPI?._state;
+      if (!platformState || typeof platformState !== "object")
+        return null;
+      const pos = safeFiniteNumber(platformState["positionAsOfTimestamp"]);
+      if (pos === null)
+        return null;
+      const ts = safeFiniteNumber(platformState["timestamp"]);
+      return { pos, ts };
+    } catch {
+      return null;
+    }
+  }
+  function readIsLocal(defaultValue = true) {
+    try {
+      const v = Spicetify?.Platform?.PlaybackAPI?._isLocal;
+      if (typeof v === "boolean")
+        return v;
+    } catch {
+    }
+    return defaultValue;
+  }
+  function getStateBasedPosition() {
+    const playing = safeIsPlaying();
+    const now2 = Date.now();
+    const fromData = readPlayerDataPosition();
+    if (fromData) {
+      if (fromData.paused || fromData.ts === null)
+        return fromData.pos;
+      return extrapolatePosition(fromData.pos, fromData.ts, now2);
+    }
+    const fromOrigin = readOriginPosition();
+    if (fromOrigin) {
+      if (fromOrigin.paused || fromOrigin.ts === null)
+        return fromOrigin.pos;
+      return extrapolatePosition(fromOrigin.pos, fromOrigin.ts, now2);
+    }
+    const fromPlatform = readPlatformPosition();
+    if (fromPlatform) {
+      if (!playing || fromPlatform.ts === null)
+        return fromPlatform.pos;
+      return extrapolatePosition(fromPlatform.pos, fromPlatform.ts, now2);
+    }
+    return null;
+  }
+  function setAnchor(position, startedAtPerfNow) {
+    const startedAt = typeof startedAtPerfNow === "number" && Number.isFinite(startedAtPerfNow) ? startedAtPerfNow : performance.now();
+    state.syncedPosition.StartedSyncAt = startedAt;
+    state.syncedPosition.Position = position;
+    syncedPosition.StartedSyncAt = startedAt;
+    syncedPosition.Position = position;
+  }
+  function ensureOnProgressAnchor() {
+    if (windowRef2.__amaiGetProgressOnProgressAttached)
+      return;
+    windowRef2.__amaiGetProgressOnProgressAttached = true;
+    try {
+      Spicetify.Player.addEventListener("onprogress", (event) => {
+        try {
+          let pos = null;
+          if (typeof event === "number") {
+            pos = safeFiniteNumber(event);
+          } else if (event && typeof event === "object") {
+            const data = event.data;
+            pos = safeFiniteNumber(
+              typeof data === "number" ? data : event.position
+            );
+          }
+          if (pos !== null && pos >= 0) {
+            setAnchor(pos);
+            state.cachedPosition = pos;
+            state.cachedPositionTime = performance.now();
+            state.cachedIsPlaying = safeIsPlaying();
+          }
+        } catch {
+        }
+      });
+    } catch {
+      windowRef2.__amaiGetProgressOnProgressAttached = false;
+    }
+  }
   function isDocumentHidden() {
     try {
       return typeof document !== "undefined" && document.hidden;
@@ -5213,21 +5372,36 @@
     });
   }
   async function getLocalPosition(startedAt, SpotifyPlatform2) {
-    const { position } = await SpotifyPlatform2.PlayerAPI._contextPlayer.getPositionState({});
+    const getPositionState = SpotifyPlatform2.PlayerAPI?._contextPlayer?.getPositionState;
+    if (typeof getPositionState !== "function") {
+      throw new Error("getPositionState unavailable");
+    }
+    const { position } = await getPositionState.call(SpotifyPlatform2.PlayerAPI._contextPlayer, {});
+    const n = Number(position);
+    if (!Number.isFinite(n))
+      throw new Error("invalid position from getPositionState");
     return {
       StartedSyncAt: startedAt,
-      Position: Number(position)
+      Position: n
     };
   }
   async function getNonLocalPosition(startedAt, SpotifyPlatform2) {
-    if (state.canSyncNonLocalTimestamp > 0) {
-      await SpotifyPlatform2.PlayerAPI._contextPlayer.resume({});
+    const contextPlayer = SpotifyPlatform2.PlayerAPI?._contextPlayer;
+    if (state.canSyncNonLocalTimestamp > 0 && typeof contextPlayer?.resume === "function") {
+      try {
+        await contextPlayer.resume.call(contextPlayer, {});
+      } catch {
+      }
     }
     state.canSyncNonLocalTimestamp = Math.max(0, state.canSyncNonLocalTimestamp - 1);
-    const { positionAsOfTimestamp, timestamp } = SpotifyPlatform2.PlayerAPI._state;
+    const platformState = SpotifyPlatform2.PlayerAPI?._state;
+    const positionAsOfTimestamp = safeFiniteNumber(platformState?.positionAsOfTimestamp);
+    const timestamp = safeFiniteNumber(platformState?.timestamp);
+    if (positionAsOfTimestamp === null)
+      throw new Error("platform position unavailable");
     return {
       StartedSyncAt: startedAt,
-      Position: extrapolatePosition(positionAsOfTimestamp, timestamp, Date.now())
+      Position: extrapolatePosition(positionAsOfTimestamp, timestamp ?? Date.now(), Date.now())
     };
   }
   function requestPositionTracking() {
@@ -5270,19 +5444,25 @@
     state.teardownRequested = true;
   }
   async function doSync() {
-    const SpotifyPlatform2 = Spicetify.Platform;
     const startedAt = performance.now();
-    const isLocallyPlaying = SpotifyPlatform2.PlaybackAPI._isLocal;
+    const pub = getPublicProgress();
+    if (pub !== null) {
+      setAnchor(pub, startedAt);
+      return;
+    }
+    const SpotifyPlatform2 = Spicetify.Platform;
+    const isLocallyPlaying = readIsLocal(true);
     let pos;
     if (isLocallyPlaying) {
+      if (!SpotifyPlatform2)
+        throw new Error("platform unavailable");
       pos = await getLocalPosition(startedAt, SpotifyPlatform2);
     } else {
+      if (!SpotifyPlatform2)
+        throw new Error("platform unavailable");
       pos = await getNonLocalPosition(startedAt, SpotifyPlatform2);
     }
-    state.syncedPosition.StartedSyncAt = pos.StartedSyncAt;
-    state.syncedPosition.Position = pos.Position;
-    syncedPosition.StartedSyncAt = pos.StartedSyncAt;
-    syncedPosition.Position = pos.Position;
+    setAnchor(pos.Position, pos.StartedSyncAt);
   }
   async function runLoop() {
     try {
@@ -5293,16 +5473,24 @@
         scheduleLoop(IDLE_HEARTBEAT_MS);
         return;
       }
-      const isPlaying = Spicetify.Player.isPlaying();
+      const isPlaying = safeIsPlaying();
       if (isPlaying && (state.activePositionClients > 0 || state.syncNow)) {
         state.syncNow = false;
-        await doSync();
+        try {
+          await doSync();
+        } catch (error) {
+          const fallback = getStateBasedPosition();
+          if (fallback !== null)
+            setAnchor(fallback);
+          else
+            console.error("Sync Position: Fail, More Details:", error);
+        }
       } else {
         state.syncNow = false;
       }
       if (state.teardownRequested && state.activePositionClients === 0)
         return;
-      const nowPlaying = Spicetify.Player.isPlaying();
+      const nowPlaying = safeIsPlaying();
       if (!nowPlaying) {
         scheduleLoop(PAUSED_POLL_MS);
       } else if (state.activePositionClients > 0) {
@@ -5318,78 +5506,159 @@
     }
   }
   function requestPositionSync() {
+    state.syncNow = true;
     scheduleLoop(0);
   }
   function reanchorPosition() {
-    const platform = Spicetify.Platform;
-    const platformState = platform?.PlayerAPI?._state;
-    if (!platformState)
-      return;
-    const positionAsOfTimestamp = typeof platformState.positionAsOfTimestamp === "number" ? platformState.positionAsOfTimestamp : 0;
-    const timestamp = typeof platformState.timestamp === "number" ? platformState.timestamp : Date.now();
-    state.syncedPosition.StartedSyncAt = performance.now();
-    state.syncedPosition.Position = extrapolatePosition(positionAsOfTimestamp, timestamp, Date.now());
-    syncedPosition.StartedSyncAt = state.syncedPosition.StartedSyncAt;
-    syncedPosition.Position = state.syncedPosition.Position;
+    try {
+      const pub = getPublicProgress();
+      if (pub !== null) {
+        setAnchor(pub);
+        return;
+      }
+      const fromData = readPlayerDataPosition();
+      if (fromData) {
+        const now2 = Date.now();
+        const pos = !fromData.paused && fromData.ts !== null ? extrapolatePosition(fromData.pos, fromData.ts, now2) : fromData.pos;
+        setAnchor(pos);
+        return;
+      }
+      const fromOrigin = readOriginPosition();
+      if (fromOrigin) {
+        const now2 = Date.now();
+        const pos = !fromOrigin.paused && fromOrigin.ts !== null ? extrapolatePosition(fromOrigin.pos, fromOrigin.ts, now2) : fromOrigin.pos;
+        setAnchor(pos);
+        return;
+      }
+      const platform = Spicetify.Platform;
+      const platformState = platform?.PlayerAPI?._state;
+      if (!platformState)
+        return;
+      const positionAsOfTimestamp = typeof platformState.positionAsOfTimestamp === "number" ? platformState.positionAsOfTimestamp : 0;
+      const timestamp = typeof platformState.timestamp === "number" ? platformState.timestamp : Date.now();
+      setAnchor(extrapolatePosition(positionAsOfTimestamp, timestamp, Date.now()));
+    } catch {
+    }
   }
   function GetProgress() {
-    const now2 = performance.now();
-    const isPlaying = Spicetify.Player.isPlaying();
-    if (state.cachedPosition !== null && state.cachedIsPlaying === isPlaying && now2 - state.cachedPositionTime < POSITION_CACHE_TTL) {
-      return state.cachedPosition;
-    }
-    if (!state.syncedPosition.StartedSyncAt && !state.syncedPosition.Position) {
-      if (SpotifyPlayer?._DEPRECATED_?.GetTrackPosition) {
-        return SpotifyPlayer._DEPRECATED_.GetTrackPosition();
+    try {
+      const now2 = performance.now();
+      let isPlaying = false;
+      try {
+        isPlaying = safeIsPlaying();
+      } catch {
+        isPlaying = false;
       }
-      console.warn("[GetProgress] Synced Position: Skip, Returning 0");
+      if (state.cachedPosition !== null && state.cachedIsPlaying === isPlaying && now2 - state.cachedPositionTime < POSITION_CACHE_TTL) {
+        return state.cachedPosition;
+      }
+      const pub = getPublicProgress();
+      if (pub !== null) {
+        setAnchor(pub, now2);
+        state.cachedPosition = pub;
+        state.cachedPositionTime = now2;
+        state.cachedIsPlaying = isPlaying;
+        return pub;
+      }
+      if (state.syncedPosition.StartedSyncAt || state.syncedPosition.Position) {
+        try {
+          const isLocal = readIsLocal(true);
+          const startedAt = state.syncedPosition.StartedSyncAt;
+          const basePosition = state.syncedPosition.Position;
+          let result;
+          if (!isPlaying) {
+            const pausedPos = readPlatformPosition()?.pos ?? readPlayerDataPosition()?.pos ?? basePosition;
+            result = pausedPos;
+          } else {
+            const calculated = extrapolatePosition(basePosition, startedAt, performance.now());
+            let offset = 0;
+            try {
+              offset = Global_default?.NonLocalTimeOffset ?? 0;
+            } catch {
+              offset = 0;
+            }
+            result = isLocal ? calculated : calculated + (typeof offset === "number" ? offset : 0);
+          }
+          if (Number.isFinite(result) && result >= 0) {
+            state.cachedPosition = result;
+            state.cachedPositionTime = now2;
+            state.cachedIsPlaying = isPlaying;
+            return result;
+          }
+        } catch {
+        }
+      }
+      const stateBased = getStateBasedPosition();
+      if (stateBased !== null && Number.isFinite(stateBased) && stateBased >= 0) {
+        state.cachedPosition = stateBased;
+        state.cachedPositionTime = now2;
+        state.cachedIsPlaying = isPlaying;
+        return stateBased;
+      }
+      try {
+        if (SpotifyPlayer?._DEPRECATED_?.GetTrackPosition) {
+          const legacy = SpotifyPlayer._DEPRECATED_.GetTrackPosition();
+          const n = safeFiniteNumber(legacy);
+          if (n !== null && n >= 0) {
+            state.cachedPosition = n;
+            state.cachedPositionTime = now2;
+            state.cachedIsPlaying = isPlaying;
+            return n;
+          }
+        }
+      } catch {
+      }
+      if (state.cachedPosition !== null && Number.isFinite(state.cachedPosition)) {
+        return state.cachedPosition;
+      }
+      return 0;
+    } catch {
+      try {
+        if (state.cachedPosition !== null && Number.isFinite(state.cachedPosition)) {
+          return state.cachedPosition;
+        }
+      } catch {
+      }
       return 0;
     }
-    const platform = Spicetify.Platform;
-    const isLocal = platform.PlaybackAPI._isLocal;
-    const startedAt = state.syncedPosition.StartedSyncAt;
-    const basePosition = state.syncedPosition.Position;
-    let result;
-    if (!isPlaying) {
-      result = platform.PlayerAPI._state.positionAsOfTimestamp;
-    } else {
-      const calculated = extrapolatePosition(basePosition, startedAt, performance.now());
-      result = isLocal ? calculated : calculated + Global_default.NonLocalTimeOffset;
-    }
-    state.cachedPosition = result;
-    state.cachedPositionTime = now2;
-    state.cachedIsPlaying = isPlaying;
-    return result;
   }
   function _DEPRECATED___GetProgress() {
-    const state2 = Spicetify?.Player?.origin?._state;
-    if (!state2) {
-      console.error("Spicetify Player state is not available.");
+    try {
+      const st = Spicetify?.Player?.origin?._state;
+      if (!st) {
+        console.error("Spicetify Player state is not available.");
+        return 0;
+      }
+      const { positionAsOfTimestamp, timestamp, isPaused } = st;
+      if (positionAsOfTimestamp == null || timestamp == null) {
+        console.error("Playback state is incomplete.");
+        return 0;
+      }
+      const pos = safeFiniteNumber(positionAsOfTimestamp);
+      const ts = safeFiniteNumber(timestamp);
+      if (pos === null || ts === null)
+        return 0;
+      const now2 = Date.now();
+      if (isPaused) {
+        return pos;
+      } else {
+        return extrapolatePosition(pos, ts, now2);
+      }
+    } catch {
       return 0;
     }
-    const { positionAsOfTimestamp, timestamp, isPaused } = state2;
-    if (positionAsOfTimestamp == null || timestamp == null) {
-      console.error("Playback state is incomplete.");
-      return null;
-    }
-    const now2 = Date.now();
-    if (isPaused) {
-      return positionAsOfTimestamp;
-    } else {
-      return extrapolatePosition(positionAsOfTimestamp, timestamp, now2);
-    }
   }
-  var syncTimings, windowRef2, state, syncedPosition, PAUSED_POLL_MS, ACTIVE_SYNC_MS, IDLE_HEARTBEAT_MS, POSITION_CACHE_TTL;
+  var windowRef2, syncTimings, state, syncedPosition, PAUSED_POLL_MS, ACTIVE_SYNC_MS, IDLE_HEARTBEAT_MS, POSITION_CACHE_TTL;
   var init_GetProgress = __esm({
     "src/utils/Gets/GetProgress.ts"() {
       init_Global();
       init_SpotifyPlayer();
       init_lifecycle();
       init_extrapolatePosition();
-      syncTimings = [0.05, 0.1, 0.15, 0.75];
       windowRef2 = window;
+      syncTimings = [0.05, 0.1, 0.15, 0.75];
       state = windowRef2.__amaiGetProgressState ?? (windowRef2.__amaiGetProgressState = {
-        canSyncNonLocalTimestamp: Spicetify.Player.isPlaying() ? syncTimings.length : 0,
+        canSyncNonLocalTimestamp: safeInitialPlaying() ? syncTimings.length : 0,
         syncedPosition: { StartedSyncAt: 0, Position: 0 },
         activePositionClients: 0,
         syncNow: false,
@@ -5405,6 +5674,10 @@
       }
       if (!("teardownRequested" in state)) {
         Object.assign(state, { teardownRequested: false });
+      }
+      try {
+        ensureOnProgressAnchor();
+      } catch {
       }
       if (typeof document !== "undefined")
         ensureVisibilityHandler();
@@ -5577,8 +5850,19 @@
 
   // src/utils/Addons.ts
   function IsPlaying() {
-    const state2 = Spicetify?.Player?.data?.isPaused;
-    return !state2;
+    try {
+      if (typeof Spicetify?.Player?.isPlaying === "function") {
+        return !!Spicetify.Player.isPlaying();
+      }
+    } catch {
+    }
+    try {
+      const paused = Spicetify?.Player?.data?.isPaused;
+      if (typeof paused === "boolean")
+        return !paused;
+    } catch {
+    }
+    return false;
   }
   function TOP_ApplyLyricsSpacer(Container) {
     const div = document.createElement("div");
@@ -5796,7 +6080,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.4.40";
+      version = "1.4.41";
     }
   });
 
@@ -6523,8 +6807,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           const tick = () => {
             if (!this.Running || this.Destroyed)
               return;
-            this.callback();
-            this.timerId = window.setTimeout(tick, this.duration);
+            try {
+              this.callback();
+            } catch (error) {
+              console.error("[Amai Lyrics] IntervalManager tick failed, continuing:", error);
+            } finally {
+              if (this.Running && !this.Destroyed) {
+                this.timerId = window.setTimeout(tick, this.duration);
+              }
+            }
           };
           this.timerId = window.setTimeout(tick, this.duration);
         }
@@ -8257,16 +8548,43 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     renderLoop = new IntervalManager(THROTTLE_TIME, () => {
       if (!Defaults_default.LyricsContainerExists)
         return;
-      const onLyricsPage = Spicetify.Platform.History.location.pathname === "/AmaiLyrics";
-      if (onLyricsPage && !pagePositionClient)
-        pagePositionClient = requestPositionTracking();
-      else if (!onLyricsPage && pagePositionClient) {
-        pagePositionClient();
-        pagePositionClient = null;
+      try {
+        let livePlaying = null;
+        if (typeof Spicetify?.Player?.isPlaying === "function") {
+          livePlaying = !!Spicetify.Player.isPlaying();
+        } else if (typeof Spicetify?.Player?.data?.isPaused === "boolean") {
+          livePlaying = !Spicetify.Player.data.isPaused;
+        }
+        if (livePlaying !== null && SpotifyPlayer.IsPlaying !== livePlaying) {
+          SpotifyPlayer.IsPlaying = livePlaying;
+        }
+      } catch {
+      }
+      let onLyricsPage = false;
+      try {
+        onLyricsPage = Spicetify.Platform.History.location.pathname === "/AmaiLyrics";
+      } catch {
+        onLyricsPage = false;
+      }
+      try {
+        if (onLyricsPage && !pagePositionClient)
+          pagePositionClient = requestPositionTracking();
+        else if (!onLyricsPage && pagePositionClient) {
+          pagePositionClient();
+          pagePositionClient = null;
+        }
+      } catch {
       }
       if (!onLyricsPage)
         return;
-      const progress = SpotifyPlayer.GetTrackPosition();
+      let progress;
+      try {
+        progress = SpotifyPlayer.GetTrackPosition();
+      } catch {
+        return;
+      }
+      if (typeof progress !== "number" || !Number.isFinite(progress) || progress < 0)
+        return;
       if (hasRenderedInitial && progress === lastRenderedPosition)
         return;
       lastRenderedPosition = progress;
@@ -8609,13 +8927,28 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     sharedScrollState.activeScrollController = value;
   }
   function ScrollToActiveLine(ScrollSimplebar2) {
-    if (!SpotifyPlayer.IsPlaying)
-      return;
-    if (!Defaults_default.LyricsContainerExists)
-      return;
-    if (Spicetify.Platform.History.location.pathname === "/AmaiLyrics") {
+    try {
+      if (!SpotifyPlayer.IsPlaying)
+        return;
+      if (!Defaults_default.LyricsContainerExists)
+        return;
+      let onLyricsPage = false;
+      try {
+        onLyricsPage = Spicetify.Platform.History.location.pathname === "/AmaiLyrics";
+      } catch {
+        return;
+      }
+      if (!onLyricsPage)
+        return;
       const Lines = LyricsObject.Types[Defaults_default.CurrentLyricsType]?.Lines;
-      const Position = SpotifyPlayer.GetTrackPosition();
+      let Position;
+      try {
+        Position = SpotifyPlayer.GetTrackPosition();
+      } catch {
+        return;
+      }
+      if (typeof Position !== "number" || !Number.isFinite(Position) || Position < 0)
+        return;
       const PositionOffset = 370;
       const ProcessedPosition = Position + PositionOffset;
       if (!Lines)
@@ -8659,6 +8992,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           });
         });
       }
+    } catch {
     }
   }
   function ResetLastLine() {
@@ -8687,15 +9021,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-18316-SVlWoh5EhHUF/1a089fc2dd7a/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b228a/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-18316-SVlWoh5EhHUF/1a089fc2dd7a/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b228a/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-18316-SVlWoh5EhHUF/1a089fc2ddab/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b234b/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-18316-SVlWoh5EhHUF/1a089fc2ddab/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b234b/ProcessingIndicator.css"() {
     }
   });
 
@@ -34024,14 +34358,34 @@ ${JSON.stringify(lyricsOnly)}`
   }
   function update() {
     const enabled = isEnabled();
-    const onLyricsPage = Spicetify.Platform.History.location.pathname === "/AmaiLyrics";
+    try {
+      if (typeof Spicetify?.Player?.isPlaying === "function") {
+        const live = !!Spicetify.Player.isPlaying();
+        if (SpotifyPlayer.IsPlaying !== live)
+          SpotifyPlayer.IsPlaying = live;
+      } else if (typeof Spicetify?.Player?.data?.isPaused === "boolean") {
+        const live = !Spicetify.Player.data.isPaused;
+        if (SpotifyPlayer.IsPlaying !== live)
+          SpotifyPlayer.IsPlaying = live;
+      }
+    } catch {
+    }
+    let onLyricsPage = false;
+    try {
+      onLyricsPage = Spicetify.Platform.History.location.pathname === "/AmaiLyrics";
+    } catch {
+      onLyricsPage = false;
+    }
     const isPaused = !SpotifyPlayer.IsPlaying;
     const needsPosition = enabled && !onLyricsPage && !isPaused;
-    if (needsPosition && !playbarPositionClient) {
-      playbarPositionClient = requestPositionTracking();
-    } else if (!needsPosition && playbarPositionClient) {
-      playbarPositionClient();
-      playbarPositionClient = null;
+    try {
+      if (needsPosition && !playbarPositionClient) {
+        playbarPositionClient = requestPositionTracking();
+      } else if (!needsPosition && playbarPositionClient) {
+        playbarPositionClient();
+        playbarPositionClient = null;
+      }
+    } catch {
     }
     if (!enabled || onLyricsPage || isPaused) {
       if (lyricsElement && centerWrapper) {
@@ -34076,7 +34430,14 @@ ${JSON.stringify(lyricsOnly)}`
       }
       return;
     }
-    const position = SpotifyPlayer.GetTrackPosition() + POSITION_OFFSET;
+    let position;
+    try {
+      position = SpotifyPlayer.GetTrackPosition() + POSITION_OFFSET;
+    } catch {
+      return;
+    }
+    if (typeof position !== "number" || !Number.isFinite(position) || position < 0)
+      return;
     const activeIdx = findActiveIndex(lines, position);
     const active = activeIdx === -1 ? null : lines[activeIdx];
     if (!active) {
@@ -34761,19 +35122,80 @@ ${JSON.stringify(lyricsOnly)}`
   init_Whentil();
   init_lifecycle();
   init_Fullscreen();
+  init_Addons();
   var _EventManager = class {
+    static safeGetRepeat() {
+      try {
+        if (typeof Spicetify?.Player?.getRepeat === "function") {
+          const v = Spicetify.Player.getRepeat();
+          if (typeof v === "number" && Number.isFinite(v))
+            return v;
+        }
+      } catch {
+      }
+      try {
+        const v = Spicetify?.Player?.data?.repeat;
+        if (typeof v === "number" && Number.isFinite(v))
+          return v;
+      } catch {
+      }
+      return 0;
+    }
+    static safeGetShuffle() {
+      try {
+        const st = Spicetify?.Player?.origin?._state;
+        if (st && typeof st === "object") {
+          const shuffle = st["shuffle"];
+          const smartShuffle = st["smartShuffle"];
+          return {
+            shuffle: shuffle === true,
+            smartShuffle: smartShuffle === true
+          };
+        }
+      } catch {
+      }
+      try {
+        const data = Spicetify?.Player?.data;
+        return { shuffle: data?.shuffle === true, smartShuffle: false };
+      } catch {
+        return { shuffle: false, smartShuffle: false };
+      }
+    }
+    static resolveIsPaused(e) {
+      try {
+        const evt = e;
+        const fromData = evt?.data?.isPaused;
+        if (typeof fromData === "boolean")
+          return fromData;
+        const direct = evt?.isPaused;
+        if (typeof direct === "boolean")
+          return direct;
+      } catch {
+      }
+      try {
+        if (typeof Spicetify?.Player?.isPlaying === "function") {
+          return !Spicetify.Player.isPlaying();
+        }
+      } catch {
+      }
+      try {
+        const paused = Spicetify?.Player?.data?.isPaused;
+        if (typeof paused === "boolean")
+          return paused;
+      } catch {
+      }
+      return null;
+    }
     static initialize() {
       this.setupPlayerStateEvents();
       this.setupNavigationEvents();
       this.setupPlayerEvents();
     }
     static setupPlayerStateEvents() {
-      SpotifyPlayer.LoopType = deriveLoopType(Spicetify.Player.getRepeat());
+      SpotifyPlayer.LoopType = deriveLoopType(_EventManager.safeGetRepeat());
       Global_default.Event.evoke("playback:loop", SpotifyPlayer.LoopType);
-      SpotifyPlayer.ShuffleType = deriveShuffleType(
-        Spicetify.Player.origin._state.shuffle,
-        Spicetify.Player.origin._state.smartShuffle
-      );
+      const { shuffle, smartShuffle } = _EventManager.safeGetShuffle();
+      SpotifyPlayer.ShuffleType = deriveShuffleType(shuffle, smartShuffle);
       Global_default.Event.evoke("playback:shuffle", SpotifyPlayer.ShuffleType);
       let lastPosition = 0;
       const positionInterval = new IntervalManager(0.5, () => {
@@ -34796,15 +35218,13 @@ ${JSON.stringify(lyricsOnly)}`
       lifecycle_default.trackPlayerEvent("shuffle_changed", _EventManager.onShuffleChanged);
     }
     static updatePlayerStatesOnSongChange() {
-      const newLoopType = deriveLoopType(Spicetify.Player.getRepeat());
+      const newLoopType = deriveLoopType(_EventManager.safeGetRepeat());
       if (SpotifyPlayer.LoopType !== newLoopType) {
         SpotifyPlayer.LoopType = newLoopType;
         Global_default.Event.evoke("playback:loop", newLoopType);
       }
-      const newShuffleType = deriveShuffleType(
-        Spicetify.Player.origin._state.shuffle,
-        Spicetify.Player.origin._state.smartShuffle
-      );
+      const { shuffle, smartShuffle } = _EventManager.safeGetShuffle();
+      const newShuffleType = deriveShuffleType(shuffle, smartShuffle);
       if (SpotifyPlayer.ShuffleType !== newShuffleType) {
         SpotifyPlayer.ShuffleType = newShuffleType;
         Global_default.Event.evoke("playback:shuffle", newShuffleType);
@@ -34832,11 +35252,24 @@ ${JSON.stringify(lyricsOnly)}`
   };
   var EventManager = _EventManager;
   EventManager.onPlayPause = (e) => {
-    const isPaused = e?.data?.isPaused;
-    SpotifyPlayer.IsPlaying = !isPaused;
-    if (!isPaused) {
-      reanchorPosition();
-      requestPositionSync();
+    const isPaused = _EventManager.resolveIsPaused(e);
+    if (isPaused !== null) {
+      SpotifyPlayer.IsPlaying = !isPaused;
+    } else {
+      try {
+        SpotifyPlayer.IsPlaying = IsPlaying();
+      } catch {
+      }
+    }
+    if (isPaused === false) {
+      try {
+        reanchorPosition();
+      } catch {
+      }
+      try {
+        requestPositionSync();
+      } catch {
+      }
     }
     Global_default.Event.evoke("playback:playpause", e);
   };
@@ -34848,17 +35281,15 @@ ${JSON.stringify(lyricsOnly)}`
     _EventManager.updatePlayerStatesOnSongChange();
   };
   EventManager.onRepeatModeChanged = () => {
-    const LoopType = deriveLoopType(Spicetify.Player.getRepeat());
+    const LoopType = deriveLoopType(_EventManager.safeGetRepeat());
     if (SpotifyPlayer.LoopType !== LoopType) {
       SpotifyPlayer.LoopType = LoopType;
       Global_default.Event.evoke("playback:loop", LoopType);
     }
   };
   EventManager.onShuffleChanged = () => {
-    const ShuffleType = deriveShuffleType(
-      Spicetify.Player.origin._state.shuffle,
-      Spicetify.Player.origin._state.smartShuffle
-    );
+    const { shuffle, smartShuffle } = _EventManager.safeGetShuffle();
+    const ShuffleType = deriveShuffleType(shuffle, smartShuffle);
     if (SpotifyPlayer.ShuffleType !== ShuffleType) {
       SpotifyPlayer.ShuffleType = ShuffleType;
       Global_default.Event.evoke("playback:shuffle", ShuffleType);
@@ -35363,7 +35794,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18316-SVlWoh5EhHUF/1a089fc2dd7a/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b228a/DotLoader.css */
 #DotLoader {
   --dot-color: var(--amai-accent-1);
   --dot-color-dim: color-mix(in srgb, var(--amai-accent-1) 22%, transparent);
@@ -35398,7 +35829,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18316-SVlWoh5EhHUF/1a089fc2ddab/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b234b/ProcessingIndicator.css */
 #SpicyLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -35480,7 +35911,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18316-SVlWoh5EhHUF/1a089fc2d690/tokens.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b1ba0/tokens.css */
 :root {
   --amai-accent-1: #1ed760;
   --amai-accent-2: #1db954;
@@ -35533,7 +35964,7 @@ ${JSON.stringify(lyricsOnly)}`
   --amai-scrollbar-thumb: rgba(255, 255, 255, 0.6);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18316-SVlWoh5EhHUF/1a089fc2d901/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b1e71/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -35691,7 +36122,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18316-SVlWoh5EhHUF/1a089fc2d992/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b1f02/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -35899,7 +36330,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18316-SVlWoh5EhHUF/1a089fc2d9f3/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b1f93/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -36503,7 +36934,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18316-SVlWoh5EhHUF/1a089fc2dab4/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b2084/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -36682,7 +37113,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18316-SVlWoh5EhHUF/1a089fc2db05/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b20c5/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -36966,7 +37397,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18316-SVlWoh5EhHUF/1a089fc2db86/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b2146/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -37230,7 +37661,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18316-SVlWoh5EhHUF/1a089fc2dbd7/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b2197/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -37252,7 +37683,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18316-SVlWoh5EhHUF/1a089fc2dc08/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b21c8/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -37279,7 +37710,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18316-SVlWoh5EhHUF/1a089fc2dc29/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b21f9/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
