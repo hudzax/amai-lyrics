@@ -268,7 +268,8 @@ ruby.romaja {
 
 ruby > rt {
   margin-bottom:0.15rem;
-  font-size:55%;
+  font-size:70%;
+  line-height:1.2;
   /* Furigana/romaji sit lighter and slightly tracked against the main line */
   font-weight: 500;
   letter-spacing: 0.02em;
