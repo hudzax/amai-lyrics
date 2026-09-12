@@ -13,13 +13,13 @@
   --bg-brightness: 0.5; /* Slightly dimmer for better contrast */
   --bg-blur-primary: 35px; /* Increased blur for primary layer */
   --bg-blur-secondary: 55px; /* Increased blur for secondary layer */
-  
+
   /* Rotation variables for different elements */
   --bg-rotation-primary: 0deg;
   --bg-rotation-secondary: 15deg; /* Offset rotation for depth */
   --bg-scale-primary: 1.1; /* Slightly larger scale */
   --bg-scale-secondary: 1.2; /* Slightly larger scale */
-  
+
   height: 100%;
   left: 0;
   overflow: hidden;
@@ -27,13 +27,13 @@
   position: absolute;
   top: 0;
   width: 100%;
-  
+
   /* Apply container-level filters instead of per-element */
   filter: saturate(var(--bg-saturation)) brightness(var(--bg-brightness));
-  
+
   /* Create stacking context for better compositing */
   isolation: isolate;
-  
+
   /* Optimize for animation */
   will-change: transform;
   transform-style: preserve-3d;
@@ -47,7 +47,12 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(15, 15, 35, 0.4) 0%, rgba(30, 10, 70, 0.3) 50%, rgba(10, 20, 50, 0.4) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(15, 15, 35, 0.4) 0%,
+    rgba(30, 10, 70, 0.3) 50%,
+    rgba(10, 20, 50, 0.4) 100%
+  );
   z-index: 10; /* Above all other elements in the dynamic bg */
   pointer-events: none;
   /* Opacity-only pulse. The previous keyframe also animated background-position,
@@ -112,7 +117,8 @@
   border-radius: 100em;
   z-index: 2;
   transform: rotate(var(--bg-rotation-secondary, 0deg)) scale(var(--bg-scale-secondary, 1));
-  filter: blur(var(--bg-blur-secondary)) hue-rotate(calc(var(--bg-hue-shift) + 30deg)) brightness(1.2);
+  filter: blur(var(--bg-blur-secondary)) hue-rotate(calc(var(--bg-hue-shift) + 30deg))
+    brightness(1.2);
   animation: bgAnimSecondary 75s linear infinite reverse;
   mix-blend-mode: soft-light; /* Softer blending for secondary layer */
 }
@@ -125,7 +131,6 @@
 .sweet-dynamic-bg > img.secondary.active {
   opacity: 0.8; /* Secondary is slightly transparent when active */
 }
-
 
 /* Fullscreen mode optimizations */
 #SpicyLyricsPage.Fullscreen .sweet-dynamic-bg {
@@ -177,7 +182,8 @@
     transform: rotate(var(--bg-rotation-primary, 0deg)) scale(var(--bg-scale-primary, 1));
   }
   to {
-    transform: rotate(calc(var(--bg-rotation-primary, 0deg) + 1turn)) scale(var(--bg-scale-primary, 1));
+    transform: rotate(calc(var(--bg-rotation-primary, 0deg) + 1turn))
+      scale(var(--bg-scale-primary, 1));
   }
 }
 
@@ -199,12 +205,20 @@
     transform: rotate(var(--bg-rotation-secondary, 0deg)) scale(var(--bg-scale-secondary, 1));
   }
   to {
-    transform: rotate(calc(var(--bg-rotation-secondary, 0deg) + 1turn)) scale(var(--bg-scale-secondary, 1));
+    transform: rotate(calc(var(--bg-rotation-secondary, 0deg) + 1turn))
+      scale(var(--bg-scale-secondary, 1));
   }
 }
 /* Performance optimization for fullscreen mode (Keep as is) */
-body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .sweet-dynamic-bg-in-this) .sweet-dynamic-bg,
-body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .sweet-dynamic-bg-in-this) .sweet-dynamic-bg * {
+body:has(#SpicyLyricsPage.Fullscreen)
+  .Root__right-sidebar
+  aside:is(.NowPlayingView, .sweet-dynamic-bg-in-this)
+  .sweet-dynamic-bg,
+body:has(#SpicyLyricsPage.Fullscreen)
+  .Root__right-sidebar
+  aside:is(.NowPlayingView, .sweet-dynamic-bg-in-this)
+  .sweet-dynamic-bg
+  * {
   display: none !important;
   animation: none !important;
   filter: none !important;
@@ -250,6 +264,19 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   --bg-brightness: 0.35;
   --bg-blur-primary: 45px;
   --bg-blur-secondary: 65px;
+}
+/* PERF: the base canvas uses 200%x200% layers for the rotating-orb look, but
+   at full-window size that is ~4x viewport raster re-filtered every frame.
+   The app canvas covers it with object-fit instead, freezes the rotation
+   (crossfade opacity transition is kept), and drops mix-blend-mode (each
+   blended layer forces an extra backdrop pass over the whole window). */
+:is(.Root, .Root__top-container).amai-app-bg-host > .sweet-dynamic-bg.amai-app-bg > img.bg-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0;
+  animation: none;
+  mix-blend-mode: normal;
 }
 /* Stronger top/bottom scrims so top-bar and playbar controls stay legible. */
 :is(.Root, .Root__top-container).amai-app-bg-host > .sweet-dynamic-bg.amai-app-bg::after {
@@ -342,9 +369,11 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   border: 1px solid var(--amai-stroke-2) !important;
   box-shadow: var(--amai-shadow-panel) !important;
 }
-/* Expanded grid state (cards present) goes back to opaque — detected by
-   content, never by hashed class names. :has() outranks the glass rule. */
-.amai-app-bg-host .Root__nav-bar:has([data-encore-id='card']) {
+/* Expanded grid state (cards present) goes back to opaque. The class is
+   toggled from JS (watchLibraryGridState, nav column only) — the previous
+   `:has([data-encore-id='card'])` selector re-evaluated on every descendant
+   mutation of the whole sidebar. */
+.amai-app-bg-host .Root__nav-bar.amai-lib-grid {
   background-color: var(--background-base) !important;
 }
 /* Library column paints its own base fill over the glass — transparent so the
@@ -364,19 +393,14 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   background-color: transparent !important;
   background-image: none !important;
 }
-/* Search wrapper keeps a visible hairline since its fill is gone. */
-.amai-app-bg-host
-  #global-nav-bar
-  div:has(> input) {
-  background: transparent !important;
-  background-color: transparent !important;
-  background-image: none !important;
+/* Search field keeps a visible pill hairline since its fill is gone. The pill
+   lives on the input itself — the previous `div:has(> input)` wrapper selector
+   forced :has() evaluation on every topbar DOM/style change. */
+.amai-app-bg-host #global-nav-bar input {
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
   border-radius: 500px !important;
 }
-.amai-app-bg-host
-  #global-nav-bar
-  div:has(> input):focus-within {
+.amai-app-bg-host #global-nav-bar input:focus {
   border-color: rgba(255, 255, 255, 0.65) !important;
 }
 /* Single-canvas mode (app background on): the sidebar goes transparent so the
@@ -386,9 +410,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
 .amai-app-bg-on .Root__right-sidebar,
 .amai-app-bg-on .Root__right-sidebar aside.NowPlayingView,
 .amai-app-bg-on .Root__right-sidebar-peek,
-.amai-app-bg-on
-  .Root__right-sidebar
-  .main-nowPlayingView-content {
+.amai-app-bg-on .Root__right-sidebar .main-nowPlayingView-content {
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
@@ -397,50 +419,32 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
    child of .main-nowPlayingView-container that sits above the app canvas.
    Neutralize it structurally — never by hashed class name, those rotate every
    Spotify build. Transparent (not display:none) so non-background uses survive. */
-.amai-app-bg-on
-  .Root__right-sidebar
-  .main-nowPlayingView-container,
-.amai-app-bg-on
-  .Root__right-sidebar
-  .main-nowPlayingView-container
-  > *:before {
+.amai-app-bg-on .Root__right-sidebar .main-nowPlayingView-container,
+.amai-app-bg-on .Root__right-sidebar .main-nowPlayingView-container > *:before {
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
 }
 /* About-artist card: inner wrappers repaint opaque over the section glass.
-   Media holders are excluded so the artist photo is untouched. */
-.amai-app-bg-on
-  .Root__right-sidebar
-  .main-nowPlayingView-aboutArtist
-  div:not(:has(img, video)) {
+   Plain descendant selector — the previous `div:not(:has(img, video))` ran a
+   descendant scan per div on every recalc. Transparent wrappers can't hide the
+   photo itself (the <img> paints independently), so no exclusion is needed. */
+.amai-app-bg-on .Root__right-sidebar .main-nowPlayingView-aboutArtist div {
   background-color: transparent !important;
 }
 /* Card body wrapper + decorative aria-hidden scrim (gradient veil): targeted
    structurally, never by hashed class names. */
-.amai-app-bg-on
-  .Root__right-sidebar
-  .main-nowPlayingView-aboutArtist
-  > div,
-.amai-app-bg-on
-  .Root__right-sidebar
-  .main-nowPlayingView-aboutArtist
-  div[aria-hidden='true'] {
+.amai-app-bg-on .Root__right-sidebar .main-nowPlayingView-aboutArtist > div,
+.amai-app-bg-on .Root__right-sidebar .main-nowPlayingView-aboutArtist div[aria-hidden='true'] {
   background-color: transparent !important;
   background-image: none !important;
 }
 /* Hide the sidebar's own background node while the app canvas is live — one
-   canvas, not two stacked blurs. Its manager keeps updating the hidden node,
-   so toggling the app background off instantly reveals current artwork. */
-.amai-app-bg-on
-  .Root__right-sidebar
-  aside.NowPlayingView
-  > .sweet-dynamic-bg,
-.amai-app-bg-on
-  .Root__right-sidebar
-  aside.NowPlayingView
-  > .sweet-dynamic-bg
-  * {
+   canvas, not two stacked blurs. Its manager skips work while hidden (see
+   NowPlayingBarBackground.apply), and the toggle-off refresh in app.tsx
+   repaints current artwork through the live instance. */
+.amai-app-bg-on .Root__right-sidebar aside.NowPlayingView > .sweet-dynamic-bg,
+.amai-app-bg-on .Root__right-sidebar aside.NowPlayingView > .sweet-dynamic-bg * {
   display: none !important;
   animation: none !important;
   filter: none !important;

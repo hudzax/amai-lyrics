@@ -95,12 +95,14 @@ export class SongChangeManager {
 
     // Debounce background updates — when rapidly skipping tracks, they'll only
     // fire once the user settles on a song for 500ms, keeping the main thread
-    // free for the critical song-change work.
-    this.debouncedBgApply(Spicetify.Player.data?.item?.metadata?.image_url);
-    this.debouncedAppBgApply(Spicetify.Player.data?.item?.metadata?.image_url);
+    // free for the critical song-change work. One metadata read shared by all
+    // three paths (was three separate `Spicetify.Player.data` walks).
+    const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
+    this.debouncedBgApply(coverUrl);
+    this.debouncedAppBgApply(coverUrl);
 
     // Publish artwork accent colors for the lyrics page (same coalescing)
-    this.debouncedAccentPublish(Spicetify.Player.data?.item?.metadata?.image_url);
+    this.debouncedAccentPublish(coverUrl);
 
     // Update UI elements directly without waiting for track info
     if (Spicetify.Player.data.item?.type === 'track') {

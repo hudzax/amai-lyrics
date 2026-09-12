@@ -13,9 +13,16 @@ import { SongChangeManager } from './managers/SongChangeManager';
 import { NowPlayingBarBackground } from './components/DynamicBG/NowPlayingBarBackground';
 import {
   AppBackground,
+  appBackgroundSingleton,
+  isAppBackgroundEnabled,
   resolveAppBgHost,
   syncAppBgMarker,
+  syncLibraryGridState,
+  watchLibraryGridState,
 } from './components/DynamicBG/AppBackground';
+/** Re-dispatched by the settings toggle after the app-BG flag changes so live
+ * managers (which own their instances/caches) can refresh stale hidden nodes. */
+export const APP_BG_CHANGED_EVENT = 'amai:appbg-changed';
 import PageView from './components/Pages/PageView';
 import { installBlankToastSuppressor } from './utils/suppressBlankToasts';
 import lifecycle from './utils/lifecycle';
@@ -51,7 +58,9 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
 
   // Set up managers
   const backgroundManager = new NowPlayingBarBackground();
-  const appBackgroundManager = new AppBackground();
+  // Shared singleton (also used by the settings toggle) so the lastImgUrl
+  // dedup cache survives across call sites instead of rebuilding per call.
+  const appBackgroundManager: AppBackground = appBackgroundSingleton;
   const songChangeManager = new SongChangeManager(
     buttonManager,
     backgroundManager,
@@ -75,13 +84,15 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
   // Set up dynamic background updates — event-driven instead of 1 Hz polling.
   // Previous interval queried `.NowPlayingView` every second forever; now we
   // observe DOM mount + song changes and only apply when actually needed.
+  // NOTE: no immediate `songchange` listeners here — SongChangeManager already
+  // fans out debounced applies for both canvases on songchange; an extra
+  // immediate apply per event would double the DOM scans + image loads.
   const applyDynamicBg = () => {
     if (!document.querySelector('.Root__right-sidebar aside.NowPlayingView')) return;
     const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
     backgroundManager.apply(coverUrl);
   };
   applyDynamicBg();
-  lifecycle.trackPlayerEvent('songchange', () => applyDynamicBg());
 
   // Always-on artwork background behind Spotify's app frame (same artwork,
   // debounced via SongChangeManager). Re-applied when the top container remounts
@@ -89,20 +100,73 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
   // Sync the marker first so single-canvas sidebar rules apply even before the
   // first artwork URL resolves.
   syncAppBgMarker();
+  syncLibraryGridState();
   const applyAppBg = () => {
+    // Enabled-check FIRST: the toggle defaults off, so this must cost one
+    // localStorage read and zero DOM queries on the disabled path.
+    if (!isAppBackgroundEnabled()) return;
     if (!resolveAppBgHost()) return;
     const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
     appBackgroundManager.apply(coverUrl);
   };
   applyAppBg();
-  lifecycle.trackPlayerEvent('songchange', () => applyAppBg());
-  const mainViewObserver = new MutationObserver(() => {
-    if (resolveAppBgHost() && !appBackgroundManager.isApplied()) {
-      applyAppBg();
+  // Remount observer: catches Spotify recreating `.Root` on navigation.
+  // Deliberately NARROW — body childList WITHOUT subtree (`.Root` is a
+  // top-level child), mutation-filtered to host adds, and rAF-throttled so a
+  // burst of unrelated DOM churn (virtualized rows, tooltips) costs one cheap
+  // flag check instead of 3 querySelectors + child scans per batch. The
+  // previous version observed `subtree: true` with unfiltered callbacks and
+  // ran on EVERY DOM mutation even with the feature toggled off.
+  let appBgObserverQueued = false;
+  const mainViewObserver = new MutationObserver((mutations) => {
+    if (!isAppBackgroundEnabled()) return;
+    let hostAdded = false;
+    for (const mut of mutations) {
+      for (const node of mut.addedNodes) {
+        if (!(node instanceof Element)) continue;
+        if (
+          node.matches?.('.Root, .Root__top-container') ||
+          node.querySelector?.('.Root, .Root__top-container')
+        ) {
+          hostAdded = true;
+          break;
+        }
+      }
+      if (hostAdded) break;
     }
+    if (!hostAdded || appBgObserverQueued) return;
+    appBgObserverQueued = true;
+    requestAnimationFrame(() => {
+      appBgObserverQueued = false;
+      if (!isAppBackgroundEnabled()) return;
+      // Own appends echo back here; isApplied() is cache-first so the echo
+      // is ~free and bails without rebuilding.
+      if (!appBackgroundManager.isApplied()) applyAppBg();
+    });
   });
-  mainViewObserver.observe(document.body, { childList: true, subtree: true });
+  mainViewObserver.observe(document.body, { childList: true, subtree: false });
   lifecycle.trackObserver(mainViewObserver);
+  // Library-grid opaque state has its own scoped observer (nav column only).
+  // The late-mount case (nav bar absent at init) is retried on navigation
+  // remounts via mainViewObserver batches — sync is idempotent and cheap.
+  const gridObserver = watchLibraryGridState();
+  if (gridObserver) lifecycle.trackObserver(gridObserver);
+  // Toggle refresh: hidden canvases (sidebar/page) skip their work while the
+  // app canvas is live, so toggling OFF must repaint them through the live
+  // instances — a fresh instance would miss the dedup cache and duplicate nodes.
+  const onAppBgChanged = () => {
+    if (isAppBackgroundEnabled()) return;
+    const lateGrid = watchLibraryGridState();
+    if (lateGrid) lifecycle.trackObserver(lateGrid);
+    applyDynamicBg();
+    const pageBox = document.querySelector<HTMLElement>('#SpicyLyricsPage .ContentBox');
+    if (pageBox) {
+      void import('./components/DynamicBG/dynamicBackground').then(
+        ({ default: ApplyDynamicBackground }) => ApplyDynamicBackground(pageBox),
+      );
+    }
+  };
+  lifecycle.trackWindow(APP_BG_CHANGED_EVENT, onAppBgChanged as never);
   // Observe sidebar mount/unmount so opening the Now Playing View triggers apply immediately
   const sidebarObserver = new MutationObserver(() => {
     // Only act when the NowPlayingView appears; hidden removal is handled by apply's early return + cache clear

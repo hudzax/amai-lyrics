@@ -15,6 +15,10 @@ export const APP_BG_HOST_CLASS = 'amai-app-bg-host';
 export const APP_BG_CLASS = 'amai-app-bg';
 export const APP_BG_IMG_A_ID = 'amai-app-bg-img-a';
 export const APP_BG_IMG_B_ID = 'amai-app-bg-img-b';
+/** Toggled on `.Root__nav-bar` when the library shows cards (expanded grid).
+ * Replaces the `:has([data-encore-id='card'])` selector, which forces the
+ * style engine to re-evaluate on every descendant mutation. */
+export const APP_BG_LIB_GRID_CLASS = 'amai-lib-grid';
 const APP_BG_CONTAINER_CLASS = 'sweet-dynamic-bg';
 const APP_BG_HOST_HELPER_CLASS = 'sweet-dynamic-bg-in-this';
 
@@ -40,14 +44,29 @@ export function resolveAppBgHost(): Element | null {
   );
 }
 
-/** Sync the `<html>` marker with the settings toggle (init / toggle changes). */
-export function syncAppBgMarker(): void {
-  document.documentElement.classList.toggle(APP_BG_ON_CLASS, isAppBackgroundEnabled());
+/** Sync the `<html>` marker with the settings toggle (init / toggle changes).
+ * Accepts a precomputed flag so hot paths (e.g. `apply()`) pay one storage
+ * read instead of two. */
+export function syncAppBgMarker(force?: boolean): void {
+  document.documentElement.classList.toggle(APP_BG_ON_CLASS, force ?? isAppBackgroundEnabled());
+}
+
+/** Sync the opaque-library-grid class (see `APP_BG_LIB_GRID_CLASS`).
+ * Exported so the toggle handler and observers can refresh it without a
+ * full `apply()` — cheap single `querySelector` inside the nav column. */
+export function syncLibraryGridState(scope?: ParentNode): void {
+  const navBar = (scope ?? document).querySelector?.('.Root__nav-bar');
+  if (!navBar) return;
+  navBar.classList.toggle(APP_BG_LIB_GRID_CLASS, !!navBar.querySelector("[data-encore-id='card']"));
 }
 
 /** Find this feature's background node without touching the lyrics page's nested BG. */
 function findAppBg(host: Element): HTMLElement | null {
-  for (const child of Array.from(host.children)) {
+  // NOTE: indexed loop over the live HTMLCollection — no Array.from alloc,
+  // and this runs inside MutationObserver callbacks on a hot DOM.
+  const kids = host.children;
+  for (let i = 0; i < kids.length; i++) {
+    const child = kids[i];
     if (
       child instanceof HTMLElement &&
       child.classList.contains(APP_BG_CONTAINER_CLASS) &&
@@ -76,8 +95,11 @@ export class AppBackground {
   };
 
   public apply(coverUrl: string | undefined): void {
-    if (!isAppBackgroundEnabled()) return;
-    syncAppBgMarker();
+    // Single storage read up front: every early-out below must precede DOM work
+    // so the (default-off) disabled path costs ~one localStorage read, no queries.
+    const enabled = isAppBackgroundEnabled();
+    if (!enabled) return;
+    syncAppBgMarker(true);
     const normalized = normalizeImageUrl(coverUrl);
     if (!normalized) return;
     coverUrl = normalized;
@@ -95,7 +117,9 @@ export class AppBackground {
         this.cached.dynamicBg = findAppBg(host);
       }
       // Cache may point at a node detached by nav/hot-reload — re-resolve.
-      if (this.cached.dynamicBg && !host.contains(this.cached.dynamicBg)) {
+      // isConnected is O(1); contains() walks — prefer the cheap check.
+      const cachedBg = this.cached.dynamicBg;
+      if (cachedBg && (!cachedBg.isConnected || cachedBg.parentElement !== host)) {
         this.cached.dynamicBg = findAppBg(host);
       }
 
@@ -127,14 +151,16 @@ export class AppBackground {
   public remove(): void {
     try {
       const host = this.cached.host ?? resolveAppBgHost();
+      // Single scan: reuse the result for both removal and helper-class check.
       const bg = host ? findAppBg(host) : null;
       bg?.remove();
       if (host) {
         // Only drop the helper positioning class when no direct-child BG remains.
-        if (!findAppBg(host)) {
+        if (!bg || !findAppBg(host)) {
           host.classList.remove(APP_BG_HOST_HELPER_CLASS);
         }
         host.classList.remove(APP_BG_HOST_CLASS);
+        host.querySelector('.Root__nav-bar')?.classList.remove(APP_BG_LIB_GRID_CLASS);
       }
       document.documentElement.classList.remove(APP_BG_ON_CLASS);
       this.clearCache();
@@ -144,7 +170,10 @@ export class AppBackground {
   }
 
   public isApplied(): boolean {
-    const host = resolveAppBgHost();
+    // Cache-first: avoids querySelector + child scan on every observer tick.
+    const cachedBg = this.cached.dynamicBg;
+    if (cachedBg?.isConnected && cachedBg.classList.contains(APP_BG_CLASS)) return true;
+    const host = this.cached.host?.isConnected ? this.cached.host : resolveAppBgHost();
     return !!host && !!findAppBg(host);
   }
 
@@ -160,14 +189,15 @@ export class AppBackground {
   }
 
   private createNewBackground(host: Element, coverUrl: string): void {
-    setRandomCSSVariables();
-
-    // A remount can leave a stale node behind while cache was cleared.
-    findAppBg(host)?.remove();
-
+    // Scoped to the canvas element: vars inherit to the <img> children without
+    // invalidating every other var() consumer document-wide.
     const dynamicBackground = document.createElement('div');
     dynamicBackground.className = `${APP_BG_CONTAINER_CLASS} ${APP_BG_CLASS}`;
     dynamicBackground.setAttribute('current-img', coverUrl);
+    setRandomCSSVariables(dynamicBackground);
+
+    // A remount can leave a stale node behind while cache was cleared.
+    findAppBg(host)?.remove();
 
     const placeholder = document.createElement('div');
     placeholder.className = 'placeholder';
@@ -186,12 +216,15 @@ export class AppBackground {
 
     host.classList.add(APP_BG_HOST_HELPER_CLASS, APP_BG_HOST_CLASS);
     host.appendChild(dynamicBackground);
-    console.log('[Amai Lyrics] App background created:', coverUrl);
+    syncLibraryGridState(host);
 
     imgA.onload = () => {
       requestAnimationFrame(() => {
         dynamicBackground.classList.add('sweet-dynamic-bg-loaded');
       });
+      // Drop the blurred placeholder layer once real pixels exist — otherwise
+      // it paints (radial-gradient + blur) behind every frame forever.
+      placeholder.remove();
     };
 
     this.cached.dynamicBg = dynamicBackground;
@@ -202,6 +235,12 @@ export class AppBackground {
     coverUrl: string,
   ): void {
     const { imgA, imgB } = images;
+    // Already showing (or already loading) this URL on either layer — skip the
+    // redundant fetch/decode. `src` is absolute; coverUrl is normalized absolute.
+    if (imgA.src === coverUrl || imgB.src === coverUrl) {
+      this.cached.dynamicBg?.setAttribute('current-img', coverUrl);
+      return;
+    }
     const activeImg = imgA.classList.contains('active') ? imgA : imgB;
     const inactiveImg = activeImg === imgA ? imgB : imgA;
 
@@ -222,4 +261,27 @@ export class AppBackground {
     };
     inactiveImg.src = coverUrl;
   }
+}
+
+/**
+ * Shared instance used by `app.tsx` and the settings toggle so the
+ * `lastImgUrl` dedup cache survives across call sites. Throwaway instances
+ * (`new AppBackground()` per toggle/song) always miss the cache and rebuild.
+ * Tests keep constructing their own instances — this is purely a runtime share.
+ */
+export const appBackgroundSingleton = new AppBackground();
+
+/**
+ * Scoped observer for the library-grid opaque state. Watches ONLY the nav
+ * column (small subtree, rare mutations) instead of the whole body, and only
+ * toggles a class — no background rebuilds. Returns the observer so callers
+ * can track it in `lifecycle`; returns null when the nav bar isn't mounted yet.
+ */
+export function watchLibraryGridState(): MutationObserver | null {
+  const navBar = document.querySelector('.Root__nav-bar');
+  if (!navBar) return null;
+  syncLibraryGridState();
+  const obs = new MutationObserver(() => syncLibraryGridState());
+  obs.observe(navBar, { childList: true, subtree: true });
+  return obs;
 }

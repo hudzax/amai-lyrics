@@ -1,6 +1,20 @@
 import { SpotifyPlayer } from '../Global/SpotifyPlayer';
 import { debounce } from '../../utils/debounce';
 import { normalizeImageUrl, setRandomCSSVariables, createBackgroundImage } from './utils';
+import { APP_BG_ON_CLASS } from './AppBackground';
+
+/**
+ * True while `element`'s background is hidden behind the app-frame canvas and
+ * would only waste a fetch/decode. The app canvas stays live behind the open
+ * lyrics page (non-fullscreen), so that page's own node is display:none;
+ * fullscreen keeps its own backdrop and must still update.
+ */
+function isHiddenByAppCanvas(element: HTMLElement): boolean {
+  if (!document.documentElement.classList.contains(APP_BG_ON_CLASS)) return false;
+  const page = element.closest?.('#SpicyLyricsPage');
+  if (!page) return false;
+  return !page.classList.contains('Fullscreen');
+}
 
 /**
  * Creates or updates the dynamic background elements.
@@ -36,7 +50,7 @@ async function setupDynamicBackground(
     bgContainer.appendChild(imgB);
 
     element.appendChild(bgContainer);
-    setRandomCSSVariables();
+    setRandomCSSVariables(bgContainer);
   }
 
   return bgContainer;
@@ -71,7 +85,7 @@ const updateDynamicBackground = debounce((bgContainer: HTMLDivElement, newImageU
       activeImg.classList.remove('active');
       inactiveImg.classList.add('active');
       bgContainer.setAttribute('current-img', newImageUrl);
-      setRandomCSSVariables();
+      setRandomCSSVariables(bgContainer);
     });
   };
   inactiveImg.onerror = () => {
@@ -86,6 +100,10 @@ const updateDynamicBackground = debounce((bgContainer: HTMLDivElement, newImageU
  */
 export default async function ApplyDynamicBackground(element: HTMLElement) {
   if (!element) return;
+  // Hidden behind the app-frame canvas (see isHiddenByAppCanvas) — skip the
+  // artwork fetch + decode. Deliberately returns before touching
+  // `current-img` so the toggle-off refresh repaints instead of dedup-hitting.
+  if (isHiddenByAppCanvas(element)) return;
 
   const rawCover = await SpotifyPlayer.Artwork.Get('d');
   const currentImgCover = normalizeImageUrl(rawCover) ?? rawCover;

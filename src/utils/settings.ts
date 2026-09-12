@@ -88,19 +88,24 @@ function generalSettings() {
     () => {
       const enabled = settings.getFieldValue('enableAppBackground') as boolean;
       storage.set('enable_app_background', enabled ? 'true' : 'false');
+      // Shared singleton: preserves the lastImgUrl dedup cache (a throwaway
+      // `new AppBackground()` per toggle always misses and rebuilds). The
+      // change event lets app.tsx repaint hidden canvases (sidebar/page skip
+      // their work while the app canvas is live) through the LIVE instances.
       if (enabled) {
         const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url as string | undefined;
         void import('../components/DynamicBG/AppBackground').then(
-          ({ AppBackground, syncAppBgMarker }) => {
-            syncAppBgMarker();
-            new AppBackground().apply(coverUrl);
+          ({ appBackgroundSingleton, syncAppBgMarker, syncLibraryGridState }) => {
+            syncAppBgMarker(true);
+            appBackgroundSingleton.apply(coverUrl);
+            syncLibraryGridState();
+            window.dispatchEvent(new Event('amai:appbg-changed'));
           },
         );
       } else {
-        void import('../components/DynamicBG/AppBackground').then(({ AppBackground }) => {
-          // Sidebar keeps updating its (hidden) node, so disabling instantly
-          // reveals the correct artwork with no restore step needed.
-          new AppBackground().remove();
+        void import('../components/DynamicBG/AppBackground').then(({ appBackgroundSingleton }) => {
+          appBackgroundSingleton.remove();
+          window.dispatchEvent(new Event('amai:appbg-changed'));
         });
       }
     },

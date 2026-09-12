@@ -1,5 +1,6 @@
 import fastdom from 'fastdom';
 import { normalizeImageUrl, setRandomCSSVariables, createBackgroundImage } from './utils';
+import { APP_BG_ON_CLASS } from './AppBackground';
 
 interface BackgroundCache {
   nowPlayingBar: Element | null;
@@ -19,6 +20,11 @@ export class NowPlayingBarBackground {
    * Uses dual-image crossfade approach for smooth transitions
    */
   public apply(coverUrl: string | undefined) {
+    // Single-canvas mode: the sidebar node is display:none behind the app-frame
+    // canvas — skip the fetch/decode entirely. Deliberately returns WITHOUT
+    // recording lastImgUrl so the toggle-off refresh (see app.tsx
+    // 'amai:appbg-changed' handler) actually repaints instead of dedup-hitting.
+    if (document.documentElement.classList.contains(APP_BG_ON_CLASS)) return;
     const normalized = normalizeImageUrl(coverUrl);
     if (!normalized) return;
     coverUrl = normalized;
@@ -76,11 +82,11 @@ export class NowPlayingBarBackground {
   }
 
   private createNewBackground(nowPlayingBar: Element, coverUrl: string) {
-    setRandomCSSVariables();
-
     const dynamicBackground = document.createElement('div');
     dynamicBackground.className = 'sweet-dynamic-bg';
     dynamicBackground.setAttribute('current-img', coverUrl);
+    // Scoped vars: inherit to the <img> children without a document-wide recalc.
+    setRandomCSSVariables(dynamicBackground);
 
     const placeholder = document.createElement('div');
     placeholder.className = 'placeholder';
@@ -101,6 +107,8 @@ export class NowPlayingBarBackground {
       requestAnimationFrame(() => {
         dynamicBackground.classList.add('sweet-dynamic-bg-loaded');
       });
+      // Drop the blurred placeholder layer once real pixels exist.
+      placeholder.remove();
     };
 
     this.cached.dynamicBg = dynamicBackground;
