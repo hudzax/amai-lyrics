@@ -83,7 +83,7 @@ function generalSettings() {
 
   settings.addToggle(
     'enableAppBackground',
-    'Show artwork background behind the Spotify app',
+    'Enable Amai Theme',
     Defaults.enableAppBackground,
     () => {
       const enabled = settings.getFieldValue('enableAppBackground') as boolean;
