@@ -1,13 +1,12 @@
 import { SpotifyPlayer } from '../components/Global/SpotifyPlayer';
 import { IntervalManager } from '../utils/IntervalManager';
-import { reanchorPosition, requestPositionSync } from '../utils/Gets/GetProgress';
+import { resolveIsPlaying, syncPlaybackPosition } from '../utils/Gets/GetProgress';
 import { deriveLoopType, deriveShuffleType } from '../utils/playerState';
 import Global from '../components/Global/Global';
 import Session from '../components/Global/Session';
 import Whentil from '../utils/Whentil';
 import lifecycle from '../utils/lifecycle';
 import Fullscreen from '../components/Utils/Fullscreen';
-import { IsPlaying as GetIsPlayingLive } from '../utils/Addons';
 
 export class EventManager {
   private static safeGetRepeat(): number {
@@ -52,7 +51,7 @@ export class EventManager {
     }
   }
 
-  private static resolveIsPaused(e: unknown): boolean | null {
+  private static resolveIsPaused(e: unknown): boolean {
     try {
       const evt = e as { data?: { isPaused?: unknown }; isPaused?: unknown } | null | undefined;
       const fromData = evt?.data?.isPaused;
@@ -62,51 +61,21 @@ export class EventManager {
     } catch {
       // fall through to live query
     }
-    // Payload shape changed after a client update — fall back to live state.
-    try {
-      if (typeof Spicetify?.Player?.isPlaying === 'function') {
-        return !Spicetify.Player.isPlaying();
-      }
-    } catch {
-      // ignore
-    }
-    try {
-      const paused = (Spicetify?.Player?.data as { isPaused?: unknown } | undefined)?.isPaused;
-      if (typeof paused === 'boolean') return paused;
-    } catch {
-      // ignore
-    }
-    return null;
+    // Payload shape changed after a client update — fall back to the single
+    // live play-state seam instead of re-reading Spicetify here.
+    return !resolveIsPlaying();
   }
 
   // Stored handler references so they can be removed on teardown.
   private static onPlayPause = (e: { data?: { isPaused?: boolean } }) => {
     const isPaused = EventManager.resolveIsPaused(e);
-    if (isPaused !== null) {
-      SpotifyPlayer.IsPlaying = !isPaused;
-    } else {
-      // Unknown payload and unreadable live state — keep last known value.
-      try {
-        SpotifyPlayer.IsPlaying = GetIsPlayingLive();
-      } catch {
-        // keep existing value
-      }
-    }
+    SpotifyPlayer.IsPlaying = !isPaused;
     // Resuming after a pause: the position anchor was frozen during the pause, so
     // GetProgress() would otherwise keep adding the elapsed pause duration to the
-    // stale anchor. Re-anchor locally and instantly (race-free) to the platform's
-    // current position, then trigger an exact RPC sync to refine it.
+    // stale anchor. One call re-anchors instantly (race-free) and schedules an
+    // exact sync to refine it.
     if (isPaused === false) {
-      try {
-        reanchorPosition();
-      } catch {
-        // ignore
-      }
-      try {
-        requestPositionSync();
-      } catch {
-        // ignore
-      }
+      syncPlaybackPosition();
     }
     Global.Event.evoke('playback:playpause', e);
   };

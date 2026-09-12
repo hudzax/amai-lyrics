@@ -1,5 +1,4 @@
 import Global from '../../components/Global/Global';
-import { SpotifyPlayer } from '../../components/Global/SpotifyPlayer';
 import lifecycle from '../lifecycle';
 import { extrapolatePosition } from './extrapolatePosition';
 
@@ -96,8 +95,12 @@ function safeFiniteNumber(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
-/** Public, Spicetify-maintained progress (survives internal renames). */
-function safeIsPlaying(): boolean {
+/**
+ * Live play-state read: the single seam for "is anything playing right now?".
+ * Prefers the maintained public API and falls back to memory state so one
+ * client update cannot freeze every render loop at once. Never throws.
+ */
+export function resolveIsPlaying(): boolean {
   try {
     if (typeof Spicetify?.Player?.isPlaying === 'function') {
       return !!Spicetify.Player.isPlaying();
@@ -138,7 +141,7 @@ function readPlayerDataPosition(): { pos: number; ts: number | null; paused: boo
     const pos = safeFiniteNumber(data.positionAsOfTimestamp);
     if (pos === null) return null;
     const ts = safeFiniteNumber(data.timestamp);
-    const paused = typeof data.isPaused === 'boolean' ? data.isPaused : !safeIsPlaying();
+    const paused = typeof data.isPaused === 'boolean' ? data.isPaused : !resolveIsPlaying();
     return { pos, ts, paused };
   } catch {
     return null;
@@ -156,7 +159,7 @@ function readOriginPosition(): { pos: number; ts: number | null; paused: boolean
     if (pos === null) return null;
     const ts = safeFiniteNumber(originState['timestamp']);
     const rawPaused = originState['isPaused'];
-    const paused = typeof rawPaused === 'boolean' ? rawPaused : !safeIsPlaying();
+    const paused = typeof rawPaused === 'boolean' ? rawPaused : !resolveIsPlaying();
     return { pos, ts, paused };
   } catch {
     return null;
@@ -193,7 +196,7 @@ function readIsLocal(defaultValue = true): boolean {
 
 /** Best-effort position from memory-only state (no RPC). Used as fallback. */
 function getStateBasedPosition(): number | null {
-  const playing = safeIsPlaying();
+  const playing = resolveIsPlaying();
   const now = Date.now();
   const fromData = readPlayerDataPosition();
   if (fromData) {
@@ -247,7 +250,7 @@ function ensureOnProgressAnchor(): void {
           setAnchor(pos);
           state.cachedPosition = pos;
           state.cachedPositionTime = performance.now();
-          state.cachedIsPlaying = safeIsPlaying();
+          state.cachedIsPlaying = resolveIsPlaying();
         }
       } catch {
         // never let an anchor update break playback
@@ -426,7 +429,7 @@ async function runLoop(): Promise<void> {
       scheduleLoop(IDLE_HEARTBEAT_MS);
       return;
     }
-    const isPlaying = safeIsPlaying();
+    const isPlaying = resolveIsPlaying();
 
     // Only do the (potentially RPC-heavy) anchor sync while something actually
     // needs a fresh position. Otherwise stay idle and do zero RPC work.
@@ -447,7 +450,7 @@ async function runLoop(): Promise<void> {
 
     if (state.teardownRequested && state.activePositionClients === 0) return;
 
-    const nowPlaying = safeIsPlaying();
+    const nowPlaying = resolveIsPlaying();
     // Paused: stay in a cheap idle poll, no getPositionState/resume calls.
     if (!nowPlaying) {
       scheduleLoop(PAUSED_POLL_MS);
@@ -469,6 +472,46 @@ export function requestPositionSync(): void {
   // consumers would skip doSync() entirely (see runLoop guard).
   state.syncNow = true;
   scheduleLoop(0);
+}
+
+/**
+ * Single entry for "playback just jumped": instant local re-anchor (race-free,
+ * no RPC) followed by an exact sync to refine it. Replaces the old two-call
+ * discipline (reanchorPosition + requestPositionSync) that every caller had to
+ * remember in the right order. Never throws.
+ */
+export function syncPlaybackPosition(): void {
+  try {
+    reanchorPosition();
+  } catch {
+    // ignore — the scheduled sync below still refines the anchor
+  }
+  try {
+    requestPositionSync();
+  } catch {
+    // ignore — the next periodic sync fixes it
+  }
+}
+
+/**
+ * Per-surface lead time (ms) added to the raw position. Renderers used to own
+ * these magic numbers individually and drifted apart (the playbar even claimed
+ * to match the scroller while using a different value). One map, one seam.
+ */
+export const PlaybackSurfaceOffset = {
+  /** Active-line highlight: exact audio position. */
+  highlight: 0,
+  /** Lyrics-page auto-scroll: arrive slightly ahead so the line is centred. */
+  scroll: 370,
+  /** Bottom-bar overlay: arrive further ahead to survive its slower tick. */
+  playbar: 600,
+} as const;
+
+export type PlaybackSurface = keyof typeof PlaybackSurfaceOffset;
+
+/** Position for a rendering surface: raw progress plus its lead time. */
+export function getPositionFor(surface: PlaybackSurface): number {
+  return GetProgress() + PlaybackSurfaceOffset[surface];
 }
 
 // Re-anchors the synced position to the platform's currently reported position
@@ -541,7 +584,7 @@ export default function GetProgress(): number {
     const now = performance.now();
     let isPlaying = false;
     try {
-      isPlaying = safeIsPlaying();
+      isPlaying = resolveIsPlaying();
     } catch {
       isPlaying = false;
     }
@@ -605,23 +648,11 @@ export default function GetProgress(): number {
       return stateBased;
     }
 
-    // 4) Legacy fallback (origin._state math).
-    try {
-      if (SpotifyPlayer?._DEPRECATED_?.GetTrackPosition) {
-        const legacy = SpotifyPlayer._DEPRECATED_.GetTrackPosition() as unknown;
-        const n = safeFiniteNumber(legacy);
-        if (n !== null && n >= 0) {
-          state.cachedPosition = n;
-          state.cachedPositionTime = now;
-          state.cachedIsPlaying = isPlaying;
-          return n;
-        }
-      }
-    } catch {
-      // ignore
-    }
-
-    // 5) Last resort: last known good, else 0 — never null/NaN/throw.
+    // 4) Last resort: last known good, else 0 — never null/NaN/throw.
+    // NOTE: the old origin._state legacy fallback lived here. It read the same
+    // fields getStateBasedPosition() already covers in (3), so a miss there meant
+    // the legacy math returned 0 and clobbered the cache with it. Dropping it
+    // also breaks the import cycle with SpotifyPlayer (which aliases GetProgress).
     if (state.cachedPosition !== null && Number.isFinite(state.cachedPosition)) {
       return state.cachedPosition;
     }

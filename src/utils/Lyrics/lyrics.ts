@@ -2,7 +2,7 @@ import { Maid } from '@hudzax/web-modules/Maid';
 import { IntervalManager } from '../IntervalManager';
 import Defaults from '../../components/Global/Defaults';
 import { SpotifyPlayer } from '../../components/Global/SpotifyPlayer';
-import { requestPositionTracking } from '../Gets/GetProgress';
+import { requestPositionTracking, resolveIsPlaying } from '../Gets/GetProgress';
 import { Lyrics } from './Animator/Main';
 import { ScrollSimplebar } from '../Scrolling/Simplebar/ScrollSimplebar';
 import { ScrollToActiveLine } from '../Scrolling/ScrollToActiveLine';
@@ -77,19 +77,11 @@ export function ensureLyricsRenderLoop(): IntervalManager {
     // Self-heal play state every tick: if the `onplaypause` payload shape
     // changed after a Spotify client update, SpotifyPlayer.IsPlaying would go
     // stale (frozen scroll/blur) even while GetProgress() keeps advancing.
-    // Reconciling here keeps the active line moving regardless of events.
-    try {
-      let livePlaying: boolean | null = null;
-      if (typeof Spicetify?.Player?.isPlaying === 'function') {
-        livePlaying = !!Spicetify.Player.isPlaying();
-      } else if (typeof Spicetify?.Player?.data?.isPaused === 'boolean') {
-        livePlaying = !Spicetify.Player.data.isPaused;
-      }
-      if (livePlaying !== null && SpotifyPlayer.IsPlaying !== livePlaying) {
-        SpotifyPlayer.IsPlaying = livePlaying;
-      }
-    } catch {
-      // ignore — keep last known play state
+    // One shared seam keeps the active line moving regardless of events.
+    // (resolveIsPlaying never throws; worst case it reports paused for a tick.)
+    const livePlaying = resolveIsPlaying();
+    if (SpotifyPlayer.IsPlaying !== livePlaying) {
+      SpotifyPlayer.IsPlaying = livePlaying;
     }
     // Skip work entirely when the lyrics page isn't visible
     let onLyricsPage = false;

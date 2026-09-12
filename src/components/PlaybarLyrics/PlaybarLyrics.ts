@@ -1,7 +1,11 @@
 import storage from '../../utils/storage';
 import { IntervalManager } from '../../utils/IntervalManager';
 import { SpotifyPlayer } from '../Global/SpotifyPlayer';
-import { requestPositionTracking } from '../../utils/Gets/GetProgress';
+import {
+  getPositionFor,
+  requestPositionTracking,
+  resolveIsPlaying,
+} from '../../utils/Gets/GetProgress';
 import { processPhoneticText } from '../../utils/Lyrics/phoneticPatterns';
 import { findActiveIndex } from '../../utils/Lyrics/findActiveIndex';
 import { convertLyrics } from '../../utils/Lyrics/conversion';
@@ -17,8 +21,9 @@ import Event from '../../utils/EventManager';
  * native controls again.
  */
 
-// Matches the offset used by ScrollToActiveLine for consistency
-const POSITION_OFFSET = 600; // ms — show the line a bit ahead of the audio
+// Surface lead times live in the position module (PlaybackSurfaceOffset) —
+// this module only picks its surface. Kept in sync with ScrollToActiveLine by
+// construction instead of by matching comments.
 const UPDATE_INTERVAL = 0.3; // seconds
 
 interface LineEntry {
@@ -284,18 +289,10 @@ async function refreshArtworkColors(): Promise<void> {
 function update(): void {
   const enabled = isEnabled();
   // Self-heal play state (same rationale as the lyrics page loop): stale
-  // IsPlaying would hide the overlay even while audio advances.
-  try {
-    if (typeof Spicetify?.Player?.isPlaying === 'function') {
-      const live = !!Spicetify.Player.isPlaying();
-      if (SpotifyPlayer.IsPlaying !== live) SpotifyPlayer.IsPlaying = live;
-    } else if (typeof Spicetify?.Player?.data?.isPaused === 'boolean') {
-      const live = !Spicetify.Player.data.isPaused;
-      if (SpotifyPlayer.IsPlaying !== live) SpotifyPlayer.IsPlaying = live;
-    }
-  } catch {
-    // keep last known value
-  }
+  // IsPlaying would hide the overlay even while audio advances. One shared
+  // seam instead of a third copy of the Spicetify shape checks.
+  const live = resolveIsPlaying();
+  if (SpotifyPlayer.IsPlaying !== live) SpotifyPlayer.IsPlaying = live;
   let onLyricsPage = false;
   try {
     onLyricsPage = Spicetify.Platform.History.location.pathname === '/AmaiLyrics';
@@ -374,7 +371,7 @@ function update(): void {
 
   let position: number;
   try {
-    position = SpotifyPlayer.GetTrackPosition() + POSITION_OFFSET;
+    position = getPositionFor('playbar');
   } catch {
     return;
   }

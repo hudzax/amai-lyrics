@@ -2,7 +2,7 @@ import SpicyFetch from '../../utils/API/SpicyFetch';
 import { spotifyHex } from '../../utils/Hasher';
 import GetProgress, {
   _DEPRECATED___GetProgress,
-  requestPositionSync,
+  syncPlaybackPosition,
 } from '../../utils/Gets/GetProgress';
 
 type ArtworkSize = 's' | 'l' | 'xl' | 'd';
@@ -101,9 +101,9 @@ export const SpotifyPlayer = {
   Seek: (position: number) => {
     Spicetify.Player.origin.seekTo(position);
     // The position anchor (syncedPosition) is only refreshed periodically; a seek
-    // makes it stale by the full seek distance. Force an immediate re-sync so the
-    // lyrics highlight snaps to the new position instead of lagging the old one.
-    requestPositionSync();
+    // makes it stale by the full seek distance. One call re-anchors instantly so
+    // the highlight snaps instead of lagging, then refines via exact sync.
+    syncPlaybackPosition();
   },
   Artwork: {
     Get: async (size: ArtworkSize): Promise<string> => {

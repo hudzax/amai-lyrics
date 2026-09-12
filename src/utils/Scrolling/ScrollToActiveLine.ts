@@ -1,5 +1,5 @@
 import Defaults from '../../components/Global/Defaults';
-import { SpotifyPlayer } from '../../components/Global/SpotifyPlayer';
+import { getPositionFor, resolveIsPlaying } from '../Gets/GetProgress';
 import { LyricsObject } from '../Lyrics/lyrics';
 import { findActiveIndex } from '../Lyrics/findActiveIndex';
 import { scrollIntoCenterView } from '../ScrollIntoView';
@@ -35,7 +35,7 @@ function setActiveController(value: { cancel: () => void } | null): void {
 
 export function ScrollToActiveLine(ScrollSimplebar: SimpleBar) {
   try {
-    if (!SpotifyPlayer.IsPlaying) return;
+    if (!resolveIsPlaying()) return;
     if (!Defaults.LyricsContainerExists) return;
 
     let onLyricsPage = false;
@@ -49,13 +49,13 @@ export function ScrollToActiveLine(ScrollSimplebar: SimpleBar) {
     const Lines = LyricsObject.Types[Defaults.CurrentLyricsType]?.Lines;
     let Position: number;
     try {
-      Position = SpotifyPlayer.GetTrackPosition();
+      // Lead time lives in the position module (PlaybackSurfaceOffset.scroll),
+      // not here — one seam owns every surface's offset.
+      Position = getPositionFor('scroll');
     } catch {
       return;
     }
     if (typeof Position !== 'number' || !Number.isFinite(Position) || Position < 0) return;
-    const PositionOffset = 370;
-    const ProcessedPosition = Position + PositionOffset;
 
     if (!Lines) return;
 
@@ -63,7 +63,7 @@ export function ScrollToActiveLine(ScrollSimplebar: SimpleBar) {
     // SAFETY: Lines are domain-timed objects; narrowed to StartTime/EndTime for the search helper
     const activeIdx = findActiveIndex(
       Lines as unknown as { StartTime: number; EndTime: number }[],
-      ProcessedPosition,
+      Position,
     );
     const currentLine = activeIdx !== -1 ? (Lines[activeIdx] as (typeof Lines)[number]) : null;
     // Hint: if cachedIdx matches activeIdx and lastLine already equals target, ScrollToActiveLine will early-return via lastLine check below.
