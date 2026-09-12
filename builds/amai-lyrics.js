@@ -5019,7 +5019,7 @@
   });
 
   // src/utils/EventManager.ts
-  var windowRef, eventRegistry, nextId, listen, unListen, evoke, Event, EventManager_default;
+  var windowRef, eventRegistry, nextId, listen, unListen, evoke, Event2, EventManager_default;
   var init_EventManager = __esm({
     "src/utils/EventManager.ts"() {
       windowRef = window;
@@ -5055,12 +5055,12 @@
           }
         }
       };
-      Event = {
+      Event2 = {
         listen,
         unListen,
         evoke
       };
-      EventManager_default = Event;
+      EventManager_default = Event2;
     }
   });
 
@@ -6089,7 +6089,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.5.0";
+      version = "1.5.1";
     }
   });
 
@@ -6416,7 +6416,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   });
 
   // node_modules/@hudzax/web-modules/Signal.js
-  var Connection, Event2, Signal, IsConnection;
+  var Connection, Event3, Signal, IsConnection;
   var init_Signal = __esm({
     "node_modules/@hudzax/web-modules/Signal.js"() {
       init_FreeArray();
@@ -6443,7 +6443,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           return this.Disconnected;
         }
       };
-      Event2 = class {
+      Event3 = class {
         Signal;
         constructor(signal) {
           this.Signal = signal;
@@ -6477,7 +6477,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           }
         }
         GetEvent() {
-          return new Event2(this);
+          return new Event3(this);
         }
         IsDestroyed() {
           return this.DestroyedState;
@@ -9021,15 +9021,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a09645516fa/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-14368-Wip8QZB631iU/1a096c60508a/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a09645516fa/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-14368-Wip8QZB631iU/1a096c60508a/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a096455174b/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-14368-Wip8QZB631iU/1a096c6050cb/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a096455174b/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-14368-Wip8QZB631iU/1a096c6050cb/ProcessingIndicator.css"() {
     }
   });
 
@@ -9125,17 +9125,18 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return url;
   }
-  function setRandomCSSVariables() {
+  function setRandomCSSVariables(target) {
+    const root2 = target ?? document.documentElement;
     const rotationPrimary = Math.floor(Math.random() * 360);
     const rotationSecondary = (Math.floor(Math.random() * 360) + 15) % 360;
-    document.documentElement.style.setProperty("--bg-rotation-primary", `${rotationPrimary}deg`);
-    document.documentElement.style.setProperty("--bg-rotation-secondary", `${rotationSecondary}deg`);
+    root2.style.setProperty("--bg-rotation-primary", `${rotationPrimary}deg`);
+    root2.style.setProperty("--bg-rotation-secondary", `${rotationSecondary}deg`);
     const scalePrimary = 1 + Math.random() * 0.2;
     const scaleSecondary = 1.1 + Math.random() * 0.2;
-    document.documentElement.style.setProperty("--bg-scale-primary", `${scalePrimary}`);
-    document.documentElement.style.setProperty("--bg-scale-secondary", `${scaleSecondary}`);
+    root2.style.setProperty("--bg-scale-primary", `${scalePrimary}`);
+    root2.style.setProperty("--bg-scale-secondary", `${scaleSecondary}`);
     const hueShift = Math.floor(Math.random() * 30);
-    document.documentElement.style.setProperty("--bg-hue-shift", `${hueShift}deg`);
+    root2.style.setProperty("--bg-hue-shift", `${hueShift}deg`);
   }
   function createBackgroundImage(id, className, src, loading) {
     const img = document.createElement("img");
@@ -9152,11 +9153,237 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
+  // src/components/DynamicBG/AppBackground.ts
+  var AppBackground_exports = {};
+  __export(AppBackground_exports, {
+    APP_BG_CLASS: () => APP_BG_CLASS,
+    APP_BG_HOST_CLASS: () => APP_BG_HOST_CLASS,
+    APP_BG_HOST_FALLBACK_SELECTOR: () => APP_BG_HOST_FALLBACK_SELECTOR,
+    APP_BG_HOST_SELECTOR: () => APP_BG_HOST_SELECTOR,
+    APP_BG_IMG_A_ID: () => APP_BG_IMG_A_ID,
+    APP_BG_IMG_B_ID: () => APP_BG_IMG_B_ID,
+    APP_BG_LIB_GRID_CLASS: () => APP_BG_LIB_GRID_CLASS,
+    APP_BG_ON_CLASS: () => APP_BG_ON_CLASS,
+    AppBackground: () => AppBackground,
+    appBackgroundSingleton: () => appBackgroundSingleton,
+    isAppBackgroundEnabled: () => isAppBackgroundEnabled,
+    resolveAppBgHost: () => resolveAppBgHost,
+    syncAppBgMarker: () => syncAppBgMarker,
+    syncLibraryGridState: () => syncLibraryGridState,
+    watchLibraryGridState: () => watchLibraryGridState
+  });
+  function isAppBackgroundEnabled() {
+    const raw = storage_default.get("enable_app_background");
+    if (raw === "true")
+      return true;
+    if (raw === "false")
+      return false;
+    return Defaults_default.enableAppBackground ?? false;
+  }
+  function resolveAppBgHost() {
+    return document.querySelector(APP_BG_HOST_SELECTOR) ?? document.querySelector(APP_BG_HOST_FALLBACK_SELECTOR);
+  }
+  function syncAppBgMarker(force) {
+    document.documentElement.classList.toggle(APP_BG_ON_CLASS, force ?? isAppBackgroundEnabled());
+  }
+  function syncLibraryGridState(scope) {
+    const navBar = (scope ?? document).querySelector?.(".Root__nav-bar");
+    if (!navBar)
+      return;
+    navBar.classList.toggle(APP_BG_LIB_GRID_CLASS, !!navBar.querySelector("[data-encore-id='card']"));
+  }
+  function findAppBg(host) {
+    const kids = host.children;
+    for (let i = 0; i < kids.length; i++) {
+      const child = kids[i];
+      if (child instanceof HTMLElement && child.classList.contains(APP_BG_CONTAINER_CLASS) && child.classList.contains(APP_BG_CLASS)) {
+        return child;
+      }
+    }
+    return null;
+  }
+  function watchLibraryGridState() {
+    const navBar = document.querySelector(".Root__nav-bar");
+    if (!navBar)
+      return null;
+    syncLibraryGridState();
+    const obs = new MutationObserver(() => syncLibraryGridState());
+    obs.observe(navBar, { childList: true, subtree: true });
+    return obs;
+  }
+  var APP_BG_HOST_SELECTOR, APP_BG_HOST_FALLBACK_SELECTOR, APP_BG_ON_CLASS, APP_BG_HOST_CLASS, APP_BG_CLASS, APP_BG_IMG_A_ID, APP_BG_IMG_B_ID, APP_BG_LIB_GRID_CLASS, APP_BG_CONTAINER_CLASS, APP_BG_HOST_HELPER_CLASS, AppBackground, appBackgroundSingleton;
+  var init_AppBackground = __esm({
+    "src/components/DynamicBG/AppBackground.ts"() {
+      init_storage();
+      init_Defaults();
+      init_utils();
+      APP_BG_HOST_SELECTOR = ".Root";
+      APP_BG_HOST_FALLBACK_SELECTOR = ".Root__top-container";
+      APP_BG_ON_CLASS = "amai-app-bg-on";
+      APP_BG_HOST_CLASS = "amai-app-bg-host";
+      APP_BG_CLASS = "amai-app-bg";
+      APP_BG_IMG_A_ID = "amai-app-bg-img-a";
+      APP_BG_IMG_B_ID = "amai-app-bg-img-b";
+      APP_BG_LIB_GRID_CLASS = "amai-lib-grid";
+      APP_BG_CONTAINER_CLASS = "sweet-dynamic-bg";
+      APP_BG_HOST_HELPER_CLASS = "sweet-dynamic-bg-in-this";
+      AppBackground = class {
+        constructor() {
+          this.cached = {
+            host: null,
+            dynamicBg: null,
+            lastImgUrl: null
+          };
+        }
+        apply(coverUrl) {
+          const enabled = isAppBackgroundEnabled();
+          if (!enabled)
+            return;
+          syncAppBgMarker(true);
+          const normalized = normalizeImageUrl(coverUrl);
+          if (!normalized)
+            return;
+          coverUrl = normalized;
+          try {
+            const host = resolveAppBgHost();
+            if (!host) {
+              this.clearCache();
+              return;
+            }
+            if (this.cached.host !== host) {
+              this.cached.host = host;
+              this.cached.dynamicBg = findAppBg(host);
+            }
+            const cachedBg = this.cached.dynamicBg;
+            if (cachedBg && (!cachedBg.isConnected || cachedBg.parentElement !== host)) {
+              this.cached.dynamicBg = findAppBg(host);
+            }
+            if (coverUrl === this.cached.lastImgUrl && this.cached.dynamicBg)
+              return;
+            if (!this.cached.dynamicBg) {
+              this.createNewBackground(host, coverUrl);
+            } else {
+              const imgA = this.cached.dynamicBg.querySelector(
+                `#${APP_BG_IMG_A_ID}`
+              );
+              const imgB = this.cached.dynamicBg.querySelector(
+                `#${APP_BG_IMG_B_ID}`
+              );
+              if (!imgA || !imgB) {
+                this.createNewBackground(host, coverUrl);
+              } else {
+                this.updateExistingBackground({ imgA, imgB }, coverUrl);
+              }
+            }
+            this.cached.lastImgUrl = coverUrl;
+          } catch (error) {
+            console.error("Error Applying the Dynamic BG to the App:", error);
+          }
+        }
+        remove() {
+          try {
+            const host = this.cached.host ?? resolveAppBgHost();
+            const bg = host ? findAppBg(host) : null;
+            bg?.remove();
+            if (host) {
+              if (!bg || !findAppBg(host)) {
+                host.classList.remove(APP_BG_HOST_HELPER_CLASS);
+              }
+              host.classList.remove(APP_BG_HOST_CLASS);
+              host.querySelector(".Root__nav-bar")?.classList.remove(APP_BG_LIB_GRID_CLASS);
+            }
+            document.documentElement.classList.remove(APP_BG_ON_CLASS);
+            this.clearCache();
+          } catch (error) {
+            console.error("Error Removing the Dynamic BG from the App:", error);
+          }
+        }
+        isApplied() {
+          const cachedBg = this.cached.dynamicBg;
+          if (cachedBg?.isConnected && cachedBg.classList.contains(APP_BG_CLASS))
+            return true;
+          const host = this.cached.host?.isConnected ? this.cached.host : resolveAppBgHost();
+          return !!host && !!findAppBg(host);
+        }
+        destroy() {
+          this.remove();
+        }
+        clearCache() {
+          this.cached.lastImgUrl = null;
+          this.cached.dynamicBg = null;
+          this.cached.host = null;
+        }
+        createNewBackground(host, coverUrl) {
+          const dynamicBackground = document.createElement("div");
+          dynamicBackground.className = `${APP_BG_CONTAINER_CLASS} ${APP_BG_CLASS}`;
+          dynamicBackground.setAttribute("current-img", coverUrl);
+          setRandomCSSVariables(dynamicBackground);
+          findAppBg(host)?.remove();
+          const placeholder = document.createElement("div");
+          placeholder.className = "placeholder";
+          dynamicBackground.appendChild(placeholder);
+          const imgA = createBackgroundImage(
+            APP_BG_IMG_A_ID,
+            "bg-image primary active",
+            coverUrl,
+            "eager"
+          );
+          dynamicBackground.appendChild(imgA);
+          const imgB = createBackgroundImage(APP_BG_IMG_B_ID, "bg-image secondary", "", "lazy");
+          dynamicBackground.appendChild(imgB);
+          host.classList.add(APP_BG_HOST_HELPER_CLASS, APP_BG_HOST_CLASS);
+          host.appendChild(dynamicBackground);
+          syncLibraryGridState(host);
+          imgA.onload = () => {
+            requestAnimationFrame(() => {
+              dynamicBackground.classList.add("sweet-dynamic-bg-loaded");
+            });
+            placeholder.remove();
+          };
+          this.cached.dynamicBg = dynamicBackground;
+        }
+        updateExistingBackground(images, coverUrl) {
+          const { imgA, imgB } = images;
+          if (imgA.src === coverUrl || imgB.src === coverUrl) {
+            this.cached.dynamicBg?.setAttribute("current-img", coverUrl);
+            return;
+          }
+          const activeImg = imgA.classList.contains("active") ? imgA : imgB;
+          const inactiveImg = activeImg === imgA ? imgB : imgA;
+          inactiveImg.onload = null;
+          inactiveImg.onerror = null;
+          inactiveImg.onload = () => {
+            if (inactiveImg.src !== coverUrl)
+              return;
+            requestAnimationFrame(() => {
+              activeImg.classList.remove("active");
+              inactiveImg.classList.add("active");
+              this.cached.dynamicBg?.setAttribute("current-img", coverUrl);
+            });
+          };
+          inactiveImg.onerror = () => {
+            console.error("Error loading new background image:", coverUrl);
+          };
+          inactiveImg.src = coverUrl;
+        }
+      };
+      appBackgroundSingleton = new AppBackground();
+    }
+  });
+
   // src/components/DynamicBG/dynamicBackground.ts
   var dynamicBackground_exports = {};
   __export(dynamicBackground_exports, {
     default: () => ApplyDynamicBackground
   });
+  function isHiddenByAppCanvas(element) {
+    if (!document.documentElement.classList.contains(APP_BG_ON_CLASS))
+      return false;
+    const page = element.closest?.("#SpicyLyricsPage");
+    if (!page)
+      return false;
+    return !page.classList.contains("Fullscreen");
+  }
   async function setupDynamicBackground(element, imageUrl) {
     let bgContainer = element.querySelector(".sweet-dynamic-bg");
     if (!bgContainer) {
@@ -9179,12 +9406,14 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       const imgB = createBackgroundImage("bg-img-b", "bg-image secondary", "", "lazy");
       bgContainer.appendChild(imgB);
       element.appendChild(bgContainer);
-      setRandomCSSVariables();
+      setRandomCSSVariables(bgContainer);
     }
     return bgContainer;
   }
   async function ApplyDynamicBackground(element) {
     if (!element)
+      return;
+    if (isHiddenByAppCanvas(element))
       return;
     const rawCover = await SpotifyPlayer.Artwork.Get("d");
     const currentImgCover = normalizeImageUrl(rawCover) ?? rawCover;
@@ -9200,6 +9429,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_SpotifyPlayer();
       init_debounce2();
       init_utils();
+      init_AppBackground();
       updateDynamicBackground = debounce2((bgContainer, newImageUrl) => {
         const imgA = bgContainer.querySelector("#bg-img-a");
         const imgB = bgContainer.querySelector("#bg-img-b");
@@ -9220,7 +9450,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             activeImg.classList.remove("active");
             inactiveImg.classList.add("active");
             bgContainer.setAttribute("current-img", newImageUrl);
-            setRandomCSSVariables();
+            setRandomCSSVariables(bgContainer);
           });
         };
         inactiveImg.onerror = () => {
@@ -34067,190 +34297,6 @@ ${JSON.stringify(lyricsOnly)}`
     }
   });
 
-  // src/components/DynamicBG/AppBackground.ts
-  var AppBackground_exports = {};
-  __export(AppBackground_exports, {
-    APP_BG_CLASS: () => APP_BG_CLASS,
-    APP_BG_HOST_CLASS: () => APP_BG_HOST_CLASS,
-    APP_BG_HOST_FALLBACK_SELECTOR: () => APP_BG_HOST_FALLBACK_SELECTOR,
-    APP_BG_HOST_SELECTOR: () => APP_BG_HOST_SELECTOR,
-    APP_BG_IMG_A_ID: () => APP_BG_IMG_A_ID,
-    APP_BG_IMG_B_ID: () => APP_BG_IMG_B_ID,
-    APP_BG_ON_CLASS: () => APP_BG_ON_CLASS,
-    AppBackground: () => AppBackground,
-    isAppBackgroundEnabled: () => isAppBackgroundEnabled,
-    resolveAppBgHost: () => resolveAppBgHost,
-    syncAppBgMarker: () => syncAppBgMarker
-  });
-  function isAppBackgroundEnabled() {
-    const raw = storage_default.get("enable_app_background");
-    if (raw === "true")
-      return true;
-    if (raw === "false")
-      return false;
-    return Defaults_default.enableAppBackground ?? false;
-  }
-  function resolveAppBgHost() {
-    return document.querySelector(APP_BG_HOST_SELECTOR) ?? document.querySelector(APP_BG_HOST_FALLBACK_SELECTOR);
-  }
-  function syncAppBgMarker() {
-    document.documentElement.classList.toggle(APP_BG_ON_CLASS, isAppBackgroundEnabled());
-  }
-  function findAppBg(host) {
-    for (const child of Array.from(host.children)) {
-      if (child instanceof HTMLElement && child.classList.contains(APP_BG_CONTAINER_CLASS) && child.classList.contains(APP_BG_CLASS)) {
-        return child;
-      }
-    }
-    return null;
-  }
-  var APP_BG_HOST_SELECTOR, APP_BG_HOST_FALLBACK_SELECTOR, APP_BG_ON_CLASS, APP_BG_HOST_CLASS, APP_BG_CLASS, APP_BG_IMG_A_ID, APP_BG_IMG_B_ID, APP_BG_CONTAINER_CLASS, APP_BG_HOST_HELPER_CLASS, AppBackground;
-  var init_AppBackground = __esm({
-    "src/components/DynamicBG/AppBackground.ts"() {
-      init_storage();
-      init_Defaults();
-      init_utils();
-      APP_BG_HOST_SELECTOR = ".Root";
-      APP_BG_HOST_FALLBACK_SELECTOR = ".Root__top-container";
-      APP_BG_ON_CLASS = "amai-app-bg-on";
-      APP_BG_HOST_CLASS = "amai-app-bg-host";
-      APP_BG_CLASS = "amai-app-bg";
-      APP_BG_IMG_A_ID = "amai-app-bg-img-a";
-      APP_BG_IMG_B_ID = "amai-app-bg-img-b";
-      APP_BG_CONTAINER_CLASS = "sweet-dynamic-bg";
-      APP_BG_HOST_HELPER_CLASS = "sweet-dynamic-bg-in-this";
-      AppBackground = class {
-        constructor() {
-          this.cached = {
-            host: null,
-            dynamicBg: null,
-            lastImgUrl: null
-          };
-        }
-        apply(coverUrl) {
-          if (!isAppBackgroundEnabled())
-            return;
-          syncAppBgMarker();
-          const normalized = normalizeImageUrl(coverUrl);
-          if (!normalized)
-            return;
-          coverUrl = normalized;
-          try {
-            const host = resolveAppBgHost();
-            if (!host) {
-              this.clearCache();
-              return;
-            }
-            if (this.cached.host !== host) {
-              this.cached.host = host;
-              this.cached.dynamicBg = findAppBg(host);
-            }
-            if (this.cached.dynamicBg && !host.contains(this.cached.dynamicBg)) {
-              this.cached.dynamicBg = findAppBg(host);
-            }
-            if (coverUrl === this.cached.lastImgUrl && this.cached.dynamicBg)
-              return;
-            if (!this.cached.dynamicBg) {
-              this.createNewBackground(host, coverUrl);
-            } else {
-              const imgA = this.cached.dynamicBg.querySelector(
-                `#${APP_BG_IMG_A_ID}`
-              );
-              const imgB = this.cached.dynamicBg.querySelector(
-                `#${APP_BG_IMG_B_ID}`
-              );
-              if (!imgA || !imgB) {
-                this.createNewBackground(host, coverUrl);
-              } else {
-                this.updateExistingBackground({ imgA, imgB }, coverUrl);
-              }
-            }
-            this.cached.lastImgUrl = coverUrl;
-          } catch (error) {
-            console.error("Error Applying the Dynamic BG to the App:", error);
-          }
-        }
-        remove() {
-          try {
-            const host = this.cached.host ?? resolveAppBgHost();
-            const bg = host ? findAppBg(host) : null;
-            bg?.remove();
-            if (host) {
-              if (!findAppBg(host)) {
-                host.classList.remove(APP_BG_HOST_HELPER_CLASS);
-              }
-              host.classList.remove(APP_BG_HOST_CLASS);
-            }
-            document.documentElement.classList.remove(APP_BG_ON_CLASS);
-            this.clearCache();
-          } catch (error) {
-            console.error("Error Removing the Dynamic BG from the App:", error);
-          }
-        }
-        isApplied() {
-          const host = resolveAppBgHost();
-          return !!host && !!findAppBg(host);
-        }
-        destroy() {
-          this.remove();
-        }
-        clearCache() {
-          this.cached.lastImgUrl = null;
-          this.cached.dynamicBg = null;
-          this.cached.host = null;
-        }
-        createNewBackground(host, coverUrl) {
-          setRandomCSSVariables();
-          findAppBg(host)?.remove();
-          const dynamicBackground = document.createElement("div");
-          dynamicBackground.className = `${APP_BG_CONTAINER_CLASS} ${APP_BG_CLASS}`;
-          dynamicBackground.setAttribute("current-img", coverUrl);
-          const placeholder = document.createElement("div");
-          placeholder.className = "placeholder";
-          dynamicBackground.appendChild(placeholder);
-          const imgA = createBackgroundImage(
-            APP_BG_IMG_A_ID,
-            "bg-image primary active",
-            coverUrl,
-            "eager"
-          );
-          dynamicBackground.appendChild(imgA);
-          const imgB = createBackgroundImage(APP_BG_IMG_B_ID, "bg-image secondary", "", "lazy");
-          dynamicBackground.appendChild(imgB);
-          host.classList.add(APP_BG_HOST_HELPER_CLASS, APP_BG_HOST_CLASS);
-          host.appendChild(dynamicBackground);
-          console.log("[Amai Lyrics] App background created:", coverUrl);
-          imgA.onload = () => {
-            requestAnimationFrame(() => {
-              dynamicBackground.classList.add("sweet-dynamic-bg-loaded");
-            });
-          };
-          this.cached.dynamicBg = dynamicBackground;
-        }
-        updateExistingBackground(images, coverUrl) {
-          const { imgA, imgB } = images;
-          const activeImg = imgA.classList.contains("active") ? imgA : imgB;
-          const inactiveImg = activeImg === imgA ? imgB : imgA;
-          inactiveImg.onload = null;
-          inactiveImg.onerror = null;
-          inactiveImg.onload = () => {
-            if (inactiveImg.src !== coverUrl)
-              return;
-            requestAnimationFrame(() => {
-              activeImg.classList.remove("active");
-              inactiveImg.classList.add("active");
-              this.cached.dynamicBg?.setAttribute("current-img", coverUrl);
-            });
-          };
-          inactiveImg.onerror = () => {
-            console.error("Error loading new background image:", coverUrl);
-          };
-          inactiveImg.src = coverUrl;
-        }
-      };
-    }
-  });
-
   // src/utils/ArtworkColors.ts
   var ArtworkColors_exports = {};
   __export(ArtworkColors_exports, {
@@ -35160,14 +35206,17 @@ ${JSON.stringify(lyricsOnly)}`
         if (enabled) {
           const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
           void Promise.resolve().then(() => (init_AppBackground(), AppBackground_exports)).then(
-            ({ AppBackground: AppBackground2, syncAppBgMarker: syncAppBgMarker2 }) => {
-              syncAppBgMarker2();
-              new AppBackground2().apply(coverUrl);
+            ({ appBackgroundSingleton: appBackgroundSingleton2, syncAppBgMarker: syncAppBgMarker2, syncLibraryGridState: syncLibraryGridState2 }) => {
+              syncAppBgMarker2(true);
+              appBackgroundSingleton2.apply(coverUrl);
+              syncLibraryGridState2();
+              window.dispatchEvent(new Event("amai:appbg-changed"));
             }
           );
         } else {
-          void Promise.resolve().then(() => (init_AppBackground(), AppBackground_exports)).then(({ AppBackground: AppBackground2 }) => {
-            new AppBackground2().remove();
+          void Promise.resolve().then(() => (init_AppBackground(), AppBackground_exports)).then(({ appBackgroundSingleton: appBackgroundSingleton2 }) => {
+            appBackgroundSingleton2.remove();
+            window.dispatchEvent(new Event("amai:appbg-changed"));
           });
         }
       }
@@ -35666,9 +35715,10 @@ ${JSON.stringify(lyricsOnly)}`
         (e) => console.error("[Amai Lyrics] SongChange fetch failed:", e)
       );
       this.buttonManager.updateRegistration();
-      this.debouncedBgApply(Spicetify.Player.data?.item?.metadata?.image_url);
-      this.debouncedAppBgApply(Spicetify.Player.data?.item?.metadata?.image_url);
-      this.debouncedAccentPublish(Spicetify.Player.data?.item?.metadata?.image_url);
+      const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
+      this.debouncedBgApply(coverUrl);
+      this.debouncedAppBgApply(coverUrl);
+      this.debouncedAccentPublish(coverUrl);
       if (Spicetify.Player.data.item?.type === "track") {
         if (document.querySelector("#SpicyLyricsPage .ContentBox .NowBar")) {
           const { UpdateNowBar: UpdateNowBar2 } = await Promise.resolve().then(() => (init_NowBar2(), NowBar_exports));
@@ -35686,6 +35736,7 @@ ${JSON.stringify(lyricsOnly)}`
   // src/components/DynamicBG/NowPlayingBarBackground.ts
   var import_fastdom7 = __toESM(require_fastdom());
   init_utils();
+  init_AppBackground();
   var NowPlayingBarBackground = class {
     constructor() {
       this.cached = {
@@ -35695,6 +35746,8 @@ ${JSON.stringify(lyricsOnly)}`
       };
     }
     apply(coverUrl) {
+      if (document.documentElement.classList.contains(APP_BG_ON_CLASS))
+        return;
       const normalized = normalizeImageUrl(coverUrl);
       if (!normalized)
         return;
@@ -35739,10 +35792,10 @@ ${JSON.stringify(lyricsOnly)}`
       this.cached.nowPlayingBar = null;
     }
     createNewBackground(nowPlayingBar, coverUrl) {
-      setRandomCSSVariables();
       const dynamicBackground = document.createElement("div");
       dynamicBackground.className = "sweet-dynamic-bg";
       dynamicBackground.setAttribute("current-img", coverUrl);
+      setRandomCSSVariables(dynamicBackground);
       const placeholder = document.createElement("div");
       placeholder.className = "placeholder";
       dynamicBackground.appendChild(placeholder);
@@ -35756,6 +35809,7 @@ ${JSON.stringify(lyricsOnly)}`
         requestAnimationFrame(() => {
           dynamicBackground.classList.add("sweet-dynamic-bg-loaded");
         });
+        placeholder.remove();
       };
       this.cached.dynamicBg = dynamicBackground;
     }
@@ -35937,6 +35991,7 @@ ${JSON.stringify(lyricsOnly)}`
 
   // src/app.tsx
   init_lifecycle();
+  var APP_BG_CHANGED_EVENT = "amai:appbg-changed";
   function setupUI() {
     AppInitializer.setupSkeletonStyles();
     return new ButtonManager();
@@ -35951,7 +36006,7 @@ ${JSON.stringify(lyricsOnly)}`
     );
     lifecycle_default.trackWhentil(playbackWhen);
     const backgroundManager = new NowPlayingBarBackground();
-    const appBackgroundManager = new AppBackground();
+    const appBackgroundManager = appBackgroundSingleton;
     const songChangeManager = new SongChangeManager(
       buttonManager,
       backgroundManager,
@@ -35972,23 +36027,65 @@ ${JSON.stringify(lyricsOnly)}`
       backgroundManager.apply(coverUrl);
     };
     applyDynamicBg();
-    lifecycle_default.trackPlayerEvent("songchange", () => applyDynamicBg());
     syncAppBgMarker();
+    syncLibraryGridState();
     const applyAppBg = () => {
+      if (!isAppBackgroundEnabled())
+        return;
       if (!resolveAppBgHost())
         return;
       const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
       appBackgroundManager.apply(coverUrl);
     };
     applyAppBg();
-    lifecycle_default.trackPlayerEvent("songchange", () => applyAppBg());
-    const mainViewObserver = new MutationObserver(() => {
-      if (resolveAppBgHost() && !appBackgroundManager.isApplied()) {
-        applyAppBg();
+    let appBgObserverQueued = false;
+    const mainViewObserver = new MutationObserver((mutations) => {
+      if (!isAppBackgroundEnabled())
+        return;
+      let hostAdded = false;
+      for (const mut of mutations) {
+        for (const node of mut.addedNodes) {
+          if (!(node instanceof Element))
+            continue;
+          if (node.matches?.(".Root, .Root__top-container") || node.querySelector?.(".Root, .Root__top-container")) {
+            hostAdded = true;
+            break;
+          }
+        }
+        if (hostAdded)
+          break;
       }
+      if (!hostAdded || appBgObserverQueued)
+        return;
+      appBgObserverQueued = true;
+      requestAnimationFrame(() => {
+        appBgObserverQueued = false;
+        if (!isAppBackgroundEnabled())
+          return;
+        if (!appBackgroundManager.isApplied())
+          applyAppBg();
+      });
     });
-    mainViewObserver.observe(document.body, { childList: true, subtree: true });
+    mainViewObserver.observe(document.body, { childList: true, subtree: false });
     lifecycle_default.trackObserver(mainViewObserver);
+    const gridObserver = watchLibraryGridState();
+    if (gridObserver)
+      lifecycle_default.trackObserver(gridObserver);
+    const onAppBgChanged = () => {
+      if (isAppBackgroundEnabled())
+        return;
+      const lateGrid = watchLibraryGridState();
+      if (lateGrid)
+        lifecycle_default.trackObserver(lateGrid);
+      applyDynamicBg();
+      const pageBox = document.querySelector("#SpicyLyricsPage .ContentBox");
+      if (pageBox) {
+        void Promise.resolve().then(() => (init_dynamicBackground(), dynamicBackground_exports)).then(
+          ({ default: ApplyDynamicBackground2 }) => ApplyDynamicBackground2(pageBox)
+        );
+      }
+    };
+    lifecycle_default.trackWindow(APP_BG_CHANGED_EVENT, onAppBgChanged);
     const sidebarObserver = new MutationObserver(() => {
       if (document.querySelector(".Root__right-sidebar aside.NowPlayingView")) {
         applyDynamicBg();
@@ -36095,7 +36192,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a09645516fa/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14368-Wip8QZB631iU/1a096c60508a/DotLoader.css */
 #DotLoader {
   --dot-color: var(--amai-accent-1);
   --dot-color-dim: color-mix(in srgb, var(--amai-accent-1) 22%, transparent);
@@ -36130,7 +36227,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a096455174b/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14368-Wip8QZB631iU/1a096c6050cb/ProcessingIndicator.css */
 #SpicyLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -36212,7 +36309,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a0964550e80/tokens.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14368-Wip8QZB631iU/1a096c6047d0/tokens.css */
 :root {
   --amai-accent-1: #1ed760;
   --amai-accent-2: #1db954;
@@ -36265,7 +36362,7 @@ ${JSON.stringify(lyricsOnly)}`
   --amai-scrollbar-thumb: rgba(255, 255, 255, 0.6);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a0964551291/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14368-Wip8QZB631iU/1a096c604a71/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -36423,7 +36520,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a0964551312/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14368-Wip8QZB631iU/1a096c604af2/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -36631,7 +36728,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a0964551383/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14368-Wip8QZB631iU/1a096c604b73/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -37235,7 +37332,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a0964551474/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14368-Wip8QZB631iU/1a096c604c94/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -37420,6 +37517,15 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   --bg-blur-primary: 45px;
   --bg-blur-secondary: 65px;
 }
+:is(.Root, .Root__top-container).amai-app-bg-host > .sweet-dynamic-bg.amai-app-bg > img.bg-image {
+  width: 100%;
+  height: 100%;
+  -o-object-fit: cover;
+  object-fit: cover;
+  border-radius: 0;
+  animation: none;
+  mix-blend-mode: normal;
+}
 :is(.Root, .Root__top-container).amai-app-bg-host > .sweet-dynamic-bg.amai-app-bg::after {
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0) 22%, rgba(0, 0, 0, 0) 72%, rgba(0, 0, 0, 0.6) 100%);
 }
@@ -37478,7 +37584,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   border: 1px solid var(--amai-stroke-2) !important;
   box-shadow: var(--amai-shadow-panel) !important;
 }
-.amai-app-bg-host .Root__nav-bar:has([data-encore-id="card"]) {
+.amai-app-bg-host .Root__nav-bar.amai-lib-grid {
   background-color: var(--background-base) !important;
 }
 .amai-app-bg-host .Root__nav-bar .main-yourLibraryX-libraryContainer,
@@ -37493,14 +37599,11 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   background-color: transparent !important;
   background-image: none !important;
 }
-.amai-app-bg-host #global-nav-bar div:has(> input) {
-  background: transparent !important;
-  background-color: transparent !important;
-  background-image: none !important;
+.amai-app-bg-host #global-nav-bar input {
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
   border-radius: 500px !important;
 }
-.amai-app-bg-host #global-nav-bar div:has(> input):focus-within {
+.amai-app-bg-host #global-nav-bar input:focus {
   border-color: rgba(255, 255, 255, 0.65) !important;
 }
 .amai-app-bg-on .Root__right-sidebar,
@@ -37517,7 +37620,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   background-color: transparent !important;
   background-image: none !important;
 }
-.amai-app-bg-on .Root__right-sidebar .main-nowPlayingView-aboutArtist div:not(:has(img, video)) {
+.amai-app-bg-on .Root__right-sidebar .main-nowPlayingView-aboutArtist div {
   background-color: transparent !important;
 }
 .amai-app-bg-on .Root__right-sidebar .main-nowPlayingView-aboutArtist > div,
@@ -37544,7 +37647,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a09645514f5/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14368-Wip8QZB631iU/1a096c604d15/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -37856,7 +37959,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a0964551576/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14368-Wip8QZB631iU/1a096c604da6/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -38124,7 +38227,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a09645515c7/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14368-Wip8QZB631iU/1a096c604df7/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -38146,7 +38249,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a09645515f8/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14368-Wip8QZB631iU/1a096c604e28/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -38173,7 +38276,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a0964551629/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-14368-Wip8QZB631iU/1a096c604e69/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
