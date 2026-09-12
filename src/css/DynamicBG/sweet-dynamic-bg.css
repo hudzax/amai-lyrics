@@ -230,6 +230,232 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   /* No need to disable canvas as it's removed */
 }
 
+/* App background — one continuous artwork canvas behind native Spotify.
+   Host is .Root (fallback .Root__top-container); the node itself is a direct
+   child (.sweet-dynamic-bg.amai-app-bg) so lyrics-page and sidebar BGs are
+   untouched. Left nav keeps its own opaque surface; the right sidebar goes
+   transparent while the canvas is live (see single-canvas rules below). */
+:is(.Root, .Root__top-container).amai-app-bg-host {
+  /* overflow:clip (not hidden) contains the oversized BG layers without
+     creating a scroll container — hidden would break position:sticky
+     descendants like the tracklist header. */
+  overflow: clip;
+  position: relative;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+:is(.Root, .Root__top-container).amai-app-bg-host > .sweet-dynamic-bg.amai-app-bg {
+  --bg-saturation: 1.8;
+  --bg-brightness: 0.35;
+  --bg-blur-primary: 45px;
+  --bg-blur-secondary: 65px;
+}
+/* Stronger top/bottom scrims so top-bar and playbar controls stay legible. */
+:is(.Root, .Root__top-container).amai-app-bg-host > .sweet-dynamic-bg.amai-app-bg::after {
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.55) 0%,
+    rgba(0, 0, 0, 0) 22%,
+    rgba(0, 0, 0, 0) 72%,
+    rgba(0, 0, 0, 0.6) 100%
+  );
+}
+/* Make Spotify's own frame surfaces transparent so the artwork shows through.
+   The paint chain is top-container > main-view container > scroll-node >
+   viewport > scroll-child > main > page content — every layer up to `main`
+   must be transparent, including background-image gradients Spotify sets on
+   the scroll child. Scoped to frame/main-view classes only: the nav and
+   sidebar columns keep their own backgrounds.
+   Gated on the host class, which only exists while the toggle is on — the
+   canvas stays live even behind the open lyrics page. */
+.amai-app-bg-host .Root__top-container,
+.amai-app-bg-host #global-nav-bar,
+.amai-app-bg-host .Root__now-playing-bar,
+.amai-app-bg-host .Root__main-view,
+.amai-app-bg-host .main-view-container,
+.amai-app-bg-host .main-content-view,
+.amai-app-bg-host .main-view-container__scroll-node,
+.amai-app-bg-host .main-view-container div[data-overlayscrollbars-viewport],
+.amai-app-bg-host .main-view-container__scroll-node-child,
+.amai-app-bg-host .main-view-container__scroll-node-child-spacer,
+.amai-app-bg-host .playlist-playlist-playlistContent,
+.amai-app-bg-host main {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+/* Library header buttons (collapse/create/expand): transparent fills, hover
+   feedback kept. Structural hook so localized aria-labels don't matter. */
+.amai-app-bg-host .Root__nav-bar .main-yourLibraryX-headerContent button,
+.amai-app-bg-host .Root__nav-bar .main-yourLibraryX-headerContent button::before,
+.amai-app-bg-host .Root__nav-bar .main-yourLibraryX-headerContent button::after {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+/* Library rows: soft white hover veil so rows sit clean on the canvas.
+   Focus outlines and the selected-row highlight are intentionally kept. */
+.amai-app-bg-host .Root__nav-bar li:hover,
+.amai-app-bg-host .Root__nav-bar [role='row']:hover,
+.amai-app-bg-host .Root__nav-bar [role='listitem']:hover,
+.amai-app-bg-host .Root__nav-bar [data-encore-id='listRow']:hover,
+.amai-app-bg-host .Root__nav-bar [data-encore-id='listRow']:hover::before,
+.amai-app-bg-host .Root__nav-bar [data-encore-id='listRow']:hover::after {
+  background-color: rgba(0, 0, 0, 0.15) !important;
+  background-image: none !important;
+}
+/* Tracklist column header: force it to scroll away with content (Spotify
+   makes it sticky natively; the inline top:64px alone isn't what sticks it),
+   and suppress its scrolled-state fill/border/shadow — backgrounds only,
+   targeted by stable class, never the hashed one. */
+.amai-app-bg-host .main-trackList-trackListHeader {
+  position: static !important;
+  top: auto !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+}
+/* Entity sticky mini-header (playlist/artist/album topbar): hidden while the
+   canvas is live. Generic hook — hides it on every entity page, toggle-off
+   restores it. */
+.amai-app-bg-host header[data-testid='topbar'] {
+  display: none !important;
+}
+/* Main container stays transparent so the bare canvas shows through
+   (a glass panel here was tried and removed — it framed every page). */
+/* Playlist header + sticky action bar paint their own fills over the glass —
+   neutralize backgrounds only (stable classes, layout/sticky untouched). */
+.amai-app-bg-host .main-entityHeader-backgroundColor,
+.amai-app-bg-host .playlist-playlist-actionBarBackground-background {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+/* Left sidebar as a floating glass panel over the canvas — mirrors the
+   lyric-line panel (fill + hairline + shadow, no backdrop blur: blur over an
+   always-animating background would re-filter every frame). */
+.amai-app-bg-host .Root__nav-bar {
+  background-color: var(--amai-fill-glass) !important;
+  background-image: none !important;
+  border: 1px solid var(--amai-stroke-2) !important;
+  box-shadow: var(--amai-shadow-panel) !important;
+}
+/* Expanded grid state (cards present) goes back to opaque — detected by
+   content, never by hashed class names. :has() outranks the glass rule. */
+.amai-app-bg-host .Root__nav-bar:has([data-encore-id='card']) {
+  background-color: var(--background-base) !important;
+}
+/* Library column paints its own base fill over the glass — transparent so the
+   panel shows through (layout props untouched). */
+.amai-app-bg-host .Root__nav-bar .main-yourLibraryX-libraryContainer,
+.amai-app-bg-host .Root__nav-bar .main-yourLibraryX-entryPoints {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+/* Top-bar controls: buttons and the search field (plus its wrapper) go
+   transparent so the canvas shows through. Hover/focus fills are left alone
+   for transient press feedback. */
+.amai-app-bg-host #global-nav-bar button,
+.amai-app-bg-host #global-nav-bar input {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+/* Search wrapper keeps a visible hairline since its fill is gone. */
+.amai-app-bg-host
+  #global-nav-bar
+  div:has(> input) {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 500px !important;
+}
+.amai-app-bg-host
+  #global-nav-bar
+  div:has(> input):focus-within {
+  border-color: rgba(255, 255, 255, 0.65) !important;
+}
+/* Single-canvas mode (app background on): the sidebar goes transparent so the
+   app-frame canvas shows through. Content panels keep their glass fills.
+   NOTE: the marker lives on <html>, so it must LEAD these selectors — anything
+   written as `body ... .amai-app-bg-on ...` can never match. */
+.amai-app-bg-on .Root__right-sidebar,
+.amai-app-bg-on .Root__right-sidebar aside.NowPlayingView,
+.amai-app-bg-on .Root__right-sidebar-peek,
+.amai-app-bg-on
+  .Root__right-sidebar
+  .main-nowPlayingView-content {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+/* The sidebar paints an opaque ::before fill (background-base, inset 0) on a
+   child of .main-nowPlayingView-container that sits above the app canvas.
+   Neutralize it structurally — never by hashed class name, those rotate every
+   Spotify build. Transparent (not display:none) so non-background uses survive. */
+.amai-app-bg-on
+  .Root__right-sidebar
+  .main-nowPlayingView-container,
+.amai-app-bg-on
+  .Root__right-sidebar
+  .main-nowPlayingView-container
+  > *:before {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+/* About-artist card: inner wrappers repaint opaque over the section glass.
+   Media holders are excluded so the artist photo is untouched. */
+.amai-app-bg-on
+  .Root__right-sidebar
+  .main-nowPlayingView-aboutArtist
+  div:not(:has(img, video)) {
+  background-color: transparent !important;
+}
+/* Card body wrapper + decorative aria-hidden scrim (gradient veil): targeted
+   structurally, never by hashed class names. */
+.amai-app-bg-on
+  .Root__right-sidebar
+  .main-nowPlayingView-aboutArtist
+  > div,
+.amai-app-bg-on
+  .Root__right-sidebar
+  .main-nowPlayingView-aboutArtist
+  div[aria-hidden='true'] {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+/* Hide the sidebar's own background node while the app canvas is live — one
+   canvas, not two stacked blurs. Its manager keeps updating the hidden node,
+   so toggling the app background off instantly reveals current artwork. */
+.amai-app-bg-on
+  .Root__right-sidebar
+  aside.NowPlayingView
+  > .sweet-dynamic-bg,
+.amai-app-bg-on
+  .Root__right-sidebar
+  aside.NowPlayingView
+  > .sweet-dynamic-bg
+  * {
+  display: none !important;
+  animation: none !important;
+  filter: none !important;
+}
+/* The app canvas stays live behind the open lyrics page — hide the lyrics
+   page's own background instead so the canvas is its backdrop. Scoped inside
+   #SpicyLyricsPage so the Root-level canvas can never match. Fullscreen keeps
+   its own scaled backdrop (it has no other background) on top of the canvas. */
+.amai-app-bg-on #SpicyLyricsPage:not(.Fullscreen) .sweet-dynamic-bg,
+.amai-app-bg-on #SpicyLyricsPage:not(.Fullscreen) .sweet-dynamic-bg * {
+  display: none !important;
+  animation: none !important;
+  filter: none !important;
+}
+
 /* Freeze every dynamic-background animation while the Spotify window is hidden
    (minimized / tray). The class is toggled on <html> by app.tsx via
    visibilitychange, so the compositor gets zero work while nobody is watching. */

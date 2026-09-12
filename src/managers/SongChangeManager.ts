@@ -1,14 +1,19 @@
 import sleep from '../utils/sleep';
 import { ButtonManager } from './ButtonManager';
 import { NowPlayingBarBackground } from '../components/DynamicBG/NowPlayingBarBackground';
+import type { AppBackground } from '../components/DynamicBG/AppBackground';
 import { EnsureProcessingIndicatorHidden } from '../utils/Lyrics/ui';
 import { debounce } from '../utils/debounce';
 
 export class SongChangeManager {
   private buttonManager: ButtonManager;
   private backgroundManager: NowPlayingBarBackground;
+  private appBackgroundManager: AppBackground | null;
 
   private readonly debouncedBgApply: ((coverUrl: string | undefined) => void) & {
+    cancel: () => void;
+  };
+  private readonly debouncedAppBgApply: ((coverUrl: string | undefined) => void) & {
     cancel: () => void;
   };
   private readonly debouncedPageBgApply: (() => void) & { cancel: () => void };
@@ -16,13 +21,22 @@ export class SongChangeManager {
     cancel: () => void;
   };
 
-  constructor(buttonManager: ButtonManager, backgroundManager: NowPlayingBarBackground) {
+  constructor(
+    buttonManager: ButtonManager,
+    backgroundManager: NowPlayingBarBackground,
+    appBackgroundManager?: AppBackground,
+  ) {
     this.buttonManager = buttonManager;
     this.backgroundManager = backgroundManager;
+    this.appBackgroundManager = appBackgroundManager ?? null;
 
     // Coalesce rapid skip events — only the settled track triggers work.
     this.debouncedBgApply = debounce((coverUrl: string | undefined) => {
       this.backgroundManager.apply(coverUrl);
+    }, 500);
+
+    this.debouncedAppBgApply = debounce((coverUrl: string | undefined) => {
+      this.appBackgroundManager?.apply(coverUrl);
     }, 500);
 
     this.debouncedPageBgApply = debounce(() => {
@@ -47,6 +61,7 @@ export class SongChangeManager {
   /** Cancel pending debounced work — call on teardown to avoid leaks. */
   public dispose(): void {
     this.debouncedBgApply.cancel();
+    this.debouncedAppBgApply.cancel();
     this.debouncedPageBgApply.cancel();
     this.debouncedAccentPublish.cancel();
   }
@@ -82,6 +97,7 @@ export class SongChangeManager {
     // fire once the user settles on a song for 500ms, keeping the main thread
     // free for the critical song-change work.
     this.debouncedBgApply(Spicetify.Player.data?.item?.metadata?.image_url);
+    this.debouncedAppBgApply(Spicetify.Player.data?.item?.metadata?.image_url);
 
     // Publish artwork accent colors for the lyrics page (same coalescing)
     this.debouncedAccentPublish(Spicetify.Player.data?.item?.metadata?.image_url);

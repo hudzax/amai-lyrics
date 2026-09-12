@@ -13,6 +13,7 @@ export const StorageKeys = {
   TRANSLATION_FONT_SIZE: 'translation_font_size',
   DEFAULT_LYRICS_SIZE: 'default_lyrics_size',
   ENABLE_PLAYBAR_LYRICS: 'enable_playbar_lyrics',
+  ENABLE_APP_BACKGROUND: 'enable_app_background',
   CURRENT_LYRICS_DATA: 'currentLyricsData',
   LAST_FETCHED_URI: 'lastFetchedUri',
 } as const;

@@ -11,6 +11,11 @@ import { EventManager } from './managers/EventManager';
 import { PageManager } from './managers/PageManager';
 import { SongChangeManager } from './managers/SongChangeManager';
 import { NowPlayingBarBackground } from './components/DynamicBG/NowPlayingBarBackground';
+import {
+  AppBackground,
+  resolveAppBgHost,
+  syncAppBgMarker,
+} from './components/DynamicBG/AppBackground';
 import PageView from './components/Pages/PageView';
 import { installBlankToastSuppressor } from './utils/suppressBlankToasts';
 import lifecycle from './utils/lifecycle';
@@ -46,9 +51,15 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
 
   // Set up managers
   const backgroundManager = new NowPlayingBarBackground();
-  const songChangeManager = new SongChangeManager(buttonManager, backgroundManager);
+  const appBackgroundManager = new AppBackground();
+  const songChangeManager = new SongChangeManager(
+    buttonManager,
+    backgroundManager,
+    appBackgroundManager,
+  );
   lifecycle.trackCallback(() => songChangeManager.dispose());
   lifecycle.trackCallback(() => backgroundManager.destroy());
+  lifecycle.trackCallback(() => appBackgroundManager.destroy());
   new PageManager(buttonManager); // Used for side effects (navigation setup)
 
   // Seed the artwork-derived accent colors (--amai-accent-*) for the initial
@@ -71,6 +82,27 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
   };
   applyDynamicBg();
   lifecycle.trackPlayerEvent('songchange', () => applyDynamicBg());
+
+  // Always-on artwork background behind Spotify's app frame (same artwork,
+  // debounced via SongChangeManager). Re-applied when the top container remounts
+  // on navigation; AppBackground.apply() itself respects the settings toggle.
+  // Sync the marker first so single-canvas sidebar rules apply even before the
+  // first artwork URL resolves.
+  syncAppBgMarker();
+  const applyAppBg = () => {
+    if (!resolveAppBgHost()) return;
+    const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
+    appBackgroundManager.apply(coverUrl);
+  };
+  applyAppBg();
+  lifecycle.trackPlayerEvent('songchange', () => applyAppBg());
+  const mainViewObserver = new MutationObserver(() => {
+    if (resolveAppBgHost() && !appBackgroundManager.isApplied()) {
+      applyAppBg();
+    }
+  });
+  mainViewObserver.observe(document.body, { childList: true, subtree: true });
+  lifecycle.trackObserver(mainViewObserver);
   // Observe sidebar mount/unmount so opening the Now Playing View triggers apply immediately
   const sidebarObserver = new MutationObserver(() => {
     // Only act when the NowPlayingView appears; hidden removal is handled by apply's early return + cache clear

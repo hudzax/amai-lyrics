@@ -81,6 +81,31 @@ function generalSettings() {
     },
   );
 
+  settings.addToggle(
+    'enableAppBackground',
+    'Show artwork background behind the Spotify app',
+    Defaults.enableAppBackground,
+    () => {
+      const enabled = settings.getFieldValue('enableAppBackground') as boolean;
+      storage.set('enable_app_background', enabled ? 'true' : 'false');
+      if (enabled) {
+        const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url as string | undefined;
+        void import('../components/DynamicBG/AppBackground').then(
+          ({ AppBackground, syncAppBgMarker }) => {
+            syncAppBgMarker();
+            new AppBackground().apply(coverUrl);
+          },
+        );
+      } else {
+        void import('../components/DynamicBG/AppBackground').then(({ AppBackground }) => {
+          // Sidebar keeps updating its (hidden) node, so disabling instantly
+          // reveals the correct artwork with no restore step needed.
+          new AppBackground().remove();
+        });
+      }
+    },
+  );
+
   settings.addDropDown(
     'translation-language',
     'Translation Language',

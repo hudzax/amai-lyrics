@@ -20,6 +20,7 @@ const Defaults = {
   LyricsContainerExists: false,
   lyrics_spacing: 2,
   enableRomaji: false,
+  enableAppBackground: false,
   disableRomajiToggleNotification: false,
   disableTranslation: false,
   translationFontSize: '0.575',
