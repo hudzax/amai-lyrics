@@ -20,6 +20,11 @@ Setup is simple with your own API key, and the clean design keeps everything eas
 - **Romaji Support:** Displays Japanese lyrics in Latin letters.
 - **Korean Romanization:** Shows Korean lyrics in Latin letters.
 - **Better Visuals:** Clean and easy-to-read design.
+- **Amai Theme:** Dynamic background extracted from the current song's artwork. Toggle available in settings.
+
+  ![Amai Theme Preview 1](./previews/amai-theme_1.jpg)
+  ![Amai Theme Preview 2](./previews/amai-theme_2.jpg)
+
 - **Playbar Lyrics:** Shows the current lyric line in the native Spotify playbar, revealing the playback controls on hover. Includes Furigana/Romaji rendering and a subtle entrance animation. Toggle available in settings.
 
   ![Playbar Lyrics Preview 1](./previews/playbar_lyrics_preview_1.png)
