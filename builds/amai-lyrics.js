@@ -5187,12 +5187,16 @@
   // src/utils/Gets/GetProgress.ts
   var GetProgress_exports = {};
   __export(GetProgress_exports, {
+    PlaybackSurfaceOffset: () => PlaybackSurfaceOffset,
     _DEPRECATED___GetProgress: () => _DEPRECATED___GetProgress,
     default: () => GetProgress,
     destroyGetProgressLoop: () => destroyGetProgressLoop,
+    getPositionFor: () => getPositionFor,
     reanchorPosition: () => reanchorPosition,
     requestPositionSync: () => requestPositionSync,
-    requestPositionTracking: () => requestPositionTracking
+    requestPositionTracking: () => requestPositionTracking,
+    resolveIsPlaying: () => resolveIsPlaying,
+    syncPlaybackPosition: () => syncPlaybackPosition
   });
   function safeInitialPlaying() {
     try {
@@ -5212,7 +5216,7 @@
   function safeFiniteNumber(value) {
     return typeof value === "number" && Number.isFinite(value) ? value : null;
   }
-  function safeIsPlaying() {
+  function resolveIsPlaying() {
     try {
       if (typeof Spicetify?.Player?.isPlaying === "function") {
         return !!Spicetify.Player.isPlaying();
@@ -5249,7 +5253,7 @@
       if (pos === null)
         return null;
       const ts = safeFiniteNumber(data.timestamp);
-      const paused = typeof data.isPaused === "boolean" ? data.isPaused : !safeIsPlaying();
+      const paused = typeof data.isPaused === "boolean" ? data.isPaused : !resolveIsPlaying();
       return { pos, ts, paused };
     } catch {
       return null;
@@ -5265,7 +5269,7 @@
         return null;
       const ts = safeFiniteNumber(originState["timestamp"]);
       const rawPaused = originState["isPaused"];
-      const paused = typeof rawPaused === "boolean" ? rawPaused : !safeIsPlaying();
+      const paused = typeof rawPaused === "boolean" ? rawPaused : !resolveIsPlaying();
       return { pos, ts, paused };
     } catch {
       return null;
@@ -5295,7 +5299,7 @@
     return defaultValue;
   }
   function getStateBasedPosition() {
-    const playing = safeIsPlaying();
+    const playing = resolveIsPlaying();
     const now2 = Date.now();
     const fromData = readPlayerDataPosition();
     if (fromData) {
@@ -5344,7 +5348,7 @@
             setAnchor(pos);
             state.cachedPosition = pos;
             state.cachedPositionTime = performance.now();
-            state.cachedIsPlaying = safeIsPlaying();
+            state.cachedIsPlaying = resolveIsPlaying();
           }
         } catch {
         }
@@ -5473,7 +5477,7 @@
         scheduleLoop(IDLE_HEARTBEAT_MS);
         return;
       }
-      const isPlaying = safeIsPlaying();
+      const isPlaying = resolveIsPlaying();
       if (isPlaying && (state.activePositionClients > 0 || state.syncNow)) {
         state.syncNow = false;
         try {
@@ -5490,7 +5494,7 @@
       }
       if (state.teardownRequested && state.activePositionClients === 0)
         return;
-      const nowPlaying = safeIsPlaying();
+      const nowPlaying = resolveIsPlaying();
       if (!nowPlaying) {
         scheduleLoop(PAUSED_POLL_MS);
       } else if (state.activePositionClients > 0) {
@@ -5508,6 +5512,19 @@
   function requestPositionSync() {
     state.syncNow = true;
     scheduleLoop(0);
+  }
+  function syncPlaybackPosition() {
+    try {
+      reanchorPosition();
+    } catch {
+    }
+    try {
+      requestPositionSync();
+    } catch {
+    }
+  }
+  function getPositionFor(surface) {
+    return GetProgress() + PlaybackSurfaceOffset[surface];
   }
   function reanchorPosition() {
     try {
@@ -5545,7 +5562,7 @@
       const now2 = performance.now();
       let isPlaying = false;
       try {
-        isPlaying = safeIsPlaying();
+        isPlaying = resolveIsPlaying();
       } catch {
         isPlaying = false;
       }
@@ -5595,19 +5612,6 @@
         state.cachedIsPlaying = isPlaying;
         return stateBased;
       }
-      try {
-        if (SpotifyPlayer?._DEPRECATED_?.GetTrackPosition) {
-          const legacy = SpotifyPlayer._DEPRECATED_.GetTrackPosition();
-          const n = safeFiniteNumber(legacy);
-          if (n !== null && n >= 0) {
-            state.cachedPosition = n;
-            state.cachedPositionTime = now2;
-            state.cachedIsPlaying = isPlaying;
-            return n;
-          }
-        }
-      } catch {
-      }
       if (state.cachedPosition !== null && Number.isFinite(state.cachedPosition)) {
         return state.cachedPosition;
       }
@@ -5648,11 +5652,10 @@
       return 0;
     }
   }
-  var windowRef2, syncTimings, state, syncedPosition, PAUSED_POLL_MS, ACTIVE_SYNC_MS, IDLE_HEARTBEAT_MS, POSITION_CACHE_TTL;
+  var windowRef2, syncTimings, state, syncedPosition, PAUSED_POLL_MS, ACTIVE_SYNC_MS, IDLE_HEARTBEAT_MS, PlaybackSurfaceOffset, POSITION_CACHE_TTL;
   var init_GetProgress = __esm({
     "src/utils/Gets/GetProgress.ts"() {
       init_Global();
-      init_SpotifyPlayer();
       init_lifecycle();
       init_extrapolatePosition();
       windowRef2 = window;
@@ -5685,6 +5688,11 @@
       PAUSED_POLL_MS = 500;
       ACTIVE_SYNC_MS = 250;
       IDLE_HEARTBEAT_MS = 1e3;
+      PlaybackSurfaceOffset = {
+        highlight: 0,
+        scroll: 370,
+        playbar: 600
+      };
       POSITION_CACHE_TTL = 15;
       lifecycle_default.trackCallback(destroyGetProgressLoop);
     }
@@ -5778,7 +5786,7 @@
         },
         Seek: (position) => {
           Spicetify.Player.origin.seekTo(position);
-          requestPositionSync();
+          syncPlaybackPosition();
         },
         Artwork: {
           Get: async (size) => {
@@ -6080,7 +6088,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.4.41";
+      version = "1.4.42";
     }
   });
 
@@ -8548,17 +8556,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     renderLoop = new IntervalManager(THROTTLE_TIME, () => {
       if (!Defaults_default.LyricsContainerExists)
         return;
-      try {
-        let livePlaying = null;
-        if (typeof Spicetify?.Player?.isPlaying === "function") {
-          livePlaying = !!Spicetify.Player.isPlaying();
-        } else if (typeof Spicetify?.Player?.data?.isPaused === "boolean") {
-          livePlaying = !Spicetify.Player.data.isPaused;
-        }
-        if (livePlaying !== null && SpotifyPlayer.IsPlaying !== livePlaying) {
-          SpotifyPlayer.IsPlaying = livePlaying;
-        }
-      } catch {
+      const livePlaying = resolveIsPlaying();
+      if (SpotifyPlayer.IsPlaying !== livePlaying) {
+        SpotifyPlayer.IsPlaying = livePlaying;
       }
       let onLyricsPage = false;
       try {
@@ -8928,7 +8928,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   function ScrollToActiveLine(ScrollSimplebar2) {
     try {
-      if (!SpotifyPlayer.IsPlaying)
+      if (!resolveIsPlaying())
         return;
       if (!Defaults_default.LyricsContainerExists)
         return;
@@ -8943,19 +8943,17 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       const Lines = LyricsObject.Types[Defaults_default.CurrentLyricsType]?.Lines;
       let Position;
       try {
-        Position = SpotifyPlayer.GetTrackPosition();
+        Position = getPositionFor("scroll");
       } catch {
         return;
       }
       if (typeof Position !== "number" || !Number.isFinite(Position) || Position < 0)
         return;
-      const PositionOffset = 370;
-      const ProcessedPosition = Position + PositionOffset;
       if (!Lines)
         return;
       const activeIdx = findActiveIndex(
         Lines,
-        ProcessedPosition
+        Position
       );
       const currentLine = activeIdx !== -1 ? Lines[activeIdx] : null;
       if (currentLine) {
@@ -9006,7 +9004,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var init_ScrollToActiveLine = __esm({
     "src/utils/Scrolling/ScrollToActiveLine.ts"() {
       init_Defaults();
-      init_SpotifyPlayer();
+      init_GetProgress();
       init_lyrics();
       init_findActiveIndex();
       init_ScrollIntoView();
@@ -9021,15 +9019,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b228a/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-21872-jtv7SMNMRGsA/1a09308f5aea/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b228a/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-21872-jtv7SMNMRGsA/1a09308f5aea/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b234b/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-21872-jtv7SMNMRGsA/1a09308f5b3b/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b234b/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-21872-jtv7SMNMRGsA/1a09308f5b3b/ProcessingIndicator.css"() {
     }
   });
 
@@ -9231,420 +9229,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // src/utils/CSS/Styles.ts
-  function applyStyles(element, styles) {
-    if (!element) {
-      console.warn("Element not found for applying styles");
-      return false;
-    }
-    try {
-      for (const key in styles) {
-        if (Object.prototype.hasOwnProperty.call(styles, key)) {
-          element.style.setProperty(key, String(styles[key]));
-        }
-      }
-      return true;
-    } catch (error) {
-      console.error("Error applying styles:", error);
-      return false;
-    }
-  }
-  function removeAllStyles(element) {
-    if (!element) {
-      console.warn("Element not found for removing styles");
-      return false;
-    }
-    try {
-      element.removeAttribute("style");
-      return true;
-    } catch (error) {
-      console.error("Error removing styles:", error);
-      return false;
-    }
-  }
-  var init_Styles = __esm({
-    "src/utils/CSS/Styles.ts"() {
-    }
-  });
-
-  // src/utils/Lyrics/Applyer/Credits/ApplyLyricsCredits.ts
-  function ApplyLyricsCredits(data) {
-    const LyricsContainer = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
-    );
-    if (!data?.SongWriters)
-      return;
-    const CreditsElement = document.createElement("div");
-    CreditsElement.classList.add("Credits");
-    const SongWriters = data.SongWriters.join(", ");
-    CreditsElement.textContent = `Credits: ${SongWriters}`;
-    LyricsContainer.appendChild(CreditsElement);
-  }
-  var init_ApplyLyricsCredits = __esm({
-    "src/utils/Lyrics/Applyer/Credits/ApplyLyricsCredits.ts"() {
-    }
-  });
-
-  // src/utils/sanitize.ts
-  function escapeHtml(text) {
-    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-  }
-  function sanitizeRubyHtml(html) {
-    const escaped = escapeHtml(html);
-    return escaped.split(RUBY_ROMAJA_OPEN).join('<ruby class="romaja">').split(RUBY_OPEN).join("<ruby>").split(RUBY_CLOSE).join("</ruby>").split(RT_OPEN).join("<rt>").split(RT_CLOSE).join("</rt>");
-  }
-  function createRubyFragment(html) {
-    const safe = sanitizeRubyHtml(html);
-    const tpl = document.createElement("template");
-    tpl.innerHTML = safe;
-    return tpl.content;
-  }
-  var RUBY_OPEN, RUBY_CLOSE, RUBY_ROMAJA_OPEN, RT_OPEN, RT_CLOSE;
-  var init_sanitize = __esm({
-    "src/utils/sanitize.ts"() {
-      RUBY_OPEN = "&lt;ruby&gt;";
-      RUBY_CLOSE = "&lt;/ruby&gt;";
-      RUBY_ROMAJA_OPEN = "&lt;ruby class=&quot;romaja&quot;&gt;";
-      RT_OPEN = "&lt;rt&gt;";
-      RT_CLOSE = "&lt;/rt&gt;";
-    }
-  });
-
-  // src/utils/Lyrics/isRtl.ts
-  function isRtl(text) {
-    if (!text || text.length === 0)
-      return false;
-    const rtlRegex = /[\u0590-\u05FF\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB1D-\uFB4F\uFB50-\uFDFF\uFE70-\uFEFF]/;
-    for (let i = 0; i < text.length; i++) {
-      const char = text[i];
-      if (/[\d\s,.;:?!()[\]{}"'\\/<>@#$%^&*_=+-]/.test(char)) {
-        continue;
-      }
-      return rtlRegex.test(char);
-    }
-    return false;
-  }
-  var isRtl_default;
-  var init_isRtl = __esm({
-    "src/utils/Lyrics/isRtl.ts"() {
-      isRtl_default = isRtl;
-    }
-  });
-
-  // src/utils/Lyrics/phoneticPatterns.ts
-  function isJapaneseText(text) {
-    return !!text && JAPANESE_CHAR_REGEX.test(text);
-  }
-  function applyPhoneticPatterns(text, enableRomaji) {
-    if (text === void 0)
-      return void 0;
-    if (JAPANESE_CHAR_REGEX.test(text)) {
-      if (enableRomaji) {
-        return text.replace(JAPANESE_ROMAJI_REGEX, (_match, _p1, p2, p3, p4) => {
-          const base = p2 || p3;
-          return `<ruby>${base}<rt>${p4}</rt></ruby>`;
-        });
-      }
-      return text.replace(JAPANESE_FURIGANA_REGEX, "<ruby>$1<rt>$2</rt></ruby>");
-    }
-    return text.replace(KOREAN_ROMAJA_REGEX, '<ruby class="romaja">$1<rt>$2</rt></ruby>');
-  }
-  function phoneticCacheKey(text, enableRomaji) {
-    return `${enableRomaji ? "r" : "f"}\0${text}`;
-  }
-  function processPhoneticText(text, enableRomaji) {
-    if (text === void 0)
-      return void 0;
-    const key = phoneticCacheKey(text, enableRomaji);
-    const cached = phoneticTextCache.get(key);
-    if (cached !== void 0)
-      return cached;
-    const result = applyPhoneticPatterns(text, enableRomaji);
-    if (phoneticTextCache.size >= PHONETIC_CACHE_MAX) {
-      const firstKey = phoneticTextCache.keys().next().value;
-      if (firstKey !== void 0)
-        phoneticTextCache.delete(firstKey);
-    }
-    phoneticTextCache.set(key, result);
-    return result;
-  }
-  var JAPANESE_CHAR_REGEX, JAPANESE_ROMAJI_REGEX, JAPANESE_FURIGANA_REGEX, KOREAN_ROMAJA_REGEX, phoneticTextCache, PHONETIC_CACHE_MAX;
-  var init_phoneticPatterns = __esm({
-    "src/utils/Lyrics/phoneticPatterns.ts"() {
-      JAPANESE_CHAR_REGEX = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/;
-      JAPANESE_ROMAJI_REGEX = /(([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)|[(\uFF08]([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)[)\uFF09])(?:{|\uFF5B)([^}\uFF5D]+)(?:}|\uFF5D)/g;
-      JAPANESE_FURIGANA_REGEX = /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^}]+)}/g;
-      KOREAN_ROMAJA_REGEX = /((?:\([0-9\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)(?:[a-zA-Z]*)[?.!,"']?){([^}]+)}/g;
-      phoneticTextCache = /* @__PURE__ */ new Map();
-      PHONETIC_CACHE_MAX = 100;
-    }
-  });
-
-  // src/utils/Lyrics/Applyer/Utils/decorateLine.ts
-  function processLinePhonetics(line, data) {
-    if (isJapaneseText(line.Text)) {
-      if (!data.Info && (!storage_default.get("disable_romaji_toggle_notification") || storage_default.get("disable_romaji_toggle_notification") === "false")) {
-        data.Info = "Toggle between Romaji or Furigana in settings. Disable this notification there as well.";
-      }
-      line.Text = applyPhoneticPatterns(line.Text, storage_default.get("enable_romaji") === "true");
-    } else {
-      line.Text = applyPhoneticPatterns(line.Text, false);
-    }
-  }
-  function decorateLineElement(lineElem, mainTextContainer, line, rawText) {
-    const hasDistinctTranslation = !!line.Translation && line.Translation.trim() !== "" && (!rawText || line.Translation.trim() !== rawText.trim());
-    if (hasDistinctTranslation) {
-      const translationElem = document.createElement("div");
-      translationElem.classList.add("translation");
-      translationElem.textContent = line.Translation;
-      mainTextContainer.appendChild(translationElem);
-    }
-    if (isRtl_default(line.Text) && !lineElem.classList.contains("rtl")) {
-      lineElem.classList.add("rtl");
-    }
-    if (ArabicPersianRegex.test(line.Text)) {
-      lineElem.setAttribute("font", "Vazirmatn");
-    }
-  }
-  var init_decorateLine = __esm({
-    "src/utils/Lyrics/Applyer/Utils/decorateLine.ts"() {
-      init_Addons();
-      init_isRtl();
-      init_storage();
-      init_phoneticPatterns();
-    }
-  });
-
-  // src/utils/Lyrics/Applyer/Static.ts
-  function ApplyStaticLyrics(data) {
-    if (!Defaults_default.LyricsContainerExists)
-      return;
-    const LyricsContainer = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
-    );
-    LyricsContainer.setAttribute("data-lyrics-type", "Static");
-    ClearLyricsContentArrays();
-    ClearScrollSimplebar();
-    TOP_ApplyLyricsSpacer(LyricsContainer);
-    const fragment = document.createDocumentFragment();
-    data.Lines.forEach((line, index) => {
-      const lineElem = document.createElement("div");
-      processLinePhonetics(line, data);
-      const mainTextContainer = document.createElement("span");
-      mainTextContainer.classList.add("main-lyrics-text");
-      if (line.Text?.includes("[DEF=font_size:small]")) {
-        lineElem.style.fontSize = "35px";
-        mainTextContainer.appendChild(
-          createRubyFragment(line.Text.replace("[DEF=font_size:small]", ""))
-        );
-      } else {
-        mainTextContainer.appendChild(createRubyFragment(line.Text));
-      }
-      lineElem.appendChild(mainTextContainer);
-      decorateLineElement(lineElem, mainTextContainer, line, data.Raw?.[index]);
-      lineElem.classList.add("line", "static");
-      LyricsObject.Types.Static.Lines.push({
-        HTMLElement: lineElem
-      });
-      fragment.appendChild(lineElem);
-    });
-    LyricsContainer.appendChild(fragment);
-    ApplyInfo(data);
-    ApplyLyricsCredits(data);
-    BOTTOM_ApplyLyricsSpacer(LyricsContainer);
-    if (ScrollSimplebar)
-      RecalculateScrollSimplebar();
-    else
-      MountScrollSimplebar();
-    const LyricsStylingContainer = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .LyricsContent .simplebar-content"
-    );
-    if (data.offline) {
-      LyricsStylingContainer.classList.add("offline");
-    }
-    removeAllStyles(LyricsStylingContainer);
-    if (data.classes) {
-      LyricsStylingContainer.className = data.classes;
-    }
-    if (data.styles) {
-      applyStyles(LyricsStylingContainer, data.styles);
-    }
-  }
-  var init_Static = __esm({
-    "src/utils/Lyrics/Applyer/Static.ts"() {
-      init_Addons();
-      init_Defaults();
-      init_Styles();
-      init_ScrollSimplebar();
-      init_lyrics();
-      init_ApplyLyricsCredits();
-      init_ApplyInfo();
-      init_sanitize();
-      init_decorateLine();
-    }
-  });
-
-  // src/utils/Lyrics/ConvertTime.ts
-  function ConvertTime(time) {
-    return time * 1e3;
-  }
-  var init_ConvertTime = __esm({
-    "src/utils/Lyrics/ConvertTime.ts"() {
-    }
-  });
-
-  // src/utils/Lyrics/Applyer/Utils/createMusicalLine.ts
-  function createDotGroup(startTime, endTime) {
-    const dotGroup = document.createElement("div");
-    dotGroup.classList.add("dotGroup");
-    const totalTime = endTime - startTime;
-    const dotTime = totalTime / 3;
-    for (let i = 0; i < 3; i++) {
-      const dot = document.createElement("span");
-      dot.classList.add("word", "dot");
-      dot.textContent = NOTE_GLYPHS[i % NOTE_GLYPHS.length];
-      const target = LyricsObject.Types.Line.Lines;
-      const idx = target.length - 1;
-      if (idx >= 0 && target[idx]?.Syllables?.Lead) {
-        target[idx].Syllables.Lead.push({
-          HTMLElement: dot,
-          StartTime: startTime + dotTime * i,
-          EndTime: i === 2 ? endTime - 400 : startTime + dotTime * (i + 1),
-          TotalTime: dotTime,
-          Dot: true
-        });
-      }
-      dotGroup.appendChild(dot);
-    }
-    return dotGroup;
-  }
-  function registerMusicalLine(startMs, endMs) {
-    const line = document.createElement("div");
-    line.classList.add("line", "musical-line");
-    LyricsObject.Types.Line.Lines.push({
-      HTMLElement: line,
-      StartTime: startMs,
-      EndTime: endMs,
-      TotalTime: endMs - startMs,
-      DotLine: true
-    });
-    SetWordArrayInCurentLine_LINE_SYNCED();
-    return line;
-  }
-  function createMusicalLineMs(startMs, endMs, oppositeAligned) {
-    const line = registerMusicalLine(startMs, endMs);
-    if (oppositeAligned)
-      line.classList.add("OppositeAligned");
-    const dots = createDotGroup(startMs, endMs);
-    line.appendChild(dots);
-    return line;
-  }
-  var NOTE_GLYPHS;
-  var init_createMusicalLine = __esm({
-    "src/utils/Lyrics/Applyer/Utils/createMusicalLine.ts"() {
-      init_ConvertTime();
-      init_lyrics();
-      NOTE_GLYPHS = ["\u266A", "\u266B", "\u2669"];
-    }
-  });
-
-  // src/utils/Lyrics/Applyer/Synced/Line.ts
-  function ApplyLineLyrics(data) {
-    if (!Defaults_default.LyricsContainerExists)
-      return;
-    const LyricsContainer = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
-    );
-    if (!LyricsContainer) {
-      console.error("Lyrics container not found");
-      return;
-    }
-    LyricsContainer.setAttribute("data-lyrics-type", "Line");
-    ClearLyricsContentArrays();
-    ClearScrollSimplebar();
-    TOP_ApplyLyricsSpacer(LyricsContainer);
-    const fragment = document.createDocumentFragment();
-    const convertStartTime = ConvertTime(data.StartTime);
-    if (data.StartTime >= lyricsBetweenShow) {
-      const musicalLine = createMusicalLineMs(
-        0,
-        convertStartTime,
-        !!data.Content[0]?.OppositeAligned
-      );
-      fragment.appendChild(musicalLine);
-    }
-    data.Content.forEach((line, index, arr) => {
-      const lineElem = document.createElement("div");
-      processLinePhonetics(line, data);
-      const mainTextContainer = document.createElement("span");
-      mainTextContainer.classList.add("main-lyrics-text");
-      mainTextContainer.classList.add("line");
-      mainTextContainer.appendChild(createRubyFragment(line.Text));
-      lineElem.appendChild(mainTextContainer);
-      decorateLineElement(lineElem, mainTextContainer, line, data.Raw?.[index]);
-      const startTime = ConvertTime(line.StartTime);
-      const endTime = ConvertTime(line.EndTime);
-      LyricsObject.Types.Line.Lines.push({
-        HTMLElement: mainTextContainer,
-        StartTime: startTime,
-        EndTime: endTime,
-        TotalTime: endTime - startTime
-      });
-      if (line.OppositeAligned) {
-        lineElem.classList.add("OppositeAligned");
-      }
-      fragment.appendChild(lineElem);
-      const nextLine = arr[index + 1];
-      const hasMusicalBreak = nextLine && nextLine.StartTime - line.EndTime >= lyricsBetweenShow;
-      if (hasMusicalBreak) {
-        const nextStartTime = ConvertTime(nextLine.StartTime);
-        const curEndTime = endTime;
-        const musicalLine = createMusicalLineMs(
-          curEndTime,
-          nextStartTime,
-          !!nextLine.OppositeAligned
-        );
-        fragment.appendChild(musicalLine);
-      }
-    });
-    LyricsContainer.appendChild(fragment);
-    ApplyInfo(data);
-    ApplyLyricsCredits(data);
-    BOTTOM_ApplyLyricsSpacer(LyricsContainer);
-    if (ScrollSimplebar) {
-      RecalculateScrollSimplebar();
-    } else {
-      MountScrollSimplebar();
-    }
-    const LyricsStylingContainer = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .LyricsContent .simplebar-content"
-    );
-    if (LyricsStylingContainer) {
-      removeAllStyles(LyricsStylingContainer);
-      if (data.classes) {
-        LyricsStylingContainer.className = data.classes;
-      }
-      if (data.styles) {
-        applyStyles(LyricsStylingContainer, data.styles);
-      }
-    }
-  }
-  var init_Line = __esm({
-    "src/utils/Lyrics/Applyer/Synced/Line.ts"() {
-      init_Addons();
-      init_Defaults();
-      init_Styles();
-      init_ScrollSimplebar();
-      init_ConvertTime();
-      init_lyrics();
-      init_ApplyLyricsCredits();
-      init_ApplyInfo();
-      init_createMusicalLine();
-      init_sanitize();
-      init_decorateLine();
-    }
-  });
-
   // src/constants/PageViewSelectors.ts
   var PageViewSelectors;
   var init_PageViewSelectors = __esm({
@@ -9669,276 +9253,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         NowBar: "#SpicyLyricsPage .NowBar",
         NotificationContainer: "#SpicyLyricsPage .NotificationContainer"
       };
-    }
-  });
-
-  // src/utils/Lyrics/cache.ts
-  function trackLyricsCacheKey(trackId) {
-    const idx = lyricsCacheKeyOrder.indexOf(trackId);
-    if (idx !== -1)
-      lyricsCacheKeyOrder.splice(idx, 1);
-    lyricsCacheKeyOrder.push(trackId);
-    if (lyricsCacheKeyOrder.length > MAX_LYRICS_CACHE_ENTRIES) {
-      const oldest = lyricsCacheKeyOrder.shift();
-      if (oldest) {
-        lyricsCache.remove(oldest).catch(() => {
-        });
-      }
-    }
-  }
-  async function cacheLyrics(trackId, lyricsJson) {
-    if (!lyricsCache)
-      return;
-    const expiresAt = new Date().getTime() + CACHE_EXPIRATION_TIME;
-    try {
-      await lyricsCache.set(trackId, {
-        ...lyricsJson,
-        expiresAt
-      });
-      trackLyricsCacheKey(trackId);
-    } catch (error) {
-      console.error("Error saving lyrics to cache:", error);
-    }
-  }
-  async function getLyricsFromCache(trackId) {
-    if (!lyricsCache)
-      return null;
-    try {
-      const lyricsFromCache = await lyricsCache.get(trackId);
-      if (!lyricsFromCache)
-        return null;
-      if (lyricsFromCache.expiresAt < new Date().getTime()) {
-        await lyricsCache.remove(trackId);
-        return null;
-      }
-      if (lyricsFromCache.status === "NO_LYRICS") {
-        return { status: "NO_LYRICS", id: trackId };
-      }
-      return { ...lyricsFromCache, fromCache: true };
-    } catch (error) {
-      console.log("[Amai Lyrics] Error parsing saved lyrics data:", error);
-      return null;
-    }
-  }
-  async function getLyricsFromLocalStorage(trackId) {
-    const savedLyricsData = storage_default.get("currentLyricsData")?.toString();
-    if (!savedLyricsData)
-      return null;
-    try {
-      const parsed = JSON.parse(savedLyricsData);
-      if (parsed?.status === "NO_LYRICS") {
-        if (!parsed.id || parsed.id === trackId) {
-          return { status: "NO_LYRICS", id: parsed.id ?? trackId };
-        }
-        return null;
-      }
-      if (parsed?.id === trackId) {
-        return parsed;
-      }
-    } catch (error) {
-      if (savedLyricsData.includes("NO_LYRICS")) {
-        try {
-          const legacySplit = savedLyricsData.split(":");
-          const legacyId = legacySplit[1]?.replace(/[^a-zA-Z0-9]/g, "");
-          if (!legacyId || legacyId === trackId) {
-            return { status: "NO_LYRICS", id: legacyId ?? trackId };
-          }
-        } catch {
-        }
-      }
-      console.error("Error parsing saved lyrics data:", error);
-    }
-    return null;
-  }
-  async function removeLyricsFromCache(trackId) {
-    if (!lyricsCache)
-      return;
-    try {
-      await lyricsCache.remove(trackId);
-    } catch (error) {
-      console.error("Error removing lyrics from cache:", error);
-    }
-  }
-  var CACHE_EXPIRATION_TIME, lyricsCache, MAX_LYRICS_CACHE_ENTRIES, windowCacheRef, lyricsCacheKeyOrder;
-  var init_cache = __esm({
-    "src/utils/Lyrics/cache.ts"() {
-      init_SpikyCache();
-      init_storage();
-      CACHE_EXPIRATION_TIME = 1e3 * 60 * 60 * 24 * 7;
-      lyricsCache = new SpikyCache({
-        name: "Cache_Lyrics"
-      });
-      MAX_LYRICS_CACHE_ENTRIES = 200;
-      windowCacheRef = window;
-      lyricsCacheKeyOrder = windowCacheRef.__amaiLyricsCacheKeys ?? [];
-      windowCacheRef.__amaiLyricsCacheKeys = lyricsCacheKeyOrder;
-    }
-  });
-
-  // src/components/Pages/pageButtons.ts
-  function setupActionButtons(maid2) {
-    setupRefreshButton(maid2);
-    setupWatchMusicVideoButton(maid2);
-    setupSettingsButton(maid2);
-  }
-  function setupRefreshButton(maid2) {
-    const refreshButton = document.querySelector(
-      PageViewSelectors.RefreshLyricsButton
-    );
-    if (!refreshButton)
-      return;
-    const clickHandler = async () => {
-      const currentUri = Spicetify.Player.data?.item?.uri;
-      if (!currentUri) {
-        Spicetify.showNotification("No track playing", false, 1e3);
-        return;
-      }
-      await new Promise((resolve) => {
-        import_fastdom3.default.mutate(() => {
-          refreshButton.classList.add("hidden");
-          resolve();
-        });
-      });
-      try {
-        const trackId = currentUri.split(":")[2];
-        removeLyricsFromCache(trackId);
-        storage_default.set("currentLyricsData", null);
-        const lyrics = await fetchLyrics(currentUri, true);
-        ApplyLyrics(lyrics);
-      } catch (error) {
-        console.error("Error refreshing lyrics:", error);
-        Spicetify.showNotification("Error refreshing lyrics", false, 2e3);
-      }
-    };
-    refreshButton.addEventListener("click", clickHandler);
-    maid2?.Give(() => refreshButton.removeEventListener("click", clickHandler));
-  }
-  function setupWatchMusicVideoButton(maid2) {
-    const watchMusicVideoButton = document.querySelector(
-      PageViewSelectors.WatchMusicVideoButton
-    );
-    if (!watchMusicVideoButton)
-      return;
-    const clickHandler = async () => {
-      const songName = await SpotifyPlayer.GetSongName();
-      const artists = await SpotifyPlayer.GetArtists();
-      if (!songName || !artists || artists.length === 0) {
-        Spicetify.showNotification("No track playing or artist information available", false, 1e3);
-        return;
-      }
-      const artistNames = SpotifyPlayer.JoinArtists(artists);
-      const searchQuery = encodeURIComponent(`${artistNames} ${songName} music video`);
-      const youtubeUrl = `https://www.youtube.com/results?search_query=${searchQuery}`;
-      window.open(youtubeUrl, "_blank");
-    };
-    watchMusicVideoButton.addEventListener("click", clickHandler);
-    maid2?.Give(() => watchMusicVideoButton.removeEventListener("click", clickHandler));
-  }
-  function setupSettingsButton(maid2) {
-    const settingsButton = document.querySelector(
-      PageViewSelectors.SettingsButton
-    );
-    if (!settingsButton)
-      return;
-    const clickHandler = () => {
-      Spicetify.Platform.History.push("/preferences");
-    };
-    settingsButton.addEventListener("click", clickHandler);
-    maid2?.Give(() => settingsButton.removeEventListener("click", clickHandler));
-  }
-  function showRefreshButton() {
-    const refreshButton = document.querySelector(
-      PageViewSelectors.RefreshLyricsButton
-    );
-    if (refreshButton) {
-      new Promise((resolve) => {
-        import_fastdom3.default.mutate(() => {
-          refreshButton.classList.remove("hidden");
-          resolve();
-        });
-      });
-    }
-  }
-  function hideRefreshButton() {
-    const refreshButton = document.querySelector(
-      PageViewSelectors.RefreshLyricsButton
-    );
-    if (refreshButton) {
-      new Promise((resolve) => {
-        import_fastdom3.default.mutate(() => {
-          refreshButton.classList.add("hidden");
-          resolve();
-        });
-      });
-    }
-  }
-  var import_fastdom3;
-  var init_pageButtons = __esm({
-    "src/components/Pages/pageButtons.ts"() {
-      init_PageViewSelectors();
-      import_fastdom3 = __toESM(require_fastdom());
-      init_storage();
-      init_cache();
-      init_fetchLyrics();
-      init_Applyer();
-      init_SpotifyPlayer();
-    }
-  });
-
-  // src/utils/Lyrics/Global/Applyer.ts
-  var Applyer_exports = {};
-  __export(Applyer_exports, {
-    default: () => ApplyLyrics
-  });
-  function ApplyLyrics(lyrics) {
-    if (!document.querySelector("#SpicyLyricsPage"))
-      return;
-    const lyricsContent = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
-    );
-    if (lyricsContent) {
-      const translationFontSize = storage_default.get("translation_font_size") || Defaults_default.translationFontSize;
-      lyricsContent.style.setProperty("--TranslationFontSize", translationFontSize);
-      const defaultLyricsSize = storage_default.get("default_lyrics_size");
-      if (defaultLyricsSize) {
-        lyricsContent.style.setProperty("--DefaultLyricsSize", defaultLyricsSize + "rem");
-      }
-    }
-    setBlurringLastLine(null);
-    if (!lyrics || isNoLyricsResult(lyrics) || lyrics.status === "NO_LYRICS")
-      return;
-    const typedLyrics = lyrics;
-    if (!typedLyrics?.id)
-      return;
-    const currentTrackId = Spicetify.Player.data?.item?.uri?.split(":")[2];
-    if (currentTrackId !== typedLyrics?.id) {
-      const uri = Spicetify.Player.data?.item?.uri;
-      if (uri) {
-        fetchLyrics(uri).then(ApplyLyrics).catch((e) => console.error("[Amai Lyrics] Failed to re-fetch mismatched lyrics:", e));
-      }
-      return;
-    }
-    const lyricsHandlers = {
-      Line: ApplyLineLyrics,
-      Static: ApplyStaticLyrics
-    };
-    const applyHandler = lyricsHandlers[typedLyrics.Type];
-    if (applyHandler) {
-      applyHandler(typedLyrics);
-      showRefreshButton();
-      addLinesEvListener();
-    }
-  }
-  var init_Applyer = __esm({
-    "src/utils/Lyrics/Global/Applyer.ts"() {
-      init_LyricsAnimator();
-      init_Static();
-      init_Line();
-      init_fetchLyrics();
-      init_pageButtons();
-      init_lyrics();
-      init_storage();
-      init_Defaults();
     }
   });
 
@@ -10019,7 +9333,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const onloadHandler = () => {
       if (!imageElement.isConnected)
         return;
-      import_fastdom4.default.mutate(() => {
+      import_fastdom3.default.mutate(() => {
         if (!imageElement.isConnected)
           return;
         imageElement.classList.add("loaded");
@@ -10030,7 +9344,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         highResImage.onload = () => {
           if (!imageElement.isConnected)
             return;
-          import_fastdom4.default.mutate(() => {
+          import_fastdom3.default.mutate(() => {
             if (!imageElement.isConnected)
               return;
             if (imageElement.src !== highResUrl) {
@@ -10066,7 +9380,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const mediaImage = document.querySelector(PageViewSelectors.MediaImage);
     if (mediaImage) {
       const mutationPromise = new Promise((resolve) => {
-        import_fastdom4.default.mutate(() => {
+        import_fastdom3.default.mutate(() => {
           if (mediaImage.classList.contains("loaded")) {
             mediaImage.classList.remove("loaded");
           }
@@ -10084,7 +9398,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const artistsElem = document.querySelector(PageViewSelectors.Artists);
     const joinedArtists = SpotifyPlayer.JoinArtists(artists);
     return new Promise((resolve) => {
-      import_fastdom4.default.mutate(() => {
+      import_fastdom3.default.mutate(() => {
         if (songNameElem && songNameElem.textContent !== songName) {
           songNameElem.textContent = songName;
         }
@@ -10102,7 +9416,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         SpotifyPlayer.Artwork.Get("xl")
       ]);
       return new Promise((resolve) => {
-        import_fastdom4.default.mutate(() => {
+        import_fastdom3.default.mutate(() => {
           if (standardUrl && mediaImage.src !== standardUrl) {
             mediaImage.src = standardUrl;
           }
@@ -10116,11 +9430,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       console.error("Failed to load artwork:", error);
     }
   }
-  var import_fastdom4;
+  var import_fastdom3;
   var init_pageContent = __esm({
     "src/components/Pages/pageContent.ts"() {
       init_SpotifyPlayer();
-      import_fastdom4 = __toESM(require_fastdom());
+      import_fastdom3 = __toESM(require_fastdom());
       init_PageViewSelectors();
     }
   });
@@ -10301,7 +9615,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (!elem)
       return;
     await new Promise((resolve) => {
-      import_fastdom5.default.mutate(() => {
+      import_fastdom4.default.mutate(() => {
         if (ReAppend)
           elem.innerHTML = "";
         elem.innerHTML = `
@@ -10315,7 +9629,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       const headerElem = document.querySelector(PageViewSelectors.Header);
       if (headerElem) {
         await new Promise((resolve) => {
-          import_fastdom5.default.mutate(() => {
+          import_fastdom4.default.mutate(() => {
             TransferElement(elem, headerElem, 0);
             resolve();
           });
@@ -10334,7 +9648,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         const contentBoxElem = document.querySelector(PageViewSelectors.ContentBox);
         if (contentBoxElem) {
           await new Promise((resolve) => {
-            import_fastdom5.default.mutate(() => {
+            import_fastdom4.default.mutate(() => {
               TransferElement(elem, contentBoxElem);
               resolve();
             });
@@ -10371,7 +9685,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       maid2?.Give(() => fullscreenBtn.removeEventListener("click", fullscreenClickHandler));
     }
   }
-  var import_fastdom5, Tooltips;
+  var import_fastdom4, Tooltips;
   var init_pageControls = __esm({
     "src/components/Pages/pageControls.ts"() {
       init_PageViewSelectors();
@@ -10379,13 +9693,276 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_Fullscreen();
       init_TransferElement();
       init_Session();
-      import_fastdom5 = __toESM(require_fastdom());
+      import_fastdom4 = __toESM(require_fastdom());
       Tooltips = {
         Close: null,
         Kofi: null,
         FullscreenToggle: null,
         LyricsToggle: null
       };
+    }
+  });
+
+  // src/utils/Lyrics/cache.ts
+  function trackLyricsCacheKey(trackId) {
+    const idx = lyricsCacheKeyOrder.indexOf(trackId);
+    if (idx !== -1)
+      lyricsCacheKeyOrder.splice(idx, 1);
+    lyricsCacheKeyOrder.push(trackId);
+    if (lyricsCacheKeyOrder.length > MAX_LYRICS_CACHE_ENTRIES) {
+      const oldest = lyricsCacheKeyOrder.shift();
+      if (oldest) {
+        lyricsCache.remove(oldest).catch(() => {
+        });
+      }
+    }
+  }
+  async function cacheLyrics(trackId, lyricsJson) {
+    if (!lyricsCache)
+      return;
+    const expiresAt = new Date().getTime() + CACHE_EXPIRATION_TIME;
+    try {
+      await lyricsCache.set(trackId, {
+        ...lyricsJson,
+        expiresAt
+      });
+      trackLyricsCacheKey(trackId);
+    } catch (error) {
+      console.error("Error saving lyrics to cache:", error);
+    }
+  }
+  async function getLyricsFromCache(trackId) {
+    if (!lyricsCache)
+      return null;
+    try {
+      const lyricsFromCache = await lyricsCache.get(trackId);
+      if (!lyricsFromCache)
+        return null;
+      if (lyricsFromCache.expiresAt < new Date().getTime()) {
+        await lyricsCache.remove(trackId);
+        return null;
+      }
+      if (lyricsFromCache.status === "NO_LYRICS") {
+        return { status: "NO_LYRICS", id: trackId };
+      }
+      return { ...lyricsFromCache, fromCache: true };
+    } catch (error) {
+      console.log("[Amai Lyrics] Error parsing saved lyrics data:", error);
+      return null;
+    }
+  }
+  async function getLyricsFromLocalStorage(trackId) {
+    const savedLyricsData = storage_default.get("currentLyricsData")?.toString();
+    if (!savedLyricsData)
+      return null;
+    try {
+      const parsed = JSON.parse(savedLyricsData);
+      if (parsed?.status === "NO_LYRICS") {
+        if (!parsed.id || parsed.id === trackId) {
+          return { status: "NO_LYRICS", id: parsed.id ?? trackId };
+        }
+        return null;
+      }
+      if (parsed?.id === trackId) {
+        return parsed;
+      }
+    } catch (error) {
+      if (savedLyricsData.includes("NO_LYRICS")) {
+        try {
+          const legacySplit = savedLyricsData.split(":");
+          const legacyId = legacySplit[1]?.replace(/[^a-zA-Z0-9]/g, "");
+          if (!legacyId || legacyId === trackId) {
+            return { status: "NO_LYRICS", id: legacyId ?? trackId };
+          }
+        } catch {
+        }
+      }
+      console.error("Error parsing saved lyrics data:", error);
+    }
+    return null;
+  }
+  async function removeLyricsFromCache(trackId) {
+    if (!lyricsCache)
+      return;
+    try {
+      await lyricsCache.remove(trackId);
+    } catch (error) {
+      console.error("Error removing lyrics from cache:", error);
+    }
+  }
+  var CACHE_EXPIRATION_TIME, lyricsCache, MAX_LYRICS_CACHE_ENTRIES, windowCacheRef, lyricsCacheKeyOrder;
+  var init_cache = __esm({
+    "src/utils/Lyrics/cache.ts"() {
+      init_SpikyCache();
+      init_storage();
+      CACHE_EXPIRATION_TIME = 1e3 * 60 * 60 * 24 * 7;
+      lyricsCache = new SpikyCache({
+        name: "Cache_Lyrics"
+      });
+      MAX_LYRICS_CACHE_ENTRIES = 200;
+      windowCacheRef = window;
+      lyricsCacheKeyOrder = windowCacheRef.__amaiLyricsCacheKeys ?? [];
+      windowCacheRef.__amaiLyricsCacheKeys = lyricsCacheKeyOrder;
+    }
+  });
+
+  // src/utils/externalNavigation.ts
+  function resolveTrustedExternalUrl(rawUrl) {
+    let parsed;
+    try {
+      parsed = new URL(rawUrl);
+    } catch {
+      return null;
+    }
+    if (parsed.protocol !== "https:")
+      return null;
+    if (!TRUSTED_EXTERNAL_HOSTS.has(parsed.hostname))
+      return null;
+    return parsed.toString();
+  }
+  function buildYouTubeSearchUrl(query) {
+    try {
+      const url = new URL("https://www.youtube.com/results");
+      url.searchParams.set("search_query", query);
+      return resolveTrustedExternalUrl(url.toString());
+    } catch {
+      return null;
+    }
+  }
+  function openTrustedExternalUrl(rawUrl, target = "_blank") {
+    const url = resolveTrustedExternalUrl(rawUrl);
+    if (!url)
+      return false;
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    if (target === "_blank") {
+      anchor.target = "_blank";
+      anchor.rel = "noopener noreferrer";
+    }
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    return true;
+  }
+  function openYouTubeSearch(query) {
+    const url = buildYouTubeSearchUrl(query);
+    if (!url)
+      return false;
+    return openTrustedExternalUrl(url, "_blank");
+  }
+  var TRUSTED_EXTERNAL_HOSTS;
+  var init_externalNavigation = __esm({
+    "src/utils/externalNavigation.ts"() {
+      TRUSTED_EXTERNAL_HOSTS = /* @__PURE__ */ new Set(["aistudio.google.com", "github.com", "www.youtube.com"]);
+    }
+  });
+
+  // src/components/Pages/pageButtons.ts
+  function setupActionButtons(maid2) {
+    setupRefreshButton(maid2);
+    setupWatchMusicVideoButton(maid2);
+    setupSettingsButton(maid2);
+  }
+  function setupRefreshButton(maid2) {
+    const refreshButton = document.querySelector(
+      PageViewSelectors.RefreshLyricsButton
+    );
+    if (!refreshButton)
+      return;
+    const clickHandler = async () => {
+      const currentUri = Spicetify.Player.data?.item?.uri;
+      if (!currentUri) {
+        Spicetify.showNotification("No track playing", false, 1e3);
+        return;
+      }
+      await new Promise((resolve) => {
+        import_fastdom5.default.mutate(() => {
+          refreshButton.classList.add("hidden");
+          resolve();
+        });
+      });
+      try {
+        const trackId = currentUri.split(":")[2];
+        removeLyricsFromCache(trackId);
+        storage_default.set("currentLyricsData", null);
+        await loadAndApplyLyrics(currentUri, { flush: true });
+      } catch (error) {
+        console.error("Error refreshing lyrics:", error);
+        Spicetify.showNotification("Error refreshing lyrics", false, 2e3);
+      }
+    };
+    refreshButton.addEventListener("click", clickHandler);
+    maid2?.Give(() => refreshButton.removeEventListener("click", clickHandler));
+  }
+  function setupWatchMusicVideoButton(maid2) {
+    const watchMusicVideoButton = document.querySelector(
+      PageViewSelectors.WatchMusicVideoButton
+    );
+    if (!watchMusicVideoButton)
+      return;
+    const clickHandler = async () => {
+      const songName = await SpotifyPlayer.GetSongName();
+      const artists = await SpotifyPlayer.GetArtists();
+      if (!songName || !artists || artists.length === 0) {
+        Spicetify.showNotification("No track playing or artist information available", false, 1e3);
+        return;
+      }
+      const artistNames = SpotifyPlayer.JoinArtists(artists);
+      if (!openYouTubeSearch(`${artistNames} ${songName} music video`)) {
+        Spicetify.showNotification("Unable to open YouTube search", false, 2e3);
+      }
+    };
+    watchMusicVideoButton.addEventListener("click", clickHandler);
+    maid2?.Give(() => watchMusicVideoButton.removeEventListener("click", clickHandler));
+  }
+  function setupSettingsButton(maid2) {
+    const settingsButton = document.querySelector(
+      PageViewSelectors.SettingsButton
+    );
+    if (!settingsButton)
+      return;
+    const clickHandler = () => {
+      Spicetify.Platform.History.push("/preferences");
+    };
+    settingsButton.addEventListener("click", clickHandler);
+    maid2?.Give(() => settingsButton.removeEventListener("click", clickHandler));
+  }
+  function showRefreshButton() {
+    const refreshButton = document.querySelector(
+      PageViewSelectors.RefreshLyricsButton
+    );
+    if (refreshButton) {
+      new Promise((resolve) => {
+        import_fastdom5.default.mutate(() => {
+          refreshButton.classList.remove("hidden");
+          resolve();
+        });
+      });
+    }
+  }
+  function hideRefreshButton() {
+    const refreshButton = document.querySelector(
+      PageViewSelectors.RefreshLyricsButton
+    );
+    if (refreshButton) {
+      new Promise((resolve) => {
+        import_fastdom5.default.mutate(() => {
+          refreshButton.classList.add("hidden");
+          resolve();
+        });
+      });
+    }
+  }
+  var import_fastdom5;
+  var init_pageButtons = __esm({
+    "src/components/Pages/pageButtons.ts"() {
+      init_PageViewSelectors();
+      import_fastdom5 = __toESM(require_fastdom());
+      init_storage();
+      init_cache();
+      init_fetchLyrics();
+      init_externalNavigation();
+      init_SpotifyPlayer();
     }
   });
 
@@ -10421,7 +9998,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     await PageView.UpdatePageContent();
     const currentUri = Spicetify.Player.data?.item?.uri;
     if (currentUri) {
-      fetchLyrics(currentUri).then(ApplyLyrics).catch((e) => console.error("[Amai Lyrics] PageView fetch failed:", e));
+      loadAndApplyLyrics(currentUri).catch(
+        (e) => console.error("[Amai Lyrics] PageView fetch failed:", e)
+      );
     }
     Session_OpenNowBar();
     Session_NowBar_SetSide();
@@ -10443,7 +10022,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         }
         const nowBar = document.querySelector(PageViewSelectors.NowBar);
         if (nowBar) {
-          nowBar.innerHTML = NowBarHTML;
+          nowBar.replaceChildren(document.createRange().createContextualFragment(NowBarHTML));
         }
         resolve();
       });
@@ -10488,7 +10067,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_dynamicBackground();
       init_Defaults();
       init_ScrollSimplebar();
-      init_Applyer();
       init_ui();
       init_NowBar2();
       init_Fullscreen();
@@ -33551,6 +33129,80 @@ ${JSON.stringify(lyricsOnly)}`
     }
   });
 
+  // src/utils/sanitize.ts
+  function escapeHtml(text) {
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  function sanitizeRubyHtml(html) {
+    const escaped = escapeHtml(html);
+    return escaped.split(RUBY_ROMAJA_OPEN).join('<ruby class="romaja">').split(RUBY_OPEN).join("<ruby>").split(RUBY_CLOSE).join("</ruby>").split(RT_OPEN).join("<rt>").split(RT_CLOSE).join("</rt>");
+  }
+  function createRubyFragment(html) {
+    const safe = sanitizeRubyHtml(html);
+    const tpl = document.createElement("template");
+    tpl.innerHTML = safe;
+    return tpl.content;
+  }
+  var RUBY_OPEN, RUBY_CLOSE, RUBY_ROMAJA_OPEN, RT_OPEN, RT_CLOSE;
+  var init_sanitize = __esm({
+    "src/utils/sanitize.ts"() {
+      RUBY_OPEN = "&lt;ruby&gt;";
+      RUBY_CLOSE = "&lt;/ruby&gt;";
+      RUBY_ROMAJA_OPEN = "&lt;ruby class=&quot;romaja&quot;&gt;";
+      RT_OPEN = "&lt;rt&gt;";
+      RT_CLOSE = "&lt;/rt&gt;";
+    }
+  });
+
+  // src/utils/Lyrics/phoneticPatterns.ts
+  function isJapaneseText(text) {
+    return !!text && JAPANESE_CHAR_REGEX.test(text);
+  }
+  function applyPhoneticPatterns(text, enableRomaji) {
+    if (text === void 0)
+      return void 0;
+    if (JAPANESE_CHAR_REGEX.test(text)) {
+      if (enableRomaji) {
+        return text.replace(JAPANESE_ROMAJI_REGEX, (_match, _p1, p2, p3, p4) => {
+          const base = p2 || p3;
+          return `<ruby>${base}<rt>${p4}</rt></ruby>`;
+        });
+      }
+      return text.replace(JAPANESE_FURIGANA_REGEX, "<ruby>$1<rt>$2</rt></ruby>");
+    }
+    return text.replace(KOREAN_ROMAJA_REGEX, '<ruby class="romaja">$1<rt>$2</rt></ruby>');
+  }
+  function phoneticCacheKey(text, enableRomaji) {
+    return `${enableRomaji ? "r" : "f"}\0${text}`;
+  }
+  function processPhoneticText(text, enableRomaji) {
+    if (text === void 0)
+      return void 0;
+    const key = phoneticCacheKey(text, enableRomaji);
+    const cached = phoneticTextCache.get(key);
+    if (cached !== void 0)
+      return cached;
+    const result = applyPhoneticPatterns(text, enableRomaji);
+    if (phoneticTextCache.size >= PHONETIC_CACHE_MAX) {
+      const firstKey = phoneticTextCache.keys().next().value;
+      if (firstKey !== void 0)
+        phoneticTextCache.delete(firstKey);
+    }
+    phoneticTextCache.set(key, result);
+    return result;
+  }
+  var JAPANESE_CHAR_REGEX, JAPANESE_ROMAJI_REGEX, JAPANESE_FURIGANA_REGEX, KOREAN_ROMAJA_REGEX, phoneticTextCache, PHONETIC_CACHE_MAX;
+  var init_phoneticPatterns = __esm({
+    "src/utils/Lyrics/phoneticPatterns.ts"() {
+      JAPANESE_CHAR_REGEX = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/;
+      JAPANESE_ROMAJI_REGEX = /(([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)|[(\uFF08]([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)[)\uFF09])(?:{|\uFF5B)([^}\uFF5D]+)(?:}|\uFF5D)/g;
+      JAPANESE_FURIGANA_REGEX = /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^}]+)}/g;
+      KOREAN_ROMAJA_REGEX = /((?:\([0-9\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)(?:[a-zA-Z]*)[?.!,"']?){([^}]+)}/g;
+      phoneticTextCache = /* @__PURE__ */ new Map();
+      PHONETIC_CACHE_MAX = 100;
+    }
+  });
+
   // src/utils/Lyrics/translationUpdater.ts
   function applyScrollReanchor(scrollEl, activeLine, activeLineTopBefore, fallbackScrollTop) {
     if (!scrollEl)
@@ -33673,8 +33325,62 @@ ${JSON.stringify(lyricsOnly)}`
     }
   });
 
+  // src/utils/Lyrics/publish.ts
+  function liveLyricsUri() {
+    try {
+      const uri = Spicetify?.Player?.data?.item?.uri;
+      return typeof uri === "string" && uri.includes(":") ? uri : null;
+    } catch {
+      return null;
+    }
+  }
+  function beginLyricsRequest(uri) {
+    sharedRequest.token += 1;
+    sharedRequest.uri = uri;
+    return sharedRequest.token;
+  }
+  function isCurrentLyricsRequest(token) {
+    if (sharedRequest.token !== token)
+      return false;
+    return liveLyricsUri() === sharedRequest.uri;
+  }
+  function publishInitialLyrics(token, data) {
+    if (!isCurrentLyricsRequest(token))
+      return false;
+    Defaults_default.CurrentLyricsType = data.Type;
+    const serialized = JSON.stringify(data);
+    storage_default.set("currentLyricsData", serialized);
+    EventManager_default.evoke("lyrics:data-updated", serialized);
+    HideLoaderContainer();
+    ClearLyricsPageContainer();
+    return true;
+  }
+  function publishEnhancedLyrics(token, trackId, data) {
+    if (!isCurrentLyricsRequest(token))
+      return false;
+    if (liveLyricsUri()?.split(":")[2] !== trackId)
+      return false;
+    updateDisplayedLyricsWithTranslations(data);
+    const serialized = JSON.stringify(data);
+    storage_default.set("currentLyricsData", serialized);
+    EventManager_default.evoke("lyrics:data-updated", serialized);
+    return true;
+  }
+  var windowRef8, sharedRequest;
+  var init_publish = __esm({
+    "src/utils/Lyrics/publish.ts"() {
+      init_storage();
+      init_Defaults();
+      init_EventManager();
+      init_ui();
+      init_translationUpdater();
+      windowRef8 = window;
+      sharedRequest = windowRef8.__amaiLyricsRequest ?? (windowRef8.__amaiLyricsRequest = { token: 0, uri: "" });
+    }
+  });
+
   // src/utils/Lyrics/processing.ts
-  async function processAndEnhanceLyrics(trackId, lyricsJson, isCurrent = true) {
+  async function processAndEnhanceLyrics(trackId, lyricsJson, token) {
     const id = lyricsJson.id || trackId;
     const type = lyricsJson.Type || "Static";
     let initialLyricsData;
@@ -33705,17 +33411,17 @@ ${JSON.stringify(lyricsOnly)}`
     const { hasKanji, hasKorean } = detectLanguages(preparedLyricsJson);
     const lyricsToDisplay = preparedLyricsJson;
     await cacheLyrics(trackId, { ...lyricsToDisplay, id });
-    if (Spicetify.Player.data?.item?.uri?.split(":")[2] === trackId) {
-      Defaults_default.CurrentLyricsType = lyricsToDisplay.Type;
-      const serialized = JSON.stringify(lyricsToDisplay);
-      storage_default.set("currentLyricsData", serialized);
-      EventManager_default.evoke("lyrics:data-updated", serialized);
-      HideLoaderContainer();
-      ClearLyricsPageContainer();
-    }
-    if (isCurrent) {
+    publishInitialLyrics(token, { ...lyricsToDisplay, id });
+    if (isCurrentLyricsRequest(token)) {
       const phoneticLyricsJson = structuredClone(preparedLyricsJson);
-      processLyricsEnhancementsAsync(trackId, phoneticLyricsJson, hasKanji, hasKorean, lyricsOnly);
+      void processLyricsEnhancementsAsync(
+        token,
+        trackId,
+        phoneticLyricsJson,
+        hasKanji,
+        hasKorean,
+        lyricsOnly
+      );
     }
     return {
       ...lyricsToDisplay,
@@ -33723,7 +33429,7 @@ ${JSON.stringify(lyricsOnly)}`
       fromCache: false
     };
   }
-  async function processLyricsEnhancementsAsync(trackId, lyricsJson, hasKanji, hasKorean, lyricsOnly) {
+  async function processLyricsEnhancementsAsync(token, trackId, lyricsJson, hasKanji, hasKorean, lyricsOnly) {
     try {
       ShowProcessingIndicator();
       const [processedLyricsJson, translations] = await Promise.all([
@@ -33732,12 +33438,7 @@ ${JSON.stringify(lyricsOnly)}`
       ]);
       attachTranslations(processedLyricsJson, translations);
       await cacheLyrics(trackId, { ...processedLyricsJson, id: trackId });
-      if (Spicetify.Player.data?.item?.uri?.split(":")[2] === trackId) {
-        updateDisplayedLyricsWithTranslations(processedLyricsJson);
-        const serialized = JSON.stringify(processedLyricsJson);
-        storage_default.set("currentLyricsData", serialized);
-        EventManager_default.evoke("lyrics:data-updated", serialized);
-      }
+      publishEnhancedLyrics(token, trackId, { ...processedLyricsJson, id: trackId });
     } catch (error) {
       console.error("Amai Lyrics: Error processing enhancements", error);
     } finally {
@@ -33819,14 +33520,11 @@ ${JSON.stringify(lyricsOnly)}`
   var JAPANESE_REGEX2, KOREAN_REGEX, LYRICS_TIMING_OFFSET;
   var init_processing = __esm({
     "src/utils/Lyrics/processing.ts"() {
-      init_storage();
-      init_Defaults();
       init_ui();
       init_cache();
       init_ai();
       init_conversion();
-      init_EventManager();
-      init_translationUpdater();
+      init_publish();
       JAPANESE_REGEX2 = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
       KOREAN_REGEX = /[\uAC00-\uD7AF]/;
       LYRICS_TIMING_OFFSET = 0.55;
@@ -33834,7 +33532,7 @@ ${JSON.stringify(lyricsOnly)}`
   });
 
   // src/utils/Lyrics/api.ts
-  async function fetchLyricsFromAPI(trackId, flush = false) {
+  async function fetchLyricsFromAPI(trackId, flush = false, token) {
     try {
       const spotifyAccessToken = await Platform_default.GetSpotifyAccessToken();
       const { response: lyricsJson, status } = await getLyrics(
@@ -33850,8 +33548,7 @@ ${JSON.stringify(lyricsOnly)}`
       if (!isValidLyricsResponse(lyricsJson)) {
         return await noLyricsMessage(trackId);
       }
-      const isCurrent = SpotifyPlayer.GetSongId() === trackId;
-      return await processAndEnhanceLyrics(trackId, lyricsJson, isCurrent);
+      return await processAndEnhanceLyrics(trackId, lyricsJson, token);
     } catch (error) {
       console.error(
         "Error fetching lyrics:",
@@ -33893,10 +33590,399 @@ ${JSON.stringify(lyricsOnly)}`
   var init_api = __esm({
     "src/utils/Lyrics/api.ts"() {
       init_Platform();
-      init_SpotifyPlayer();
       init_Lyrics();
       init_ui();
       init_processing();
+    }
+  });
+
+  // src/utils/CSS/Styles.ts
+  function applyStyles(element, styles) {
+    if (!element) {
+      console.warn("Element not found for applying styles");
+      return false;
+    }
+    try {
+      for (const key in styles) {
+        if (Object.prototype.hasOwnProperty.call(styles, key)) {
+          element.style.setProperty(key, String(styles[key]));
+        }
+      }
+      return true;
+    } catch (error) {
+      console.error("Error applying styles:", error);
+      return false;
+    }
+  }
+  function removeAllStyles(element) {
+    if (!element) {
+      console.warn("Element not found for removing styles");
+      return false;
+    }
+    try {
+      element.removeAttribute("style");
+      return true;
+    } catch (error) {
+      console.error("Error removing styles:", error);
+      return false;
+    }
+  }
+  var init_Styles = __esm({
+    "src/utils/CSS/Styles.ts"() {
+    }
+  });
+
+  // src/utils/Lyrics/Applyer/Credits/ApplyLyricsCredits.ts
+  function ApplyLyricsCredits(data) {
+    const LyricsContainer = document.querySelector(
+      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
+    );
+    if (!data?.SongWriters)
+      return;
+    const CreditsElement = document.createElement("div");
+    CreditsElement.classList.add("Credits");
+    const SongWriters = data.SongWriters.join(", ");
+    CreditsElement.textContent = `Credits: ${SongWriters}`;
+    LyricsContainer.appendChild(CreditsElement);
+  }
+  var init_ApplyLyricsCredits = __esm({
+    "src/utils/Lyrics/Applyer/Credits/ApplyLyricsCredits.ts"() {
+    }
+  });
+
+  // src/utils/Lyrics/isRtl.ts
+  function isRtl(text) {
+    if (!text || text.length === 0)
+      return false;
+    const rtlRegex = /[\u0590-\u05FF\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB1D-\uFB4F\uFB50-\uFDFF\uFE70-\uFEFF]/;
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      if (/[\d\s,.;:?!()[\]{}"'\\/<>@#$%^&*_=+-]/.test(char)) {
+        continue;
+      }
+      return rtlRegex.test(char);
+    }
+    return false;
+  }
+  var isRtl_default;
+  var init_isRtl = __esm({
+    "src/utils/Lyrics/isRtl.ts"() {
+      isRtl_default = isRtl;
+    }
+  });
+
+  // src/utils/Lyrics/Applyer/Utils/decorateLine.ts
+  function processLinePhonetics(line, data) {
+    if (isJapaneseText(line.Text)) {
+      if (!data.Info && (!storage_default.get("disable_romaji_toggle_notification") || storage_default.get("disable_romaji_toggle_notification") === "false")) {
+        data.Info = "Toggle between Romaji or Furigana in settings. Disable this notification there as well.";
+      }
+      line.Text = applyPhoneticPatterns(line.Text, storage_default.get("enable_romaji") === "true");
+    } else {
+      line.Text = applyPhoneticPatterns(line.Text, false);
+    }
+  }
+  function decorateLineElement(lineElem, mainTextContainer, line, rawText) {
+    const hasDistinctTranslation = !!line.Translation && line.Translation.trim() !== "" && (!rawText || line.Translation.trim() !== rawText.trim());
+    if (hasDistinctTranslation) {
+      const translationElem = document.createElement("div");
+      translationElem.classList.add("translation");
+      translationElem.textContent = line.Translation;
+      mainTextContainer.appendChild(translationElem);
+    }
+    if (isRtl_default(line.Text) && !lineElem.classList.contains("rtl")) {
+      lineElem.classList.add("rtl");
+    }
+    if (ArabicPersianRegex.test(line.Text)) {
+      lineElem.setAttribute("font", "Vazirmatn");
+    }
+  }
+  var init_decorateLine = __esm({
+    "src/utils/Lyrics/Applyer/Utils/decorateLine.ts"() {
+      init_Addons();
+      init_isRtl();
+      init_storage();
+      init_phoneticPatterns();
+    }
+  });
+
+  // src/utils/Lyrics/Applyer/Static.ts
+  function ApplyStaticLyrics(data) {
+    if (!Defaults_default.LyricsContainerExists)
+      return;
+    const LyricsContainer = document.querySelector(
+      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
+    );
+    LyricsContainer.setAttribute("data-lyrics-type", "Static");
+    ClearLyricsContentArrays();
+    ClearScrollSimplebar();
+    TOP_ApplyLyricsSpacer(LyricsContainer);
+    const fragment = document.createDocumentFragment();
+    data.Lines.forEach((line, index) => {
+      const lineElem = document.createElement("div");
+      processLinePhonetics(line, data);
+      const mainTextContainer = document.createElement("span");
+      mainTextContainer.classList.add("main-lyrics-text");
+      if (line.Text?.includes("[DEF=font_size:small]")) {
+        lineElem.style.fontSize = "35px";
+        mainTextContainer.appendChild(
+          createRubyFragment(line.Text.replace("[DEF=font_size:small]", ""))
+        );
+      } else {
+        mainTextContainer.appendChild(createRubyFragment(line.Text));
+      }
+      lineElem.appendChild(mainTextContainer);
+      decorateLineElement(lineElem, mainTextContainer, line, data.Raw?.[index]);
+      lineElem.classList.add("line", "static");
+      LyricsObject.Types.Static.Lines.push({
+        HTMLElement: lineElem
+      });
+      fragment.appendChild(lineElem);
+    });
+    LyricsContainer.appendChild(fragment);
+    ApplyInfo(data);
+    ApplyLyricsCredits(data);
+    BOTTOM_ApplyLyricsSpacer(LyricsContainer);
+    if (ScrollSimplebar)
+      RecalculateScrollSimplebar();
+    else
+      MountScrollSimplebar();
+    const LyricsStylingContainer = document.querySelector(
+      "#SpicyLyricsPage .LyricsContainer .LyricsContent .simplebar-content"
+    );
+    if (data.offline) {
+      LyricsStylingContainer.classList.add("offline");
+    }
+    removeAllStyles(LyricsStylingContainer);
+    if (data.classes) {
+      LyricsStylingContainer.className = data.classes;
+    }
+    if (data.styles) {
+      applyStyles(LyricsStylingContainer, data.styles);
+    }
+  }
+  var init_Static = __esm({
+    "src/utils/Lyrics/Applyer/Static.ts"() {
+      init_Addons();
+      init_Defaults();
+      init_Styles();
+      init_ScrollSimplebar();
+      init_lyrics();
+      init_ApplyLyricsCredits();
+      init_ApplyInfo();
+      init_sanitize();
+      init_decorateLine();
+    }
+  });
+
+  // src/utils/Lyrics/ConvertTime.ts
+  function ConvertTime(time) {
+    return time * 1e3;
+  }
+  var init_ConvertTime = __esm({
+    "src/utils/Lyrics/ConvertTime.ts"() {
+    }
+  });
+
+  // src/utils/Lyrics/Applyer/Utils/createMusicalLine.ts
+  function createDotGroup(startTime, endTime) {
+    const dotGroup = document.createElement("div");
+    dotGroup.classList.add("dotGroup");
+    const totalTime = endTime - startTime;
+    const dotTime = totalTime / 3;
+    for (let i = 0; i < 3; i++) {
+      const dot = document.createElement("span");
+      dot.classList.add("word", "dot");
+      dot.textContent = NOTE_GLYPHS[i % NOTE_GLYPHS.length];
+      const target = LyricsObject.Types.Line.Lines;
+      const idx = target.length - 1;
+      if (idx >= 0 && target[idx]?.Syllables?.Lead) {
+        target[idx].Syllables.Lead.push({
+          HTMLElement: dot,
+          StartTime: startTime + dotTime * i,
+          EndTime: i === 2 ? endTime - 400 : startTime + dotTime * (i + 1),
+          TotalTime: dotTime,
+          Dot: true
+        });
+      }
+      dotGroup.appendChild(dot);
+    }
+    return dotGroup;
+  }
+  function registerMusicalLine(startMs, endMs) {
+    const line = document.createElement("div");
+    line.classList.add("line", "musical-line");
+    LyricsObject.Types.Line.Lines.push({
+      HTMLElement: line,
+      StartTime: startMs,
+      EndTime: endMs,
+      TotalTime: endMs - startMs,
+      DotLine: true
+    });
+    SetWordArrayInCurentLine_LINE_SYNCED();
+    return line;
+  }
+  function createMusicalLineMs(startMs, endMs, oppositeAligned) {
+    const line = registerMusicalLine(startMs, endMs);
+    if (oppositeAligned)
+      line.classList.add("OppositeAligned");
+    const dots = createDotGroup(startMs, endMs);
+    line.appendChild(dots);
+    return line;
+  }
+  var NOTE_GLYPHS;
+  var init_createMusicalLine = __esm({
+    "src/utils/Lyrics/Applyer/Utils/createMusicalLine.ts"() {
+      init_ConvertTime();
+      init_lyrics();
+      NOTE_GLYPHS = ["\u266A", "\u266B", "\u2669"];
+    }
+  });
+
+  // src/utils/Lyrics/Applyer/Synced/Line.ts
+  function ApplyLineLyrics(data) {
+    if (!Defaults_default.LyricsContainerExists)
+      return;
+    const LyricsContainer = document.querySelector(
+      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
+    );
+    if (!LyricsContainer) {
+      console.error("Lyrics container not found");
+      return;
+    }
+    LyricsContainer.setAttribute("data-lyrics-type", "Line");
+    ClearLyricsContentArrays();
+    ClearScrollSimplebar();
+    TOP_ApplyLyricsSpacer(LyricsContainer);
+    const fragment = document.createDocumentFragment();
+    const convertStartTime = ConvertTime(data.StartTime);
+    if (data.StartTime >= lyricsBetweenShow) {
+      const musicalLine = createMusicalLineMs(
+        0,
+        convertStartTime,
+        !!data.Content[0]?.OppositeAligned
+      );
+      fragment.appendChild(musicalLine);
+    }
+    data.Content.forEach((line, index, arr) => {
+      const lineElem = document.createElement("div");
+      processLinePhonetics(line, data);
+      const mainTextContainer = document.createElement("span");
+      mainTextContainer.classList.add("main-lyrics-text");
+      mainTextContainer.classList.add("line");
+      mainTextContainer.appendChild(createRubyFragment(line.Text));
+      lineElem.appendChild(mainTextContainer);
+      decorateLineElement(lineElem, mainTextContainer, line, data.Raw?.[index]);
+      const startTime = ConvertTime(line.StartTime);
+      const endTime = ConvertTime(line.EndTime);
+      LyricsObject.Types.Line.Lines.push({
+        HTMLElement: mainTextContainer,
+        StartTime: startTime,
+        EndTime: endTime,
+        TotalTime: endTime - startTime
+      });
+      if (line.OppositeAligned) {
+        lineElem.classList.add("OppositeAligned");
+      }
+      fragment.appendChild(lineElem);
+      const nextLine = arr[index + 1];
+      const hasMusicalBreak = nextLine && nextLine.StartTime - line.EndTime >= lyricsBetweenShow;
+      if (hasMusicalBreak) {
+        const nextStartTime = ConvertTime(nextLine.StartTime);
+        const curEndTime = endTime;
+        const musicalLine = createMusicalLineMs(
+          curEndTime,
+          nextStartTime,
+          !!nextLine.OppositeAligned
+        );
+        fragment.appendChild(musicalLine);
+      }
+    });
+    LyricsContainer.appendChild(fragment);
+    ApplyInfo(data);
+    ApplyLyricsCredits(data);
+    BOTTOM_ApplyLyricsSpacer(LyricsContainer);
+    if (ScrollSimplebar) {
+      RecalculateScrollSimplebar();
+    } else {
+      MountScrollSimplebar();
+    }
+    const LyricsStylingContainer = document.querySelector(
+      "#SpicyLyricsPage .LyricsContainer .LyricsContent .simplebar-content"
+    );
+    if (LyricsStylingContainer) {
+      removeAllStyles(LyricsStylingContainer);
+      if (data.classes) {
+        LyricsStylingContainer.className = data.classes;
+      }
+      if (data.styles) {
+        applyStyles(LyricsStylingContainer, data.styles);
+      }
+    }
+  }
+  var init_Line = __esm({
+    "src/utils/Lyrics/Applyer/Synced/Line.ts"() {
+      init_Addons();
+      init_Defaults();
+      init_Styles();
+      init_ScrollSimplebar();
+      init_ConvertTime();
+      init_lyrics();
+      init_ApplyLyricsCredits();
+      init_ApplyInfo();
+      init_createMusicalLine();
+      init_sanitize();
+      init_decorateLine();
+    }
+  });
+
+  // src/utils/Lyrics/Global/Applyer.ts
+  function ApplyLyrics(lyrics) {
+    if (!document.querySelector("#SpicyLyricsPage"))
+      return false;
+    const lyricsContent = document.querySelector(
+      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
+    );
+    if (lyricsContent) {
+      const translationFontSize = storage_default.get("translation_font_size") || Defaults_default.translationFontSize;
+      lyricsContent.style.setProperty("--TranslationFontSize", translationFontSize);
+      const defaultLyricsSize = storage_default.get("default_lyrics_size");
+      if (defaultLyricsSize) {
+        lyricsContent.style.setProperty("--DefaultLyricsSize", defaultLyricsSize + "rem");
+      }
+    }
+    setBlurringLastLine(null);
+    if (!lyrics || isNoLyricsResult(lyrics) || lyrics.status === "NO_LYRICS")
+      return false;
+    const typedLyrics = lyrics;
+    if (!typedLyrics?.id)
+      return false;
+    const currentTrackId = Spicetify.Player.data?.item?.uri?.split(":")[2];
+    if (currentTrackId !== typedLyrics?.id)
+      return false;
+    const lyricsHandlers = {
+      Line: ApplyLineLyrics,
+      Static: ApplyStaticLyrics
+    };
+    const applyHandler = lyricsHandlers[typedLyrics.Type];
+    if (applyHandler) {
+      applyHandler(typedLyrics);
+      showRefreshButton();
+      addLinesEvListener();
+      return true;
+    }
+    return false;
+  }
+  var init_Applyer = __esm({
+    "src/utils/Lyrics/Global/Applyer.ts"() {
+      init_LyricsAnimator();
+      init_Static();
+      init_Line();
+      init_fetchLyrics();
+      init_pageButtons();
+      init_lyrics();
+      init_storage();
+      init_Defaults();
     }
   });
 
@@ -33905,25 +33991,24 @@ ${JSON.stringify(lyricsOnly)}`
   __export(fetchLyrics_exports, {
     default: () => fetchLyrics,
     isNoLyricsResult: () => isNoLyricsResult,
+    loadAndApplyLyrics: () => loadAndApplyLyrics,
     lyricsCache: () => lyricsCache
   });
   function isNoLyricsResult(v) {
     return typeof v === "object" && v !== null && v.status === "NO_LYRICS";
   }
-  async function applyLoadedLyrics(result) {
+  async function applyLoadedLyrics(result, token) {
     if (isNoLyricsResult(result)) {
       return await noLyricsMessage(result.id);
     }
-    Defaults_default.CurrentLyricsType = result.Type;
-    storage_default.set("currentLyricsData", JSON.stringify(result));
-    HideLoaderContainer();
-    ClearLyricsPageContainer();
+    publishInitialLyrics(token, result);
     return result;
   }
   async function fetchLyrics(uri, flush = false) {
     if (!uri || typeof uri !== "string" || !uri.includes(":")) {
       return await noLyricsMessage();
     }
+    const token = beginLyricsRequest(uri);
     resetLyricsUI();
     ClearLyricsPageContainer();
     document.querySelector("#SpicyLyricsPage .ContentBox")?.classList.remove("LyricsHidden");
@@ -33933,21 +34018,39 @@ ${JSON.stringify(lyricsOnly)}`
     }
     const localLyrics = await getLyricsFromLocalStorage(trackId);
     if (localLyrics)
-      return applyLoadedLyrics(localLyrics);
+      return applyLoadedLyrics(localLyrics, token);
     const cachedLyrics = await getLyricsFromCache(trackId);
     if (cachedLyrics)
-      return applyLoadedLyrics(cachedLyrics);
+      return applyLoadedLyrics(cachedLyrics, token);
     hideRefreshButton();
     if (!flush && inFlight.has(trackId)) {
       return inFlight.get(trackId);
     }
     ShowLoaderContainer();
-    const promise = fetchLyricsFromAPI(trackId, flush).finally(() => {
+    const promise = fetchLyricsFromAPI(trackId, flush, token).finally(() => {
       if (inFlight.get(trackId) === promise)
         inFlight.delete(trackId);
     });
     inFlight.set(trackId, promise);
     return promise;
+  }
+  async function loadAndApplyLyrics(uri, opts = {}) {
+    let target = uri;
+    let flush = opts.flush ?? false;
+    let last = await noLyricsMessage();
+    for (let attempt = 0; attempt < 2; attempt++) {
+      last = await fetchLyrics(target, flush);
+      flush = false;
+      if (isNoLyricsResult(last))
+        return last;
+      if (ApplyLyrics(last))
+        return last;
+      const live = liveLyricsUri();
+      if (!live || live === target)
+        return last;
+      target = live;
+    }
+    return last;
   }
   var inFlight;
   var init_fetchLyrics = __esm({
@@ -33956,8 +34059,8 @@ ${JSON.stringify(lyricsOnly)}`
       init_cache();
       init_api();
       init_pageButtons();
-      init_storage();
-      init_Defaults();
+      init_Applyer();
+      init_publish();
       inFlight = /* @__PURE__ */ new Map();
     }
   });
@@ -34358,18 +34461,9 @@ ${JSON.stringify(lyricsOnly)}`
   }
   function update() {
     const enabled = isEnabled();
-    try {
-      if (typeof Spicetify?.Player?.isPlaying === "function") {
-        const live = !!Spicetify.Player.isPlaying();
-        if (SpotifyPlayer.IsPlaying !== live)
-          SpotifyPlayer.IsPlaying = live;
-      } else if (typeof Spicetify?.Player?.data?.isPaused === "boolean") {
-        const live = !Spicetify.Player.data.isPaused;
-        if (SpotifyPlayer.IsPlaying !== live)
-          SpotifyPlayer.IsPlaying = live;
-      }
-    } catch {
-    }
+    const live = resolveIsPlaying();
+    if (SpotifyPlayer.IsPlaying !== live)
+      SpotifyPlayer.IsPlaying = live;
     let onLyricsPage = false;
     try {
       onLyricsPage = Spicetify.Platform.History.location.pathname === "/AmaiLyrics";
@@ -34432,7 +34526,7 @@ ${JSON.stringify(lyricsOnly)}`
     }
     let position;
     try {
-      position = SpotifyPlayer.GetTrackPosition() + POSITION_OFFSET;
+      position = getPositionFor("playbar");
     } catch {
       return;
     }
@@ -34528,7 +34622,7 @@ ${JSON.stringify(lyricsOnly)}`
     lifecycle_default.trackCallback(cleanup);
     lifecycle_default.trackWhentil(initWhen);
   }
-  var POSITION_OFFSET, UPDATE_INTERVAL, lyricsElement, centerWrapper, intervalManager, resizeObserver, lastText, playbarPositionClient, initWhen, cachedLines, cachedLinesRaw, inMemoryLyricsData, lyricsDataListenerId, currentColors, lastArtworkUrl, artworkColorDebounceTimer, MIN_TEXT_COLOR_LUMINANCE, cachedPlaybarEnabled, cachedPlaybarEnabledAt, PLAYBAR_ENABLED_TTL_MS, PlaybarLyrics_default;
+  var UPDATE_INTERVAL, lyricsElement, centerWrapper, intervalManager, resizeObserver, lastText, playbarPositionClient, initWhen, cachedLines, cachedLinesRaw, inMemoryLyricsData, lyricsDataListenerId, currentColors, lastArtworkUrl, artworkColorDebounceTimer, MIN_TEXT_COLOR_LUMINANCE, cachedPlaybarEnabled, cachedPlaybarEnabledAt, PLAYBAR_ENABLED_TTL_MS, PlaybarLyrics_default;
   var init_PlaybarLyrics = __esm({
     "src/components/PlaybarLyrics/PlaybarLyrics.ts"() {
       init_storage();
@@ -34543,7 +34637,6 @@ ${JSON.stringify(lyricsOnly)}`
       init_lifecycle();
       init_ArtworkColors();
       init_EventManager();
-      POSITION_OFFSET = 600;
       UPDATE_INTERVAL = 0.3;
       lyricsElement = null;
       centerWrapper = null;
@@ -34807,8 +34900,7 @@ ${JSON.stringify(lyricsOnly)}`
   init_storage();
   init_fetchLyrics();
   init_Defaults();
-  init_fetchLyrics();
-  init_Applyer();
+  init_externalNavigation();
   function setSettingsMenu() {
     generalSettings();
     devSettings();
@@ -34836,10 +34928,12 @@ ${JSON.stringify(lyricsOnly)}`
       if (!playerData?.item?.uri)
         return;
       const currentUri = playerData.item.uri;
-      fetchLyrics(currentUri).then(ApplyLyrics).catch((e) => console.error("[Amai Lyrics] Refetch after API key change failed:", e));
+      loadAndApplyLyrics(currentUri).catch(
+        (e) => console.error("[Amai Lyrics] Refetch after API key change failed:", e)
+      );
     });
     settings.addButton("get-gemini-api", "Get your own Gemini API here", "get API Key", () => {
-      window.location.href = "https://aistudio.google.com/app/apikey/";
+      openTrustedExternalUrl("https://aistudio.google.com/app/apikey/", "_self");
     });
     settings.addToggle(
       "enableRomaji",
@@ -34961,7 +35055,7 @@ ${JSON.stringify(lyricsOnly)}`
       "Enhances your Spotify experience with Furigana for Japanese Kanji, Romaji for Japanese lyrics, Romanization for Korean lyrics, and line-by-line translations powered by Google Gemini AI.",
       `v${Defaults_default.Version}`,
       () => {
-        window.location.href = "https://github.com/hudzax/amai-lyrics";
+        openTrustedExternalUrl("https://github.com/hudzax/amai-lyrics", "_self");
       }
     );
     settings.addButton(
@@ -34969,7 +35063,7 @@ ${JSON.stringify(lyricsOnly)}`
       "Found a bug or have a feature request?",
       "Report Issue",
       () => {
-        window.location.href = "https://github.com/hudzax/amai-lyrics/issues";
+        openTrustedExternalUrl("https://github.com/hudzax/amai-lyrics/issues", "_self");
       }
     );
     settings.pushSettings();
@@ -34981,10 +35075,10 @@ ${JSON.stringify(lyricsOnly)}`
   init_lifecycle();
   var AppInitializer = class {
     static async initializeCore() {
-      const windowRef8 = window;
-      if (!windowRef8.__amaiCoreInitialized) {
+      const windowRef9 = window;
+      if (!windowRef9.__amaiCoreInitialized) {
         lyricsCache.destroy();
-        windowRef8.__amaiCoreInitialized = true;
+        windowRef9.__amaiCoreInitialized = true;
       }
       await this.injectGoogleFonts();
       await this.initializePlatformAndSettings();
@@ -35122,7 +35216,6 @@ ${JSON.stringify(lyricsOnly)}`
   init_Whentil();
   init_lifecycle();
   init_Fullscreen();
-  init_Addons();
   var _EventManager = class {
     static safeGetRepeat() {
       try {
@@ -35172,19 +35265,7 @@ ${JSON.stringify(lyricsOnly)}`
           return direct;
       } catch {
       }
-      try {
-        if (typeof Spicetify?.Player?.isPlaying === "function") {
-          return !Spicetify.Player.isPlaying();
-        }
-      } catch {
-      }
-      try {
-        const paused = Spicetify?.Player?.data?.isPaused;
-        if (typeof paused === "boolean")
-          return paused;
-      } catch {
-      }
-      return null;
+      return !resolveIsPlaying();
     }
     static initialize() {
       this.setupPlayerStateEvents();
@@ -35253,23 +35334,9 @@ ${JSON.stringify(lyricsOnly)}`
   var EventManager = _EventManager;
   EventManager.onPlayPause = (e) => {
     const isPaused = _EventManager.resolveIsPaused(e);
-    if (isPaused !== null) {
-      SpotifyPlayer.IsPlaying = !isPaused;
-    } else {
-      try {
-        SpotifyPlayer.IsPlaying = IsPlaying();
-      } catch {
-      }
-    }
+    SpotifyPlayer.IsPlaying = !isPaused;
     if (isPaused === false) {
-      try {
-        reanchorPosition();
-      } catch {
-      }
-      try {
-        requestPositionSync();
-      } catch {
-      }
+      syncPlaybackPosition();
     }
     Global_default.Event.evoke("playback:playpause", e);
   };
@@ -35344,7 +35411,6 @@ ${JSON.stringify(lyricsOnly)}`
   init_debounce2();
   var SongChangeManager = class {
     constructor(buttonManager, backgroundManager) {
-      this.latestUri = null;
       this.buttonManager = buttonManager;
       this.backgroundManager = backgroundManager;
       this.debouncedBgApply = debounce2((coverUrl) => {
@@ -35381,15 +35447,11 @@ ${JSON.stringify(lyricsOnly)}`
       }
       if (!currentUri)
         return;
-      this.latestUri = currentUri;
       EnsureProcessingIndicatorHidden();
-      const { default: fetchLyrics2 } = await Promise.resolve().then(() => (init_fetchLyrics(), fetchLyrics_exports));
-      const { default: ApplyLyrics2 } = await Promise.resolve().then(() => (init_Applyer(), Applyer_exports));
-      fetchLyrics2(currentUri).then((lyrics) => {
-        if (this.latestUri === currentUri) {
-          ApplyLyrics2(lyrics);
-        }
-      }).catch((e) => console.error("[Amai Lyrics] SongChange fetch failed:", e));
+      const { loadAndApplyLyrics: loadAndApplyLyrics2 } = await Promise.resolve().then(() => (init_fetchLyrics(), fetchLyrics_exports));
+      loadAndApplyLyrics2(currentUri).catch(
+        (e) => console.error("[Amai Lyrics] SongChange fetch failed:", e)
+      );
       this.buttonManager.updateRegistration();
       this.debouncedBgApply(Spicetify.Player.data?.item?.metadata?.image_url);
       this.debouncedAccentPublish(Spicetify.Player.data?.item?.metadata?.image_url);
@@ -35641,9 +35703,9 @@ ${JSON.stringify(lyricsOnly)}`
     lifecycle_default.track(() => clearInterval(timer));
   }
   function installBlankToastSuppressor() {
-    const windowRef8 = window;
-    if (!windowRef8.__amaiToastInstalled) {
-      windowRef8.__amaiToastInstalled = true;
+    const windowRef9 = window;
+    if (!windowRef9.__amaiToastInstalled) {
+      windowRef9.__amaiToastInstalled = true;
       overrideShowNotification();
       if (!overrideSnackbar()) {
         let tries = 0;
@@ -35722,17 +35784,19 @@ ${JSON.stringify(lyricsOnly)}`
     );
     const currentUri = Spicetify.Player.data?.item?.uri;
     if (currentUri) {
-      const { default: fetchLyrics2 } = await Promise.resolve().then(() => (init_fetchLyrics(), fetchLyrics_exports));
-      const { default: ApplyLyrics2 } = await Promise.resolve().then(() => (init_Applyer(), Applyer_exports));
-      fetchLyrics2(currentUri).then(ApplyLyrics2).catch((e) => console.error("[Amai Lyrics] Failed to fetch initial lyrics:", e));
+      const { loadAndApplyLyrics: loadAndApplyLyrics2 } = await Promise.resolve().then(() => (init_fetchLyrics(), fetchLyrics_exports));
+      loadAndApplyLyrics2(currentUri).catch(
+        (e) => console.error("[Amai Lyrics] Failed to fetch initial lyrics:", e)
+      );
     }
     const onOnline = async () => {
       storage_default.set("lastFetchedUri", null);
       const currentUri2 = Spicetify.Player.data?.item?.uri;
       if (currentUri2) {
-        const { default: fetchLyrics2 } = await Promise.resolve().then(() => (init_fetchLyrics(), fetchLyrics_exports));
-        const { default: ApplyLyrics2 } = await Promise.resolve().then(() => (init_Applyer(), Applyer_exports));
-        fetchLyrics2(currentUri2).then(ApplyLyrics2).catch((e) => console.error("[Amai Lyrics] Failed to re-fetch on online:", e));
+        const { loadAndApplyLyrics: loadAndApplyLyrics2 } = await Promise.resolve().then(() => (init_fetchLyrics(), fetchLyrics_exports));
+        loadAndApplyLyrics2(currentUri2).catch(
+          (e) => console.error("[Amai Lyrics] Failed to re-fetch on online:", e)
+        );
       }
     };
     lifecycle_default.trackWindow("online", onOnline);
@@ -35794,7 +35858,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b228a/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21872-jtv7SMNMRGsA/1a09308f5aea/DotLoader.css */
 #DotLoader {
   --dot-color: var(--amai-accent-1);
   --dot-color-dim: color-mix(in srgb, var(--amai-accent-1) 22%, transparent);
@@ -35829,7 +35893,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b234b/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21872-jtv7SMNMRGsA/1a09308f5b3b/ProcessingIndicator.css */
 #SpicyLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -35911,7 +35975,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b1ba0/tokens.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21872-jtv7SMNMRGsA/1a09308f52d0/tokens.css */
 :root {
   --amai-accent-1: #1ed760;
   --amai-accent-2: #1db954;
@@ -35964,7 +36028,7 @@ ${JSON.stringify(lyricsOnly)}`
   --amai-scrollbar-thumb: rgba(255, 255, 255, 0.6);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b1e71/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21872-jtv7SMNMRGsA/1a09308f55e1/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -36122,7 +36186,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b1f02/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21872-jtv7SMNMRGsA/1a09308f56b2/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -36330,7 +36394,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b1f93/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21872-jtv7SMNMRGsA/1a09308f5743/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -36934,7 +36998,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b2084/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21872-jtv7SMNMRGsA/1a09308f5804/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -37113,7 +37177,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b20c5/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21872-jtv7SMNMRGsA/1a09308f5865/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -37397,7 +37461,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b2146/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21872-jtv7SMNMRGsA/1a09308f58e6/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -37661,7 +37725,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b2197/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21872-jtv7SMNMRGsA/1a09308f5937/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -37683,7 +37747,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b21c8/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21872-jtv7SMNMRGsA/1a09308f5968/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -37710,7 +37774,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7596-PI5XZwyIEiz1/1a092b9b21f9/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21872-jtv7SMNMRGsA/1a09308f5999/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
