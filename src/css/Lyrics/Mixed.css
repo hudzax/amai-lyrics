@@ -6,6 +6,9 @@
   flex-wrap: wrap;
   transition: opacity .1s cubic-bezier(0.61, 1, 0.88, 1);
   font-size: var(--font-size);
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line .word,
@@ -324,7 +327,8 @@
   transform-origin: left center;
   transition: scale .2s var(--amai-ease-io), opacity .2s var(--amai-ease-io);
   margin: 1cqw 0 0 0;
-  display: inline-block;
+  display: block;
+  max-width: 100%;
 }
 
 #SpicyLyricsPage .LyricsContainer .LyricsContent[data-lyrics-type="Line"] .line.OppositeAligned {

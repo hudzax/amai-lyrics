@@ -260,6 +260,7 @@ header.main-topBar-container .amai-info {
 
 ruby {
   margin-top:-0.5rem;
+  max-width: 100%;
 }
 
 ruby.romaja {
@@ -273,6 +274,9 @@ ruby > rt {
   /* Furigana/romaji sit lighter and slightly tracked against the main line */
   font-weight: 500;
   letter-spacing: 0.02em;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .Button-buttonSecondary-small-useBrowserDefaultFocusStyle {
@@ -292,16 +296,43 @@ ruby > rt {
   /* color: #ccc; */
   line-height: calc(var(--DefaultLyricsSize) * var(--TranslationFontSize, 0.575) * 1.35);
   font-weight: 500;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .line {
   display: flex;
   flex-direction: column;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  box-sizing: border-box;
 }
 
 .main-lyrics-text {
   display: block;
   width: 100%;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  box-sizing: border-box;
+}
+
+/* Long romaji/furigana annotations are wider than their base kanji. Without
+   wrapping, the rt row overflows the lyrics column and gets hard-clipped by
+   overflow-x: hidden on .LyricsContent. */
+#SpicyLyricsPage .LyricsContainer .LyricsContent ruby {
+  max-width: 100%;
+}
+
+#SpicyLyricsPage .LyricsContainer .LyricsContent ruby > rt {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .main-trackList-trackListRow:focus-within, .main-trackList-trackListRow:hover, .BoxComponent-group-card-naked-isInteractive-draggable:hover::after {
