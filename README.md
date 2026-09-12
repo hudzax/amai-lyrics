@@ -22,8 +22,8 @@ Setup is simple with your own API key, and the clean design keeps everything eas
 - **Better Visuals:** Clean and easy-to-read design.
 - **Amai Theme:** Dynamic background extracted from the current song's artwork. Toggle available in settings.
 
-  ![Amai Theme Preview 1](./previews/amai-theme_1.jpg)
-  ![Amai Theme Preview 2](./previews/amai-theme_2.jpg)
+  ![Amai Theme Preview 1](./previews/amai-theme_2.jpg)
+  ![Amai Theme Preview 2](./previews/amai_theme_3.jpg)
 
 - **Playbar Lyrics:** Shows the current lyric line in the native Spotify playbar, revealing the playback controls on hover. Includes Furigana/Romaji rendering and a subtle entrance animation. Toggle available in settings.
 
