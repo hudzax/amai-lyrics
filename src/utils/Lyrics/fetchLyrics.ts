@@ -8,14 +8,18 @@ import {
   resetLyricsUI,
   ClearLyricsPageContainer,
   ShowLoaderContainer,
-  HideLoaderContainer,
   noLyricsMessage,
 } from './ui';
 import { getLyricsFromLocalStorage, getLyricsFromCache, lyricsCache } from './cache';
 import { fetchLyricsFromAPI } from './api';
 import { hideRefreshButton } from '../../components/Pages/pageButtons';
-import storage from '../storage';
-import Defaults from '../../components/Global/Defaults';
+import ApplyLyrics from './Global/Applyer';
+import {
+  beginLyricsRequest,
+  publishInitialLyrics,
+  liveLyricsUri,
+  type LyricsRequestToken,
+} from './publish';
 
 import { LyricsData } from './conversion';
 import { NoLyricsResult } from './ui';
@@ -43,15 +47,17 @@ const inFlight = new Map<string, Promise<LyricsFetchResult>>();
  * returns it. Centralizes what the cache reads used to do inline so the cache
  * layer stays a pure read.
  */
-async function applyLoadedLyrics(result: LyricsFetchResult): Promise<LyricsFetchResult> {
+async function applyLoadedLyrics(
+  result: LyricsFetchResult,
+  token: LyricsRequestToken,
+): Promise<LyricsFetchResult> {
   if (isNoLyricsResult(result)) {
     return await noLyricsMessage(result.id);
   }
 
-  Defaults.CurrentLyricsType = result.Type;
-  storage.set('currentLyricsData', JSON.stringify(result));
-  HideLoaderContainer();
-  ClearLyricsPageContainer();
+  // Single publication seam: currency check, domain state, snapshot,
+  // bus notification (the playbar overlay syncs off this), loader teardown.
+  publishInitialLyrics(token, result);
   return result;
 }
 
@@ -65,6 +71,9 @@ export default async function fetchLyrics(uri: string, flush = false): Promise<L
   if (!uri || typeof uri !== 'string' || !uri.includes(':')) {
     return await noLyricsMessage();
   }
+  // Stamp the request before the first await: any earlier request is stale
+  // from here on, no matter where its continuations land.
+  const token = beginLyricsRequest(uri);
   resetLyricsUI();
   ClearLyricsPageContainer();
   document
@@ -77,10 +86,10 @@ export default async function fetchLyrics(uri: string, flush = false): Promise<L
   }
 
   const localLyrics = await getLyricsFromLocalStorage(trackId);
-  if (localLyrics) return applyLoadedLyrics(localLyrics);
+  if (localLyrics) return applyLoadedLyrics(localLyrics, token);
 
   const cachedLyrics = await getLyricsFromCache(trackId);
-  if (cachedLyrics) return applyLoadedLyrics(cachedLyrics);
+  if (cachedLyrics) return applyLoadedLyrics(cachedLyrics, token);
 
   // Hide refresh button during fetch
   hideRefreshButton();
@@ -94,13 +103,40 @@ export default async function fetchLyrics(uri: string, flush = false): Promise<L
 
   ShowLoaderContainer();
 
-  const promise = fetchLyricsFromAPI(trackId, flush).finally(() => {
+  const promise = fetchLyricsFromAPI(trackId, flush, token).finally(() => {
     // Only clear our own entry; a newer request for the same track may have
     // replaced it in the map (e.g. a `flush` refresh overlapping a normal fetch).
     if (inFlight.get(trackId) === promise) inFlight.delete(trackId);
   });
   inFlight.set(trackId, promise);
   return promise;
+}
+
+/**
+ * The pipeline's single composition: fetch, then apply to the page.
+ * Replaces the six hand-rolled `fetchLyrics(uri).then(ApplyLyrics)` chains
+ * (app init/online, PageView, pageButtons, settings, SongChangeManager) and
+ * the applyer's self-refetch back-edge: when the track moved mid-flight and
+ * the applyer declines, the pipeline retries once for the live track instead
+ * of the applyer calling back into the fetch seam.
+ */
+export async function loadAndApplyLyrics(
+  uri: string,
+  opts: { flush?: boolean } = {},
+): Promise<LyricsFetchResult> {
+  let target = uri;
+  let flush = opts.flush ?? false;
+  let last: LyricsFetchResult = await noLyricsMessage();
+  for (let attempt = 0; attempt < 2; attempt++) {
+    last = await fetchLyrics(target, flush);
+    flush = false; // only the explicit request is ever forced
+    if (isNoLyricsResult(last)) return last;
+    if (ApplyLyrics(last)) return last;
+    const live = liveLyricsUri();
+    if (!live || live === target) return last;
+    target = live;
+  }
+  return last;
 }
 
 export { lyricsCache };

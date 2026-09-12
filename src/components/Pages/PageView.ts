@@ -1,4 +1,4 @@
-import fetchLyrics from '../../utils/Lyrics/fetchLyrics';
+import { loadAndApplyLyrics } from '../../utils/Lyrics/fetchLyrics';
 import '../../css/Loaders/DotLoader.css';
 import '../../css/Loaders/ProcessingIndicator.css';
 import { ClearLyricsContentArrays, removeLinesEvListener } from '../../utils/Lyrics/lyrics';
@@ -6,7 +6,6 @@ import { clearApplyInfoTimeout } from '../../utils/Lyrics/Applyer/Info/ApplyInfo
 import ApplyDynamicBackground from '../DynamicBG/dynamicBackground';
 import Defaults from '../Global/Defaults';
 import { ClearScrollSimplebar } from '../../utils/Scrolling/Simplebar/ScrollSimplebar';
-import ApplyLyrics from '../../utils/Lyrics/Global/Applyer';
 import { clearLyricsUiTimeouts } from '../../utils/Lyrics/ui';
 import { Session_NowBar_SetSide, Session_OpenNowBar } from '../Utils/NowBar';
 import Fullscreen from '../Utils/Fullscreen';
@@ -64,9 +63,9 @@ async function OpenPage() {
 
   const currentUri = Spicetify.Player.data?.item?.uri;
   if (currentUri) {
-    fetchLyrics(currentUri)
-      .then(ApplyLyrics)
-      .catch((e) => console.error('[Amai Lyrics] PageView fetch failed:', e));
+    loadAndApplyLyrics(currentUri).catch((e) =>
+      console.error('[Amai Lyrics] PageView fetch failed:', e),
+    );
   }
 
   Session_OpenNowBar();
@@ -91,6 +90,7 @@ async function createPageElement() {
 
       const elem = document.createElement('div');
       elem.id = 'SpicyLyricsPage';
+      // SAFETY: PageHTML is a static trusted template bundled with the extension, not user-supplied lyrics text.
       elem.innerHTML = PageHTML;
       if (PageRoot) {
         PageRoot.appendChild(elem);
@@ -98,7 +98,8 @@ async function createPageElement() {
 
       const nowBar = document.querySelector<HTMLElement>(PageViewSelectors.NowBar);
       if (nowBar) {
-        nowBar.innerHTML = NowBarHTML;
+        // SAFETY: NowBarHTML is a static trusted template bundled with the extension, not user-supplied lyrics text.
+        nowBar.replaceChildren(document.createRange().createContextualFragment(NowBarHTML));
       }
       resolve();
     });
@@ -128,6 +129,7 @@ async function DestroyPage() {
     maid?.CleanUp();
     // Maid.Destroy is idempotent; CleanUp alone would leave Maid reusable but
     // we null the ref anyway so next Open gets a fresh instance.
+    // SAFETY: the Maid type does not declare optional Destroy, but runtime Maid instances may expose it; the optional call is a safe no-op when absent.
     (maid as unknown as { Destroy?: () => void })?.Destroy?.();
   } catch {
     /* ignore maid cleanup error */

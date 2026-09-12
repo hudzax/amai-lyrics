@@ -3,8 +3,8 @@ import { PageViewSelectors } from '../../constants/PageViewSelectors';
 import fastdom from 'fastdom';
 import storage from '../../utils/storage';
 import { removeLyricsFromCache } from '../../utils/Lyrics/cache';
-import fetchLyrics from '../../utils/Lyrics/fetchLyrics';
-import ApplyLyrics from '../../utils/Lyrics/Global/Applyer';
+import { loadAndApplyLyrics } from '../../utils/Lyrics/fetchLyrics';
+import { openYouTubeSearch } from '../../utils/externalNavigation';
 import { SpotifyPlayer } from '../Global/SpotifyPlayer';
 
 export function setupActionButtons(maid: Maid | null) {
@@ -37,8 +37,7 @@ function setupRefreshButton(maid: Maid | null) {
       const trackId = currentUri.split(':')[2];
       removeLyricsFromCache(trackId);
       storage.set('currentLyricsData', null);
-      const lyrics = await fetchLyrics(currentUri, true);
-      ApplyLyrics(lyrics);
+      await loadAndApplyLyrics(currentUri, { flush: true });
     } catch (error) {
       console.error('Error refreshing lyrics:', error);
       Spicetify.showNotification('Error refreshing lyrics', false, 2000);
@@ -65,10 +64,9 @@ function setupWatchMusicVideoButton(maid: Maid | null) {
     }
 
     const artistNames = SpotifyPlayer.JoinArtists(artists);
-    const searchQuery = encodeURIComponent(`${artistNames} ${songName} music video`);
-    const youtubeUrl = `https://www.youtube.com/results?search_query=${searchQuery}`;
-
-    window.open(youtubeUrl, '_blank');
+    if (!openYouTubeSearch(`${artistNames} ${songName} music video`)) {
+      Spicetify.showNotification('Unable to open YouTube search', false, 2000);
+    }
   };
 
   watchMusicVideoButton.addEventListener('click', clickHandler);

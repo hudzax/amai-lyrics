@@ -2,14 +2,7 @@
  * Lyrics processing functions for Amai Lyrics
  */
 
-import storage from '../storage';
-import Defaults from '../../components/Global/Defaults';
-import {
-  HideLoaderContainer,
-  ClearLyricsPageContainer,
-  ShowProcessingIndicator,
-  EnsureProcessingIndicatorHidden,
-} from './ui';
+import { ShowProcessingIndicator, EnsureProcessingIndicatorHidden } from './ui';
 import { cacheLyrics } from './cache';
 import { fetchPhoneticLyrics, fetchLyricTranslations } from './ai';
 import {
@@ -21,9 +14,13 @@ import {
   SyllableBasedLyricItem,
   LyricsLine,
 } from './conversion';
-import Event from '../EventManager';
 import { LyricsResult } from '../API/Lyrics';
-import { updateDisplayedLyricsWithTranslations } from './translationUpdater';
+import {
+  isCurrentLyricsRequest,
+  publishInitialLyrics,
+  publishEnhancedLyrics,
+  type LyricsRequestToken,
+} from './publish';
 
 // Regular expressions for language detection
 const JAPANESE_REGEX = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
@@ -33,16 +30,19 @@ const KOREAN_REGEX = /[\uAC00-\uD7AF]/;
 const LYRICS_TIMING_OFFSET = 0.55;
 
 /**
- * Processes and enhances lyrics with AI features
+ * Processes and enhances lyrics with AI features.
  *
  * @param trackId - Spotify track ID
  * @param lyricsJson - Raw lyrics data from API
+ * @param token - Pipeline request token: initial paint, enhancement work,
+ *   and enhancement publication all check it, so a superseded request
+ *   resolves its data but never touches UI, storage, or the event bus.
  * @returns Enhanced lyrics data
  */
 export async function processAndEnhanceLyrics(
   trackId: string,
   lyricsJson: LyricsResult,
-  isCurrent = true,
+  token: LyricsRequestToken,
 ): Promise<LyricsData> {
   const id = lyricsJson.id || trackId;
   // Type is kept as a plain string: the API can still return 'Syllable', which
@@ -90,26 +90,27 @@ export async function processAndEnhanceLyrics(
   // reuse it directly. Clone only for the async enhancement branch.
   const lyricsToDisplay = preparedLyricsJson as LyricsData;
 
-  // Cache and display the initial lyrics
+  // Cache and display the initial lyrics. Publication is a no-op when the
+  // request went stale while the network was in flight.
   await cacheLyrics(trackId, { ...lyricsToDisplay, id: id });
-
-  if (Spicetify.Player.data?.item?.uri?.split(':')[2] === trackId) {
-    Defaults.CurrentLyricsType = lyricsToDisplay.Type;
-    const serialized = JSON.stringify(lyricsToDisplay);
-    storage.set('currentLyricsData', serialized);
-    Event.evoke('lyrics:data-updated', serialized);
-    HideLoaderContainer();
-    ClearLyricsPageContainer();
-  }
+  publishInitialLyrics(token, { ...lyricsToDisplay, id: id });
 
   // STEP 2: Process phonetic and translations asynchronously. Skip the
-  // (potentially slow, network-bound) Gemini enhancement when this track is no
-  // longer the one the user is on, so seeking past a song doesn't waste work.
-  if (isCurrent) {
+  // (potentially slow, network-bound) enhancement when this request is no
+  // longer current, so seeking past a song doesn't waste work. The basic
+  // lyrics are still cached so a re-seek is fast.
+  if (isCurrentLyricsRequest(token)) {
     const phoneticLyricsJson: LyricsData = structuredClone(preparedLyricsJson);
 
     // Start async processing without blocking the initial display
-    processLyricsEnhancementsAsync(trackId, phoneticLyricsJson, hasKanji, hasKorean, lyricsOnly);
+    void processLyricsEnhancementsAsync(
+      token,
+      trackId,
+      phoneticLyricsJson,
+      hasKanji,
+      hasKorean,
+      lyricsOnly,
+    );
   }
 
   // Return immediately with the basic lyrics
@@ -131,6 +132,7 @@ export async function processAndEnhanceLyrics(
  * @param lyricsOnly - Plain text lyrics array
  */
 async function processLyricsEnhancementsAsync(
+  token: LyricsRequestToken,
   trackId: string,
   lyricsJson: LyricsData,
   hasKanji: boolean,
@@ -152,15 +154,8 @@ async function processLyricsEnhancementsAsync(
     // Update cache with enhanced lyrics
     await cacheLyrics(trackId, { ...processedLyricsJson, id: trackId });
 
-    // Only update UI if this is still the current track
-    if (Spicetify.Player.data?.item?.uri?.split(':')[2] === trackId) {
-      // Update the displayed lyrics with translations
-      updateDisplayedLyricsWithTranslations(processedLyricsJson);
-
-      const serialized = JSON.stringify(processedLyricsJson);
-      storage.set('currentLyricsData', serialized);
-      Event.evoke('lyrics:data-updated', serialized);
-    }
+    // Publish in place (scroll/animation-safe). No-op when stale.
+    publishEnhancedLyrics(token, trackId, { ...processedLyricsJson, id: trackId });
   } catch (error) {
     console.error('Amai Lyrics: Error processing enhancements', error);
     // Don't show error to user - keep original lyrics visible

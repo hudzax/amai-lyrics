@@ -1,7 +1,7 @@
 import { setBlurringLastLine } from '../Animator/Lyrics/LyricsAnimator';
 import { ApplyStaticLyrics } from '../Applyer/Static';
 import { ApplyLineLyrics } from '../Applyer/Synced/Line';
-import fetchLyrics, { isNoLyricsResult } from '../fetchLyrics';
+import { isNoLyricsResult } from '../fetchLyrics';
 import { showRefreshButton } from '../../../components/Pages/pageButtons';
 import { addLinesEvListener } from '../lyrics';
 import storage from '../../storage';
@@ -10,12 +10,16 @@ import { NoLyricsResult } from '../ui';
 import { LyricsData } from '../conversion';
 
 /**
- * Applies lyrics to the UI based on the lyrics type
- * @param lyrics The lyrics data object containing type and content, or NO_LYRICS sentinel
+ * Applies lyrics to the UI based on the lyrics type.
+ * Returns true when the lyrics were mounted. Returns false (without fetching
+ * anything) when the payload went stale — the pipeline owns the single retry
+ * for the live track, so this module never calls back into the fetch seam.
  */
-export default function ApplyLyrics(lyrics: LyricsData | NoLyricsResult | null | undefined) {
+export default function ApplyLyrics(
+  lyrics: LyricsData | NoLyricsResult | null | undefined,
+): boolean {
   // Check if lyrics page exists
-  if (!document.querySelector('#SpicyLyricsPage')) return;
+  if (!document.querySelector('#SpicyLyricsPage')) return false;
 
   // Apply font sizes from settings
   const lyricsContent = document.querySelector<HTMLElement>(
@@ -41,21 +45,15 @@ export default function ApplyLyrics(lyrics: LyricsData | NoLyricsResult | null |
     isNoLyricsResult(lyrics as never) ||
     (lyrics as NoLyricsResult).status === 'NO_LYRICS'
   )
-    return;
+    return false;
   const typedLyrics = lyrics as LyricsData;
-  if (!typedLyrics?.id) return;
+  if (!typedLyrics?.id) return false;
 
-  // Check if lyrics match current track
+  // Stale payload (track moved mid-flight): decline and let the pipeline
+  // retry once for the live track. No self-refetch here — the seam stays
+  // one-directional (pipeline -> apply).
   const currentTrackId = Spicetify.Player.data?.item?.uri?.split(':')[2];
-  if (currentTrackId !== typedLyrics?.id) {
-    const uri = Spicetify.Player.data?.item?.uri;
-    if (uri) {
-      fetchLyrics(uri)
-        .then(ApplyLyrics)
-        .catch((e) => console.error('[Amai Lyrics] Failed to re-fetch mismatched lyrics:', e));
-    }
-    return;
-  }
+  if (currentTrackId !== typedLyrics?.id) return false;
 
   // Apply lyrics based on type
   // NOTE: 'Syllable' lyrics are normalized to 'Line' on ingest (processing.ts);
@@ -71,5 +69,7 @@ export default function ApplyLyrics(lyrics: LyricsData | NoLyricsResult | null |
     // Show refresh button after lyrics are applied
     showRefreshButton();
     addLinesEvListener(); // Attach event listener after lyrics are rendered
+    return true;
   }
+  return false;
 }

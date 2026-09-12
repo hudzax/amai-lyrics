@@ -1,9 +1,8 @@
 import { SettingsSection } from '../edited_packages/spcr-settings/settingsSection';
 import storage from './storage';
-import { lyricsCache } from './Lyrics/fetchLyrics';
+import { lyricsCache, loadAndApplyLyrics } from './Lyrics/fetchLyrics';
 import Defaults from '../components/Global/Defaults';
-import fetchLyrics from './Lyrics/fetchLyrics';
-import ApplyLyrics from './Lyrics/Global/Applyer';
+import { openTrustedExternalUrl } from './externalNavigation';
 
 export function setSettingsMenu() {
   generalSettings();
@@ -40,13 +39,13 @@ function generalSettings() {
     const playerData = Spicetify.Player.data as Spicetify.PlayerState;
     if (!playerData?.item?.uri) return; // Exit if `uri` is not available
     const currentUri = playerData.item.uri;
-    fetchLyrics(currentUri)
-      .then(ApplyLyrics)
-      .catch((e) => console.error('[Amai Lyrics] Refetch after API key change failed:', e));
+    loadAndApplyLyrics(currentUri).catch((e) =>
+      console.error('[Amai Lyrics] Refetch after API key change failed:', e),
+    );
   });
 
   settings.addButton('get-gemini-api', 'Get your own Gemini API here', 'get API Key', () => {
-    window.location.href = 'https://aistudio.google.com/app/apikey/';
+    openTrustedExternalUrl('https://aistudio.google.com/app/apikey/', '_self');
   });
 
   settings.addToggle(
@@ -190,7 +189,7 @@ function infos() {
     'Enhances your Spotify experience with Furigana for Japanese Kanji, Romaji for Japanese lyrics, Romanization for Korean lyrics, and line-by-line translations powered by Google Gemini AI.',
     `v${Defaults.Version}`,
     () => {
-      window.location.href = 'https://github.com/hudzax/amai-lyrics';
+      openTrustedExternalUrl('https://github.com/hudzax/amai-lyrics', '_self');
     },
   );
 
@@ -199,7 +198,7 @@ function infos() {
     'Found a bug or have a feature request?',
     'Report Issue',
     () => {
-      window.location.href = 'https://github.com/hudzax/amai-lyrics/issues';
+      openTrustedExternalUrl('https://github.com/hudzax/amai-lyrics/issues', '_self');
     },
   );
 

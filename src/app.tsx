@@ -113,11 +113,10 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
   // Initialize with current song if available
   const currentUri = Spicetify.Player.data?.item?.uri;
   if (currentUri) {
-    const { default: fetchLyrics } = await import('./utils/Lyrics/fetchLyrics');
-    const { default: ApplyLyrics } = await import('./utils/Lyrics/Global/Applyer');
-    fetchLyrics(currentUri)
-      .then(ApplyLyrics)
-      .catch((e) => console.error('[Amai Lyrics] Failed to fetch initial lyrics:', e));
+    const { loadAndApplyLyrics } = await import('./utils/Lyrics/fetchLyrics');
+    loadAndApplyLyrics(currentUri).catch((e) =>
+      console.error('[Amai Lyrics] Failed to fetch initial lyrics:', e),
+    );
   }
 
   // Handle online/offline events
@@ -125,11 +124,10 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
     storage.set('lastFetchedUri', null);
     const currentUri = Spicetify.Player.data?.item?.uri;
     if (currentUri) {
-      const { default: fetchLyrics } = await import('./utils/Lyrics/fetchLyrics');
-      const { default: ApplyLyrics } = await import('./utils/Lyrics/Global/Applyer');
-      fetchLyrics(currentUri)
-        .then(ApplyLyrics)
-        .catch((e) => console.error('[Amai Lyrics] Failed to re-fetch on online:', e));
+      const { loadAndApplyLyrics } = await import('./utils/Lyrics/fetchLyrics');
+      loadAndApplyLyrics(currentUri).catch((e) =>
+        console.error('[Amai Lyrics] Failed to re-fetch on online:', e),
+      );
     }
   };
   lifecycle.trackWindow('online', onOnline as never);

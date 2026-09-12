@@ -3,10 +3,10 @@
  */
 
 import Platform from '../../components/Global/Platform';
-import { SpotifyPlayer } from '../../components/Global/SpotifyPlayer';
 import { getLyrics, LyricsResult } from '../API/Lyrics';
 import { ClearLyricsPageContainer, noLyricsMessage, NoLyricsResult } from './ui';
 import { processAndEnhanceLyrics } from './processing';
+import { LyricsRequestToken } from './publish';
 import { LyricsData } from './conversion';
 
 /**
@@ -18,6 +18,7 @@ import { LyricsData } from './conversion';
 export async function fetchLyricsFromAPI(
   trackId: string,
   flush = false,
+  token: LyricsRequestToken,
 ): Promise<LyricsData | NoLyricsResult> {
   try {
     const spotifyAccessToken = await Platform.GetSpotifyAccessToken();
@@ -41,13 +42,10 @@ export async function fetchLyricsFromAPI(
       return await noLyricsMessage(trackId);
     }
 
-    // Cheaper short-circuit for skipped tracks: if the user has already moved
-    // off this track, skip the expensive Gemini enhancement (phonetics +
-    // translations). The basic lyrics are still cached so a re-seek is fast.
-    const isCurrent = SpotifyPlayer.GetSongId() === trackId;
-
-    // Process and enhance lyrics
-    return await processAndEnhanceLyrics(trackId, lyricsJson, isCurrent);
+    // Currency lives with the pipeline token now: the skip decision is made
+    // where the enhancement runs (processing checks the token before doing
+    // expensive work), not recomputed here from player state.
+    return await processAndEnhanceLyrics(trackId, lyricsJson, token);
   } catch (error) {
     // Log error with detailed information
     console.error(
