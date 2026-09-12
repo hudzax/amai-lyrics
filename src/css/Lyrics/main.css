@@ -296,6 +296,7 @@ ruby > rt {
   /* color: #ccc; */
   line-height: calc(var(--DefaultLyricsSize) * var(--TranslationFontSize, 0.575) * 1.35);
   font-weight: 500;
+  font-style: italic;
   max-width: 100%;
   white-space: normal;
   overflow-wrap: anywhere;
