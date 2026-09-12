@@ -5946,6 +5946,7 @@
         TRANSLATION_FONT_SIZE: "translation_font_size",
         DEFAULT_LYRICS_SIZE: "default_lyrics_size",
         ENABLE_PLAYBAR_LYRICS: "enable_playbar_lyrics",
+        ENABLE_APP_BACKGROUND: "enable_app_background",
         CURRENT_LYRICS_DATA: "currentLyricsData",
         LAST_FETCHED_URI: "lastFetchedUri"
       };
@@ -6088,7 +6089,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.4.43";
+      version = "1.5.0";
     }
   });
 
@@ -6335,6 +6336,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         LyricsContainerExists: false,
         lyrics_spacing: 2,
         enableRomaji: false,
+        enableAppBackground: false,
         disableRomajiToggleNotification: false,
         disableTranslation: false,
         translationFontSize: "0.575",
@@ -9019,15 +9021,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-7528-G55Qmxj7IzDt/1a0950c1848a/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a09645516fa/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-7528-G55Qmxj7IzDt/1a0950c1848a/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a09645516fa/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-7528-G55Qmxj7IzDt/1a0950c184bb/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a096455174b/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-7528-G55Qmxj7IzDt/1a0950c184bb/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a096455174b/ProcessingIndicator.css"() {
     }
   });
 
@@ -34065,6 +34067,190 @@ ${JSON.stringify(lyricsOnly)}`
     }
   });
 
+  // src/components/DynamicBG/AppBackground.ts
+  var AppBackground_exports = {};
+  __export(AppBackground_exports, {
+    APP_BG_CLASS: () => APP_BG_CLASS,
+    APP_BG_HOST_CLASS: () => APP_BG_HOST_CLASS,
+    APP_BG_HOST_FALLBACK_SELECTOR: () => APP_BG_HOST_FALLBACK_SELECTOR,
+    APP_BG_HOST_SELECTOR: () => APP_BG_HOST_SELECTOR,
+    APP_BG_IMG_A_ID: () => APP_BG_IMG_A_ID,
+    APP_BG_IMG_B_ID: () => APP_BG_IMG_B_ID,
+    APP_BG_ON_CLASS: () => APP_BG_ON_CLASS,
+    AppBackground: () => AppBackground,
+    isAppBackgroundEnabled: () => isAppBackgroundEnabled,
+    resolveAppBgHost: () => resolveAppBgHost,
+    syncAppBgMarker: () => syncAppBgMarker
+  });
+  function isAppBackgroundEnabled() {
+    const raw = storage_default.get("enable_app_background");
+    if (raw === "true")
+      return true;
+    if (raw === "false")
+      return false;
+    return Defaults_default.enableAppBackground ?? false;
+  }
+  function resolveAppBgHost() {
+    return document.querySelector(APP_BG_HOST_SELECTOR) ?? document.querySelector(APP_BG_HOST_FALLBACK_SELECTOR);
+  }
+  function syncAppBgMarker() {
+    document.documentElement.classList.toggle(APP_BG_ON_CLASS, isAppBackgroundEnabled());
+  }
+  function findAppBg(host) {
+    for (const child of Array.from(host.children)) {
+      if (child instanceof HTMLElement && child.classList.contains(APP_BG_CONTAINER_CLASS) && child.classList.contains(APP_BG_CLASS)) {
+        return child;
+      }
+    }
+    return null;
+  }
+  var APP_BG_HOST_SELECTOR, APP_BG_HOST_FALLBACK_SELECTOR, APP_BG_ON_CLASS, APP_BG_HOST_CLASS, APP_BG_CLASS, APP_BG_IMG_A_ID, APP_BG_IMG_B_ID, APP_BG_CONTAINER_CLASS, APP_BG_HOST_HELPER_CLASS, AppBackground;
+  var init_AppBackground = __esm({
+    "src/components/DynamicBG/AppBackground.ts"() {
+      init_storage();
+      init_Defaults();
+      init_utils();
+      APP_BG_HOST_SELECTOR = ".Root";
+      APP_BG_HOST_FALLBACK_SELECTOR = ".Root__top-container";
+      APP_BG_ON_CLASS = "amai-app-bg-on";
+      APP_BG_HOST_CLASS = "amai-app-bg-host";
+      APP_BG_CLASS = "amai-app-bg";
+      APP_BG_IMG_A_ID = "amai-app-bg-img-a";
+      APP_BG_IMG_B_ID = "amai-app-bg-img-b";
+      APP_BG_CONTAINER_CLASS = "sweet-dynamic-bg";
+      APP_BG_HOST_HELPER_CLASS = "sweet-dynamic-bg-in-this";
+      AppBackground = class {
+        constructor() {
+          this.cached = {
+            host: null,
+            dynamicBg: null,
+            lastImgUrl: null
+          };
+        }
+        apply(coverUrl) {
+          if (!isAppBackgroundEnabled())
+            return;
+          syncAppBgMarker();
+          const normalized = normalizeImageUrl(coverUrl);
+          if (!normalized)
+            return;
+          coverUrl = normalized;
+          try {
+            const host = resolveAppBgHost();
+            if (!host) {
+              this.clearCache();
+              return;
+            }
+            if (this.cached.host !== host) {
+              this.cached.host = host;
+              this.cached.dynamicBg = findAppBg(host);
+            }
+            if (this.cached.dynamicBg && !host.contains(this.cached.dynamicBg)) {
+              this.cached.dynamicBg = findAppBg(host);
+            }
+            if (coverUrl === this.cached.lastImgUrl && this.cached.dynamicBg)
+              return;
+            if (!this.cached.dynamicBg) {
+              this.createNewBackground(host, coverUrl);
+            } else {
+              const imgA = this.cached.dynamicBg.querySelector(
+                `#${APP_BG_IMG_A_ID}`
+              );
+              const imgB = this.cached.dynamicBg.querySelector(
+                `#${APP_BG_IMG_B_ID}`
+              );
+              if (!imgA || !imgB) {
+                this.createNewBackground(host, coverUrl);
+              } else {
+                this.updateExistingBackground({ imgA, imgB }, coverUrl);
+              }
+            }
+            this.cached.lastImgUrl = coverUrl;
+          } catch (error) {
+            console.error("Error Applying the Dynamic BG to the App:", error);
+          }
+        }
+        remove() {
+          try {
+            const host = this.cached.host ?? resolveAppBgHost();
+            const bg = host ? findAppBg(host) : null;
+            bg?.remove();
+            if (host) {
+              if (!findAppBg(host)) {
+                host.classList.remove(APP_BG_HOST_HELPER_CLASS);
+              }
+              host.classList.remove(APP_BG_HOST_CLASS);
+            }
+            document.documentElement.classList.remove(APP_BG_ON_CLASS);
+            this.clearCache();
+          } catch (error) {
+            console.error("Error Removing the Dynamic BG from the App:", error);
+          }
+        }
+        isApplied() {
+          const host = resolveAppBgHost();
+          return !!host && !!findAppBg(host);
+        }
+        destroy() {
+          this.remove();
+        }
+        clearCache() {
+          this.cached.lastImgUrl = null;
+          this.cached.dynamicBg = null;
+          this.cached.host = null;
+        }
+        createNewBackground(host, coverUrl) {
+          setRandomCSSVariables();
+          findAppBg(host)?.remove();
+          const dynamicBackground = document.createElement("div");
+          dynamicBackground.className = `${APP_BG_CONTAINER_CLASS} ${APP_BG_CLASS}`;
+          dynamicBackground.setAttribute("current-img", coverUrl);
+          const placeholder = document.createElement("div");
+          placeholder.className = "placeholder";
+          dynamicBackground.appendChild(placeholder);
+          const imgA = createBackgroundImage(
+            APP_BG_IMG_A_ID,
+            "bg-image primary active",
+            coverUrl,
+            "eager"
+          );
+          dynamicBackground.appendChild(imgA);
+          const imgB = createBackgroundImage(APP_BG_IMG_B_ID, "bg-image secondary", "", "lazy");
+          dynamicBackground.appendChild(imgB);
+          host.classList.add(APP_BG_HOST_HELPER_CLASS, APP_BG_HOST_CLASS);
+          host.appendChild(dynamicBackground);
+          console.log("[Amai Lyrics] App background created:", coverUrl);
+          imgA.onload = () => {
+            requestAnimationFrame(() => {
+              dynamicBackground.classList.add("sweet-dynamic-bg-loaded");
+            });
+          };
+          this.cached.dynamicBg = dynamicBackground;
+        }
+        updateExistingBackground(images, coverUrl) {
+          const { imgA, imgB } = images;
+          const activeImg = imgA.classList.contains("active") ? imgA : imgB;
+          const inactiveImg = activeImg === imgA ? imgB : imgA;
+          inactiveImg.onload = null;
+          inactiveImg.onerror = null;
+          inactiveImg.onload = () => {
+            if (inactiveImg.src !== coverUrl)
+              return;
+            requestAnimationFrame(() => {
+              activeImg.classList.remove("active");
+              inactiveImg.classList.add("active");
+              this.cached.dynamicBg?.setAttribute("current-img", coverUrl);
+            });
+          };
+          inactiveImg.onerror = () => {
+            console.error("Error loading new background image:", coverUrl);
+          };
+          inactiveImg.src = coverUrl;
+        }
+      };
+    }
+  });
+
   // src/utils/ArtworkColors.ts
   var ArtworkColors_exports = {};
   __export(ArtworkColors_exports, {
@@ -34964,6 +35150,28 @@ ${JSON.stringify(lyricsOnly)}`
         storage_default.set("enable_playbar_lyrics", settings.getFieldValue("enablePlaybarLyrics"));
       }
     );
+    settings.addToggle(
+      "enableAppBackground",
+      "Enable Amai Theme",
+      Defaults_default.enableAppBackground,
+      () => {
+        const enabled = settings.getFieldValue("enableAppBackground");
+        storage_default.set("enable_app_background", enabled ? "true" : "false");
+        if (enabled) {
+          const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
+          void Promise.resolve().then(() => (init_AppBackground(), AppBackground_exports)).then(
+            ({ AppBackground: AppBackground2, syncAppBgMarker: syncAppBgMarker2 }) => {
+              syncAppBgMarker2();
+              new AppBackground2().apply(coverUrl);
+            }
+          );
+        } else {
+          void Promise.resolve().then(() => (init_AppBackground(), AppBackground_exports)).then(({ AppBackground: AppBackground2 }) => {
+            new AppBackground2().remove();
+          });
+        }
+      }
+    );
     settings.addDropDown(
       "translation-language",
       "Translation Language",
@@ -35410,11 +35618,15 @@ ${JSON.stringify(lyricsOnly)}`
   init_ui();
   init_debounce2();
   var SongChangeManager = class {
-    constructor(buttonManager, backgroundManager) {
+    constructor(buttonManager, backgroundManager, appBackgroundManager) {
       this.buttonManager = buttonManager;
       this.backgroundManager = backgroundManager;
+      this.appBackgroundManager = appBackgroundManager ?? null;
       this.debouncedBgApply = debounce2((coverUrl) => {
         this.backgroundManager.apply(coverUrl);
+      }, 500);
+      this.debouncedAppBgApply = debounce2((coverUrl) => {
+        this.appBackgroundManager?.apply(coverUrl);
       }, 500);
       this.debouncedPageBgApply = debounce2(() => {
         void Promise.resolve().then(() => (init_dynamicBackground(), dynamicBackground_exports)).then(
@@ -35433,6 +35645,7 @@ ${JSON.stringify(lyricsOnly)}`
     }
     dispose() {
       this.debouncedBgApply.cancel();
+      this.debouncedAppBgApply.cancel();
       this.debouncedPageBgApply.cancel();
       this.debouncedAccentPublish.cancel();
     }
@@ -35454,6 +35667,7 @@ ${JSON.stringify(lyricsOnly)}`
       );
       this.buttonManager.updateRegistration();
       this.debouncedBgApply(Spicetify.Player.data?.item?.metadata?.image_url);
+      this.debouncedAppBgApply(Spicetify.Player.data?.item?.metadata?.image_url);
       this.debouncedAccentPublish(Spicetify.Player.data?.item?.metadata?.image_url);
       if (Spicetify.Player.data.item?.type === "track") {
         if (document.querySelector("#SpicyLyricsPage .ContentBox .NowBar")) {
@@ -35571,6 +35785,7 @@ ${JSON.stringify(lyricsOnly)}`
   };
 
   // src/app.tsx
+  init_AppBackground();
   init_PageView();
 
   // src/utils/suppressBlankToasts.ts
@@ -35736,9 +35951,15 @@ ${JSON.stringify(lyricsOnly)}`
     );
     lifecycle_default.trackWhentil(playbackWhen);
     const backgroundManager = new NowPlayingBarBackground();
-    const songChangeManager = new SongChangeManager(buttonManager, backgroundManager);
+    const appBackgroundManager = new AppBackground();
+    const songChangeManager = new SongChangeManager(
+      buttonManager,
+      backgroundManager,
+      appBackgroundManager
+    );
     lifecycle_default.trackCallback(() => songChangeManager.dispose());
     lifecycle_default.trackCallback(() => backgroundManager.destroy());
+    lifecycle_default.trackCallback(() => appBackgroundManager.destroy());
     new PageManager(buttonManager);
     void Promise.resolve().then(() => (init_ArtworkColors(), ArtworkColors_exports)).then(({ publishArtworkAccents: publishArtworkAccents2 }) => {
       void publishArtworkAccents2(Spicetify.Player.data?.item?.metadata?.image_url ?? null);
@@ -35752,6 +35973,22 @@ ${JSON.stringify(lyricsOnly)}`
     };
     applyDynamicBg();
     lifecycle_default.trackPlayerEvent("songchange", () => applyDynamicBg());
+    syncAppBgMarker();
+    const applyAppBg = () => {
+      if (!resolveAppBgHost())
+        return;
+      const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
+      appBackgroundManager.apply(coverUrl);
+    };
+    applyAppBg();
+    lifecycle_default.trackPlayerEvent("songchange", () => applyAppBg());
+    const mainViewObserver = new MutationObserver(() => {
+      if (resolveAppBgHost() && !appBackgroundManager.isApplied()) {
+        applyAppBg();
+      }
+    });
+    mainViewObserver.observe(document.body, { childList: true, subtree: true });
+    lifecycle_default.trackObserver(mainViewObserver);
     const sidebarObserver = new MutationObserver(() => {
       if (document.querySelector(".Root__right-sidebar aside.NowPlayingView")) {
         applyDynamicBg();
@@ -35858,7 +36095,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7528-G55Qmxj7IzDt/1a0950c1848a/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a09645516fa/DotLoader.css */
 #DotLoader {
   --dot-color: var(--amai-accent-1);
   --dot-color-dim: color-mix(in srgb, var(--amai-accent-1) 22%, transparent);
@@ -35893,7 +36130,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7528-G55Qmxj7IzDt/1a0950c184bb/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a096455174b/ProcessingIndicator.css */
 #SpicyLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -35975,7 +36212,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7528-G55Qmxj7IzDt/1a0950c17cc0/tokens.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a0964550e80/tokens.css */
 :root {
   --amai-accent-1: #1ed760;
   --amai-accent-2: #1db954;
@@ -36028,7 +36265,7 @@ ${JSON.stringify(lyricsOnly)}`
   --amai-scrollbar-thumb: rgba(255, 255, 255, 0.6);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7528-G55Qmxj7IzDt/1a0950c17fc1/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a0964551291/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -36186,7 +36423,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7528-G55Qmxj7IzDt/1a0950c18042/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a0964551312/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -36394,7 +36631,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7528-G55Qmxj7IzDt/1a0950c180b3/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a0964551383/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -36998,7 +37235,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7528-G55Qmxj7IzDt/1a0950c18184/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a0964551474/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -37170,6 +37407,136 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
     filter: blur(20px) hue-rotate(calc(var(--bg-hue-shift) + 30deg));
   }
 }
+:is(.Root, .Root__top-container).amai-app-bg-host {
+  overflow: clip;
+  position: relative;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+:is(.Root, .Root__top-container).amai-app-bg-host > .sweet-dynamic-bg.amai-app-bg {
+  --bg-saturation: 1.8;
+  --bg-brightness: 0.35;
+  --bg-blur-primary: 45px;
+  --bg-blur-secondary: 65px;
+}
+:is(.Root, .Root__top-container).amai-app-bg-host > .sweet-dynamic-bg.amai-app-bg::after {
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0) 22%, rgba(0, 0, 0, 0) 72%, rgba(0, 0, 0, 0.6) 100%);
+}
+.amai-app-bg-host .Root__top-container,
+.amai-app-bg-host #global-nav-bar,
+.amai-app-bg-host .Root__now-playing-bar,
+.amai-app-bg-host .Root__main-view,
+.amai-app-bg-host .main-view-container,
+.amai-app-bg-host .main-content-view,
+.amai-app-bg-host .main-view-container__scroll-node,
+.amai-app-bg-host .main-view-container div[data-overlayscrollbars-viewport],
+.amai-app-bg-host .main-view-container__scroll-node-child,
+.amai-app-bg-host .main-view-container__scroll-node-child-spacer,
+.amai-app-bg-host .playlist-playlist-playlistContent,
+.amai-app-bg-host main {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+.amai-app-bg-host .Root__nav-bar .main-yourLibraryX-headerContent button,
+.amai-app-bg-host .Root__nav-bar .main-yourLibraryX-headerContent button::before,
+.amai-app-bg-host .Root__nav-bar .main-yourLibraryX-headerContent button::after {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+.amai-app-bg-host .Root__nav-bar li:hover,
+.amai-app-bg-host .Root__nav-bar [role=row]:hover,
+.amai-app-bg-host .Root__nav-bar [role=listitem]:hover,
+.amai-app-bg-host .Root__nav-bar [data-encore-id=listRow]:hover,
+.amai-app-bg-host .Root__nav-bar [data-encore-id=listRow]:hover::before,
+.amai-app-bg-host .Root__nav-bar [data-encore-id=listRow]:hover::after {
+  background-color: rgba(0, 0, 0, 0.15) !important;
+  background-image: none !important;
+}
+.amai-app-bg-host .main-trackList-trackListHeader {
+  position: static !important;
+  top: auto !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+}
+.amai-app-bg-host header[data-testid=topbar] {
+  display: none !important;
+}
+.amai-app-bg-host .main-entityHeader-backgroundColor,
+.amai-app-bg-host .playlist-playlist-actionBarBackground-background {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+.amai-app-bg-host .Root__nav-bar {
+  background-color: var(--amai-fill-glass) !important;
+  background-image: none !important;
+  border: 1px solid var(--amai-stroke-2) !important;
+  box-shadow: var(--amai-shadow-panel) !important;
+}
+.amai-app-bg-host .Root__nav-bar:has([data-encore-id="card"]) {
+  background-color: var(--background-base) !important;
+}
+.amai-app-bg-host .Root__nav-bar .main-yourLibraryX-libraryContainer,
+.amai-app-bg-host .Root__nav-bar .main-yourLibraryX-entryPoints {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+.amai-app-bg-host #global-nav-bar button,
+.amai-app-bg-host #global-nav-bar input {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+.amai-app-bg-host #global-nav-bar div:has(> input) {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 500px !important;
+}
+.amai-app-bg-host #global-nav-bar div:has(> input):focus-within {
+  border-color: rgba(255, 255, 255, 0.65) !important;
+}
+.amai-app-bg-on .Root__right-sidebar,
+.amai-app-bg-on .Root__right-sidebar aside.NowPlayingView,
+.amai-app-bg-on .Root__right-sidebar-peek,
+.amai-app-bg-on .Root__right-sidebar .main-nowPlayingView-content {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+.amai-app-bg-on .Root__right-sidebar .main-nowPlayingView-container,
+.amai-app-bg-on .Root__right-sidebar .main-nowPlayingView-container > *:before {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+.amai-app-bg-on .Root__right-sidebar .main-nowPlayingView-aboutArtist div:not(:has(img, video)) {
+  background-color: transparent !important;
+}
+.amai-app-bg-on .Root__right-sidebar .main-nowPlayingView-aboutArtist > div,
+.amai-app-bg-on .Root__right-sidebar .main-nowPlayingView-aboutArtist div[aria-hidden=true] {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+.amai-app-bg-on .Root__right-sidebar aside.NowPlayingView > .sweet-dynamic-bg,
+.amai-app-bg-on .Root__right-sidebar aside.NowPlayingView > .sweet-dynamic-bg * {
+  display: none !important;
+  animation: none !important;
+  filter: none !important;
+}
+.amai-app-bg-on #SpicyLyricsPage:not(.Fullscreen) .sweet-dynamic-bg,
+.amai-app-bg-on #SpicyLyricsPage:not(.Fullscreen) .sweet-dynamic-bg * {
+  display: none !important;
+  animation: none !important;
+  filter: none !important;
+}
 .amai-hidden .sweet-dynamic-bg,
 .amai-hidden .sweet-dynamic-bg::after,
 .amai-hidden .sweet-dynamic-bg > img.bg-image,
@@ -37177,7 +37544,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7528-G55Qmxj7IzDt/1a0950c181d5/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a09645514f5/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -37405,6 +37772,7 @@ header.main-topBar-container .amai-info {
 }
 ruby {
   margin-top: -0.5rem;
+  max-width: 100%;
 }
 ruby.romaja {
   margin-right: 0.25rem;
@@ -37415,6 +37783,9 @@ ruby > rt {
   line-height: 1.2;
   font-weight: 500;
   letter-spacing: 0.02em;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .Button-buttonSecondary-small-useBrowserDefaultFocusStyle {
   border: 1px solid rgba(255, 255, 255, 0.65);
@@ -37429,14 +37800,37 @@ ruby > rt {
   font-size: calc(var(--DefaultLyricsSize) * var(--TranslationFontSize, 0.575));
   line-height: calc(var(--DefaultLyricsSize) * var(--TranslationFontSize, 0.575) * 1.35);
   font-weight: 500;
+  font-style: italic;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .line {
   display: flex;
   flex-direction: column;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  box-sizing: border-box;
 }
 .main-lyrics-text {
   display: block;
   width: 100%;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  box-sizing: border-box;
+}
+#SpicyLyricsPage .LyricsContainer .LyricsContent ruby {
+  max-width: 100%;
+}
+#SpicyLyricsPage .LyricsContainer .LyricsContent ruby > rt {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .main-trackList-trackListRow:focus-within,
 .main-trackList-trackListRow:hover,
@@ -37462,13 +37856,16 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7528-G55Qmxj7IzDt/1a0950c18256/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a0964551576/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
   flex-wrap: wrap;
   transition: opacity .1s cubic-bezier(0.61, 1, 0.88, 1);
   font-size: var(--font-size);
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line .word,
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
@@ -37686,7 +38083,8 @@ ruby > rt {
   transform-origin: left center;
   transition: scale .2s var(--amai-ease-io), opacity .2s var(--amai-ease-io);
   margin: 1cqw 0 0 0;
-  display: inline-block;
+  display: block;
+  max-width: 100%;
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent[data-lyrics-type=Line] .line.OppositeAligned {
   transform-origin: right center;
@@ -37726,7 +38124,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7528-G55Qmxj7IzDt/1a0950c182a7/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a09645515c7/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -37748,7 +38146,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7528-G55Qmxj7IzDt/1a0950c182d8/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a09645515f8/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -37775,7 +38173,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-7528-G55Qmxj7IzDt/1a0950c18309/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5044-clfNX64MZE9N/1a0964551629/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
@@ -37848,7 +38246,7 @@ ruby > rt {
   ruby-position: over;
 }
 .amai-playbar-lyrics ruby > rt {
-  font-size: 70%;
+  font-size: 85%;
   line-height: 1.2;
 }
 .amai-hide-controls .player-controls {
