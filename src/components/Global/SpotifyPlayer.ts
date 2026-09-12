@@ -1,9 +1,6 @@
 import SpicyFetch from '../../utils/API/SpicyFetch';
 import { spotifyHex } from '../../utils/Hasher';
-import GetProgress, {
-  _DEPRECATED___GetProgress,
-  syncPlaybackPosition,
-} from '../../utils/Gets/GetProgress';
+import GetProgress, { syncPlaybackPosition } from '../../utils/Gets/GetProgress';
 
 type ArtworkSize = 's' | 'l' | 'xl' | 'd';
 
@@ -170,9 +167,6 @@ export const SpotifyPlayer = {
     return artists?.join(', ') ?? '';
   },
   IsPodcast: false,
-  _DEPRECATED_: {
-    GetTrackPosition: _DEPRECATED___GetProgress,
-  },
   Pause: Spicetify.Player.pause,
   Play: Spicetify.Player.play,
   Skip: {

@@ -1,3 +1,21 @@
+/**
+ * Playback-time seam - the single place that knows where in the track we are.
+ *
+ * Deep interface (everything callers need):
+ * - GetProgress (default): raw position in ms. Never throws, never NaN.
+ * - resolveIsPlaying: live play state with memory fallback. Never throws.
+ * - getPositionFor + PlaybackSurfaceOffset: per-surface lead times. One map.
+ * - requestPositionTracking: ref-counted consumer registration for the sync loop.
+ * - requestPositionSync: one-shot prime for the init path with zero consumers.
+ * - syncPlaybackPosition: instant re-anchor plus exact sync after a jump.
+ *
+ * Internal (not exported): defensive Spicetify readers, RPC fallbacks,
+ * re-anchoring, loop scheduling, teardown. The loop stays on a bespoke
+ * variable-rate timer instead of IntervalManager: it needs 250/500/1000ms
+ * rates, window-shared hot-reload state, and a heartbeat while hidden.
+ * Teardown flows through lifecycle, which owns the destroy callback below.
+ */
+
 import Global from '../../components/Global/Global';
 import lifecycle from '../lifecycle';
 import { extrapolatePosition } from './extrapolatePosition';
@@ -383,7 +401,7 @@ function scheduleLoop(delay: number): void {
   state.loopTimeoutId = id;
 }
 
-export function destroyGetProgressLoop(): void {
+function destroyGetProgressLoop(): void {
   if (state.loopTimeoutId !== null) {
     clearTimeout(state.loopTimeoutId);
     state.loopTimeoutId = null;
@@ -527,7 +545,7 @@ export function getPositionFor(surface: PlaybackSurface): number {
 // Spicetify.Player.isPlaying() flipping to true, so it can be dropped for up to
 // the next paused-poll tick. Re-anchoring here is instant and race-free; the
 // next scheduled doSync() refines it with an exact position read.
-export function reanchorPosition(): void {
+function reanchorPosition(): void {
   try {
     const pub = getPublicProgress();
     if (pub !== null) {
@@ -673,34 +691,3 @@ export default function GetProgress(): number {
 // (fresh closure), so we register unconditionally — lifecycle disposes it on the
 // next reload via __amaiLyricsTeardown.
 lifecycle.trackCallback(destroyGetProgressLoop);
-
-// DEPRECATED
-export function _DEPRECATED___GetProgress(): number {
-  try {
-    const st = Spicetify?.Player?.origin?._state as
-      { positionAsOfTimestamp?: unknown; timestamp?: unknown; isPaused?: unknown } | undefined;
-    if (!st) {
-      console.error('Spicetify Player state is not available.');
-      return 0;
-    }
-
-    const { positionAsOfTimestamp, timestamp, isPaused } = st;
-
-    if (positionAsOfTimestamp == null || timestamp == null) {
-      console.error('Playback state is incomplete.');
-      return 0;
-    }
-    const pos = safeFiniteNumber(positionAsOfTimestamp);
-    const ts = safeFiniteNumber(timestamp);
-    if (pos === null || ts === null) return 0;
-
-    const now = Date.now();
-    if (isPaused) {
-      return pos;
-    } else {
-      return extrapolatePosition(pos, ts, now);
-    }
-  } catch {
-    return 0;
-  }
-}

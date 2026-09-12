@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
+import lifecycle from '../src/utils/lifecycle';
 import GetProgress, {
-  destroyGetProgressLoop,
   getPositionFor,
   PlaybackSurfaceOffset,
   resolveIsPlaying,
@@ -18,7 +18,7 @@ describe('playback-time seam', () => {
     spicetify.Spicetify.Player.getProgress = origPlayer.getProgress;
     spicetify.Spicetify.Player.isPlaying = origPlayer.isPlaying;
     spicetify.Spicetify.Player.data = { ...origData };
-    destroyGetProgressLoop();
+    lifecycle.disposeAll();
     vi.restoreAllMocks();
   });
 

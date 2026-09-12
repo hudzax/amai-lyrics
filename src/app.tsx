@@ -10,19 +10,8 @@ import { ButtonManager } from './managers/ButtonManager';
 import { EventManager } from './managers/EventManager';
 import { PageManager } from './managers/PageManager';
 import { SongChangeManager } from './managers/SongChangeManager';
-import { NowPlayingBarBackground } from './components/DynamicBG/NowPlayingBarBackground';
-import {
-  AppBackground,
-  appBackgroundSingleton,
-  isAppBackgroundEnabled,
-  resolveAppBgHost,
-  syncAppBgMarker,
-  syncLibraryGridState,
-  watchLibraryGridState,
-} from './components/DynamicBG/AppBackground';
-/** Re-dispatched by the settings toggle after the app-BG flag changes so live
- * managers (which own their instances/caches) can refresh stale hidden nodes. */
-export const APP_BG_CHANGED_EVENT = 'amai:appbg-changed';
+import { ArtworkSurfaces } from './components/DynamicBG/ArtworkSurfaces';
+export { APP_BG_CHANGED_EVENT } from './components/DynamicBG/ArtworkSurfaces';
 import PageView from './components/Pages/PageView';
 import { installBlankToastSuppressor } from './utils/suppressBlankToasts';
 import lifecycle from './utils/lifecycle';
@@ -56,141 +45,18 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
   );
   lifecycle.trackWhentil(playbackWhen);
 
-  // Set up managers
-  const backgroundManager = new NowPlayingBarBackground();
-  // Shared singleton (also used by the settings toggle) so the lastImgUrl
-  // dedup cache survives across call sites instead of rebuilding per call.
-  const appBackgroundManager: AppBackground = appBackgroundSingleton;
-  const songChangeManager = new SongChangeManager(
-    buttonManager,
-    backgroundManager,
-    appBackgroundManager,
-  );
+  // Set up managers: one artwork seam owns every background canvas plus the
+  // accent publish, so song changes and remounts fan out from a single module.
+  const surfaces = new ArtworkSurfaces();
+  surfaces.mount();
+  lifecycle.trackCallback(() => surfaces.destroy());
+  const songChangeManager = new SongChangeManager(buttonManager, surfaces);
   lifecycle.trackCallback(() => songChangeManager.dispose());
-  lifecycle.trackCallback(() => backgroundManager.destroy());
-  lifecycle.trackCallback(() => appBackgroundManager.destroy());
   new PageManager(buttonManager); // Used for side effects (navigation setup)
-
-  // Seed the artwork-derived accent colors (--amai-accent-*) for the initial
-  // track. Subsequent updates happen via SongChangeManager's debounced publish.
-  void import('./utils/ArtworkColors').then(({ publishArtworkAccents }) => {
-    void publishArtworkAccents(Spicetify.Player.data?.item?.metadata?.image_url ?? null);
-  });
 
   // Tear down the lyrics page (and its SimpleBar observers / tippy instances)
   // on plugin teardown so a hot-reload doesn't leave a stale #SpicyLyricsPage.
   lifecycle.trackCallback(() => PageView.Destroy());
-
-  // Set up dynamic background updates — event-driven instead of 1 Hz polling.
-  // Previous interval queried `.NowPlayingView` every second forever; now we
-  // observe DOM mount + song changes and only apply when actually needed.
-  // NOTE: no immediate `songchange` listeners here — SongChangeManager already
-  // fans out debounced applies for both canvases on songchange; an extra
-  // immediate apply per event would double the DOM scans + image loads.
-  const applyDynamicBg = () => {
-    if (!document.querySelector('.Root__right-sidebar aside.NowPlayingView')) return;
-    const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
-    backgroundManager.apply(coverUrl);
-  };
-  applyDynamicBg();
-
-  // Always-on artwork background behind Spotify's app frame (same artwork,
-  // debounced via SongChangeManager). Re-applied when the top container remounts
-  // on navigation; AppBackground.apply() itself respects the settings toggle.
-  // Sync the marker first so single-canvas sidebar rules apply even before the
-  // first artwork URL resolves.
-  syncAppBgMarker();
-  syncLibraryGridState();
-  const applyAppBg = () => {
-    // Enabled-check FIRST: the toggle defaults off, so this must cost one
-    // localStorage read and zero DOM queries on the disabled path.
-    if (!isAppBackgroundEnabled()) return;
-    if (!resolveAppBgHost()) return;
-    const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
-    appBackgroundManager.apply(coverUrl);
-  };
-  applyAppBg();
-  // Remount observer: catches Spotify recreating `.Root` on navigation.
-  // Deliberately NARROW — body childList WITHOUT subtree (`.Root` is a
-  // top-level child), mutation-filtered to host adds, and rAF-throttled so a
-  // burst of unrelated DOM churn (virtualized rows, tooltips) costs one cheap
-  // flag check instead of 3 querySelectors + child scans per batch. The
-  // previous version observed `subtree: true` with unfiltered callbacks and
-  // ran on EVERY DOM mutation even with the feature toggled off.
-  let appBgObserverQueued = false;
-  const mainViewObserver = new MutationObserver((mutations) => {
-    if (!isAppBackgroundEnabled()) return;
-    let hostAdded = false;
-    for (const mut of mutations) {
-      for (const node of mut.addedNodes) {
-        if (!(node instanceof Element)) continue;
-        if (
-          node.matches?.('.Root, .Root__top-container') ||
-          node.querySelector?.('.Root, .Root__top-container')
-        ) {
-          hostAdded = true;
-          break;
-        }
-      }
-      if (hostAdded) break;
-    }
-    if (!hostAdded || appBgObserverQueued) return;
-    appBgObserverQueued = true;
-    requestAnimationFrame(() => {
-      appBgObserverQueued = false;
-      if (!isAppBackgroundEnabled()) return;
-      // Own appends echo back here; isApplied() is cache-first so the echo
-      // is ~free and bails without rebuilding.
-      if (!appBackgroundManager.isApplied()) applyAppBg();
-    });
-  });
-  mainViewObserver.observe(document.body, { childList: true, subtree: false });
-  lifecycle.trackObserver(mainViewObserver);
-  // Library-grid opaque state has its own scoped observer (nav column only).
-  // The late-mount case (nav bar absent at init) is retried on navigation
-  // remounts via mainViewObserver batches — sync is idempotent and cheap.
-  const gridObserver = watchLibraryGridState();
-  if (gridObserver) lifecycle.trackObserver(gridObserver);
-  // Toggle refresh: hidden canvases (sidebar/page) skip their work while the
-  // app canvas is live, so toggling OFF must repaint them through the live
-  // instances — a fresh instance would miss the dedup cache and duplicate nodes.
-  const onAppBgChanged = () => {
-    if (isAppBackgroundEnabled()) return;
-    const lateGrid = watchLibraryGridState();
-    if (lateGrid) lifecycle.trackObserver(lateGrid);
-    applyDynamicBg();
-    const pageBox = document.querySelector<HTMLElement>('#SpicyLyricsPage .ContentBox');
-    if (pageBox) {
-      void import('./components/DynamicBG/dynamicBackground').then(
-        ({ default: ApplyDynamicBackground }) => ApplyDynamicBackground(pageBox),
-      );
-    }
-  };
-  lifecycle.trackWindow(APP_BG_CHANGED_EVENT, onAppBgChanged as never);
-  // Observe sidebar mount/unmount so opening the Now Playing View triggers apply immediately
-  const sidebarObserver = new MutationObserver(() => {
-    // Only act when the NowPlayingView appears; hidden removal is handled by apply's early return + cache clear
-    if (document.querySelector('.Root__right-sidebar aside.NowPlayingView')) {
-      applyDynamicBg();
-    }
-  });
-  const observeRoot = document.querySelector('.Root__right-sidebar') ?? document.body;
-  sidebarObserver.observe(observeRoot, { childList: true, subtree: true });
-  lifecycle.trackObserver(sidebarObserver);
-  // Also handle late-mounted right sidebar container itself
-  if (!document.querySelector('.Root__right-sidebar')) {
-    const bodyObserver = new MutationObserver((_muts, obs) => {
-      const sb = document.querySelector('.Root__right-sidebar');
-      if (sb) {
-        obs.disconnect();
-        sidebarObserver.disconnect();
-        sidebarObserver.observe(sb, { childList: true, subtree: true });
-        applyDynamicBg();
-      }
-    });
-    bodyObserver.observe(document.body, { childList: true, subtree: false });
-    lifecycle.trackObserver(bodyObserver);
-  }
 
   // Mirror visibility onto <html> so pure-CSS animations (dynamic background
   // rotation etc.) can pause via .amai-hidden rules while the client is

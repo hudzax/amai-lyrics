@@ -65,11 +65,9 @@ vi.mock('../src/utils/Gets/GetProgress', () => ({
   default: vi.fn(() => 0),
   requestPositionTracking: vi.fn(() => () => {}),
   requestPositionSync: vi.fn(),
-  reanchorPosition: vi.fn(),
   resolveIsPlaying: () => true,
   getPositionFor: () => 0,
   syncPlaybackPosition: vi.fn(),
-  _DEPRECATED___GetProgress: vi.fn(() => 0),
 }));
 
 vi.mock('../src/utils/API/Lyrics', () => ({
