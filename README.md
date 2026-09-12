@@ -1,31 +1,20 @@
 # 🎶 Amai Lyrics
 
-![Romaji Preview](./previews/preview_romaji.jpg)
+![Amai Theme Preview](./previews/amai_theme_3.jpg)
 
 Welcome! **Amai Lyrics** is an extension for [Spicetify](https://spicetify.app/) that helps you enjoy Japanese and Korean songs on Spotify. It adds Furigana to help you read Kanji, shows Romaji and Korean Romanization so you can follow along, and provides line-by-line translations.
 
-Using Google's latest Gemini model, Amai Lyrics can now display:
-
-- **Translations** for each line
-- **Furigana** (pronunciation guides) above Kanji
-- **Romaji** (Latin script) for Japanese lyrics
-- **Korean Romanization** (Latin script) for Korean lyrics
-
-Setup is simple with your own API key, and the clean design keeps everything easy to read.
+Powered by Google's Gemini model — just add your own API key. See Features below for details.
 
 ## 🌟 Features
 
-- **Line-by-line Translation:** See translations for each line of lyrics.
-- **Furigana Support:** Shows pronunciation guides above Kanji characters.
-- **Romaji Support:** Displays Japanese lyrics in Latin letters.
-- **Korean Romanization:** Shows Korean lyrics in Latin letters.
-- **Better Visuals:** Clean and easy-to-read design.
-- **Amai Theme:** Dynamic background extracted from the current song's artwork. Toggle available in settings.
+- **Lyrics Plus:** Line-by-line translations, Furigana for Kanji, Romaji for Japanese, and Romanization for Korean.
+- **Amai Theme:** Dynamic background from the current song's artwork. Toggle in settings.
 
   ![Amai Theme Preview 1](./previews/amai-theme_2.jpg)
-  ![Amai Theme Preview 2](./previews/amai_theme_3.jpg)
+  ![Amai Theme Preview 2](./previews/amai-theme_1.jpg)
 
-- **Playbar Lyrics:** Shows the current lyric line in the native Spotify playbar, revealing the playback controls on hover. Includes Furigana/Romaji rendering and a subtle entrance animation. Toggle available in settings.
+- **Playbar Lyrics:** Current line in the Spotify playbar with Furigana/Romaji support. Toggle in settings.
 
   ![Playbar Lyrics Preview 1](./previews/playbar_lyrics_preview_1.png)
   ![Playbar Lyrics Preview 2](./previews/playbar_lyrics_preview_2.png)
@@ -52,14 +41,6 @@ You can change the translation language in Spotify's settings after installing t
 ## 💻 Supported Platforms
 
 Amai Lyrics works on **Windows**, **Linux**, and **macOS**. These are the platforms supported by Spicetify, which Amai Lyrics runs on.
-
-## 👀 Preview
-
-Here’s what it looks like:
-
-![Furigana Preview](./previews/preview_furigana.jpg)
-
-![Korean Romanization Preview](./previews/preview_romaja.jpg)
 
 ## 🚀 How to Install
 
