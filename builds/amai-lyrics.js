@@ -6057,7 +6057,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.5.2";
+      version = "1.5.3";
     }
   });
 
@@ -8989,15 +8989,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-16140-sNwM1oU570Nz/1a0a0f9e206a/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286f2b/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-16140-sNwM1oU570Nz/1a0a0f9e206a/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286f2b/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-16140-sNwM1oU570Nz/1a0a0f9e20db/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286fac/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-16140-sNwM1oU570Nz/1a0a0f9e20db/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286fac/ProcessingIndicator.css"() {
     }
   });
 
@@ -36159,7 +36159,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16140-sNwM1oU570Nz/1a0a0f9e206a/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286f2b/DotLoader.css */
 #DotLoader {
   --dot-color: var(--amai-accent-1);
   --dot-color-dim: color-mix(in srgb, var(--amai-accent-1) 22%, transparent);
@@ -36194,7 +36194,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16140-sNwM1oU570Nz/1a0a0f9e20db/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286fac/ProcessingIndicator.css */
 #SpicyLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -36276,7 +36276,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16140-sNwM1oU570Nz/1a0a0f9e1710/tokens.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286500/tokens.css */
 :root {
   --amai-accent-1: #1ed760;
   --amai-accent-2: #1db954;
@@ -36329,7 +36329,7 @@ ${JSON.stringify(lyricsOnly)}`
   --amai-scrollbar-thumb: rgba(255, 255, 255, 0.6);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16140-sNwM1oU570Nz/1a0a0f9e1b01/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286851/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -36536,7 +36536,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16140-sNwM1oU570Nz/1a0a0f9e1bd2/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286972/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -36744,7 +36744,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16140-sNwM1oU570Nz/1a0a0f9e1c63/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286a03/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -37348,7 +37348,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16140-sNwM1oU570Nz/1a0a0f9e1d54/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286b24/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -37663,7 +37663,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16140-sNwM1oU570Nz/1a0a0f9e1df5/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286bb5/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -37802,59 +37802,6 @@ header.main-topBar-container .amai-info {
   padding-top: 0.4rem;
   padding-bottom: 0.4rem;
 }
-#amai-settings button,
-#amai-dev-settings button,
-#amai-info button {
-  --encore-control-size-smaller: 32px;
-  --encore-spacing-tighter-4: 4px;
-  --encore-spacing-base: 16px;
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-  background-color: transparent;
-  border-radius: var(--encore-button-corner-radius,9999px);
-  cursor: pointer;
-  text-align: center;
-  text-decoration: none;
-  text-transform: none;
-  touch-action: manipulation;
-  transition-duration: 33ms;
-  transition-property:
-    background-color,
-    border-color,
-    color,
-    box-shadow,
-    filter,
-    transform;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  user-select: none;
-  vertical-align: middle;
-  transform: translate3d(0px, 0px, 0px);
-  border: 1px solid var(--essential-subdued,#818181);
-  color: var(--text-base,#000000);
-  min-inline-size: 0px;
-  min-block-size: var(--encore-control-size-smaller,32px);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-block-size: var(--encore-control-size-smaller);
-  padding-block: var(--encore-spacing-tighter-4);
-  padding-inline: var(--encore-spacing-base);
-}
-#amai-settings button:hover,
-#amai-dev-settings button:hover,
-#amai-info button:hover {
-  transform: scale(1.04);
-  border: 1px solid var(--essential-base,#000000);
-}
-#amai-settings button:active,
-#amai-dev-settings button:active,
-#amai-info button:active {
-  opacity: 0.7;
-  outline: none;
-  transform: scale(1);
-  border: 1px solid var(--essential-subdued,#818181);
-}
 .BoxComponent-box-elevated {
   opacity: 0.9;
   padding-top: 8px;
@@ -37908,11 +37855,6 @@ ruby > rt {
 }
 .Button-buttonSecondary-small-useBrowserDefaultFocusStyle {
   border: 1px solid rgba(255, 255, 255, 0.65);
-}
-.amai-settings-header {
-  color: var(--text-base,#ffffff);
-  font-size: 1.25rem;
-  font-weight: 700;
 }
 .translation {
   display: block;
@@ -37975,7 +37917,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16140-sNwM1oU570Nz/1a0a0f9e1e76/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286c36/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -38243,7 +38185,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16140-sNwM1oU570Nz/1a0a0f9e1ee7/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286ca7/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -38265,7 +38207,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16140-sNwM1oU570Nz/1a0a0f9e1f28/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286ce8/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -38292,7 +38234,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16140-sNwM1oU570Nz/1a0a0f9e1f79/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286d19/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
@@ -38389,6 +38331,212 @@ ruby > rt {
   .amai-playbar-lyrics-inner {
     animation-duration: 0s, var(--scroll-dur, 8s);
   }
+}
+
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286d6a/Settings.css */
+:is(#amai-settings, #amai-dev-settings, #amai-info) {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-section {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .amai-settings-header {
+  margin: 0;
+  color: var(--text-base, #ffffff);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  align-items: center;
+  gap: 8px 24px;
+  min-width: 0;
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row > .x-settings-firstColumn {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row > .x-settings-secondColumn {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row label {
+  color: var(--text-subdued, #b3b3b3);
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.4;
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-toggle-wrapper {
+  display: inline-flex;
+  position: relative;
+  align-items: center;
+  cursor: pointer;
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-toggle-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-toggle-indicatorWrapper {
+  display: block;
+  position: relative;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 24px;
+  border-radius: 24px;
+  background-color: #535353;
+  transition: background-color 0.1s;
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-toggle-indicator {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: inherit;
+  background-color: #ffffff;
+  transition:
+    background-color 0.1s,
+    left 0.1s,
+    right 0.1s,
+    width 0.1s;
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-toggle-input:hover:not(:disabled):not(:active) ~ .x-toggle-indicatorWrapper {
+  background-color: #b3b3b3;
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-toggle-input:checked ~ .x-toggle-indicatorWrapper {
+  background-color: #1db954;
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-toggle-input:checked:hover:not(:disabled):not(:active) ~ .x-toggle-indicatorWrapper {
+  background-color: #1ed760;
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-toggle-input:checked ~ .x-toggle-indicatorWrapper .x-toggle-indicator {
+  left: auto;
+  right: 2px;
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-toggle-input:disabled ~ .x-toggle-indicatorWrapper {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-toggle-wrapper:focus-within {
+  outline: 5px auto -webkit-focus-ring-color;
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row select {
+  box-sizing: border-box;
+  width: 100%;
+  height: 32px;
+  padding-block: 0;
+  padding-inline: 12px 20px;
+  border: 0;
+  border-inline-end: 12px solid transparent;
+  border-radius: var(--encore-corner-radius-base, 4px);
+  background-color: var(--background-elevated-base, #242424);
+  color: var(--text-subdued, #b3b3b3);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: 0.24px;
+  cursor: pointer;
+  transition: background-color 0.1s, color 0.1s;
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row select:hover {
+  background-color: var(--background-elevated-highlight, #2a2a2a);
+  color: var(--text-base, #ffffff);
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row select:focus-visible {
+  outline: 2px solid var(--essential-bright-accent, #1ed760);
+  outline-offset: 2px;
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 32px;
+  padding-block: 4px;
+  padding-inline: 12px;
+  border: 1px solid transparent;
+  border-radius: var(--encore-corner-radius-base, 4px);
+  background-color: var(--background-tinted-base, rgba(255, 255, 255, 0.1));
+  color: var(--text-base, #ffffff);
+  font-family: inherit;
+  font-size: 0.875rem;
+  line-height: 20px;
+  transition:
+    background-color 0.1s,
+    border-color 0.1s,
+    outline-color 0.1s;
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-input:hover {
+  background-color: var(--background-tinted-highlight, rgba(255, 255, 255, 0.14));
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-input:focus-visible {
+  outline: 2px solid var(--essential-bright-accent, #1ed760);
+  outline-offset: 1px;
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row > .x-settings-secondColumn > span {
+  display: inline-flex;
+  align-items: center;
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) button {
+  --encore-control-size-smaller: 32px;
+  --encore-spacing-tighter-4: 4px;
+  --encore-spacing-base: 16px;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  background-color: transparent;
+  border-radius: var(--encore-button-corner-radius, 9999px);
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  text-transform: none;
+  touch-action: manipulation;
+  transition-duration: 33ms;
+  transition-property:
+    background-color,
+    border-color,
+    color,
+    box-shadow,
+    filter,
+    transform;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  vertical-align: middle;
+  transform: translate3d(0px, 0px, 0px);
+  border: 1px solid var(--essential-subdued, #818181);
+  color: var(--text-base, #ffffff);
+  min-inline-size: 0px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: var(--encore-control-size-smaller, 32px);
+  padding-block: var(--encore-spacing-tighter-4);
+  padding-inline: var(--encore-spacing-base);
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) button:hover {
+  transform: scale(1.04);
+  border: 1px solid var(--essential-base, #ffffff);
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) button:active {
+  opacity: 0.7;
+  outline: none;
+  transform: scale(1);
+  border: 1px solid var(--essential-subdued, #818181);
 }
 
       `).trim();
