@@ -28,8 +28,8 @@
   font-family: var(--amai-font-display);
 }
 
-[font="Vazirmatn"] {
-  font-family: "Vazirmatn", "Noto Sans JP", sans-serif;
+[font='Vazirmatn'] {
+  font-family: 'Vazirmatn', 'Noto Sans JP', sans-serif;
 }
 
 body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child,
@@ -45,8 +45,10 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
   gap: 8px;
   height: 5cqh;
   justify-content: center;
-  opacity: .5;
-  transition: opacity .2s, bottom .5s;
+  opacity: 0.5;
+  transition:
+    opacity 0.2s,
+    bottom 0.5s;
   z-index: 101;
   --ViewControlSize: 100cqh;
 }
@@ -107,64 +109,143 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
 }
 
 #SpicyLyricsPage:not(.Fullscreen):hover .ViewControls {
-  opacity: .5;
+  opacity: 0.5;
   bottom: var(--PageHoverOffset);
 }
 
 #SpicyLyricsPage .ViewControls button {
-  cursor: pointer
+  cursor: pointer;
 }
 
-
-.Root__right-sidebar:has(.main-nowPlayingView-section,canvas) {
-  --background-tint: color-mix(in srgb,rgb(var(--spice-rgb-selected-row)) 7%,transparent);
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) {
+  --background-tint: color-mix(in srgb, rgb(var(--spice-rgb-selected-row)) 7%, transparent);
   --spice-card: var(--background-tint);
-  --background-tinted-base: var(--background-tint)
+  --background-tinted-base: var(--background-tint);
 }
 
-.Root__right-sidebar:has(.main-nowPlayingView-section,canvas) .main-nowPlayingView-content {
-  background: transparent
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-content {
+  background: transparent;
 }
 
-.Root__right-sidebar:has(.main-nowPlayingView-section,canvas) .main-nowPlayingView-contextItemInfo:before {
-  display: none
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas)
+  .main-nowPlayingView-contextItemInfo:before {
+  display: none;
 }
 
-.Root__right-sidebar:has(.main-nowPlayingView-section,canvas) .sweet-dynamic-bg div[data-overlayscrollbars-viewport],.Root__right-sidebar:has(.main-nowPlayingView-section,canvas) .sweet-dynamic-bg div[data-overlayscrollbars-viewport]>div {
-  background: transparent
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas)
+  .sweet-dynamic-bg
+  div[data-overlayscrollbars-viewport],
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas)
+  .sweet-dynamic-bg
+  div[data-overlayscrollbars-viewport]
+  > div {
+  background: transparent;
 }
 
-
-.Root__right-sidebar:has(.main-nowPlayingView-section,canvas) .sweet-dynamic-bg .main-nowPlayingView-coverArtContainer div:has(video):after,.Root__right-sidebar:has(.main-nowPlayingView-section,canvas) .sweet-dynamic-bg .main-nowPlayingView-coverArtContainer div:has(video):before {
-  display: none
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas)
+  .sweet-dynamic-bg
+  .main-nowPlayingView-coverArtContainer
+  div:has(video):after,
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas)
+  .sweet-dynamic-bg
+  .main-nowPlayingView-coverArtContainer
+  div:has(video):before {
+  display: none;
 }
 
-.Root__right-sidebar:has(.main-nowPlayingView-section,canvas) .sweet-dynamic-bg .main-trackInfo-artists {
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas)
+  .sweet-dynamic-bg
+  .main-trackInfo-artists {
   filter: brightness(1.15);
-  opacity: .75
+  opacity: 0.75;
 }
 
-.Root__right-sidebar:has(.main-nowPlayingView-section,canvas) .main-nowPlayingView-coverArt {
-  box-shadow: 0 9px 20px 0 rgba(0,0,0,.271);
-  opacity: .95
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-coverArt {
+  box-shadow: 0 9px 20px 0 rgba(0, 0, 0, 0.271);
+  opacity: 0.95;
 }
 
-.Root__right-sidebar:has(.main-nowPlayingView-section,canvas) .main-nowPlayingView-section {
-  background-color: var(--background-tinted-base)
-}
-
-.Root__right-sidebar:has(.main-nowPlayingView-section,canvas) button[type=button] {
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section {
   background-color: var(--background-tinted-base);
-  color: hsla(0,0%,100%,.8)
 }
 
-.Root__right-sidebar:has(.main-nowPlayingView-section,canvas) button[type=button] .Button-sm-buttonSecondary-isUsingKeyboard-useBrowserDefaultFocusStyle,.Root__right-sidebar:has(.main-nowPlayingView-section,canvas) button[type=button] .Button-sm-buttonSecondary-useBrowserDefaultFocusStyle {
-  border: 1px solid hsla(0,0%,100%,.5)
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) button[type='button'] {
+  background-color: var(--background-tinted-base);
+  color: hsla(0, 0%, 100%, 0.8);
+}
+
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas)
+  button[type='button']
+  .Button-sm-buttonSecondary-isUsingKeyboard-useBrowserDefaultFocusStyle,
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas)
+  button[type='button']
+  .Button-sm-buttonSecondary-useBrowserDefaultFocusStyle {
+  border: 1px solid hsla(0, 0%, 100%, 0.5);
 }
 
 #SpicyLyricsPageSvg {
   fill: currentColor;
   transform: translateY(2px);
+  background: transparent;
+  transition:
+    transform var(--amai-dur-fast, 0.15s) var(--amai-ease-out-expo, cubic-bezier(0.22, 1, 0.36, 1)),
+    filter var(--amai-dur-base, 0.2s) var(--amai-ease-standard, cubic-bezier(0.4, 0, 0.2, 1)),
+    fill var(--amai-dur-base, 0.2s) var(--amai-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+  will-change: transform, filter;
+}
+
+/* Playbar button: transparent background in all states so only the icon shows */
+button:has(#SpicyLyricsPageSvg),
+button:has(#SpicyLyricsPageSvg):hover,
+button:has(#SpicyLyricsPageSvg):active,
+button:has(#SpicyLyricsPageSvg):focus,
+button:has(#SpicyLyricsPageSvg):focus-visible {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Playbar button hover effects: dim -> bright, gentle lift + accent glow */
+button:has(#SpicyLyricsPageSvg) {
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: color var(--amai-dur-base, 0.2s)
+    var(--amai-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+button:has(#SpicyLyricsPageSvg):hover {
+  color: #fff;
+}
+
+button:has(#SpicyLyricsPageSvg):hover #SpicyLyricsPageSvg {
+  transform: translateY(2px) scale(1.12);
+  filter: drop-shadow(0 0 8px rgba(var(--amai-accent-rgb, 30, 215, 96), 0.55));
+}
+
+button:has(#SpicyLyricsPageSvg):active #SpicyLyricsPageSvg {
+  transform: translateY(2px) scale(0.94);
+  filter: none;
+}
+
+button:has(#SpicyLyricsPageSvg):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--amai-accent-1, #1ed760) 70%, white);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #SpicyLyricsPageSvg,
+  button:has(#SpicyLyricsPageSvg) {
+    transition: none;
+  }
+
+  button:has(#SpicyLyricsPageSvg):hover #SpicyLyricsPageSvg,
+  button:has(#SpicyLyricsPageSvg):active #SpicyLyricsPageSvg {
+    transform: translateY(2px);
+    filter: none;
+  }
 }
 
 button:has(#SpicyLyricsPageSvg):after {
