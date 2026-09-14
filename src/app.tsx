@@ -29,6 +29,7 @@ import './css/Loaders/LoaderContainer.css';
 import './css/FullscreenTransition.css';
 import './css/PlaybarLyrics.css';
 import './css/Settings.css'; // Spotify preferences page (Amai settings sections)
+import './css/Tooltips.css'; // global Tippy tooltip theme (must stay unscoped)
 
 function setupUI(): ButtonManager {
   AppInitializer.setupSkeletonStyles();

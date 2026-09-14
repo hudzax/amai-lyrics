@@ -6,6 +6,8 @@ import lifecycle from '../utils/lifecycle';
 export class ButtonManager {
   private button: Spicetify.Playbar.Button;
   private buttonRegistered = false;
+  /** Our replacement tooltip (themed); destroyed with the manager. */
+  private playbarTippy: { destroy: () => void } | null = null;
 
   constructor() {
     this.button = this.createButton();
@@ -27,7 +29,37 @@ export class ButtonManager {
       false as boolean,
     );
 
-    button.tippy.setContent('Amai Lyrics');
+    // Spicetify builds the button's tooltip internally with TippyProps'
+    // custom render, which Spotify leaves completely unstyled (bare text, no
+    // bubble) — and `theme` is a no-op with that render. On top of that,
+    // Spicetify.Tippy itself loads asynchronously, so if it isn't ready yet
+    // the button ends up with no tippy at all (native `title` fallback).
+    // Once Tippy exists we therefore swap in our own instance (default
+    // render → `.tippy-box[data-theme='amai-lyrics']`, styled in
+    // src/css/Tooltips.css) and point the button at it, so any later
+    // internal `label` update still lands on our tooltip.
+    const tooltipWhen = Whentil.When(
+      () => Spicetify.Tippy,
+      () => {
+        try {
+          button.tippy?.destroy?.();
+        } catch {
+          /* internal tooltip already gone — nothing to clean up */
+        }
+        button.element.removeAttribute('title');
+        this.playbarTippy = Spicetify.Tippy(button.element, {
+          content: 'Amai Lyrics',
+          theme: 'amai-lyrics',
+          animation: 'amai',
+          arrow: false,
+          delay: [200, 0],
+          placement: 'top',
+        });
+        button.tippy = this.playbarTippy;
+      },
+    );
+    lifecycle.trackWhentil(tooltipWhen);
+
     return button;
   }
 
@@ -42,6 +74,12 @@ export class ButtonManager {
 
   /** Remove the playbar button and release its subscription on teardown. */
   public dispose() {
+    try {
+      this.playbarTippy?.destroy();
+    } catch {
+      /* tooltip already gone */
+    }
+    this.playbarTippy = null;
     try {
       this.button.deregister();
     } catch {

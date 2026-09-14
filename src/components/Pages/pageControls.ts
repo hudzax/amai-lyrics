@@ -77,9 +77,18 @@ function SetupTippy(elem: HTMLElement | null, maid: Maid | null) {
   const closeButton = elem.querySelector<HTMLButtonElement>(PageViewSelectors.CloseButton);
 
   if (closeButton) {
+    // NOTE: intentionally NOT spreading Spicetify.TippyProps — its custom
+    // render outputs `.main-contextMenu-tippy`, which Spotify leaves
+    // completely unstyled (no background). Without it, tippy's default
+    // render creates `.tippy-box[data-theme='amai-lyrics']`, styled in
+    // src/css/Tooltips.css.
     Tooltips.Close = Spicetify.Tippy(closeButton, {
-      ...Spicetify.TippyProps,
       content: `Exit Lyrics Page`,
+      theme: 'amai-lyrics',
+      animation: 'amai',
+      arrow: false,
+      delay: [200, 0],
+      placement: 'top',
     });
 
     const closeClickHandler = () => Session.GoBack();
@@ -92,9 +101,14 @@ function SetupTippy(elem: HTMLElement | null, maid: Maid | null) {
   );
 
   if (fullscreenBtn) {
+    // Same as above: default render + our theme, not TippyProps.
     Tooltips.FullscreenToggle = Spicetify.Tippy(fullscreenBtn, {
-      ...Spicetify.TippyProps,
       content: `Toggle Fullscreen View`,
+      theme: 'amai-lyrics',
+      animation: 'amai',
+      arrow: false,
+      delay: [200, 0],
+      placement: 'top',
     });
 
     const fullscreenClickHandler = () => Fullscreen.Toggle();

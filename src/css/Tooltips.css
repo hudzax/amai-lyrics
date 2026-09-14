@@ -1,0 +1,116 @@
+/* ============================================================
+   Amai Lyrics — Tooltip styling
+   All selectors here must stay GLOBAL (never nest under
+   #SpicyLyricsPage): tippy appends its poppers to <body>.
+
+   WHY TWO RULE SETS (verified against the installed client):
+   - Spicetify.TippyProps uses a CUSTOM tippy render that outputs
+     `#context-menu > .main-contextMenu-tippy` (no .tippy-box).
+     Spotify ships NO styling for that class (checked every xpui
+     stylesheet), so those bubbles render as bare text. The `theme`
+     prop is a no-op with that render — tippy only writes
+     data-theme inside the DEFAULT render's updater.
+   - Our tooltips (lyrics-page controls in pageControls.ts, playbar button
+     in ButtonManager.ts) therefore use Spicetify.Tippy WITHOUT TippyProps,
+     so the default render creates `.tippy-box[data-theme='amai-lyrics']`,
+     styled in the first section. (The playbar button swaps its instance in
+     once Spicetify.Tippy loads, since Tippy itself arrives
+     asynchronously.) Structural rules (arrow/animation) are included
+     because Spotify never loads tippy.css.
+   - Anything else that keeps using TippyProps (other extensions',
+     Spicetify's own buttons) is covered by the #context-menu fallback
+     rule at the bottom.
+   ============================================================ */
+
+/* ---------- Our themed bubble (default tippy render) ---------- */
+
+.tippy-box[data-theme~='amai-lyrics'] {
+  position: relative;
+  background-color: rgba(18, 18, 18, 0.92);
+  backdrop-filter: blur(12px) saturate(1.4);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  border: 1px solid var(--amai-stroke-2, rgba(255, 255, 255, 0.2));
+  border-radius: 8px;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.45),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+  color: var(--amai-text-hi, rgba(255, 255, 255, 0.95));
+  font-family: var(--amai-font-display, 'Manrope', sans-serif);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+  max-width: 240px;
+  outline: 0;
+  text-align: center;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+
+.tippy-box[data-theme~='amai-lyrics'] > .tippy-content {
+  padding: 6px 10px;
+}
+
+/* Entrance: tippy toggles data-state; the default render mirrors our
+   animation name onto data-animation. */
+.tippy-box[data-theme~='amai-lyrics'][data-animation='amai'][data-state='hidden'] {
+  opacity: 0;
+  transform: translateY(4px) scale(0.97);
+}
+
+/* No arrow: tooltips are created with `arrow: false` (see pageControls.ts /
+   ButtonManager.ts), so tippy never renders `.tippy-arrow`. */
+
+/* ---------- Fallback: Spicetify-rendered tooltips ----------
+   Spicetify.TippyProps renders `#context-menu >
+   .main-contextMenu-tippy` with zero client styling, so without this
+   every TippyProps-based tooltip (including our playbar button's)
+   is bare text. Same bubble look, but font: inherit so foreign
+   tooltips keep the surrounding Spotify typeface. */
+
+#context-menu > .main-contextMenu-tippy {
+  background-color: rgba(18, 18, 18, 0.92);
+  backdrop-filter: blur(12px) saturate(1.4);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.45),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+  color: rgba(255, 255, 255, 0.95);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+  max-width: 240px;
+  padding: 6px 10px;
+  text-align: center;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+
+/* Spicetify's onShow/onMount toggle these (also unstyled by Spotify) */
+#context-menu > .main-contextMenu-tippyEnter {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+#context-menu > .main-contextMenu-tippyEnterActive {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tippy-box[data-theme~='amai-lyrics'],
+  #context-menu > .main-contextMenu-tippy {
+    transition: none;
+  }
+
+  .tippy-box[data-theme~='amai-lyrics'][data-animation='amai'][data-state='hidden'],
+  #context-menu > .main-contextMenu-tippyEnter {
+    transform: none;
+  }
+}
