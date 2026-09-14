@@ -12,7 +12,6 @@ import { convertLyrics } from '../../utils/Lyrics/conversion';
 import { createRubyFragment } from '../../utils/sanitize';
 import Whentil from '../../utils/Whentil';
 import lifecycle from '../../utils/lifecycle';
-import extractArtworkColors, { liftToLuminance } from '../../utils/ArtworkColors';
 import Event from '../../utils/EventManager';
 
 /**
@@ -53,19 +52,6 @@ let cachedLinesRaw: string | null = null;
 let inMemoryLyricsData: string | null = null;
 
 let lyricsDataListenerId: number | null = null;
-
-// ---- Artwork color animation state ----
-let currentColors: string[] = [];
-let lastArtworkUrl = '';
-let artworkColorDebounceTimer: number | null = null;
-
-// Minimum perceived brightness (0-255) for artwork colours used in text.
-// Colours darker than this get lightened so the lyrics stay readable against
-// Spotify's dark playbar background.
-const MIN_TEXT_COLOR_LUMINANCE = 140;
-
-// hexLuminance/liftToLuminance live in utils/ArtworkColors.ts (shared with the
-// page-wide accent publisher) and are imported above.
 
 // Cached read for hot path — storage.get hits Spicetify.LocalStorage each tick.
 let cachedPlaybarEnabled: boolean | null = null;
@@ -167,19 +153,12 @@ function onSongChange(): void {
   cachedLinesRaw = null;
   cachedPlaybarEnabled = null;
   inMemoryLyricsData = storage.get('currentLyricsData');
-  currentColors = [];
-  lastArtworkUrl = '';
   if (lyricsElement) {
     lyricsElement.innerHTML = '';
-    applyArtworkColors([]);
   }
-  // Debounce artwork color extraction — when rapidly skipping tracks, only
-  // the final song's artwork is processed, avoiding wasted fetch + CPU work.
-  if (artworkColorDebounceTimer !== null) clearTimeout(artworkColorDebounceTimer);
-  artworkColorDebounceTimer = window.setTimeout(() => {
-    artworkColorDebounceTimer = null;
-    refreshArtworkColors();
-  }, 500);
+  // The animated gradient's colours are no longer resolved here: they inherit
+  // --amai-accent-* published on <html> by the ArtworkSurfaces seam, whose own
+  // skip-coalescing fan-out already runs on song change.
 }
 
 /**
@@ -223,67 +202,6 @@ function setLyricsText(html: string): void {
       { duration: 300, easing: 'ease-in-out' },
     );
   }
-}
-
-/**
- * Applies artwork-derived colors as CSS custom properties on the lyrics
- * element so the CSS animation can use them for a shifting text gradient.
- */
-function applyArtworkColors(colors: string[]): void {
-  if (!lyricsElement) return;
-
-  if (!colors.length) {
-    lyricsElement.style.removeProperty('--color-1');
-    lyricsElement.style.removeProperty('--color-2');
-    lyricsElement.style.removeProperty('--color-3');
-    lyricsElement.style.removeProperty('--color-4');
-    lyricsElement.style.removeProperty('--color-5');
-    return;
-  }
-
-  // Boost dim colours so text stays readable against the dark playbar.
-  // This preserves hue/saturation character while guaranteeing legibility.
-  const boosted = colors.map((c) => liftToLuminance(c, MIN_TEXT_COLOR_LUMINANCE));
-
-  // Pad with repeats if fewer than 5 colours were extracted
-  const padded = [...boosted];
-  while (padded.length < 5) {
-    padded.push(padded[padded.length % padded.length]);
-  }
-
-  lyricsElement.style.setProperty('--color-1', padded[0]);
-  lyricsElement.style.setProperty('--color-2', padded[1]);
-  lyricsElement.style.setProperty('--color-3', padded[2]);
-  lyricsElement.style.setProperty('--color-4', padded[3]);
-  lyricsElement.style.setProperty('--color-5', padded[4]);
-}
-
-/**
- * Extracts colors from the current artwork URL and applies them.
- *
- * Uses the same artwork-resolving logic as ApplyDynamicBackground so we
- * get a real HTTP URL (not a spotify:image: URI) that can be loaded onto
- * a canvas for pixel sampling.
- */
-async function refreshArtworkColors(): Promise<void> {
-  // Resolve artwork URL the same way the dynamic background does
-  let artworkUrl = await SpotifyPlayer.Artwork.Get('d');
-  if (!artworkUrl) {
-    applyArtworkColors([]);
-    return;
-  }
-  if (artworkUrl.startsWith('spotify:image:')) {
-    const imageId = artworkUrl.replace('spotify:image:', '');
-    artworkUrl = `https://i.scdn.co/image/${imageId}`;
-  }
-  if (artworkUrl === lastArtworkUrl && currentColors.length > 0) {
-    return; // already up-to-date
-  }
-  lastArtworkUrl = artworkUrl;
-
-  const colors = await extractArtworkColors(artworkUrl);
-  currentColors = colors;
-  applyArtworkColors(colors);
 }
 
 function update(): void {
@@ -428,9 +346,6 @@ function inject(): void {
     const seek = wrapper.querySelector<HTMLElement>('.playback-bar');
     if (seek) resizeObserver.observe(seek);
   }
-
-  // Fetch and apply artwork colors for the initial track
-  refreshArtworkColors();
 }
 
 function cleanup(): void {
@@ -444,10 +359,6 @@ function cleanup(): void {
   resizeObserver = null;
   window.removeEventListener('resize', positionLyrics);
   Spicetify.Player.removeEventListener('songchange', onSongChange);
-  if (artworkColorDebounceTimer !== null) {
-    clearTimeout(artworkColorDebounceTimer);
-    artworkColorDebounceTimer = null;
-  }
   if (lyricsDataListenerId != null) {
     Event.unListen(lyricsDataListenerId);
     lyricsDataListenerId = null;

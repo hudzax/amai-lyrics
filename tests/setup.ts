@@ -75,6 +75,16 @@ if (typeof window !== 'undefined' && !(window as unknown as { Spicetify: unknown
   (window as unknown as { Spicetify: unknown }).Spicetify = g.Spicetify;
 }
 
+// jsdom has no requestAnimationFrame unless pretendToBeVisual is set. DOM
+// render paths (e.g. PlaybarLyrics marquee measurement) call it after mutating
+// the subtree; a no-op stub keeps those assertions free of real timing.
+if (typeof g.requestAnimationFrame === 'undefined') {
+  g.requestAnimationFrame = () => 0;
+}
+if (typeof g.cancelAnimationFrame === 'undefined') {
+  g.cancelAnimationFrame = () => {};
+}
+
 // jsdom has no ResizeObserver; Maid teardown and layout observers reference it.
 if (typeof g.ResizeObserver === 'undefined') {
   g.ResizeObserver = class {

@@ -12,14 +12,15 @@
 }
 
 /*
- * The lyrics container gets 5 color custom properties (--color-1 … --color-5)
- * injected from JavaScript when artwork colors are extracted.  If extraction
- * hasn't run yet (or fails), we fall back to a pleasant gradient based on
- * Spotify's brand accent.
+ * The lyrics container animates a 5-stop gradient driven by the artwork
+ * palette. The colours are NOT set from JavaScript on this element: they
+ * inherit the --amai-accent-* custom properties published on <html> by the
+ * ArtworkSurfaces seam (ArtworkColors.publishArtworkAccents), which fall back
+ * to the Spotify-green defaults in tokens.css before the first artwork
+ * resolves or when a track has none.
  */
 .amai-playbar-lyrics {
-  /* Fallback accent palette — overridden per-song from JS on this element
-     (--color-*) or inherited from the published artwork accents. */
+  /* Artwork palette — inherited from --amai-accent-* published on <html>. */
   --color-1: var(--amai-accent-1);
   --color-2: var(--amai-accent-2);
   --color-3: var(--amai-accent-3);
@@ -145,7 +146,6 @@
 .now-playing-bar__center:hover .amai-playbar-lyrics {
   opacity: 0 !important;
 }
-
 
 /* Reduced motion: freeze the decorative color-shift animation (duration 0 keeps
    it at its 0% keyframe = --color-1) while keeping the marquee functional so
