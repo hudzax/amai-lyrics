@@ -26,12 +26,9 @@ function setupRefreshButton(maid: Maid | null) {
       return;
     }
 
-    await new Promise<void>((resolve) => {
-      fastdom.mutate(() => {
-        refreshButton.classList.add('hidden');
-        resolve();
-      });
-    });
+    // Synchronous hide: click feedback shouldn't wait a frame, and a single
+    // classList write doesn't need batching.
+    refreshButton.classList.add('hidden');
 
     try {
       const trackId = currentUri.split(':')[2];
@@ -92,11 +89,8 @@ export function showRefreshButton() {
     PageViewSelectors.RefreshLyricsButton,
   );
   if (refreshButton) {
-    new Promise<void>((resolve) => {
-      fastdom.mutate(() => {
-        refreshButton.classList.remove('hidden');
-        resolve();
-      });
+    fastdom.mutate(() => {
+      refreshButton.classList.remove('hidden');
     });
   }
 }
@@ -106,11 +100,8 @@ export function hideRefreshButton() {
     PageViewSelectors.RefreshLyricsButton,
   );
   if (refreshButton) {
-    new Promise<void>((resolve) => {
-      fastdom.mutate(() => {
-        refreshButton.classList.add('hidden');
-        resolve();
-      });
+    fastdom.mutate(() => {
+      refreshButton.classList.add('hidden');
     });
   }
 }

@@ -1,5 +1,6 @@
 import { SpotifyPlayer } from '../Global/SpotifyPlayer';
 import fastdom from 'fastdom';
+import { mutateAsync } from '../../utils/fastdomAsync';
 import { PageViewSelectors } from '../../constants/PageViewSelectors';
 import { Maid } from '@hudzax/web-modules/Maid';
 
@@ -66,16 +67,15 @@ export async function UpdatePageContent(isOpened: boolean) {
   const mediaImage = document.querySelector<HTMLImageElement>(PageViewSelectors.MediaImage);
 
   if (mediaImage) {
-    const mutationPromise = new Promise<void>((resolve) => {
-      fastdom.mutate(() => {
+    await Promise.all([
+      mutateAsync(() => {
         if (mediaImage.classList.contains('loaded')) {
           mediaImage.classList.remove('loaded');
         }
-        resolve();
-      });
-    });
-
-    await Promise.all([mutationPromise, updateSongInfo(), updateArtwork(mediaImage)]);
+      }),
+      updateSongInfo(),
+      updateArtwork(mediaImage),
+    ]);
   }
 }
 
@@ -89,16 +89,13 @@ async function updateSongInfo() {
   const artistsElem = document.querySelector<HTMLElement>(PageViewSelectors.Artists);
   const joinedArtists = SpotifyPlayer.JoinArtists(artists);
 
-  return new Promise<void>((resolve) => {
-    fastdom.mutate(() => {
-      if (songNameElem && songNameElem.textContent !== songName) {
-        songNameElem.textContent = songName;
-      }
-      if (artistsElem && artistsElem.textContent !== joinedArtists) {
-        artistsElem.textContent = joinedArtists;
-      }
-      resolve();
-    });
+  return mutateAsync(() => {
+    if (songNameElem && songNameElem.textContent !== songName) {
+      songNameElem.textContent = songName;
+    }
+    if (artistsElem && artistsElem.textContent !== joinedArtists) {
+      artistsElem.textContent = joinedArtists;
+    }
   });
 }
 
@@ -109,16 +106,13 @@ async function updateArtwork(mediaImage: HTMLImageElement) {
       SpotifyPlayer.Artwork.Get('xl'),
     ]);
 
-    return new Promise<void>((resolve) => {
-      fastdom.mutate(() => {
-        if (standardUrl && mediaImage.src !== standardUrl) {
-          mediaImage.src = standardUrl;
-        }
-        if (highResUrl && mediaImage.getAttribute('data-high-res') !== highResUrl) {
-          mediaImage.setAttribute('data-high-res', highResUrl);
-        }
-        resolve();
-      });
+    return mutateAsync(() => {
+      if (standardUrl && mediaImage.src !== standardUrl) {
+        mediaImage.src = standardUrl;
+      }
+      if (highResUrl && mediaImage.getAttribute('data-high-res') !== highResUrl) {
+        mediaImage.setAttribute('data-high-res', highResUrl);
+      }
     });
   } catch (error) {
     console.error('Failed to load artwork:', error);

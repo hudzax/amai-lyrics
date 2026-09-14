@@ -4,7 +4,7 @@ import { Icons } from '../Styling/Icons';
 import Fullscreen from '../Utils/Fullscreen';
 import TransferElement from '../Utils/TransferElement';
 import Session from '../Global/Session';
-import fastdom from 'fastdom';
+import { mutateAsync } from '../../utils/fastdomAsync';
 
 export const Tooltips: Record<string, { destroy: () => void } | null> = {
   Close: null,
@@ -13,31 +13,29 @@ export const Tooltips: Record<string, { destroy: () => void } | null> = {
   LyricsToggle: null,
 };
 
-export async function AppendViewControls(maid: Maid | null, ReAppend: boolean = false) {
+export async function AppendViewControls(maid: Maid | null) {
   const elem = document.querySelector<HTMLElement>(PageViewSelectors.ViewControls);
   if (!elem) return;
 
-  await new Promise<void>((resolve) => {
-    fastdom.mutate(() => {
-      if (ReAppend) elem.innerHTML = '';
-      elem.innerHTML = `
+  // Parse once and swap: replaceChildren(fragment) replaces all children,
+  // so no separate clear step is needed on the ReAppend path.
+  // SAFETY: Icons.* and Fullscreen state are static bundled values, not user-supplied text.
+  await mutateAsync(() => {
+    elem.replaceChildren(
+      document.createRange().createContextualFragment(`
             <button id="Close" class="ViewControl">${Icons.Close}</button>
             <button id="FullscreenToggle" class="ViewControl">${
               Fullscreen.IsOpen ? Icons.CloseFullscreen : Icons.Fullscreen
             }</button>
-        `;
-      resolve();
-    });
+        `),
+    );
   });
 
   if (Fullscreen.IsOpen) {
     const headerElem = document.querySelector<HTMLElement>(PageViewSelectors.Header);
     if (headerElem) {
-      await new Promise<void>((resolve) => {
-        fastdom.mutate(() => {
-          TransferElement(elem, headerElem, 0);
-          resolve();
-        });
+      await mutateAsync(() => {
+        TransferElement(elem, headerElem, 0);
       });
     }
     Object.values(Tooltips).forEach((a) => a?.destroy());
@@ -52,11 +50,8 @@ export async function AppendViewControls(maid: Maid | null, ReAppend: boolean = 
     if (headerViewControlsElem) {
       const contentBoxElem = document.querySelector<HTMLElement>(PageViewSelectors.ContentBox);
       if (contentBoxElem) {
-        await new Promise<void>((resolve) => {
-          fastdom.mutate(() => {
-            TransferElement(elem, contentBoxElem);
-            resolve();
-          });
+        await mutateAsync(() => {
+          TransferElement(elem, contentBoxElem);
         });
       }
     }

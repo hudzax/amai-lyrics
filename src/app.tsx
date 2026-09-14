@@ -14,6 +14,7 @@ import { ArtworkSurfaces } from './components/DynamicBG/ArtworkSurfaces';
 export { APP_BG_CHANGED_EVENT } from './components/DynamicBG/ArtworkSurfaces';
 import PageView from './components/Pages/PageView';
 import { installBlankToastSuppressor } from './utils/suppressBlankToasts';
+import { installFastdomErrorHandler } from './utils/fastdomAsync';
 import lifecycle from './utils/lifecycle';
 
 // CSS Imports
@@ -130,6 +131,10 @@ async function main() {
   lifecycle.registerGlobalTeardown();
 
   installBlankToastSuppressor();
+  // Route FastDOM batch errors to console.error instead of uncaught rAF throws.
+  // (Also auto-installed on fastdomAsync import; called here so startup
+  // ordering is explicit and the import is referenced.)
+  installFastdomErrorHandler();
 
   try {
     await AppInitializer.initializeCore();

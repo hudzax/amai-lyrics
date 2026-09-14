@@ -10,7 +10,7 @@ import { clearLyricsUiTimeouts } from '../../utils/Lyrics/ui';
 import { Session_NowBar_SetSide, Session_OpenNowBar } from '../Utils/NowBar';
 import Fullscreen from '../Utils/Fullscreen';
 import { ResetLastLine } from '../../utils/Scrolling/ScrollToActiveLine';
-import fastdom from 'fastdom';
+import { mutateAsync } from '../../utils/fastdomAsync';
 import { Maid } from '@hudzax/web-modules/Maid';
 import { PageViewSelectors } from '../../constants/PageViewSelectors';
 import { PageHTML, NowBarHTML } from './PageHTML';
@@ -30,13 +30,9 @@ const PageView = {
 
 export let PageRoot: HTMLElement | null = null;
 
-async function initializePageRoot() {
-  return new Promise<void>((resolve) => {
-    fastdom.measure(() => {
-      PageRoot = document.querySelector<HTMLElement>(PageViewSelectors.PageRoot);
-      resolve();
-    });
-  });
+function initializePageRoot(): void {
+  // querySelector is not a layout read — no fastdom batch needed.
+  PageRoot = document.querySelector<HTMLElement>(PageViewSelectors.PageRoot);
 }
 
 async function OpenPage() {
@@ -44,7 +40,7 @@ async function OpenPage() {
 
   maid = new Maid();
 
-  await initializePageRoot();
+  initializePageRoot();
   await createPageElement();
 
   Defaults.LyricsContainerExists = true;
@@ -79,30 +75,27 @@ async function OpenPage() {
 }
 
 async function createPageElement() {
-  return new Promise<void>((resolve) => {
-    fastdom.mutate(() => {
-      // Remove any pre-existing page node (e.g. one left behind by a hot-reload
-      // before the previous instance's teardown ran) to avoid duplicate
-      // #SpicyLyricsPage nodes — ~75 selectors throughout the app resolve the
-      // stale node otherwise.
-      const existing = document.getElementById('SpicyLyricsPage');
-      if (existing) existing.remove();
+  await mutateAsync(() => {
+    // Remove any pre-existing page node (e.g. one left behind by a hot-reload
+    // before the previous instance's teardown ran) to avoid duplicate
+    // #SpicyLyricsPage nodes — ~75 selectors throughout the app resolve the
+    // stale node otherwise.
+    const existing = document.getElementById('SpicyLyricsPage');
+    if (existing) existing.remove();
 
-      const elem = document.createElement('div');
-      elem.id = 'SpicyLyricsPage';
-      // SAFETY: PageHTML is a static trusted template bundled with the extension, not user-supplied lyrics text.
-      elem.innerHTML = PageHTML;
-      if (PageRoot) {
-        PageRoot.appendChild(elem);
-      }
+    const elem = document.createElement('div');
+    elem.id = 'SpicyLyricsPage';
+    // SAFETY: PageHTML is a static trusted template bundled with the extension, not user-supplied lyrics text.
+    elem.replaceChildren(document.createRange().createContextualFragment(PageHTML));
+    if (PageRoot) {
+      PageRoot.appendChild(elem);
+    }
 
-      const nowBar = document.querySelector<HTMLElement>(PageViewSelectors.NowBar);
-      if (nowBar) {
-        // SAFETY: NowBarHTML is a static trusted template bundled with the extension, not user-supplied lyrics text.
-        nowBar.replaceChildren(document.createRange().createContextualFragment(NowBarHTML));
-      }
-      resolve();
-    });
+    const nowBar = document.querySelector<HTMLElement>(PageViewSelectors.NowBar);
+    if (nowBar) {
+      // SAFETY: NowBarHTML is a static trusted template bundled with the extension, not user-supplied lyrics text.
+      nowBar.replaceChildren(document.createRange().createContextualFragment(NowBarHTML));
+    }
   });
 }
 
@@ -110,10 +103,18 @@ async function DestroyPage() {
   if (!PageView.IsOpened) return;
   if (Fullscreen.IsOpen) Fullscreen.Close();
   const spicyLyricsPage = document.querySelector<HTMLElement>(PageViewSelectors.SpicyLyricsPage);
-  if (!spicyLyricsPage) return;
-  fastdom.mutate(() => {
-    spicyLyricsPage?.remove();
-  });
+  if (spicyLyricsPage) {
+    // Await the removal before flipping LyricsContainerExists: otherwise the
+    // flag reads "gone" for a frame while the node is still mounted, and
+    // in-flight measures in that window read stale DOM.
+    try {
+      await mutateAsync(() => {
+        spicyLyricsPage.remove();
+      });
+    } catch (error) {
+      console.error('[Amai Lyrics] PageView destroy failed:', error);
+    }
+  }
   Defaults.LyricsContainerExists = false;
   removeLinesEvListener();
   ClearLyricsContentArrays();

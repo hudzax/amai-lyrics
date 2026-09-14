@@ -4,7 +4,6 @@ import { LyricsObject } from '../Lyrics/lyrics';
 import { findActiveIndex } from '../Lyrics/findActiveIndex';
 import { scrollIntoCenterView } from '../ScrollIntoView';
 import SimpleBar from 'simplebar';
-import fastdom from 'fastdom';
 
 // Window-persisted so hot-reload doesn't orphan in-flight rAF scroll loop
 // SAFETY: window augmentation for hot-reload persistence is intentional; __amaiScrollState is our own namespace and never conflicts with Spotify
@@ -68,45 +67,42 @@ export function ScrollToActiveLine(ScrollSimplebar: SimpleBar) {
     const currentLine = activeIdx !== -1 ? (Lines[activeIdx] as (typeof Lines)[number]) : null;
     // Hint: if cachedIdx matches activeIdx and lastLine already equals target, ScrollToActiveLine will early-return via lastLine check below.
 
-    // If we found an active line, process it with FastDOM
+    // If we found an active line, scroll to it. The guards below are all
+    // non-layout reads (flags, querySelector, isConnected), so they run
+    // synchronously — wrapping them in a fastdom batch would only add a
+    // frame of latency before scrollIntoCenterView's own measure runs.
+    // (The heavy layout reads live inside scrollIntoCenterView.)
     if (currentLine) {
       const LineElem = currentLine.HTMLElement as HTMLElement;
       // Already scrolled to this exact line -> skip all DOM work this tick
       if (lastLine === LineElem) return;
+      if (!LineElem || !LineElem.isConnected) return;
+      // Abort if page was destroyed while this tick was queued (orphan rAF leak)
+      if (!Defaults.LyricsContainerExists) return;
+      if (!document.querySelector('#SpicyLyricsPage')) return;
+      const container = ScrollSimplebar?.getScrollElement() as HTMLElement;
+      if (!container || !container.isConnected) return;
 
       // Cancel any in-flight scroll animation so seeks don't stack competing rAF loops.
+      // Done only after the guards pass, so a no-op tick doesn't kill live scrolling.
       if (activeScrollController) {
         activeScrollController.cancel();
         setActiveController(null);
       }
+      if (lastLine === LineElem) return;
 
-      // Use closure variables to pass data from measure to mutate
-      fastdom.measure(() => {
-        // Abort if page was destroyed while this tick was queued (orphan rAF leak)
-        if (!Defaults.LyricsContainerExists) return;
-        if (!document.querySelector('#SpicyLyricsPage')) return;
-        const container = ScrollSimplebar?.getScrollElement() as HTMLElement;
-        if (!container || !container.isConnected) return;
-        if (!LineElem || !LineElem.isConnected) return;
-        fastdom.mutate(() => {
-          if (!Defaults.LyricsContainerExists) return;
-          if (!container.isConnected || !LineElem.isConnected) return;
-          if (lastLine === LineElem) return;
+      // Release the previous pre-highlight target: Animate only keeps the
+      // Active class on a NotSung line while OverridenByScroller is
+      // present, so leaving it on a line we no longer target (e.g. after
+      // a seek) would stick the highlight there.
+      if (lastLine && lastLine.classList.contains('OverridenByScroller')) {
+        lastLine.classList.remove('OverridenByScroller');
+      }
 
-          // Release the previous pre-highlight target: Animate only keeps the
-          // Active class on a NotSung line while OverridenByScroller is
-          // present, so leaving it on a line we no longer target (e.g. after
-          // a seek) would stick the highlight there.
-          if (lastLine && lastLine.classList.contains('OverridenByScroller')) {
-            lastLine.classList.remove('OverridenByScroller');
-          }
+      setLastLine(LineElem);
 
-          setLastLine(LineElem);
-
-          setActiveController(scrollIntoCenterView(container, LineElem, 270, -50));
-          LineElem.classList.add('Active', 'OverridenByScroller');
-        });
-      });
+      setActiveController(scrollIntoCenterView(container, LineElem, 270, -50));
+      LineElem.classList.add('Active', 'OverridenByScroller');
     }
   } catch {
     // Never throw from a scroll tick — IntervalManager would log and continue,

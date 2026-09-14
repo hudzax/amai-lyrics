@@ -1,4 +1,5 @@
 import fastdom from 'fastdom';
+import { measureAsync, mutateAsync } from '../../utils/fastdomAsync';
 import { normalizeImageUrl, setRandomCSSVariables, createBackgroundImage } from './utils';
 import { APP_BG_ON_CLASS } from './AppBackground';
 
@@ -14,6 +15,10 @@ export class NowPlayingBarBackground {
     dynamicBg: null,
     lastImgUrl: null,
   };
+  // URL with an in-flight measure→mutate handoff. Recorded synchronously so
+  // rapid repeat calls dedup against it instead of racing the async update
+  // of lastImgUrl below.
+  private pendingUrl: string | null = null;
 
   /**
    * Apply optimized dynamic background to the now playing bar
@@ -25,34 +30,37 @@ export class NowPlayingBarBackground {
     // recording lastImgUrl so the toggle-off refresh (see app.tsx
     // 'amai:appbg-changed' handler) actually repaints instead of dedup-hitting.
     if (document.documentElement.classList.contains(APP_BG_ON_CLASS)) return;
-    const normalized = normalizeImageUrl(coverUrl);
-    if (!normalized) return;
-    coverUrl = normalized;
+    const targetUrl = normalizeImageUrl(coverUrl);
+    if (!targetUrl) return;
 
-    try {
-      // Quick check for cached values to avoid unnecessary work
-      if (coverUrl === this.cached.lastImgUrl && this.cached.dynamicBg) return;
+    // Quick check for cached values to avoid unnecessary work
+    if (targetUrl === this.cached.lastImgUrl && this.cached.dynamicBg) return;
+    if (targetUrl === this.pendingUrl) return;
+    this.pendingUrl = targetUrl;
 
-      // Use closure variables to pass data from measure to mutate
-      new Promise<{
-        nowPlayingBar: Element | null;
-        hasDynamicBg: boolean;
-        images: { imgA: HTMLImageElement; imgB: HTMLImageElement } | null;
-      }>((resolve) => {
-        fastdom.measure(() => {
-          const nowPlayingBar = document.querySelector('.Root__right-sidebar aside.NowPlayingView');
-          const hasDynamicBg = !!this.cached.dynamicBg;
-          const images = this.cached.dynamicBg
+    void (async () => {
+      try {
+        const { nowPlayingBar, hasDynamicBg, images } = await measureAsync(() => {
+          const bar = document.querySelector('.Root__right-sidebar aside.NowPlayingView');
+          const hasBg = !!this.cached.dynamicBg;
+          const imgs = this.cached.dynamicBg
             ? {
                 imgA: this.cached.dynamicBg.querySelector('#bg-img-a') as HTMLImageElement,
                 imgB: this.cached.dynamicBg.querySelector('#bg-img-b') as HTMLImageElement,
               }
             : null;
-          resolve({ nowPlayingBar, hasDynamicBg, images });
+          return { nowPlayingBar: bar, hasDynamicBg: hasBg, images: imgs };
         });
-      }).then(({ nowPlayingBar, hasDynamicBg, images }) => {
-        fastdom.mutate(() => {
-          if (!nowPlayingBar) {
+
+        if (!nowPlayingBar || !nowPlayingBar.isConnected) {
+          this.clearCache();
+          return;
+        }
+
+        await mutateAsync(() => {
+          // Sidebar remounted between measure and mutate: drop the stale
+          // ref instead of appending into a detached tree.
+          if (!nowPlayingBar.isConnected) {
             this.clearCache();
             return;
           }
@@ -62,23 +70,26 @@ export class NowPlayingBarBackground {
           }
 
           if (!hasDynamicBg) {
-            this.createNewBackground(nowPlayingBar, coverUrl);
+            this.createNewBackground(nowPlayingBar, targetUrl);
           } else if (images) {
-            this.updateExistingBackground(images, coverUrl);
+            this.updateExistingBackground(images, targetUrl);
           }
 
-          this.cached.lastImgUrl = coverUrl;
+          this.cached.lastImgUrl = targetUrl;
         });
-      });
-    } catch (error) {
-      console.error('Error Applying the Dynamic BG to the NowPlayingBar:', error);
-    }
+      } catch (error) {
+        console.error('Error Applying the Dynamic BG to the NowPlayingBar:', error);
+      } finally {
+        if (this.pendingUrl === targetUrl) this.pendingUrl = null;
+      }
+    })();
   }
 
   private clearCache() {
     this.cached.lastImgUrl = null;
     this.cached.dynamicBg = null;
     this.cached.nowPlayingBar = null;
+    this.pendingUrl = null;
   }
 
   private createNewBackground(nowPlayingBar: Element, coverUrl: string) {
@@ -104,11 +115,13 @@ export class NowPlayingBarBackground {
 
     // Mark as loaded after image loads
     imgA.onload = () => {
-      requestAnimationFrame(() => {
+      if (!dynamicBackground.isConnected) return;
+      fastdom.mutate(() => {
+        if (!dynamicBackground.isConnected) return;
         dynamicBackground.classList.add('sweet-dynamic-bg-loaded');
+        // Drop the blurred placeholder layer once real pixels exist.
+        placeholder.remove();
       });
-      // Drop the blurred placeholder layer once real pixels exist.
-      placeholder.remove();
     };
 
     this.cached.dynamicBg = dynamicBackground;
@@ -128,7 +141,8 @@ export class NowPlayingBarBackground {
     inactiveImg.onerror = null;
     inactiveImg.onload = () => {
       if (inactiveImg.src !== coverUrl) return;
-      requestAnimationFrame(() => {
+      fastdom.mutate(() => {
+        if (inactiveImg.src !== coverUrl) return;
         // Swap active classes
         activeImg.classList.remove('active');
         inactiveImg.classList.add('active');

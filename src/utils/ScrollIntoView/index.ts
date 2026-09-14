@@ -19,6 +19,10 @@ function cubicEaseInOut(progress: number): number {
     : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 }
 
+const INERT_CONTROLLER: ScrollController = {
+  cancel: () => {},
+};
+
 export function smoothScrollIntoView(options: ScrollIntoViewOptions): ScrollController {
   const {
     container,
@@ -29,24 +33,37 @@ export function smoothScrollIntoView(options: ScrollIntoViewOptions): ScrollCont
     axis = 'vertical',
   } = options;
 
-  // Create a controller object that will be returned immediately.
-  // Track cancellation so detached containers don't keep animating.
+  // Validate before scheduling anything: measuring a detached node yields
+  // zero rects and a garbage target, so bail out synchronously instead.
+  if (!container.isConnected || !element.isConnected) return INERT_CONTROLLER;
+
   let cancelled = false;
-  let cancelAnimation = () => {
-    cancelled = true;
-  };
+  let animationFrameId = 0;
+  // fastdom.measure returns the queued task, so cancel() can dequeue it via
+  // fastdom.clear instead of letting it run a frame later just to early-return.
+  let measureTask: (() => void) | null = null;
   const controller: ScrollController = {
-    cancel: () => cancelAnimation(),
+    cancel: () => {
+      cancelled = true;
+      if (measureTask) {
+        fastdom.clear(measureTask);
+        measureTask = null;
+      }
+      cancelAnimationFrame(animationFrameId);
+    },
   };
 
-  // Use closure variables to pass data from measure to mutate
-  new Promise<{ startScroll: number; distance: number }>((resolve) => {
-    fastdom.measure(() => {
+  measureTask = fastdom.measure(() => {
+    measureTask = null;
+    if (cancelled || !container.isConnected || !element.isConnected) return;
+
+    let startScroll: number;
+    let distance: number;
+    try {
       const containerRect = container.getBoundingClientRect();
       const elementRect = element.getBoundingClientRect();
-      let targetScroll: number;
-      let startScroll: number;
 
+      let targetScroll: number;
       if (axis === 'vertical') {
         startScroll = container.scrollTop;
         if (align === 'center') {
@@ -72,46 +89,43 @@ export function smoothScrollIntoView(options: ScrollIntoViewOptions): ScrollCont
           targetScroll = elementRect.left - containerRect.left + container.scrollLeft - offset;
         }
       }
-      const distance = targetScroll - startScroll;
-      resolve({ startScroll, distance });
-    });
-  }).then(({ startScroll, distance }) => {
-    if (cancelled) return;
-    // If container detached before measure->mutate handoff, abort.
-    if (!container.isConnected) return;
-    fastdom.mutate(() => {
+      distance = targetScroll - startScroll;
+    } catch {
+      // A layout read can throw on a node removed mid-flush; skip silently —
+      // the next scroll tick will retry with live nodes.
+      return;
+    }
+
+    // Already there: skip the rAF loop entirely.
+    if (distance === 0) return;
+    if (cancelled || !container.isConnected) return;
+
+    // The rAF loop writes directly instead of re-queueing every tick through
+    // fastdom.mutate: rAF already batches per frame, so per-tick mutate
+    // would only add a frame of latency and queue churn at 60fps.
+    // The clock starts from the first rAF timestamp, not from this measure
+    // task, so the measure→rAF gap doesn't skew the easing curve.
+    let startTime: number | null = null;
+    const animate = (currentTime: number) => {
       if (cancelled || !container.isConnected) return;
-      const startTime = performance.now();
-      let animationFrameId: number;
+      if (startTime === null) startTime = currentTime;
+      const elapsed = currentTime - startTime;
+      const progress = duration <= 0 ? 1 : Math.min(elapsed / duration, 1);
+      const easedProgress = cubicEaseInOut(progress);
+      const newScroll = startScroll + distance * easedProgress;
 
-      function animate(currentTime: number) {
-        if (cancelled || !container.isConnected) return;
-        const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const easedProgress = cubicEaseInOut(progress);
-        const newScroll = startScroll + distance * easedProgress;
-
-        fastdom.mutate(() => {
-          if (cancelled || !container.isConnected) return;
-          if (axis === 'vertical') {
-            container.scrollTop = newScroll;
-          } else {
-            container.scrollLeft = newScroll;
-          }
-        });
-
-        if (progress < 1) {
-          animationFrameId = requestAnimationFrame(animate);
-        }
+      if (axis === 'vertical') {
+        container.scrollTop = newScroll;
+      } else {
+        container.scrollLeft = newScroll;
       }
 
-      animationFrameId = requestAnimationFrame(animate);
+      if (progress < 1) {
+        animationFrameId = requestAnimationFrame(animate);
+      }
+    };
 
-      cancelAnimation = () => {
-        cancelled = true;
-        cancelAnimationFrame(animationFrameId);
-      };
-    });
+    animationFrameId = requestAnimationFrame(animate);
   });
 
   // Return the controller immediately
