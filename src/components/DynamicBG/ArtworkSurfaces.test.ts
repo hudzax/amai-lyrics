@@ -124,6 +124,36 @@ describe('ArtworkSurfaces seam', () => {
     expect(calls.accents).toEqual([undefined, 'track-a']);
   });
 
+  it('does not paint a stale blank over the launch paint', async () => {
+    const { calls, adapters, setCoverUrl } = setupFakes();
+    surfaces = new ArtworkSurfaces(adapters);
+    setCoverUrl(undefined);
+    surfaces.mount();
+    // Song changes while the player still has no artwork: snapshots undefined.
+    surfaces.applyArtwork();
+    setCoverUrl('live-cover');
+    await vi.advanceTimersByTimeAsync(1000);
+    // Initial blank, then the launch paint, then the settled fan-out which
+    // must re-read live instead of replaying the snapshotted undefined.
+    expect(calls.sidebar[0]).toBeUndefined();
+    expect(calls.sidebar).toContain('live-cover');
+    expect(calls.sidebar[calls.sidebar.length - 1]).toBe('live-cover');
+  });
+
+  it('keeps the launch waiter when the settled paint still has no artwork', async () => {
+    const { calls, adapters, setCoverUrl } = setupFakes();
+    surfaces = new ArtworkSurfaces(adapters);
+    setCoverUrl(undefined);
+    surfaces.mount();
+    surfaces.applyArtwork();
+    await vi.advanceTimersByTimeAsync(500);
+    // Settled with no artwork: the waiter must survive so the late URL paints.
+    setCoverUrl('late-cover');
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(calls.sidebar[calls.sidebar.length - 1]).toBe('late-cover');
+    expect(calls.accents[calls.accents.length - 1]).toBe('late-cover');
+  });
+
   it('repaints hidden canvases when the toggle flips off', () => {
     const { calls, adapters } = setupFakes();
     surfaces = new ArtworkSurfaces(adapters);

@@ -104,11 +104,15 @@ export class ArtworkSurfaces {
     this.adapters = adapters ?? createDefaultAdapters(this.sidebarBg);
     // Coalesce rapid skip events: only the settled track triggers work.
     this.debouncedFanOut = debounce((coverUrl: string | undefined) => {
-      this.clearFirstPaintWaiter();
-      this.adapters.applySidebar(coverUrl);
-      this.adapters.applyAppFrame(coverUrl);
+      // Re-read live at fire time: a payload snapshotted as undefined (no
+      // artwork when the song changed) must not paint a blank over the launch
+      // waiter's paint, nor cancel the waiter while there is still nothing.
+      const effective = coverUrl ?? this.adapters.readCoverUrl();
+      if (effective) this.clearFirstPaintWaiter();
+      this.adapters.applySidebar(effective);
+      this.adapters.applyAppFrame(effective);
       this.adapters.applyLyricsPage();
-      this.adapters.publishAccents(coverUrl);
+      this.adapters.publishAccents(effective);
     }, FAN_OUT_DELAY_MS);
     this.toggleHandler = () => this.refreshAfterToggle();
   }
