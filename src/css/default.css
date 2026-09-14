@@ -48,7 +48,9 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
   opacity: 0.5;
   transition:
     opacity 0.2s,
-    bottom 0.5s;
+    bottom 0.5s,
+    transform 0.2s,
+    visibility 0.2s;
   z-index: 101;
   --ViewControlSize: 100cqh;
 }
@@ -59,6 +61,33 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
   bottom: -8cqh;
   --PageHoverOffset: -2.2cqh;
   --ControlsHoverOffset: 1.5cqh;
+}
+
+/* Pinned to the bottom of the left-side panel — hidden until the lyrics page is hovered */
+#SpicyLyricsPage:not(.Fullscreen) .AmaiPageButtonContainer .ViewControls {
+  position: absolute;
+  bottom: 1.5cqh;
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  width: auto;
+  height: 5cqh;
+  margin-top: 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+#SpicyLyricsPage:not(.Fullscreen):hover .AmaiPageButtonContainer .ViewControls,
+#SpicyLyricsPage:not(.Fullscreen) .AmaiPageButtonContainer .ViewControls:hover,
+#SpicyLyricsPage:not(.Fullscreen):focus-within .AmaiPageButtonContainer .ViewControls,
+#SpicyLyricsPage:not(.Fullscreen) .AmaiPageButtonContainer .ViewControls:focus-within {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
 }
 
 #SpicyLyricsPage .ViewControls .ViewControl {
@@ -111,6 +140,10 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
 #SpicyLyricsPage:not(.Fullscreen):hover .ViewControls {
   opacity: 0.5;
   bottom: var(--PageHoverOffset);
+}
+
+#SpicyLyricsPage:not(.Fullscreen):hover .AmaiPageButtonContainer .ViewControls {
+  bottom: 1.5cqh;
 }
 
 #SpicyLyricsPage .ViewControls button {

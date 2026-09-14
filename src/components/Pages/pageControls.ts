@@ -44,15 +44,27 @@ export async function AppendViewControls(maid: Maid | null) {
     );
     SetupTippy(viewControlsElem, maid);
   } else {
-    const headerViewControlsElem = document.querySelector<HTMLElement>(
-      PageViewSelectors.HeaderViewControls,
+    // Non-fullscreen: dock the controls inside the left-side button stack,
+    // below the version text (appended at the end of the container).
+    const actionContainer = document.querySelector<HTMLElement>(
+      PageViewSelectors.ActionButtonContainer,
     );
-    if (headerViewControlsElem) {
-      const contentBoxElem = document.querySelector<HTMLElement>(PageViewSelectors.ContentBox);
-      if (contentBoxElem) {
-        await mutateAsync(() => {
-          TransferElement(elem, contentBoxElem);
-        });
+    if (actionContainer && actionContainer.lastElementChild !== elem) {
+      await mutateAsync(() => {
+        TransferElement(elem, actionContainer);
+      });
+    } else if (!actionContainer) {
+      // Fallback to the legacy bottom-edge dock when the button stack is missing.
+      const headerViewControlsElem = document.querySelector<HTMLElement>(
+        PageViewSelectors.HeaderViewControls,
+      );
+      if (headerViewControlsElem) {
+        const contentBoxElem = document.querySelector<HTMLElement>(PageViewSelectors.ContentBox);
+        if (contentBoxElem) {
+          await mutateAsync(() => {
+            TransferElement(elem, contentBoxElem);
+          });
+        }
       }
     }
     Object.values(Tooltips).forEach((a) => a?.destroy());

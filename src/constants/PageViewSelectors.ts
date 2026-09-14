@@ -11,6 +11,7 @@ export const PageViewSelectors = {
   RefreshLyricsButton: '#RefreshLyrics',
   WatchMusicVideoButton: '#WatchMusicVideoButton',
   SettingsButton: '#AmaiSettingsButton',
+  ActionButtonContainer: '#SpicyLyricsPage .ContentBox .NowBar .AmaiPageButtonContainer',
   CloseButton: '#Close',
   FullscreenToggleButton: '#FullscreenToggle',
   LoaderContainer: '#SpicyLyricsPage .loaderContainer',
