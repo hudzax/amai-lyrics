@@ -27,6 +27,7 @@ import './css/Lyrics/Mixed.css';
 import './css/Loaders/LoaderContainer.css';
 import './css/FullscreenTransition.css';
 import './css/PlaybarLyrics.css';
+import './css/Settings.css'; // Spotify preferences page (Amai settings sections)
 
 function setupUI(): ButtonManager {
   AppInitializer.setupSkeletonStyles();
