@@ -1,119 +1,25 @@
-import Defaults from '../../components/Global/Defaults';
-import { getPositionFor, resolveIsPlaying } from '../Gets/GetProgress';
-import { LyricsObject } from '../Lyrics/lyrics';
-import { findActiveIndex } from '../Lyrics/findActiveIndex';
-import { scrollIntoCenterView } from '../ScrollIntoView';
-import SimpleBar from 'simplebar';
+import type SimpleBar from 'simplebar';
+import { resetAutoScroll, syncAutoScroll } from './AutoScroll';
 
-// Window-persisted so hot-reload doesn't orphan in-flight rAF scroll loop
-// SAFETY: window augmentation for hot-reload persistence is intentional; __amaiScrollState is our own namespace and never conflicts with Spotify
-const windowRef = window as unknown as {
-  __amaiScrollState?: {
-    lastLine: HTMLElement | null;
-    activeScrollController: { cancel: () => void } | null;
-  };
-};
-const sharedScrollState = (windowRef.__amaiScrollState ??= {
-  lastLine: null,
-  activeScrollController: null,
-});
-
-let lastLine: HTMLElement | null = sharedScrollState.lastLine;
-let activeScrollController: { cancel: () => void } | null =
-  sharedScrollState.activeScrollController;
-
-function setLastLine(value: HTMLElement | null): void {
-  lastLine = value;
-  sharedScrollState.lastLine = value;
-}
-
-function setActiveController(value: { cancel: () => void } | null): void {
-  activeScrollController = value;
-  sharedScrollState.activeScrollController = value;
-}
-
-export function ScrollToActiveLine(ScrollSimplebar: SimpleBar) {
-  try {
-    if (!resolveIsPlaying()) return;
-    if (!Defaults.LyricsContainerExists) return;
-
-    let onLyricsPage = false;
+/**
+ * Backward-compatible seam for auto-scroll decisions.
+ *
+ * The sequencing now lives in the AutoScroll module; this adapter preserves
+ * the historical import path so existing callers keep working while they
+ * migrate to AutoScroll.sync / AutoScroll.reset directly.
+ */
+export function ScrollToActiveLine(scrollSimplebar?: SimpleBar): void {
+  if (scrollSimplebar) {
     try {
-      onLyricsPage = Spicetify.Platform.History.location.pathname === '/AmaiLyrics';
+      syncAutoScroll({ container: scrollSimplebar.getScrollElement() as HTMLElement });
+      return;
     } catch {
       return;
     }
-    if (!onLyricsPage) return;
-    // These operations don't involve DOM reads, so they can be done synchronously
-    const Lines = LyricsObject.Types[Defaults.CurrentLyricsType]?.Lines;
-    let Position: number;
-    try {
-      // Lead time lives in the position module (PlaybackSurfaceOffset.scroll),
-      // not here — one seam owns every surface's offset.
-      Position = getPositionFor('scroll');
-    } catch {
-      return;
-    }
-    if (typeof Position !== 'number' || !Number.isFinite(Position) || Position < 0) return;
-
-    if (!Lines) return;
-
-    // Binary search for active line — O(log n) instead of O(n) scan.
-    // SAFETY: Lines are domain-timed objects; narrowed to StartTime/EndTime for the search helper
-    const activeIdx = findActiveIndex(
-      Lines as unknown as { StartTime: number; EndTime: number }[],
-      Position,
-    );
-    const currentLine = activeIdx !== -1 ? (Lines[activeIdx] as (typeof Lines)[number]) : null;
-    // Hint: if cachedIdx matches activeIdx and lastLine already equals target, ScrollToActiveLine will early-return via lastLine check below.
-
-    // If we found an active line, scroll to it. The guards below are all
-    // non-layout reads (flags, querySelector, isConnected), so they run
-    // synchronously — wrapping them in a fastdom batch would only add a
-    // frame of latency before scrollIntoCenterView's own measure runs.
-    // (The heavy layout reads live inside scrollIntoCenterView.)
-    if (currentLine) {
-      const LineElem = currentLine.HTMLElement as HTMLElement;
-      // Already scrolled to this exact line -> skip all DOM work this tick
-      if (lastLine === LineElem) return;
-      if (!LineElem || !LineElem.isConnected) return;
-      // Abort if page was destroyed while this tick was queued (orphan rAF leak)
-      if (!Defaults.LyricsContainerExists) return;
-      if (!document.querySelector('#AmaiLyricsPage')) return;
-      const container = ScrollSimplebar?.getScrollElement() as HTMLElement;
-      if (!container || !container.isConnected) return;
-
-      // Cancel any in-flight scroll animation so seeks don't stack competing rAF loops.
-      // Done only after the guards pass, so a no-op tick doesn't kill live scrolling.
-      if (activeScrollController) {
-        activeScrollController.cancel();
-        setActiveController(null);
-      }
-      if (lastLine === LineElem) return;
-
-      // Release the previous pre-highlight target: Animate only keeps the
-      // Active class on a NotSung line while OverridenByScroller is
-      // present, so leaving it on a line we no longer target (e.g. after
-      // a seek) would stick the highlight there.
-      if (lastLine && lastLine.classList.contains('OverridenByScroller')) {
-        lastLine.classList.remove('OverridenByScroller');
-      }
-
-      setLastLine(LineElem);
-
-      setActiveController(scrollIntoCenterView(container, LineElem, 270, -50));
-      LineElem.classList.add('Active', 'OverridenByScroller');
-    }
-  } catch {
-    // Never throw from a scroll tick — IntervalManager would log and continue,
-    // but silent skip keeps scroll self-healing across client updates.
   }
+  syncAutoScroll();
 }
 
-export function ResetLastLine() {
-  if (activeScrollController) {
-    activeScrollController.cancel();
-    setActiveController(null);
-  }
-  setLastLine(null);
+export function ResetLastLine(): void {
+  resetAutoScroll();
 }

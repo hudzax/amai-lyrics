@@ -5,11 +5,11 @@ import { ClearLyricsContentArrays, removeLinesEvListener } from '../../utils/Lyr
 import { clearApplyInfoTimeout } from '../../utils/Lyrics/Applyer/Info/ApplyInfo';
 import ApplyDynamicBackground from '../DynamicBG/dynamicBackground';
 import Defaults from '../Global/Defaults';
-import { ClearScrollSimplebar } from '../../utils/Scrolling/Simplebar/ScrollSimplebar';
+import { AutoScroll } from '../../utils/Scrolling/AutoScroll';
 import { clearLyricsUiTimeouts } from '../../utils/Lyrics/ui';
 import { Session_NowBar_SetSide, Session_OpenNowBar } from '../Utils/NowBar';
 import Fullscreen from '../Utils/Fullscreen';
-import { ResetLastLine } from '../../utils/Scrolling/ScrollToActiveLine';
+
 import { mutateAsync } from '../../utils/fastdomAsync';
 import { Maid } from '@hudzax/web-modules/Maid';
 import { PageViewSelectors } from '../../constants/PageViewSelectors';
@@ -121,11 +121,9 @@ async function DestroyPage() {
   clearApplyInfoTimeout();
   Object.values(Tooltips).forEach((a) => a?.destroy());
   Object.keys(Tooltips).forEach((k) => (Tooltips[k] = null));
-  ResetLastLine();
-  // Use the leak-safe clear helper — directly unMounting here would bypass
-  // the stored removeEventListener refs and leave listeners on the detached
-  // SimpleBar container.
-  ClearScrollSimplebar();
+  // One scroll seam owns reset plus the leak-safe container teardown behind
+  // a single call (it keeps the stored removeEventListener refs inside).
+  AutoScroll.destroy();
   try {
     maid?.CleanUp();
     // Maid.Destroy is idempotent; CleanUp alone would leave Maid reusable but

@@ -1,5 +1,5 @@
 import Animator from '../../utils/Animator';
-import { ResetLastLine } from '../../utils/Scrolling/ScrollToActiveLine';
+import { AutoScroll } from '../../utils/Scrolling/AutoScroll';
 import storage from '../../utils/storage';
 import Global from '../Global/Global';
 import PageView, { PageRoot } from '../Pages/PageView';
@@ -154,7 +154,7 @@ function Open() {
       // Open the now bar with playback controls
       OpenNowBar();
 
-      ResetLastLine();
+      AutoScroll.reset();
 
       // Set up media box hover effects
       const MediaBox = document.querySelector<HTMLElement>(
@@ -237,7 +237,7 @@ function Close() {
         DeregisterNowBarBtn();
       }
 
-      ResetLastLine();
+      AutoScroll.reset();
 
       // Clean up media box event listeners
       const MediaBox = document.querySelector<HTMLElement>(

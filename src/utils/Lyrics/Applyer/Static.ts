@@ -1,12 +1,8 @@
 import { BOTTOM_ApplyLyricsSpacer, TOP_ApplyLyricsSpacer } from '../../Addons';
 import Defaults from '../../../components/Global/Defaults';
 import { applyStyles, removeAllStyles } from '../../CSS/Styles';
-import {
-  ClearScrollSimplebar,
-  MountScrollSimplebar,
-  RecalculateScrollSimplebar,
-  ScrollSimplebar,
-} from '../../Scrolling/Simplebar/ScrollSimplebar';
+import { ClearScrollSimplebar } from '../../Scrolling/Simplebar/ScrollSimplebar';
+import { AutoScroll } from '../../Scrolling/AutoScroll';
 import { ClearLyricsContentArrays, LyricsObject } from '../lyrics';
 import { ApplyLyricsCredits } from './Credits/ApplyLyricsCredits';
 import { ApplyInfo } from './Info/ApplyInfo';
@@ -64,8 +60,8 @@ export function ApplyStaticLyrics(data) {
   ApplyLyricsCredits(data);
   BOTTOM_ApplyLyricsSpacer(LyricsContainer);
 
-  if (ScrollSimplebar) RecalculateScrollSimplebar();
-  else MountScrollSimplebar();
+  // One scroll seam owns mount-vs-recalculate behind a single call.
+  AutoScroll.mount();
 
   const LyricsStylingContainer = document.querySelector<HTMLElement>(
     '#AmaiLyricsPage .LyricsContainer .LyricsContent .simplebar-content',

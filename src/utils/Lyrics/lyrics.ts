@@ -4,11 +4,10 @@ import Defaults from '../../components/Global/Defaults';
 import { SpotifyPlayer } from '../../components/Global/SpotifyPlayer';
 import { requestPositionTracking, resolveIsPlaying } from '../Gets/GetProgress';
 import { Lyrics } from './Animator/Main';
-import { ScrollSimplebar } from '../Scrolling/Simplebar/ScrollSimplebar';
-import { ScrollToActiveLine } from '../Scrolling/ScrollToActiveLine';
+import { AutoScroll } from '../Scrolling/AutoScroll';
+
 import { resetLyricsSetterCache } from './Animator/Lyrics/LyricsSetter';
 import { resetAnimatorCache } from './Animator/Lyrics/LyricsAnimator';
-import { ResetLastLine } from '../Scrolling/ScrollToActiveLine';
 
 export const lyricsBetweenShow = 3;
 
@@ -45,7 +44,7 @@ export function ClearLyricsContentArrays() {
   hasRenderedInitial = false;
   resetLyricsSetterCache();
   resetAnimatorCache();
-  ResetLastLine();
+  AutoScroll.reset();
 }
 
 const THROTTLE_TIME = 0.05;
@@ -117,7 +116,7 @@ export function ensureLyricsRenderLoop(): IntervalManager {
     Lyrics.Animate();
     scrollTickCounter++;
     if (scrollTickCounter % 2 === 0) {
-      ScrollToActiveLine(ScrollSimplebar);
+      AutoScroll.sync();
     }
   });
   renderLoop.Start();
