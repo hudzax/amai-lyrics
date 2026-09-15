@@ -4,7 +4,7 @@
   align-items: center;
   flex-direction: column;
   justify-content: center;
-  overflow: hidden ;
+  overflow: hidden;
   width: 100%;
 }
 
@@ -13,13 +13,13 @@
 }
 
 #SpicyLyricsPage .LyricsContainer .LyricsContent {
-  --TextGlowDef: rgba(255,255,255,0.15) 0px 0px 6px;
+  --TextGlowDef: rgba(255, 255, 255, 0.15) 0px 0px 6px;
   /* Active-line glow picks up the artwork accent hue (alpha ≈ original 0.25) */
   --ActiveTextGlowDef: rgba(var(--amai-accent-rgb), 0.28) 0px 0px 16px;
-  --StrongTextGlowDef: rgba(255,255,255,0.68) 0px 0px 16px;
-  --StrongerTextGlowDef: rgba(255,255,255,0.74) 0px 0px 16px;
-  --DefaultLyricsSize: clamp(1.5rem,calc(.425cqw * 7), 3rem);
-  --DefaultLyricsSize-Small: clamp(1.1rem,calc(1cqw* 6), 1.5rem);
+  --StrongTextGlowDef: rgba(255, 255, 255, 0.68) 0px 0px 16px;
+  --StrongerTextGlowDef: rgba(255, 255, 255, 0.74) 0px 0px 16px;
+  --DefaultLyricsSize: clamp(1.5rem, calc(0.425cqw * 7), 3rem);
+  --DefaultLyricsSize-Small: clamp(1.1rem, calc(1cqw * 6), 1.5rem);
   --Simplebar-Scrollbar-Color: var(--amai-scrollbar-thumb);
 
   overflow-x: hidden !important;
@@ -28,18 +28,21 @@
   width: 100%;
   font-size: var(--DefaultLyricsSize);
   font-weight: 700;
-  transition: opacity, transform, scale 0.2s linear;
+  transition:
+    opacity,
+    transform,
+    scale 0.2s linear;
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
   z-index: 9;
 
   --ImageMask: linear-gradient(
     180deg,
-    transparent 0,                          /* Fully transparent at the top */
-    var(--spice-sidebar) 128px,              /* Sidebar color starts at 16px */
-    var(--spice-sidebar) calc(100% - 128px), /* Sidebar color ends before the bottom */
-    transparent calc(100% - 8px),          /* Starts fading to transparent */
-    transparent                             /* Fully transparent at the bottom */
+    transparent 0,
+    /* Fully transparent at the top */ var(--spice-sidebar) 128px,
+    /* Sidebar color starts at 16px */ var(--spice-sidebar) calc(100% - 128px),
+    /* Sidebar color ends before the bottom */ transparent calc(100% - 8px),
+    /* Starts fading to transparent */ transparent /* Fully transparent at the bottom */
   );
 
   --webkit-mask-image: var(--ImageMask);
@@ -56,15 +59,32 @@
   height: 25cqh;
 }
 
-#SpicyLyricsPage .ContentBox .NowBar:not(.Active) + .LyricsContainer .LyricsContent .simplebar-content-wrapper {
+#SpicyLyricsPage
+  .ContentBox
+  .NowBar:not(.Active)
+  + .LyricsContainer
+  .LyricsContent
+  .simplebar-content-wrapper {
   padding: 0 18cqw;
 }
 
-#SpicyLyricsPage .ContentBox .NowBar.Active:is(.LeftSide) + .LyricsContainer .LyricsContent .simplebar-content-wrapper .simplebar-content {
+#SpicyLyricsPage
+  .ContentBox
+  .NowBar.Active:is(.LeftSide)
+  + .LyricsContainer
+  .LyricsContent
+  .simplebar-content-wrapper
+  .simplebar-content {
   padding: 0 5cqw 0 3.5cqw !important;
 }
 
-#SpicyLyricsPage .ContentBox .NowBar.Active:is(.RightSide) + .LyricsContainer .LyricsContent .simplebar-content-wrapper .simplebar-content {
+#SpicyLyricsPage
+  .ContentBox
+  .NowBar.Active:is(.RightSide)
+  + .LyricsContainer
+  .LyricsContent
+  .simplebar-content-wrapper
+  .simplebar-content {
   padding: 0 3.5cqw 0 5cqw !important;
 }
 
@@ -129,21 +149,19 @@
   transform: scale(0.8);
 }
 
-/* Hide refresh button when lyrics container is hidden */
-#SpicyLyricsPage .ContentBox.LyricsHidden .AmaiPageButtonContainer {
-  display: none;
-}
-
+/* Keep action buttons (Refresh / Watch MV / Settings / version) visible even
+   when lyrics are unavailable (ContentBox.LyricsHidden) so the user can
+   retry, open the MV, or open settings. */
 /* Hide refresh button when in fullscreen mode */
 #SpicyLyricsPage.Fullscreen .AmaiPageButtonContainer {
   display: none;
 }
 
 #SpicyLyricsPage .amai-version-number {
-  font-size: .85em;
+  font-size: 0.85em;
   color: var(--amai-text-faint);
   cursor: pointer;
-  font-weight:normal;
+  font-weight: normal;
 }
 
 #SpicyLyricsPage .amai-version-number:hover {
@@ -190,7 +208,13 @@ header.main-topBar-container .amai-info {
   padding: 0 2cqh;
 }
 
-#SpicyLyricsPage .ContentBox .NowBar.Active + .LyricsContainer .LyricsContent .simplebar-content-wrapper .simplebar-content {
+#SpicyLyricsPage
+  .ContentBox
+  .NowBar.Active
+  + .LyricsContainer
+  .LyricsContent
+  .simplebar-content-wrapper
+  .simplebar-content {
   padding: 3cqh 3cqh 1.8cqh 3cqh;
   background-color: var(--amai-fill-glass); /* Lowered opacity for stronger acrylic effect */
   /* No backdrop-filter here: this surface covers the whole lyrics area and sits
@@ -209,16 +233,20 @@ header.main-topBar-container .amai-info {
   box-shadow: var(--amai-shadow-panel); /* Optional shadow */
 }
 
-.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section > button > div > div {
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas)
+  .main-nowPlayingView-section
+  > button
+  > div
+  > div {
   background-color: transparent; /* Lowered opacity for stronger acrylic effect */
 }
 
 #SpicyLyricsPage .ContentBox .NowBar .Header .Metadata {
-  margin:1.8cqh 0 0 0;
+  margin: 1.8cqh 0 0 0;
 }
 
 ruby {
-  margin-top:-0.5rem;
+  margin-top: -0.5rem;
   max-width: 100%;
 }
 
@@ -227,9 +255,9 @@ ruby.romaja {
 }
 
 ruby > rt {
-  margin-bottom:0.15rem;
-  font-size:70%;
-  line-height:1.2;
+  margin-bottom: 0.15rem;
+  font-size: 70%;
+  line-height: 1.2;
   /* Furigana/romaji sit lighter and slightly tracked against the main line */
   font-weight: 500;
   letter-spacing: 0.02em;
@@ -291,7 +319,9 @@ ruby > rt {
   word-break: break-word;
 }
 
-.main-trackList-trackListRow:focus-within, .main-trackList-trackListRow:hover, .BoxComponent-group-card-naked-isInteractive-draggable:hover::after {
+.main-trackList-trackListRow:focus-within,
+.main-trackList-trackListRow:hover,
+.BoxComponent-group-card-naked-isInteractive-draggable:hover::after {
   background-color: rgba(255, 255, 255, 0.1); /* Lowered opacity for stronger acrylic effect */
   backdrop-filter: blur(20px); /* Increased blur for more acrylic */
   -webkit-backdrop-filter: blur(20px); /* Safari support */
@@ -305,14 +335,14 @@ ruby > rt {
 }
 
 .main-nowPlayingView-credits > *:not(:first-child)::before {
-  content: "";
+  content: '';
   display: block;
-  height: .25px;
+  height: 0.25px;
   background: rgb(255 255 255 / 25%);
-  margin-bottom: .55rem;
+  margin-bottom: 0.55rem;
 }
 
 /* Hide ads placeholder element*/
-#main-view > div > div[data-testid=test-ref-div] {
+#main-view > div > div[data-testid='test-ref-div'] {
   display: none;
 }
