@@ -30,11 +30,14 @@ export class PageManager {
     const { default: PageView } = await import('../components/Pages/PageView');
 
     if (location.pathname === '/AmaiLyrics') {
-      PageView.Open();
+      await PageView.Open();
       this.buttonManager.setActive(true);
     } else {
-      if (this.lastLocation?.pathname === '/AmaiLyrics') {
-        PageView.Destroy();
+      // Destroy when we tracked the open OR the page is still mounted: the open
+      // event can be missed across hot-reloads, and a leaked #SpicyLyricsPage
+      // hides Spotify's own content via body:has() CSS (blank main view).
+      if (this.lastLocation?.pathname === '/AmaiLyrics' || PageView.IsOpened) {
+        await PageView.Destroy();
         this.buttonManager.setActive(false);
       }
     }
