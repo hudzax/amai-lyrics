@@ -6053,11 +6053,248 @@
     }
   });
 
+  // src/edited_packages/spcr-settings/settingsSection.tsx
+  var import_react, import_react_dom, SettingsSection;
+  var init_settingsSection = __esm({
+    "src/edited_packages/spcr-settings/settingsSection.tsx"() {
+      import_react = __toESM(require_react());
+      import_react_dom = __toESM(require_react_dom());
+      init_lifecycle();
+      SettingsSection = class {
+        constructor(name, settingsId, initialSettingsFields = {}) {
+          this.name = name;
+          this.settingsId = settingsId;
+          this.initialSettingsFields = initialSettingsFields;
+          this.settingsFields = this.initialSettingsFields;
+          this.stopHistoryListener = null;
+          this.setRerender = null;
+          this.pushSettings = async () => {
+            Object.entries(this.settingsFields).forEach(([nameId, field]) => {
+              if (field.type !== "button" && this.getFieldValue(nameId) === void 0) {
+                this.setFieldValue(nameId, field.defaultValue);
+              }
+            });
+            while (!Spicetify?.Platform?.History?.listen) {
+              await new Promise((resolve) => setTimeout(resolve, 100));
+            }
+            if (this.stopHistoryListener)
+              this.stopHistoryListener();
+            this.stopHistoryListener = Spicetify.Platform.History.listen((e) => {
+              if (e.pathname === "/preferences") {
+                this.render();
+              }
+            });
+            lifecycle_default.trackHistory(this.stopHistoryListener);
+            if (Spicetify.Platform.History.location.pathname === "/preferences") {
+              await this.render();
+            }
+          };
+          this.rerender = () => {
+            if (this.setRerender) {
+              this.setRerender(Math.random());
+            }
+          };
+          this.renderInto = (container) => {
+            import_react_dom.default.render(/* @__PURE__ */ import_react.default.createElement(this.FieldsContainer, null), container);
+          };
+          this.render = async () => {
+            while (!document.getElementById("desktop.settings.selectLanguage")) {
+              if (Spicetify.Platform.History.location.pathname !== "/preferences")
+                return;
+              await new Promise((resolve) => setTimeout(resolve, 100));
+            }
+            const allSettingsContainer = document.querySelector(
+              ".main-view-container__scroll-node-child main div"
+            );
+            if (!allSettingsContainer)
+              return console.error("[spcr-settings] settings container not found");
+            let pluginSettingsContainer = Array.from(allSettingsContainer.children).find(
+              (child) => child.id === this.settingsId
+            );
+            if (!pluginSettingsContainer) {
+              pluginSettingsContainer = document.createElement("div");
+              pluginSettingsContainer.id = this.settingsId;
+              allSettingsContainer.appendChild(pluginSettingsContainer);
+            } else {
+              console.log(pluginSettingsContainer);
+            }
+            import_react_dom.default.render(/* @__PURE__ */ import_react.default.createElement(this.FieldsContainer, null), pluginSettingsContainer);
+          };
+          this.addButton = (nameId, description, value, onClick, events) => {
+            this.settingsFields[nameId] = {
+              type: "button",
+              description,
+              value,
+              events: {
+                onClick,
+                ...events
+              }
+            };
+          };
+          this.addInput = (nameId, description, defaultValue, onChange, inputType, events) => {
+            this.settingsFields[nameId] = {
+              type: "input",
+              description,
+              defaultValue,
+              inputType,
+              events: {
+                onChange,
+                ...events
+              }
+            };
+          };
+          this.addHidden = (nameId, defaultValue) => {
+            this.settingsFields[nameId] = {
+              type: "hidden",
+              defaultValue
+            };
+          };
+          this.addToggle = (nameId, description, defaultValue, onChange, events) => {
+            this.settingsFields[nameId] = {
+              type: "toggle",
+              description,
+              defaultValue,
+              events: {
+                onChange,
+                ...events
+              }
+            };
+          };
+          this.addDropDown = (nameId, description, options, defaultIndex, onSelect, events) => {
+            this.settingsFields[nameId] = {
+              type: "dropdown",
+              description,
+              defaultValue: options[defaultIndex],
+              options,
+              events: {
+                onSelect,
+                ...events
+              }
+            };
+          };
+          this.getFieldValue = (nameId) => {
+            try {
+              return JSON.parse(Spicetify.LocalStorage.get(`${this.settingsId}.${nameId}`) || "{}")?.value;
+            } catch {
+              return void 0;
+            }
+          };
+          this.setFieldValue = (nameId, newValue) => {
+            Spicetify.LocalStorage.set(`${this.settingsId}.${nameId}`, JSON.stringify({ value: newValue }));
+          };
+          this.FieldsContainer = () => {
+            const [rerender, setRerender] = (0, import_react.useState)(0);
+            this.setRerender = setRerender;
+            return /* @__PURE__ */ import_react.default.createElement("div", {
+              className: "x-settings-section",
+              key: rerender
+            }, /* @__PURE__ */ import_react.default.createElement("h2", {
+              className: "amai-settings-header"
+            }, this.name), Object.entries(this.settingsFields).map(([nameId, field]) => {
+              return /* @__PURE__ */ import_react.default.createElement(this.Field, {
+                nameId,
+                field
+              });
+            }));
+          };
+          this.Field = (props) => {
+            const id = `${this.settingsId}.${props.nameId}`;
+            let defaultStateValue;
+            if (props.field.type === "button") {
+              defaultStateValue = props.field.value;
+            } else {
+              defaultStateValue = this.getFieldValue(props.nameId);
+            }
+            if (props.field.type === "hidden") {
+              return /* @__PURE__ */ import_react.default.createElement(import_react.default.Fragment, null);
+            }
+            const [value, setValueState] = (0, import_react.useState)(defaultStateValue);
+            const setValue = (newValue) => {
+              if (newValue !== void 0) {
+                setValueState(newValue);
+                this.setFieldValue(props.nameId, newValue);
+              }
+            };
+            return /* @__PURE__ */ import_react.default.createElement("div", {
+              className: "x-settings-row"
+            }, /* @__PURE__ */ import_react.default.createElement("div", {
+              className: "x-settings-firstColumn"
+            }, /* @__PURE__ */ import_react.default.createElement("label", {
+              className: "TypeElement-viola-textSubdued-type",
+              htmlFor: id
+            }, props.field.description || "")), /* @__PURE__ */ import_react.default.createElement("div", {
+              className: "x-settings-secondColumn"
+            }, props.field.type === "input" ? /* @__PURE__ */ import_react.default.createElement("input", {
+              className: "x-settings-input",
+              id,
+              dir: "ltr",
+              value,
+              type: props.field.inputType || "text",
+              ...props.field.events,
+              onChange: (e) => {
+                setValue(e.currentTarget.value);
+                const onChange = props.field.events?.onChange;
+                if (onChange)
+                  onChange(e);
+              }
+            }) : props.field.type === "button" ? /* @__PURE__ */ import_react.default.createElement("span", null, /* @__PURE__ */ import_react.default.createElement("button", {
+              id,
+              className: "Button-sc-y0gtbx-0 Button-small-buttonSecondary-useBrowserDefaultFocusStyle x-settings-button",
+              ...props.field.events,
+              onClick: (e) => {
+                setValue();
+                const onClick = props.field.events?.onClick;
+                if (onClick)
+                  onClick(e);
+              },
+              type: "button"
+            }, value)) : props.field.type === "toggle" ? /* @__PURE__ */ import_react.default.createElement("label", {
+              className: "x-settings-secondColumn x-toggle-wrapper"
+            }, /* @__PURE__ */ import_react.default.createElement("input", {
+              id,
+              className: "x-toggle-input",
+              type: "checkbox",
+              checked: value,
+              ...props.field.events,
+              onClick: (e) => {
+                setValue(e.currentTarget.checked);
+                const onClick = props.field.events?.onClick;
+                if (onClick)
+                  onClick(e);
+              }
+            }), /* @__PURE__ */ import_react.default.createElement("span", {
+              className: "x-toggle-indicatorWrapper"
+            }, /* @__PURE__ */ import_react.default.createElement("span", {
+              className: "x-toggle-indicator"
+            }))) : props.field.type === "dropdown" ? /* @__PURE__ */ import_react.default.createElement("select", {
+              className: "main-dropDown-dropDown",
+              id,
+              ...props.field.events,
+              onChange: (e) => {
+                setValue(
+                  props.field.options[e.currentTarget.selectedIndex]
+                );
+                const onSelect = props.field.events?.onSelect;
+                if (onSelect)
+                  onSelect(e);
+              }
+            }, props.field.options.map((option, i) => {
+              return /* @__PURE__ */ import_react.default.createElement("option", {
+                selected: option === value,
+                value: i + 1
+              }, option);
+            })) : /* @__PURE__ */ import_react.default.createElement(import_react.default.Fragment, null)));
+          };
+        }
+      };
+    }
+  });
+
   // package.json
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.5.4";
+      version = "1.5.5";
     }
   });
 
@@ -8984,15 +9221,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a2676928c/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55d1dd/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a2676928c/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55d1dd/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a267692cd/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55d24e/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a267692cd/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55d24e/ProcessingIndicator.css"() {
     }
   });
 
@@ -9776,21 +10013,61 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   });
 
   // src/components/Global/Session.ts
-  var sessionHistory, Session, Session_default;
+  function isSameLocation(a, b) {
+    return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash;
+  }
+  function getPlatformHistory() {
+    try {
+      const spicetify = globalThis;
+      return spicetify?.Spicetify?.Platform?.History;
+    } catch {
+      return void 0;
+    }
+  }
+  function previousFromPlatformHistory() {
+    const history = getPlatformHistory();
+    const entries = history?.entries;
+    if (!Array.isArray(entries) || entries.length < 2)
+      return null;
+    const cursor = typeof history?.index === "number" ? Math.min(history.index, entries.length - 1) : entries.length - 1;
+    for (let i = cursor - 1; i >= 0; i--) {
+      const pathname = entries[i]?.pathname;
+      if (pathname && pathname !== LYRICS_PATHNAME)
+        return pathname;
+    }
+    return null;
+  }
+  var LYRICS_PATHNAME, sessionHistory, Session, Session_default;
   var init_Session = __esm({
     "src/components/Global/Session.ts"() {
       init_Global();
+      LYRICS_PATHNAME = "/AmaiLyrics";
       sessionHistory = [];
       Session = {
         Navigate: (data) => {
           Spicetify.Platform.History.push(data);
         },
         GoBack: () => {
-          if (sessionHistory.length > 1) {
-            Session.Navigate(sessionHistory[sessionHistory.length - 2]);
-          } else {
-            Session.Navigate({ pathname: "/" });
+          const platformPrevious = previousFromPlatformHistory();
+          if (platformPrevious) {
+            Session.Navigate({ pathname: platformPrevious });
+            return;
           }
+          for (let i = sessionHistory.length - 2; i >= 0; i--) {
+            if (sessionHistory[i].pathname !== LYRICS_PATHNAME) {
+              Session.Navigate(sessionHistory[i]);
+              return;
+            }
+          }
+          try {
+            const goBack = getPlatformHistory()?.goBack;
+            if (typeof goBack === "function") {
+              goBack();
+              return;
+            }
+          } catch {
+          }
+          Session.Navigate({ pathname: "/" });
         },
         GetPreviousLocation: () => {
           if (sessionHistory.length > 1) {
@@ -9808,6 +10085,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           );
         },
         PushToHistory: (data) => {
+          const last = sessionHistory[sessionHistory.length - 1];
+          if (last && isSameLocation(last, data))
+            return;
           sessionHistory.push(data);
         }
       };
@@ -10072,6 +10352,95 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
+  // src/components/Pages/SettingsModal.ts
+  function handleOverlayMouseDown(event) {
+    if (event.target === overlay)
+      closeAmaiSettingsModal();
+  }
+  function handleKeyDown(event) {
+    if (event.key === "Escape")
+      closeAmaiSettingsModal();
+  }
+  function openAmaiSettingsModal() {
+    const sections = getAmaiSettingsSections();
+    if (sections.length === 0) {
+      console.error("[Amai Lyrics] Cannot open settings modal: no sections registered");
+      Spicetify.showNotification("Amai settings are not ready yet", true, 2e3);
+      return;
+    }
+    closeAmaiSettingsModal();
+    const active = document.activeElement;
+    lastFocusedElement = active instanceof HTMLElement ? active : null;
+    overlay = document.createElement("div");
+    overlay.className = "amai-settings-overlay";
+    const dialog = document.createElement("div");
+    dialog.className = "amai-settings-dialog";
+    dialog.setAttribute("role", "dialog");
+    dialog.setAttribute("aria-modal", "true");
+    dialog.setAttribute("aria-label", "Amai Lyrics Settings");
+    const header = document.createElement("div");
+    header.className = "amai-settings-dialog-header";
+    const title = document.createElement("h2");
+    title.className = "amai-settings-dialog-title";
+    title.textContent = "Amai Lyrics Settings";
+    const closeButton = document.createElement("button");
+    closeButton.className = "amai-settings-dialog-close";
+    closeButton.type = "button";
+    closeButton.setAttribute("aria-label", "Close settings");
+    closeButton.textContent = "\u2715";
+    closeButton.addEventListener("click", () => closeAmaiSettingsModal());
+    header.appendChild(title);
+    header.appendChild(closeButton);
+    const body = document.createElement("div");
+    body.className = "amai-settings-dialog-body";
+    const container = document.createElement("div");
+    container.className = "amai-settings-modal";
+    const slots = sections.map((section) => {
+      const slot = document.createElement("div");
+      slot.id = section.settingsId;
+      container.appendChild(slot);
+      return slot;
+    });
+    body.appendChild(container);
+    dialog.appendChild(header);
+    dialog.appendChild(body);
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+    overlay.addEventListener("mousedown", handleOverlayMouseDown);
+    document.addEventListener("keydown", handleKeyDown, true);
+    sections.forEach((section, index) => {
+      try {
+        section.renderInto(slots[index]);
+      } catch (error) {
+        console.error(
+          `[Amai Lyrics] Failed to render settings section: ${section.settingsId}`,
+          error
+        );
+      }
+    });
+    closeButton.focus();
+  }
+  function closeAmaiSettingsModal() {
+    if (!overlay)
+      return;
+    const node = overlay;
+    overlay = null;
+    document.removeEventListener("keydown", handleKeyDown, true);
+    node.remove();
+    if (lastFocusedElement?.isConnected) {
+      lastFocusedElement.focus();
+      lastFocusedElement = null;
+    }
+  }
+  var overlay, lastFocusedElement;
+  var init_SettingsModal = __esm({
+    "src/components/Pages/SettingsModal.ts"() {
+      init_settings();
+      overlay = null;
+      lastFocusedElement = null;
+    }
+  });
+
   // src/components/Pages/pageButtons.ts
   function setupActionButtons(maid2) {
     setupRefreshButton(maid2);
@@ -10132,7 +10501,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (!settingsButton)
       return;
     const clickHandler = () => {
-      Spicetify.Platform.History.push("/preferences");
+      openAmaiSettingsModal();
     };
     settingsButton.addEventListener("click", clickHandler);
     maid2?.Give(() => settingsButton.removeEventListener("click", clickHandler));
@@ -10167,6 +10536,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_fetchLyrics();
       init_externalNavigation();
       init_SpotifyPlayer();
+      init_SettingsModal();
     }
   });
 
@@ -34274,6 +34644,228 @@ ${JSON.stringify(lyricsOnly)}`
     }
   });
 
+  // src/utils/settings.ts
+  function setSettingsMenu() {
+    amaiSettingsSections.length = 0;
+    generalSettings();
+    devSettings();
+    infos();
+  }
+  function getAmaiSettingsSections() {
+    return amaiSettingsSections;
+  }
+  function devSettings() {
+    const settings = new SettingsSection("Amai - Dev Settings", "amai-dev-settings");
+    settings.addButton(
+      "remove-cached-lyrics",
+      "Delete all locally cached lyrics",
+      "Clear Cache",
+      () => {
+        void lyricsCache.destroy();
+        storage_default.set("currentLyricsData", null);
+        Spicetify.showNotification("Cache Destroyed Successfully!", false, 2e3);
+      }
+    );
+    settings.addButton("reload", "Reload Spotify to apply changes", "Reload Spotify", () => {
+      window.location.reload();
+    });
+    settings.pushSettings();
+    amaiSettingsSections.push(settings);
+  }
+  function generalSettings() {
+    const settings = new SettingsSection("Amai - Settings", "amai-settings");
+    settings.addToggle(
+      "enableAppBackground",
+      "Enable Amai Theme (dynamic album-art background)",
+      Defaults_default.enableAppBackground,
+      () => {
+        const enabled = settings.getFieldValue("enableAppBackground");
+        storage_default.set("enable_app_background", enabled ? "true" : "false");
+        if (enabled) {
+          const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
+          void Promise.resolve().then(() => (init_AppBackground(), AppBackground_exports)).then(
+            ({ appBackgroundSingleton: appBackgroundSingleton2, syncAppBgMarker: syncAppBgMarker2, syncLibraryGridState: syncLibraryGridState2 }) => {
+              syncAppBgMarker2(true);
+              appBackgroundSingleton2.apply(coverUrl);
+              syncLibraryGridState2();
+              window.dispatchEvent(new Event("amai:appbg-changed"));
+            }
+          );
+        } else {
+          void Promise.resolve().then(() => (init_AppBackground(), AppBackground_exports)).then(({ appBackgroundSingleton: appBackgroundSingleton2 }) => {
+            appBackgroundSingleton2.remove();
+            window.dispatchEvent(new Event("amai:appbg-changed"));
+          });
+        }
+      }
+    );
+    settings.addInput("gemini-api-key", "Gemini API Key (required for translations)", "", () => {
+      storage_default.set("GEMINI_API_KEY", settings.getFieldValue("gemini-api-key"));
+      void lyricsCache.destroy();
+      storage_default.set("currentLyricsData", null);
+      const playerData = Spicetify.Player.data;
+      if (!playerData?.item?.uri)
+        return;
+      const currentUri = playerData.item.uri;
+      loadAndApplyLyrics(currentUri).catch(
+        (e) => console.error("[Amai Lyrics] Refetch after API key change failed:", e)
+      );
+    });
+    settings.addButton(
+      "get-gemini-api",
+      "No key yet? Get a free Gemini API key",
+      "Get Free API Key",
+      () => {
+        openTrustedExternalUrl("https://aistudio.google.com/app/apikey/", "_self");
+      }
+    );
+    settings.addToggle(
+      "enableRomaji",
+      "Show Romaji readings for Japanese lyrics",
+      Defaults_default.enableRomaji,
+      () => {
+        void lyricsCache.destroy();
+        storage_default.set("currentLyricsData", null);
+        storage_default.set("enable_romaji", settings.getFieldValue("enableRomaji"));
+      }
+    );
+    settings.addToggle(
+      "disableRomajiToggleNotification",
+      "Hide the popup shown when toggling Romaji/Furigana",
+      Defaults_default.disableRomajiToggleNotification,
+      () => {
+        storage_default.set(
+          "disable_romaji_toggle_notification",
+          settings.getFieldValue("disableRomajiToggleNotification")
+        );
+      }
+    );
+    settings.addToggle(
+      "enablePlaybarLyrics",
+      "Show the current lyric line in the playbar",
+      true,
+      () => {
+        storage_default.set("enable_playbar_lyrics", settings.getFieldValue("enablePlaybarLyrics"));
+      }
+    );
+    settings.addDropDown(
+      "translation-language",
+      "Translate lyrics into",
+      [
+        "English",
+        "Spanish",
+        "French",
+        "German",
+        "Portuguese",
+        "Chinese (Simplified)",
+        "Thai",
+        "Indonesian",
+        "Malay",
+        "Japanese",
+        "Korean"
+      ],
+      0,
+      () => {
+        const selected = settings.getFieldValue("translation-language");
+        storage_default.set("translation_language", selected);
+        void lyricsCache.destroy();
+        storage_default.set("currentLyricsData", null);
+      }
+    );
+    settings.addToggle(
+      "disableTranslation",
+      "Turn off lyric translations",
+      Defaults_default.disableTranslation,
+      () => {
+        void lyricsCache.destroy();
+        storage_default.set("currentLyricsData", null);
+        storage_default.set("disable_translation", settings.getFieldValue("disableTranslation"));
+      }
+    );
+    const translationFontSizeOptions = ["Extra Small", "Small", "Normal", "Large", "Extra Large"];
+    const fontSizeValues = ["0.4", "0.475", "0.575", "0.7", "0.85"];
+    const currentSize = storage_default.get("translation_font_size") || Defaults_default.translationFontSize;
+    const defaultIndex = fontSizeValues.indexOf(currentSize) !== -1 ? fontSizeValues.indexOf(currentSize) : 2;
+    settings.addDropDown(
+      "translation-font-size",
+      "Translation text size",
+      translationFontSizeOptions,
+      defaultIndex,
+      () => {
+        const selected = settings.getFieldValue("translation-font-size");
+        const index = translationFontSizeOptions.indexOf(selected);
+        const value = fontSizeValues[index >= 0 ? index : 2];
+        storage_default.set("translation_font_size", value);
+        const container = document.querySelector(
+          "#SpicyLyricsPage .LyricsContainer .LyricsContent"
+        );
+        if (container) {
+          container.style.setProperty("--TranslationFontSize", value);
+        }
+      }
+    );
+    const lyricsSizeOptions = ["Extra Small", "Small", "Normal", "Large", "Extra Large"];
+    const lyricsSizeValues = ["1.2", "1.5", "", "2.5", "3"];
+    const currentLyricsSize = storage_default.get("default_lyrics_size") || "";
+    const defaultLyricsSizeIndex = currentLyricsSize ? Math.max(0, lyricsSizeValues.indexOf(currentLyricsSize)) : 2;
+    settings.addDropDown(
+      "default-lyrics-size",
+      "Main lyrics text size",
+      lyricsSizeOptions,
+      defaultLyricsSizeIndex,
+      () => {
+        const selected = settings.getFieldValue("default-lyrics-size");
+        const index = lyricsSizeOptions.indexOf(selected);
+        const value = lyricsSizeValues[index >= 0 ? index : 2];
+        storage_default.set("default_lyrics_size", value);
+        const container = document.querySelector(
+          "#SpicyLyricsPage .LyricsContainer .LyricsContent"
+        );
+        if (container) {
+          if (value) {
+            container.style.setProperty("--DefaultLyricsSize", value + "rem");
+          } else {
+            container.style.removeProperty("--DefaultLyricsSize");
+          }
+        }
+      }
+    );
+    settings.pushSettings();
+    amaiSettingsSections.push(settings);
+  }
+  function infos() {
+    const settings = new SettingsSection("Amai - Info", "amai-info");
+    settings.addButton(
+      "more-info",
+      "Enhances your Spotify experience with Furigana for Japanese Kanji, Romaji for Japanese lyrics, Romanization for Korean lyrics, and line-by-line translations powered by Google Gemini AI.",
+      `v${Defaults_default.Version}`,
+      () => {
+        openTrustedExternalUrl("https://github.com/hudzax/amai-lyrics", "_self");
+      }
+    );
+    settings.addButton(
+      "report-issue",
+      "Found a bug or have a feature request?",
+      "Report Issue",
+      () => {
+        openTrustedExternalUrl("https://github.com/hudzax/amai-lyrics/issues", "_self");
+      }
+    );
+    settings.pushSettings();
+    amaiSettingsSections.push(settings);
+  }
+  var amaiSettingsSections;
+  var init_settings = __esm({
+    "src/utils/settings.ts"() {
+      init_settingsSection();
+      init_storage();
+      init_fetchLyrics();
+      init_Defaults();
+      init_externalNavigation();
+      amaiSettingsSections = [];
+    }
+  });
+
   // src/utils/ArtworkColors.ts
   var ArtworkColors_exports = {};
   __export(ArtworkColors_exports, {
@@ -34821,430 +35413,8 @@ ${JSON.stringify(lyricsOnly)}`
   init_storage();
   init_Whentil();
 
-  // src/edited_packages/spcr-settings/settingsSection.tsx
-  var import_react = __toESM(require_react());
-  var import_react_dom = __toESM(require_react_dom());
-  init_lifecycle();
-  var SettingsSection = class {
-    constructor(name, settingsId, initialSettingsFields = {}) {
-      this.name = name;
-      this.settingsId = settingsId;
-      this.initialSettingsFields = initialSettingsFields;
-      this.settingsFields = this.initialSettingsFields;
-      this.stopHistoryListener = null;
-      this.setRerender = null;
-      this.pushSettings = async () => {
-        Object.entries(this.settingsFields).forEach(([nameId, field]) => {
-          if (field.type !== "button" && this.getFieldValue(nameId) === void 0) {
-            this.setFieldValue(nameId, field.defaultValue);
-          }
-        });
-        while (!Spicetify?.Platform?.History?.listen) {
-          await new Promise((resolve) => setTimeout(resolve, 100));
-        }
-        if (this.stopHistoryListener)
-          this.stopHistoryListener();
-        this.stopHistoryListener = Spicetify.Platform.History.listen((e) => {
-          if (e.pathname === "/preferences") {
-            this.render();
-          }
-        });
-        lifecycle_default.trackHistory(this.stopHistoryListener);
-        if (Spicetify.Platform.History.location.pathname === "/preferences") {
-          await this.render();
-        }
-      };
-      this.rerender = () => {
-        if (this.setRerender) {
-          this.setRerender(Math.random());
-        }
-      };
-      this.render = async () => {
-        while (!document.getElementById("desktop.settings.selectLanguage")) {
-          if (Spicetify.Platform.History.location.pathname !== "/preferences")
-            return;
-          await new Promise((resolve) => setTimeout(resolve, 100));
-        }
-        const allSettingsContainer = document.querySelector(
-          ".main-view-container__scroll-node-child main div"
-        );
-        if (!allSettingsContainer)
-          return console.error("[spcr-settings] settings container not found");
-        let pluginSettingsContainer = Array.from(allSettingsContainer.children).find(
-          (child) => child.id === this.settingsId
-        );
-        if (!pluginSettingsContainer) {
-          pluginSettingsContainer = document.createElement("div");
-          pluginSettingsContainer.id = this.settingsId;
-          allSettingsContainer.appendChild(pluginSettingsContainer);
-        } else {
-          console.log(pluginSettingsContainer);
-        }
-        import_react_dom.default.render(/* @__PURE__ */ import_react.default.createElement(this.FieldsContainer, null), pluginSettingsContainer);
-      };
-      this.addButton = (nameId, description, value, onClick, events) => {
-        this.settingsFields[nameId] = {
-          type: "button",
-          description,
-          value,
-          events: {
-            onClick,
-            ...events
-          }
-        };
-      };
-      this.addInput = (nameId, description, defaultValue, onChange, inputType, events) => {
-        this.settingsFields[nameId] = {
-          type: "input",
-          description,
-          defaultValue,
-          inputType,
-          events: {
-            onChange,
-            ...events
-          }
-        };
-      };
-      this.addHidden = (nameId, defaultValue) => {
-        this.settingsFields[nameId] = {
-          type: "hidden",
-          defaultValue
-        };
-      };
-      this.addToggle = (nameId, description, defaultValue, onChange, events) => {
-        this.settingsFields[nameId] = {
-          type: "toggle",
-          description,
-          defaultValue,
-          events: {
-            onChange,
-            ...events
-          }
-        };
-      };
-      this.addDropDown = (nameId, description, options, defaultIndex, onSelect, events) => {
-        this.settingsFields[nameId] = {
-          type: "dropdown",
-          description,
-          defaultValue: options[defaultIndex],
-          options,
-          events: {
-            onSelect,
-            ...events
-          }
-        };
-      };
-      this.getFieldValue = (nameId) => {
-        return JSON.parse(Spicetify.LocalStorage.get(`${this.settingsId}.${nameId}`) || "{}")?.value;
-      };
-      this.setFieldValue = (nameId, newValue) => {
-        Spicetify.LocalStorage.set(`${this.settingsId}.${nameId}`, JSON.stringify({ value: newValue }));
-      };
-      this.FieldsContainer = () => {
-        const [rerender, setRerender] = (0, import_react.useState)(0);
-        this.setRerender = setRerender;
-        return /* @__PURE__ */ import_react.default.createElement("div", {
-          className: "x-settings-section",
-          key: rerender
-        }, /* @__PURE__ */ import_react.default.createElement("h2", {
-          className: "amai-settings-header"
-        }, this.name), Object.entries(this.settingsFields).map(([nameId, field]) => {
-          return /* @__PURE__ */ import_react.default.createElement(this.Field, {
-            nameId,
-            field
-          });
-        }));
-      };
-      this.Field = (props) => {
-        const id = `${this.settingsId}.${props.nameId}`;
-        let defaultStateValue;
-        if (props.field.type === "button") {
-          defaultStateValue = props.field.value;
-        } else {
-          defaultStateValue = this.getFieldValue(props.nameId);
-        }
-        if (props.field.type === "hidden") {
-          return /* @__PURE__ */ import_react.default.createElement(import_react.default.Fragment, null);
-        }
-        const [value, setValueState] = (0, import_react.useState)(defaultStateValue);
-        const setValue = (newValue) => {
-          if (newValue !== void 0) {
-            setValueState(newValue);
-            this.setFieldValue(props.nameId, newValue);
-          }
-        };
-        return /* @__PURE__ */ import_react.default.createElement("div", {
-          className: "x-settings-row"
-        }, /* @__PURE__ */ import_react.default.createElement("div", {
-          className: "x-settings-firstColumn"
-        }, /* @__PURE__ */ import_react.default.createElement("label", {
-          className: "TypeElement-viola-textSubdued-type",
-          htmlFor: id
-        }, props.field.description || "")), /* @__PURE__ */ import_react.default.createElement("div", {
-          className: "x-settings-secondColumn"
-        }, props.field.type === "input" ? /* @__PURE__ */ import_react.default.createElement("input", {
-          className: "x-settings-input",
-          id,
-          dir: "ltr",
-          value,
-          type: props.field.inputType || "text",
-          ...props.field.events,
-          onChange: (e) => {
-            setValue(e.currentTarget.value);
-            const onChange = props.field.events?.onChange;
-            if (onChange)
-              onChange(e);
-          }
-        }) : props.field.type === "button" ? /* @__PURE__ */ import_react.default.createElement("span", null, /* @__PURE__ */ import_react.default.createElement("button", {
-          id,
-          className: "Button-sc-y0gtbx-0 Button-small-buttonSecondary-useBrowserDefaultFocusStyle x-settings-button",
-          ...props.field.events,
-          onClick: (e) => {
-            setValue();
-            const onClick = props.field.events?.onClick;
-            if (onClick)
-              onClick(e);
-          },
-          type: "button"
-        }, value)) : props.field.type === "toggle" ? /* @__PURE__ */ import_react.default.createElement("label", {
-          className: "x-settings-secondColumn x-toggle-wrapper"
-        }, /* @__PURE__ */ import_react.default.createElement("input", {
-          id,
-          className: "x-toggle-input",
-          type: "checkbox",
-          checked: value,
-          ...props.field.events,
-          onClick: (e) => {
-            setValue(e.currentTarget.checked);
-            const onClick = props.field.events?.onClick;
-            if (onClick)
-              onClick(e);
-          }
-        }), /* @__PURE__ */ import_react.default.createElement("span", {
-          className: "x-toggle-indicatorWrapper"
-        }, /* @__PURE__ */ import_react.default.createElement("span", {
-          className: "x-toggle-indicator"
-        }))) : props.field.type === "dropdown" ? /* @__PURE__ */ import_react.default.createElement("select", {
-          className: "main-dropDown-dropDown",
-          id,
-          ...props.field.events,
-          onChange: (e) => {
-            setValue(
-              props.field.options[e.currentTarget.selectedIndex]
-            );
-            const onSelect = props.field.events?.onSelect;
-            if (onSelect)
-              onSelect(e);
-          }
-        }, props.field.options.map((option, i) => {
-          return /* @__PURE__ */ import_react.default.createElement("option", {
-            selected: option === value,
-            value: i + 1
-          }, option);
-        })) : /* @__PURE__ */ import_react.default.createElement(import_react.default.Fragment, null)));
-      };
-    }
-  };
-
-  // src/utils/settings.ts
-  init_storage();
-  init_fetchLyrics();
-  init_Defaults();
-  init_externalNavigation();
-  function setSettingsMenu() {
-    generalSettings();
-    devSettings();
-    infos();
-  }
-  function devSettings() {
-    const settings = new SettingsSection("Amai - Dev Settings", "amai-dev-settings");
-    settings.addButton("remove-cached-lyrics", "Remove Cached Lyrics", "Remove Cached Lyrics", () => {
-      void lyricsCache.destroy();
-      storage_default.set("currentLyricsData", null);
-      Spicetify.showNotification("Cache Destroyed Successfully!", false, 2e3);
-    });
-    settings.addButton("reload", "Reload UI", "Reload", () => {
-      window.location.reload();
-    });
-    settings.pushSettings();
-  }
-  function generalSettings() {
-    const settings = new SettingsSection("Amai - Settings", "amai-settings");
-    settings.addInput("gemini-api-key", "Gemini API Key", "", () => {
-      storage_default.set("GEMINI_API_KEY", settings.getFieldValue("gemini-api-key"));
-      void lyricsCache.destroy();
-      storage_default.set("currentLyricsData", null);
-      const playerData = Spicetify.Player.data;
-      if (!playerData?.item?.uri)
-        return;
-      const currentUri = playerData.item.uri;
-      loadAndApplyLyrics(currentUri).catch(
-        (e) => console.error("[Amai Lyrics] Refetch after API key change failed:", e)
-      );
-    });
-    settings.addButton("get-gemini-api", "Get your own Gemini API here", "get API Key", () => {
-      openTrustedExternalUrl("https://aistudio.google.com/app/apikey/", "_self");
-    });
-    settings.addToggle(
-      "enableRomaji",
-      "Enable Romaji for Japanese Lyrics",
-      Defaults_default.enableRomaji,
-      () => {
-        void lyricsCache.destroy();
-        storage_default.set("currentLyricsData", null);
-        storage_default.set("enable_romaji", settings.getFieldValue("enableRomaji"));
-      }
-    );
-    settings.addToggle(
-      "disableRomajiToggleNotification",
-      "Disable Romaji/Furigana Toggle Notification",
-      Defaults_default.disableRomajiToggleNotification,
-      () => {
-        storage_default.set(
-          "disable_romaji_toggle_notification",
-          settings.getFieldValue("disableRomajiToggleNotification")
-        );
-      }
-    );
-    settings.addToggle(
-      "enablePlaybarLyrics",
-      "Show current lyric in the bottom playbar",
-      true,
-      () => {
-        storage_default.set("enable_playbar_lyrics", settings.getFieldValue("enablePlaybarLyrics"));
-      }
-    );
-    settings.addToggle(
-      "enableAppBackground",
-      "Enable Amai Theme",
-      Defaults_default.enableAppBackground,
-      () => {
-        const enabled = settings.getFieldValue("enableAppBackground");
-        storage_default.set("enable_app_background", enabled ? "true" : "false");
-        if (enabled) {
-          const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
-          void Promise.resolve().then(() => (init_AppBackground(), AppBackground_exports)).then(
-            ({ appBackgroundSingleton: appBackgroundSingleton2, syncAppBgMarker: syncAppBgMarker2, syncLibraryGridState: syncLibraryGridState2 }) => {
-              syncAppBgMarker2(true);
-              appBackgroundSingleton2.apply(coverUrl);
-              syncLibraryGridState2();
-              window.dispatchEvent(new Event("amai:appbg-changed"));
-            }
-          );
-        } else {
-          void Promise.resolve().then(() => (init_AppBackground(), AppBackground_exports)).then(({ appBackgroundSingleton: appBackgroundSingleton2 }) => {
-            appBackgroundSingleton2.remove();
-            window.dispatchEvent(new Event("amai:appbg-changed"));
-          });
-        }
-      }
-    );
-    settings.addDropDown(
-      "translation-language",
-      "Translation Language",
-      [
-        "English",
-        "Spanish",
-        "French",
-        "German",
-        "Portuguese",
-        "Chinese (Simplified)",
-        "Thai",
-        "Indonesian",
-        "Malay",
-        "Japanese",
-        "Korean"
-      ],
-      0,
-      () => {
-        const selected = settings.getFieldValue("translation-language");
-        storage_default.set("translation_language", selected);
-        void lyricsCache.destroy();
-        storage_default.set("currentLyricsData", null);
-      }
-    );
-    settings.addToggle(
-      "disableTranslation",
-      "Disable Translation",
-      Defaults_default.disableTranslation,
-      () => {
-        void lyricsCache.destroy();
-        storage_default.set("currentLyricsData", null);
-        storage_default.set("disable_translation", settings.getFieldValue("disableTranslation"));
-      }
-    );
-    const translationFontSizeOptions = ["Extra Small", "Small", "Normal", "Large", "Extra Large"];
-    const fontSizeValues = ["0.4", "0.475", "0.575", "0.7", "0.85"];
-    const currentSize = storage_default.get("translation_font_size") || Defaults_default.translationFontSize;
-    const defaultIndex = fontSizeValues.indexOf(currentSize) !== -1 ? fontSizeValues.indexOf(currentSize) : 2;
-    settings.addDropDown(
-      "translation-font-size",
-      "Translation Font Size",
-      translationFontSizeOptions,
-      defaultIndex,
-      () => {
-        const selected = settings.getFieldValue("translation-font-size");
-        const index = translationFontSizeOptions.indexOf(selected);
-        const value = fontSizeValues[index >= 0 ? index : 2];
-        storage_default.set("translation_font_size", value);
-        const container = document.querySelector(
-          "#SpicyLyricsPage .LyricsContainer .LyricsContent"
-        );
-        if (container) {
-          container.style.setProperty("--TranslationFontSize", value);
-        }
-      }
-    );
-    const lyricsSizeOptions = ["Extra Small", "Small", "Normal", "Large", "Extra Large"];
-    const lyricsSizeValues = ["1.2", "1.5", "", "2.5", "3"];
-    const currentLyricsSize = storage_default.get("default_lyrics_size") || "";
-    const defaultLyricsSizeIndex = currentLyricsSize ? Math.max(0, lyricsSizeValues.indexOf(currentLyricsSize)) : 2;
-    settings.addDropDown(
-      "default-lyrics-size",
-      "Main Lyrics Size",
-      lyricsSizeOptions,
-      defaultLyricsSizeIndex,
-      () => {
-        const selected = settings.getFieldValue("default-lyrics-size");
-        const index = lyricsSizeOptions.indexOf(selected);
-        const value = lyricsSizeValues[index >= 0 ? index : 2];
-        storage_default.set("default_lyrics_size", value);
-        const container = document.querySelector(
-          "#SpicyLyricsPage .LyricsContainer .LyricsContent"
-        );
-        if (container) {
-          if (value) {
-            container.style.setProperty("--DefaultLyricsSize", value + "rem");
-          } else {
-            container.style.removeProperty("--DefaultLyricsSize");
-          }
-        }
-      }
-    );
-    settings.pushSettings();
-  }
-  function infos() {
-    const settings = new SettingsSection("Amai - Info", "amai-info");
-    settings.addButton(
-      "more-info",
-      "Enhances your Spotify experience with Furigana for Japanese Kanji, Romaji for Japanese lyrics, Romanization for Korean lyrics, and line-by-line translations powered by Google Gemini AI.",
-      `v${Defaults_default.Version}`,
-      () => {
-        openTrustedExternalUrl("https://github.com/hudzax/amai-lyrics", "_self");
-      }
-    );
-    settings.addButton(
-      "report-issue",
-      "Found a bug or have a feature request?",
-      "Report Issue",
-      () => {
-        openTrustedExternalUrl("https://github.com/hudzax/amai-lyrics/issues", "_self");
-      }
-    );
-    settings.pushSettings();
-  }
-
   // src/managers/AppInitializer.ts
+  init_settings();
   init_Platform();
   init_cache();
   init_lifecycle();
@@ -35588,11 +35758,11 @@ ${JSON.stringify(lyricsOnly)}`
     async loadPage(location) {
       const { default: PageView2 } = await Promise.resolve().then(() => (init_PageView(), PageView_exports));
       if (location.pathname === "/AmaiLyrics") {
-        PageView2.Open();
+        await PageView2.Open();
         this.buttonManager.setActive(true);
       } else {
-        if (this.lastLocation?.pathname === "/AmaiLyrics") {
-          PageView2.Destroy();
+        if (this.lastLocation?.pathname === "/AmaiLyrics" || PageView2.IsOpened) {
+          await PageView2.Destroy();
           this.buttonManager.setActive(false);
         }
       }
@@ -36236,7 +36406,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a2676928c/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55d1dd/DotLoader.css */
 #DotLoader {
   --dot-color: var(--amai-accent-1);
   --dot-color-dim: color-mix(in srgb, var(--amai-accent-1) 22%, transparent);
@@ -36271,7 +36441,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a267692cd/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55d24e/ProcessingIndicator.css */
 #SpicyLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -36353,7 +36523,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a267686b0/tokens.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55c850/tokens.css */
 :root {
   --amai-accent-1: #1ed760;
   --amai-accent-2: #1db954;
@@ -36406,7 +36576,7 @@ ${JSON.stringify(lyricsOnly)}`
   --amai-scrollbar-thumb: rgba(255, 255, 255, 0.6);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a26768a71/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55cb61/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -36644,7 +36814,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a26768bd2/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55cc52/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -36852,7 +37022,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a26768c83/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55ccd3/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -37456,7 +37626,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a26768e04/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55ce24/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -37771,7 +37941,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a26768ec5/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55cee5/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -37785,12 +37955,12 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   display: none;
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent {
-  --TextGlowDef: rgba(255,255,255,0.15) 0px 0px 6px;
+  --TextGlowDef: rgba(255, 255, 255, 0.15) 0px 0px 6px;
   --ActiveTextGlowDef: rgba(var(--amai-accent-rgb), 0.28) 0px 0px 16px;
-  --StrongTextGlowDef: rgba(255,255,255,0.68) 0px 0px 16px;
-  --StrongerTextGlowDef: rgba(255,255,255,0.74) 0px 0px 16px;
-  --DefaultLyricsSize: clamp(1.5rem,calc(.425cqw * 7), 3rem);
-  --DefaultLyricsSize-Small: clamp(1.1rem,calc(1cqw* 6), 1.5rem);
+  --StrongTextGlowDef: rgba(255, 255, 255, 0.68) 0px 0px 16px;
+  --StrongerTextGlowDef: rgba(255, 255, 255, 0.74) 0px 0px 16px;
+  --DefaultLyricsSize: clamp(1.5rem, calc(0.425cqw * 7), 3rem);
+  --DefaultLyricsSize-Small: clamp(1.1rem, calc(1cqw * 6), 1.5rem);
   --Simplebar-Scrollbar-Color: var(--amai-scrollbar-thumb);
   overflow-x: hidden !important;
   overflow-y: auto !important;
@@ -37878,14 +38048,11 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   pointer-events: none;
   transform: scale(0.8);
 }
-#SpicyLyricsPage .ContentBox.LyricsHidden .AmaiPageButtonContainer {
-  display: none;
-}
 #SpicyLyricsPage.Fullscreen .AmaiPageButtonContainer {
   display: none;
 }
 #SpicyLyricsPage .amai-version-number {
-  font-size: .85em;
+  font-size: 0.85em;
   color: var(--amai-text-faint);
   cursor: pointer;
   font-weight: normal;
@@ -38017,15 +38184,15 @@ ruby > rt {
 .main-nowPlayingView-credits > *:not(:first-child)::before {
   content: "";
   display: block;
-  height: .25px;
+  height: 0.25px;
   background: rgb(255 255 255 / 25%);
-  margin-bottom: .55rem;
+  margin-bottom: 0.55rem;
 }
 #main-view > div > div[data-testid=test-ref-div] {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a26768f96/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55cf66/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -38412,7 +38579,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a26769047/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55d017/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -38434,7 +38601,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a26769078/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55d068/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -38461,7 +38628,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a267690b9/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55d099/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
@@ -38560,7 +38727,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a2676910a/Settings.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55d0ea/Settings.css */
 :is(#amai-settings, #amai-dev-settings, #amai-info) {
   display: grid;
   gap: 8px;
@@ -38584,6 +38751,9 @@ ruby > rt {
   align-items: center;
   gap: 8px 24px;
   min-width: 0;
+  padding: 8px 12px;
+  border-radius: var(--encore-corner-radius-base, 4px);
+  transition: background-color 0.15s;
 }
 :is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row > .x-settings-firstColumn {
   display: flex;
@@ -38602,6 +38772,24 @@ ruby > rt {
   font-size: 0.875rem;
   font-weight: 400;
   line-height: 1.4;
+  transition: color 0.15s;
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row:hover {
+  background-color: var(--background-tinted-base, rgba(255, 255, 255, 0.1));
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row:hover > .x-settings-firstColumn label {
+  color: var(--text-base, #ffffff);
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row:has(#amai-settings\.enableAppBackground) {
+  background-color: rgba(29, 185, 84, 0.12);
+  box-shadow: inset 3px 0 0 0 var(--essential-bright-accent, #1ed760), inset 0 0 0 1px rgba(30, 215, 96, 0.35);
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row:has(#amai-settings\.enableAppBackground) > .x-settings-firstColumn label {
+  color: var(--text-base, #ffffff);
+  font-weight: 600;
+}
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row:has(#amai-settings\.enableAppBackground):hover {
+  background-color: rgba(29, 185, 84, 0.2);
 }
 :is(#amai-settings, #amai-dev-settings, #amai-info) .x-toggle-wrapper {
   display: inline-flex;
@@ -38766,7 +38954,83 @@ ruby > rt {
   border: 1px solid var(--essential-subdued, #818181);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a2676917b/Tooltips.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55d13b/SettingsModal.css */
+.amai-settings-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background-color: rgba(0, 0, 0, 0.6);
+}
+.amai-settings-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(640px, 100%);
+  max-height: min(80vh, 720px);
+  overflow: hidden;
+  border-radius: 8px;
+  background-color: var(--background-base, #121212);
+  color: var(--text-base, #ffffff);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+.amai-settings-dialog-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 16px 12px 24px;
+  border-bottom: 1px solid var(--background-tinted-base, rgba(255, 255, 255, 0.1));
+}
+.amai-settings-dialog-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.amai-settings-dialog-close {
+  box-sizing: border-box;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  background-color: transparent;
+  color: var(--text-subdued, #b3b3b3);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color 0.1s,
+    color 0.1s,
+    transform 0.1s;
+}
+.amai-settings-dialog-close:hover {
+  background-color: var(--background-tinted-base, rgba(255, 255, 255, 0.1));
+  color: var(--text-base, #ffffff);
+  transform: scale(1.04);
+}
+.amai-settings-dialog-close:focus-visible {
+  outline: 2px solid var(--essential-bright-accent, #1ed760);
+  outline-offset: 2px;
+}
+.amai-settings-dialog-body {
+  overflow-y: auto;
+  padding: 16px 24px 24px;
+}
+.amai-settings-dialog-body .amai-settings-modal {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55d16c/Tooltips.css */
 .tippy-box[data-theme~=amai-lyrics] {
   position: relative;
   background-color: rgba(18, 18, 18, 0.92);
