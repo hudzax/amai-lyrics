@@ -5,9 +5,21 @@ import Defaults from '../components/Global/Defaults';
 import { openTrustedExternalUrl } from './externalNavigation';
 
 export function setSettingsMenu() {
+  amaiSettingsSections.length = 0;
   generalSettings();
   devSettings();
   infos();
+}
+
+/**
+ * The live Amai settings sections. Shared by the `/preferences` page render
+ * and the lyrics-page settings modal so both mount the same fields, values
+ * and change handlers — only the mount point differs.
+ */
+const amaiSettingsSections: SettingsSection[] = [];
+
+export function getAmaiSettingsSections(): SettingsSection[] {
+  return amaiSettingsSections;
 }
 
 function devSettings() {
@@ -24,6 +36,7 @@ function devSettings() {
   });
 
   settings.pushSettings();
+  amaiSettingsSections.push(settings);
 }
 
 function generalSettings() {
@@ -209,6 +222,7 @@ function generalSettings() {
   );
 
   settings.pushSettings();
+  amaiSettingsSections.push(settings);
 }
 
 function infos() {
@@ -233,4 +247,5 @@ function infos() {
   );
 
   settings.pushSettings();
+  amaiSettingsSections.push(settings);
 }

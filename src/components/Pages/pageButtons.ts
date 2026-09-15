@@ -6,6 +6,7 @@ import { removeLyricsFromCache } from '../../utils/Lyrics/cache';
 import { loadAndApplyLyrics } from '../../utils/Lyrics/fetchLyrics';
 import { openYouTubeSearch } from '../../utils/externalNavigation';
 import { SpotifyPlayer } from '../Global/SpotifyPlayer';
+import { openAmaiSettingsModal } from './SettingsModal';
 
 export function setupActionButtons(maid: Maid | null) {
   setupRefreshButton(maid);
@@ -77,7 +78,7 @@ function setupSettingsButton(maid: Maid | null) {
   if (!settingsButton) return;
 
   const clickHandler = () => {
-    Spicetify.Platform.History.push('/preferences');
+    openAmaiSettingsModal();
   };
 
   settingsButton.addEventListener('click', clickHandler);

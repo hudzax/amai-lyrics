@@ -56,6 +56,10 @@ if (!g.Spicetify) {
     },
     Tippy: () => ({ destroy: () => {} }),
     TippyProps: {},
+    PopupModal: {
+      display: () => {},
+      hide: () => {},
+    },
     showNotification: () => {},
     Snackbar: { enqueueSnackbar: (msg: unknown) => msg },
   };

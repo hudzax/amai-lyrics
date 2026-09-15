@@ -51,6 +51,16 @@ class SettingsSection {
     }
   };
 
+  /**
+   * Render this section into an arbitrary container — used by the lyrics-page
+   * settings modal. Unlike `pushSettings`/`render` this neither waits for nor
+   * requires the `/preferences` route; the caller owns the container's
+   * lifecycle and must remove it (e.g. by closing the modal) when done.
+   */
+  renderInto = (container: HTMLElement) => {
+    ReactDOM.render(<this.FieldsContainer />, container);
+  };
+
   private render = async () => {
     while (!document.getElementById('desktop.settings.selectLanguage')) {
       if (Spicetify.Platform.History.location.pathname !== '/preferences') return;
@@ -162,7 +172,11 @@ class SettingsSection {
   };
 
   getFieldValue = <Type,>(nameId: string): Type => {
-    return JSON.parse(Spicetify.LocalStorage.get(`${this.settingsId}.${nameId}`) || '{}')?.value;
+    try {
+      return JSON.parse(Spicetify.LocalStorage.get(`${this.settingsId}.${nameId}`) || '{}')?.value;
+    } catch {
+      return undefined as Type;
+    }
   };
 
   setFieldValue = (nameId: string, newValue: unknown) => {
