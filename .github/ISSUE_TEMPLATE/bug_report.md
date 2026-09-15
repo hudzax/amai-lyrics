@@ -1,38 +1,68 @@
 ---
 name: Bug report
-about: Create a report to help us improve
-title: ''
-labels: ''
+about: Report a reproducible problem with amai-lyrics
+title: '[Bug]: '
+labels: bug
 assignees: ''
-
 ---
 
-**Describe the bug**
+### Checklist
+
+- [ ] I searched open and closed issues and this bug has not been reported yet
+- [ ] I am on the latest amai-lyrics release
+- [ ] I restarted Spotify and re-applied Spicetify (`spicetify apply`) after installing / updating
+
+### Describe the bug
+
 A clear and concise description of what the bug is.
 
-**To Reproduce**
+### To reproduce
+
 Steps to reproduce the behavior:
+
 1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
+2. Click on '...'
+3. Play '...'
 4. See error
 
-**Expected behavior**
+### Expected behavior
+
 A clear and concise description of what you expected to happen.
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+### Screenshots / video
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+If applicable, add screenshots or a short clip to help explain your problem.
 
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
+### Environment (please complete the following information)
 
-**Additional context**
-Add any other context about the problem here.
+- OS: [e.g. Windows 11, macOS 14, Arch Linux]
+- Spotify version: [e.g. 1.2.48 — Help > About Spotify]
+- Spicetify version (`spicetify -v`): [e.g. 2.38.1]
+- amai-lyrics version (release tag or commit): [e.g. v1.5.5]
+- Install method: [e.g. Spicetify Marketplace, manual copy of `amai-lyrics-main.js`, `npm run build`]
+- Other installed extensions / custom apps: [e.g. none, lyrics-plus]
+
+### Song / lyrics context
+
+- Track name + Spotify URI: [e.g. `spotify:track:...` — right-click the song > Share > Copy Spotify URI]
+- Song language: [e.g. Japanese / Korean / other]
+- Lyrics state on Spotify: [e.g. synced / static / no lyrics shown]
+- Enabled features:
+  - [ ] Furigana
+  - [ ] Romaji / Romanization
+  - [ ] Translation (Gemini)
+  - [ ] Playbar lyrics overlay
+  - [ ] Dynamic background
+- Gemini API key configured? [Yes / No — never paste your key here]
+
+### Console errors
+
+If applicable, open DevTools (`Ctrl+Shift+I` / `Cmd+Option+I` > Console), reproduce the bug, and paste any related errors:
+
+```text
+paste console output here
+```
+
+### Additional context
+
+Add any other context about the problem here (settings changed, when it started, does it happen on every song, etc.).
