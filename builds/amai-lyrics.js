@@ -4894,7 +4894,7 @@
         }
         return sentData;
       } else {
-        const SpicyLyricsAPI_Headers = IsExternal ? null : {};
+        const AmaiLyricsAPI_Headers = IsExternal ? null : {};
         const SpotifyAPI_Headers = IsExternal ? {
           "Spotify-App-Version": Spicetify.Platform.version,
           "App-Platform": Spicetify.Platform.PlatformData.app_platform,
@@ -4904,7 +4904,7 @@
         const headers = {
           Authorization: `Bearer ${SpotifyAccessToken}`,
           ...SpotifyAPI_Headers,
-          ...SpicyLyricsAPI_Headers
+          ...AmaiLyricsAPI_Headers
         };
         const res = await fetch(url, {
           method: "GET",
@@ -6294,7 +6294,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.5.5";
+      version = "1.5.6";
     }
   });
 
@@ -7355,6 +7355,405 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       Lyrics = {
         Animate,
         TimeSetter
+      };
+    }
+  });
+
+  // src/utils/Lyrics/lyrics.ts
+  var lyrics_exports = {};
+  __export(lyrics_exports, {
+    ClearLyricsContentArrays: () => ClearLyricsContentArrays,
+    LINE_SYNCED_CurrentLineLyricsObject: () => LINE_SYNCED_CurrentLineLyricsObject,
+    LyricsObject: () => LyricsObject,
+    SetWordArrayInCurentLine_LINE_SYNCED: () => SetWordArrayInCurentLine_LINE_SYNCED,
+    addLinesEvListener: () => addLinesEvListener,
+    destroyLyricsRenderLoop: () => destroyLyricsRenderLoop,
+    ensureLyricsRenderLoop: () => ensureLyricsRenderLoop,
+    lineElementToStartTimeMap: () => lineElementToStartTimeMap,
+    lyricsBetweenShow: () => lyricsBetweenShow,
+    populateElementTimeMaps: () => populateElementTimeMaps,
+    removeLinesEvListener: () => removeLinesEvListener
+  });
+  function SetWordArrayInCurentLine_LINE_SYNCED() {
+    LINE_SYNCED_CurrentLineLyricsObject = LyricsObject.Types.Line.Lines.length - 1;
+    LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables = {};
+    LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables.Lead = [];
+  }
+  function ClearLyricsContentArrays() {
+    LyricsObject.Types.Line.Lines = [];
+    LyricsObject.Types.Static.Lines = [];
+    lineElementToStartTimeMap.clear();
+    lastRenderedPosition = -1;
+    hasRenderedInitial = false;
+    resetLyricsSetterCache();
+    resetAnimatorCache();
+    AutoScroll.reset();
+  }
+  function ensureLyricsRenderLoop() {
+    if (renderLoop && windowRef3.__amaiRenderLoopStarted)
+      return renderLoop;
+    windowRef3.__amaiRenderLoopStarted = true;
+    renderLoop = new IntervalManager(THROTTLE_TIME, () => {
+      if (!Defaults_default.LyricsContainerExists)
+        return;
+      const livePlaying = resolveIsPlaying();
+      if (SpotifyPlayer.IsPlaying !== livePlaying) {
+        SpotifyPlayer.IsPlaying = livePlaying;
+      }
+      let onLyricsPage = false;
+      try {
+        onLyricsPage = Spicetify.Platform.History.location.pathname === "/AmaiLyrics";
+      } catch {
+        onLyricsPage = false;
+      }
+      try {
+        if (onLyricsPage && !pagePositionClient)
+          pagePositionClient = requestPositionTracking();
+        else if (!onLyricsPage && pagePositionClient) {
+          pagePositionClient();
+          pagePositionClient = null;
+        }
+      } catch {
+      }
+      if (!onLyricsPage)
+        return;
+      let progress;
+      try {
+        progress = SpotifyPlayer.GetTrackPosition();
+      } catch {
+        return;
+      }
+      if (typeof progress !== "number" || !Number.isFinite(progress) || progress < 0)
+        return;
+      if (hasRenderedInitial && progress === lastRenderedPosition)
+        return;
+      lastRenderedPosition = progress;
+      hasRenderedInitial = true;
+      Lyrics.TimeSetter(progress);
+      Lyrics.Animate();
+      scrollTickCounter++;
+      if (scrollTickCounter % 2 === 0) {
+        AutoScroll.sync();
+      }
+    });
+    renderLoop.Start();
+    windowRef3.__amaiRenderLoop = renderLoop;
+    return renderLoop;
+  }
+  function destroyLyricsRenderLoop() {
+    if (pagePositionClient) {
+      pagePositionClient();
+      pagePositionClient = null;
+    }
+    if (renderLoop) {
+      renderLoop.Destroy();
+      renderLoop = null;
+    }
+    windowRef3.__amaiRenderLoop = null;
+    windowRef3.__amaiRenderLoopStarted = false;
+    lastRenderedPosition = -1;
+    hasRenderedInitial = false;
+  }
+  function populateElementTimeMaps() {
+    lineElementToStartTimeMap.clear();
+    LyricsObject.Types.Line.Lines.forEach((line) => {
+      if (line.HTMLElement && typeof line.StartTime === "number") {
+        lineElementToStartTimeMap.set(line.HTMLElement, line.StartTime);
+      }
+    });
+  }
+  function LinesEvListener(e) {
+    let target = e.target;
+    let startTime;
+    if (target.tagName.toLowerCase() === "rt") {
+      if (target.parentElement) {
+        target = target.parentElement;
+      }
+    }
+    if (target.tagName.toLowerCase() === "ruby" || target.classList.contains("translation")) {
+      if (target.parentElement) {
+        target = target.parentElement;
+      }
+    }
+    if (target.classList.contains("line")) {
+      startTime = lineElementToStartTimeMap.get(target);
+    }
+    if (typeof startTime === "number") {
+      SpotifyPlayer.Seek(startTime);
+    }
+  }
+  function addLinesEvListener() {
+    if (LinesEvListenerExists) {
+      removeLinesEvListener();
+    }
+    populateElementTimeMaps();
+    LinesEvListenerExists = true;
+    LinesEvListenerMaid = new Maid();
+    const el = document.querySelector("#AmaiLyricsPage .LyricsContainer .LyricsContent");
+    if (!el) {
+      LinesEvListenerExists = false;
+      return;
+    }
+    el.addEventListener("click", LinesEvListener);
+    LinesEvListenerMaid.Give(() => {
+      el.removeEventListener("click", LinesEvListener);
+    });
+  }
+  function removeLinesEvListener() {
+    if (!LinesEvListenerExists)
+      return;
+    LinesEvListenerExists = false;
+    if (LinesEvListenerMaid) {
+      LinesEvListenerMaid.Destroy();
+    }
+  }
+  var lyricsBetweenShow, LyricsObject, lineElementToStartTimeMap, LINE_SYNCED_CurrentLineLyricsObject, THROTTLE_TIME, lastRenderedPosition, hasRenderedInitial, scrollTickCounter, pagePositionClient, windowRef3, renderLoop, LinesEvListenerMaid, LinesEvListenerExists;
+  var init_lyrics = __esm({
+    "src/utils/Lyrics/lyrics.ts"() {
+      init_Maid();
+      init_IntervalManager();
+      init_Defaults();
+      init_SpotifyPlayer();
+      init_GetProgress();
+      init_Main();
+      init_AutoScroll();
+      init_LyricsSetter();
+      init_LyricsAnimator();
+      lyricsBetweenShow = 3;
+      LyricsObject = {
+        Types: {
+          Line: {
+            Lines: []
+          },
+          Static: {
+            Lines: []
+          }
+        }
+      };
+      lineElementToStartTimeMap = /* @__PURE__ */ new Map();
+      LINE_SYNCED_CurrentLineLyricsObject = LyricsObject.Types.Line.Lines.length - 1;
+      THROTTLE_TIME = 0.05;
+      lastRenderedPosition = -1;
+      hasRenderedInitial = false;
+      scrollTickCounter = 0;
+      pagePositionClient = null;
+      windowRef3 = window;
+      renderLoop = windowRef3.__amaiRenderLoop ?? null;
+      if (!windowRef3.__amaiRenderLoopStarted) {
+        ensureLyricsRenderLoop();
+      }
+    }
+  });
+
+  // node_modules/fastdom/fastdom.js
+  var require_fastdom = __commonJS({
+    "node_modules/fastdom/fastdom.js"(exports, module) {
+      !function(win) {
+        "use strict";
+        var debug = 0 ? console.log.bind(console, "[fastdom]") : function() {
+        };
+        var raf = win.requestAnimationFrame || win.webkitRequestAnimationFrame || win.mozRequestAnimationFrame || win.msRequestAnimationFrame || function(cb) {
+          return setTimeout(cb, 16);
+        };
+        function FastDom() {
+          var self2 = this;
+          self2.reads = [];
+          self2.writes = [];
+          self2.raf = raf.bind(win);
+          debug("initialized", self2);
+        }
+        FastDom.prototype = {
+          constructor: FastDom,
+          runTasks: function(tasks) {
+            debug("run tasks");
+            var task;
+            while (task = tasks.shift())
+              task();
+          },
+          measure: function(fn, ctx) {
+            debug("measure");
+            var task = !ctx ? fn : fn.bind(ctx);
+            this.reads.push(task);
+            scheduleFlush(this);
+            return task;
+          },
+          mutate: function(fn, ctx) {
+            debug("mutate");
+            var task = !ctx ? fn : fn.bind(ctx);
+            this.writes.push(task);
+            scheduleFlush(this);
+            return task;
+          },
+          clear: function(task) {
+            debug("clear", task);
+            return remove(this.reads, task) || remove(this.writes, task);
+          },
+          extend: function(props) {
+            debug("extend", props);
+            if (typeof props != "object")
+              throw new Error("expected object");
+            var child = Object.create(this);
+            mixin(child, props);
+            child.fastdom = this;
+            if (child.initialize)
+              child.initialize();
+            return child;
+          },
+          catch: null
+        };
+        function scheduleFlush(fastdom6) {
+          if (!fastdom6.scheduled) {
+            fastdom6.scheduled = true;
+            fastdom6.raf(flush.bind(null, fastdom6));
+            debug("flush scheduled");
+          }
+        }
+        function flush(fastdom6) {
+          debug("flush");
+          var writes = fastdom6.writes;
+          var reads = fastdom6.reads;
+          var error;
+          try {
+            debug("flushing reads", reads.length);
+            fastdom6.runTasks(reads);
+            debug("flushing writes", writes.length);
+            fastdom6.runTasks(writes);
+          } catch (e) {
+            error = e;
+          }
+          fastdom6.scheduled = false;
+          if (reads.length || writes.length)
+            scheduleFlush(fastdom6);
+          if (error) {
+            debug("task errored", error.message);
+            if (fastdom6.catch)
+              fastdom6.catch(error);
+            else
+              throw error;
+          }
+        }
+        function remove(array, item) {
+          var index = array.indexOf(item);
+          return !!~index && !!array.splice(index, 1);
+        }
+        function mixin(target, source) {
+          for (var key in source) {
+            if (source.hasOwnProperty(key))
+              target[key] = source[key];
+          }
+        }
+        var exports2 = win.fastdom = win.fastdom || new FastDom();
+        if (typeof define == "function")
+          define(function() {
+            return exports2;
+          });
+        else if (typeof module == "object")
+          module.exports = exports2;
+      }(typeof window !== "undefined" ? window : typeof exports != "undefined" ? exports : globalThis);
+    }
+  });
+
+  // src/utils/ScrollIntoView/index.ts
+  function cubicEaseInOut(progress) {
+    return progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+  }
+  function smoothScrollIntoView(options) {
+    const {
+      container,
+      element,
+      duration = 150,
+      offset = 0,
+      align = "top",
+      axis = "vertical"
+    } = options;
+    if (!container.isConnected || !element.isConnected)
+      return INERT_CONTROLLER;
+    let cancelled = false;
+    let animationFrameId = 0;
+    let measureTask = null;
+    const controller = {
+      cancel: () => {
+        cancelled = true;
+        if (measureTask) {
+          import_fastdom.default.clear(measureTask);
+          measureTask = null;
+        }
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+    measureTask = import_fastdom.default.measure(() => {
+      measureTask = null;
+      if (cancelled || !container.isConnected || !element.isConnected)
+        return;
+      let startScroll;
+      let distance;
+      try {
+        const containerRect = container.getBoundingClientRect();
+        const elementRect = element.getBoundingClientRect();
+        let targetScroll;
+        if (axis === "vertical") {
+          startScroll = container.scrollTop;
+          if (align === "center") {
+            targetScroll = elementRect.top - containerRect.top + container.scrollTop - (container.clientHeight / 2 - element.clientHeight / 2) - offset;
+          } else {
+            targetScroll = elementRect.top - containerRect.top + container.scrollTop - offset;
+          }
+        } else {
+          startScroll = container.scrollLeft;
+          if (align === "center") {
+            targetScroll = elementRect.left - containerRect.left + container.scrollLeft - (container.clientWidth / 2 - element.clientWidth / 2) - offset;
+          } else {
+            targetScroll = elementRect.left - containerRect.left + container.scrollLeft - offset;
+          }
+        }
+        distance = targetScroll - startScroll;
+      } catch {
+        return;
+      }
+      if (distance === 0)
+        return;
+      if (cancelled || !container.isConnected)
+        return;
+      let startTime = null;
+      const animate = (currentTime) => {
+        if (cancelled || !container.isConnected)
+          return;
+        if (startTime === null)
+          startTime = currentTime;
+        const elapsed = currentTime - startTime;
+        const progress = duration <= 0 ? 1 : Math.min(elapsed / duration, 1);
+        const easedProgress = cubicEaseInOut(progress);
+        const newScroll = startScroll + distance * easedProgress;
+        if (axis === "vertical") {
+          container.scrollTop = newScroll;
+        } else {
+          container.scrollLeft = newScroll;
+        }
+        if (progress < 1) {
+          animationFrameId = requestAnimationFrame(animate);
+        }
+      };
+      animationFrameId = requestAnimationFrame(animate);
+    });
+    return controller;
+  }
+  function scrollIntoCenterView(container, element, duration = 150, offset = 0, axis = "vertical") {
+    return smoothScrollIntoView({
+      container,
+      element,
+      duration,
+      offset,
+      align: "center",
+      axis
+    });
+  }
+  var import_fastdom, INERT_CONTROLLER;
+  var init_ScrollIntoView = __esm({
+    "src/utils/ScrollIntoView/index.ts"() {
+      import_fastdom = __toESM(require_fastdom());
+      INERT_CONTROLLER = {
+        cancel: () => {
+        }
       };
     }
   });
@@ -8642,7 +9041,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   // src/utils/Scrolling/Simplebar/ScrollSimplebar.ts
   function MountScrollSimplebar() {
     const LyricsContainer = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
+      "#AmaiLyricsPage .LyricsContainer .LyricsContent"
     );
     if (!LyricsContainer)
       return;
@@ -8673,7 +9072,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     LyricsContainer.addEventListener("simplebar-dragend", onDragEnd);
   }
   function ClearScrollSimplebar() {
-    const LyricsContainer = boundLyricsContainer ?? document.querySelector("#SpicyLyricsPage .LyricsContainer .LyricsContent");
+    const LyricsContainer = boundLyricsContainer ?? document.querySelector("#AmaiLyricsPage .LyricsContainer .LyricsContent");
     const container = boundContainer ?? document.querySelector(ElementEventQuery);
     ScrollSimplebar?.unMount();
     ScrollSimplebar = null;
@@ -8698,7 +9097,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   function updateScrollbarVisibility() {
     const LyricsContainer = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
+      "#AmaiLyricsPage .LyricsContainer .LyricsContent"
     );
     if (!LyricsContainer)
       return;
@@ -8715,7 +9114,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_GetElementHeight();
       init_IsHovering();
       isDragging = false;
-      ElementEventQuery = "#SpicyLyricsPage .ContentBox .LyricsContainer";
+      ElementEventQuery = "#AmaiLyricsPage .ContentBox .LyricsContainer";
       onMouseEnter = null;
       onMouseLeave = null;
       onDragStart = null;
@@ -8725,410 +9124,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // src/utils/Lyrics/lyrics.ts
-  var lyrics_exports = {};
-  __export(lyrics_exports, {
-    ClearLyricsContentArrays: () => ClearLyricsContentArrays,
-    LINE_SYNCED_CurrentLineLyricsObject: () => LINE_SYNCED_CurrentLineLyricsObject,
-    LyricsObject: () => LyricsObject,
-    SetWordArrayInCurentLine_LINE_SYNCED: () => SetWordArrayInCurentLine_LINE_SYNCED,
-    addLinesEvListener: () => addLinesEvListener,
-    destroyLyricsRenderLoop: () => destroyLyricsRenderLoop,
-    ensureLyricsRenderLoop: () => ensureLyricsRenderLoop,
-    lineElementToStartTimeMap: () => lineElementToStartTimeMap,
-    lyricsBetweenShow: () => lyricsBetweenShow,
-    populateElementTimeMaps: () => populateElementTimeMaps,
-    removeLinesEvListener: () => removeLinesEvListener
-  });
-  function SetWordArrayInCurentLine_LINE_SYNCED() {
-    LINE_SYNCED_CurrentLineLyricsObject = LyricsObject.Types.Line.Lines.length - 1;
-    LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables = {};
-    LyricsObject.Types.Line.Lines[LINE_SYNCED_CurrentLineLyricsObject].Syllables.Lead = [];
-  }
-  function ClearLyricsContentArrays() {
-    LyricsObject.Types.Line.Lines = [];
-    LyricsObject.Types.Static.Lines = [];
-    lineElementToStartTimeMap.clear();
-    lastRenderedPosition = -1;
-    hasRenderedInitial = false;
-    resetLyricsSetterCache();
-    resetAnimatorCache();
-    ResetLastLine();
-  }
-  function ensureLyricsRenderLoop() {
-    if (renderLoop && windowRef3.__amaiRenderLoopStarted)
-      return renderLoop;
-    windowRef3.__amaiRenderLoopStarted = true;
-    renderLoop = new IntervalManager(THROTTLE_TIME, () => {
-      if (!Defaults_default.LyricsContainerExists)
-        return;
-      const livePlaying = resolveIsPlaying();
-      if (SpotifyPlayer.IsPlaying !== livePlaying) {
-        SpotifyPlayer.IsPlaying = livePlaying;
-      }
-      let onLyricsPage = false;
-      try {
-        onLyricsPage = Spicetify.Platform.History.location.pathname === "/AmaiLyrics";
-      } catch {
-        onLyricsPage = false;
-      }
-      try {
-        if (onLyricsPage && !pagePositionClient)
-          pagePositionClient = requestPositionTracking();
-        else if (!onLyricsPage && pagePositionClient) {
-          pagePositionClient();
-          pagePositionClient = null;
-        }
-      } catch {
-      }
-      if (!onLyricsPage)
-        return;
-      let progress;
-      try {
-        progress = SpotifyPlayer.GetTrackPosition();
-      } catch {
-        return;
-      }
-      if (typeof progress !== "number" || !Number.isFinite(progress) || progress < 0)
-        return;
-      if (hasRenderedInitial && progress === lastRenderedPosition)
-        return;
-      lastRenderedPosition = progress;
-      hasRenderedInitial = true;
-      Lyrics.TimeSetter(progress);
-      Lyrics.Animate();
-      scrollTickCounter++;
-      if (scrollTickCounter % 2 === 0) {
-        ScrollToActiveLine(ScrollSimplebar);
-      }
-    });
-    renderLoop.Start();
-    windowRef3.__amaiRenderLoop = renderLoop;
-    return renderLoop;
-  }
-  function destroyLyricsRenderLoop() {
-    if (pagePositionClient) {
-      pagePositionClient();
-      pagePositionClient = null;
-    }
-    if (renderLoop) {
-      renderLoop.Destroy();
-      renderLoop = null;
-    }
-    windowRef3.__amaiRenderLoop = null;
-    windowRef3.__amaiRenderLoopStarted = false;
-    lastRenderedPosition = -1;
-    hasRenderedInitial = false;
-  }
-  function populateElementTimeMaps() {
-    lineElementToStartTimeMap.clear();
-    LyricsObject.Types.Line.Lines.forEach((line) => {
-      if (line.HTMLElement && typeof line.StartTime === "number") {
-        lineElementToStartTimeMap.set(line.HTMLElement, line.StartTime);
-      }
-    });
-  }
-  function LinesEvListener(e) {
-    let target = e.target;
-    let startTime;
-    if (target.tagName.toLowerCase() === "rt") {
-      if (target.parentElement) {
-        target = target.parentElement;
-      }
-    }
-    if (target.tagName.toLowerCase() === "ruby" || target.classList.contains("translation")) {
-      if (target.parentElement) {
-        target = target.parentElement;
-      }
-    }
-    if (target.classList.contains("line")) {
-      startTime = lineElementToStartTimeMap.get(target);
-    }
-    if (typeof startTime === "number") {
-      SpotifyPlayer.Seek(startTime);
-    }
-  }
-  function addLinesEvListener() {
-    if (LinesEvListenerExists) {
-      removeLinesEvListener();
-    }
-    populateElementTimeMaps();
-    LinesEvListenerExists = true;
-    LinesEvListenerMaid = new Maid();
-    const el = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
-    );
-    if (!el) {
-      LinesEvListenerExists = false;
-      return;
-    }
-    el.addEventListener("click", LinesEvListener);
-    LinesEvListenerMaid.Give(() => {
-      el.removeEventListener("click", LinesEvListener);
-    });
-  }
-  function removeLinesEvListener() {
-    if (!LinesEvListenerExists)
-      return;
-    LinesEvListenerExists = false;
-    if (LinesEvListenerMaid) {
-      LinesEvListenerMaid.Destroy();
-    }
-  }
-  var lyricsBetweenShow, LyricsObject, lineElementToStartTimeMap, LINE_SYNCED_CurrentLineLyricsObject, THROTTLE_TIME, lastRenderedPosition, hasRenderedInitial, scrollTickCounter, pagePositionClient, windowRef3, renderLoop, LinesEvListenerMaid, LinesEvListenerExists;
-  var init_lyrics = __esm({
-    "src/utils/Lyrics/lyrics.ts"() {
-      init_Maid();
-      init_IntervalManager();
-      init_Defaults();
-      init_SpotifyPlayer();
-      init_GetProgress();
-      init_Main();
-      init_ScrollSimplebar();
-      init_ScrollToActiveLine();
-      init_LyricsSetter();
-      init_LyricsAnimator();
-      init_ScrollToActiveLine();
-      lyricsBetweenShow = 3;
-      LyricsObject = {
-        Types: {
-          Line: {
-            Lines: []
-          },
-          Static: {
-            Lines: []
-          }
-        }
-      };
-      lineElementToStartTimeMap = /* @__PURE__ */ new Map();
-      LINE_SYNCED_CurrentLineLyricsObject = LyricsObject.Types.Line.Lines.length - 1;
-      THROTTLE_TIME = 0.05;
-      lastRenderedPosition = -1;
-      hasRenderedInitial = false;
-      scrollTickCounter = 0;
-      pagePositionClient = null;
-      windowRef3 = window;
-      renderLoop = windowRef3.__amaiRenderLoop ?? null;
-      if (!windowRef3.__amaiRenderLoopStarted) {
-        ensureLyricsRenderLoop();
-      }
-    }
-  });
-
-  // node_modules/fastdom/fastdom.js
-  var require_fastdom = __commonJS({
-    "node_modules/fastdom/fastdom.js"(exports, module) {
-      !function(win) {
-        "use strict";
-        var debug = 0 ? console.log.bind(console, "[fastdom]") : function() {
-        };
-        var raf = win.requestAnimationFrame || win.webkitRequestAnimationFrame || win.mozRequestAnimationFrame || win.msRequestAnimationFrame || function(cb) {
-          return setTimeout(cb, 16);
-        };
-        function FastDom() {
-          var self2 = this;
-          self2.reads = [];
-          self2.writes = [];
-          self2.raf = raf.bind(win);
-          debug("initialized", self2);
-        }
-        FastDom.prototype = {
-          constructor: FastDom,
-          runTasks: function(tasks) {
-            debug("run tasks");
-            var task;
-            while (task = tasks.shift())
-              task();
-          },
-          measure: function(fn, ctx) {
-            debug("measure");
-            var task = !ctx ? fn : fn.bind(ctx);
-            this.reads.push(task);
-            scheduleFlush(this);
-            return task;
-          },
-          mutate: function(fn, ctx) {
-            debug("mutate");
-            var task = !ctx ? fn : fn.bind(ctx);
-            this.writes.push(task);
-            scheduleFlush(this);
-            return task;
-          },
-          clear: function(task) {
-            debug("clear", task);
-            return remove(this.reads, task) || remove(this.writes, task);
-          },
-          extend: function(props) {
-            debug("extend", props);
-            if (typeof props != "object")
-              throw new Error("expected object");
-            var child = Object.create(this);
-            mixin(child, props);
-            child.fastdom = this;
-            if (child.initialize)
-              child.initialize();
-            return child;
-          },
-          catch: null
-        };
-        function scheduleFlush(fastdom6) {
-          if (!fastdom6.scheduled) {
-            fastdom6.scheduled = true;
-            fastdom6.raf(flush.bind(null, fastdom6));
-            debug("flush scheduled");
-          }
-        }
-        function flush(fastdom6) {
-          debug("flush");
-          var writes = fastdom6.writes;
-          var reads = fastdom6.reads;
-          var error;
-          try {
-            debug("flushing reads", reads.length);
-            fastdom6.runTasks(reads);
-            debug("flushing writes", writes.length);
-            fastdom6.runTasks(writes);
-          } catch (e) {
-            error = e;
-          }
-          fastdom6.scheduled = false;
-          if (reads.length || writes.length)
-            scheduleFlush(fastdom6);
-          if (error) {
-            debug("task errored", error.message);
-            if (fastdom6.catch)
-              fastdom6.catch(error);
-            else
-              throw error;
-          }
-        }
-        function remove(array, item) {
-          var index = array.indexOf(item);
-          return !!~index && !!array.splice(index, 1);
-        }
-        function mixin(target, source) {
-          for (var key in source) {
-            if (source.hasOwnProperty(key))
-              target[key] = source[key];
-          }
-        }
-        var exports2 = win.fastdom = win.fastdom || new FastDom();
-        if (typeof define == "function")
-          define(function() {
-            return exports2;
-          });
-        else if (typeof module == "object")
-          module.exports = exports2;
-      }(typeof window !== "undefined" ? window : typeof exports != "undefined" ? exports : globalThis);
-    }
-  });
-
-  // src/utils/ScrollIntoView/index.ts
-  function cubicEaseInOut(progress) {
-    return progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-  }
-  function smoothScrollIntoView(options) {
-    const {
-      container,
-      element,
-      duration = 150,
-      offset = 0,
-      align = "top",
-      axis = "vertical"
-    } = options;
-    if (!container.isConnected || !element.isConnected)
-      return INERT_CONTROLLER;
-    let cancelled = false;
-    let animationFrameId = 0;
-    let measureTask = null;
-    const controller = {
-      cancel: () => {
-        cancelled = true;
-        if (measureTask) {
-          import_fastdom.default.clear(measureTask);
-          measureTask = null;
-        }
-        cancelAnimationFrame(animationFrameId);
-      }
-    };
-    measureTask = import_fastdom.default.measure(() => {
-      measureTask = null;
-      if (cancelled || !container.isConnected || !element.isConnected)
-        return;
-      let startScroll;
-      let distance;
-      try {
-        const containerRect = container.getBoundingClientRect();
-        const elementRect = element.getBoundingClientRect();
-        let targetScroll;
-        if (axis === "vertical") {
-          startScroll = container.scrollTop;
-          if (align === "center") {
-            targetScroll = elementRect.top - containerRect.top + container.scrollTop - (container.clientHeight / 2 - element.clientHeight / 2) - offset;
-          } else {
-            targetScroll = elementRect.top - containerRect.top + container.scrollTop - offset;
-          }
-        } else {
-          startScroll = container.scrollLeft;
-          if (align === "center") {
-            targetScroll = elementRect.left - containerRect.left + container.scrollLeft - (container.clientWidth / 2 - element.clientWidth / 2) - offset;
-          } else {
-            targetScroll = elementRect.left - containerRect.left + container.scrollLeft - offset;
-          }
-        }
-        distance = targetScroll - startScroll;
-      } catch {
-        return;
-      }
-      if (distance === 0)
-        return;
-      if (cancelled || !container.isConnected)
-        return;
-      let startTime = null;
-      const animate = (currentTime) => {
-        if (cancelled || !container.isConnected)
-          return;
-        if (startTime === null)
-          startTime = currentTime;
-        const elapsed = currentTime - startTime;
-        const progress = duration <= 0 ? 1 : Math.min(elapsed / duration, 1);
-        const easedProgress = cubicEaseInOut(progress);
-        const newScroll = startScroll + distance * easedProgress;
-        if (axis === "vertical") {
-          container.scrollTop = newScroll;
-        } else {
-          container.scrollLeft = newScroll;
-        }
-        if (progress < 1) {
-          animationFrameId = requestAnimationFrame(animate);
-        }
-      };
-      animationFrameId = requestAnimationFrame(animate);
-    });
-    return controller;
-  }
-  function scrollIntoCenterView(container, element, duration = 150, offset = 0, axis = "vertical") {
-    return smoothScrollIntoView({
-      container,
-      element,
-      duration,
-      offset,
-      align: "center",
-      axis
-    });
-  }
-  var import_fastdom, INERT_CONTROLLER;
-  var init_ScrollIntoView = __esm({
-    "src/utils/ScrollIntoView/index.ts"() {
-      import_fastdom = __toESM(require_fastdom());
-      INERT_CONTROLLER = {
-        cancel: () => {
-        }
-      };
-    }
-  });
-
-  // src/utils/Scrolling/ScrollToActiveLine.ts
+  // src/utils/Scrolling/AutoScroll.ts
   function setLastLine(value) {
     lastLine = value;
     sharedScrollState.lastLine = value;
@@ -9137,80 +9133,114 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     activeScrollController = value;
     sharedScrollState.activeScrollController = value;
   }
-  function ScrollToActiveLine(ScrollSimplebar2) {
+  function resolveOnLyricsPage() {
     try {
-      if (!resolveIsPlaying())
-        return;
-      if (!Defaults_default.LyricsContainerExists)
-        return;
-      let onLyricsPage = false;
-      try {
-        onLyricsPage = Spicetify.Platform.History.location.pathname === "/AmaiLyrics";
-      } catch {
-        return;
-      }
-      if (!onLyricsPage)
-        return;
-      const Lines = LyricsObject.Types[Defaults_default.CurrentLyricsType]?.Lines;
-      let Position;
-      try {
-        Position = getPositionFor("scroll");
-      } catch {
-        return;
-      }
-      if (typeof Position !== "number" || !Number.isFinite(Position) || Position < 0)
-        return;
-      if (!Lines)
-        return;
-      const activeIdx = findActiveIndex(
-        Lines,
-        Position
-      );
-      const currentLine = activeIdx !== -1 ? Lines[activeIdx] : null;
-      if (currentLine) {
-        const LineElem = currentLine.HTMLElement;
-        if (lastLine === LineElem)
-          return;
-        if (!LineElem || !LineElem.isConnected)
-          return;
-        if (!Defaults_default.LyricsContainerExists)
-          return;
-        if (!document.querySelector("#SpicyLyricsPage"))
-          return;
-        const container = ScrollSimplebar2?.getScrollElement();
-        if (!container || !container.isConnected)
-          return;
-        if (activeScrollController) {
-          activeScrollController.cancel();
-          setActiveController(null);
-        }
-        if (lastLine === LineElem)
-          return;
-        if (lastLine && lastLine.classList.contains("OverridenByScroller")) {
-          lastLine.classList.remove("OverridenByScroller");
-        }
-        setLastLine(LineElem);
-        setActiveController(scrollIntoCenterView(container, LineElem, 270, -50));
-        LineElem.classList.add("Active", "OverridenByScroller");
-      }
+      return Spicetify.Platform.History.location.pathname === "/AmaiLyrics";
+    } catch {
+      return false;
+    }
+  }
+  function mountAutoScroll() {
+    try {
+      if (ScrollSimplebar)
+        RecalculateScrollSimplebar();
+      else
+        MountScrollSimplebar();
     } catch {
     }
   }
-  function ResetLastLine() {
-    if (activeScrollController) {
-      activeScrollController.cancel();
-      setActiveController(null);
+  function recalculateAutoScroll() {
+    try {
+      RecalculateScrollSimplebar();
+    } catch {
     }
-    setLastLine(null);
   }
-  var windowRef4, sharedScrollState, lastLine, activeScrollController;
-  var init_ScrollToActiveLine = __esm({
-    "src/utils/Scrolling/ScrollToActiveLine.ts"() {
+  function syncAutoScroll(overrides = {}) {
+    try {
+      const isPlaying = overrides.isPlaying ?? resolveIsPlaying();
+      if (!isPlaying)
+        return;
+      if (!Defaults_default.LyricsContainerExists)
+        return;
+      const onLyricsPage = overrides.onLyricsPage ?? resolveOnLyricsPage();
+      if (!onLyricsPage)
+        return;
+      const lines = overrides.lines ?? LyricsObject.Types[Defaults_default.CurrentLyricsType]?.Lines;
+      let position;
+      try {
+        position = overrides.position ?? getPositionFor("scroll");
+      } catch {
+        return;
+      }
+      if (typeof position !== "number" || !Number.isFinite(position) || position < 0)
+        return;
+      if (!lines)
+        return;
+      const activeIdx = findActiveIndex(
+        lines,
+        position
+      );
+      const currentLine = activeIdx !== -1 ? lines[activeIdx] : null;
+      if (!currentLine)
+        return;
+      const lineElem = currentLine.HTMLElement;
+      if (lastLine === lineElem)
+        return;
+      if (!lineElem || !lineElem.isConnected)
+        return;
+      if (!Defaults_default.LyricsContainerExists)
+        return;
+      if (!document.querySelector("#AmaiLyricsPage"))
+        return;
+      const hasContainerOverride = overrides.container !== void 0;
+      const container = hasContainerOverride ? overrides.container : ScrollSimplebar?.getScrollElement();
+      if (!container || !container.isConnected)
+        return;
+      if (activeScrollController) {
+        activeScrollController.cancel();
+        setActiveController(null);
+      }
+      if (lastLine === lineElem)
+        return;
+      if (lastLine && lastLine.classList.contains("OverridenByScroller")) {
+        lastLine.classList.remove("OverridenByScroller");
+      }
+      setLastLine(lineElem);
+      const scroller = overrides.scroller ?? scrollIntoCenterView;
+      setActiveController(scroller(container, lineElem, 270, -50));
+      lineElem.classList.add("Active", "OverridenByScroller");
+    } catch {
+    }
+  }
+  function resetAutoScroll() {
+    try {
+      if (activeScrollController) {
+        activeScrollController.cancel();
+        setActiveController(null);
+      }
+      if (lastLine && lastLine.isConnected && lastLine.classList.contains("OverridenByScroller")) {
+        lastLine.classList.remove("OverridenByScroller");
+      }
+      setLastLine(null);
+    } catch {
+    }
+  }
+  function destroyAutoScroll() {
+    resetAutoScroll();
+    try {
+      ClearScrollSimplebar();
+    } catch {
+    }
+  }
+  var windowRef4, sharedScrollState, lastLine, activeScrollController, AutoScroll;
+  var init_AutoScroll = __esm({
+    "src/utils/Scrolling/AutoScroll.ts"() {
       init_Defaults();
       init_GetProgress();
       init_lyrics();
       init_findActiveIndex();
       init_ScrollIntoView();
+      init_ScrollSimplebar();
       windowRef4 = window;
       sharedScrollState = windowRef4.__amaiScrollState ?? (windowRef4.__amaiScrollState = {
         lastLine: null,
@@ -9218,18 +9248,25 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       });
       lastLine = sharedScrollState.lastLine;
       activeScrollController = sharedScrollState.activeScrollController;
+      AutoScroll = {
+        mount: mountAutoScroll,
+        sync: syncAutoScroll,
+        reset: resetAutoScroll,
+        destroy: destroyAutoScroll,
+        recalculate: recalculateAutoScroll
+      };
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55d1dd/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-22052-V49qWVZX17kS/1a0a5469573d/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55d1dd/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-22052-V49qWVZX17kS/1a0a5469573d/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55d24e/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-22052-V49qWVZX17kS/1a0a5469578e/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55d24e/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-22052-V49qWVZX17kS/1a0a5469578e/ProcessingIndicator.css"() {
     }
   });
 
@@ -9579,7 +9616,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   function isHiddenByAppCanvas(element) {
     if (!document.documentElement.classList.contains(APP_BG_ON_CLASS))
       return false;
-    const page = element.closest?.("#SpicyLyricsPage");
+    const page = element.closest?.("#AmaiLyricsPage");
     if (!page)
       return false;
     return !page.classList.contains("Fullscreen");
@@ -9707,24 +9744,24 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     "src/constants/PageViewSelectors.ts"() {
       PageViewSelectors = {
         PageRoot: ".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]",
-        SpicyLyricsPage: "#SpicyLyricsPage",
-        ContentBox: "#SpicyLyricsPage .ContentBox",
-        MediaImage: "#SpicyLyricsPage .MediaImage",
-        SongName: "#SpicyLyricsPage .SongName span",
-        Artists: "#SpicyLyricsPage .Artists span",
-        ViewControls: "#SpicyLyricsPage .ContentBox .ViewControls",
-        Header: "#SpicyLyricsPage .ContentBox .NowBar .Header",
-        HeaderViewControls: "#SpicyLyricsPage .ContentBox .NowBar .Header .ViewControls",
+        AmaiLyricsPage: "#AmaiLyricsPage",
+        ContentBox: "#AmaiLyricsPage .ContentBox",
+        MediaImage: "#AmaiLyricsPage .MediaImage",
+        SongName: "#AmaiLyricsPage .SongName span",
+        Artists: "#AmaiLyricsPage .Artists span",
+        ViewControls: "#AmaiLyricsPage .ContentBox .ViewControls",
+        Header: "#AmaiLyricsPage .ContentBox .NowBar .Header",
+        HeaderViewControls: "#AmaiLyricsPage .ContentBox .NowBar .Header .ViewControls",
         RefreshLyricsButton: "#RefreshLyrics",
         WatchMusicVideoButton: "#WatchMusicVideoButton",
         SettingsButton: "#AmaiSettingsButton",
-        ActionButtonContainer: "#SpicyLyricsPage .ContentBox .NowBar .AmaiPageButtonContainer",
+        ActionButtonContainer: "#AmaiLyricsPage .ContentBox .NowBar .AmaiPageButtonContainer",
         CloseButton: "#Close",
         FullscreenToggleButton: "#FullscreenToggle",
-        LoaderContainer: "#SpicyLyricsPage .loaderContainer",
-        LyricsContent: "#SpicyLyricsPage .LyricsContent",
-        NowBar: "#SpicyLyricsPage .NowBar",
-        NotificationContainer: "#SpicyLyricsPage .NotificationContainer"
+        LoaderContainer: "#AmaiLyricsPage .loaderContainer",
+        LyricsContent: "#AmaiLyricsPage .LyricsContent",
+        NowBar: "#AmaiLyricsPage .NowBar",
+        NotificationContainer: "#AmaiLyricsPage .NotificationContainer"
       };
     }
   });
@@ -9920,7 +9957,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
 `;
       Icons = {
         LyricsPage: `
-        <svg class="Svg-sc-ytk21e-0 Svg-img-16-icon" id="SpicyLyricsPageSvg" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 16 16" preserveAspectRatio="xMidYMid meet" role="img" aria-hidden="true" data-encore-id="icon">
+        <svg class="Svg-sc-ytk21e-0 Svg-img-16-icon" id="AmaiLyricsPageSvg" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 16 16" preserveAspectRatio="xMidYMid meet" role="img" aria-hidden="true" data-encore-id="icon">
             <ellipse cx="4.9" cy="12.1" rx="2.45" ry="1.9" transform="rotate(-20 4.9 12.1)" />
             <rect x="6.35" y="2.6" width="1.3" height="9.5" rx="0.45" />
             <path d="M7.65 2.6l2.9.75c.4.1.62.5.5.88l-.65 1.9c-.1-.9-1-1.7-2.75-2V2.6z" />
@@ -9929,7 +9966,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         </svg>
     `,
         LyricsLargeIcon: `
-        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 16 16" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon" id="SpicyLyricsPageSvg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 16 16" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon" id="AmaiLyricsPageSvg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
             <ellipse cx="4.9" cy="12.1" rx="2.45" ry="1.9" transform="rotate(-20 4.9 12.1)" />
             <rect x="6.35" y="2.6" width="1.3" height="9.5" rx="0.45" />
             <path d="M7.65 2.6l2.9.75c.4.1.62.5.5.88l-.65 1.9c-.1-.9-1-1.7-2.75-2V2.6z" />
@@ -10198,109 +10235,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // src/utils/Lyrics/cache.ts
-  function trackLyricsCacheKey(trackId) {
-    const idx = lyricsCacheKeyOrder.indexOf(trackId);
-    if (idx !== -1)
-      lyricsCacheKeyOrder.splice(idx, 1);
-    lyricsCacheKeyOrder.push(trackId);
-    if (lyricsCacheKeyOrder.length > MAX_LYRICS_CACHE_ENTRIES) {
-      const oldest = lyricsCacheKeyOrder.shift();
-      if (oldest) {
-        lyricsCache.remove(oldest).catch(() => {
-        });
-      }
-    }
-  }
-  async function cacheLyrics(trackId, lyricsJson) {
-    if (!lyricsCache)
-      return;
-    const expiresAt = new Date().getTime() + CACHE_EXPIRATION_TIME;
-    try {
-      await lyricsCache.set(trackId, {
-        ...lyricsJson,
-        expiresAt
-      });
-      trackLyricsCacheKey(trackId);
-    } catch (error) {
-      console.error("Error saving lyrics to cache:", error);
-    }
-  }
-  async function getLyricsFromCache(trackId) {
-    if (!lyricsCache)
-      return null;
-    try {
-      const lyricsFromCache = await lyricsCache.get(trackId);
-      if (!lyricsFromCache)
-        return null;
-      if (lyricsFromCache.expiresAt < new Date().getTime()) {
-        await lyricsCache.remove(trackId);
-        return null;
-      }
-      if (lyricsFromCache.status === "NO_LYRICS") {
-        return { status: "NO_LYRICS", id: trackId };
-      }
-      return { ...lyricsFromCache, fromCache: true };
-    } catch (error) {
-      console.log("[Amai Lyrics] Error parsing saved lyrics data:", error);
-      return null;
-    }
-  }
-  async function getLyricsFromLocalStorage(trackId) {
-    const savedLyricsData = storage_default.get("currentLyricsData")?.toString();
-    if (!savedLyricsData)
-      return null;
-    try {
-      const parsed = JSON.parse(savedLyricsData);
-      if (parsed?.status === "NO_LYRICS") {
-        if (!parsed.id || parsed.id === trackId) {
-          return { status: "NO_LYRICS", id: parsed.id ?? trackId };
-        }
-        return null;
-      }
-      if (parsed?.id === trackId) {
-        return parsed;
-      }
-    } catch (error) {
-      if (savedLyricsData.includes("NO_LYRICS")) {
-        try {
-          const legacySplit = savedLyricsData.split(":");
-          const legacyId = legacySplit[1]?.replace(/[^a-zA-Z0-9]/g, "");
-          if (!legacyId || legacyId === trackId) {
-            return { status: "NO_LYRICS", id: legacyId ?? trackId };
-          }
-        } catch {
-        }
-      }
-      console.error("Error parsing saved lyrics data:", error);
-    }
-    return null;
-  }
-  async function removeLyricsFromCache(trackId) {
-    if (!lyricsCache)
-      return;
-    try {
-      await lyricsCache.remove(trackId);
-    } catch (error) {
-      console.error("Error removing lyrics from cache:", error);
-    }
-  }
-  var CACHE_EXPIRATION_TIME, lyricsCache, MAX_LYRICS_CACHE_ENTRIES, windowCacheRef, lyricsCacheKeyOrder;
-  var init_cache = __esm({
-    "src/utils/Lyrics/cache.ts"() {
-      init_SpikyCache();
-      init_storage();
-      CACHE_EXPIRATION_TIME = 1e3 * 60 * 60 * 24 * 7;
-      lyricsCache = new SpikyCache({
-        name: "Cache_Lyrics"
-      });
-      MAX_LYRICS_CACHE_ENTRIES = 200;
-      windowCacheRef = window;
-      lyricsCacheKeyOrder = windowCacheRef.__amaiLyricsCacheKeys ?? [];
-      windowCacheRef.__amaiLyricsCacheKeys = lyricsCacheKeyOrder;
-    }
-  });
-
   // src/utils/externalNavigation.ts
   function resolveTrustedExternalUrl(rawUrl) {
     let parsed;
@@ -10461,10 +10395,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       }
       refreshButton.classList.add("hidden");
       try {
-        const trackId = currentUri.split(":")[2];
-        removeLyricsFromCache(trackId);
-        storage_default.set("currentLyricsData", null);
-        await loadAndApplyLyrics(currentUri, { flush: true });
+        await refreshLyrics(currentUri);
       } catch (error) {
         console.error("Error refreshing lyrics:", error);
         Spicetify.showNotification("Error refreshing lyrics", false, 2e3);
@@ -10531,8 +10462,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     "src/components/Pages/pageButtons.ts"() {
       init_PageViewSelectors();
       import_fastdom4 = __toESM(require_fastdom());
-      init_storage();
-      init_cache();
       init_fetchLyrics();
       init_externalNavigation();
       init_SpotifyPlayer();
@@ -10579,11 +10508,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   async function createPageElement() {
     await mutateAsync(() => {
-      const existing = document.getElementById("SpicyLyricsPage");
+      const existing = document.getElementById("AmaiLyricsPage");
       if (existing)
         existing.remove();
       const elem = document.createElement("div");
-      elem.id = "SpicyLyricsPage";
+      elem.id = "AmaiLyricsPage";
       elem.replaceChildren(document.createRange().createContextualFragment(PageHTML));
       if (PageRoot) {
         PageRoot.appendChild(elem);
@@ -10599,11 +10528,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return;
     if (Fullscreen_default.IsOpen)
       Fullscreen_default.Close();
-    const spicyLyricsPage = document.querySelector(PageViewSelectors.SpicyLyricsPage);
-    if (spicyLyricsPage) {
+    const amaiLyricsPage = document.querySelector(PageViewSelectors.AmaiLyricsPage);
+    if (amaiLyricsPage) {
       try {
         await mutateAsync(() => {
-          spicyLyricsPage.remove();
+          amaiLyricsPage.remove();
         });
       } catch (error) {
         console.error("[Amai Lyrics] PageView destroy failed:", error);
@@ -10615,8 +10544,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     clearApplyInfoTimeout();
     Object.values(Tooltips).forEach((a) => a?.destroy());
     Object.keys(Tooltips).forEach((k) => Tooltips[k] = null);
-    ResetLastLine();
-    ClearScrollSimplebar();
+    AutoScroll.destroy();
     try {
       maid?.CleanUp();
       maid?.Destroy?.();
@@ -10636,11 +10564,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_ApplyInfo();
       init_dynamicBackground();
       init_Defaults();
-      init_ScrollSimplebar();
-      init_ui();
+      init_AutoScroll();
       init_NowBar2();
       init_Fullscreen();
-      init_ScrollToActiveLine();
       init_fastdomAsync();
       init_Maid();
       init_PageViewSelectors();
@@ -10695,18 +10621,18 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   }
   function Open() {
-    const SpicyPage = document.querySelector(".Root__main-view #SpicyLyricsPage");
+    const SpicyPage = document.querySelector(".Root__main-view #AmaiLyricsPage");
     const Root = document.body;
     if (SpicyPage) {
       let setupFullscreenUI = function() {
         PageView_default.AppendViewControls();
         OpenNowBar();
-        ResetLastLine();
+        AutoScroll.reset();
         const MediaBox = document.querySelector(
-          "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox"
+          "#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox"
         );
         const MediaImage = document.querySelector(
-          "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage"
+          "#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage"
         );
         if (MediaBox && MediaImage) {
           MediaBox_Data.Functions.Eventify(MediaImage);
@@ -10721,7 +10647,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       SpicyPage.classList.add("Fullscreen");
       Fullscreen.IsOpen = true;
       if (!document.fullscreenElement) {
-        Root.querySelector("#SpicyLyricsPage").requestFullscreen().then(() => {
+        Root.querySelector("#AmaiLyricsPage").requestFullscreen().then(() => {
           setupFullscreenUI();
         }).catch((err2) => {
           setupFullscreenUI();
@@ -10734,7 +10660,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   }
   function Close() {
-    const SpicyPage = document.querySelector("#SpicyLyricsPage");
+    const SpicyPage = document.querySelector("#AmaiLyricsPage");
     if (SpicyPage) {
       let restoreUI = function() {
         TransferElement(SpicyPage, PageRoot);
@@ -10755,19 +10681,19 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         if (NoLyrics) {
           OpenNowBar();
           const lyricsContainer = document.querySelector(
-            "#SpicyLyricsPage .ContentBox .LyricsContainer"
+            "#AmaiLyricsPage .ContentBox .LyricsContainer"
           );
           if (lyricsContainer) {
             lyricsContainer.classList.add("Hidden");
           }
           DeregisterNowBarBtn();
         }
-        ResetLastLine();
+        AutoScroll.reset();
         const MediaBox = document.querySelector(
-          "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox"
+          "#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox"
         );
         const MediaImage = document.querySelector(
-          "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage"
+          "#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage"
         );
         if (MediaBox) {
           MediaBox.removeEventListener("mouseenter", MediaBox_Data.Functions.MouseIn);
@@ -10791,7 +10717,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   }
   function Toggle() {
-    const SpicyPage = document.querySelector("#SpicyLyricsPage");
+    const SpicyPage = document.querySelector("#AmaiLyricsPage");
     if (SpicyPage) {
       if (SpicyPage.classList.contains("fullscreen-transition")) {
         return;
@@ -10811,7 +10737,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var init_Fullscreen = __esm({
     "src/components/Utils/Fullscreen.ts"() {
       init_Animator();
-      init_ScrollToActiveLine();
+      init_AutoScroll();
       init_storage();
       init_Global();
       init_PageView();
@@ -10876,17 +10802,17 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
 
   // src/components/NowBar/DragAndDrop.ts
   function setupDragAndDrop() {
-    const DragBox = Fullscreen_default.IsOpen ? document.querySelector("#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent") : document.querySelector("#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage");
+    const DragBox = Fullscreen_default.IsOpen ? document.querySelector("#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent") : document.querySelector("#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage");
     if (!DragBox)
       return;
     const dropZones = document.querySelectorAll(
-      "#SpicyLyricsPage .ContentBox .DropZone"
+      "#AmaiLyricsPage .ContentBox .DropZone"
     );
     if (!DragBox._dragEventsAdded) {
       DragBox.addEventListener("dragstart", () => {
         setTimeout(() => {
-          document.querySelector("#SpicyLyricsPage").classList.add("SomethingDragging");
-          const NowBar = document.querySelector("#SpicyLyricsPage .ContentBox .NowBar");
+          document.querySelector("#AmaiLyricsPage").classList.add("SomethingDragging");
+          const NowBar = document.querySelector("#AmaiLyricsPage .ContentBox .NowBar");
           if (NowBar.classList.contains("LeftSide")) {
             dropZones.forEach((zone) => {
               if (zone.classList.contains("LeftSide")) {
@@ -10908,7 +10834,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         }, 0);
       });
       DragBox.addEventListener("dragend", () => {
-        document.querySelector("#SpicyLyricsPage").classList.remove("SomethingDragging");
+        document.querySelector("#AmaiLyricsPage").classList.remove("SomethingDragging");
         dropZones.forEach((zone) => zone.classList.remove("Hidden"));
         DragBox.classList.remove("Dragging");
       });
@@ -10926,7 +10852,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         zone.addEventListener("drop", (e) => {
           e.preventDefault();
           zone.classList.remove("DraggingOver");
-          const NowBar = document.querySelector("#SpicyLyricsPage .ContentBox .NowBar");
+          const NowBar = document.querySelector("#AmaiLyricsPage .ContentBox .NowBar");
           const currentClass = NowBar.classList.contains("LeftSide") ? "LeftSide" : "RightSide";
           const newClass = zone.classList.contains("RightSide") ? "RightSide" : "LeftSide";
           if (currentClass !== newClass) {
@@ -11000,7 +10926,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       })
     );
     nowBarInitWhen = Whentil_default.When(
-      () => document.querySelector("#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage"),
+      () => document.querySelector("#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage"),
       () => updateVinylSpinState()
     );
     nowBarListenerIds.push(
@@ -11040,7 +10966,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   function updateVinylSpinState() {
     const MediaImage = document.querySelector(
-      "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage"
+      "#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage"
     );
     if (!MediaImage)
       return;
@@ -11165,7 +11091,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   function removeLeftoverElements() {
     const MediaBox = document.querySelector(
-      "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent"
+      "#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent"
     );
     if (MediaBox) {
       const albumData = MediaBox.querySelector(".AlbumData");
@@ -11673,7 +11599,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   }
   async function OpenNowBar() {
-    const NowBar = document.querySelector("#SpicyLyricsPage .ContentBox .NowBar");
+    const NowBar = document.querySelector("#AmaiLyricsPage .ContentBox .NowBar");
     if (!NowBar)
       return;
     UpdateNowBar(true);
@@ -11682,7 +11608,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     storage_default.set("IsNowBarOpen", "true");
     if (Fullscreen_default.IsOpen) {
       const MediaBox = document.querySelector(
-        "#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent"
+        "#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent"
       );
       if (!MediaBox)
         return;
@@ -11724,10 +11650,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           viewControlsWhen = null;
         }
         viewControlsWhen = Whentil_default.When(
-          () => document.querySelector("#SpicyLyricsPage .ContentBox .NowBar .Header .ViewControls"),
+          () => document.querySelector("#AmaiLyricsPage .ContentBox .NowBar .Header .ViewControls"),
           () => {
             viewControlsWhen = null;
-            if (!MediaBox.isConnected || !document.querySelector("#SpicyLyricsPage"))
+            if (!MediaBox.isConnected || !document.querySelector("#AmaiLyricsPage"))
               return;
             const viewControls = MediaBox.querySelector(".ViewControls");
             const fragment = document.createDocumentFragment();
@@ -11749,7 +11675,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   function CloseNowBar() {
     cancelViewControlsWhen();
-    const NowBar = document.querySelector("#SpicyLyricsPage .ContentBox .NowBar");
+    const NowBar = document.querySelector("#AmaiLyricsPage .ContentBox .NowBar");
     if (!NowBar)
       return;
     NowBar.classList.remove("Active");
@@ -11760,7 +11686,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     OpenNowBar();
   }
   function UpdateNowBar(force = false) {
-    const NowBar = document.querySelector("#SpicyLyricsPage .ContentBox .NowBar");
+    const NowBar = document.querySelector("#AmaiLyricsPage .ContentBox .NowBar");
     if (!NowBar)
       return;
     const ArtistsDiv = NowBar.querySelector(".Header .Metadata .Artists");
@@ -11823,7 +11749,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   }
   function NowBar_SwapSides() {
-    const NowBar = document.querySelector("#SpicyLyricsPage .ContentBox .NowBar");
+    const NowBar = document.querySelector("#AmaiLyricsPage .ContentBox .NowBar");
     if (!NowBar)
       return;
     const CurrentSide = storage_default.get("NowBarSide");
@@ -11842,7 +11768,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   }
   function Session_NowBar_SetSide() {
-    const NowBar = document.querySelector("#SpicyLyricsPage .ContentBox .NowBar");
+    const NowBar = document.querySelector("#AmaiLyricsPage .ContentBox .NowBar");
     if (!NowBar)
       return;
     const CurrentSide = storage_default.get("NowBarSide");
@@ -11862,7 +11788,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   function DeregisterNowBarBtn() {
     const nowBarButton = document.querySelector(
-      "#SpicyLyricsPage .ContentBox .ViewControls #NowBarToggle"
+      "#AmaiLyricsPage .ContentBox .ViewControls #NowBarToggle"
     );
     if (nowBarButton) {
       nowBarButton.remove();
@@ -11903,6 +11829,26 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
+  // src/utils/Lyrics/trackId.ts
+  function parseTrackId(uri) {
+    if (!uri || typeof uri !== "string")
+      return "";
+    const parts = uri.split(":");
+    return parts[2] ?? "";
+  }
+  function liveTrackId() {
+    try {
+      const uri = Spicetify?.Player?.data?.item?.uri;
+      return parseTrackId(typeof uri === "string" ? uri : null);
+    } catch {
+      return "";
+    }
+  }
+  var init_trackId = __esm({
+    "src/utils/Lyrics/trackId.ts"() {
+    }
+  });
+
   // src/utils/Lyrics/ui.ts
   function syncLoaderTimeout(value) {
     ContainerShowLoaderTimeout = value;
@@ -11920,23 +11866,23 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   }
   function resetLyricsUI() {
-    const lyricsContent = document.querySelector("#SpicyLyricsPage .LyricsContainer .LyricsContent");
+    const lyricsContent = document.querySelector("#AmaiLyricsPage .LyricsContainer .LyricsContent");
     if (lyricsContent?.classList.contains("offline")) {
       lyricsContent.classList.remove("offline");
     }
-    document.querySelector("#SpicyLyricsPage .ContentBox .LyricsContainer")?.classList.remove("Hidden");
+    document.querySelector("#AmaiLyricsPage .ContentBox .LyricsContainer")?.classList.remove("Hidden");
     if (!Fullscreen_default.IsOpen)
       PageView_default.AppendViewControls();
   }
   async function noLyricsMessage(trackId) {
     try {
-      const currentId = Spicetify.Player.data?.item?.uri?.split(":")[2];
+      const currentId = liveTrackId();
       const isForCurrentTrack = !trackId || currentId === trackId;
       if (isForCurrentTrack) {
         HideLoaderContainer();
         Defaults_default.CurrentLyricsType = "None";
-        document.querySelector("#SpicyLyricsPage .ContentBox .LyricsContainer")?.classList.add("Hidden");
-        document.querySelector("#SpicyLyricsPage .ContentBox")?.classList.add("LyricsHidden");
+        document.querySelector("#AmaiLyricsPage .ContentBox .LyricsContainer")?.classList.add("Hidden");
+        document.querySelector("#AmaiLyricsPage .ContentBox")?.classList.add("LyricsHidden");
         OpenNowBar();
         DeregisterNowBarBtn();
         showRefreshButton();
@@ -11955,7 +11901,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   function ShowLoaderContainer() {
     const loaderContainer = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .loaderContainer"
+      "#AmaiLyricsPage .LyricsContainer .loaderContainer"
     );
     if (loaderContainer) {
       const id = window.setTimeout(() => loaderContainer.classList.add("active"), 1e3);
@@ -11964,7 +11910,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   function HideLoaderContainer() {
     const loaderContainer = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .loaderContainer"
+      "#AmaiLyricsPage .LyricsContainer .loaderContainer"
     );
     if (loaderContainer) {
       const timeoutId = ContainerShowLoaderTimeout ?? uiState.containerShowLoaderTimeout;
@@ -11976,7 +11922,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   }
   function ClearLyricsPageContainer() {
-    const lyricsContent = document.querySelector("#SpicyLyricsPage .LyricsContainer .LyricsContent");
+    const lyricsContent = document.querySelector("#AmaiLyricsPage .LyricsContainer .LyricsContent");
     if (lyricsContent) {
       lyricsContent.innerHTML = "";
     }
@@ -11984,7 +11930,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   function ShowProcessingIndicator() {
     try {
       const indicator = document.querySelector(
-        "#SpicyLyricsPage .LyricsContainer .processingIndicator"
+        "#AmaiLyricsPage .LyricsContainer .processingIndicator"
       );
       if (indicator) {
         if (window.ProcessingIndicatorTimeout) {
@@ -12000,7 +11946,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   function HideProcessingIndicator() {
     try {
       const indicator = document.querySelector(
-        "#SpicyLyricsPage .LyricsContainer .processingIndicator"
+        "#AmaiLyricsPage .LyricsContainer .processingIndicator"
       );
       if (indicator) {
         indicator.classList.remove("active");
@@ -12027,9 +11973,113 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_PageView();
       init_Fullscreen();
       init_pageButtons();
+      init_trackId();
       windowRef7 = window;
       uiState = windowRef7.__amaiLyricsUiState ?? (windowRef7.__amaiLyricsUiState = { containerShowLoaderTimeout: null });
       ContainerShowLoaderTimeout = uiState.containerShowLoaderTimeout;
+    }
+  });
+
+  // src/utils/Lyrics/cache.ts
+  function trackLyricsCacheKey(trackId) {
+    const idx = lyricsCacheKeyOrder.indexOf(trackId);
+    if (idx !== -1)
+      lyricsCacheKeyOrder.splice(idx, 1);
+    lyricsCacheKeyOrder.push(trackId);
+    if (lyricsCacheKeyOrder.length > MAX_LYRICS_CACHE_ENTRIES) {
+      const oldest = lyricsCacheKeyOrder.shift();
+      if (oldest) {
+        lyricsCache.remove(oldest).catch(() => {
+        });
+      }
+    }
+  }
+  async function cacheLyrics(trackId, lyricsJson) {
+    if (!lyricsCache)
+      return;
+    const expiresAt = new Date().getTime() + CACHE_EXPIRATION_TIME;
+    try {
+      await lyricsCache.set(trackId, {
+        ...lyricsJson,
+        expiresAt
+      });
+      trackLyricsCacheKey(trackId);
+    } catch (error) {
+      console.error("Error saving lyrics to cache:", error);
+    }
+  }
+  async function getLyricsFromCache(trackId) {
+    if (!lyricsCache)
+      return null;
+    try {
+      const lyricsFromCache = await lyricsCache.get(trackId);
+      if (!lyricsFromCache)
+        return null;
+      if (lyricsFromCache.expiresAt < new Date().getTime()) {
+        await lyricsCache.remove(trackId);
+        return null;
+      }
+      if (lyricsFromCache.status === "NO_LYRICS") {
+        return { status: "NO_LYRICS", id: trackId };
+      }
+      return { ...lyricsFromCache, fromCache: true };
+    } catch (error) {
+      console.log("[Amai Lyrics] Error parsing saved lyrics data:", error);
+      return null;
+    }
+  }
+  async function getLyricsFromLocalStorage(trackId) {
+    const savedLyricsData = storage_default.get("currentLyricsData")?.toString();
+    if (!savedLyricsData)
+      return null;
+    try {
+      const parsed = JSON.parse(savedLyricsData);
+      if (parsed?.status === "NO_LYRICS") {
+        if (!parsed.id || parsed.id === trackId) {
+          return { status: "NO_LYRICS", id: parsed.id ?? trackId };
+        }
+        return null;
+      }
+      if (parsed?.id === trackId) {
+        return parsed;
+      }
+    } catch (error) {
+      if (savedLyricsData.includes("NO_LYRICS")) {
+        try {
+          const legacySplit = savedLyricsData.split(":");
+          const legacyId = legacySplit[1]?.replace(/[^a-zA-Z0-9]/g, "");
+          if (!legacyId || legacyId === trackId) {
+            return { status: "NO_LYRICS", id: legacyId ?? trackId };
+          }
+        } catch {
+        }
+      }
+      console.error("Error parsing saved lyrics data:", error);
+    }
+    return null;
+  }
+  async function removeLyricsFromCache(trackId) {
+    if (!lyricsCache)
+      return;
+    try {
+      await lyricsCache.remove(trackId);
+    } catch (error) {
+      console.error("Error removing lyrics from cache:", error);
+    }
+  }
+  var CACHE_EXPIRATION_TIME, lyricsCache, MAX_LYRICS_CACHE_ENTRIES, windowCacheRef, lyricsCacheKeyOrder;
+  var init_cache = __esm({
+    "src/utils/Lyrics/cache.ts"() {
+      init_SpikyCache();
+      init_storage();
+      CACHE_EXPIRATION_TIME = 1e3 * 60 * 60 * 24 * 7;
+      lyricsCache = new SpikyCache({
+        name: "Cache_Lyrics"
+      });
+      MAX_LYRICS_CACHE_ENTRIES = 200;
+      windowCacheRef = window;
+      lyricsCacheKeyOrder = windowCacheRef.__amaiLyricsCacheKeys ?? [];
+      windowCacheRef.__amaiLyricsCacheKeys = lyricsCacheKeyOrder;
     }
   });
 
@@ -33699,6 +33749,131 @@ ${JSON.stringify(lyricsOnly)}`
     }
   });
 
+  // src/utils/CSS/Styles.ts
+  function applyStyles(element, styles) {
+    if (!element) {
+      console.warn("Element not found for applying styles");
+      return false;
+    }
+    try {
+      for (const key in styles) {
+        if (Object.prototype.hasOwnProperty.call(styles, key)) {
+          element.style.setProperty(key, String(styles[key]));
+        }
+      }
+      return true;
+    } catch (error) {
+      console.error("Error applying styles:", error);
+      return false;
+    }
+  }
+  function removeAllStyles(element) {
+    if (!element) {
+      console.warn("Element not found for removing styles");
+      return false;
+    }
+    try {
+      element.removeAttribute("style");
+      return true;
+    } catch (error) {
+      console.error("Error removing styles:", error);
+      return false;
+    }
+  }
+  var init_Styles = __esm({
+    "src/utils/CSS/Styles.ts"() {
+    }
+  });
+
+  // src/utils/Lyrics/ConvertTime.ts
+  function ConvertTime(time) {
+    return time * 1e3;
+  }
+  var init_ConvertTime = __esm({
+    "src/utils/Lyrics/ConvertTime.ts"() {
+    }
+  });
+
+  // src/utils/Lyrics/Applyer/Credits/ApplyLyricsCredits.ts
+  function ApplyLyricsCredits(data) {
+    const LyricsContainer = document.querySelector("#AmaiLyricsPage .LyricsContainer .LyricsContent");
+    if (!data?.SongWriters)
+      return;
+    const CreditsElement = document.createElement("div");
+    CreditsElement.classList.add("Credits");
+    const SongWriters = data.SongWriters.join(", ");
+    CreditsElement.textContent = `Credits: ${SongWriters}`;
+    LyricsContainer.appendChild(CreditsElement);
+  }
+  var init_ApplyLyricsCredits = __esm({
+    "src/utils/Lyrics/Applyer/Credits/ApplyLyricsCredits.ts"() {
+    }
+  });
+
+  // src/utils/Lyrics/Applyer/Utils/createMusicalLine.ts
+  function createDotGroup(startTime, endTime) {
+    const dotGroup = document.createElement("div");
+    dotGroup.classList.add("dotGroup");
+    dotGroup.setAttribute("aria-hidden", "true");
+    const totalTime = endTime - startTime;
+    const dotTime = totalTime / 3;
+    for (let i = 0; i < 3; i++) {
+      const dot = document.createElement("span");
+      dot.classList.add("word", "dot");
+      dot.textContent = DOT_GLYPH;
+      const target = LyricsObject.Types.Line.Lines;
+      const idx = target.length - 1;
+      if (idx >= 0 && target[idx]?.Syllables?.Lead) {
+        target[idx].Syllables.Lead.push({
+          HTMLElement: dot,
+          StartTime: startTime + dotTime * i,
+          EndTime: i === 2 ? endTime - 400 : startTime + dotTime * (i + 1),
+          TotalTime: dotTime,
+          Dot: true
+        });
+      }
+      dotGroup.appendChild(dot);
+    }
+    return dotGroup;
+  }
+  function createInstrumentalPill(startMs, endMs) {
+    const pill = document.createElement("div");
+    pill.classList.add("instrumental-pill");
+    pill.setAttribute("role", "img");
+    pill.setAttribute("aria-label", INSTRUMENTAL_LABEL);
+    pill.appendChild(createDotGroup(startMs, endMs));
+    return pill;
+  }
+  function registerMusicalLine(startMs, endMs) {
+    const line = document.createElement("div");
+    line.classList.add("line", "musical-line");
+    LyricsObject.Types.Line.Lines.push({
+      HTMLElement: line,
+      StartTime: startMs,
+      EndTime: endMs,
+      TotalTime: endMs - startMs,
+      DotLine: true
+    });
+    SetWordArrayInCurentLine_LINE_SYNCED();
+    return line;
+  }
+  function createMusicalLineMs(startMs, endMs, oppositeAligned) {
+    const line = registerMusicalLine(startMs, endMs);
+    if (oppositeAligned)
+      line.classList.add("OppositeAligned");
+    line.appendChild(createInstrumentalPill(startMs, endMs));
+    return line;
+  }
+  var DOT_GLYPH, INSTRUMENTAL_LABEL;
+  var init_createMusicalLine = __esm({
+    "src/utils/Lyrics/Applyer/Utils/createMusicalLine.ts"() {
+      init_ConvertTime();
+      init_lyrics();
+      DOT_GLYPH = "\u2022";
+      INSTRUMENTAL_LABEL = "Instrumental";
+    }
+  });
+
   // src/utils/sanitize.ts
   function escapeHtml(text) {
     return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
@@ -33721,6 +33896,27 @@ ${JSON.stringify(lyricsOnly)}`
       RUBY_ROMAJA_OPEN = "&lt;ruby class=&quot;romaja&quot;&gt;";
       RT_OPEN = "&lt;rt&gt;";
       RT_CLOSE = "&lt;/rt&gt;";
+    }
+  });
+
+  // src/utils/Lyrics/isRtl.ts
+  function isRtl(text) {
+    if (!text || text.length === 0)
+      return false;
+    const rtlRegex = /[\u0590-\u05FF\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB1D-\uFB4F\uFB50-\uFDFF\uFE70-\uFEFF]/;
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      if (/[\d\s,.;:?!()[\]{}"'\\/<>@#$%^&*_=+-]/.test(char)) {
+        continue;
+      }
+      return rtlRegex.test(char);
+    }
+    return false;
+  }
+  var isRtl_default;
+  var init_isRtl = __esm({
+    "src/utils/Lyrics/isRtl.ts"() {
+      isRtl_default = isRtl;
     }
   });
 
@@ -33773,7 +33969,162 @@ ${JSON.stringify(lyricsOnly)}`
     }
   });
 
-  // src/utils/Lyrics/translationUpdater.ts
+  // src/utils/Lyrics/Applyer/Utils/decorateLine.ts
+  function processLinePhonetics(line, data) {
+    if (isJapaneseText(line.Text)) {
+      if (!data.Info && (!storage_default.get("disable_romaji_toggle_notification") || storage_default.get("disable_romaji_toggle_notification") === "false")) {
+        data.Info = "Toggle between Romaji or Furigana in settings. Disable this notification there as well.";
+      }
+      line.Text = applyPhoneticPatterns(line.Text, storage_default.get("enable_romaji") === "true");
+    } else {
+      line.Text = applyPhoneticPatterns(line.Text, false);
+    }
+  }
+  function decorateLineElement(lineElem, mainTextContainer, line, rawText) {
+    const hasDistinctTranslation = !!line.Translation && line.Translation.trim() !== "" && (!rawText || line.Translation.trim() !== rawText.trim());
+    if (hasDistinctTranslation) {
+      const translationElem = document.createElement("div");
+      translationElem.classList.add("translation");
+      translationElem.textContent = line.Translation;
+      mainTextContainer.appendChild(translationElem);
+    }
+    if (isRtl_default(line.Text) && !lineElem.classList.contains("rtl")) {
+      lineElem.classList.add("rtl");
+    }
+    if (ArabicPersianRegex.test(line.Text)) {
+      lineElem.setAttribute("font", "Vazirmatn");
+    }
+  }
+  var init_decorateLine = __esm({
+    "src/utils/Lyrics/Applyer/Utils/decorateLine.ts"() {
+      init_Addons();
+      init_isRtl();
+      init_storage();
+      init_phoneticPatterns();
+    }
+  });
+
+  // src/utils/Lyrics/LyricsRenderer.ts
+  function resolveContainer() {
+    if (!Defaults_default.LyricsContainerExists)
+      return null;
+    const container = document.querySelector(LYRICS_CONTAINER_SELECTOR);
+    if (!container) {
+      console.error("Lyrics container not found");
+      return null;
+    }
+    return container;
+  }
+  function inferType(data) {
+    if (data.Type === "Line" || data.Type === "Static")
+      return data.Type;
+    return Array.isArray(data.Content) ? "Line" : "Static";
+  }
+  function renderLyrics(data) {
+    const container = resolveContainer();
+    if (!container)
+      return;
+    const type = inferType(data);
+    container.setAttribute("data-lyrics-type", type);
+    ClearLyricsContentArrays();
+    ClearScrollSimplebar();
+    TOP_ApplyLyricsSpacer(container);
+    if (type === "Line") {
+      renderLineRows(container, data);
+    } else {
+      renderStaticRows(container, data);
+    }
+    finishRender(container, data);
+  }
+  function renderLineRows(container, data) {
+    const content = data.Content ?? [];
+    const fragment = document.createDocumentFragment();
+    const convertStartTime = ConvertTime(data.StartTime ?? 0);
+    if ((data.StartTime ?? 0) >= lyricsBetweenShow) {
+      const musicalLine = createMusicalLineMs(0, convertStartTime, !!content[0]?.OppositeAligned);
+      fragment.appendChild(musicalLine);
+    }
+    content.forEach((line, index, arr) => {
+      const lineElem = document.createElement("div");
+      processLinePhonetics(line, data);
+      const mainTextContainer = document.createElement("span");
+      mainTextContainer.classList.add("main-lyrics-text");
+      mainTextContainer.classList.add("line");
+      mainTextContainer.appendChild(createRubyFragment(line.Text));
+      lineElem.appendChild(mainTextContainer);
+      decorateLineElement(lineElem, mainTextContainer, line, data.Raw?.[index]);
+      const startTime = ConvertTime(line.StartTime);
+      const endTime = ConvertTime(line.EndTime);
+      LyricsObject.Types.Line.Lines.push({
+        HTMLElement: mainTextContainer,
+        StartTime: startTime,
+        EndTime: endTime,
+        TotalTime: endTime - startTime
+      });
+      if (line.OppositeAligned) {
+        lineElem.classList.add("OppositeAligned");
+      }
+      fragment.appendChild(lineElem);
+      const nextLine = arr[index + 1];
+      const hasMusicalBreak = nextLine && nextLine.StartTime - line.EndTime >= lyricsBetweenShow;
+      if (hasMusicalBreak) {
+        const nextStartTime = ConvertTime(nextLine.StartTime);
+        const curEndTime = endTime;
+        const musicalLine = createMusicalLineMs(
+          curEndTime,
+          nextStartTime,
+          !!nextLine.OppositeAligned
+        );
+        fragment.appendChild(musicalLine);
+      }
+    });
+    container.appendChild(fragment);
+  }
+  function renderStaticRows(container, data) {
+    const lines = data.Lines ?? [];
+    const fragment = document.createDocumentFragment();
+    lines.forEach((line, index) => {
+      const lineElem = document.createElement("div");
+      processLinePhonetics(line, data);
+      const mainTextContainer = document.createElement("span");
+      mainTextContainer.classList.add("main-lyrics-text");
+      if (line.Text?.includes("[DEF=font_size:small]")) {
+        lineElem.style.fontSize = "35px";
+        mainTextContainer.appendChild(
+          createRubyFragment(line.Text.replace("[DEF=font_size:small]", ""))
+        );
+      } else {
+        mainTextContainer.appendChild(createRubyFragment(line.Text));
+      }
+      lineElem.appendChild(mainTextContainer);
+      decorateLineElement(lineElem, mainTextContainer, line, data.Raw?.[index]);
+      lineElem.classList.add("line", "static");
+      LyricsObject.Types.Static.Lines.push({
+        HTMLElement: lineElem
+      });
+      fragment.appendChild(lineElem);
+    });
+    container.appendChild(fragment);
+  }
+  function finishRender(container, data) {
+    ApplyInfo(data);
+    ApplyLyricsCredits(data);
+    BOTTOM_ApplyLyricsSpacer(container);
+    AutoScroll.mount();
+    const stylingContainer = document.querySelector(STYLING_CONTAINER_SELECTOR);
+    if (!stylingContainer)
+      return;
+    if (data.offline) {
+      stylingContainer.classList.add("offline");
+    }
+    removeAllStyles(stylingContainer);
+    if (data.classes) {
+      stylingContainer.className = data.classes;
+    }
+    if (data.styles) {
+      applyStyles(stylingContainer, data.styles);
+    }
+  }
   function applyScrollReanchor(scrollEl, activeLine, activeLineTopBefore, fallbackScrollTop) {
     if (!scrollEl)
       return;
@@ -33785,13 +34136,11 @@ ${JSON.stringify(lyricsOnly)}`
       scrollEl.scrollTop = fallbackScrollTop;
     }
   }
-  function updateDisplayedLyricsWithTranslations(lyricsData) {
+  function updateLyricTranslations(lyricsData) {
     try {
       if (!Defaults_default.LyricsContainerExists)
         return;
-      const lyricsContainer = document.querySelector(
-        "#SpicyLyricsPage .LyricsContainer .LyricsContent"
-      );
+      const lyricsContainer = document.querySelector(LYRICS_CONTAINER_SELECTOR);
       if (!lyricsContainer)
         return;
       const simplebarContent = lyricsContainer.querySelector(
@@ -33852,7 +34201,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
   function updateLineLyricsTranslations(content, enableRomaji, rawLyrics) {
     const lineElements = document.querySelectorAll(
-      "#SpicyLyricsPage .LyricsContainer .LyricsContent .main-lyrics-text.line"
+      "#AmaiLyricsPage .LyricsContainer .LyricsContent .main-lyrics-text.line"
     );
     content.forEach((line, index) => {
       if (index >= lineElements.length)
@@ -33868,7 +34217,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
   function updateStaticLyricsTranslations(lines, enableRomaji, rawLyrics) {
     const lineElements = document.querySelectorAll(
-      "#SpicyLyricsPage .LyricsContainer .LyricsContent .line.static .main-lyrics-text"
+      "#AmaiLyricsPage .LyricsContainer .LyricsContent .line.static .main-lyrics-text"
     );
     lines.forEach((line, index) => {
       if (index >= lineElements.length)
@@ -33882,15 +34231,26 @@ ${JSON.stringify(lyricsOnly)}`
       );
     });
   }
-  var appliedLineState;
-  var init_translationUpdater = __esm({
-    "src/utils/Lyrics/translationUpdater.ts"() {
-      init_storage();
+  var LYRICS_CONTAINER_SELECTOR, STYLING_CONTAINER_SELECTOR, appliedLineState;
+  var init_LyricsRenderer = __esm({
+    "src/utils/Lyrics/LyricsRenderer.ts"() {
+      init_Addons();
       init_Defaults();
-      init_sanitize();
-      init_phoneticPatterns();
-      init_lyrics();
+      init_Styles();
       init_ScrollSimplebar();
+      init_AutoScroll();
+      init_ConvertTime();
+      init_lyrics();
+      init_ApplyLyricsCredits();
+      init_ApplyInfo();
+      init_createMusicalLine();
+      init_sanitize();
+      init_decorateLine();
+      init_storage();
+      init_phoneticPatterns();
+      init_ScrollSimplebar();
+      LYRICS_CONTAINER_SELECTOR = "#AmaiLyricsPage .LyricsContainer .LyricsContent";
+      STYLING_CONTAINER_SELECTOR = "#AmaiLyricsPage .LyricsContainer .LyricsContent .simplebar-content";
       appliedLineState = /* @__PURE__ */ new WeakMap();
     }
   });
@@ -33928,9 +34288,9 @@ ${JSON.stringify(lyricsOnly)}`
   function publishEnhancedLyrics(token, trackId, data) {
     if (!isCurrentLyricsRequest(token))
       return false;
-    if (liveLyricsUri()?.split(":")[2] !== trackId)
+    if (liveTrackId() !== trackId)
       return false;
-    updateDisplayedLyricsWithTranslations(data);
+    updateLyricTranslations(data);
     const serialized = JSON.stringify(data);
     storage_default.set("currentLyricsData", serialized);
     EventManager_default.evoke("lyrics:data-updated", serialized);
@@ -33943,7 +34303,8 @@ ${JSON.stringify(lyricsOnly)}`
       init_Defaults();
       init_EventManager();
       init_ui();
-      init_translationUpdater();
+      init_LyricsRenderer();
+      init_trackId();
       windowRef8 = window;
       sharedRequest = windowRef8.__amaiLyricsRequest ?? (windowRef8.__amaiLyricsRequest = { token: 0, uri: "" });
     }
@@ -34166,361 +34527,12 @@ ${JSON.stringify(lyricsOnly)}`
     }
   });
 
-  // src/utils/CSS/Styles.ts
-  function applyStyles(element, styles) {
-    if (!element) {
-      console.warn("Element not found for applying styles");
-      return false;
-    }
-    try {
-      for (const key in styles) {
-        if (Object.prototype.hasOwnProperty.call(styles, key)) {
-          element.style.setProperty(key, String(styles[key]));
-        }
-      }
-      return true;
-    } catch (error) {
-      console.error("Error applying styles:", error);
-      return false;
-    }
-  }
-  function removeAllStyles(element) {
-    if (!element) {
-      console.warn("Element not found for removing styles");
-      return false;
-    }
-    try {
-      element.removeAttribute("style");
-      return true;
-    } catch (error) {
-      console.error("Error removing styles:", error);
-      return false;
-    }
-  }
-  var init_Styles = __esm({
-    "src/utils/CSS/Styles.ts"() {
-    }
-  });
-
-  // src/utils/Lyrics/Applyer/Credits/ApplyLyricsCredits.ts
-  function ApplyLyricsCredits(data) {
-    const LyricsContainer = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
-    );
-    if (!data?.SongWriters)
-      return;
-    const CreditsElement = document.createElement("div");
-    CreditsElement.classList.add("Credits");
-    const SongWriters = data.SongWriters.join(", ");
-    CreditsElement.textContent = `Credits: ${SongWriters}`;
-    LyricsContainer.appendChild(CreditsElement);
-  }
-  var init_ApplyLyricsCredits = __esm({
-    "src/utils/Lyrics/Applyer/Credits/ApplyLyricsCredits.ts"() {
-    }
-  });
-
-  // src/utils/Lyrics/isRtl.ts
-  function isRtl(text) {
-    if (!text || text.length === 0)
-      return false;
-    const rtlRegex = /[\u0590-\u05FF\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB1D-\uFB4F\uFB50-\uFDFF\uFE70-\uFEFF]/;
-    for (let i = 0; i < text.length; i++) {
-      const char = text[i];
-      if (/[\d\s,.;:?!()[\]{}"'\\/<>@#$%^&*_=+-]/.test(char)) {
-        continue;
-      }
-      return rtlRegex.test(char);
-    }
-    return false;
-  }
-  var isRtl_default;
-  var init_isRtl = __esm({
-    "src/utils/Lyrics/isRtl.ts"() {
-      isRtl_default = isRtl;
-    }
-  });
-
-  // src/utils/Lyrics/Applyer/Utils/decorateLine.ts
-  function processLinePhonetics(line, data) {
-    if (isJapaneseText(line.Text)) {
-      if (!data.Info && (!storage_default.get("disable_romaji_toggle_notification") || storage_default.get("disable_romaji_toggle_notification") === "false")) {
-        data.Info = "Toggle between Romaji or Furigana in settings. Disable this notification there as well.";
-      }
-      line.Text = applyPhoneticPatterns(line.Text, storage_default.get("enable_romaji") === "true");
-    } else {
-      line.Text = applyPhoneticPatterns(line.Text, false);
-    }
-  }
-  function decorateLineElement(lineElem, mainTextContainer, line, rawText) {
-    const hasDistinctTranslation = !!line.Translation && line.Translation.trim() !== "" && (!rawText || line.Translation.trim() !== rawText.trim());
-    if (hasDistinctTranslation) {
-      const translationElem = document.createElement("div");
-      translationElem.classList.add("translation");
-      translationElem.textContent = line.Translation;
-      mainTextContainer.appendChild(translationElem);
-    }
-    if (isRtl_default(line.Text) && !lineElem.classList.contains("rtl")) {
-      lineElem.classList.add("rtl");
-    }
-    if (ArabicPersianRegex.test(line.Text)) {
-      lineElem.setAttribute("font", "Vazirmatn");
-    }
-  }
-  var init_decorateLine = __esm({
-    "src/utils/Lyrics/Applyer/Utils/decorateLine.ts"() {
-      init_Addons();
-      init_isRtl();
-      init_storage();
-      init_phoneticPatterns();
-    }
-  });
-
-  // src/utils/Lyrics/Applyer/Static.ts
-  function ApplyStaticLyrics(data) {
-    if (!Defaults_default.LyricsContainerExists)
-      return;
-    const LyricsContainer = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
-    );
-    LyricsContainer.setAttribute("data-lyrics-type", "Static");
-    ClearLyricsContentArrays();
-    ClearScrollSimplebar();
-    TOP_ApplyLyricsSpacer(LyricsContainer);
-    const fragment = document.createDocumentFragment();
-    data.Lines.forEach((line, index) => {
-      const lineElem = document.createElement("div");
-      processLinePhonetics(line, data);
-      const mainTextContainer = document.createElement("span");
-      mainTextContainer.classList.add("main-lyrics-text");
-      if (line.Text?.includes("[DEF=font_size:small]")) {
-        lineElem.style.fontSize = "35px";
-        mainTextContainer.appendChild(
-          createRubyFragment(line.Text.replace("[DEF=font_size:small]", ""))
-        );
-      } else {
-        mainTextContainer.appendChild(createRubyFragment(line.Text));
-      }
-      lineElem.appendChild(mainTextContainer);
-      decorateLineElement(lineElem, mainTextContainer, line, data.Raw?.[index]);
-      lineElem.classList.add("line", "static");
-      LyricsObject.Types.Static.Lines.push({
-        HTMLElement: lineElem
-      });
-      fragment.appendChild(lineElem);
-    });
-    LyricsContainer.appendChild(fragment);
-    ApplyInfo(data);
-    ApplyLyricsCredits(data);
-    BOTTOM_ApplyLyricsSpacer(LyricsContainer);
-    if (ScrollSimplebar)
-      RecalculateScrollSimplebar();
-    else
-      MountScrollSimplebar();
-    const LyricsStylingContainer = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .LyricsContent .simplebar-content"
-    );
-    if (data.offline) {
-      LyricsStylingContainer.classList.add("offline");
-    }
-    removeAllStyles(LyricsStylingContainer);
-    if (data.classes) {
-      LyricsStylingContainer.className = data.classes;
-    }
-    if (data.styles) {
-      applyStyles(LyricsStylingContainer, data.styles);
-    }
-  }
-  var init_Static = __esm({
-    "src/utils/Lyrics/Applyer/Static.ts"() {
-      init_Addons();
-      init_Defaults();
-      init_Styles();
-      init_ScrollSimplebar();
-      init_lyrics();
-      init_ApplyLyricsCredits();
-      init_ApplyInfo();
-      init_sanitize();
-      init_decorateLine();
-    }
-  });
-
-  // src/utils/Lyrics/ConvertTime.ts
-  function ConvertTime(time) {
-    return time * 1e3;
-  }
-  var init_ConvertTime = __esm({
-    "src/utils/Lyrics/ConvertTime.ts"() {
-    }
-  });
-
-  // src/utils/Lyrics/Applyer/Utils/createMusicalLine.ts
-  function createDotGroup(startTime, endTime) {
-    const dotGroup = document.createElement("div");
-    dotGroup.classList.add("dotGroup");
-    dotGroup.setAttribute("aria-hidden", "true");
-    const totalTime = endTime - startTime;
-    const dotTime = totalTime / 3;
-    for (let i = 0; i < 3; i++) {
-      const dot = document.createElement("span");
-      dot.classList.add("word", "dot");
-      dot.textContent = DOT_GLYPH;
-      const target = LyricsObject.Types.Line.Lines;
-      const idx = target.length - 1;
-      if (idx >= 0 && target[idx]?.Syllables?.Lead) {
-        target[idx].Syllables.Lead.push({
-          HTMLElement: dot,
-          StartTime: startTime + dotTime * i,
-          EndTime: i === 2 ? endTime - 400 : startTime + dotTime * (i + 1),
-          TotalTime: dotTime,
-          Dot: true
-        });
-      }
-      dotGroup.appendChild(dot);
-    }
-    return dotGroup;
-  }
-  function createInstrumentalPill(startMs, endMs) {
-    const pill = document.createElement("div");
-    pill.classList.add("instrumental-pill");
-    pill.setAttribute("role", "img");
-    pill.setAttribute("aria-label", INSTRUMENTAL_LABEL);
-    pill.appendChild(createDotGroup(startMs, endMs));
-    return pill;
-  }
-  function registerMusicalLine(startMs, endMs) {
-    const line = document.createElement("div");
-    line.classList.add("line", "musical-line");
-    LyricsObject.Types.Line.Lines.push({
-      HTMLElement: line,
-      StartTime: startMs,
-      EndTime: endMs,
-      TotalTime: endMs - startMs,
-      DotLine: true
-    });
-    SetWordArrayInCurentLine_LINE_SYNCED();
-    return line;
-  }
-  function createMusicalLineMs(startMs, endMs, oppositeAligned) {
-    const line = registerMusicalLine(startMs, endMs);
-    if (oppositeAligned)
-      line.classList.add("OppositeAligned");
-    line.appendChild(createInstrumentalPill(startMs, endMs));
-    return line;
-  }
-  var DOT_GLYPH, INSTRUMENTAL_LABEL;
-  var init_createMusicalLine = __esm({
-    "src/utils/Lyrics/Applyer/Utils/createMusicalLine.ts"() {
-      init_ConvertTime();
-      init_lyrics();
-      DOT_GLYPH = "\u2022";
-      INSTRUMENTAL_LABEL = "Instrumental";
-    }
-  });
-
-  // src/utils/Lyrics/Applyer/Synced/Line.ts
-  function ApplyLineLyrics(data) {
-    if (!Defaults_default.LyricsContainerExists)
-      return;
-    const LyricsContainer = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
-    );
-    if (!LyricsContainer) {
-      console.error("Lyrics container not found");
-      return;
-    }
-    LyricsContainer.setAttribute("data-lyrics-type", "Line");
-    ClearLyricsContentArrays();
-    ClearScrollSimplebar();
-    TOP_ApplyLyricsSpacer(LyricsContainer);
-    const fragment = document.createDocumentFragment();
-    const convertStartTime = ConvertTime(data.StartTime);
-    if (data.StartTime >= lyricsBetweenShow) {
-      const musicalLine = createMusicalLineMs(
-        0,
-        convertStartTime,
-        !!data.Content[0]?.OppositeAligned
-      );
-      fragment.appendChild(musicalLine);
-    }
-    data.Content.forEach((line, index, arr) => {
-      const lineElem = document.createElement("div");
-      processLinePhonetics(line, data);
-      const mainTextContainer = document.createElement("span");
-      mainTextContainer.classList.add("main-lyrics-text");
-      mainTextContainer.classList.add("line");
-      mainTextContainer.appendChild(createRubyFragment(line.Text));
-      lineElem.appendChild(mainTextContainer);
-      decorateLineElement(lineElem, mainTextContainer, line, data.Raw?.[index]);
-      const startTime = ConvertTime(line.StartTime);
-      const endTime = ConvertTime(line.EndTime);
-      LyricsObject.Types.Line.Lines.push({
-        HTMLElement: mainTextContainer,
-        StartTime: startTime,
-        EndTime: endTime,
-        TotalTime: endTime - startTime
-      });
-      if (line.OppositeAligned) {
-        lineElem.classList.add("OppositeAligned");
-      }
-      fragment.appendChild(lineElem);
-      const nextLine = arr[index + 1];
-      const hasMusicalBreak = nextLine && nextLine.StartTime - line.EndTime >= lyricsBetweenShow;
-      if (hasMusicalBreak) {
-        const nextStartTime = ConvertTime(nextLine.StartTime);
-        const curEndTime = endTime;
-        const musicalLine = createMusicalLineMs(
-          curEndTime,
-          nextStartTime,
-          !!nextLine.OppositeAligned
-        );
-        fragment.appendChild(musicalLine);
-      }
-    });
-    LyricsContainer.appendChild(fragment);
-    ApplyInfo(data);
-    ApplyLyricsCredits(data);
-    BOTTOM_ApplyLyricsSpacer(LyricsContainer);
-    if (ScrollSimplebar) {
-      RecalculateScrollSimplebar();
-    } else {
-      MountScrollSimplebar();
-    }
-    const LyricsStylingContainer = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .LyricsContent .simplebar-content"
-    );
-    if (LyricsStylingContainer) {
-      removeAllStyles(LyricsStylingContainer);
-      if (data.classes) {
-        LyricsStylingContainer.className = data.classes;
-      }
-      if (data.styles) {
-        applyStyles(LyricsStylingContainer, data.styles);
-      }
-    }
-  }
-  var init_Line = __esm({
-    "src/utils/Lyrics/Applyer/Synced/Line.ts"() {
-      init_Addons();
-      init_Defaults();
-      init_Styles();
-      init_ScrollSimplebar();
-      init_ConvertTime();
-      init_lyrics();
-      init_ApplyLyricsCredits();
-      init_ApplyInfo();
-      init_createMusicalLine();
-      init_sanitize();
-      init_decorateLine();
-    }
-  });
-
   // src/utils/Lyrics/Global/Applyer.ts
   function ApplyLyrics(lyrics) {
-    if (!document.querySelector("#SpicyLyricsPage"))
+    if (!document.querySelector("#AmaiLyricsPage"))
       return false;
     const lyricsContent = document.querySelector(
-      "#SpicyLyricsPage .LyricsContainer .LyricsContent"
+      "#AmaiLyricsPage .LyricsContainer .LyricsContent"
     );
     if (lyricsContent) {
       const translationFontSize = storage_default.get("translation_font_size") || Defaults_default.translationFontSize;
@@ -34536,30 +34548,24 @@ ${JSON.stringify(lyricsOnly)}`
     const typedLyrics = lyrics;
     if (!typedLyrics?.id)
       return false;
-    const currentTrackId = Spicetify.Player.data?.item?.uri?.split(":")[2];
+    const currentTrackId = liveTrackId();
     if (currentTrackId !== typedLyrics?.id)
       return false;
-    const lyricsHandlers = {
-      Line: ApplyLineLyrics,
-      Static: ApplyStaticLyrics
-    };
-    const applyHandler = lyricsHandlers[typedLyrics.Type];
-    if (applyHandler) {
-      applyHandler(typedLyrics);
-      showRefreshButton();
-      addLinesEvListener();
-      return true;
-    }
-    return false;
+    if (typedLyrics.Type !== "Line" && typedLyrics.Type !== "Static")
+      return false;
+    renderLyrics(typedLyrics);
+    showRefreshButton();
+    addLinesEvListener();
+    return true;
   }
   var init_Applyer = __esm({
     "src/utils/Lyrics/Global/Applyer.ts"() {
       init_LyricsAnimator();
-      init_Static();
-      init_Line();
+      init_LyricsRenderer();
       init_fetchLyrics();
       init_pageButtons();
       init_lyrics();
+      init_trackId();
       init_storage();
       init_Defaults();
     }
@@ -34568,10 +34574,12 @@ ${JSON.stringify(lyricsOnly)}`
   // src/utils/Lyrics/fetchLyrics.ts
   var fetchLyrics_exports = {};
   __export(fetchLyrics_exports, {
+    clearLyricsUiTimeouts: () => clearLyricsUiTimeouts,
     default: () => fetchLyrics,
     isNoLyricsResult: () => isNoLyricsResult,
     loadAndApplyLyrics: () => loadAndApplyLyrics,
-    lyricsCache: () => lyricsCache
+    lyricsCache: () => lyricsCache,
+    refreshLyrics: () => refreshLyrics
   });
   function isNoLyricsResult(v) {
     return typeof v === "object" && v !== null && v.status === "NO_LYRICS";
@@ -34590,8 +34598,9 @@ ${JSON.stringify(lyricsOnly)}`
     const token = beginLyricsRequest(uri);
     resetLyricsUI();
     ClearLyricsPageContainer();
-    document.querySelector("#SpicyLyricsPage .ContentBox")?.classList.remove("LyricsHidden");
-    const trackId = uri.split(":")[2] ?? "";
+    EnsureProcessingIndicatorHidden();
+    document.querySelector("#AmaiLyricsPage .ContentBox")?.classList.remove("LyricsHidden");
+    const trackId = parseTrackId(uri);
     if (!trackId) {
       return await noLyricsMessage();
     }
@@ -34631,6 +34640,14 @@ ${JSON.stringify(lyricsOnly)}`
     }
     return last;
   }
+  async function refreshLyrics(uri) {
+    const trackId = parseTrackId(uri);
+    if (trackId) {
+      await removeLyricsFromCache(trackId);
+    }
+    storage_default.set("currentLyricsData", null);
+    return loadAndApplyLyrics(uri, { flush: true });
+  }
   var inFlight;
   var init_fetchLyrics = __esm({
     "src/utils/Lyrics/fetchLyrics.ts"() {
@@ -34640,6 +34657,8 @@ ${JSON.stringify(lyricsOnly)}`
       init_pageButtons();
       init_Applyer();
       init_publish();
+      init_trackId();
+      init_storage();
       inFlight = /* @__PURE__ */ new Map();
     }
   });
@@ -34797,7 +34816,7 @@ ${JSON.stringify(lyricsOnly)}`
         const value = fontSizeValues[index >= 0 ? index : 2];
         storage_default.set("translation_font_size", value);
         const container = document.querySelector(
-          "#SpicyLyricsPage .LyricsContainer .LyricsContent"
+          "#AmaiLyricsPage .LyricsContainer .LyricsContent"
         );
         if (container) {
           container.style.setProperty("--TranslationFontSize", value);
@@ -34819,7 +34838,7 @@ ${JSON.stringify(lyricsOnly)}`
         const value = lyricsSizeValues[index >= 0 ? index : 2];
         storage_default.set("default_lyrics_size", value);
         const container = document.querySelector(
-          "#SpicyLyricsPage .LyricsContainer .LyricsContent"
+          "#AmaiLyricsPage .LyricsContainer .LyricsContent"
         );
         if (container) {
           if (value) {
@@ -35416,7 +35435,7 @@ ${JSON.stringify(lyricsOnly)}`
   // src/managers/AppInitializer.ts
   init_settings();
   init_Platform();
-  init_cache();
+  init_fetchLyrics();
   init_lifecycle();
   var AppInitializer = class {
     static async initializeCore() {
@@ -35777,7 +35796,6 @@ ${JSON.stringify(lyricsOnly)}`
   var sleep_default = sleep2;
 
   // src/managers/SongChangeManager.ts
-  init_ui();
   var SongChangeManager = class {
     constructor(buttonManager, surfaces) {
       this.buttonManager = buttonManager;
@@ -35797,7 +35815,6 @@ ${JSON.stringify(lyricsOnly)}`
       }
       if (!currentUri)
         return;
-      EnsureProcessingIndicatorHidden();
       const { loadAndApplyLyrics: loadAndApplyLyrics2 } = await Promise.resolve().then(() => (init_fetchLyrics(), fetchLyrics_exports));
       loadAndApplyLyrics2(currentUri).catch(
         (e) => console.error("[Amai Lyrics] SongChange fetch failed:", e)
@@ -35806,12 +35823,12 @@ ${JSON.stringify(lyricsOnly)}`
       const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
       this.surfaces.applyArtwork(coverUrl);
       if (Spicetify.Player.data.item?.type === "track") {
-        if (document.querySelector("#SpicyLyricsPage .ContentBox .NowBar")) {
+        if (document.querySelector("#AmaiLyricsPage .ContentBox .NowBar")) {
           const { UpdateNowBar: UpdateNowBar2 } = await Promise.resolve().then(() => (init_NowBar2(), NowBar_exports));
           UpdateNowBar2();
         }
       }
-      if (document.querySelector("#SpicyLyricsPage .LyricsContainer")) {
+      if (document.querySelector("#AmaiLyricsPage .LyricsContainer")) {
         const { default: PageView2 } = await Promise.resolve().then(() => (init_PageView(), PageView_exports));
         PageView2.UpdatePageContent();
       }
@@ -35972,10 +35989,10 @@ ${JSON.stringify(lyricsOnly)}`
         appBackgroundSingleton.apply(coverUrl);
       },
       applyLyricsPage: () => {
-        if (!document.querySelector("#SpicyLyricsPage .LyricsContainer"))
+        if (!document.querySelector("#AmaiLyricsPage .LyricsContainer"))
           return;
         void Promise.resolve().then(() => (init_dynamicBackground(), dynamicBackground_exports)).then(({ default: ApplyDynamicBackground2 }) => {
-          const el = document.querySelector("#SpicyLyricsPage .ContentBox");
+          const el = document.querySelector("#AmaiLyricsPage .ContentBox");
           if (el)
             ApplyDynamicBackground2(el);
         });
@@ -36406,7 +36423,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55d1dd/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22052-V49qWVZX17kS/1a0a5469573d/DotLoader.css */
 #DotLoader {
   --dot-color: var(--amai-accent-1);
   --dot-color-dim: color-mix(in srgb, var(--amai-accent-1) 22%, transparent);
@@ -36441,8 +36458,8 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55d24e/ProcessingIndicator.css */
-#SpicyLyricsPage .LyricsContainer .processingIndicator {
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22052-V49qWVZX17kS/1a0a5469578e/ProcessingIndicator.css */
+#AmaiLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
   left: 0;
@@ -36457,11 +36474,11 @@ ${JSON.stringify(lyricsOnly)}`
   z-index: 5;
   pointer-events: none;
 }
-#SpicyLyricsPage .LyricsContainer .processingIndicator.active {
+#AmaiLyricsPage .LyricsContainer .processingIndicator.active {
   opacity: 1;
   transform: translateY(0);
 }
-#SpicyLyricsPage .LyricsContainer .processingIndicator .progress {
+#AmaiLyricsPage .LyricsContainer .processingIndicator .progress {
   position: absolute;
   top: 0;
   left: 0;
@@ -36472,7 +36489,7 @@ ${JSON.stringify(lyricsOnly)}`
   transform: translateX(-100%);
   animation: processingSlide 2s infinite ease-in-out;
 }
-#SpicyLyricsPage .LyricsContainer .processingIndicator .text {
+#AmaiLyricsPage .LyricsContainer .processingIndicator .text {
   position: absolute;
   bottom: 25px;
   right: 15px;
@@ -36485,7 +36502,7 @@ ${JSON.stringify(lyricsOnly)}`
   pointer-events: none;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
-#SpicyLyricsPage .LyricsContainer .processingIndicator.active .text {
+#AmaiLyricsPage .LyricsContainer .processingIndicator.active .text {
   opacity: 1;
   transform: translateY(0);
 }
@@ -36507,7 +36524,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  #SpicyLyricsPage .LyricsContainer .processingIndicator .progress {
+  #AmaiLyricsPage .LyricsContainer .processingIndicator .progress {
     animation: processingSlideReduced 2s infinite linear;
   }
   @keyframes processingSlideReduced {
@@ -36523,7 +36540,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55c850/tokens.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22052-V49qWVZX17kS/1a0a54694b80/tokens.css */
 :root {
   --amai-accent-1: #1ed760;
   --amai-accent-2: #1db954;
@@ -36576,14 +36593,14 @@ ${JSON.stringify(lyricsOnly)}`
   --amai-scrollbar-thumb: rgba(255, 255, 255, 0.6);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55cb61/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22052-V49qWVZX17kS/1a0a54694e41/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
 .main-nowPlayingView-contextItemInfo::before {
   display: none;
 }
-#SpicyLyricsPage {
+#AmaiLyricsPage {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -36600,7 +36617,7 @@ ${JSON.stringify(lyricsOnly)}`
   -moz-user-select: none;
   user-select: none;
 }
-#SpicyLyricsPage {
+#AmaiLyricsPage {
   font-family: var(--amai-font-display);
 }
 [font=Vazirmatn] {
@@ -36609,13 +36626,13 @@ ${JSON.stringify(lyricsOnly)}`
     "Noto Sans JP",
     sans-serif;
 }
-body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child,
-body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer,
-body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child,
-body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
+body:has(#AmaiLyricsPage) .main-view-container__scroll-node-child,
+body:has(#AmaiLyricsPage) .main-view-container__scroll-node-child-spacer,
+body:has(#AmaiLyricsPage) .main-view-container__scroll-node-child,
+body:has(#AmaiLyricsPage) .main-view-container__scroll-node-child-spacer {
   display: none;
 }
-#SpicyLyricsPage .ViewControls {
+#AmaiLyricsPage .ViewControls {
   container-type: size;
   display: flex;
   gap: 8px;
@@ -36630,14 +36647,14 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
   z-index: 101;
   --ViewControlSize: 100cqh;
 }
-#SpicyLyricsPage:not(.Fullscreen) .ViewControls {
+#AmaiLyricsPage:not(.Fullscreen) .ViewControls {
   position: absolute;
   width: 100cqw;
   bottom: -8cqh;
   --PageHoverOffset: -2.2cqh;
   --ControlsHoverOffset: 1.5cqh;
 }
-#SpicyLyricsPage:not(.Fullscreen) .AmaiPageButtonContainer .ViewControls {
+#AmaiLyricsPage:not(.Fullscreen) .AmaiPageButtonContainer .ViewControls {
   position: absolute;
   bottom: 1.5cqh;
   left: 50%;
@@ -36652,16 +36669,16 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
   align-items: center;
   justify-content: center;
 }
-#SpicyLyricsPage:not(.Fullscreen):hover .AmaiPageButtonContainer .ViewControls,
-#SpicyLyricsPage:not(.Fullscreen) .AmaiPageButtonContainer .ViewControls:hover,
-#SpicyLyricsPage:not(.Fullscreen):focus-within .AmaiPageButtonContainer .ViewControls,
-#SpicyLyricsPage:not(.Fullscreen) .AmaiPageButtonContainer .ViewControls:focus-within {
+#AmaiLyricsPage:not(.Fullscreen):hover .AmaiPageButtonContainer .ViewControls,
+#AmaiLyricsPage:not(.Fullscreen) .AmaiPageButtonContainer .ViewControls:hover,
+#AmaiLyricsPage:not(.Fullscreen):focus-within .AmaiPageButtonContainer .ViewControls,
+#AmaiLyricsPage:not(.Fullscreen) .AmaiPageButtonContainer .ViewControls:focus-within {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
   transform: translateX(-50%) translateY(0);
 }
-#SpicyLyricsPage .ViewControls .ViewControl {
+#AmaiLyricsPage .ViewControls .ViewControl {
   --ViewControlHeight: var(--ViewControlSize, 100cqh);
   aspect-ratio: 1;
   background: var(--amai-fill-control);
@@ -36682,33 +36699,33 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
     transform var(--amai-dur-fast) var(--amai-ease-out-expo),
     box-shadow var(--amai-dur-base) var(--amai-ease-standard);
 }
-#SpicyLyricsPage .ViewControls .ViewControl:hover {
+#AmaiLyricsPage .ViewControls .ViewControl:hover {
   background: color-mix(in srgb, var(--amai-accent-1) 18%, var(--amai-fill-control-hover));
   transform: translateY(-1px);
   box-shadow: var(--amai-shadow-panel);
 }
-#SpicyLyricsPage .ViewControls .ViewControl:active {
+#AmaiLyricsPage .ViewControls .ViewControl:active {
   transform: translateY(0) scale(0.92);
 }
-#SpicyLyricsPage .ViewControls .ViewControl:focus-visible {
+#AmaiLyricsPage .ViewControls .ViewControl:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--amai-accent-1) 70%, white);
   outline-offset: 2px;
 }
-#SpicyLyricsPage .ViewControls .ViewControl svg {
+#AmaiLyricsPage .ViewControls .ViewControl svg {
   fill: currentColor;
 }
-#SpicyLyricsPage:not(.Fullscreen) .ViewControls:hover {
+#AmaiLyricsPage:not(.Fullscreen) .ViewControls:hover {
   opacity: 1 !important;
   bottom: var(--ControlsHoverOffset) !important;
 }
-#SpicyLyricsPage:not(.Fullscreen):hover .ViewControls {
+#AmaiLyricsPage:not(.Fullscreen):hover .ViewControls {
   opacity: 0.5;
   bottom: var(--PageHoverOffset);
 }
-#SpicyLyricsPage:not(.Fullscreen):hover .AmaiPageButtonContainer .ViewControls {
+#AmaiLyricsPage:not(.Fullscreen):hover .AmaiPageButtonContainer .ViewControls {
   bottom: 1.5cqh;
 }
-#SpicyLyricsPage .ViewControls button {
+#AmaiLyricsPage .ViewControls button {
   cursor: pointer;
 }
 .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) {
@@ -36749,7 +36766,7 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
 .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) button[type=button] .Button-sm-buttonSecondary-useBrowserDefaultFocusStyle {
   border: 1px solid hsla(0, 0%, 100%, 0.5);
 }
-#SpicyLyricsPageSvg {
+#AmaiLyricsPageSvg {
   fill: currentColor;
   transform: translateY(2px);
   background: transparent;
@@ -36759,63 +36776,63 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
     fill var(--amai-dur-base, 0.2s) var(--amai-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
   will-change: transform, filter;
 }
-button:has(#SpicyLyricsPageSvg),
-button:has(#SpicyLyricsPageSvg):hover,
-button:has(#SpicyLyricsPageSvg):active,
-button:has(#SpicyLyricsPageSvg):focus,
-button:has(#SpicyLyricsPageSvg):focus-visible {
+button:has(#AmaiLyricsPageSvg),
+button:has(#AmaiLyricsPageSvg):hover,
+button:has(#AmaiLyricsPageSvg):active,
+button:has(#AmaiLyricsPageSvg):focus,
+button:has(#AmaiLyricsPageSvg):focus-visible {
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
   border-color: transparent !important;
   box-shadow: none !important;
 }
-button:has(#SpicyLyricsPageSvg) {
+button:has(#AmaiLyricsPageSvg) {
   color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
   transition: color var(--amai-dur-base, 0.2s) var(--amai-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
 }
-button:has(#SpicyLyricsPageSvg):hover {
+button:has(#AmaiLyricsPageSvg):hover {
   color: #fff;
 }
-button:has(#SpicyLyricsPageSvg):hover #SpicyLyricsPageSvg {
+button:has(#AmaiLyricsPageSvg):hover #AmaiLyricsPageSvg {
   transform: translateY(2px) scale(1.12);
   filter: drop-shadow(0 0 8px rgba(var(--amai-accent-rgb, 30, 215, 96), 0.55));
 }
-button:has(#SpicyLyricsPageSvg):active #SpicyLyricsPageSvg {
+button:has(#AmaiLyricsPageSvg):active #AmaiLyricsPageSvg {
   transform: translateY(2px) scale(0.94);
   filter: none;
 }
-button:has(#SpicyLyricsPageSvg):focus-visible {
+button:has(#AmaiLyricsPageSvg):focus-visible {
   outline: 2px solid color-mix(in srgb, var(--amai-accent-1, #1ed760) 70%, white);
   outline-offset: 2px;
   border-radius: 6px;
 }
 @media (prefers-reduced-motion: reduce) {
-  #SpicyLyricsPageSvg,
-  button:has(#SpicyLyricsPageSvg) {
+  #AmaiLyricsPageSvg,
+  button:has(#AmaiLyricsPageSvg) {
     transition: none;
   }
-  button:has(#SpicyLyricsPageSvg):hover #SpicyLyricsPageSvg,
-  button:has(#SpicyLyricsPageSvg):active #SpicyLyricsPageSvg {
+  button:has(#AmaiLyricsPageSvg):hover #AmaiLyricsPageSvg,
+  button:has(#AmaiLyricsPageSvg):active #AmaiLyricsPageSvg {
     transform: translateY(2px);
     filter: none;
   }
 }
-button:has(#SpicyLyricsPageSvg):after {
+button:has(#AmaiLyricsPageSvg):after {
   transform: translateX(-370%) translateY(-40%) !important;
 }
-.Root__main-view:has(#SpicyLyricsPage),
-.Root__main-view:has(#SpicyLyricsPage) .KL8t9WB65UfUEPuTFAhO,
-.Root__main-view:has(#SpicyLyricsPage) .main-content-view,
-.Root__main-view:has(#SpicyLyricsPage) .main-view-container,
-.Root__main-view:has(#SpicyLyricsPage) .main-view-container__scroll-node,
-.Root__main-view:has(#SpicyLyricsPage) .main-view-container .div[data-overlayscrollbars-viewport] {
+.Root__main-view:has(#AmaiLyricsPage),
+.Root__main-view:has(#AmaiLyricsPage) .KL8t9WB65UfUEPuTFAhO,
+.Root__main-view:has(#AmaiLyricsPage) .main-content-view,
+.Root__main-view:has(#AmaiLyricsPage) .main-view-container,
+.Root__main-view:has(#AmaiLyricsPage) .main-view-container__scroll-node,
+.Root__main-view:has(#AmaiLyricsPage) .main-view-container .div[data-overlayscrollbars-viewport] {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55cc52/Simplebar.css */
-#SpicyLyricsPage [data-simplebar] {
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22052-V49qWVZX17kS/1a0a54694f02/Simplebar.css */
+#AmaiLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
   flex-wrap: wrap;
@@ -36823,14 +36840,14 @@ button:has(#SpicyLyricsPageSvg):after {
   align-content: flex-start;
   align-items: flex-start;
 }
-#SpicyLyricsPage .simplebar-wrapper {
+#AmaiLyricsPage .simplebar-wrapper {
   overflow: hidden;
   width: inherit;
   height: inherit;
   max-width: inherit;
   max-height: inherit;
 }
-#SpicyLyricsPage .simplebar-mask {
+#AmaiLyricsPage .simplebar-mask {
   direction: inherit;
   position: absolute;
   overflow: hidden;
@@ -36844,7 +36861,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: auto !important;
   z-index: 0;
 }
-#SpicyLyricsPage .simplebar-offset {
+#AmaiLyricsPage .simplebar-offset {
   direction: inherit !important;
   box-sizing: inherit !important;
   resize: none !important;
@@ -36857,7 +36874,7 @@ button:has(#SpicyLyricsPageSvg):after {
   margin: 0;
   -webkit-overflow-scrolling: touch;
 }
-#SpicyLyricsPage .simplebar-content-wrapper {
+#AmaiLyricsPage .simplebar-content-wrapper {
   direction: inherit;
   box-sizing: border-box !important;
   position: relative;
@@ -36870,24 +36887,24 @@ button:has(#SpicyLyricsPageSvg):after {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
-#SpicyLyricsPage .simplebar-content-wrapper::-webkit-scrollbar,
-#SpicyLyricsPage .simplebar-hide-scrollbar::-webkit-scrollbar {
+#AmaiLyricsPage .simplebar-content-wrapper::-webkit-scrollbar,
+#AmaiLyricsPage .simplebar-hide-scrollbar::-webkit-scrollbar {
   display: none;
   width: 0;
   height: 0;
 }
-#SpicyLyricsPage .simplebar-content:before,
-#SpicyLyricsPage .simplebar-content:after {
+#AmaiLyricsPage .simplebar-content:before,
+#AmaiLyricsPage .simplebar-content:after {
   content: " ";
   display: table;
 }
-#SpicyLyricsPage .simplebar-placeholder {
+#AmaiLyricsPage .simplebar-placeholder {
   max-height: 100%;
   max-width: 100%;
   width: 100%;
   pointer-events: none;
 }
-#SpicyLyricsPage .simplebar-height-auto-observer-wrapper {
+#AmaiLyricsPage .simplebar-height-auto-observer-wrapper {
   box-sizing: inherit !important;
   height: 100%;
   width: 100%;
@@ -36904,7 +36921,7 @@ button:has(#SpicyLyricsPageSvg):after {
   flex-shrink: 0;
   flex-basis: 0;
 }
-#SpicyLyricsPage .simplebar-height-auto-observer {
+#AmaiLyricsPage .simplebar-height-auto-observer {
   box-sizing: inherit;
   display: block;
   opacity: 0;
@@ -36919,7 +36936,7 @@ button:has(#SpicyLyricsPageSvg):after {
   pointer-events: none;
   z-index: -1;
 }
-#SpicyLyricsPage .simplebar-track {
+#AmaiLyricsPage .simplebar-track {
   z-index: 1;
   position: absolute;
   right: 0;
@@ -36927,24 +36944,24 @@ button:has(#SpicyLyricsPageSvg):after {
   pointer-events: none;
   overflow: hidden;
 }
-#SpicyLyricsPage [data-simplebar].simplebar-dragging {
+#AmaiLyricsPage [data-simplebar].simplebar-dragging {
   pointer-events: none;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   -moz-user-select: none;
   user-select: none;
 }
-#SpicyLyricsPage [data-simplebar].simplebar-dragging .simplebar-content {
+#AmaiLyricsPage [data-simplebar].simplebar-dragging .simplebar-content {
   pointer-events: none;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   -moz-user-select: none;
   user-select: none;
 }
-#SpicyLyricsPage [data-simplebar].simplebar-dragging .simplebar-track {
+#AmaiLyricsPage [data-simplebar].simplebar-dragging .simplebar-track {
   pointer-events: all;
 }
-#SpicyLyricsPage .simplebar-scrollbar {
+#AmaiLyricsPage .simplebar-scrollbar {
   position: absolute;
   left: 0;
   right: 0;
@@ -36960,26 +36977,26 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
   transition: opacity 0.2s 0.5s linear;
 }
-#SpicyLyricsPage .simplebar-scrollbar.simplebar-visible:before {
+#AmaiLyricsPage .simplebar-scrollbar.simplebar-visible:before {
   opacity: 0.5 !important;
   transition-delay: 0s !important;
   transition-duration: 0s !important;
 }
-#SpicyLyricsPage .simplebar-track.simplebar-vertical {
+#AmaiLyricsPage .simplebar-track.simplebar-vertical {
   top: 0;
   width: 11px;
 }
-#SpicyLyricsPage .simplebar-scrollbar:before {
+#AmaiLyricsPage .simplebar-scrollbar:before {
   top: 2px;
   bottom: 2px;
   left: 2px;
   right: 2px;
 }
-#SpicyLyricsPage .simplebar-track.simplebar-horizontal {
+#AmaiLyricsPage .simplebar-track.simplebar-horizontal {
   left: 0;
   height: 11px;
 }
-#SpicyLyricsPage .simplebar-track.simplebar-horizontal .simplebar-scrollbar {
+#AmaiLyricsPage .simplebar-track.simplebar-horizontal .simplebar-scrollbar {
   right: auto;
   left: 0;
   top: 0;
@@ -36988,11 +37005,11 @@ button:has(#SpicyLyricsPageSvg):after {
   min-width: 10px;
   width: auto;
 }
-#SpicyLyricsPage [data-simplebar-direction=rtl] .simplebar-track.simplebar-vertical {
+#AmaiLyricsPage [data-simplebar-direction=rtl] .simplebar-track.simplebar-vertical {
   right: auto;
   left: 0;
 }
-#SpicyLyricsPage .simplebar-dummy-scrollbar-size {
+#AmaiLyricsPage .simplebar-dummy-scrollbar-size {
   direction: rtl;
   position: fixed;
   opacity: 0;
@@ -37003,26 +37020,26 @@ button:has(#SpicyLyricsPageSvg):after {
   overflow-x: scroll;
   -ms-overflow-style: scrollbar !important;
 }
-#SpicyLyricsPage .simplebar-dummy-scrollbar-size > div {
+#AmaiLyricsPage .simplebar-dummy-scrollbar-size > div {
   width: 200%;
   height: 200%;
   margin: 10px 0;
 }
-#SpicyLyricsPage .ScrollbarScrollable .simplebar-track {
+#AmaiLyricsPage .ScrollbarScrollable .simplebar-track {
   transition: opacity 0.2s linear;
   opacity: 1;
 }
-#SpicyLyricsPage .ScrollbarScrollable .simplebar-track.simplebar-vertical {
+#AmaiLyricsPage .ScrollbarScrollable .simplebar-track.simplebar-vertical {
   right: 5px;
 }
-#SpicyLyricsPage .ScrollbarScrollable .simplebar-track.simplebar-horizontal {
+#AmaiLyricsPage .ScrollbarScrollable .simplebar-track.simplebar-horizontal {
   bottom: 5px;
 }
-#SpicyLyricsPage .ScrollbarScrollable.hide-scrollbar .simplebar-track {
+#AmaiLyricsPage .ScrollbarScrollable.hide-scrollbar .simplebar-track {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55ccd3/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22052-V49qWVZX17kS/1a0a54694f63/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -37053,7 +37070,7 @@ button:has(#SpicyLyricsPageSvg):after {
     transform: rotate(360deg);
   }
 }
-#SpicyLyricsPage .ContentBox {
+#AmaiLyricsPage .ContentBox {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -37063,7 +37080,7 @@ button:has(#SpicyLyricsPageSvg):after {
   --default-font-size: clamp(0.5rem, calc(0.8cqw * 3), 3rem);
   --songname-font-size: clamp(0.5rem, calc(0.7cqw * 3), 3rem);
 }
-#SpicyLyricsPage .ContentBox .NowBar {
+#AmaiLyricsPage .ContentBox .NowBar {
   --title-height: 5cqh;
   display: flex;
   position: absolute;
@@ -37076,15 +37093,15 @@ button:has(#SpicyLyricsPageSvg):after {
   transition: opacity 0.2s ease-in-out;
   opacity: 0;
 }
-#SpicyLyricsPage .ContentBox .NowBar.RightSide {
+#AmaiLyricsPage .ContentBox .NowBar.RightSide {
   margin: 0 3.5cqw 0 3.5cqw;
 }
-#SpicyLyricsPage .ContentBox .NowBar.Active {
+#AmaiLyricsPage .ContentBox .NowBar.Active {
   position: relative;
   opacity: 1;
   z-index: 1;
 }
-#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox {
+#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -37092,7 +37109,7 @@ button:has(#SpicyLyricsPageSvg):after {
   width: 20cqw;
   height: 20cqw;
 }
-#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox::before {
+#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox::before {
   content: "";
   position: absolute;
   width: 100%;
@@ -37111,7 +37128,7 @@ button:has(#SpicyLyricsPageSvg):after {
   z-index: 1;
   box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), var(--amai-shadow-vinyl);
 }
-#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox::after {
+#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox::after {
   content: "";
   position: absolute;
   width: 5%;
@@ -37121,11 +37138,11 @@ button:has(#SpicyLyricsPageSvg):after {
   z-index: 4;
   box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.9), 0 2px 6px rgba(0, 0, 0, 0.5);
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox {
   width: 16cqw;
   height: 16cqw;
 }
-#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImagePlaceholder {
+#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImagePlaceholder {
   position: absolute;
   border-radius: 50%;
   width: 40%;
@@ -37134,23 +37151,23 @@ button:has(#SpicyLyricsPageSvg):after {
   z-index: 2;
   transition: opacity 0.3s ease-in-out;
 }
-#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage.loaded + .MediaImagePlaceholder,
-#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox:has(.MediaImage.loaded) .MediaImagePlaceholder {
+#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage.loaded + .MediaImagePlaceholder,
+#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox:has(.MediaImage.loaded) .MediaImagePlaceholder {
   opacity: 0;
 }
-#SpicyLyricsPage .ContentBox .NowBar .AmaiPageButtonContainer {
+#AmaiLyricsPage .ContentBox .NowBar .AmaiPageButtonContainer {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-#SpicyLyricsPage .ContentBox .NowBar .AmaiPageButtonContainer .AmaiPageButton {
+#AmaiLyricsPage .ContentBox .NowBar .AmaiPageButtonContainer .AmaiPageButton {
   width: clamp(160px, 18cqh, 220px);
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView {
   position: relative;
   height: auto;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .AmaiPageButtonContainer {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .AmaiPageButtonContainer {
   position: relative;
   margin: 18cqh auto 0;
   left: auto;
@@ -37160,7 +37177,7 @@ button:has(#SpicyLyricsPageSvg):after {
   align-items: center;
   z-index: 100;
 }
-#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage {
+#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage {
   --ArtworkBrightness: 1;
   --ArtworkBlur: 0px;
   border-radius: 50%;
@@ -37178,16 +37195,16 @@ button:has(#SpicyLyricsPageSvg):after {
   animation-play-state: paused;
   filter: brightness(var(--ArtworkBrightness));
 }
-#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage.Playing {
+#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage.Playing {
   animation-play-state: running;
 }
-#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage.loaded {
+#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage.loaded {
   filter: brightness(var(--ArtworkBrightness)) blur(var(--ArtworkBlur));
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox .MediaContent {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox .MediaContent {
   cursor: grab;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox .MediaContent .AlbumData {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox .MediaContent .AlbumData {
   font-size: calc(var(--default-font-size) * 0.75);
   font-weight: 600;
   display: flex;
@@ -37201,7 +37218,7 @@ button:has(#SpicyLyricsPageSvg):after {
   width: 20cqw;
   box-sizing: border-box;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox .MediaContent .AlbumData span {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox .MediaContent .AlbumData span {
   width: 100%;
   white-space: nowrap;
   overflow: hidden;
@@ -37209,20 +37226,20 @@ button:has(#SpicyLyricsPageSvg):after {
   display: inline-block;
   text-align: center;
 }
-#SpicyLyricsPage .ContentBox .NowBar .Header .Metadata {
+#AmaiLyricsPage .ContentBox .NowBar .Header .Metadata {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
   margin: 2cqh;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .Metadata .SongName {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .Header .Metadata .SongName {
   display: none;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .Metadata .Artists {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .Header .Metadata .Artists {
   display: none;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox .MediaContent .ArtistData {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox .MediaContent .ArtistData {
   font-size: calc(var(--default-font-size) * 0.65);
   font-weight: 500;
   display: flex;
@@ -37236,7 +37253,7 @@ button:has(#SpicyLyricsPageSvg):after {
   width: 20cqw;
   box-sizing: border-box;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox .MediaContent .ArtistData span {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox .MediaContent .ArtistData span {
   width: 100%;
   white-space: nowrap;
   overflow: hidden;
@@ -37244,10 +37261,10 @@ button:has(#SpicyLyricsPageSvg):after {
   display: inline-block;
   text-align: center;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .Metadata {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .Header .Metadata {
   margin-top: 18cqh;
 }
-#SpicyLyricsPage .ContentBox .NowBar .Header .Metadata .SongName {
+#AmaiLyricsPage .ContentBox .NowBar .Header .Metadata .SongName {
   font-weight: 700;
   font-size: var(--songname-font-size);
   color: white;
@@ -37255,7 +37272,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: .95;
   letter-spacing: -0.01em;
 }
-#SpicyLyricsPage .ContentBox .NowBar .Header .Metadata .SongName span {
+#AmaiLyricsPage .ContentBox .NowBar .Header .Metadata .SongName span {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -37264,7 +37281,7 @@ button:has(#SpicyLyricsPageSvg):after {
   text-align: center;
   line-height: var(--title-height);
 }
-#SpicyLyricsPage .ContentBox .NowBar .Header .Metadata .Artists {
+#AmaiLyricsPage .ContentBox .NowBar .Header .Metadata .Artists {
   font-size: calc(var(--default-font-size)* 0.65);
   line-height: calc(var(--title-height) * 0.65);
   font-weight: 400;
@@ -37272,7 +37289,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: .7;
   animation: none;
 }
-#SpicyLyricsPage .ContentBox .NowBar .Header .Metadata .Artists span {
+#AmaiLyricsPage .ContentBox .NowBar .Header .Metadata .Artists span {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -37282,67 +37299,67 @@ button:has(#SpicyLyricsPageSvg):after {
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
-#SpicyLyricsPage .ContentBox .NowBar:is(.Active.LeftSide) + .LyricsContainer .loaderContainer {
+#AmaiLyricsPage .ContentBox .NowBar:is(.Active.LeftSide) + .LyricsContainer .loaderContainer {
   background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.2) 20%);
 }
-#SpicyLyricsPage .ContentBox .NowBar:is(.Active.RightSide) + .LyricsContainer .loaderContainer {
+#AmaiLyricsPage .ContentBox .NowBar:is(.Active.RightSide) + .LyricsContainer .loaderContainer {
   background: linear-gradient(270deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.2) 20%);
 }
-#SpicyLyricsPage .ContentBox.LyricsHidden .NowBar {
+#AmaiLyricsPage .ContentBox.LyricsHidden .NowBar {
   margin: 0 !important;
 }
-#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox.Skeletoned {
+#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox.Skeletoned {
   width: 20cqw;
   height: 20cqw;
   --BorderRadius: 1cqh;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox.Skeletoned {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox.Skeletoned {
   width: 30cqw;
   height: 30cqw;
 }
-#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox.Skeletoned .MediaImage {
+#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox.Skeletoned .MediaImage {
   display: none;
 }
-#SpicyLyricsPage .ContentBox .NowBar .Header .Metadata .SongName.Skeletoned {
+#AmaiLyricsPage .ContentBox .NowBar .Header .Metadata .SongName.Skeletoned {
   width: 14cqw;
   height: 4.5cqh;
   --BorderRadius: .25cqw;
 }
-#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox.Skeletoned * {
+#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox.Skeletoned * {
   display: none;
 }
-#SpicyLyricsPage .ContentBox .NowBar .Header .Metadata .SongName.Skeletoned span {
+#AmaiLyricsPage .ContentBox .NowBar .Header .Metadata .SongName.Skeletoned span {
   display: none;
 }
-#SpicyLyricsPage .ContentBox .NowBar .Header .Metadata .Artists.Skeletoned {
+#AmaiLyricsPage .ContentBox .NowBar .Header .Metadata .Artists.Skeletoned {
   width: 12cqw;
   height: 3.5cqh;
   margin: 1.5cqh 0;
   --BorderRadius: .25cqw;
 }
-#SpicyLyricsPage .ContentBox .NowBar .Header .Metadata .Artists.Skeletoned span {
+#AmaiLyricsPage .ContentBox .NowBar .Header .Metadata .Artists.Skeletoned span {
   display: none;
 }
-#SpicyLyricsPage .ContentBox .DropZone.RightSide {
+#AmaiLyricsPage .ContentBox .DropZone.RightSide {
   order: 4;
 }
-#SpicyLyricsPage .ContentBox .DropZone.LeftSide {
+#AmaiLyricsPage .ContentBox .DropZone.LeftSide {
   order: 0;
 }
-#SpicyLyricsPage .ContentBox .NowBar.LeftSide {
+#AmaiLyricsPage .ContentBox .NowBar.LeftSide {
   order: 1;
 }
-#SpicyLyricsPage .ContentBox .LyricsContainer {
+#AmaiLyricsPage .ContentBox .LyricsContainer {
   order: 2;
 }
-#SpicyLyricsPage .ContentBox .NowBar.RightSide {
+#AmaiLyricsPage .ContentBox .NowBar.RightSide {
   order: 3;
 }
-#SpicyLyricsPage:has(.ContentBox .NowBar.Active.RightSide) .ScrollbarScrollable .simplebar-track.simplebar-vertical {
+#AmaiLyricsPage:has(.ContentBox .NowBar.Active.RightSide) .ScrollbarScrollable .simplebar-track.simplebar-vertical {
   left: 5px;
   right: 0;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox .MediaContent {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox .MediaContent {
   position: absolute;
   top: 100%;
   left: 50%;
@@ -37358,13 +37375,13 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 1;
   transition: opacity .2s;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox:hover .MediaContent {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox:hover .MediaContent {
   opacity: 1;
 }
-#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent {
+#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent {
   display: none;
 }
-#SpicyLyricsPage .ContentBox .DropZone {
+#AmaiLyricsPage .ContentBox .DropZone {
   width: 200cqw;
   height: 100cqh;
   position: absolute;
@@ -37377,29 +37394,29 @@ button:has(#SpicyLyricsPageSvg):after {
   justify-content: center;
   text-align: center;
 }
-#SpicyLyricsPage .ContentBox .DropZone span {
+#AmaiLyricsPage .ContentBox .DropZone span {
   color: black;
   font-size: var(--default-font-size);
   text-align: center;
 }
-#SpicyLyricsPage .ContentBox .DropZone.Hidden {
+#AmaiLyricsPage .ContentBox .DropZone.Hidden {
   display: none !important;
 }
-#SpicyLyricsPage.SomethingDragging .ContentBox .LyricsContainer {
+#AmaiLyricsPage.SomethingDragging .ContentBox .LyricsContainer {
   display: none;
 }
-#SpicyLyricsPage.SomethingDragging .ContentBox .DropZone {
+#AmaiLyricsPage.SomethingDragging .ContentBox .DropZone {
   position: relative;
   z-index: 99999;
   opacity: .2;
 }
-#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage.Dragging {
+#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage.Dragging {
   opacity: .6;
 }
-#SpicyLyricsPage.SomethingDragging .ContentBox .DropZone.DraggingOver {
+#AmaiLyricsPage.SomethingDragging .ContentBox .DropZone.DraggingOver {
   opacity: .5;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -37413,7 +37430,7 @@ button:has(#SpicyLyricsPageSvg):after {
   visibility: visible !important;
   z-index: 2;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .Timeline {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .Timeline {
   position: relative;
   bottom: auto;
   width: 22cqw;
@@ -37422,10 +37439,10 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 1 !important;
   visibility: visible !important;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl.TrackSkip.PrevTrack {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl.TrackSkip.PrevTrack {
   rotate: 180deg;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl {
   aspect-ratio: 1;
   display: flex;
   fill: #fff;
@@ -37438,44 +37455,44 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 4cqh;
   width: 4cqh;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl svg {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl svg {
   transition: filter .175s ease-out;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl.ShuffleToggle,
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl.LoopToggle {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl.ShuffleToggle,
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl.LoopToggle {
   height: 2cqh;
   width: 2cqh;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl.PlayStateToggle.Playing {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl.PlayStateToggle.Playing {
   height: 3.8cqh;
   width: 3.8cqh;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl.PlayStateToggle.Paused {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl.PlayStateToggle.Paused {
   height: 4.4cqh;
   width: 4.4cqh;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl:not(.Pressed) {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl:not(.Pressed) {
   animation: pressAnimation .6s;
   animation-fill-mode: forwards;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .ViewControls {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .ViewControls {
   opacity: 1 !important;
   position: relative;
   width: 100%;
   margin-bottom: 2cqh;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl.Pressed {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl.Pressed {
   transform: scale(var(--ShrinkScale));
   transition: opacity transform .175s cubic-bezier(.37, 0, .63, 1);
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls:hover .PlaybackControl:not(:hover) {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls:hover .PlaybackControl:not(:hover) {
   opacity: .5;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl:hover {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl:hover {
   opacity: 1 !important;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl.ShuffleToggle.Enabled,
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl.LoopToggle.Enabled {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl.ShuffleToggle.Enabled,
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls .PlaybackControl.LoopToggle.Enabled {
   filter: brightness(2.75);
 }
 @keyframes pressAnimation {
@@ -37504,7 +37521,7 @@ button:has(#SpicyLyricsPageSvg):after {
     transform: scale(calc(1 - var(--ShrinkDelta)*0));
   }
 }
-#SpicyLyricsPage .Timeline {
+#AmaiLyricsPage .Timeline {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -37514,7 +37531,7 @@ button:has(#SpicyLyricsPageSvg):after {
   position: absolute;
   bottom: 0;
 }
-#SpicyLyricsPage .Timeline .SliderBar {
+#AmaiLyricsPage .Timeline .SliderBar {
   --TraveledColor: hsla(0,0%,100%,.9);
   --RemainingColor: hsla(0,0%,100%,.38);
   --SliderProgress: 0.6;
@@ -37527,7 +37544,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: .65cqh;
   cursor: pointer;
 }
-#SpicyLyricsPage .Timeline .SliderBar .Handle {
+#AmaiLyricsPage .Timeline .SliderBar .Handle {
   aspect-ratio: 1;
   background: #fff;
   border-radius: 100cqw;
@@ -37538,7 +37555,7 @@ button:has(#SpicyLyricsPageSvg):after {
   top: 54cqh;
   transform: translate(-50%, -50%);
 }
-#SpicyLyricsPage .NotificationContainer {
+#AmaiLyricsPage .NotificationContainer {
   display: none;
   flex-direction: row;
   align-items: center;
@@ -37550,22 +37567,22 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 7cqh;
   padding: 2cqh 4cqh;
 }
-#SpicyLyricsPage .NotificationContainer.Danger {
+#AmaiLyricsPage .NotificationContainer.Danger {
   background: rgba(255, 118, 118, 0.5);
 }
-#SpicyLyricsPage .NotificationContainer.Information {
+#AmaiLyricsPage .NotificationContainer.Information {
   background: rgba(158, 158, 255, 0.5);
 }
-#SpicyLyricsPage .NotificationContainer.Success {
+#AmaiLyricsPage .NotificationContainer.Success {
   background: rgba(148, 255, 148, 0.5);
 }
-#SpicyLyricsPage .NotificationContainer.Warning {
+#AmaiLyricsPage .NotificationContainer.Warning {
   background: rgba(255, 208, 19, 0.5);
 }
-#SpicyLyricsPage .NotificationContainer.Visible {
+#AmaiLyricsPage .NotificationContainer.Visible {
   display: flex;
 }
-#SpicyLyricsPage .NotificationContainer .NotificationIcon {
+#AmaiLyricsPage .NotificationContainer .NotificationIcon {
   aspect-ratio: 1;
   width: 4cqh;
   height: 4cqh;
@@ -37573,43 +37590,43 @@ button:has(#SpicyLyricsPageSvg):after {
   align-items: center;
   justify-content: center;
 }
-#SpicyLyricsPage .NotificationContainer .NotificationIcon svg {
+#AmaiLyricsPage .NotificationContainer .NotificationIcon svg {
   aspect-ratio: 1;
   width: 3cqh;
   height: 3cqh;
 }
-#SpicyLyricsPage .NotificationContainer.Danger .NotificationIcon svg {
+#AmaiLyricsPage .NotificationContainer.Danger .NotificationIcon svg {
   fill: #ff0000;
 }
-#SpicyLyricsPage .NotificationContainer.Information .NotificationIcon svg {
+#AmaiLyricsPage .NotificationContainer.Information .NotificationIcon svg {
   fill: #2a2aff;
 }
-#SpicyLyricsPage .NotificationContainer.Success .NotificationIcon svg {
+#AmaiLyricsPage .NotificationContainer.Success .NotificationIcon svg {
   fill: #00ff00;
 }
-#SpicyLyricsPage .NotificationContainer.Warning .NotificationIcon svg {
+#AmaiLyricsPage .NotificationContainer.Warning .NotificationIcon svg {
   fill: #ffaa00;
 }
-#SpicyLyricsPage .NotificationContainer .NotificationText {
+#AmaiLyricsPage .NotificationContainer .NotificationText {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
   margin: 1cqh;
 }
-#SpicyLyricsPage .NotificationContainer .NotificationText .NotificationTitle {
+#AmaiLyricsPage .NotificationContainer .NotificationText .NotificationTitle {
   font-size: calc(var(--default-font-size) * 0.8);
   font-weight: 900;
   color: rgb(255, 255, 255);
   text-align: center;
 }
-#SpicyLyricsPage .NotificationContainer .NotificationText .NotificationDescription {
+#AmaiLyricsPage .NotificationContainer .NotificationText .NotificationDescription {
   font-size: calc(var(--default-font-size) * 0.4);
   font-weight: 400;
   color: rgb(206, 206, 206);
   text-align: center;
 }
-#SpicyLyricsPage .NotificationContainer .NotificationCloseButton {
+#AmaiLyricsPage .NotificationContainer .NotificationCloseButton {
   color: rgb(255, 255, 255);
   font-size: calc(var(--default-font-size) * 0.3);
   cursor: pointer;
@@ -37619,14 +37636,14 @@ button:has(#SpicyLyricsPageSvg):after {
   align-items: center;
   justify-content: center;
 }
-#SpicyLyricsPage .NotificationContainer .NotificationCloseButton.Disabled {
+#AmaiLyricsPage .NotificationContainer .NotificationCloseButton.Disabled {
   opacity: 0;
   z-index: -1;
   pointer-events: none;
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55ce24/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22052-V49qWVZX17kS/1a0a54695044/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -37715,7 +37732,7 @@ button:has(#SpicyLyricsPageSvg):after {
 .sweet-dynamic-bg > img.secondary.active {
   opacity: 0.8;
 }
-#SpicyLyricsPage.Fullscreen .sweet-dynamic-bg {
+#AmaiLyricsPage.Fullscreen .sweet-dynamic-bg {
   max-height: 60%;
   max-width: 20%;
   scale: 500% 170%;
@@ -37743,7 +37760,7 @@ button:has(#SpicyLyricsPageSvg):after {
   z-index: 10;
   position: relative;
 }
-#SpicyLyricsPage .sweet-dynamic-bg {
+#AmaiLyricsPage .sweet-dynamic-bg {
   --bg-saturation: 2.5;
   --bg-brightness: 0.45;
   max-height: 55%;
@@ -37778,8 +37795,8 @@ button:has(#SpicyLyricsPageSvg):after {
     transform: rotate(calc(var(--bg-rotation-secondary, 0deg) + 1turn)) scale(var(--bg-scale-secondary, 1));
   }
 }
-body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .sweet-dynamic-bg-in-this) .sweet-dynamic-bg,
-body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .sweet-dynamic-bg-in-this) .sweet-dynamic-bg * {
+body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .sweet-dynamic-bg-in-this) .sweet-dynamic-bg,
+body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .sweet-dynamic-bg-in-this) .sweet-dynamic-bg * {
   display: none !important;
   animation: none !important;
   filter: none !important;
@@ -37928,8 +37945,8 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   animation: none !important;
   filter: none !important;
 }
-.amai-app-bg-on #SpicyLyricsPage:not(.Fullscreen) .sweet-dynamic-bg,
-.amai-app-bg-on #SpicyLyricsPage:not(.Fullscreen) .sweet-dynamic-bg * {
+.amai-app-bg-on #AmaiLyricsPage:not(.Fullscreen) .sweet-dynamic-bg,
+.amai-app-bg-on #AmaiLyricsPage:not(.Fullscreen) .sweet-dynamic-bg * {
   display: none !important;
   animation: none !important;
   filter: none !important;
@@ -37941,8 +37958,8 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55cee5/main.css */
-#SpicyLyricsPage .LyricsContainer {
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22052-V49qWVZX17kS/1a0a546950d5/main.css */
+#AmaiLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
   align-items: center;
@@ -37951,10 +37968,10 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   overflow: hidden;
   width: 100%;
 }
-#SpicyLyricsPage .LyricsContainer.Hidden {
+#AmaiLyricsPage .LyricsContainer.Hidden {
   display: none;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent {
+#AmaiLyricsPage .LyricsContainer .LyricsContent {
   --TextGlowDef: rgba(255, 255, 255, 0.15) 0px 0px 6px;
   --ActiveTextGlowDef: rgba(var(--amai-accent-rgb), 0.28) 0px 0px 16px;
   --StrongTextGlowDef: rgba(255, 255, 255, 0.68) 0px 0px 16px;
@@ -37980,24 +37997,24 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   -webkit-mask-image: var(--ImageMask);
   mask-image: var(--ImageMask);
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .BottomSpacer {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .BottomSpacer {
   display: block;
   height: 50cqh;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .TopSpacer {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .TopSpacer {
   display: block;
   height: 25cqh;
 }
-#SpicyLyricsPage .ContentBox .NowBar:not(.Active) + .LyricsContainer .LyricsContent .simplebar-content-wrapper {
+#AmaiLyricsPage .ContentBox .NowBar:not(.Active) + .LyricsContainer .LyricsContent .simplebar-content-wrapper {
   padding: 0 18cqw;
 }
-#SpicyLyricsPage .ContentBox .NowBar.Active:is(.LeftSide) + .LyricsContainer .LyricsContent .simplebar-content-wrapper .simplebar-content {
+#AmaiLyricsPage .ContentBox .NowBar.Active:is(.LeftSide) + .LyricsContainer .LyricsContent .simplebar-content-wrapper .simplebar-content {
   padding: 0 5cqw 0 3.5cqw !important;
 }
-#SpicyLyricsPage .ContentBox .NowBar.Active:is(.RightSide) + .LyricsContainer .LyricsContent .simplebar-content-wrapper .simplebar-content {
+#AmaiLyricsPage .ContentBox .NowBar.Active:is(.RightSide) + .LyricsContainer .LyricsContent .simplebar-content-wrapper .simplebar-content {
   padding: 0 3.5cqw 0 5cqw !important;
 }
-#SpicyLyricsPage .AmaiPageButtonContainer {
+#AmaiLyricsPage .AmaiPageButtonContainer {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -38006,7 +38023,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   margin-top: 8px;
   gap: 8px;
 }
-#SpicyLyricsPage .AmaiPageButton {
+#AmaiLyricsPage .AmaiPageButton {
   padding: 10px 24px;
   background: var(--amai-fill-subtle);
   border: 1px solid var(--amai-stroke-1);
@@ -38030,34 +38047,34 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   width: fit-content;
   min-width: 160px;
 }
-#SpicyLyricsPage .AmaiPageButton:hover {
+#AmaiLyricsPage .AmaiPageButton:hover {
   background: var(--amai-fill-raised);
   border-color: color-mix(in srgb, var(--amai-accent-1) 55%, transparent);
   color: rgba(255, 255, 255, 1);
   box-shadow: 0 4px 16px rgba(var(--amai-accent-rgb), 0.18), var(--amai-shadow-card);
 }
-#SpicyLyricsPage .AmaiPageButton:active {
+#AmaiLyricsPage .AmaiPageButton:active {
   transform: scale(0.95);
 }
-#SpicyLyricsPage .AmaiPageButton:focus-visible {
+#AmaiLyricsPage .AmaiPageButton:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--amai-accent-1) 70%, white);
   outline-offset: 2px;
 }
-#SpicyLyricsPage .AmaiPageButton.hidden {
+#AmaiLyricsPage .AmaiPageButton.hidden {
   opacity: 0;
   pointer-events: none;
   transform: scale(0.8);
 }
-#SpicyLyricsPage.Fullscreen .AmaiPageButtonContainer {
+#AmaiLyricsPage.Fullscreen .AmaiPageButtonContainer {
   display: none;
 }
-#SpicyLyricsPage .amai-version-number {
+#AmaiLyricsPage .amai-version-number {
   font-size: 0.85em;
   color: var(--amai-text-faint);
   cursor: pointer;
   font-weight: normal;
 }
-#SpicyLyricsPage .amai-version-number:hover {
+#AmaiLyricsPage .amai-version-number:hover {
   color: rgba(255, 255, 255, 1);
 }
 header.main-topBar-container .amai-info {
@@ -38090,10 +38107,10 @@ header.main-topBar-container .amai-info {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   color: white;
 }
-#SpicyLyricsPage .ContentBox .NowBar .Header {
+#AmaiLyricsPage .ContentBox .NowBar .Header {
   padding: 0 2cqh;
 }
-#SpicyLyricsPage .ContentBox .NowBar.Active + .LyricsContainer .LyricsContent .simplebar-content-wrapper .simplebar-content {
+#AmaiLyricsPage .ContentBox .NowBar.Active + .LyricsContainer .LyricsContent .simplebar-content-wrapper .simplebar-content {
   padding: 3cqh 3cqh 1.8cqh 3cqh;
   background-color: var(--amai-fill-glass);
   border: 1px solid var(--amai-stroke-2);
@@ -38108,7 +38125,7 @@ header.main-topBar-container .amai-info {
 .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section > button > div > div {
   background-color: transparent;
 }
-#SpicyLyricsPage .ContentBox .NowBar .Header .Metadata {
+#AmaiLyricsPage .ContentBox .NowBar .Header .Metadata {
   margin: 1.8cqh 0 0 0;
 }
 ruby {
@@ -38160,10 +38177,10 @@ ruby > rt {
   word-break: break-word;
   box-sizing: border-box;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent ruby {
+#AmaiLyricsPage .LyricsContainer .LyricsContent ruby {
   max-width: 100%;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent ruby > rt {
+#AmaiLyricsPage .LyricsContainer .LyricsContent ruby > rt {
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
@@ -38192,8 +38209,8 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55cf66/Mixed.css */
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line {
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22052-V49qWVZX17kS/1a0a54695156/Mixed.css */
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
   flex-wrap: wrap;
@@ -38203,8 +38220,8 @@ ruby > rt {
   max-width: 100%;
   overflow-wrap: anywhere;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line .word,
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line {
   cursor: pointer;
   font-weight: 700;
   -webkit-text-fill-color: transparent;
@@ -38212,8 +38229,8 @@ ruby > rt {
   background-clip: text;
   position: relative;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .word {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line,
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line .word {
   --gradient-position: -20%;
   --gradient-alpha: 0.85;
   --gradient-alpha-end: 0.5;
@@ -38221,10 +38238,10 @@ ruby > rt {
   --gradient-offset: 0%;
   background-image: linear-gradient(var(--gradient-degrees), rgba(255, 255, 255, var(--gradient-alpha)) var(--gradient-position), rgba(255, 255, 255, var(--gradient-alpha-end)) calc(var(--gradient-position) + 20% + var(--gradient-offset)));
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.static {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.static {
   background-image: linear-gradient(var(--gradient-degrees), rgba(255, 255, 255, 0.8) var(--gradient-position), rgba(255, 255, 255, var(--gradient-alpha-end)) calc(var(--gradient-position) + 20% + var(--gradient-offset)));
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line {
   --BlurAmount: 0px;
   --DefaultLyricsScale: 0.95;
   --DefaultLineScale: 1;
@@ -38238,31 +38255,31 @@ ruby > rt {
   line-height: 1.5;
   direction: ltr;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.rtl {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.rtl {
   direction: rtl !important;
   transform-origin: right center !important;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent:not(.HideLineBlur) .line {
+#AmaiLyricsPage .LyricsContainer .LyricsContent:not(.HideLineBlur) .line {
   filter: blur(var(--BlurAmount));
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .word {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line .word {
   transform-origin: center center;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .dotGroup {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line .word,
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line .dotGroup {
   --text-shadow-blur-radius: 4px;
   --text-shadow-opacity: 0%;
   --TextShadowDefinition: 0 0 var(--text-shadow-blur-radius) rgba(255, 255, 255, var(--text-shadow-opacity));
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .dotGroup {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.Active .word,
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.Active .dotGroup {
   will-change:
     transform,
     opacity,
     text-shadow,
     scale;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line:not(.musical-line) .word {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line:not(.musical-line) .word {
   display: inline-block;
   --DefaultTransitionDuration: var(--content-duration, 0.15s);
   --TransitionDuration: var(--DefaultTransitionDuration);
@@ -38272,47 +38289,47 @@ ruby > rt {
     scale var(--TransitionDuration) var(--amai-ease-word),
     filter var(--TransitionDuration) var(--amai-ease-word);
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line:is(.Active, .Sung) .word {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line:is(.Active, .Sung) .word {
   text-shadow: var(--TextShadowDefinition);
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.OppositeAligned {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.OppositeAligned {
   justify-content: flex-end;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Sung {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.Sung {
   opacity: var(--Vocal-Sung-opacity);
   --gradient-position: 100% !important;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Sung,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.Sung,
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.NotSung {
   scale: var(--DefaultLineScale);
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.NotSung {
   opacity: var(--Vocal-NotSung-opacity);
   --gradient-position: -20% !important;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung:hover,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung:hover .word,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Sung:hover,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Sung:hover .word {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.NotSung:hover,
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.NotSung:hover .word,
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.Sung:hover,
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.Sung:hover .word {
   text-shadow: none;
   opacity: var(--Vocal-Hover-opacity, 1) !important;
   filter: none;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line .word:not(.dot)::after {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line .word:not(.dot)::after {
   content: "";
   margin-right: 0.3ch;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung .word {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.NotSung .word {
   --text-shadow-blur-radius: 4px !important;
   --text-shadow-opacity: 0% !important;
   --gradient-position: -20% !important;
   --TransitionDuration: var(--DefaultTransitionDuration) !important;
   scale: var(--DefaultLyricsScale) !important;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung .word {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.NotSung .word {
   transform: translateY(calc(var(--DefaultLyricsSize) * 0.01)) !important;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Sung .word {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.Sung .word {
   --gradient-position: 100% !important;
   --text-shadow-blur-radius: 4px !important;
   --text-shadow-opacity: 0% !important;
@@ -38321,7 +38338,7 @@ ruby > rt {
   transform: translateY(0) !important;
   scale: 1 !important;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line {
   position: relative;
   transform-origin: center center;
   margin: 1cqw 0 0 0;
@@ -38330,10 +38347,10 @@ ruby > rt {
   background-image: none !important;
   -webkit-text-fill-color: currentColor;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line.OppositeAligned {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line.OppositeAligned {
   justify-content: flex-end;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill {
   --pill-pad-y: 0.28em;
   --pill-pad-x: 0.9em;
   position: relative;
@@ -38362,14 +38379,14 @@ ruby > rt {
     opacity var(--amai-dur-slow) var(--amai-ease-standard),
     box-shadow var(--amai-dur-slow) var(--amai-ease-standard);
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill .dotGroup,
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill .dot {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill .dotGroup,
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill .dot {
   background-image: none !important;
   -webkit-text-fill-color: currentColor;
   background-clip: border-box;
   text-shadow: none;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill::after {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill::after {
   content: "";
   position: absolute;
   inset: -20%;
@@ -38378,19 +38395,19 @@ ruby > rt {
   background: linear-gradient(100deg, transparent 25%, rgba(255, 255, 255, 0.22) 50%, transparent 75%);
   transform: translateX(-130%);
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill {
   color: var(--amai-text-hi);
   border-color: color-mix(in srgb, var(--amai-accent-1) 45%, transparent);
   box-shadow: 0 0 24px rgba(var(--amai-accent-rgb), 0.22), var(--amai-shadow-card);
   animation: instrumental-breathe 2.6s var(--amai-ease-io) infinite;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill::after {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill::after {
   animation: instrumental-shimmer 2.6s var(--amai-ease-io) infinite;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line.NotSung .instrumental-pill {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line.NotSung .instrumental-pill {
   opacity: 0.55;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Sung .instrumental-pill {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Sung .instrumental-pill {
   opacity: var(--Vocal-Sung-opacity);
 }
 @keyframes instrumental-breathe {
@@ -38430,7 +38447,7 @@ ruby > rt {
     scale: 1.1;
   }
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line {
   animation: amai-line-enter 0.5s var(--amai-ease-word) backwards;
 }
 @keyframes amai-line-enter {
@@ -38443,7 +38460,7 @@ ruby > rt {
     transform: translateY(0);
   }
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill .dotGroup {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill .dotGroup {
   scale: 1;
   transform-origin: center center;
   position: relative;
@@ -38467,7 +38484,7 @@ ruby > rt {
     --text-shadow-opacity: 50%;
   }
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill .dotGroup {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill .dotGroup {
   --dot-gap: 0.18em;
   display: inline-flex;
   flex-direction: row;
@@ -38475,46 +38492,46 @@ ruby > rt {
   gap: var(--dot-gap);
   margin-inline-start: 0.1em;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill .dotGroup .dot {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill .dotGroup .dot {
   font-size: 0.85em;
   line-height: 1;
   scale: 0.85;
   opacity: 0.45;
   --gradient-position: 100%;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill .dotGroup .dot {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill .dotGroup .dot {
   animation: instrumental-dot-bounce 1.2s var(--amai-ease-io) infinite;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill .dotGroup .dot:nth-child(2) {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill .dotGroup .dot:nth-child(2) {
   animation-delay: 0.15s;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill .dotGroup .dot:nth-child(3) {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill .dotGroup .dot:nth-child(3) {
   animation-delay: 0.3s;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.Active {
   opacity: 1;
   filter: none;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .word {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.Active .word {
   opacity: 1;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.static {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.static {
   cursor: default;
   --gradient-position: 100%;
   --gradient-alpha: 1;
   --gradient-alpha-end: 1;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent.offline {
+#AmaiLyricsPage .LyricsContainer .LyricsContent.offline {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line:not(.musical-line),
-#SpicyLyricsPage .LyricsContainer .LyricsContent .Credits {
-  margin: var(--SpicyLyrics-LineSpacing, 1cqw 0);
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line:not(.musical-line),
+#AmaiLyricsPage .LyricsContainer .LyricsContent .Credits {
+  margin: var(--AmaiLyrics-LineSpacing, 1cqw 0);
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .Credits {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .Credits {
   --font-size: calc(var(--DefaultLyricsSize) * 0.47);
   font-size: var(--font-size);
   opacity: 0.8;
@@ -38522,65 +38539,65 @@ ruby > rt {
   scale: 1;
   transition: opacity 0.8s ease-in-out;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .Credits.Active {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .Credits.Active {
   opacity: 1;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent[data-lyrics-type=Line] .line {
+#AmaiLyricsPage .LyricsContainer .LyricsContent[data-lyrics-type=Line] .line {
   transform-origin: left center;
   transition: scale 0.2s var(--amai-ease-io), opacity 0.2s var(--amai-ease-io);
   margin: 1cqw 0 0 0;
   display: block;
   max-width: 100%;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent[data-lyrics-type=Line] .line.OppositeAligned {
+#AmaiLyricsPage .LyricsContainer .LyricsContent[data-lyrics-type=Line] .line.OppositeAligned {
   transform-origin: right center;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent[data-lyrics-type=Line] .line.Active {
+#AmaiLyricsPage .LyricsContainer .LyricsContent[data-lyrics-type=Line] .line.Active {
   scale: 1.05;
   text-shadow: var(--ActiveTextGlowDef) !important;
 }
-#SpicyLyricsPage.Podcast .LyricsContainer .LyricsContent .line.NotSung .word,
-#SpicyLyricsPage.Podcast .LyricsContainer .LyricsContent .line.Sung .word {
+#AmaiLyricsPage.Podcast .LyricsContainer .LyricsContent .line.NotSung .word,
+#AmaiLyricsPage.Podcast .LyricsContainer .LyricsContent .line.Sung .word {
   scale: 1 !important;
   transform: translateY(calc(var(--DefaultLyricsSize) * 0)) !important;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent:has(.OppositeAligned) .line.OppositeAligned:not(.rtl) {
+#AmaiLyricsPage .LyricsContainer .LyricsContent:has(.OppositeAligned) .line.OppositeAligned:not(.rtl) {
   padding-left: 15cqw;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent:has(.OppositeAligned) .line:not(.OppositeAligned, .rtl) {
+#AmaiLyricsPage .LyricsContainer .LyricsContent:has(.OppositeAligned) .line:not(.OppositeAligned, .rtl) {
   padding-right: 15cqw;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent:has(.OppositeAligned.rtl) .line.OppositeAligned {
+#AmaiLyricsPage .LyricsContainer .LyricsContent:has(.OppositeAligned.rtl) .line.OppositeAligned {
   padding-right: 15cqw;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent:has(.OppositeAligned.rtl) .line:not(.OppositeAligned) {
+#AmaiLyricsPage .LyricsContainer .LyricsContent:has(.OppositeAligned.rtl) .line:not(.OppositeAligned) {
   padding-left: 15cqw;
 }
 @media (prefers-reduced-motion: reduce) {
-  #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
+  #AmaiLyricsPage .LyricsContainer .LyricsContent .line {
     filter: none !important;
   }
-  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .word {
+  #AmaiLyricsPage .LyricsContainer .LyricsContent .line.Active .word {
     will-change: auto !important;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
+  #AmaiLyricsPage .LyricsContainer .LyricsContent .line {
     animation: none !important;
   }
-  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill,
-  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill,
-  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill::after,
-  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill .dotGroup .dot {
+  #AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill,
+  #AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill,
+  #AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill::after,
+  #AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill .dotGroup .dot {
     animation: none !important;
   }
-  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill::after {
+  #AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill::after {
     display: none !important;
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55d017/LoaderContainer.css */
-#SpicyLyricsPage .LyricsContainer .loaderContainer {
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22052-V49qWVZX17kS/1a0a546951e7/LoaderContainer.css */
+#AmaiLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
   justify-content: center;
@@ -38593,42 +38610,42 @@ ruby > rt {
   opacity: 0;
   transition: all 0.4s ease-in-out;
 }
-#SpicyLyricsPage .LyricsContainer .loaderContainer.active {
+#AmaiLyricsPage .LyricsContainer .loaderContainer.active {
   opacity: 1;
   z-index: 9;
 }
-#SpicyLyricsPage .LyricsContainer .loaderContainer:is(.active) + .LyricsContent {
+#AmaiLyricsPage .LyricsContainer .loaderContainer:is(.active) + .LyricsContent {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55d068/FullscreenTransition.css */
-#SpicyLyricsPage.fullscreen-transition {
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22052-V49qWVZX17kS/1a0a54695228/FullscreenTransition.css */
+#AmaiLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .ViewControls,
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .ViewControls,
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls {
   opacity: 1 !important;
   visibility: visible !important;
   transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
 }
-#SpicyLyricsPage.fullscreen-transition.Fullscreen .ContentBox .NowBar .CenteredView .Header .ViewControls,
-#SpicyLyricsPage.fullscreen-transition.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls {
+#AmaiLyricsPage.fullscreen-transition.Fullscreen .ContentBox .NowBar .CenteredView .Header .ViewControls,
+#AmaiLyricsPage.fullscreen-transition.Fullscreen .ContentBox .NowBar .CenteredView .Header .MediaBox .MediaContent .PlaybackControls {
   opacity: 1 !important;
   visibility: visible !important;
   z-index: 9999;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox .MediaContent {
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .Header .MediaBox .MediaContent {
   display: flex !important;
 }
-#SpicyLyricsPage.Fullscreen .ContentBox .ViewControls,
-#SpicyLyricsPage.Fullscreen .ContentBox .NowBar .Header .ViewControls {
+#AmaiLyricsPage.Fullscreen .ContentBox .ViewControls,
+#AmaiLyricsPage.Fullscreen .ContentBox .NowBar .Header .ViewControls {
   z-index: 1000;
 }
-#SpicyLyricsPage .ViewControls #FullscreenToggle {
+#AmaiLyricsPage .ViewControls #FullscreenToggle {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55d099/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22052-V49qWVZX17kS/1a0a54695269/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
@@ -38727,7 +38744,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55d0ea/Settings.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22052-V49qWVZX17kS/1a0a546952ca/Settings.css */
 :is(#amai-settings, #amai-dev-settings, #amai-info) {
   display: grid;
   gap: 8px;
@@ -38954,7 +38971,7 @@ ruby > rt {
   border: 1px solid var(--essential-subdued, #818181);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55d13b/SettingsModal.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22052-V49qWVZX17kS/1a0a5469536b/SettingsModal.css */
 .amai-settings-overlay {
   position: fixed;
   inset: 0;
@@ -39030,7 +39047,7 @@ ruby > rt {
   min-width: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-376-S4nAmP5oqFCM/1a0a2e55d16c/Tooltips.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22052-V49qWVZX17kS/1a0a546953bc/Tooltips.css */
 .tippy-box[data-theme~=amai-lyrics] {
   position: relative;
   background-color: rgba(18, 18, 18, 0.92);
