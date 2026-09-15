@@ -51,6 +51,11 @@
   align-items: center;
   gap: 8px 24px;
   min-width: 0;
+  /* Resting state is transparent, but the padding + radius are always present
+     so the hover tint below never shifts layout when it kicks in. */
+  padding: 8px 12px;
+  border-radius: var(--encore-corner-radius-base, 4px);
+  transition: background-color 0.15s;
 }
 
 :is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row > .x-settings-firstColumn {
@@ -73,6 +78,48 @@
   font-size: 0.875rem;
   font-weight: 400;
   line-height: 1.4;
+  transition: color 0.15s;
+}
+
+/* ---- Row hover ----
+   Every row gets an Encore tinted wash with a brightened label, so each
+   setting reads as interactive. */
+:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row:hover {
+  background-color: var(--background-tinted-base, rgba(255, 255, 255, 0.1));
+}
+
+:is(#amai-settings, #amai-dev-settings, #amai-info)
+  .x-settings-row:hover
+  > .x-settings-firstColumn
+  label {
+  color: var(--text-base, #ffffff);
+}
+
+/* ---- Featured row: "Enable Amai Theme" ----
+   Rows carry no per-field class, so this is matched through the toggle's id
+   (`amai-settings.enableAppBackground` — dot escaped). Tint + accent ring +
+   left bar are all paint-only (background/box-shadow), so geometry never
+   shifts. `:has()` outranks the generic hover above via the id's
+   specificity, keeping the feature styling intact while hovered. */
+:is(#amai-settings, #amai-dev-settings, #amai-info)
+  .x-settings-row:has(#amai-settings\.enableAppBackground) {
+  background-color: rgba(29, 185, 84, 0.12);
+  box-shadow:
+    inset 3px 0 0 0 var(--essential-bright-accent, #1ed760),
+    inset 0 0 0 1px rgba(30, 215, 96, 0.35);
+}
+
+:is(#amai-settings, #amai-dev-settings, #amai-info)
+  .x-settings-row:has(#amai-settings\.enableAppBackground)
+  > .x-settings-firstColumn
+  label {
+  color: var(--text-base, #ffffff);
+  font-weight: 600;
+}
+
+:is(#amai-settings, #amai-dev-settings, #amai-info)
+  .x-settings-row:has(#amai-settings\.enableAppBackground):hover {
+  background-color: rgba(29, 185, 84, 0.2);
 }
 
 /* ---- Toggle ----

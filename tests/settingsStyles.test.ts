@@ -68,4 +68,18 @@ describe('Settings.css', () => {
       /\.x-toggle-input:checked[\s\S]*?\.x-toggle-indicator\s*\{[^}]*right:\s*2px;/,
     );
   });
+
+  it('gives every row a hover wash that cannot shift layout', () => {
+    expect(css).toMatch(/\.x-settings-row:hover\s*\{[^}]*background-color:/s);
+    // The resting row must already carry padding + radius so the hover tint
+    // fades in without moving content.
+    expect(css).toMatch(/\.x-settings-row\s*\{[^}]*padding:[^}]*border-radius:/s);
+  });
+
+  it('highlights the Enable Amai Theme row through its toggle id', () => {
+    // Rows carry no per-field class; the feature styling hooks the toggle's
+    // element id (amai-settings.enableAppBackground).
+    expect(css).toContain('enableAppBackground');
+    expect(css).toContain(':has(#amai-settings\\.enableAppBackground)');
+  });
 });

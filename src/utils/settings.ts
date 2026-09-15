@@ -25,13 +25,18 @@ export function getAmaiSettingsSections(): SettingsSection[] {
 function devSettings() {
   const settings = new SettingsSection('Amai - Dev Settings', 'amai-dev-settings');
 
-  settings.addButton('remove-cached-lyrics', 'Remove Cached Lyrics', 'Remove Cached Lyrics', () => {
-    void lyricsCache.destroy();
-    storage.set('currentLyricsData', null);
-    Spicetify.showNotification('Cache Destroyed Successfully!', false, 2000);
-  });
+  settings.addButton(
+    'remove-cached-lyrics',
+    'Delete all locally cached lyrics',
+    'Clear Cache',
+    () => {
+      void lyricsCache.destroy();
+      storage.set('currentLyricsData', null);
+      Spicetify.showNotification('Cache Destroyed Successfully!', false, 2000);
+    },
+  );
 
-  settings.addButton('reload', 'Reload UI', 'Reload', () => {
+  settings.addButton('reload', 'Reload Spotify to apply changes', 'Reload Spotify', () => {
     window.location.reload();
   });
 
@@ -42,61 +47,11 @@ function devSettings() {
 function generalSettings() {
   const settings = new SettingsSection('Amai - Settings', 'amai-settings');
 
-  settings.addInput('gemini-api-key', 'Gemini API Key', '', () => {
-    storage.set('GEMINI_API_KEY', settings.getFieldValue('gemini-api-key') as string);
-
-    // clear cache and current lyrics data
-    void lyricsCache.destroy();
-    storage.set('currentLyricsData', null);
-    // Refetch lyrics for the current song
-    const playerData = Spicetify.Player.data as Spicetify.PlayerState;
-    if (!playerData?.item?.uri) return; // Exit if `uri` is not available
-    const currentUri = playerData.item.uri;
-    loadAndApplyLyrics(currentUri).catch((e) =>
-      console.error('[Amai Lyrics] Refetch after API key change failed:', e),
-    );
-  });
-
-  settings.addButton('get-gemini-api', 'Get your own Gemini API here', 'get API Key', () => {
-    openTrustedExternalUrl('https://aistudio.google.com/app/apikey/', '_self');
-  });
-
-  settings.addToggle(
-    'enableRomaji',
-    'Enable Romaji for Japanese Lyrics',
-    Defaults.enableRomaji,
-    () => {
-      // clear cache and current lyrics data
-      void lyricsCache.destroy();
-      storage.set('currentLyricsData', null);
-      storage.set('enable_romaji', settings.getFieldValue('enableRomaji') as string);
-    },
-  );
-
-  settings.addToggle(
-    'disableRomajiToggleNotification',
-    'Disable Romaji/Furigana Toggle Notification',
-    Defaults.disableRomajiToggleNotification,
-    () => {
-      storage.set(
-        'disable_romaji_toggle_notification',
-        settings.getFieldValue('disableRomajiToggleNotification') as string,
-      );
-    },
-  );
-
-  settings.addToggle(
-    'enablePlaybarLyrics',
-    'Show current lyric in the bottom playbar',
-    true,
-    () => {
-      storage.set('enable_playbar_lyrics', settings.getFieldValue('enablePlaybarLyrics') as string);
-    },
-  );
-
+  // Featured first: the theme toggle sits on top of the section so it is
+  // impossible to miss (render order follows registration order).
   settings.addToggle(
     'enableAppBackground',
-    'Enable Amai Theme',
+    'Enable Amai Theme (dynamic album-art background)',
     Defaults.enableAppBackground,
     () => {
       const enabled = settings.getFieldValue('enableAppBackground') as boolean;
@@ -124,9 +79,66 @@ function generalSettings() {
     },
   );
 
+  settings.addInput('gemini-api-key', 'Gemini API Key (required for translations)', '', () => {
+    storage.set('GEMINI_API_KEY', settings.getFieldValue('gemini-api-key') as string);
+
+    // clear cache and current lyrics data
+    void lyricsCache.destroy();
+    storage.set('currentLyricsData', null);
+    // Refetch lyrics for the current song
+    const playerData = Spicetify.Player.data as Spicetify.PlayerState;
+    if (!playerData?.item?.uri) return; // Exit if `uri` is not available
+    const currentUri = playerData.item.uri;
+    loadAndApplyLyrics(currentUri).catch((e) =>
+      console.error('[Amai Lyrics] Refetch after API key change failed:', e),
+    );
+  });
+
+  settings.addButton(
+    'get-gemini-api',
+    'No key yet? Get a free Gemini API key',
+    'Get Free API Key',
+    () => {
+      openTrustedExternalUrl('https://aistudio.google.com/app/apikey/', '_self');
+    },
+  );
+
+  settings.addToggle(
+    'enableRomaji',
+    'Show Romaji readings for Japanese lyrics',
+    Defaults.enableRomaji,
+    () => {
+      // clear cache and current lyrics data
+      void lyricsCache.destroy();
+      storage.set('currentLyricsData', null);
+      storage.set('enable_romaji', settings.getFieldValue('enableRomaji') as string);
+    },
+  );
+
+  settings.addToggle(
+    'disableRomajiToggleNotification',
+    'Hide the popup shown when toggling Romaji/Furigana',
+    Defaults.disableRomajiToggleNotification,
+    () => {
+      storage.set(
+        'disable_romaji_toggle_notification',
+        settings.getFieldValue('disableRomajiToggleNotification') as string,
+      );
+    },
+  );
+
+  settings.addToggle(
+    'enablePlaybarLyrics',
+    'Show the current lyric line in the playbar',
+    true,
+    () => {
+      storage.set('enable_playbar_lyrics', settings.getFieldValue('enablePlaybarLyrics') as string);
+    },
+  );
+
   settings.addDropDown(
     'translation-language',
-    'Translation Language',
+    'Translate lyrics into',
     [
       'English',
       'Spanish',
@@ -153,7 +165,7 @@ function generalSettings() {
 
   settings.addToggle(
     'disableTranslation',
-    'Disable Translation',
+    'Turn off lyric translations',
     Defaults.disableTranslation,
     () => {
       // clear cache and current lyrics data
@@ -172,7 +184,7 @@ function generalSettings() {
 
   settings.addDropDown(
     'translation-font-size',
-    'Translation Font Size',
+    'Translation text size',
     translationFontSizeOptions,
     defaultIndex,
     () => {
@@ -199,7 +211,7 @@ function generalSettings() {
 
   settings.addDropDown(
     'default-lyrics-size',
-    'Main Lyrics Size',
+    'Main lyrics text size',
     lyricsSizeOptions,
     defaultLyricsSizeIndex,
     () => {
