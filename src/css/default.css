@@ -8,7 +8,7 @@
   display: none;
 }
 
-#SpicyLyricsPage {
+#AmaiLyricsPage {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -24,7 +24,7 @@
   user-select: none;
 }
 
-#SpicyLyricsPage {
+#AmaiLyricsPage {
   font-family: var(--amai-font-display);
 }
 
@@ -32,14 +32,14 @@
   font-family: 'Vazirmatn', 'Noto Sans JP', sans-serif;
 }
 
-body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child,
-body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer,
-body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child,
-body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
+body:has(#AmaiLyricsPage) .main-view-container__scroll-node-child,
+body:has(#AmaiLyricsPage) .main-view-container__scroll-node-child-spacer,
+body:has(#AmaiLyricsPage) .main-view-container__scroll-node-child,
+body:has(#AmaiLyricsPage) .main-view-container__scroll-node-child-spacer {
   display: none;
 }
 
-#SpicyLyricsPage .ViewControls {
+#AmaiLyricsPage .ViewControls {
   container-type: size;
   display: flex;
   gap: 8px;
@@ -55,7 +55,7 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
   --ViewControlSize: 100cqh;
 }
 
-#SpicyLyricsPage:not(.Fullscreen) .ViewControls {
+#AmaiLyricsPage:not(.Fullscreen) .ViewControls {
   position: absolute;
   width: 100cqw;
   bottom: -8cqh;
@@ -64,7 +64,7 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
 }
 
 /* Pinned to the bottom of the left-side panel — hidden until the lyrics page is hovered */
-#SpicyLyricsPage:not(.Fullscreen) .AmaiPageButtonContainer .ViewControls {
+#AmaiLyricsPage:not(.Fullscreen) .AmaiPageButtonContainer .ViewControls {
   position: absolute;
   bottom: 1.5cqh;
   left: 50%;
@@ -80,17 +80,17 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
   justify-content: center;
 }
 
-#SpicyLyricsPage:not(.Fullscreen):hover .AmaiPageButtonContainer .ViewControls,
-#SpicyLyricsPage:not(.Fullscreen) .AmaiPageButtonContainer .ViewControls:hover,
-#SpicyLyricsPage:not(.Fullscreen):focus-within .AmaiPageButtonContainer .ViewControls,
-#SpicyLyricsPage:not(.Fullscreen) .AmaiPageButtonContainer .ViewControls:focus-within {
+#AmaiLyricsPage:not(.Fullscreen):hover .AmaiPageButtonContainer .ViewControls,
+#AmaiLyricsPage:not(.Fullscreen) .AmaiPageButtonContainer .ViewControls:hover,
+#AmaiLyricsPage:not(.Fullscreen):focus-within .AmaiPageButtonContainer .ViewControls,
+#AmaiLyricsPage:not(.Fullscreen) .AmaiPageButtonContainer .ViewControls:focus-within {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
   transform: translateX(-50%) translateY(0);
 }
 
-#SpicyLyricsPage .ViewControls .ViewControl {
+#AmaiLyricsPage .ViewControls .ViewControl {
   --ViewControlHeight: var(--ViewControlSize, 100cqh);
   aspect-ratio: 1;
   background: var(--amai-fill-control);
@@ -112,41 +112,41 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
     box-shadow var(--amai-dur-base) var(--amai-ease-standard);
 }
 
-#SpicyLyricsPage .ViewControls .ViewControl:hover {
+#AmaiLyricsPage .ViewControls .ViewControl:hover {
   /* Accent-tinted glass: artwork hue over the dark glass base */
   background: color-mix(in srgb, var(--amai-accent-1) 18%, var(--amai-fill-control-hover));
   transform: translateY(-1px);
   box-shadow: var(--amai-shadow-panel);
 }
 
-#SpicyLyricsPage .ViewControls .ViewControl:active {
+#AmaiLyricsPage .ViewControls .ViewControl:active {
   transform: translateY(0) scale(0.92);
 }
 
-#SpicyLyricsPage .ViewControls .ViewControl:focus-visible {
+#AmaiLyricsPage .ViewControls .ViewControl:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--amai-accent-1) 70%, white);
   outline-offset: 2px;
 }
 
-#SpicyLyricsPage .ViewControls .ViewControl svg {
+#AmaiLyricsPage .ViewControls .ViewControl svg {
   fill: currentColor;
 }
 
-#SpicyLyricsPage:not(.Fullscreen) .ViewControls:hover {
+#AmaiLyricsPage:not(.Fullscreen) .ViewControls:hover {
   opacity: 1 !important;
   bottom: var(--ControlsHoverOffset) !important;
 }
 
-#SpicyLyricsPage:not(.Fullscreen):hover .ViewControls {
+#AmaiLyricsPage:not(.Fullscreen):hover .ViewControls {
   opacity: 0.5;
   bottom: var(--PageHoverOffset);
 }
 
-#SpicyLyricsPage:not(.Fullscreen):hover .AmaiPageButtonContainer .ViewControls {
+#AmaiLyricsPage:not(.Fullscreen):hover .AmaiPageButtonContainer .ViewControls {
   bottom: 1.5cqh;
 }
 
-#SpicyLyricsPage .ViewControls button {
+#AmaiLyricsPage .ViewControls button {
   cursor: pointer;
 }
 
@@ -216,7 +216,7 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
   border: 1px solid hsla(0, 0%, 100%, 0.5);
 }
 
-#SpicyLyricsPageSvg {
+#AmaiLyricsPageSvg {
   fill: currentColor;
   transform: translateY(2px);
   background: transparent;
@@ -228,11 +228,11 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
 }
 
 /* Playbar button: transparent background in all states so only the icon shows */
-button:has(#SpicyLyricsPageSvg),
-button:has(#SpicyLyricsPageSvg):hover,
-button:has(#SpicyLyricsPageSvg):active,
-button:has(#SpicyLyricsPageSvg):focus,
-button:has(#SpicyLyricsPageSvg):focus-visible {
+button:has(#AmaiLyricsPageSvg),
+button:has(#AmaiLyricsPageSvg):hover,
+button:has(#AmaiLyricsPageSvg):active,
+button:has(#AmaiLyricsPageSvg):focus,
+button:has(#AmaiLyricsPageSvg):focus-visible {
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
@@ -241,56 +241,56 @@ button:has(#SpicyLyricsPageSvg):focus-visible {
 }
 
 /* Playbar button hover effects: dim -> bright, gentle lift + accent glow */
-button:has(#SpicyLyricsPageSvg) {
+button:has(#AmaiLyricsPageSvg) {
   color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
   transition: color var(--amai-dur-base, 0.2s)
     var(--amai-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
 }
 
-button:has(#SpicyLyricsPageSvg):hover {
+button:has(#AmaiLyricsPageSvg):hover {
   color: #fff;
 }
 
-button:has(#SpicyLyricsPageSvg):hover #SpicyLyricsPageSvg {
+button:has(#AmaiLyricsPageSvg):hover #AmaiLyricsPageSvg {
   transform: translateY(2px) scale(1.12);
   filter: drop-shadow(0 0 8px rgba(var(--amai-accent-rgb, 30, 215, 96), 0.55));
 }
 
-button:has(#SpicyLyricsPageSvg):active #SpicyLyricsPageSvg {
+button:has(#AmaiLyricsPageSvg):active #AmaiLyricsPageSvg {
   transform: translateY(2px) scale(0.94);
   filter: none;
 }
 
-button:has(#SpicyLyricsPageSvg):focus-visible {
+button:has(#AmaiLyricsPageSvg):focus-visible {
   outline: 2px solid color-mix(in srgb, var(--amai-accent-1, #1ed760) 70%, white);
   outline-offset: 2px;
   border-radius: 6px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #SpicyLyricsPageSvg,
-  button:has(#SpicyLyricsPageSvg) {
+  #AmaiLyricsPageSvg,
+  button:has(#AmaiLyricsPageSvg) {
     transition: none;
   }
 
-  button:has(#SpicyLyricsPageSvg):hover #SpicyLyricsPageSvg,
-  button:has(#SpicyLyricsPageSvg):active #SpicyLyricsPageSvg {
+  button:has(#AmaiLyricsPageSvg):hover #AmaiLyricsPageSvg,
+  button:has(#AmaiLyricsPageSvg):active #AmaiLyricsPageSvg {
     transform: translateY(2px);
     filter: none;
   }
 }
 
-button:has(#SpicyLyricsPageSvg):after {
+button:has(#AmaiLyricsPageSvg):after {
   transform: translateX(-370%) translateY(-40%) !important;
 }
 
 /* "Page Not Visible" fix */
-.Root__main-view:has(#SpicyLyricsPage),
-.Root__main-view:has(#SpicyLyricsPage) .KL8t9WB65UfUEPuTFAhO,
-.Root__main-view:has(#SpicyLyricsPage) .main-content-view,
-.Root__main-view:has(#SpicyLyricsPage) .main-view-container,
-.Root__main-view:has(#SpicyLyricsPage) .main-view-container__scroll-node,
-.Root__main-view:has(#SpicyLyricsPage) .main-view-container .div[data-overlayscrollbars-viewport] {
+.Root__main-view:has(#AmaiLyricsPage),
+.Root__main-view:has(#AmaiLyricsPage) .KL8t9WB65UfUEPuTFAhO,
+.Root__main-view:has(#AmaiLyricsPage) .main-content-view,
+.Root__main-view:has(#AmaiLyricsPage) .main-view-container,
+.Root__main-view:has(#AmaiLyricsPage) .main-view-container__scroll-node,
+.Root__main-view:has(#AmaiLyricsPage) .main-view-container .div[data-overlayscrollbars-viewport] {
   height: 100% !important;
 }

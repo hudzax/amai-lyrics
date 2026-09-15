@@ -133,7 +133,7 @@
 }
 
 /* Fullscreen mode optimizations */
-#SpicyLyricsPage.Fullscreen .sweet-dynamic-bg {
+#AmaiLyricsPage.Fullscreen .sweet-dynamic-bg {
   max-height: 60%;
   max-width: 20%;
   scale: 500% 170%; /* Keep existing scaling */
@@ -167,7 +167,7 @@
   position: relative;
 }
 /* Lyrics page specific styling */
-#SpicyLyricsPage .sweet-dynamic-bg {
+#AmaiLyricsPage .sweet-dynamic-bg {
   --bg-saturation: 2.5;
   --bg-brightness: 0.45;
   max-height: 55%;
@@ -210,11 +210,11 @@
   }
 }
 /* Performance optimization for fullscreen mode (Keep as is) */
-body:has(#SpicyLyricsPage.Fullscreen)
+body:has(#AmaiLyricsPage.Fullscreen)
   .Root__right-sidebar
   aside:is(.NowPlayingView, .sweet-dynamic-bg-in-this)
   .sweet-dynamic-bg,
-body:has(#SpicyLyricsPage.Fullscreen)
+body:has(#AmaiLyricsPage.Fullscreen)
   .Root__right-sidebar
   aside:is(.NowPlayingView, .sweet-dynamic-bg-in-this)
   .sweet-dynamic-bg
@@ -451,10 +451,10 @@ body:has(#SpicyLyricsPage.Fullscreen)
 }
 /* The app canvas stays live behind the open lyrics page — hide the lyrics
    page's own background instead so the canvas is its backdrop. Scoped inside
-   #SpicyLyricsPage so the Root-level canvas can never match. Fullscreen keeps
+   #AmaiLyricsPage so the Root-level canvas can never match. Fullscreen keeps
    its own scaled backdrop (it has no other background) on top of the canvas. */
-.amai-app-bg-on #SpicyLyricsPage:not(.Fullscreen) .sweet-dynamic-bg,
-.amai-app-bg-on #SpicyLyricsPage:not(.Fullscreen) .sweet-dynamic-bg * {
+.amai-app-bg-on #AmaiLyricsPage:not(.Fullscreen) .sweet-dynamic-bg,
+.amai-app-bg-on #AmaiLyricsPage:not(.Fullscreen) .sweet-dynamic-bg * {
   display: none !important;
   animation: none !important;
   filter: none !important;

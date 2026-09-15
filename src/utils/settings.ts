@@ -194,7 +194,7 @@ function generalSettings() {
       storage.set('translation_font_size', value);
 
       const container = document.querySelector<HTMLElement>(
-        '#SpicyLyricsPage .LyricsContainer .LyricsContent',
+        '#AmaiLyricsPage .LyricsContainer .LyricsContent',
       );
       if (container) {
         container.style.setProperty('--TranslationFontSize', value);
@@ -221,7 +221,7 @@ function generalSettings() {
       storage.set('default_lyrics_size', value);
 
       const container = document.querySelector<HTMLElement>(
-        '#SpicyLyricsPage .LyricsContainer .LyricsContent',
+        '#AmaiLyricsPage .LyricsContainer .LyricsContent',
       );
       if (container) {
         if (value) {

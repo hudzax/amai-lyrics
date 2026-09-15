@@ -5,20 +5,20 @@ import { DraggableElement, DroppableElement } from './types';
 export function setupDragAndDrop() {
   // Cache DragBox and dropZones for reuse
   const DragBox = Fullscreen.IsOpen
-    ? document.querySelector('#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent')
-    : document.querySelector('#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage');
+    ? document.querySelector('#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent')
+    : document.querySelector('#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage');
   if (!DragBox) return;
 
   const dropZones = document.querySelectorAll<DroppableElement>(
-    '#SpicyLyricsPage .ContentBox .DropZone',
+    '#AmaiLyricsPage .ContentBox .DropZone',
   );
 
   // Use a flag to prevent duplicate event listeners
   if (!(DragBox as DraggableElement)._dragEventsAdded) {
     DragBox.addEventListener('dragstart', () => {
       setTimeout(() => {
-        document.querySelector('#SpicyLyricsPage').classList.add('SomethingDragging');
-        const NowBar = document.querySelector('#SpicyLyricsPage .ContentBox .NowBar');
+        document.querySelector('#AmaiLyricsPage').classList.add('SomethingDragging');
+        const NowBar = document.querySelector('#AmaiLyricsPage .ContentBox .NowBar');
         if (NowBar.classList.contains('LeftSide')) {
           dropZones.forEach((zone) => {
             if (zone.classList.contains('LeftSide')) {
@@ -41,7 +41,7 @@ export function setupDragAndDrop() {
     });
 
     DragBox.addEventListener('dragend', () => {
-      document.querySelector('#SpicyLyricsPage').classList.remove('SomethingDragging');
+      document.querySelector('#AmaiLyricsPage').classList.remove('SomethingDragging');
       dropZones.forEach((zone) => zone.classList.remove('Hidden'));
       DragBox.classList.remove('Dragging');
     });
@@ -65,7 +65,7 @@ export function setupDragAndDrop() {
         e.preventDefault();
         zone.classList.remove('DraggingOver');
 
-        const NowBar = document.querySelector('#SpicyLyricsPage .ContentBox .NowBar');
+        const NowBar = document.querySelector('#AmaiLyricsPage .ContentBox .NowBar');
         const currentClass = NowBar.classList.contains('LeftSide') ? 'LeftSide' : 'RightSide';
 
         const newClass = zone.classList.contains('RightSide') ? 'RightSide' : 'LeftSide';

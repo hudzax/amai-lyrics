@@ -1,7 +1,5 @@
 export function ApplyLyricsCredits(data: { SongWriters?: string[] }) {
-  const LyricsContainer = document.querySelector(
-    '#SpicyLyricsPage .LyricsContainer .LyricsContent',
-  );
+  const LyricsContainer = document.querySelector('#AmaiLyricsPage .LyricsContainer .LyricsContent');
   if (!data?.SongWriters) return;
   const CreditsElement = document.createElement('div');
   CreditsElement.classList.add('Credits');

@@ -18,7 +18,7 @@ export function ApplyStaticLyrics(data) {
   if (!Defaults.LyricsContainerExists) return;
 
   const LyricsContainer = document.querySelector<HTMLElement>(
-    '#SpicyLyricsPage .LyricsContainer .LyricsContent',
+    '#AmaiLyricsPage .LyricsContainer .LyricsContent',
   );
   LyricsContainer.setAttribute('data-lyrics-type', 'Static');
 
@@ -68,7 +68,7 @@ export function ApplyStaticLyrics(data) {
   else MountScrollSimplebar();
 
   const LyricsStylingContainer = document.querySelector<HTMLElement>(
-    '#SpicyLyricsPage .LyricsContainer .LyricsContent .simplebar-content',
+    '#AmaiLyricsPage .LyricsContainer .LyricsContent .simplebar-content',
   );
 
   if (data.offline) {

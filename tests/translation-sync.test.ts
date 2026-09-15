@@ -103,7 +103,7 @@ function stubScrollTop(el: HTMLElement, initial = 0): void {
 
 function setupDom(): void {
   document.body.innerHTML = `
-    <div id="SpicyLyricsPage">
+    <div id="AmaiLyricsPage">
       <div class="LyricsContainer">
         <div class="LyricsContent">
           <div class="simplebar-content-wrapper"></div>
@@ -204,7 +204,7 @@ describe('translation update keeps lyrics sync intact', () => {
 
   it('falls back to raw scrollTop preservation for static lyrics', () => {
     const container = document.querySelector<HTMLElement>(
-      '#SpicyLyricsPage .LyricsContainer .LyricsContent',
+      '#AmaiLyricsPage .LyricsContainer .LyricsContent',
     );
     const lineElem = document.createElement('div');
     lineElem.classList.add('line', 'static');

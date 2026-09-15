@@ -59,7 +59,7 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
   new PageManager(buttonManager); // Used for side effects (navigation setup)
 
   // Tear down the lyrics page (and its SimpleBar observers / tippy instances)
-  // on plugin teardown so a hot-reload doesn't leave a stale #SpicyLyricsPage.
+  // on plugin teardown so a hot-reload doesn't leave a stale #AmaiLyricsPage.
   lifecycle.trackCallback(() => PageView.Destroy());
 
   // Mirror visibility onto <html> so pure-CSS animations (dynamic background

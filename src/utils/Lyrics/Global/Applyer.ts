@@ -19,11 +19,11 @@ export default function ApplyLyrics(
   lyrics: LyricsData | NoLyricsResult | null | undefined,
 ): boolean {
   // Check if lyrics page exists
-  if (!document.querySelector('#SpicyLyricsPage')) return false;
+  if (!document.querySelector('#AmaiLyricsPage')) return false;
 
   // Apply font sizes from settings
   const lyricsContent = document.querySelector<HTMLElement>(
-    '#SpicyLyricsPage .LyricsContainer .LyricsContent',
+    '#AmaiLyricsPage .LyricsContainer .LyricsContent',
   );
   if (lyricsContent) {
     const translationFontSize =

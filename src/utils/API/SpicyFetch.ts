@@ -71,7 +71,7 @@ export default async function SpicyFetch(
       }
       return sentData;
     } else {
-      const SpicyLyricsAPI_Headers = IsExternal ? null : {};
+      const AmaiLyricsAPI_Headers = IsExternal ? null : {};
 
       const SpotifyAPI_Headers = IsExternal
         ? {
@@ -85,7 +85,7 @@ export default async function SpicyFetch(
       const headers = {
         Authorization: `Bearer ${SpotifyAccessToken}`,
         ...SpotifyAPI_Headers,
-        ...SpicyLyricsAPI_Headers,
+        ...AmaiLyricsAPI_Headers,
       };
 
       const res = await fetch(url, {

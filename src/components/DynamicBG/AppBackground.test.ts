@@ -84,7 +84,7 @@ describe('AppBackground', () => {
     const host = setupMainView();
     host.insertAdjacentHTML(
       'beforeend',
-      '<div id="SpicyLyricsPage"><div class="ContentBox"><div class="sweet-dynamic-bg"><img id="bg-img-a" class="bg-image primary active"></div></div></div>',
+      '<div id="AmaiLyricsPage"><div class="ContentBox"><div class="sweet-dynamic-bg"><img id="bg-img-a" class="bg-image primary active"></div></div></div>',
     );
 
     const bg = new AppBackground();
@@ -94,7 +94,7 @@ describe('AppBackground', () => {
     bg.remove();
     expect(bg.isApplied()).toBe(false);
     // Nested lyrics background survives.
-    expect(document.querySelector('#SpicyLyricsPage .sweet-dynamic-bg')).not.toBeNull();
+    expect(document.querySelector('#AmaiLyricsPage .sweet-dynamic-bg')).not.toBeNull();
     expect(host.classList.contains('amai-app-bg-host')).toBe(false);
   });
 

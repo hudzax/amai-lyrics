@@ -51,13 +51,13 @@ export class SongChangeManager {
 
     // Update UI elements directly without waiting for track info
     if (Spicetify.Player.data.item?.type === 'track') {
-      if (document.querySelector('#SpicyLyricsPage .ContentBox .NowBar')) {
+      if (document.querySelector('#AmaiLyricsPage .ContentBox .NowBar')) {
         const { UpdateNowBar } = await import('../components/Utils/NowBar');
         UpdateNowBar();
       }
     }
 
-    if (document.querySelector('#SpicyLyricsPage .LyricsContainer')) {
+    if (document.querySelector('#AmaiLyricsPage .LyricsContainer')) {
       // Update the page content (artwork, song name, artists)
       const { default: PageView } = await import('../components/Pages/PageView');
       PageView.UpdatePageContent();

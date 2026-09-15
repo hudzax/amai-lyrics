@@ -83,7 +83,7 @@ function findAppBg(host: Element): HTMLElement | null {
  * Same dual-image crossfade approach as the lyrics/sidebar backgrounds, but
  * scoped to a direct child of `.Root` (fallback `.Root__top-container`) so one
  * continuous canvas sits behind the top bar, main view, and playbar, while
- * `remove()` never touches the nested `#SpicyLyricsPage` or sidebar backgrounds.
+ * `remove()` never touches the nested `#AmaiLyricsPage` or sidebar backgrounds.
  * Synchronous DOM writes keep it trivially testable; callers debounce
  * song-change applies.
  */

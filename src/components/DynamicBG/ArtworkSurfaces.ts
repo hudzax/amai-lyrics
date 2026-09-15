@@ -60,9 +60,9 @@ export function createDefaultAdapters(sidebarBg: NowPlayingBarBackground): Artwo
       appBackgroundSingleton.apply(coverUrl);
     },
     applyLyricsPage: () => {
-      if (!document.querySelector('#SpicyLyricsPage .LyricsContainer')) return;
+      if (!document.querySelector('#AmaiLyricsPage .LyricsContainer')) return;
       void import('./dynamicBackground').then(({ default: ApplyDynamicBackground }) => {
-        const el = document.querySelector<HTMLElement>('#SpicyLyricsPage .ContentBox');
+        const el = document.querySelector<HTMLElement>('#AmaiLyricsPage .ContentBox');
         if (el) ApplyDynamicBackground(el);
       });
     },

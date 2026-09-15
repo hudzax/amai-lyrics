@@ -78,7 +78,7 @@ export function setupEventListeners() {
   // Set initial spin state once the record element is available
   nowBarInitWhen = Whentil.When(
     () =>
-      document.querySelector('#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage'),
+      document.querySelector('#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage'),
     () => updateVinylSpinState(),
   );
 
@@ -142,7 +142,7 @@ export function setupEventListeners() {
  */
 function updateVinylSpinState(): void {
   const MediaImage = document.querySelector<HTMLImageElement>(
-    '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage',
+    '#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage',
   );
   if (!MediaImage) return;
 
@@ -333,7 +333,7 @@ export function CleanUpActiveComponents() {
  */
 function removeLeftoverElements() {
   const MediaBox = document.querySelector(
-    '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent',
+    '#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent',
   );
 
   if (MediaBox) {

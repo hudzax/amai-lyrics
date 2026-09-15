@@ -1,7 +1,7 @@
 /* ============================================================
    Amai Lyrics — Tooltip styling
    All selectors here must stay GLOBAL (never nest under
-   #SpicyLyricsPage): tippy appends its poppers to <body>.
+   #AmaiLyricsPage): tippy appends its poppers to <body>.
 
    WHY TWO RULE SETS (verified against the installed client):
    - Spicetify.TippyProps uses a CUSTOM tippy render that outputs

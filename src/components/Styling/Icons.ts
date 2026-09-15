@@ -8,7 +8,7 @@ const TrackSkip = `
 
 export const Icons = {
   LyricsPage: `
-        <svg class="Svg-sc-ytk21e-0 Svg-img-16-icon" id="SpicyLyricsPageSvg" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 16 16" preserveAspectRatio="xMidYMid meet" role="img" aria-hidden="true" data-encore-id="icon">
+        <svg class="Svg-sc-ytk21e-0 Svg-img-16-icon" id="AmaiLyricsPageSvg" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 16 16" preserveAspectRatio="xMidYMid meet" role="img" aria-hidden="true" data-encore-id="icon">
             <ellipse cx="4.9" cy="12.1" rx="2.45" ry="1.9" transform="rotate(-20 4.9 12.1)" />
             <rect x="6.35" y="2.6" width="1.3" height="9.5" rx="0.45" />
             <path d="M7.65 2.6l2.9.75c.4.1.62.5.5.88l-.65 1.9c-.1-.9-1-1.7-2.75-2V2.6z" />
@@ -17,7 +17,7 @@ export const Icons = {
         </svg>
     `,
   LyricsLargeIcon: `
-        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 16 16" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon" id="SpicyLyricsPageSvg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 16 16" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon" id="AmaiLyricsPageSvg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
             <ellipse cx="4.9" cy="12.1" rx="2.45" ry="1.9" transform="rotate(-20 4.9 12.1)" />
             <rect x="6.35" y="2.6" width="1.3" height="9.5" rx="0.45" />
             <path d="M7.65 2.6l2.9.75c.4.1.62.5.5.88l-.65 1.9c-.1-.9-1-1.7-2.75-2V2.6z" />

@@ -10,7 +10,7 @@ import {
 export let ScrollSimplebar: SimpleBar;
 let isDragging = false;
 
-const ElementEventQuery = '#SpicyLyricsPage .ContentBox .LyricsContainer';
+const ElementEventQuery = '#AmaiLyricsPage .ContentBox .LyricsContainer';
 
 // Stored handler refs so removeEventListener actually matches addEventListener.
 let onMouseEnter: (() => void) | null = null;
@@ -22,7 +22,7 @@ let boundLyricsContainer: HTMLElement | null = null;
 
 export function MountScrollSimplebar() {
   const LyricsContainer = document.querySelector<HTMLElement>(
-    '#SpicyLyricsPage .LyricsContainer .LyricsContent',
+    '#AmaiLyricsPage .LyricsContainer .LyricsContent',
   );
   if (!LyricsContainer) return;
 
@@ -67,7 +67,7 @@ export function ClearScrollSimplebar() {
   // nodes).
   const LyricsContainer =
     boundLyricsContainer ??
-    document.querySelector<HTMLElement>('#SpicyLyricsPage .LyricsContainer .LyricsContent');
+    document.querySelector<HTMLElement>('#AmaiLyricsPage .LyricsContainer .LyricsContent');
   const container = boundContainer ?? document.querySelector<HTMLElement>(ElementEventQuery);
 
   ScrollSimplebar?.unMount();
@@ -95,7 +95,7 @@ export function RecalculateScrollSimplebar() {
 
 function updateScrollbarVisibility() {
   const LyricsContainer = document.querySelector<HTMLElement>(
-    '#SpicyLyricsPage .LyricsContainer .LyricsContent',
+    '#AmaiLyricsPage .LyricsContainer .LyricsContent',
   );
   if (!LyricsContainer) return;
 

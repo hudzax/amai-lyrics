@@ -77,7 +77,7 @@ export default async function fetchLyrics(uri: string, flush = false): Promise<L
   resetLyricsUI();
   ClearLyricsPageContainer();
   document
-    .querySelector<HTMLElement>('#SpicyLyricsPage .ContentBox')
+    .querySelector<HTMLElement>('#AmaiLyricsPage .ContentBox')
     ?.classList.remove('LyricsHidden');
 
   const trackId = uri.split(':')[2] ?? '';

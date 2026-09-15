@@ -1,4 +1,4 @@
-#SpicyLyricsPage [data-simplebar] {
+#AmaiLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
   flex-wrap: wrap;
@@ -7,7 +7,7 @@
   align-items: flex-start;
 }
 
-#SpicyLyricsPage .simplebar-wrapper {
+#AmaiLyricsPage .simplebar-wrapper {
   overflow: hidden;
   width: inherit;
   height: inherit;
@@ -15,7 +15,7 @@
   max-height: inherit;
 }
 
-#SpicyLyricsPage .simplebar-mask {
+#AmaiLyricsPage .simplebar-mask {
   direction: inherit;
   position: absolute;
   overflow: hidden;
@@ -30,7 +30,7 @@
   z-index: 0;
 }
 
-#SpicyLyricsPage .simplebar-offset {
+#AmaiLyricsPage .simplebar-offset {
   direction: inherit !important;
   box-sizing: inherit !important;
   resize: none !important;
@@ -44,7 +44,7 @@
   -webkit-overflow-scrolling: touch;
 }
 
-#SpicyLyricsPage .simplebar-content-wrapper {
+#AmaiLyricsPage .simplebar-content-wrapper {
   direction: inherit;
   box-sizing: border-box !important;
   position: relative;
@@ -58,27 +58,27 @@
   -ms-overflow-style: none;
 }
 
-#SpicyLyricsPage .simplebar-content-wrapper::-webkit-scrollbar,
-#SpicyLyricsPage .simplebar-hide-scrollbar::-webkit-scrollbar {
+#AmaiLyricsPage .simplebar-content-wrapper::-webkit-scrollbar,
+#AmaiLyricsPage .simplebar-hide-scrollbar::-webkit-scrollbar {
   display: none;
   width: 0;
   height: 0;
 }
 
-#SpicyLyricsPage .simplebar-content:before,
-#SpicyLyricsPage .simplebar-content:after {
+#AmaiLyricsPage .simplebar-content:before,
+#AmaiLyricsPage .simplebar-content:after {
   content: ' ';
   display: table;
 }
 
-#SpicyLyricsPage .simplebar-placeholder {
+#AmaiLyricsPage .simplebar-placeholder {
   max-height: 100%;
   max-width: 100%;
   width: 100%;
   pointer-events: none;
 }
 
-#SpicyLyricsPage .simplebar-height-auto-observer-wrapper {
+#AmaiLyricsPage .simplebar-height-auto-observer-wrapper {
   box-sizing: inherit !important;
   height: 100%;
   width: 100%;
@@ -96,7 +96,7 @@
   flex-basis: 0;
 }
 
-#SpicyLyricsPage .simplebar-height-auto-observer {
+#AmaiLyricsPage .simplebar-height-auto-observer {
   box-sizing: inherit;
   display: block;
   opacity: 0;
@@ -112,7 +112,7 @@
   z-index: -1;
 }
 
-#SpicyLyricsPage .simplebar-track {
+#AmaiLyricsPage .simplebar-track {
   z-index: 1;
   position: absolute;
   right: 0;
@@ -121,7 +121,7 @@
   overflow: hidden;
 }
 
-#SpicyLyricsPage [data-simplebar].simplebar-dragging {
+#AmaiLyricsPage [data-simplebar].simplebar-dragging {
   pointer-events: none;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
@@ -131,7 +131,7 @@
   user-select: none;
 }
 
-#SpicyLyricsPage [data-simplebar].simplebar-dragging .simplebar-content {
+#AmaiLyricsPage [data-simplebar].simplebar-dragging .simplebar-content {
   pointer-events: none;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
@@ -141,11 +141,11 @@
   user-select: none;
 }
 
-#SpicyLyricsPage [data-simplebar].simplebar-dragging .simplebar-track {
+#AmaiLyricsPage [data-simplebar].simplebar-dragging .simplebar-track {
   pointer-events: all;
 }
 
-#SpicyLyricsPage .simplebar-scrollbar {
+#AmaiLyricsPage .simplebar-scrollbar {
   position: absolute;
   left: 0;
   right: 0;
@@ -163,30 +163,30 @@
   transition: opacity 0.2s 0.5s linear;
 }
 
-#SpicyLyricsPage .simplebar-scrollbar.simplebar-visible:before {
+#AmaiLyricsPage .simplebar-scrollbar.simplebar-visible:before {
   opacity: 0.5 !important;
   transition-delay: 0s !important;
   transition-duration: 0s !important;
 }
 
-#SpicyLyricsPage .simplebar-track.simplebar-vertical {
+#AmaiLyricsPage .simplebar-track.simplebar-vertical {
   top: 0;
   width: 11px;
 }
 
-#SpicyLyricsPage .simplebar-scrollbar:before {
+#AmaiLyricsPage .simplebar-scrollbar:before {
   top: 2px;
   bottom: 2px;
   left: 2px;
   right: 2px;
 }
 
-#SpicyLyricsPage .simplebar-track.simplebar-horizontal {
+#AmaiLyricsPage .simplebar-track.simplebar-horizontal {
   left: 0;
   height: 11px;
 }
 
-#SpicyLyricsPage .simplebar-track.simplebar-horizontal .simplebar-scrollbar {
+#AmaiLyricsPage .simplebar-track.simplebar-horizontal .simplebar-scrollbar {
   right: auto;
   left: 0;
   top: 0;
@@ -197,12 +197,12 @@
 }
 
 /* Rtl support */
-#SpicyLyricsPage [data-simplebar-direction='rtl'] .simplebar-track.simplebar-vertical {
+#AmaiLyricsPage [data-simplebar-direction='rtl'] .simplebar-track.simplebar-vertical {
   right: auto;
   left: 0;
 }
 
-#SpicyLyricsPage .simplebar-dummy-scrollbar-size {
+#AmaiLyricsPage .simplebar-dummy-scrollbar-size {
   direction: rtl;
   position: fixed;
   opacity: 0;
@@ -214,25 +214,25 @@
   -ms-overflow-style: scrollbar !important;
 }
 
-#SpicyLyricsPage .simplebar-dummy-scrollbar-size > div {
+#AmaiLyricsPage .simplebar-dummy-scrollbar-size > div {
   width: 200%;
   height: 200%;
   margin: 10px 0;
 }
 
-#SpicyLyricsPage .ScrollbarScrollable .simplebar-track {
+#AmaiLyricsPage .ScrollbarScrollable .simplebar-track {
   transition: opacity 0.2s linear;
   opacity: 1;
 }
 
-#SpicyLyricsPage .ScrollbarScrollable .simplebar-track.simplebar-vertical {
+#AmaiLyricsPage .ScrollbarScrollable .simplebar-track.simplebar-vertical {
   right: 5px
 }
 
-#SpicyLyricsPage .ScrollbarScrollable .simplebar-track.simplebar-horizontal {
+#AmaiLyricsPage .ScrollbarScrollable .simplebar-track.simplebar-horizontal {
   bottom: 5px
 }
 
-#SpicyLyricsPage .ScrollbarScrollable.hide-scrollbar .simplebar-track {
+#AmaiLyricsPage .ScrollbarScrollable.hide-scrollbar .simplebar-track {
   opacity: 0;
 }

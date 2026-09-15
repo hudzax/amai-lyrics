@@ -11,7 +11,7 @@ import { APP_BG_ON_CLASS } from './AppBackground';
  */
 function isHiddenByAppCanvas(element: HTMLElement): boolean {
   if (!document.documentElement.classList.contains(APP_BG_ON_CLASS)) return false;
-  const page = element.closest?.('#SpicyLyricsPage');
+  const page = element.closest?.('#AmaiLyricsPage');
   if (!page) return false;
   return !page.classList.contains('Fullscreen');
 }

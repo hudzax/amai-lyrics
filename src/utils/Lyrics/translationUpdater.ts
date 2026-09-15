@@ -58,7 +58,7 @@ export function updateDisplayedLyricsWithTranslations(lyricsData: LyricsData): v
     if (!Defaults.LyricsContainerExists) return;
 
     const lyricsContainer = document.querySelector<HTMLElement>(
-      '#SpicyLyricsPage .LyricsContainer .LyricsContent',
+      '#AmaiLyricsPage .LyricsContainer .LyricsContent',
     );
 
     if (!lyricsContainer) return;
@@ -184,7 +184,7 @@ function updateLineLyricsTranslations(
   rawLyrics?: string[],
 ): void {
   const lineElements = document.querySelectorAll(
-    '#SpicyLyricsPage .LyricsContainer .LyricsContent .main-lyrics-text.line',
+    '#AmaiLyricsPage .LyricsContainer .LyricsContent .main-lyrics-text.line',
   );
 
   content.forEach((line, index) => {
@@ -212,7 +212,7 @@ function updateStaticLyricsTranslations(
   rawLyrics?: string[],
 ): void {
   const lineElements = document.querySelectorAll(
-    '#SpicyLyricsPage .LyricsContainer .LyricsContent .line.static .main-lyrics-text',
+    '#AmaiLyricsPage .LyricsContainer .LyricsContent .line.static .main-lyrics-text',
   );
 
   lines.forEach((line, index) => {

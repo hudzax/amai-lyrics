@@ -42,7 +42,7 @@ export function ApplyLineLyrics(data: LyricsData): void {
   if (!Defaults.LyricsContainerExists) return;
 
   const LyricsContainer = document.querySelector<HTMLElement>(
-    '#SpicyLyricsPage .LyricsContainer .LyricsContent',
+    '#AmaiLyricsPage .LyricsContainer .LyricsContent',
   );
 
   if (!LyricsContainer) {
@@ -137,7 +137,7 @@ export function ApplyLineLyrics(data: LyricsData): void {
 
   // Apply custom styles if provided
   const LyricsStylingContainer = document.querySelector<HTMLElement>(
-    '#SpicyLyricsPage .LyricsContainer .LyricsContent .simplebar-content',
+    '#AmaiLyricsPage .LyricsContainer .LyricsContent .simplebar-content',
   );
 
   if (LyricsStylingContainer) {

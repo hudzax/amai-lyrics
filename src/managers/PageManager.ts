@@ -34,7 +34,7 @@ export class PageManager {
       this.buttonManager.setActive(true);
     } else {
       // Destroy when we tracked the open OR the page is still mounted: the open
-      // event can be missed across hot-reloads, and a leaked #SpicyLyricsPage
+      // event can be missed across hot-reloads, and a leaked #AmaiLyricsPage
       // hides Spotify's own content via body:has() CSS (blank main view).
       if (this.lastLocation?.pathname === '/AmaiLyrics' || PageView.IsOpened) {
         await PageView.Destroy();

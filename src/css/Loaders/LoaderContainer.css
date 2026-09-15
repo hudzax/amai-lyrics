@@ -1,5 +1,5 @@
 
-#SpicyLyricsPage .LyricsContainer .loaderContainer {
+#AmaiLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
   justify-content: center;
@@ -13,11 +13,11 @@
   transition: all 0.4s ease-in-out;
 }
 
-#SpicyLyricsPage .LyricsContainer .loaderContainer.active {
+#AmaiLyricsPage .LyricsContainer .loaderContainer.active {
   opacity: 1;
   z-index: 9;
 }
 
-#SpicyLyricsPage .LyricsContainer .loaderContainer:is(.active) + .LyricsContent {
+#AmaiLyricsPage .LyricsContainer .loaderContainer:is(.active) + .LyricsContent {
   display: none;
 }

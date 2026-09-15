@@ -78,13 +78,13 @@ async function createPageElement() {
   await mutateAsync(() => {
     // Remove any pre-existing page node (e.g. one left behind by a hot-reload
     // before the previous instance's teardown ran) to avoid duplicate
-    // #SpicyLyricsPage nodes — ~75 selectors throughout the app resolve the
+    // #AmaiLyricsPage nodes — ~75 selectors throughout the app resolve the
     // stale node otherwise.
-    const existing = document.getElementById('SpicyLyricsPage');
+    const existing = document.getElementById('AmaiLyricsPage');
     if (existing) existing.remove();
 
     const elem = document.createElement('div');
-    elem.id = 'SpicyLyricsPage';
+    elem.id = 'AmaiLyricsPage';
     // SAFETY: PageHTML is a static trusted template bundled with the extension, not user-supplied lyrics text.
     elem.replaceChildren(document.createRange().createContextualFragment(PageHTML));
     if (PageRoot) {
@@ -102,14 +102,14 @@ async function createPageElement() {
 async function DestroyPage() {
   if (!PageView.IsOpened) return;
   if (Fullscreen.IsOpen) Fullscreen.Close();
-  const spicyLyricsPage = document.querySelector<HTMLElement>(PageViewSelectors.SpicyLyricsPage);
-  if (spicyLyricsPage) {
+  const amaiLyricsPage = document.querySelector<HTMLElement>(PageViewSelectors.AmaiLyricsPage);
+  if (amaiLyricsPage) {
     // Await the removal before flipping LyricsContainerExists: otherwise the
     // flag reads "gone" for a frame while the node is still mounted, and
     // in-flight measures in that window read stale DOM.
     try {
       await mutateAsync(() => {
-        spicyLyricsPage.remove();
+        amaiLyricsPage.remove();
       });
     } catch (error) {
       console.error('[Amai Lyrics] PageView destroy failed:', error);

@@ -79,7 +79,7 @@ export function ScrollToActiveLine(ScrollSimplebar: SimpleBar) {
       if (!LineElem || !LineElem.isConnected) return;
       // Abort if page was destroyed while this tick was queued (orphan rAF leak)
       if (!Defaults.LyricsContainerExists) return;
-      if (!document.querySelector('#SpicyLyricsPage')) return;
+      if (!document.querySelector('#AmaiLyricsPage')) return;
       const container = ScrollSimplebar?.getScrollElement() as HTMLElement;
       if (!container || !container.isConnected) return;
 

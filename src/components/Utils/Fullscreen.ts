@@ -118,7 +118,7 @@ const MediaBox_Data = {
 };
 
 function Open() {
-  const SpicyPage = document.querySelector<HTMLElement>('.Root__main-view #SpicyLyricsPage');
+  const SpicyPage = document.querySelector<HTMLElement>('.Root__main-view #AmaiLyricsPage');
   const Root = document.body as HTMLElement;
 
   if (SpicyPage) {
@@ -129,7 +129,7 @@ function Open() {
 
     // Request fullscreen first, then set up UI elements after transition
     if (!document.fullscreenElement) {
-      Root.querySelector('#SpicyLyricsPage')
+      Root.querySelector('#AmaiLyricsPage')
         .requestFullscreen()
         .then(() => {
           // Set up UI controls after fullscreen transition completes
@@ -158,10 +158,10 @@ function Open() {
 
       // Set up media box hover effects
       const MediaBox = document.querySelector<HTMLElement>(
-        '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox',
+        '#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox',
       );
       const MediaImage = document.querySelector<HTMLElement>(
-        '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage',
+        '#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage',
       );
 
       if (MediaBox && MediaImage) {
@@ -182,7 +182,7 @@ function Open() {
 }
 
 function Close() {
-  const SpicyPage = document.querySelector<HTMLElement>('#SpicyLyricsPage');
+  const SpicyPage = document.querySelector<HTMLElement>('#AmaiLyricsPage');
 
   if (SpicyPage) {
     // First exit browser fullscreen if active
@@ -229,7 +229,7 @@ function Close() {
       if (NoLyrics) {
         OpenNowBar();
         const lyricsContainer = document.querySelector(
-          '#SpicyLyricsPage .ContentBox .LyricsContainer',
+          '#AmaiLyricsPage .ContentBox .LyricsContainer',
         );
         if (lyricsContainer) {
           lyricsContainer.classList.add('Hidden');
@@ -241,10 +241,10 @@ function Close() {
 
       // Clean up media box event listeners
       const MediaBox = document.querySelector<HTMLElement>(
-        '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox',
+        '#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox',
       );
       const MediaImage = document.querySelector<HTMLElement>(
-        '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage',
+        '#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage',
       );
 
       if (MediaBox) {
@@ -263,7 +263,7 @@ function Close() {
 }
 
 function Toggle() {
-  const SpicyPage = document.querySelector<HTMLElement>('#SpicyLyricsPage');
+  const SpicyPage = document.querySelector<HTMLElement>('#AmaiLyricsPage');
 
   if (SpicyPage) {
     // Prevent multiple rapid toggles by checking if a transition is in progress

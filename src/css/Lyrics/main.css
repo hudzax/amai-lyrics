@@ -1,4 +1,4 @@
-#SpicyLyricsPage .LyricsContainer {
+#AmaiLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
   align-items: center;
@@ -8,11 +8,11 @@
   width: 100%;
 }
 
-#SpicyLyricsPage .LyricsContainer.Hidden {
+#AmaiLyricsPage .LyricsContainer.Hidden {
   display: none;
 }
 
-#SpicyLyricsPage .LyricsContainer .LyricsContent {
+#AmaiLyricsPage .LyricsContainer .LyricsContent {
   --TextGlowDef: rgba(255, 255, 255, 0.15) 0px 0px 6px;
   /* Active-line glow picks up the artwork accent hue (alpha ≈ original 0.25) */
   --ActiveTextGlowDef: rgba(var(--amai-accent-rgb), 0.28) 0px 0px 16px;
@@ -49,17 +49,17 @@
   mask-image: var(--ImageMask);
 }
 
-#SpicyLyricsPage .LyricsContainer .LyricsContent .BottomSpacer {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .BottomSpacer {
   display: block;
   height: 50cqh;
 }
 
-#SpicyLyricsPage .LyricsContainer .LyricsContent .TopSpacer {
+#AmaiLyricsPage .LyricsContainer .LyricsContent .TopSpacer {
   display: block;
   height: 25cqh;
 }
 
-#SpicyLyricsPage
+#AmaiLyricsPage
   .ContentBox
   .NowBar:not(.Active)
   + .LyricsContainer
@@ -68,7 +68,7 @@
   padding: 0 18cqw;
 }
 
-#SpicyLyricsPage
+#AmaiLyricsPage
   .ContentBox
   .NowBar.Active:is(.LeftSide)
   + .LyricsContainer
@@ -78,7 +78,7 @@
   padding: 0 5cqw 0 3.5cqw !important;
 }
 
-#SpicyLyricsPage
+#AmaiLyricsPage
   .ContentBox
   .NowBar.Active:is(.RightSide)
   + .LyricsContainer
@@ -90,7 +90,7 @@
 
 /* Amai Page Button Styles */
 
-#SpicyLyricsPage .AmaiPageButtonContainer {
+#AmaiLyricsPage .AmaiPageButtonContainer {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -100,7 +100,7 @@
   gap: 8px;
 }
 
-#SpicyLyricsPage .AmaiPageButton {
+#AmaiLyricsPage .AmaiPageButton {
   padding: 10px 24px;
   background: var(--amai-fill-subtle);
   border: 1px solid var(--amai-stroke-1);
@@ -124,7 +124,7 @@
   min-width: 160px;
 }
 
-#SpicyLyricsPage .AmaiPageButton:hover {
+#AmaiLyricsPage .AmaiPageButton:hover {
   background: var(--amai-fill-raised);
   /* Artwork-tinted border + soft accent glow on hover */
   border-color: color-mix(in srgb, var(--amai-accent-1) 55%, transparent);
@@ -134,16 +134,16 @@
     var(--amai-shadow-card);
 }
 
-#SpicyLyricsPage .AmaiPageButton:active {
+#AmaiLyricsPage .AmaiPageButton:active {
   transform: scale(0.95);
 }
 
-#SpicyLyricsPage .AmaiPageButton:focus-visible {
+#AmaiLyricsPage .AmaiPageButton:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--amai-accent-1) 70%, white);
   outline-offset: 2px;
 }
 
-#SpicyLyricsPage .AmaiPageButton.hidden {
+#AmaiLyricsPage .AmaiPageButton.hidden {
   opacity: 0;
   pointer-events: none;
   transform: scale(0.8);
@@ -153,18 +153,18 @@
    when lyrics are unavailable (ContentBox.LyricsHidden) so the user can
    retry, open the MV, or open settings. */
 /* Hide refresh button when in fullscreen mode */
-#SpicyLyricsPage.Fullscreen .AmaiPageButtonContainer {
+#AmaiLyricsPage.Fullscreen .AmaiPageButtonContainer {
   display: none;
 }
 
-#SpicyLyricsPage .amai-version-number {
+#AmaiLyricsPage .amai-version-number {
   font-size: 0.85em;
   color: var(--amai-text-faint);
   cursor: pointer;
   font-weight: normal;
 }
 
-#SpicyLyricsPage .amai-version-number:hover {
+#AmaiLyricsPage .amai-version-number:hover {
   color: rgba(255, 255, 255, 1);
 }
 
@@ -204,11 +204,11 @@ header.main-topBar-container .amai-info {
   color: white;
 }
 
-#SpicyLyricsPage .ContentBox .NowBar .Header {
+#AmaiLyricsPage .ContentBox .NowBar .Header {
   padding: 0 2cqh;
 }
 
-#SpicyLyricsPage
+#AmaiLyricsPage
   .ContentBox
   .NowBar.Active
   + .LyricsContainer
@@ -241,7 +241,7 @@ header.main-topBar-container .amai-info {
   background-color: transparent; /* Lowered opacity for stronger acrylic effect */
 }
 
-#SpicyLyricsPage .ContentBox .NowBar .Header .Metadata {
+#AmaiLyricsPage .ContentBox .NowBar .Header .Metadata {
   margin: 1.8cqh 0 0 0;
 }
 
@@ -309,11 +309,11 @@ ruby > rt {
 /* Long romaji/furigana annotations are wider than their base kanji. Without
    wrapping, the rt row overflows the lyrics column and gets hard-clipped by
    overflow-x: hidden on .LyricsContent. */
-#SpicyLyricsPage .LyricsContainer .LyricsContent ruby {
+#AmaiLyricsPage .LyricsContainer .LyricsContent ruby {
   max-width: 100%;
 }
 
-#SpicyLyricsPage .LyricsContainer .LyricsContent ruby > rt {
+#AmaiLyricsPage .LyricsContainer .LyricsContent ruby > rt {
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;

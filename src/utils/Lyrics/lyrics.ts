@@ -200,9 +200,7 @@ export function addLinesEvListener() {
   LinesEvListenerExists = true;
   LinesEvListenerMaid = new Maid();
 
-  const el = document.querySelector<HTMLElement>(
-    '#SpicyLyricsPage .LyricsContainer .LyricsContent',
-  );
+  const el = document.querySelector<HTMLElement>('#AmaiLyricsPage .LyricsContainer .LyricsContent');
   if (!el) {
     LinesEvListenerExists = false; // Ensure we can retry if element not found initially
     return;

@@ -34,7 +34,7 @@ lifecycle.trackCallback(cancelViewControlsWhen);
  * Sets up playback controls and progress bar in fullscreen mode
  */
 async function OpenNowBar() {
-  const NowBar = document.querySelector('#SpicyLyricsPage .ContentBox .NowBar');
+  const NowBar = document.querySelector('#AmaiLyricsPage .ContentBox .NowBar');
   if (!NowBar) return;
   UpdateNowBar(true);
   if (!NowBar.classList.contains('Active')) NowBar.classList.add('Active');
@@ -43,7 +43,7 @@ async function OpenNowBar() {
   if (Fullscreen.IsOpen) {
     // Cache MediaBox for repeated use
     const MediaBox = document.querySelector(
-      '#SpicyLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent',
+      '#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent',
     );
     if (!MediaBox) return;
 
@@ -97,11 +97,11 @@ async function OpenNowBar() {
         viewControlsWhen = null;
       }
       viewControlsWhen = Whentil.When(
-        () => document.querySelector('#SpicyLyricsPage .ContentBox .NowBar .Header .ViewControls'),
+        () => document.querySelector('#AmaiLyricsPage .ContentBox .NowBar .Header .ViewControls'),
         () => {
           viewControlsWhen = null;
           // Abort if page was destroyed while waiting (prevents appending to detached MediaBox)
-          if (!MediaBox.isConnected || !document.querySelector('#SpicyLyricsPage')) return;
+          if (!MediaBox.isConnected || !document.querySelector('#AmaiLyricsPage')) return;
           // Ensure there's no duplicate elements before appending
           const viewControls = MediaBox.querySelector('.ViewControls');
 
@@ -131,7 +131,7 @@ async function OpenNowBar() {
  */
 function CloseNowBar() {
   cancelViewControlsWhen();
-  const NowBar = document.querySelector('#SpicyLyricsPage .ContentBox .NowBar');
+  const NowBar = document.querySelector('#AmaiLyricsPage .ContentBox .NowBar');
   if (!NowBar) return;
   NowBar.classList.remove('Active');
   storage.set('IsNowBarOpen', 'false');
@@ -156,7 +156,7 @@ function Session_OpenNowBar() {
  * @param force - If true, updates even if the NowBar is closed
  */
 function UpdateNowBar(force = false) {
-  const NowBar = document.querySelector('#SpicyLyricsPage .ContentBox .NowBar');
+  const NowBar = document.querySelector('#AmaiLyricsPage .ContentBox .NowBar');
   if (!NowBar) return;
 
   // Cache elements for repeated use
@@ -239,7 +239,7 @@ function UpdateNowBar(force = false) {
  * Swaps the NowBar between left and right sides of the screen
  */
 function NowBar_SwapSides() {
-  const NowBar = document.querySelector('#SpicyLyricsPage .ContentBox .NowBar');
+  const NowBar = document.querySelector('#AmaiLyricsPage .ContentBox .NowBar');
   if (!NowBar) return;
 
   const CurrentSide = storage.get('NowBarSide');
@@ -265,7 +265,7 @@ function NowBar_SwapSides() {
  * Restores the NowBar to its previous side (left or right) from session storage
  */
 function Session_NowBar_SetSide() {
-  const NowBar = document.querySelector('#SpicyLyricsPage .ContentBox .NowBar');
+  const NowBar = document.querySelector('#AmaiLyricsPage .ContentBox .NowBar');
   if (!NowBar) return;
 
   const CurrentSide = storage.get('NowBarSide');
@@ -293,7 +293,7 @@ function Session_NowBar_SetSide() {
 function DeregisterNowBarBtn() {
   // Remove the button from DOM
   const nowBarButton = document.querySelector(
-    '#SpicyLyricsPage .ContentBox .ViewControls #NowBarToggle',
+    '#AmaiLyricsPage .ContentBox .ViewControls #NowBarToggle',
   );
   if (nowBarButton) {
     nowBarButton.remove();
