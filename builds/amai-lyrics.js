@@ -6057,7 +6057,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.5.3";
+      version = "1.5.4";
     }
   });
 
@@ -6947,34 +6947,33 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   function resetAnimatorCache() {
     lastBlurActiveIndex = null;
   }
-  function activateDot(word) {
-    if (!word.HTMLElement.classList.contains("dot-active")) {
-      const dotDuration = word.EndTime - word.StartTime;
-      word.HTMLElement.style.setProperty("--dot-duration", `${dotDuration}ms`);
-      void word.HTMLElement.offsetWidth;
-      word.HTMLElement.classList.add("dot-active");
-    }
-    word.scale = 1;
-    word.glow = 0.5;
-  }
-  function resetDotNotSung(word) {
-    word.HTMLElement.classList.remove("dot-active");
+  function clearDotInlineStyles(word) {
     setStyleIfChanged(word.HTMLElement, "transform", "");
     setStyleIfChanged(word.HTMLElement, "scale", "");
     setStyleIfChanged(word.HTMLElement, "opacity", "");
     setStyleIfChanged(word.HTMLElement, "--text-shadow-blur-radius", "");
     setStyleIfChanged(word.HTMLElement, "--text-shadow-opacity", "");
+    setStyleIfChanged(word.HTMLElement, "--dot-duration", "");
+  }
+  function activateDot(word) {
+    if (!word.HTMLElement.classList.contains("dot-active")) {
+      void word.HTMLElement.offsetWidth;
+      word.HTMLElement.classList.add("dot-active");
+    }
+    clearDotInlineStyles(word);
+    word.scale = 1;
+    word.glow = 0.5;
+  }
+  function resetDotNotSung(word) {
+    word.HTMLElement.classList.remove("dot-active");
+    clearDotInlineStyles(word);
     word.translateY = 0.01;
     word.scale = 0.75;
     word.glow = 0;
   }
   function resetDotSung(word) {
     word.HTMLElement.classList.remove("dot-active");
-    setStyleIfChanged(word.HTMLElement, "transform", "translateY(calc(var(--font-size) * 0))");
-    setStyleIfChanged(word.HTMLElement, "scale", "1.2");
-    setStyleIfChanged(word.HTMLElement, "opacity", "1");
-    setStyleIfChanged(word.HTMLElement, "--text-shadow-blur-radius", "12px");
-    setStyleIfChanged(word.HTMLElement, "--text-shadow-opacity", "50%");
+    clearDotInlineStyles(word);
     word.scale = 1.2;
     word.glow = 0.5;
   }
@@ -8735,33 +8734,33 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           },
           catch: null
         };
-        function scheduleFlush(fastdom8) {
-          if (!fastdom8.scheduled) {
-            fastdom8.scheduled = true;
-            fastdom8.raf(flush.bind(null, fastdom8));
+        function scheduleFlush(fastdom6) {
+          if (!fastdom6.scheduled) {
+            fastdom6.scheduled = true;
+            fastdom6.raf(flush.bind(null, fastdom6));
             debug("flush scheduled");
           }
         }
-        function flush(fastdom8) {
+        function flush(fastdom6) {
           debug("flush");
-          var writes = fastdom8.writes;
-          var reads = fastdom8.reads;
+          var writes = fastdom6.writes;
+          var reads = fastdom6.reads;
           var error;
           try {
             debug("flushing reads", reads.length);
-            fastdom8.runTasks(reads);
+            fastdom6.runTasks(reads);
             debug("flushing writes", writes.length);
-            fastdom8.runTasks(writes);
+            fastdom6.runTasks(writes);
           } catch (e) {
             error = e;
           }
-          fastdom8.scheduled = false;
+          fastdom6.scheduled = false;
           if (reads.length || writes.length)
-            scheduleFlush(fastdom8);
+            scheduleFlush(fastdom6);
           if (error) {
             debug("task errored", error.message);
-            if (fastdom8.catch)
-              fastdom8.catch(error);
+            if (fastdom6.catch)
+              fastdom6.catch(error);
             else
               throw error;
           }
@@ -8800,19 +8799,31 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       align = "top",
       axis = "vertical"
     } = options;
+    if (!container.isConnected || !element.isConnected)
+      return INERT_CONTROLLER;
     let cancelled = false;
-    let cancelAnimation = () => {
-      cancelled = true;
-    };
+    let animationFrameId = 0;
+    let measureTask = null;
     const controller = {
-      cancel: () => cancelAnimation()
+      cancel: () => {
+        cancelled = true;
+        if (measureTask) {
+          import_fastdom.default.clear(measureTask);
+          measureTask = null;
+        }
+        cancelAnimationFrame(animationFrameId);
+      }
     };
-    new Promise((resolve) => {
-      import_fastdom.default.measure(() => {
+    measureTask = import_fastdom.default.measure(() => {
+      measureTask = null;
+      if (cancelled || !container.isConnected || !element.isConnected)
+        return;
+      let startScroll;
+      let distance;
+      try {
         const containerRect = container.getBoundingClientRect();
         const elementRect = element.getBoundingClientRect();
         let targetScroll;
-        let startScroll;
         if (axis === "vertical") {
           startScroll = container.scrollTop;
           if (align === "center") {
@@ -8828,45 +8839,34 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             targetScroll = elementRect.left - containerRect.left + container.scrollLeft - offset;
           }
         }
-        const distance = targetScroll - startScroll;
-        resolve({ startScroll, distance });
-      });
-    }).then(({ startScroll, distance }) => {
-      if (cancelled)
+        distance = targetScroll - startScroll;
+      } catch {
         return;
-      if (!container.isConnected)
+      }
+      if (distance === 0)
         return;
-      import_fastdom.default.mutate(() => {
+      if (cancelled || !container.isConnected)
+        return;
+      let startTime = null;
+      const animate = (currentTime) => {
         if (cancelled || !container.isConnected)
           return;
-        const startTime = performance.now();
-        let animationFrameId;
-        function animate(currentTime) {
-          if (cancelled || !container.isConnected)
-            return;
-          const elapsed = currentTime - startTime;
-          const progress = Math.min(elapsed / duration, 1);
-          const easedProgress = cubicEaseInOut(progress);
-          const newScroll = startScroll + distance * easedProgress;
-          import_fastdom.default.mutate(() => {
-            if (cancelled || !container.isConnected)
-              return;
-            if (axis === "vertical") {
-              container.scrollTop = newScroll;
-            } else {
-              container.scrollLeft = newScroll;
-            }
-          });
-          if (progress < 1) {
-            animationFrameId = requestAnimationFrame(animate);
-          }
+        if (startTime === null)
+          startTime = currentTime;
+        const elapsed = currentTime - startTime;
+        const progress = duration <= 0 ? 1 : Math.min(elapsed / duration, 1);
+        const easedProgress = cubicEaseInOut(progress);
+        const newScroll = startScroll + distance * easedProgress;
+        if (axis === "vertical") {
+          container.scrollTop = newScroll;
+        } else {
+          container.scrollLeft = newScroll;
         }
-        animationFrameId = requestAnimationFrame(animate);
-        cancelAnimation = () => {
-          cancelled = true;
-          cancelAnimationFrame(animationFrameId);
-        };
-      });
+        if (progress < 1) {
+          animationFrameId = requestAnimationFrame(animate);
+        }
+      };
+      animationFrameId = requestAnimationFrame(animate);
     });
     return controller;
   }
@@ -8880,10 +8880,14 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       axis
     });
   }
-  var import_fastdom;
+  var import_fastdom, INERT_CONTROLLER;
   var init_ScrollIntoView = __esm({
     "src/utils/ScrollIntoView/index.ts"() {
       import_fastdom = __toESM(require_fastdom());
+      INERT_CONTROLLER = {
+        cancel: () => {
+        }
+      };
     }
   });
 
@@ -8930,35 +8934,27 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         const LineElem = currentLine.HTMLElement;
         if (lastLine === LineElem)
           return;
+        if (!LineElem || !LineElem.isConnected)
+          return;
+        if (!Defaults_default.LyricsContainerExists)
+          return;
+        if (!document.querySelector("#SpicyLyricsPage"))
+          return;
+        const container = ScrollSimplebar2?.getScrollElement();
+        if (!container || !container.isConnected)
+          return;
         if (activeScrollController) {
           activeScrollController.cancel();
           setActiveController(null);
         }
-        import_fastdom2.default.measure(() => {
-          if (!Defaults_default.LyricsContainerExists)
-            return;
-          if (!document.querySelector("#SpicyLyricsPage"))
-            return;
-          const container = ScrollSimplebar2?.getScrollElement();
-          if (!container || !container.isConnected)
-            return;
-          if (!LineElem || !LineElem.isConnected)
-            return;
-          import_fastdom2.default.mutate(() => {
-            if (!Defaults_default.LyricsContainerExists)
-              return;
-            if (!container.isConnected || !LineElem.isConnected)
-              return;
-            if (lastLine === LineElem)
-              return;
-            if (lastLine && lastLine.classList.contains("OverridenByScroller")) {
-              lastLine.classList.remove("OverridenByScroller");
-            }
-            setLastLine(LineElem);
-            setActiveController(scrollIntoCenterView(container, LineElem, 270, -50));
-            LineElem.classList.add("Active", "OverridenByScroller");
-          });
-        });
+        if (lastLine === LineElem)
+          return;
+        if (lastLine && lastLine.classList.contains("OverridenByScroller")) {
+          lastLine.classList.remove("OverridenByScroller");
+        }
+        setLastLine(LineElem);
+        setActiveController(scrollIntoCenterView(container, LineElem, 270, -50));
+        LineElem.classList.add("Active", "OverridenByScroller");
       }
     } catch {
     }
@@ -8970,7 +8966,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     setLastLine(null);
   }
-  var import_fastdom2, windowRef4, sharedScrollState, lastLine, activeScrollController;
+  var windowRef4, sharedScrollState, lastLine, activeScrollController;
   var init_ScrollToActiveLine = __esm({
     "src/utils/Scrolling/ScrollToActiveLine.ts"() {
       init_Defaults();
@@ -8978,7 +8974,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_lyrics();
       init_findActiveIndex();
       init_ScrollIntoView();
-      import_fastdom2 = __toESM(require_fastdom());
       windowRef4 = window;
       sharedScrollState = windowRef4.__amaiScrollState ?? (windowRef4.__amaiScrollState = {
         lastLine: null,
@@ -8989,15 +8984,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286f2b/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a2676928c/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286f2b/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a2676928c/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286fac/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a267692cd/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286fac/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a267692cd/ProcessingIndicator.css"() {
     }
   });
 
@@ -9429,6 +9424,46 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
+  // src/utils/fastdomAsync.ts
+  function installFastdomErrorHandler() {
+    if (errorHandlerInstalled)
+      return;
+    errorHandlerInstalled = true;
+    import_fastdom2.default.catch = (error) => {
+      console.error("[Amai Lyrics] FastDOM task failed:", error);
+    };
+  }
+  function measureAsync(fn) {
+    return new Promise((resolve, reject) => {
+      import_fastdom2.default.measure(() => {
+        try {
+          resolve(fn());
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+  }
+  function mutateAsync(fn) {
+    return new Promise((resolve, reject) => {
+      import_fastdom2.default.mutate(() => {
+        try {
+          resolve(fn());
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+  }
+  var import_fastdom2, errorHandlerInstalled;
+  var init_fastdomAsync = __esm({
+    "src/utils/fastdomAsync.ts"() {
+      import_fastdom2 = __toESM(require_fastdom());
+      errorHandlerInstalled = false;
+      installFastdomErrorHandler();
+    }
+  });
+
   // src/constants/PageViewSelectors.ts
   var PageViewSelectors;
   var init_PageViewSelectors = __esm({
@@ -9446,6 +9481,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         RefreshLyricsButton: "#RefreshLyrics",
         WatchMusicVideoButton: "#WatchMusicVideoButton",
         SettingsButton: "#AmaiSettingsButton",
+        ActionButtonContainer: "#SpicyLyricsPage .ContentBox .NowBar .AmaiPageButtonContainer",
         CloseButton: "#Close",
         FullscreenToggleButton: "#FullscreenToggle",
         LoaderContainer: "#SpicyLyricsPage .loaderContainer",
@@ -9579,15 +9615,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return;
     const mediaImage = document.querySelector(PageViewSelectors.MediaImage);
     if (mediaImage) {
-      const mutationPromise = new Promise((resolve) => {
-        import_fastdom3.default.mutate(() => {
+      await Promise.all([
+        mutateAsync(() => {
           if (mediaImage.classList.contains("loaded")) {
             mediaImage.classList.remove("loaded");
           }
-          resolve();
-        });
-      });
-      await Promise.all([mutationPromise, updateSongInfo(), updateArtwork(mediaImage)]);
+        }),
+        updateSongInfo(),
+        updateArtwork(mediaImage)
+      ]);
     }
   }
   async function updateSongInfo() {
@@ -9597,16 +9633,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const songNameElem = document.querySelector(PageViewSelectors.SongName);
     const artistsElem = document.querySelector(PageViewSelectors.Artists);
     const joinedArtists = SpotifyPlayer.JoinArtists(artists);
-    return new Promise((resolve) => {
-      import_fastdom3.default.mutate(() => {
-        if (songNameElem && songNameElem.textContent !== songName) {
-          songNameElem.textContent = songName;
-        }
-        if (artistsElem && artistsElem.textContent !== joinedArtists) {
-          artistsElem.textContent = joinedArtists;
-        }
-        resolve();
-      });
+    return mutateAsync(() => {
+      if (songNameElem && songNameElem.textContent !== songName) {
+        songNameElem.textContent = songName;
+      }
+      if (artistsElem && artistsElem.textContent !== joinedArtists) {
+        artistsElem.textContent = joinedArtists;
+      }
     });
   }
   async function updateArtwork(mediaImage) {
@@ -9615,16 +9648,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         SpotifyPlayer.Artwork.Get("l"),
         SpotifyPlayer.Artwork.Get("xl")
       ]);
-      return new Promise((resolve) => {
-        import_fastdom3.default.mutate(() => {
-          if (standardUrl && mediaImage.src !== standardUrl) {
-            mediaImage.src = standardUrl;
-          }
-          if (highResUrl && mediaImage.getAttribute("data-high-res") !== highResUrl) {
-            mediaImage.setAttribute("data-high-res", highResUrl);
-          }
-          resolve();
-        });
+      return mutateAsync(() => {
+        if (standardUrl && mediaImage.src !== standardUrl) {
+          mediaImage.src = standardUrl;
+        }
+        if (highResUrl && mediaImage.getAttribute("data-high-res") !== highResUrl) {
+          mediaImage.setAttribute("data-high-res", highResUrl);
+        }
       });
     } catch (error) {
       console.error("Failed to load artwork:", error);
@@ -9635,6 +9665,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     "src/components/Pages/pageContent.ts"() {
       init_SpotifyPlayer();
       import_fastdom3 = __toESM(require_fastdom());
+      init_fastdomAsync();
       init_PageViewSelectors();
     }
   });
@@ -9786,29 +9817,23 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   });
 
   // src/components/Pages/pageControls.ts
-  async function AppendViewControls(maid2, ReAppend = false) {
+  async function AppendViewControls(maid2) {
     const elem = document.querySelector(PageViewSelectors.ViewControls);
     if (!elem)
       return;
-    await new Promise((resolve) => {
-      import_fastdom4.default.mutate(() => {
-        if (ReAppend)
-          elem.innerHTML = "";
-        elem.innerHTML = `
+    await mutateAsync(() => {
+      elem.replaceChildren(
+        document.createRange().createContextualFragment(`
             <button id="Close" class="ViewControl">${Icons.Close}</button>
             <button id="FullscreenToggle" class="ViewControl">${Fullscreen_default.IsOpen ? Icons.CloseFullscreen : Icons.Fullscreen}</button>
-        `;
-        resolve();
-      });
+        `)
+      );
     });
     if (Fullscreen_default.IsOpen) {
       const headerElem = document.querySelector(PageViewSelectors.Header);
       if (headerElem) {
-        await new Promise((resolve) => {
-          import_fastdom4.default.mutate(() => {
-            TransferElement(elem, headerElem, 0);
-            resolve();
-          });
+        await mutateAsync(() => {
+          TransferElement(elem, headerElem, 0);
         });
       }
       Object.values(Tooltips).forEach((a) => a?.destroy());
@@ -9817,18 +9842,24 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       );
       SetupTippy(viewControlsElem, maid2);
     } else {
-      const headerViewControlsElem = document.querySelector(
-        PageViewSelectors.HeaderViewControls
+      const actionContainer = document.querySelector(
+        PageViewSelectors.ActionButtonContainer
       );
-      if (headerViewControlsElem) {
-        const contentBoxElem = document.querySelector(PageViewSelectors.ContentBox);
-        if (contentBoxElem) {
-          await new Promise((resolve) => {
-            import_fastdom4.default.mutate(() => {
+      if (actionContainer && actionContainer.lastElementChild !== elem) {
+        await mutateAsync(() => {
+          TransferElement(elem, actionContainer);
+        });
+      } else if (!actionContainer) {
+        const headerViewControlsElem = document.querySelector(
+          PageViewSelectors.HeaderViewControls
+        );
+        if (headerViewControlsElem) {
+          const contentBoxElem = document.querySelector(PageViewSelectors.ContentBox);
+          if (contentBoxElem) {
+            await mutateAsync(() => {
               TransferElement(elem, contentBoxElem);
-              resolve();
             });
-          });
+          }
         }
       }
       Object.values(Tooltips).forEach((a) => a?.destroy());
@@ -9841,8 +9872,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const closeButton = elem.querySelector(PageViewSelectors.CloseButton);
     if (closeButton) {
       Tooltips.Close = Spicetify.Tippy(closeButton, {
-        ...Spicetify.TippyProps,
-        content: `Exit Lyrics Page`
+        content: `Exit Lyrics Page`,
+        theme: "amai-lyrics",
+        animation: "amai",
+        arrow: false,
+        delay: [200, 0],
+        placement: "top"
       });
       const closeClickHandler = () => Session_default.GoBack();
       closeButton.addEventListener("click", closeClickHandler);
@@ -9853,15 +9888,19 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     );
     if (fullscreenBtn) {
       Tooltips.FullscreenToggle = Spicetify.Tippy(fullscreenBtn, {
-        ...Spicetify.TippyProps,
-        content: `Toggle Fullscreen View`
+        content: `Toggle Fullscreen View`,
+        theme: "amai-lyrics",
+        animation: "amai",
+        arrow: false,
+        delay: [200, 0],
+        placement: "top"
       });
       const fullscreenClickHandler = () => Fullscreen_default.Toggle();
       fullscreenBtn.addEventListener("click", fullscreenClickHandler);
       maid2?.Give(() => fullscreenBtn.removeEventListener("click", fullscreenClickHandler));
     }
   }
-  var import_fastdom4, Tooltips;
+  var Tooltips;
   var init_pageControls = __esm({
     "src/components/Pages/pageControls.ts"() {
       init_PageViewSelectors();
@@ -9869,7 +9908,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_Fullscreen();
       init_TransferElement();
       init_Session();
-      import_fastdom4 = __toESM(require_fastdom());
+      init_fastdomAsync();
       Tooltips = {
         Close: null,
         Kofi: null,
@@ -10051,12 +10090,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         Spicetify.showNotification("No track playing", false, 1e3);
         return;
       }
-      await new Promise((resolve) => {
-        import_fastdom5.default.mutate(() => {
-          refreshButton.classList.add("hidden");
-          resolve();
-        });
-      });
+      refreshButton.classList.add("hidden");
       try {
         const trackId = currentUri.split(":")[2];
         removeLyricsFromCache(trackId);
@@ -10108,11 +10142,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       PageViewSelectors.RefreshLyricsButton
     );
     if (refreshButton) {
-      new Promise((resolve) => {
-        import_fastdom5.default.mutate(() => {
-          refreshButton.classList.remove("hidden");
-          resolve();
-        });
+      import_fastdom4.default.mutate(() => {
+        refreshButton.classList.remove("hidden");
       });
     }
   }
@@ -10121,19 +10152,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       PageViewSelectors.RefreshLyricsButton
     );
     if (refreshButton) {
-      new Promise((resolve) => {
-        import_fastdom5.default.mutate(() => {
-          refreshButton.classList.add("hidden");
-          resolve();
-        });
+      import_fastdom4.default.mutate(() => {
+        refreshButton.classList.add("hidden");
       });
     }
   }
-  var import_fastdom5;
+  var import_fastdom4;
   var init_pageButtons = __esm({
     "src/components/Pages/pageButtons.ts"() {
       init_PageViewSelectors();
-      import_fastdom5 = __toESM(require_fastdom());
+      import_fastdom4 = __toESM(require_fastdom());
       init_storage();
       init_cache();
       init_fetchLyrics();
@@ -10148,19 +10176,14 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     PageRoot: () => PageRoot,
     default: () => PageView_default
   });
-  async function initializePageRoot() {
-    return new Promise((resolve) => {
-      import_fastdom6.default.measure(() => {
-        PageRoot = document.querySelector(PageViewSelectors.PageRoot);
-        resolve();
-      });
-    });
+  function initializePageRoot() {
+    PageRoot = document.querySelector(PageViewSelectors.PageRoot);
   }
   async function OpenPage() {
     if (PageView.IsOpened)
       return;
     maid = new Maid();
-    await initializePageRoot();
+    initializePageRoot();
     await createPageElement();
     Defaults_default.LyricsContainerExists = true;
     const contentBox = document.querySelector(PageViewSelectors.ContentBox);
@@ -10185,23 +10208,20 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     PageView.IsOpened = true;
   }
   async function createPageElement() {
-    return new Promise((resolve) => {
-      import_fastdom6.default.mutate(() => {
-        const existing = document.getElementById("SpicyLyricsPage");
-        if (existing)
-          existing.remove();
-        const elem = document.createElement("div");
-        elem.id = "SpicyLyricsPage";
-        elem.innerHTML = PageHTML;
-        if (PageRoot) {
-          PageRoot.appendChild(elem);
-        }
-        const nowBar = document.querySelector(PageViewSelectors.NowBar);
-        if (nowBar) {
-          nowBar.replaceChildren(document.createRange().createContextualFragment(NowBarHTML));
-        }
-        resolve();
-      });
+    await mutateAsync(() => {
+      const existing = document.getElementById("SpicyLyricsPage");
+      if (existing)
+        existing.remove();
+      const elem = document.createElement("div");
+      elem.id = "SpicyLyricsPage";
+      elem.replaceChildren(document.createRange().createContextualFragment(PageHTML));
+      if (PageRoot) {
+        PageRoot.appendChild(elem);
+      }
+      const nowBar = document.querySelector(PageViewSelectors.NowBar);
+      if (nowBar) {
+        nowBar.replaceChildren(document.createRange().createContextualFragment(NowBarHTML));
+      }
     });
   }
   async function DestroyPage() {
@@ -10210,11 +10230,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (Fullscreen_default.IsOpen)
       Fullscreen_default.Close();
     const spicyLyricsPage = document.querySelector(PageViewSelectors.SpicyLyricsPage);
-    if (!spicyLyricsPage)
-      return;
-    import_fastdom6.default.mutate(() => {
-      spicyLyricsPage?.remove();
-    });
+    if (spicyLyricsPage) {
+      try {
+        await mutateAsync(() => {
+          spicyLyricsPage.remove();
+        });
+      } catch (error) {
+        console.error("[Amai Lyrics] PageView destroy failed:", error);
+      }
+    }
     Defaults_default.LyricsContainerExists = false;
     removeLinesEvListener();
     ClearLyricsContentArrays();
@@ -10232,7 +10256,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     PageView.IsOpened = false;
     clearLyricsUiTimeouts();
   }
-  var import_fastdom6, maid, PageView, PageRoot, PageView_default;
+  var maid, PageView, PageRoot, PageView_default;
   var init_PageView = __esm({
     "src/components/Pages/PageView.ts"() {
       init_fetchLyrics();
@@ -10247,7 +10271,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_NowBar2();
       init_Fullscreen();
       init_ScrollToActiveLine();
-      import_fastdom6 = __toESM(require_fastdom());
+      init_fastdomAsync();
       init_Maid();
       init_PageViewSelectors();
       init_PageHTML();
@@ -33964,12 +33988,13 @@ ${JSON.stringify(lyricsOnly)}`
   function createDotGroup(startTime, endTime) {
     const dotGroup = document.createElement("div");
     dotGroup.classList.add("dotGroup");
+    dotGroup.setAttribute("aria-hidden", "true");
     const totalTime = endTime - startTime;
     const dotTime = totalTime / 3;
     for (let i = 0; i < 3; i++) {
       const dot = document.createElement("span");
       dot.classList.add("word", "dot");
-      dot.textContent = NOTE_GLYPHS[i % NOTE_GLYPHS.length];
+      dot.textContent = DOT_GLYPH;
       const target = LyricsObject.Types.Line.Lines;
       const idx = target.length - 1;
       if (idx >= 0 && target[idx]?.Syllables?.Lead) {
@@ -33984,6 +34009,14 @@ ${JSON.stringify(lyricsOnly)}`
       dotGroup.appendChild(dot);
     }
     return dotGroup;
+  }
+  function createInstrumentalPill(startMs, endMs) {
+    const pill = document.createElement("div");
+    pill.classList.add("instrumental-pill");
+    pill.setAttribute("role", "img");
+    pill.setAttribute("aria-label", INSTRUMENTAL_LABEL);
+    pill.appendChild(createDotGroup(startMs, endMs));
+    return pill;
   }
   function registerMusicalLine(startMs, endMs) {
     const line = document.createElement("div");
@@ -34002,16 +34035,16 @@ ${JSON.stringify(lyricsOnly)}`
     const line = registerMusicalLine(startMs, endMs);
     if (oppositeAligned)
       line.classList.add("OppositeAligned");
-    const dots = createDotGroup(startMs, endMs);
-    line.appendChild(dots);
+    line.appendChild(createInstrumentalPill(startMs, endMs));
     return line;
   }
-  var NOTE_GLYPHS;
+  var DOT_GLYPH, INSTRUMENTAL_LABEL;
   var init_createMusicalLine = __esm({
     "src/utils/Lyrics/Applyer/Utils/createMusicalLine.ts"() {
       init_ConvertTime();
       init_lyrics();
-      NOTE_GLYPHS = ["\u266A", "\u266B", "\u2669"];
+      DOT_GLYPH = "\u2022";
+      INSTRUMENTAL_LABEL = "Instrumental";
     }
   });
 
@@ -35289,6 +35322,7 @@ ${JSON.stringify(lyricsOnly)}`
   var ButtonManager = class {
     constructor() {
       this.buttonRegistered = false;
+      this.playbarTippy = null;
       this.button = this.createButton();
       this.setupEventListeners();
     }
@@ -35306,7 +35340,26 @@ ${JSON.stringify(lyricsOnly)}`
         false,
         false
       );
-      button.tippy.setContent("Amai Lyrics");
+      const tooltipWhen = Whentil_default.When(
+        () => Spicetify.Tippy,
+        () => {
+          try {
+            button.tippy?.destroy?.();
+          } catch {
+          }
+          button.element.removeAttribute("title");
+          this.playbarTippy = Spicetify.Tippy(button.element, {
+            content: "Amai Lyrics",
+            theme: "amai-lyrics",
+            animation: "amai",
+            arrow: false,
+            delay: [200, 0],
+            placement: "top"
+          });
+          button.tippy = this.playbarTippy;
+        }
+      );
+      lifecycle_default.trackWhentil(tooltipWhen);
       return button;
     }
     setupEventListeners() {
@@ -35317,6 +35370,11 @@ ${JSON.stringify(lyricsOnly)}`
       lifecycle_default.trackWhentil(when);
     }
     dispose() {
+      try {
+        this.playbarTippy?.destroy();
+      } catch {
+      }
+      this.playbarTippy = null;
       try {
         this.button.deregister();
       } catch {
@@ -35597,7 +35655,8 @@ ${JSON.stringify(lyricsOnly)}`
   init_AppBackground();
 
   // src/components/DynamicBG/NowPlayingBarBackground.ts
-  var import_fastdom7 = __toESM(require_fastdom());
+  var import_fastdom5 = __toESM(require_fastdom());
+  init_fastdomAsync();
   init_utils();
   init_AppBackground();
   var NowPlayingBarBackground = class {
@@ -35607,30 +35666,36 @@ ${JSON.stringify(lyricsOnly)}`
         dynamicBg: null,
         lastImgUrl: null
       };
+      this.pendingUrl = null;
     }
     apply(coverUrl) {
       if (document.documentElement.classList.contains(APP_BG_ON_CLASS))
         return;
-      const normalized = normalizeImageUrl(coverUrl);
-      if (!normalized)
+      const targetUrl = normalizeImageUrl(coverUrl);
+      if (!targetUrl)
         return;
-      coverUrl = normalized;
-      try {
-        if (coverUrl === this.cached.lastImgUrl && this.cached.dynamicBg)
-          return;
-        new Promise((resolve) => {
-          import_fastdom7.default.measure(() => {
-            const nowPlayingBar = document.querySelector(".Root__right-sidebar aside.NowPlayingView");
-            const hasDynamicBg = !!this.cached.dynamicBg;
-            const images = this.cached.dynamicBg ? {
+      if (targetUrl === this.cached.lastImgUrl && this.cached.dynamicBg)
+        return;
+      if (targetUrl === this.pendingUrl)
+        return;
+      this.pendingUrl = targetUrl;
+      void (async () => {
+        try {
+          const { nowPlayingBar, hasDynamicBg, images } = await measureAsync(() => {
+            const bar = document.querySelector(".Root__right-sidebar aside.NowPlayingView");
+            const hasBg = !!this.cached.dynamicBg;
+            const imgs = this.cached.dynamicBg ? {
               imgA: this.cached.dynamicBg.querySelector("#bg-img-a"),
               imgB: this.cached.dynamicBg.querySelector("#bg-img-b")
             } : null;
-            resolve({ nowPlayingBar, hasDynamicBg, images });
+            return { nowPlayingBar: bar, hasDynamicBg: hasBg, images: imgs };
           });
-        }).then(({ nowPlayingBar, hasDynamicBg, images }) => {
-          import_fastdom7.default.mutate(() => {
-            if (!nowPlayingBar) {
+          if (!nowPlayingBar || !nowPlayingBar.isConnected) {
+            this.clearCache();
+            return;
+          }
+          await mutateAsync(() => {
+            if (!nowPlayingBar.isConnected) {
               this.clearCache();
               return;
             }
@@ -35638,21 +35703,25 @@ ${JSON.stringify(lyricsOnly)}`
               this.cached.nowPlayingBar = nowPlayingBar;
             }
             if (!hasDynamicBg) {
-              this.createNewBackground(nowPlayingBar, coverUrl);
+              this.createNewBackground(nowPlayingBar, targetUrl);
             } else if (images) {
-              this.updateExistingBackground(images, coverUrl);
+              this.updateExistingBackground(images, targetUrl);
             }
-            this.cached.lastImgUrl = coverUrl;
+            this.cached.lastImgUrl = targetUrl;
           });
-        });
-      } catch (error) {
-        console.error("Error Applying the Dynamic BG to the NowPlayingBar:", error);
-      }
+        } catch (error) {
+          console.error("Error Applying the Dynamic BG to the NowPlayingBar:", error);
+        } finally {
+          if (this.pendingUrl === targetUrl)
+            this.pendingUrl = null;
+        }
+      })();
     }
     clearCache() {
       this.cached.lastImgUrl = null;
       this.cached.dynamicBg = null;
       this.cached.nowPlayingBar = null;
+      this.pendingUrl = null;
     }
     createNewBackground(nowPlayingBar, coverUrl) {
       const dynamicBackground = document.createElement("div");
@@ -35669,10 +35738,14 @@ ${JSON.stringify(lyricsOnly)}`
       nowPlayingBar.classList.add("sweet-dynamic-bg-in-this");
       nowPlayingBar.appendChild(dynamicBackground);
       imgA.onload = () => {
-        requestAnimationFrame(() => {
+        if (!dynamicBackground.isConnected)
+          return;
+        import_fastdom5.default.mutate(() => {
+          if (!dynamicBackground.isConnected)
+            return;
           dynamicBackground.classList.add("sweet-dynamic-bg-loaded");
+          placeholder.remove();
         });
-        placeholder.remove();
       };
       this.cached.dynamicBg = dynamicBackground;
     }
@@ -35685,7 +35758,9 @@ ${JSON.stringify(lyricsOnly)}`
       inactiveImg.onload = () => {
         if (inactiveImg.src !== coverUrl)
           return;
-        requestAnimationFrame(() => {
+        import_fastdom5.default.mutate(() => {
+          if (inactiveImg.src !== coverUrl)
+            return;
           activeImg.classList.remove("active");
           inactiveImg.classList.add("active");
           this.cached.dynamicBg?.setAttribute("current-img", coverUrl);
@@ -36053,6 +36128,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 
   // src/app.tsx
+  init_fastdomAsync();
   init_lifecycle();
   function setupUI() {
     AppInitializer.setupSkeletonStyles();
@@ -36120,6 +36196,7 @@ ${JSON.stringify(lyricsOnly)}`
     }
     lifecycle_default.registerGlobalTeardown();
     installBlankToastSuppressor();
+    installFastdomErrorHandler();
     try {
       await AppInitializer.initializeCore();
       const buttonManager = setupUI();
@@ -36159,7 +36236,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286f2b/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a2676928c/DotLoader.css */
 #DotLoader {
   --dot-color: var(--amai-accent-1);
   --dot-color-dim: color-mix(in srgb, var(--amai-accent-1) 22%, transparent);
@@ -36194,7 +36271,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286fac/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a267692cd/ProcessingIndicator.css */
 #SpicyLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -36276,7 +36353,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286500/tokens.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a267686b0/tokens.css */
 :root {
   --amai-accent-1: #1ed760;
   --amai-accent-2: #1db954;
@@ -36329,7 +36406,7 @@ ${JSON.stringify(lyricsOnly)}`
   --amai-scrollbar-thumb: rgba(255, 255, 255, 0.6);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286851/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a26768a71/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -36375,7 +36452,11 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
   height: 5cqh;
   justify-content: center;
   opacity: 0.5;
-  transition: opacity 0.2s, bottom 0.5s;
+  transition:
+    opacity 0.2s,
+    bottom 0.5s,
+    transform 0.2s,
+    visibility 0.2s;
   z-index: 101;
   --ViewControlSize: 100cqh;
 }
@@ -36385,6 +36466,30 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
   bottom: -8cqh;
   --PageHoverOffset: -2.2cqh;
   --ControlsHoverOffset: 1.5cqh;
+}
+#SpicyLyricsPage:not(.Fullscreen) .AmaiPageButtonContainer .ViewControls {
+  position: absolute;
+  bottom: 1.5cqh;
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  width: auto;
+  height: 5cqh;
+  margin-top: 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+#SpicyLyricsPage:not(.Fullscreen):hover .AmaiPageButtonContainer .ViewControls,
+#SpicyLyricsPage:not(.Fullscreen) .AmaiPageButtonContainer .ViewControls:hover,
+#SpicyLyricsPage:not(.Fullscreen):focus-within .AmaiPageButtonContainer .ViewControls,
+#SpicyLyricsPage:not(.Fullscreen) .AmaiPageButtonContainer .ViewControls:focus-within {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
 }
 #SpicyLyricsPage .ViewControls .ViewControl {
   --ViewControlHeight: var(--ViewControlSize, 100cqh);
@@ -36429,6 +36534,9 @@ body:has(#SpicyLyricsPage) .main-view-container__scroll-node-child-spacer {
 #SpicyLyricsPage:not(.Fullscreen):hover .ViewControls {
   opacity: 0.5;
   bottom: var(--PageHoverOffset);
+}
+#SpicyLyricsPage:not(.Fullscreen):hover .AmaiPageButtonContainer .ViewControls {
+  bottom: 1.5cqh;
 }
 #SpicyLyricsPage .ViewControls button {
   cursor: pointer;
@@ -36536,7 +36644,7 @@ button:has(#SpicyLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286972/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a26768bd2/Simplebar.css */
 #SpicyLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -36744,7 +36852,7 @@ button:has(#SpicyLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286a03/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a26768c83/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -37348,7 +37456,7 @@ button:has(#SpicyLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286b24/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a26768e04/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -37663,7 +37771,7 @@ body:has(#SpicyLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingV
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286bb5/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a26768ec5/main.css */
 #SpicyLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -37917,12 +38025,12 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286c36/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a26768f96/Mixed.css */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
   flex-wrap: wrap;
-  transition: opacity .1s cubic-bezier(0.61, 1, 0.88, 1);
+  transition: opacity 0.1s cubic-bezier(0.61, 1, 0.88, 1);
   font-size: var(--font-size);
   min-width: 0;
   max-width: 100%;
@@ -37977,7 +38085,7 @@ ruby > rt {
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line .dotGroup {
   --text-shadow-blur-radius: 4px;
   --text-shadow-opacity: 0%;
-  --TextShadowDefinition: 0 0 var(--text-shadow-blur-radius) rgba(255,255,255,var(--text-shadow-opacity));
+  --TextShadowDefinition: 0 0 var(--text-shadow-blur-radius) rgba(255, 255, 255, var(--text-shadow-opacity));
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .word,
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .dotGroup {
@@ -38025,7 +38133,7 @@ ruby > rt {
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line .word:not(.dot)::after {
   content: "";
-  margin-right: .3ch;
+  margin-right: 0.3ch;
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.NotSung .word {
   --text-shadow-blur-radius: 4px !important;
@@ -38049,7 +38157,111 @@ ruby > rt {
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line {
   position: relative;
   transform-origin: center center;
-  margin: 0;
+  margin: 1cqw 0 0 0;
+  display: flex;
+  align-items: center;
+  background-image: none !important;
+  -webkit-text-fill-color: currentColor;
+}
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line.OppositeAligned {
+  justify-content: flex-end;
+}
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill {
+  --pill-pad-y: 0.28em;
+  --pill-pad-x: 0.9em;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  max-width: 100%;
+  font-size: var(--DefaultLyricsSize);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.25;
+  color: var(--amai-text-mid);
+  background: var(--amai-fill-glass);
+  border: 1px solid var(--amai-stroke-1);
+  border-radius: 999px;
+  padding: var(--pill-pad-y) var(--pill-pad-x) calc(var(--pill-pad-y) + 0.04em);
+  cursor: pointer;
+  -webkit-text-fill-color: currentColor;
+  background-clip: border-box;
+  transition:
+    color var(--amai-dur-slow) var(--amai-ease-standard),
+    border-color var(--amai-dur-slow) var(--amai-ease-standard),
+    background-color var(--amai-dur-slow) var(--amai-ease-standard),
+    opacity var(--amai-dur-slow) var(--amai-ease-standard),
+    box-shadow var(--amai-dur-slow) var(--amai-ease-standard);
+}
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill .dotGroup,
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill .dot {
+  background-image: none !important;
+  -webkit-text-fill-color: currentColor;
+  background-clip: border-box;
+  text-shadow: none;
+}
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 25%, rgba(255, 255, 255, 0.22) 50%, transparent 75%);
+  transform: translateX(-130%);
+}
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill {
+  color: var(--amai-text-hi);
+  border-color: color-mix(in srgb, var(--amai-accent-1) 45%, transparent);
+  box-shadow: 0 0 24px rgba(var(--amai-accent-rgb), 0.22), var(--amai-shadow-card);
+  animation: instrumental-breathe 2.6s var(--amai-ease-io) infinite;
+}
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill::after {
+  animation: instrumental-shimmer 2.6s var(--amai-ease-io) infinite;
+}
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line.NotSung .instrumental-pill {
+  opacity: 0.55;
+}
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Sung .instrumental-pill {
+  opacity: var(--Vocal-Sung-opacity);
+}
+@keyframes instrumental-breathe {
+  0%, 100% {
+    scale: 1;
+  }
+  50% {
+    scale: 1.03;
+  }
+}
+@keyframes instrumental-shimmer {
+  0% {
+    transform: translateX(-130%);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  60% {
+    transform: translateX(130%);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(130%);
+    opacity: 0;
+  }
+}
+@keyframes instrumental-dot-bounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.45;
+    scale: 0.85;
+  }
+  30% {
+    transform: translateY(-0.22em);
+    opacity: 1;
+    scale: 1.1;
+  }
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
   animation: amai-line-enter 0.5s var(--amai-ease-word) backwards;
@@ -38064,9 +38276,11 @@ ruby > rt {
     transform: translateY(0);
   }
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .dotGroup {
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill .dotGroup {
   scale: 1;
   transform-origin: center center;
+  position: relative;
+  z-index: 2;
 }
 @property --text-shadow-blur-radius { syntax: "<length>"; initial-value: 4px; inherits: false; }
 @property --text-shadow-opacity { syntax: "<percentage>"; initial-value: 0%; inherits: false; }
@@ -38086,25 +38300,29 @@ ruby > rt {
     --text-shadow-opacity: 50%;
   }
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .dotGroup {
-  --dot-gap: clamp(0.005rem, 1.7cqw, 0.2rem);
-  display: flex;
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill .dotGroup {
+  --dot-gap: 0.18em;
+  display: inline-flex;
   flex-direction: row;
+  align-items: center;
   gap: var(--dot-gap);
+  margin-inline-start: 0.1em;
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .dotGroup .dot {
-  --font-size: calc(var(--DefaultLyricsSize)*0.9);
-  scale: 0.75;
-  font-size: var(--font-size);
-  opacity: 0.2;
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill .dotGroup .dot {
+  font-size: 0.85em;
+  line-height: 1;
+  scale: 0.85;
+  opacity: 0.45;
   --gradient-position: 100%;
-  transition:
-    scale 0.45s var(--amai-ease-out-expo),
-    opacity 0.45s var(--amai-ease-out-expo),
-    transform 0.45s var(--amai-ease-out-expo);
 }
-#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .dotGroup .dot.dot-active {
-  animation: dot-pop var(--dot-duration, 1s) var(--amai-ease-out-expo) 1 forwards;
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill .dotGroup .dot {
+  animation: instrumental-dot-bounce 1.2s var(--amai-ease-io) infinite;
+}
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill .dotGroup .dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+#SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill .dotGroup .dot:nth-child(3) {
+  animation-delay: 0.3s;
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active {
   opacity: 1;
@@ -38130,7 +38348,7 @@ ruby > rt {
   margin: var(--SpicyLyrics-LineSpacing, 1cqw 0);
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent .Credits {
-  --font-size: calc(var(--DefaultLyricsSize)*0.47);
+  --font-size: calc(var(--DefaultLyricsSize) * 0.47);
   font-size: var(--font-size);
   opacity: 0.8;
   margin-top: 7cqh !important;
@@ -38142,7 +38360,7 @@ ruby > rt {
 }
 #SpicyLyricsPage .LyricsContainer .LyricsContent[data-lyrics-type=Line] .line {
   transform-origin: left center;
-  transition: scale .2s var(--amai-ease-io), opacity .2s var(--amai-ease-io);
+  transition: scale 0.2s var(--amai-ease-io), opacity 0.2s var(--amai-ease-io);
   margin: 1cqw 0 0 0;
   display: block;
   max-width: 100%;
@@ -38183,9 +38401,18 @@ ruby > rt {
   #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
     animation: none !important;
   }
+  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill,
+  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill,
+  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill::after,
+  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill .dotGroup .dot {
+    animation: none !important;
+  }
+  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill::after {
+    display: none !important;
+  }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286ca7/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a26769047/LoaderContainer.css */
 #SpicyLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -38207,7 +38434,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286ce8/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a26769078/FullscreenTransition.css */
 #SpicyLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -38234,7 +38461,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286d19/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a267690b9/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
@@ -38333,7 +38560,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17916-MrjsEQTfYJnM/1a0a20286d6a/Settings.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a2676910a/Settings.css */
 :is(#amai-settings, #amai-dev-settings, #amai-info) {
   display: grid;
   gap: 8px;
@@ -38537,6 +38764,70 @@ ruby > rt {
   outline: none;
   transform: scale(1);
   border: 1px solid var(--essential-subdued, #818181);
+}
+
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21372-bbOvaICyiOL7/1a0a2676917b/Tooltips.css */
+.tippy-box[data-theme~=amai-lyrics] {
+  position: relative;
+  background-color: rgba(18, 18, 18, 0.92);
+  backdrop-filter: blur(12px) saturate(1.4);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  border: 1px solid var(--amai-stroke-2, rgba(255, 255, 255, 0.2));
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.3);
+  color: var(--amai-text-hi, rgba(255, 255, 255, 0.95));
+  font-family: var(--amai-font-display, "Manrope", sans-serif);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+  max-width: 240px;
+  outline: 0;
+  text-align: center;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.tippy-box[data-theme~=amai-lyrics] > .tippy-content {
+  padding: 6px 10px;
+}
+.tippy-box[data-theme~=amai-lyrics][data-animation=amai][data-state=hidden] {
+  opacity: 0;
+  transform: translateY(4px) scale(0.97);
+}
+#context-menu > .main-contextMenu-tippy {
+  background-color: rgba(18, 18, 18, 0.92);
+  backdrop-filter: blur(12px) saturate(1.4);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.3);
+  color: rgba(255, 255, 255, 0.95);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+  max-width: 240px;
+  padding: 6px 10px;
+  text-align: center;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+#context-menu > .main-contextMenu-tippyEnter {
+  opacity: 0;
+  transform: translateY(4px);
+}
+#context-menu > .main-contextMenu-tippyEnterActive {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tippy-box[data-theme~=amai-lyrics],
+  #context-menu > .main-contextMenu-tippy {
+    transition: none;
+  }
+  .tippy-box[data-theme~=amai-lyrics][data-animation=amai][data-state=hidden],
+  #context-menu > .main-contextMenu-tippyEnter {
+    transform: none;
+  }
 }
 
       `).trim();
