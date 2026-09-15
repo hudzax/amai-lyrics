@@ -2,7 +2,7 @@
  * Binary search for the lyric line containing a playback position (inclusive on
  * both ends).
  *
- * This replaces three hand-rolled copies (LyricsSetter, ScrollToActiveLine and
+ * This replaces three hand-rolled copies (LyricsSetter, AutoScroll and
  * PlaybarLyrics) that had drifted apart in field naming (StartTime/EndTime vs
  * startTime/endTime). The canonical field names follow the domain convention;
  * StartTime/EndTime are in the same unit as `position` (milliseconds everywhere

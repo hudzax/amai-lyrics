@@ -11,7 +11,10 @@ import {
 } from './Simplebar/ScrollSimplebar';
 
 export interface AutoScrollLine {
-  HTMLElement: unknown;
+  // Optional because registrations are typed that way upstream (StoredLine in
+  // LyricsRenderer); the renderer always sets it, but a line without an element
+  // is simply not scrollable and the tick guards against it.
+  HTMLElement?: HTMLElement;
   StartTime: number;
   EndTime: number;
 }
@@ -71,15 +74,6 @@ export function mountAutoScroll(): void {
   }
 }
 
-/** Forward for callers that only need a recalculation. */
-export function recalculateAutoScroll(): void {
-  try {
-    RecalculateScrollSimplebar();
-  } catch {
-    // ignore — recalc is best-effort
-  }
-}
-
 /**
  * One auto-scroll tick. Never throws. Without overrides it reads the live
  * seams (play state, lyrics page, lines, position, container, motion).
@@ -107,30 +101,26 @@ export function syncAutoScroll(overrides: AutoScrollSyncOverrides = {}): void {
     if (typeof position !== 'number' || !Number.isFinite(position) || position < 0) return;
     if (!lines) return;
 
-    const activeIdx = findActiveIndex(
-      lines as unknown as { StartTime: number; EndTime: number }[],
-      position,
-    );
+    const activeIdx = findActiveIndex(lines, position);
     const currentLine = activeIdx !== -1 ? lines[activeIdx] : null;
     if (!currentLine) return;
 
-    const lineElem = currentLine.HTMLElement as HTMLElement;
+    const lineElem = currentLine.HTMLElement;
+    if (!lineElem) return;
     if (lastLine === lineElem) return;
-    if (!lineElem || !lineElem.isConnected) return;
-    if (!Defaults.LyricsContainerExists) return;
+    if (!lineElem.isConnected) return;
     if (!document.querySelector('#AmaiLyricsPage')) return;
 
-    const hasContainerOverride = overrides.container !== undefined;
-    const container = hasContainerOverride
-      ? (overrides.container as HTMLElement | null)
-      : (ScrollSimplebar?.getScrollElement() as HTMLElement | undefined);
+    const container =
+      overrides.container !== undefined
+        ? overrides.container
+        : (ScrollSimplebar?.getScrollElement() as HTMLElement | undefined);
     if (!container || !container.isConnected) return;
 
     if (activeScrollController) {
       activeScrollController.cancel();
       setActiveController(null);
     }
-    if (lastLine === lineElem) return;
 
     // Release the previous pre-highlight target so a seek never sticks it.
     if (lastLine && lastLine.classList.contains('OverridenByScroller')) {
@@ -183,5 +173,4 @@ export const AutoScroll = {
   sync: syncAutoScroll,
   reset: resetAutoScroll,
   destroy: destroyAutoScroll,
-  recalculate: recalculateAutoScroll,
 };

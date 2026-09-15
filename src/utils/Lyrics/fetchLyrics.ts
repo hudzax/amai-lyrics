@@ -159,8 +159,8 @@ export async function loadAndApplyLyrics(
 /**
  * Refresh seam: evict cache + snapshot, then force a fresh fetch-and-apply.
  * Replaces the hand-rolled `removeLyricsFromCache + storage.set(null) +
- * loadAndApplyLyrics(flush:true)` triple (refresh button, settings toggles)
- * so callers never cross the cache or storage seams directly.
+ * loadAndApplyLyrics(flush:true)` triple (the refresh button) so callers never
+ * cross the cache or storage seams directly.
  */
 export async function refreshLyrics(uri: string): Promise<LyricsFetchResult> {
   const trackId = parseTrackId(uri);

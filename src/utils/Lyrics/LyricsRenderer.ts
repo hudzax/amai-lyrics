@@ -35,6 +35,8 @@ import type { LyricsData, LineBasedLyricItem, LyricsLine } from './conversion';
 const LYRICS_CONTAINER_SELECTOR = '#AmaiLyricsPage .LyricsContainer .LyricsContent';
 const STYLING_CONTAINER_SELECTOR =
   '#AmaiLyricsPage .LyricsContainer .LyricsContent .simplebar-content';
+const LINE_ROW_SELECTOR = `${LYRICS_CONTAINER_SELECTOR} .main-lyrics-text.line`;
+const STATIC_ROW_SELECTOR = `${LYRICS_CONTAINER_SELECTOR} .line.static .main-lyrics-text`;
 
 /** Payload shape the render path accepts: the conversion union plus legacy display fields. */
 export interface RenderableLyricsData {
@@ -97,7 +99,7 @@ function resolveContainer(): HTMLElement | null {
 function inferType(data: RenderableLyricsData): 'Line' | 'Static' {
   if (data.Type === 'Line' || data.Type === 'Static') return data.Type;
   // Legacy payloads without a discriminator: Content marks line-synced rows.
-  return Array.isArray((data as { Content?: unknown }).Content) ? 'Line' : 'Static';
+  return Array.isArray(data.Content) ? 'Line' : 'Static';
 }
 
 /**
@@ -174,11 +176,9 @@ function renderLineRows(container: HTMLElement, data: RenderableLyricsData): voi
     const hasMusicalBreak = nextLine && nextLine.StartTime - line.EndTime >= lyricsBetweenShow;
 
     if (hasMusicalBreak) {
-      const nextStartTime = ConvertTime(nextLine.StartTime);
-      const curEndTime = endTime;
       const musicalLine = createMusicalLineMs(
-        curEndTime,
-        nextStartTime,
+        endTime,
+        ConvertTime(nextLine.StartTime),
         !!nextLine.OppositeAligned,
       );
       fragment.appendChild(musicalLine);
@@ -405,9 +405,7 @@ function updateLineLyricsTranslations(
   enableRomaji: boolean,
   rawLyrics?: string[],
 ): void {
-  const lineElements = document.querySelectorAll(
-    '#AmaiLyricsPage .LyricsContainer .LyricsContent .main-lyrics-text.line',
-  );
+  const lineElements = document.querySelectorAll(LINE_ROW_SELECTOR);
 
   content.forEach((line, index) => {
     if (index >= lineElements.length) return;
@@ -429,9 +427,7 @@ function updateStaticLyricsTranslations(
   enableRomaji: boolean,
   rawLyrics?: string[],
 ): void {
-  const lineElements = document.querySelectorAll(
-    '#AmaiLyricsPage .LyricsContainer .LyricsContent .line.static .main-lyrics-text',
-  );
+  const lineElements = document.querySelectorAll(STATIC_ROW_SELECTOR);
 
   lines.forEach((line, index) => {
     if (index >= lineElements.length) return;

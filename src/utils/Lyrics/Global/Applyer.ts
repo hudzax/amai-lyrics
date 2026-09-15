@@ -40,12 +40,7 @@ export default function ApplyLyrics(
   setBlurringLastLine(null);
 
   // Typed sentinel check — don't attempt to render NO_LYRICS payload
-  if (
-    !lyrics ||
-    isNoLyricsResult(lyrics as never) ||
-    (lyrics as NoLyricsResult).status === 'NO_LYRICS'
-  )
-    return false;
+  if (!lyrics || isNoLyricsResult(lyrics)) return false;
   const typedLyrics = lyrics as LyricsData;
   if (!typedLyrics?.id) return false;
 

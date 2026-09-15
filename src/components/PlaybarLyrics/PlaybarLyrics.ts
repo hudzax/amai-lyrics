@@ -21,7 +21,7 @@ import Event from '../../utils/EventManager';
  */
 
 // Surface lead times live in the position module (PlaybackSurfaceOffset) —
-// this module only picks its surface. Kept in sync with ScrollToActiveLine by
+// this module only picks its surface. Kept in sync with AutoScroll by
 // construction instead of by matching comments.
 const UPDATE_INTERVAL = 0.3; // seconds
 
