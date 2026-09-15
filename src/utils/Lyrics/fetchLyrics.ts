@@ -9,8 +9,15 @@ import {
   ClearLyricsPageContainer,
   ShowLoaderContainer,
   noLyricsMessage,
+  EnsureProcessingIndicatorHidden,
+  clearLyricsUiTimeouts,
 } from './ui';
-import { getLyricsFromLocalStorage, getLyricsFromCache, lyricsCache } from './cache';
+import {
+  getLyricsFromLocalStorage,
+  getLyricsFromCache,
+  removeLyricsFromCache,
+  lyricsCache,
+} from './cache';
 import { fetchLyricsFromAPI } from './api';
 import { hideRefreshButton } from '../../components/Pages/pageButtons';
 import ApplyLyrics from './Global/Applyer';
@@ -20,6 +27,8 @@ import {
   liveLyricsUri,
   type LyricsRequestToken,
 } from './publish';
+import { parseTrackId } from './trackId';
+import storage from '../storage';
 
 import { LyricsData } from './conversion';
 import { NoLyricsResult } from './ui';
@@ -64,6 +73,10 @@ async function applyLoadedLyrics(
 /**
  * Main function to fetch lyrics for a given Spotify track URI
  *
+ * LyricsPipeline seam: callers pass the full Spotify URI — track-id parsing,
+ * currency stamping, loader handling, and the stuck-indicator guard all live
+ * behind this interface, never in callers.
+ *
  * @param uri - Spotify track URI
  * @returns Processed lyrics data or typed NO_LYRICS sentinel
  */
@@ -76,11 +89,15 @@ export default async function fetchLyrics(uri: string, flush = false): Promise<L
   const token = beginLyricsRequest(uri);
   resetLyricsUI();
   ClearLyricsPageContainer();
+  // A stuck processing indicator from a previous track must never survive
+  // into the new request — the pipeline owns this guard so song-change
+  // callers don't cross the ui seam directly.
+  EnsureProcessingIndicatorHidden();
   document
     .querySelector<HTMLElement>('#AmaiLyricsPage .ContentBox')
     ?.classList.remove('LyricsHidden');
 
-  const trackId = uri.split(':')[2] ?? '';
+  const trackId = parseTrackId(uri);
   if (!trackId) {
     return await noLyricsMessage();
   }
@@ -139,4 +156,19 @@ export async function loadAndApplyLyrics(
   return last;
 }
 
-export { lyricsCache };
+/**
+ * Refresh seam: evict cache + snapshot, then force a fresh fetch-and-apply.
+ * Replaces the hand-rolled `removeLyricsFromCache + storage.set(null) +
+ * loadAndApplyLyrics(flush:true)` triple (refresh button, settings toggles)
+ * so callers never cross the cache or storage seams directly.
+ */
+export async function refreshLyrics(uri: string): Promise<LyricsFetchResult> {
+  const trackId = parseTrackId(uri);
+  if (trackId) {
+    await removeLyricsFromCache(trackId);
+  }
+  storage.set('currentLyricsData', null);
+  return loadAndApplyLyrics(uri, { flush: true });
+}
+
+export { lyricsCache, clearLyricsUiTimeouts };

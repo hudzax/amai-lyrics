@@ -1,6 +1,6 @@
 import { setSettingsMenu } from '../utils/settings';
 import Platform from '../components/Global/Platform';
-import { lyricsCache } from '../utils/Lyrics/cache';
+import { lyricsCache } from '../utils/Lyrics/fetchLyrics';
 import lifecycle from '../utils/lifecycle';
 
 export class AppInitializer {

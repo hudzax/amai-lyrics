@@ -7,6 +7,7 @@ import { OpenNowBar, DeregisterNowBarBtn } from '../../components/Utils/NowBar';
 import PageView from '../../components/Pages/PageView';
 import Fullscreen from '../../components/Utils/Fullscreen';
 import { showRefreshButton } from '../../components/Pages/pageButtons';
+import { liveTrackId } from './trackId';
 
 // Window-persisted so hot-reload doesn't orphan timeout holding detached DOM.
 const windowRef = window as unknown as {
@@ -65,7 +66,7 @@ export interface NoLyricsResult {
  */
 export async function noLyricsMessage(trackId?: string): Promise<NoLyricsResult> {
   try {
-    const currentId = Spicetify.Player.data?.item?.uri?.split(':')[2];
+    const currentId = liveTrackId();
     const isForCurrentTrack = !trackId || currentId === trackId;
     if (isForCurrentTrack) {
       HideLoaderContainer();

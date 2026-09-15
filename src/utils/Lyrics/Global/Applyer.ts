@@ -3,6 +3,7 @@ import { renderLyrics } from '../LyricsRenderer';
 import { isNoLyricsResult } from '../fetchLyrics';
 import { showRefreshButton } from '../../../components/Pages/pageButtons';
 import { addLinesEvListener } from '../lyrics';
+import { liveTrackId } from '../trackId';
 import storage from '../../storage';
 import Defaults from '../../../components/Global/Defaults';
 import { NoLyricsResult } from '../ui';
@@ -50,8 +51,9 @@ export default function ApplyLyrics(
 
   // Stale payload (track moved mid-flight): decline and let the pipeline
   // retry once for the live track. No self-refetch here — the seam stays
-  // one-directional (pipeline -> apply).
-  const currentTrackId = Spicetify.Player.data?.item?.uri?.split(':')[2];
+  // one-directional (pipeline -> apply). Track-id parsing lives in the
+  // trackId leaf so this gate never splits URIs itself.
+  const currentTrackId = liveTrackId();
   if (currentTrackId !== typedLyrics?.id) return false;
 
   // Render behind the single LyricsRenderer seam. 'Syllable' lyrics are

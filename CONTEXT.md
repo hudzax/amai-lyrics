@@ -37,3 +37,13 @@ src/utils/Scrolling/AutoScroll.ts. Callers cross it through mount, sync,
 reset, and destroy - never through the SimpleBar container, the scroller, or
 the last-line pointer. The position read crosses the PlaybackTime seam; tests
 inject position, lines, container, and scroller overrides instead.
+
+## LyricsPipeline
+
+The single place that turns a track change into painted lyrics: request
+currency, cache and storage reads, lyrics API fetch, enhancement, publication,
+and apply. Lives in src/utils/Lyrics/fetchLyrics.ts (composition) with
+publish.ts owning currency and publication. Callers cross it through
+loadAndApplyLyrics and fetchLyrics - never through cache, api, processing,
+publish, ui, or the Global Applyer directly. SongChangeManager is a thin
+caller that fans out to this seam plus artwork and page content.

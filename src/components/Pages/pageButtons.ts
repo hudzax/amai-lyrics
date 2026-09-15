@@ -1,9 +1,7 @@
 import { Maid } from '@hudzax/web-modules/Maid';
 import { PageViewSelectors } from '../../constants/PageViewSelectors';
 import fastdom from 'fastdom';
-import storage from '../../utils/storage';
-import { removeLyricsFromCache } from '../../utils/Lyrics/cache';
-import { loadAndApplyLyrics } from '../../utils/Lyrics/fetchLyrics';
+import { refreshLyrics } from '../../utils/Lyrics/fetchLyrics';
 import { openYouTubeSearch } from '../../utils/externalNavigation';
 import { SpotifyPlayer } from '../Global/SpotifyPlayer';
 import { openAmaiSettingsModal } from './SettingsModal';
@@ -32,10 +30,9 @@ function setupRefreshButton(maid: Maid | null) {
     refreshButton.classList.add('hidden');
 
     try {
-      const trackId = currentUri.split(':')[2];
-      removeLyricsFromCache(trackId);
-      storage.set('currentLyricsData', null);
-      await loadAndApplyLyrics(currentUri, { flush: true });
+      // Refresh seam owns cache eviction, snapshot clear, and forced
+      // refetch — callers never split the URI or touch cache/storage.
+      await refreshLyrics(currentUri);
     } catch (error) {
       console.error('Error refreshing lyrics:', error);
       Spicetify.showNotification('Error refreshing lyrics', false, 2000);

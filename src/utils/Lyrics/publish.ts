@@ -13,6 +13,9 @@
  * Currency state is window-persisted so a hot-reload orphan (a fetch started
  * by the previous injection) can never publish over the new instance.
  *
+ * Track-id parsing lives in the leaf `trackId` module (zero imports, no
+ * cycle): callers import `parseTrackId` / `liveTrackId` from there directly.
+ *
  * NOTE on imports: this module deliberately does not import fetchLyrics,
  * api, or processing — it is a leaf they all share, so the pipeline keeps a
  * single direction (fetchLyrics -> api -> processing -> publish).
@@ -23,6 +26,7 @@ import Defaults from '../../components/Global/Defaults';
 import Event from '../EventManager';
 import { HideLoaderContainer, ClearLyricsPageContainer } from './ui';
 import { updateLyricTranslations } from './LyricsRenderer';
+import { liveTrackId } from './trackId';
 import type { LyricsData } from './conversion';
 
 /** Opaque handle for one lyrics request (fetch or refresh). */
@@ -91,7 +95,7 @@ export function publishEnhancedLyrics(
   data: LyricsData,
 ): boolean {
   if (!isCurrentLyricsRequest(token)) return false;
-  if (liveLyricsUri()?.split(':')[2] !== trackId) return false;
+  if (liveTrackId() !== trackId) return false;
   updateLyricTranslations(data);
   const serialized = JSON.stringify(data);
   storage.set('currentLyricsData', serialized);

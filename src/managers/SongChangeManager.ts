@@ -1,7 +1,6 @@
 import sleep from '../utils/sleep';
 import { ButtonManager } from './ButtonManager';
 import type { ArtworkSurfaces } from '../components/DynamicBG/ArtworkSurfaces';
-import { EnsureProcessingIndicatorHidden } from '../utils/Lyrics/ui';
 
 export class SongChangeManager {
   private buttonManager: ButtonManager;
@@ -30,9 +29,9 @@ export class SongChangeManager {
 
     if (!currentUri) return;
 
-    // Hide processing indicator when song changes to prevent stuck indicators
-    EnsureProcessingIndicatorHidden();
-
+    // The LyricsPipeline seam owns the stuck-indicator guard, loader handling,
+    // and request currency — this caller only fans out to lyrics, artwork,
+    // and page seams.
     // Single pipeline composition: fetch, then apply. Staleness (slow fetch
     // for a skipped song) is owned by the pipeline's request token — a
     // superseded request resolves its data but never publishes or applies.

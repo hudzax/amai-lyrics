@@ -1,4 +1,4 @@
-import { loadAndApplyLyrics } from '../../utils/Lyrics/fetchLyrics';
+import { loadAndApplyLyrics, clearLyricsUiTimeouts } from '../../utils/Lyrics/fetchLyrics';
 import '../../css/Loaders/DotLoader.css';
 import '../../css/Loaders/ProcessingIndicator.css';
 import { ClearLyricsContentArrays, removeLinesEvListener } from '../../utils/Lyrics/lyrics';
@@ -6,7 +6,6 @@ import { clearApplyInfoTimeout } from '../../utils/Lyrics/Applyer/Info/ApplyInfo
 import ApplyDynamicBackground from '../DynamicBG/dynamicBackground';
 import Defaults from '../Global/Defaults';
 import { AutoScroll } from '../../utils/Scrolling/AutoScroll';
-import { clearLyricsUiTimeouts } from '../../utils/Lyrics/ui';
 import { Session_NowBar_SetSide, Session_OpenNowBar } from '../Utils/NowBar';
 import Fullscreen from '../Utils/Fullscreen';
 
