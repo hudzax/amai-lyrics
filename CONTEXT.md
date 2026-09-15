@@ -19,6 +19,16 @@ publish. Lives in src/components/DynamicBG/ArtworkSurfaces.ts. A one-shot waiter
 it through mount, applyArtwork, refreshStaticSurfaces, cancelPending, and
 destroy - never through the individual canvases.
 
+## LyricsRenderer
+
+The single place that paints lyrics onto the page: container lookup, clear,
+row building for Line and Static payloads, info/credits, styling,
+registration, scroll mount, and the in-place translation update with scroll
+re-anchor. Lives in src/utils/Lyrics/LyricsRenderer.ts. Callers cross it
+through renderLyrics, updateLyricTranslations, and getLineRecords (the uniform
+line view) - never through the Static/Line builders, the translation updater,
+or the scroll container. The builders and updater remain as thin adapters over
+this seam for their historic callers and tests.
 ## AutoScroll
 
 The single place that keeps the active lyric line centered: container mount,

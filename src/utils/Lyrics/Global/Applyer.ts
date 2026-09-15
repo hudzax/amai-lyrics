@@ -1,6 +1,5 @@
 import { setBlurringLastLine } from '../Animator/Lyrics/LyricsAnimator';
-import { ApplyStaticLyrics } from '../Applyer/Static';
-import { ApplyLineLyrics } from '../Applyer/Synced/Line';
+import { renderLyrics } from '../LyricsRenderer';
 import { isNoLyricsResult } from '../fetchLyrics';
 import { showRefreshButton } from '../../../components/Pages/pageButtons';
 import { addLinesEvListener } from '../lyrics';
@@ -55,21 +54,13 @@ export default function ApplyLyrics(
   const currentTrackId = Spicetify.Player.data?.item?.uri?.split(':')[2];
   if (currentTrackId !== typedLyrics?.id) return false;
 
-  // Apply lyrics based on type
-  // NOTE: 'Syllable' lyrics are normalized to 'Line' on ingest (processing.ts);
-  // the word-by-word karaoke renderer has been removed.
-  const lyricsHandlers = {
-    Line: ApplyLineLyrics,
-    Static: ApplyStaticLyrics,
-  };
-
-  const applyHandler = lyricsHandlers[typedLyrics.Type as keyof typeof lyricsHandlers];
-  if (applyHandler) {
-    applyHandler(typedLyrics as never);
-    // Show refresh button after lyrics are applied
-    showRefreshButton();
-    addLinesEvListener(); // Attach event listener after lyrics are rendered
-    return true;
-  }
-  return false;
+  // Render behind the single LyricsRenderer seam. 'Syllable' lyrics are
+  // normalized to 'Line' on ingest (processing.ts); the word-by-word karaoke
+  // renderer has been removed.
+  if (typedLyrics.Type !== 'Line' && typedLyrics.Type !== 'Static') return false;
+  renderLyrics(typedLyrics);
+  // Show refresh button after lyrics are applied
+  showRefreshButton();
+  addLinesEvListener(); // Attach event listener after lyrics are rendered
+  return true;
 }

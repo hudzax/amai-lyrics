@@ -1,85 +1,13 @@
-import { BOTTOM_ApplyLyricsSpacer, TOP_ApplyLyricsSpacer } from '../../Addons';
-import Defaults from '../../../components/Global/Defaults';
-import { applyStyles, removeAllStyles } from '../../CSS/Styles';
-import { ClearScrollSimplebar } from '../../Scrolling/Simplebar/ScrollSimplebar';
-import { AutoScroll } from '../../Scrolling/AutoScroll';
-import { ClearLyricsContentArrays, LyricsObject } from '../lyrics';
-import { ApplyLyricsCredits } from './Credits/ApplyLyricsCredits';
-import { ApplyInfo } from './Info/ApplyInfo';
-// import { ApplyTranslation } from './Translation/ApplyTranslation';
-import { createRubyFragment } from '../../sanitize';
-import { decorateLineElement, processLinePhonetics } from './Utils/decorateLine';
+import { renderLyrics } from '../LyricsRenderer';
+import type { RenderableLyricsData } from '../LyricsRenderer';
 
-export function ApplyStaticLyrics(data) {
-  if (!Defaults.LyricsContainerExists) return;
-
-  const LyricsContainer = document.querySelector<HTMLElement>(
-    '#AmaiLyricsPage .LyricsContainer .LyricsContent',
-  );
-  LyricsContainer.setAttribute('data-lyrics-type', 'Static');
-
-  ClearLyricsContentArrays();
-  ClearScrollSimplebar();
-  TOP_ApplyLyricsSpacer(LyricsContainer);
-
-  const fragment = document.createDocumentFragment();
-
-  data.Lines.forEach((line, index) => {
-    const lineElem = document.createElement('div');
-
-    processLinePhonetics(line, data);
-
-    const mainTextContainer = document.createElement('span');
-    mainTextContainer.classList.add('main-lyrics-text');
-
-    if (line.Text?.includes('[DEF=font_size:small]')) {
-      lineElem.style.fontSize = '35px';
-      mainTextContainer.appendChild(
-        createRubyFragment(line.Text.replace('[DEF=font_size:small]', '')),
-      );
-    } else {
-      mainTextContainer.appendChild(createRubyFragment(line.Text));
-    }
-
-    lineElem.appendChild(mainTextContainer);
-
-    decorateLineElement(lineElem, mainTextContainer, line, data.Raw?.[index]);
-
-    lineElem.classList.add('line', 'static');
-
-    LyricsObject.Types.Static.Lines.push({
-      HTMLElement: lineElem,
-    });
-
-    fragment.appendChild(lineElem);
-  });
-
-  LyricsContainer.appendChild(fragment);
-
-  ApplyInfo(data);
-  ApplyLyricsCredits(data);
-  BOTTOM_ApplyLyricsSpacer(LyricsContainer);
-
-  // One scroll seam owns mount-vs-recalculate behind a single call.
-  AutoScroll.mount();
-
-  const LyricsStylingContainer = document.querySelector<HTMLElement>(
-    '#AmaiLyricsPage .LyricsContainer .LyricsContent .simplebar-content',
-  );
-
-  if (data.offline) {
-    LyricsStylingContainer.classList.add('offline');
-  }
-
-  removeAllStyles(LyricsStylingContainer);
-
-  if (data.classes) {
-    LyricsStylingContainer.className = data.classes;
-  }
-
-  if (data.styles) {
-    applyStyles(LyricsStylingContainer, data.styles);
-  }
-
-  // ApplyTranslation(data.Raw);
+/**
+ * Applies static (unsynced) lyrics to the lyrics container.
+ *
+ * Thin adapter over the LyricsRenderer seam: the row building, registration,
+ * and scroll mount live behind `renderLyrics`. Kept as a named entry so
+ * existing callers keep crossing a stable interface.
+ */
+export function ApplyStaticLyrics(data: RenderableLyricsData): void {
+  renderLyrics(data);
 }

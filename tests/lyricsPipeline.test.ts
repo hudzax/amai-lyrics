@@ -18,8 +18,9 @@ vi.mock('../src/utils/Lyrics/ui', () => ({
   EnsureProcessingIndicatorHidden: vi.fn(),
   noLyricsMessage: vi.fn(async (id?: string) => ({ status: 'NO_LYRICS', id })),
 }));
-vi.mock('../src/utils/Lyrics/translationUpdater', () => ({
-  updateDisplayedLyricsWithTranslations: vi.fn(),
+vi.mock('../src/utils/Lyrics/LyricsRenderer', () => ({
+  renderLyrics: vi.fn(),
+  updateLyricTranslations: vi.fn(),
 }));
 vi.mock('../src/utils/Lyrics/cache', () => ({
   getLyricsFromLocalStorage: vi.fn(async () => null),
@@ -45,7 +46,7 @@ import {
   ClearLyricsPageContainer,
   noLyricsMessage,
 } from '../src/utils/Lyrics/ui';
-import { updateDisplayedLyricsWithTranslations } from '../src/utils/Lyrics/translationUpdater';
+import { updateLyricTranslations } from '../src/utils/Lyrics/LyricsRenderer';
 import { fetchLyricsFromAPI } from '../src/utils/Lyrics/api';
 import ApplyLyrics from '../src/utils/Lyrics/Global/Applyer';
 import fetchLyrics, { loadAndApplyLyrics } from '../src/utils/Lyrics/fetchLyrics';
@@ -144,7 +145,7 @@ describe('publishEnhancedLyrics', () => {
     const token = beginLyricsRequest(URI_A);
 
     expect(publishEnhancedLyrics(token, 'trackA', staticPayload('trackA') as never)).toBe(true);
-    expect(updateDisplayedLyricsWithTranslations).toHaveBeenCalledTimes(1);
+    expect(updateLyricTranslations).toHaveBeenCalledTimes(1);
     expect(mockedEvent.evoke).toHaveBeenCalledWith(
       'lyrics:data-updated',
       expect.stringContaining('trackA'),
@@ -158,7 +159,7 @@ describe('publishEnhancedLyrics', () => {
     beginLyricsRequest(URI_B);
 
     expect(publishEnhancedLyrics(stale, 'trackA', staticPayload('trackA') as never)).toBe(false);
-    expect(updateDisplayedLyricsWithTranslations).not.toHaveBeenCalled();
+    expect(updateLyricTranslations).not.toHaveBeenCalled();
     expect(mockedEvent.evoke).not.toHaveBeenCalled();
   });
 });

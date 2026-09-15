@@ -22,7 +22,7 @@ import storage from '../storage';
 import Defaults from '../../components/Global/Defaults';
 import Event from '../EventManager';
 import { HideLoaderContainer, ClearLyricsPageContainer } from './ui';
-import { updateDisplayedLyricsWithTranslations } from './translationUpdater';
+import { updateLyricTranslations } from './LyricsRenderer';
 import type { LyricsData } from './conversion';
 
 /** Opaque handle for one lyrics request (fetch or refresh). */
@@ -92,7 +92,7 @@ export function publishEnhancedLyrics(
 ): boolean {
   if (!isCurrentLyricsRequest(token)) return false;
   if (liveLyricsUri()?.split(':')[2] !== trackId) return false;
-  updateDisplayedLyricsWithTranslations(data);
+  updateLyricTranslations(data);
   const serialized = JSON.stringify(data);
   storage.set('currentLyricsData', serialized);
   Event.evoke('lyrics:data-updated', serialized);
