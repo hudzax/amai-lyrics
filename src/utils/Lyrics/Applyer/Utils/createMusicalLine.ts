@@ -1,16 +1,23 @@
 import { ConvertTime } from '../../ConvertTime';
 import { LyricsObject, SetWordArrayInCurentLine_LINE_SYNCED } from '../../lyrics';
 
-const NOTE_GLYPHS = ['♪', '♫', '♩'] as const;
+const DOT_GLYPH = '•' as const;
+const INSTRUMENTAL_LABEL = 'Instrumental' as const;
 
 /**
- * Creates a .dotGroup with 3 note glyphs and registers them in the lyrics
+ * Creates a .dotGroup with 3 ambient dots and registers them in the lyrics
  * object under the most-recent Line line. Caller must have pushed the line
  * and called SetWordArrayInCurentLine_LINE_SYNCED() first.
+ *
+ * The dots keep their Start/End timing (so the parent .musical-line stays
+ * Active for the whole break) but visuals are ambient-only: CSS drives a
+ * staggered bounce whenever the parent line is .Active, ignoring per-dot
+ * progress. See Mixed.css `.instrumental-pill`.
  */
 function createDotGroup(startTime: number, endTime: number): HTMLElement {
   const dotGroup = document.createElement('div');
   dotGroup.classList.add('dotGroup');
+  dotGroup.setAttribute('aria-hidden', 'true');
 
   const totalTime = endTime - startTime;
   const dotTime = totalTime / 3;
@@ -18,7 +25,7 @@ function createDotGroup(startTime: number, endTime: number): HTMLElement {
   for (let i = 0; i < 3; i++) {
     const dot = document.createElement('span');
     dot.classList.add('word', 'dot');
-    dot.textContent = NOTE_GLYPHS[i % NOTE_GLYPHS.length];
+    dot.textContent = DOT_GLYPH;
 
     const target = LyricsObject.Types.Line.Lines;
     // Use the last pushed line (caller must have pushed it and called SetWordArray)
@@ -40,6 +47,20 @@ function createDotGroup(startTime: number, endTime: number): HTMLElement {
   return dotGroup;
 }
 
+/**
+ * Builds the ambient pill: dots only (no icon / text).
+ * Dots are aria-hidden; the pill carries the accessible name.
+ */
+function createInstrumentalPill(startMs: number, endMs: number): HTMLElement {
+  const pill = document.createElement('div');
+  pill.classList.add('instrumental-pill');
+  pill.setAttribute('role', 'img');
+  pill.setAttribute('aria-label', INSTRUMENTAL_LABEL);
+
+  pill.appendChild(createDotGroup(startMs, endMs));
+  return pill;
+}
+
 function registerMusicalLine(startMs: number, endMs: number): HTMLElement {
   const line = document.createElement('div');
   line.classList.add('line', 'musical-line');
@@ -58,7 +79,8 @@ function registerMusicalLine(startMs: number, endMs: number): HTMLElement {
 
 /**
  * Creates a .musical-line container, registers it in LyricsObject, and
- * appends a 3-dot group. Returns the element for fragment insertion.
+ * appends the shimmer pill (ambient dots only).
+ * Returns the element for fragment insertion.
  */
 export function createMusicalLine(opts: {
   startTimeSec: number; // in seconds as received from API
@@ -72,8 +94,7 @@ export function createMusicalLine(opts: {
   const line = registerMusicalLine(startMs, endMs);
   if (oppositeAligned) line.classList.add('OppositeAligned');
 
-  const dots = createDotGroup(startMs, endMs);
-  line.appendChild(dots);
+  line.appendChild(createInstrumentalPill(startMs, endMs));
   return line;
 }
 
@@ -89,7 +110,6 @@ export function createMusicalLineMs(
   const line = registerMusicalLine(startMs, endMs);
   if (oppositeAligned) line.classList.add('OppositeAligned');
 
-  const dots = createDotGroup(startMs, endMs);
-  line.appendChild(dots);
+  line.appendChild(createInstrumentalPill(startMs, endMs));
   return line;
 }

@@ -69,16 +69,21 @@ afterAll(() => {
 });
 
 describe('createMusicalLineMs', () => {
-  it('registers a dot line with three note dots', () => {
+  it('registers a dot line with shimmer pill and three ambient dots', () => {
     const el = createMusicalLineMs(1000, 4000);
 
     expect(el.classList.contains('line')).toBe(true);
     expect(el.classList.contains('musical-line')).toBe(true);
+    const pill = el.querySelector('.instrumental-pill');
+    expect(pill).not.toBeNull();
+    expect(pill?.getAttribute('aria-label')).toBe('Instrumental');
+    expect(pill?.querySelector('.instrumental-note')).toBeNull();
+    expect(pill?.querySelector('.instrumental-label')).toBeNull();
     const dots = el.querySelectorAll('.word.dot');
     expect(dots).toHaveLength(3);
-    expect(dots[0].textContent).toBe('♪');
-    expect(dots[1].textContent).toBe('♫');
-    expect(dots[2].textContent).toBe('♩');
+    expect(dots[0].textContent).toBe('•');
+    expect(dots[1].textContent).toBe('•');
+    expect(dots[2].textContent).toBe('•');
 
     const lines = LyricsObject.Types.Line.Lines;
     expect(lines).toHaveLength(1);

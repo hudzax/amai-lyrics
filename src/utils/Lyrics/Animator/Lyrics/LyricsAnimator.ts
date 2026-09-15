@@ -98,25 +98,32 @@ export function resetAnimatorCache(): void {
   lastBlurActiveIndex = null;
 }
 
-// Dot-state helpers — used by the Line path's musical-break dot groups
+// Dot-state helpers — instrumental pill is ambient-only (CSS-driven).
+// The parent .line Active/Sung/NotSung + nth-child delays own all visuals, so
+// helpers only toggle .dot-active for compat and clear stale inline styles
+// that would override the ambient keyframes (transform/opacity/scale).
+function clearDotInlineStyles(word) {
+  setStyleIfChanged(word.HTMLElement, 'transform', '');
+  setStyleIfChanged(word.HTMLElement, 'scale', '');
+  setStyleIfChanged(word.HTMLElement, 'opacity', '');
+  setStyleIfChanged(word.HTMLElement, '--text-shadow-blur-radius', '');
+  setStyleIfChanged(word.HTMLElement, '--text-shadow-opacity', '');
+  setStyleIfChanged(word.HTMLElement, '--dot-duration', '');
+}
+
 function activateDot(word) {
   if (!word.HTMLElement.classList.contains('dot-active')) {
-    const dotDuration = word.EndTime - word.StartTime;
-    word.HTMLElement.style.setProperty('--dot-duration', `${dotDuration}ms`);
     void word.HTMLElement.offsetWidth;
     word.HTMLElement.classList.add('dot-active');
   }
+  clearDotInlineStyles(word);
   word.scale = 1;
   word.glow = 0.5;
 }
 
 function resetDotNotSung(word) {
   word.HTMLElement.classList.remove('dot-active');
-  setStyleIfChanged(word.HTMLElement, 'transform', '');
-  setStyleIfChanged(word.HTMLElement, 'scale', '');
-  setStyleIfChanged(word.HTMLElement, 'opacity', '');
-  setStyleIfChanged(word.HTMLElement, '--text-shadow-blur-radius', '');
-  setStyleIfChanged(word.HTMLElement, '--text-shadow-opacity', '');
+  clearDotInlineStyles(word);
   word.translateY = 0.01;
   word.scale = 0.75;
   word.glow = 0;
@@ -124,11 +131,7 @@ function resetDotNotSung(word) {
 
 function resetDotSung(word) {
   word.HTMLElement.classList.remove('dot-active');
-  setStyleIfChanged(word.HTMLElement, 'transform', 'translateY(calc(var(--font-size) * 0))');
-  setStyleIfChanged(word.HTMLElement, 'scale', '1.2');
-  setStyleIfChanged(word.HTMLElement, 'opacity', '1');
-  setStyleIfChanged(word.HTMLElement, '--text-shadow-blur-radius', '12px');
-  setStyleIfChanged(word.HTMLElement, '--text-shadow-opacity', '50%');
+  clearDotInlineStyles(word);
   word.scale = 1.2;
   word.glow = 0.5;
 }
