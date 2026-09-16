@@ -1,5 +1,6 @@
 import lifecycle from '../../utils/lifecycle';
 import Whentil from '../../utils/Whentil';
+import Global from '../Global/Global';
 import { debounce } from '../../utils/debounce';
 import {
   appBackgroundSingleton,
@@ -98,6 +99,7 @@ export class ArtworkSurfaces {
   private gridObserver: MutationObserver | null = null;
   private appFrameRafQueued = false;
   private firstPaintWaiter: ReturnType<typeof Whentil.When> | null = null;
+  private fullscreenOpenId: number | null = null;
 
   constructor(adapters?: ArtworkSurfaceAdapters) {
     this.sidebarBg = new NowPlayingBarBackground();
@@ -148,6 +150,14 @@ export class ArtworkSurfaces {
     lifecycle.trackCallback(() =>
       window.removeEventListener(APP_BG_CHANGED_EVENT, this.toggleHandler),
     );
+    // Fullscreen entry is the one transition that un-hides the lyrics page's own
+    // backdrop (the app canvas hides it otherwise). If ApplyDynamicBackground
+    // skipped creation while the page was non-fullscreen, the node doesn't exist
+    // yet — re-apply here so the backdrop is painted before it is shown.
+    this.fullscreenOpenId = Global.Event.listen('fullscreen:open', () =>
+      this.adapters.applyLyricsPage(),
+    );
+    lifecycle.trackGlobalEvent(this.fullscreenOpenId);
   }
 
   /** Disconnect, cancel, and clear canvases (hot-reload safe). */
@@ -159,6 +169,10 @@ export class ArtworkSurfaces {
     this.sidebarLateObserver?.disconnect();
     this.appFrameObserver?.disconnect();
     this.gridObserver?.disconnect();
+    if (this.fullscreenOpenId !== null) {
+      Global.Event.unListen(this.fullscreenOpenId);
+      this.fullscreenOpenId = null;
+    }
     this.sidebarObserver = null;
     this.sidebarLateObserver = null;
     this.appFrameObserver = null;

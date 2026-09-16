@@ -1,272 +1,51 @@
 import { SongProgressBar } from '../../utils/Lyrics/SongProgressBar';
-import { IntervalManager } from '../../utils/IntervalManager';
-import { INTERVALS } from '../../constants/intervals';
 import { SpotifyPlayer } from '../Global/SpotifyPlayer';
-import Fullscreen from '../Utils/Fullscreen';
-import { progressBarState } from './state';
-import { ComponentInstance } from './types';
 
-/**
- * Creates and sets up the song progress bar with event handlers and update interval
- * @returns ComponentInstance with methods to apply, clean up, and get the element
- */
-export const SetupSongProgressBar = (AppendQueue: HTMLElement[]): ComponentInstance => {
-  // Create and initialize the progress bar
-  const { songProgressBar, timelineElement, sliderBar } = createProgressBarElements();
+/** Internal NowBar renderer: no clock, shared state, or global subscriptions. */
+export function createProgressBar() {
+  const model = new SongProgressBar();
+  const element = document.createElement('div');
+  element.className = 'Timeline';
+  const positionText = document.createElement('span');
+  positionText.className = 'Time Position';
+  const slider = document.createElement('div');
+  slider.className = 'SliderBar';
+  const handle = document.createElement('div');
+  handle.className = 'Handle';
+  slider.appendChild(handle);
+  const durationText = document.createElement('span');
+  durationText.className = 'Time Duration';
+  element.append(positionText, slider, durationText);
+  let destroyed = false;
 
-  if (!sliderBar) {
-    console.error('Could not find SliderBar element');
-    return null;
-  }
-
-  // Create the update function
-  const updateTimelineState = createUpdateFunction(songProgressBar, timelineElement, sliderBar);
-
-  // Set up click handler for seeking
-  const sliderBarHandler = createSliderClickHandler(songProgressBar, sliderBar, timelineElement);
-  sliderBar.addEventListener('click', sliderBarHandler);
-
-  // Run initial update
-  updateTimelineState();
-
-  // Initialize tracking variables
-  initializeTrackingVariables();
-
-  // Set up update interval
-  const updateInterval = setupUpdateInterval(updateTimelineState);
-
-  // Store references for later use
-  progressBarState.SongProgressBar_ClassInstance = songProgressBar;
-  progressBarState.TimeLineElement = timelineElement;
-  progressBarState.updateTimelineState_Function = updateTimelineState;
-  progressBarState.updateInterval = updateInterval;
+  const render = (position: number) => {
+    if (destroyed || !Number.isFinite(position)) return;
+    model.Update({
+      duration: SpotifyPlayer.GetTrackDuration() ?? 0,
+      position: Math.max(0, position),
+    });
+    slider.style.setProperty('--SliderProgress', String(model.GetProgressPercentage()));
+    positionText.textContent = model.GetFormattedPosition();
+    durationText.textContent = model.GetFormattedDuration();
+  };
+  const seek = (event: MouseEvent) => {
+    if (destroyed || !element.isConnected || slider.getBoundingClientRect().width <= 0) return;
+    const position = model.CalculatePositionFromClick({ sliderBar: slider, event });
+    if (!Number.isFinite(position)) return;
+    SpotifyPlayer.Seek(position);
+    render(position);
+  };
+  slider.addEventListener('click', seek);
 
   return {
-    Apply: () => {
-      AppendQueue.push(timelineElement);
+    element,
+    render,
+    destroy: () => {
+      if (destroyed) return;
+      destroyed = true;
+      slider.removeEventListener('click', seek);
+      model.Destroy();
+      element.remove();
     },
-    GetElement: () => timelineElement,
-    CleanUp: () => cleanupProgressBar(sliderBar, sliderBarHandler),
   };
-};
-
-/**
- * Creates and initializes the progress bar elements
- */
-function createProgressBarElements() {
-  // Create the SongProgressBar instance
-  const songProgressBar = new SongProgressBar();
-
-  // Update initial values
-  songProgressBar.Update({
-    duration: SpotifyPlayer.GetTrackDuration() ?? 0,
-    position: SpotifyPlayer.GetTrackPosition() ?? 0,
-  });
-
-  // Create the timeline element — built with DOM APIs to avoid innerHTML
-  const timelineElement = document.createElement('div');
-  timelineElement.classList.add('Timeline');
-  const positionSpan = document.createElement('span');
-  positionSpan.className = 'Time Position';
-  positionSpan.textContent = songProgressBar.GetFormattedPosition() ?? '0:00';
-  const sliderBarDiv = document.createElement('div');
-  sliderBarDiv.className = 'SliderBar';
-  sliderBarDiv.style.setProperty(
-    '--SliderProgress',
-    String(songProgressBar.GetProgressPercentage() ?? 0),
-  );
-  const handleDiv = document.createElement('div');
-  handleDiv.className = 'Handle';
-  sliderBarDiv.appendChild(handleDiv);
-  const durationSpan = document.createElement('span');
-  durationSpan.className = 'Time Duration';
-  durationSpan.textContent = songProgressBar.GetFormattedDuration() ?? '0:00';
-  timelineElement.append(positionSpan, sliderBarDiv, durationSpan);
-
-  // Get the slider bar element
-  const sliderBar = timelineElement.querySelector<HTMLElement>('.SliderBar');
-
-  return { songProgressBar, timelineElement, sliderBar };
-}
-
-/**
- * Creates a function to update the timeline state
- */
-function createUpdateFunction(
-  songProgressBar: SongProgressBar,
-  timelineElement: HTMLElement,
-  sliderBar: HTMLElement,
-) {
-  return (e: number | { data?: number } | null = null) => {
-    const positionElement = timelineElement.querySelector<HTMLElement>('.Time.Position');
-    const durationElement = timelineElement.querySelector<HTMLElement>('.Time.Duration');
-
-    if (!positionElement || !durationElement || !sliderBar) {
-      console.error('Missing required elements for timeline update');
-      return;
-    }
-
-    // Get the current position - handle different input types
-    let currentPosition;
-    if (e === null) {
-      // Normal update - get current position
-      currentPosition = SpotifyPlayer.GetTrackPosition();
-    } else if (typeof e === 'number') {
-      // Direct position value passed
-      currentPosition = e;
-    } else if (e && e.data && typeof e.data === 'number') {
-      // Event from Spicetify with position in data
-      currentPosition = e.data;
-    } else {
-      // Fallback
-      currentPosition = SpotifyPlayer.GetTrackPosition();
-    }
-
-    // Update the progress bar state
-    songProgressBar.Update({
-      duration: SpotifyPlayer.GetTrackDuration() ?? 0,
-      position: currentPosition ?? 0,
-    });
-
-    // Get formatted values
-    const sliderPercentage = songProgressBar.GetProgressPercentage();
-    const formattedPosition = songProgressBar.GetFormattedPosition();
-    const formattedDuration = songProgressBar.GetFormattedDuration();
-
-    // Update the UI
-    sliderBar.style.setProperty('--SliderProgress', sliderPercentage.toString());
-    durationElement.textContent = formattedDuration;
-    positionElement.textContent = formattedPosition;
-  };
-}
-
-/**
- * Creates a click handler for the slider bar to seek to a position
- */
-function createSliderClickHandler(
-  songProgressBar: SongProgressBar,
-  sliderBar: HTMLElement,
-  timelineElement: HTMLElement,
-) {
-  return (event: MouseEvent) => {
-    // Only process clicks when in fullscreen mode
-    if (!Fullscreen.IsOpen) return;
-
-    // Calculate position from click
-    const positionMs = songProgressBar.CalculatePositionFromClick({
-      sliderBar: sliderBar,
-      event: event,
-    });
-
-    // Use the calculated position (in milliseconds)
-    if (typeof SpotifyPlayer !== 'undefined' && SpotifyPlayer.Seek) {
-      SpotifyPlayer.Seek(positionMs);
-
-      // Update tracking variables
-      progressBarState.lastKnownPosition = positionMs;
-      progressBarState.lastUpdateTime = performance.now();
-
-      // Update the UI to reflect the new position
-      songProgressBar.Update({
-        duration: SpotifyPlayer.GetTrackDuration() ?? 0,
-        position: positionMs,
-      });
-
-      // Update UI elements
-      const sliderPercentage = songProgressBar.GetProgressPercentage();
-      const formattedPosition = songProgressBar.GetFormattedPosition();
-
-      sliderBar.style.setProperty('--SliderProgress', sliderPercentage.toString());
-
-      const positionElement = timelineElement.querySelector<HTMLElement>('.Time.Position');
-      if (positionElement) {
-        positionElement.textContent = formattedPosition;
-      }
-    }
-  };
-}
-
-/**
- * Initializes tracking variables for position interpolation
- */
-function initializeTrackingVariables() {
-  progressBarState.lastKnownPosition = SpotifyPlayer.GetTrackPosition() || 0;
-  progressBarState.lastUpdateTime = performance.now();
-}
-
-/**
- * Sets up the update interval for smooth progress bar updates.
- *
- * Uses IntervalManager instead of a bare setInterval so the whole update loop
- * is auto-paused while the window is hidden/minimized and destroyed on
- * lifecycle teardown. No inner document.hidden check is needed anymore: the
- * manager simply stops ticking while hidden, and the interpolation below
- * self-corrects on the next visible tick (>3s elapsed -> real-position
- * re-anchor through the player API).
- */
-function setupUpdateInterval(updateTimelineState: (position?: number) => void): IntervalManager {
-  const updateInterval = new IntervalManager(INTERVALS.PROGRESS_BAR_UPDATE, () => {
-    // Skip entirely when not visible: fullscreen is the only place this bar exists.
-    // Also skip while window is hidden (IntervalManager already pauses, but guard costs nothing).
-    if (!Fullscreen.IsOpen) return;
-    if (!SpotifyPlayer.IsPlaying) {
-      return;
-    }
-
-    // Get stored values
-    const { lastKnownPosition, lastUpdateTime } = progressBarState;
-
-    // Calculate elapsed time
-    const now = performance.now();
-    const elapsed = now - (lastUpdateTime || now);
-
-    // Update strategy: get actual position occasionally, interpolate most of the time
-    if (elapsed > 3000) {
-      // Every 3 seconds, get actual position from API
-      const actualPosition = SpotifyPlayer.GetTrackPosition() || 0;
-      progressBarState.lastKnownPosition = actualPosition;
-      progressBarState.lastUpdateTime = now;
-      updateTimelineState(actualPosition);
-    } else {
-      // Otherwise, interpolate position based on elapsed time
-      const interpolatedPosition = (lastKnownPosition || 0) + elapsed;
-      progressBarState.lastInterpolationUpdate = now;
-      updateTimelineState(interpolatedPosition);
-    }
-  });
-  updateInterval.Start();
-  return updateInterval;
-}
-
-/**
- * Cleans up the progress bar resources
- */
-function cleanupProgressBar(sliderBar: HTMLElement, sliderBarHandler: EventListener) {
-  // Remove event listeners
-  if (sliderBar) {
-    sliderBar.removeEventListener('click', sliderBarHandler);
-  }
-
-  // Destroy the update interval (also unregisters its visibility listener)
-  const { updateInterval, SongProgressBar_ClassInstance, TimeLineElement } = progressBarState;
-  updateInterval?.Destroy();
-
-  // Clean up the progress bar instance
-  if (SongProgressBar_ClassInstance) {
-    SongProgressBar_ClassInstance.Destroy();
-  }
-
-  // Remove the timeline element from DOM if attached
-  if (TimeLineElement && TimeLineElement.parentNode) {
-    TimeLineElement.parentNode.removeChild(TimeLineElement);
-  }
-
-  // Reset state
-  Object.keys(progressBarState).forEach((key) => {
-    delete progressBarState[key];
-  });
-
-  // Initialize with empty values
-  progressBarState.lastKnownPosition = 0;
-  progressBarState.lastUpdateTime = 0;
 }

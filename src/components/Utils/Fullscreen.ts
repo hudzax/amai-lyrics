@@ -3,7 +3,7 @@ import { AutoScroll } from '../../utils/Scrolling/AutoScroll';
 import storage from '../../utils/storage';
 import Global from '../Global/Global';
 import PageView, { PageRoot } from '../Pages/PageView';
-import { DeregisterNowBarBtn, OpenNowBar } from './NowBar';
+import { DeregisterNowBarBtn, OpenNowBar, UpdateNowBar } from './NowBar';
 import TransferElement from './TransferElement';
 import lifecycle from '../../utils/lifecycle';
 
@@ -148,6 +148,7 @@ function Open() {
 
     // Function to set up UI elements after fullscreen transition
     function setupFullscreenUI() {
+      if (!Fullscreen.IsOpen || !SpicyPage.isConnected) return;
       // Ensure controls are properly added
       PageView.AppendViewControls();
 
@@ -227,7 +228,8 @@ function Close() {
         }
       }
       if (NoLyrics) {
-        OpenNowBar();
+        // Refresh an existing lifetime; never resurrect a destroyed page's NowBar.
+        void UpdateNowBar();
         const lyricsContainer = document.querySelector(
           '#AmaiLyricsPage .ContentBox .LyricsContainer',
         );

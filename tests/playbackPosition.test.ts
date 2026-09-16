@@ -53,6 +53,8 @@ describe('playback-time seam', () => {
     await new Promise((r) => setTimeout(r, 25));
     expect(GetProgress()).toBe(5000);
     expect(getPositionFor('highlight')).toBe(5000 + PlaybackSurfaceOffset.highlight);
+    expect(getPositionFor('nowbar')).toBe(5000);
+    expect(PlaybackSurfaceOffset.nowbar).toBe(0);
     expect(getPositionFor('scroll')).toBe(5000 + PlaybackSurfaceOffset.scroll);
     expect(getPositionFor('playbar')).toBe(5000 + PlaybackSurfaceOffset.playbar);
     // The scroll/playbar lead times are what the old call-site constants were.

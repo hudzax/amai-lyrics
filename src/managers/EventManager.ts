@@ -1,12 +1,10 @@
 import { SpotifyPlayer } from '../components/Global/SpotifyPlayer';
-import { IntervalManager } from '../utils/IntervalManager';
 import { resolveIsPlaying, syncPlaybackPosition } from '../utils/Gets/GetProgress';
 import { deriveLoopType, deriveShuffleType } from '../utils/playerState';
 import Global from '../components/Global/Global';
 import Session from '../components/Global/Session';
 import Whentil from '../utils/Whentil';
 import lifecycle from '../utils/lifecycle';
-import Fullscreen from '../components/Utils/Fullscreen';
 
 export class EventManager {
   private static safeGetRepeat(): number {
@@ -80,10 +78,6 @@ export class EventManager {
     Global.Event.evoke('playback:playpause', e);
   };
 
-  private static onProgress = (e: unknown) => {
-    Global.Event.evoke('playback:progress', e);
-  };
-
   private static onSongChange = (e: unknown) => {
     Global.Event.evoke('playback:songchange', e);
     EventManager.updatePlayerStatesOnSongChange();
@@ -121,25 +115,11 @@ export class EventManager {
     SpotifyPlayer.ShuffleType = deriveShuffleType(shuffle, smartShuffle);
     Global.Event.evoke('playback:shuffle', SpotifyPlayer.ShuffleType);
 
-    // Position tracking - only needed for fullscreen progress bar. Skip tick entirely
-    // when fullscreen is closed so we don't wake the main thread every 500ms for nothing
-    // (the synced GetProgress loop still provides positions for lyrics/playbar when needed).
-    let lastPosition = 0;
-    const positionInterval = new IntervalManager(0.5, () => {
-      if (!Fullscreen.IsOpen) return;
-      const pos = SpotifyPlayer.GetTrackPosition();
-      if (pos !== lastPosition) {
-        Global.Event.evoke('playback:position', pos);
-      }
-      lastPosition = pos;
-    });
-    positionInterval.Start();
-    lifecycle.trackInterval(positionInterval);
+    // NowBar owns its PositionConsumer; no second position delivery path here.
   }
 
   private static setupPlayerEvents() {
     lifecycle.trackPlayerEvent('onplaypause', EventManager.onPlayPause);
-    lifecycle.trackPlayerEvent('onprogress', EventManager.onProgress);
     lifecycle.trackPlayerEvent('songchange', EventManager.onSongChange);
     lifecycle.trackPlayerEvent('repeat_mode_changed', EventManager.onRepeatModeChanged);
     lifecycle.trackPlayerEvent('shuffle_changed', EventManager.onShuffleChanged);

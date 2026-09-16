@@ -1,7 +1,5 @@
-import { SpotifyPlayer } from '../Global/SpotifyPlayer';
+import { UpdateNowBar } from '../Utils/NowBar';
 import fastdom from 'fastdom';
-import { mutateAsync } from '../../utils/fastdomAsync';
-import { PageViewSelectors } from '../../constants/PageViewSelectors';
 import { Maid } from '@hudzax/web-modules/Maid';
 
 interface ImageElementWithSetup extends HTMLImageElement {
@@ -62,59 +60,5 @@ export function setupImageLoading(imageElement: ImageElementWithSetup, maid: Mai
 }
 
 export async function UpdatePageContent(isOpened: boolean) {
-  if (!isOpened) return;
-
-  const mediaImage = document.querySelector<HTMLImageElement>(PageViewSelectors.MediaImage);
-
-  if (mediaImage) {
-    await Promise.all([
-      mutateAsync(() => {
-        if (mediaImage.classList.contains('loaded')) {
-          mediaImage.classList.remove('loaded');
-        }
-      }),
-      updateSongInfo(),
-      updateArtwork(mediaImage),
-    ]);
-  }
-}
-
-async function updateSongInfo() {
-  const songNamePromise = SpotifyPlayer.GetSongName();
-  const artistsPromise = SpotifyPlayer.GetArtists();
-
-  const [songName, artists] = await Promise.all([songNamePromise, artistsPromise]);
-
-  const songNameElem = document.querySelector<HTMLElement>(PageViewSelectors.SongName);
-  const artistsElem = document.querySelector<HTMLElement>(PageViewSelectors.Artists);
-  const joinedArtists = SpotifyPlayer.JoinArtists(artists);
-
-  return mutateAsync(() => {
-    if (songNameElem && songNameElem.textContent !== songName) {
-      songNameElem.textContent = songName;
-    }
-    if (artistsElem && artistsElem.textContent !== joinedArtists) {
-      artistsElem.textContent = joinedArtists;
-    }
-  });
-}
-
-async function updateArtwork(mediaImage: HTMLImageElement) {
-  try {
-    const [standardUrl, highResUrl] = await Promise.all([
-      SpotifyPlayer.Artwork.Get('l'),
-      SpotifyPlayer.Artwork.Get('xl'),
-    ]);
-
-    return mutateAsync(() => {
-      if (standardUrl && mediaImage.src !== standardUrl) {
-        mediaImage.src = standardUrl;
-      }
-      if (highResUrl && mediaImage.getAttribute('data-high-res') !== highResUrl) {
-        mediaImage.setAttribute('data-high-res', highResUrl);
-      }
-    });
-  } catch (error) {
-    console.error('Failed to load artwork:', error);
-  }
+  if (isOpened) await UpdateNowBar();
 }

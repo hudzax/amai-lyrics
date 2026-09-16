@@ -1,308 +1,253 @@
 import storage from '../../utils/storage';
-import Whentil from '../../utils/Whentil';
 import { SpotifyPlayer } from '../Global/SpotifyPlayer';
 import Fullscreen from '../Utils/Fullscreen';
+import Global from '../Global/Global';
 import lifecycle from '../../utils/lifecycle';
+import { getPositionFor } from '../../utils/Gets/GetProgress';
+import { registerPositionConsumer } from '../../utils/PositionConsumer';
+import { INTERVALS } from '../../constants/intervals';
 import { setupDragAndDrop } from './DragAndDrop';
-import { CleanUpActiveComponents, setupEventListeners } from './EventListeners';
-import { SetupPlaybackControls } from './PlaybackControls';
-import { SetupSongProgressBar } from './ProgressBar';
-import {
-  ActivePlaybackControlsInstance,
-  ActiveSetupSongProgressBarInstance,
-  setActivePlaybackControlsInstance,
-  setActiveSetupSongProgressBarInstance,
-} from './state';
+import { createPlaybackControls } from './PlaybackControls';
+import { createProgressBar } from './ProgressBar';
 
-// Tracked so rapid open/close or page destroy doesn't leave orphan polling task holding AppendQueue closure
-let viewControlsWhen: ReturnType<typeof Whentil.When> | null = null;
-
-function cancelViewControlsWhen(): void {
-  if (viewControlsWhen) {
-    viewControlsWhen.Cancel();
-    viewControlsWhen = null;
-  }
+/** NowBarOverlay owns the mounted lifetime; builders below this seam stay private. */
+interface MountedNowBar {
+  root: HTMLElement;
+  refresh: () => Promise<void>;
+  destroy: () => void;
 }
 
-// Register teardown for this instance. The module re-evaluates on every
-// hot-reload (fresh closure), so we register unconditionally; lifecycle
-// disposes it on the next reload via __amaiLyricsTeardown.
-lifecycle.trackCallback(cancelViewControlsWhen);
+let mounted: MountedNowBar | null = null;
+let destroyed = false;
+
+// Per-injection ownership: teardown invalidates pending work even before metadata resolves.
+lifecycle.trackCallback(() => {
+  destroyed = true;
+  CloseNowBar();
+});
 
 /**
- * Opens the NowBar and initializes its components
- * Sets up playback controls and progress bar in fullscreen mode
+ * True while a page may still mount a NowBar. PageView flips this synchronously
+ * in DestroyPage() so a pending fullscreen-entry continuation cannot re-open
+ * (and re-create a position loop on) a page that is being torn down.
  */
-async function OpenNowBar() {
-  const NowBar = document.querySelector('#AmaiLyricsPage .ContentBox .NowBar');
-  if (!NowBar) return;
-  UpdateNowBar(true);
-  if (!NowBar.classList.contains('Active')) NowBar.classList.add('Active');
-  storage.set('IsNowBarOpen', 'true');
+let pageDestroyed = false;
 
-  if (Fullscreen.IsOpen) {
-    // Cache MediaBox for repeated use
-    const MediaBox = document.querySelector(
-      '#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent',
-    );
-    if (!MediaBox) return;
+/** Called by PageView when page teardown begins; also closes the active lifetime. */
+function InvalidateNowBar(): void {
+  pageDestroyed = true;
+  CloseNowBar();
+}
 
-    // Remove only if present, avoid unnecessary DOM ops
-    const existingAlbumData = MediaBox.querySelector('.AlbumData');
-    if (existingAlbumData) MediaBox.removeChild(existingAlbumData);
+function mount(root: HTMLElement): MountedNowBar {
+  let disposed = false;
+  let metadataVersion = 0;
+  let fullscreen: boolean | null = null;
+  let controls: ReturnType<typeof createPlaybackControls> | null = null;
+  let progress: ReturnType<typeof createProgressBar> | null = null;
+  let stopPosition: (() => void) | null = null;
+  let stopDrag: (() => void) | null = null;
+  let artistData: HTMLElement | null = null;
+  let albumData: HTMLElement | null = null;
+  const listenerIds: number[] = [];
+  const image = root.querySelector<HTMLImageElement>('.MediaImage');
+  const mediaContent = root.querySelector<HTMLElement>('.MediaContent');
 
-    const existingPlaybackControls = MediaBox.querySelector('.PlaybackControls');
-    if (existingPlaybackControls) MediaBox.removeChild(existingPlaybackControls);
+  const refreshPlayback = () => {
+    if (disposed || !root.isConnected) return;
+    image?.classList.toggle('Playing', SpotifyPlayer.IsPlaying);
+    controls?.refresh();
+  };
 
-    // Let's Apply more data into the fullscreen mode.
-    {
-      const AppendQueue = [];
-      {
-        // Artist name, shown above the album name in the controls group
-        const ArtistNameElement = document.createElement('div');
-        ArtistNameElement.classList.add('ArtistData');
-        const artistNames = SpotifyPlayer.JoinArtists(await SpotifyPlayer.GetArtists());
-        const artistSpan = document.createElement('span');
-        artistSpan.textContent = artistNames;
-        ArtistNameElement.appendChild(artistSpan);
-        AppendQueue.push(ArtistNameElement);
-      }
-      {
-        const AlbumNameElement = document.createElement('div');
-        AlbumNameElement.classList.add('AlbumData');
-        const albumSpan = document.createElement('span');
-        albumSpan.textContent = SpotifyPlayer.GetAlbumName();
-        AlbumNameElement.appendChild(albumSpan);
-        /* AlbumNameElement.classList.add("marqueeify");
-                AlbumNameElement.setAttribute("marquee-base-width", "22cqw"); */
-        AppendQueue.push(AlbumNameElement);
-      }
+  const clearFullscreen = () => {
+    stopPosition?.();
+    stopPosition = null;
+    controls?.destroy();
+    controls = null;
+    progress?.destroy();
+    progress = null;
+    artistData?.remove();
+    artistData = null;
+    albumData?.remove();
+    albumData = null;
+  };
 
-      // Set up playback controls
-      const playbackControlsInstance = SetupPlaybackControls(AppendQueue);
-      setActivePlaybackControlsInstance(playbackControlsInstance);
-      ActivePlaybackControlsInstance.Apply();
-
-      // Set up song progress bar
-      const songProgressBarInstance = SetupSongProgressBar(AppendQueue);
-      setActiveSetupSongProgressBarInstance(songProgressBarInstance);
-      if (ActiveSetupSongProgressBarInstance) {
-        ActiveSetupSongProgressBarInstance.Apply();
-      }
-
-      // Use a more reliable approach to add elements — tracked for teardown so rapid
-      // open/close or hot-reload doesn't leave orphan Whentil polls holding AppendQueue closures
-      if (viewControlsWhen) {
-        viewControlsWhen.Cancel();
-        viewControlsWhen = null;
-      }
-      viewControlsWhen = Whentil.When(
-        () => document.querySelector('#AmaiLyricsPage .ContentBox .NowBar .Header .ViewControls'),
-        () => {
-          viewControlsWhen = null;
-          // Abort if page was destroyed while waiting (prevents appending to detached MediaBox)
-          if (!MediaBox.isConnected || !document.querySelector('#AmaiLyricsPage')) return;
-          // Ensure there's no duplicate elements before appending
-          const viewControls = MediaBox.querySelector('.ViewControls');
-
-          // Create a temporary fragment to avoid multiple reflows
-          const fragment = document.createDocumentFragment();
-          AppendQueue.forEach((element) => {
-            fragment.appendChild(element);
-          });
-
-          // Only update DOM if fragment has children
-          if (fragment.childNodes.length > 0) {
-            MediaBox.innerHTML = '';
-            if (viewControls) MediaBox.appendChild(viewControls);
-            MediaBox.appendChild(fragment);
-          }
+  const syncMode = () => {
+    if (disposed || !root.isConnected || fullscreen === Fullscreen.IsOpen) return;
+    fullscreen = Fullscreen.IsOpen;
+    stopDrag?.();
+    clearFullscreen();
+    if (fullscreen && mediaContent) {
+      artistData = document.createElement('div');
+      artistData.className = 'ArtistData';
+      artistData.appendChild(document.createElement('span'));
+      albumData = document.createElement('div');
+      albumData.className = 'AlbumData';
+      albumData.appendChild(document.createElement('span'));
+      controls = createPlaybackControls();
+      progress = createProgressBar();
+      // Append only owned nodes; view controls belong to the page, not this lifetime.
+      mediaContent.append(artistData, albumData, controls.element, progress.element);
+      progress.render(getPositionFor('nowbar'));
+      stopPosition = registerPositionConsumer({
+        surface: 'nowbar',
+        intervalSeconds: INTERVALS.PROGRESS_BAR_UPDATE,
+        enabled: () => !disposed && root.isConnected && Fullscreen.IsOpen,
+        // Paused seeks still need a position, but not continuous remote tracking.
+        wantsTracking: ({ isPlaying }) => isPlaying,
+        onPosition: (position) => {
+          progress?.render(position);
+          image?.classList.toggle('Playing', SpotifyPlayer.IsPlaying);
         },
-      );
+      });
     }
+    stopDrag = setupDragAndDrop(root, fullscreen);
+    refreshPlayback();
+  };
+
+  const refresh = async () => {
+    if (disposed || !root.isConnected) return;
+    syncMode();
+    refreshPlayback();
+    const version = ++metadataVersion;
+    const uri = Spicetify.Player.data?.item?.uri;
+    const album = SpotifyPlayer.GetAlbumName();
+    const skeletons = root.querySelectorAll('.Artists, .SongName, .MediaBox');
+    skeletons.forEach((node) => node.classList.add('Skeletoned'));
+    const current = () =>
+      !disposed &&
+      root.isConnected &&
+      version === metadataVersion &&
+      uri === Spicetify.Player.data?.item?.uri;
+    try {
+      const [title, artists, artwork] = await Promise.allSettled([
+        SpotifyPlayer.GetSongName(),
+        SpotifyPlayer.GetArtists(),
+        SpotifyPlayer.Artwork.Get('xl'),
+      ]);
+      if (!current()) return;
+      const setText = (selector: string, text: string) => {
+        const node = root.querySelector(selector);
+        if (node && node.textContent !== text) node.textContent = text;
+      };
+      const artistNames =
+        artists.status === 'fulfilled' ? SpotifyPlayer.JoinArtists(artists.value) : '';
+      if (title.status === 'fulfilled') setText('.Metadata .SongName span', title.value);
+      if (artists.status === 'fulfilled') {
+        setText('.Metadata .Artists span', artistNames);
+        setText('.ArtistData span', artistNames);
+      }
+      setText('.AlbumData span', album);
+      if (artwork.status === 'fulfilled' && image) {
+        if (artwork.value) {
+          if (image.getAttribute('src') !== artwork.value) {
+            image.classList.remove('loaded');
+            // Keep the page's image loader from restoring the previous track's artwork.
+            image.setAttribute('data-high-res', artwork.value);
+            image.src = artwork.value;
+          }
+        } else {
+          // This track has no cover: drop the previous track's image instead of keeping it.
+          image.classList.remove('loaded');
+          image.removeAttribute('src');
+          image.removeAttribute('data-high-res');
+        }
+      }
+    } catch (error) {
+      if (current()) console.error('[Amai Lyrics] NowBar metadata failed:', error);
+    } finally {
+      if (current()) skeletons.forEach((node) => node.classList.remove('Skeletoned'));
+    }
+  };
+
+  for (const event of ['playback:playpause', 'playback:loop', 'playback:shuffle']) {
+    // EventManager has already normalized observation state; never parse raw payloads here.
+    listenerIds.push(Global.Event.listen(event, refreshPlayback));
+  }
+  listenerIds.push(Global.Event.listen('playback:songchange', refreshPlayback));
+  for (const event of ['fullscreen:open', 'fullscreen:exit']) {
+    listenerIds.push(Global.Event.listen(event, () => void refresh()));
   }
 
-  setupDragAndDrop();
-  setupEventListeners();
+  const instance: MountedNowBar = {
+    root,
+    refresh,
+    destroy: () => {
+      if (disposed) return;
+      disposed = true;
+      ++metadataVersion;
+      listenerIds.forEach((id) => Global.Event.unListen(id));
+      stopDrag?.();
+      stopDrag = null;
+      clearFullscreen();
+      image?.classList.remove('Playing');
+      root.querySelectorAll('.Skeletoned').forEach((node) => node.classList.remove('Skeletoned'));
+    },
+  };
+  return instance;
 }
 
-/**
- * Closes the NowBar and cleans up its components
- */
-function CloseNowBar() {
-  cancelViewControlsWhen();
-  const NowBar = document.querySelector('#AmaiLyricsPage .ContentBox .NowBar');
-  if (!NowBar) return;
-  NowBar.classList.remove('Active');
-  storage.set('IsNowBarOpen', 'false');
-  CleanUpActiveComponents();
-}
-
-/**
- * Restores the NowBar to its previous state (open or closed) from session storage
- */
-function Session_OpenNowBar() {
-  OpenNowBar();
-  // const IsNowBarOpen = storage.get('IsNowBarOpen');
-  // if (IsNowBarOpen === 'true') {
-  //   OpenNowBar();
-  // } else {
-  //   CloseNowBar();
-  // }
-}
-
-/**
- * Updates the NowBar content with current track information
- * @param force - If true, updates even if the NowBar is closed
- */
-function UpdateNowBar(force = false) {
-  const NowBar = document.querySelector('#AmaiLyricsPage .ContentBox .NowBar');
-  if (!NowBar) return;
-
-  // Cache elements for repeated use
-  const ArtistsDiv = NowBar.querySelector('.Header .Metadata .Artists');
-  const ArtistsSpan = NowBar.querySelector('.Header .Metadata .Artists span');
-  const MediaImage = NowBar.querySelector<HTMLImageElement>('.Header .MediaBox .MediaImage');
-  const SongNameSpan = NowBar.querySelector('.Header .Metadata .SongName span');
-  const MediaBox = NowBar.querySelector('.Header .MediaBox');
-  const SongName = NowBar.querySelector('.Header .Metadata .SongName');
-
-  // Add null checks before accessing DOM elements
-  if (!ArtistsDiv || !MediaBox || !SongName) {
-    console.error('Required elements not found in UpdateNowBar');
+/** Repeated opens reuse the mounted lifetime; metadata never delays resource ownership. */
+async function OpenNowBar(): Promise<void> {
+  if (destroyed || pageDestroyed) return;
+  const root = document.querySelector<HTMLElement>('#AmaiLyricsPage .ContentBox .NowBar');
+  if (!root || !root.isConnected) {
+    CloseNowBar();
     return;
   }
-
-  ArtistsDiv.classList.add('Skeletoned');
-  MediaBox.classList.add('Skeletoned');
-  SongName.classList.add('Skeletoned');
-
-  const IsNowBarOpen = storage.get('IsNowBarOpen');
-  if (IsNowBarOpen == 'false' && !force) return;
-
-  // Set artwork image
-  if (MediaImage) {
-    SpotifyPlayer.Artwork.Get('xl')
-      .then((artwork) => {
-        if (MediaImage.src !== artwork) {
-          MediaImage.src = artwork;
-        }
-        MediaBox.classList.remove('Skeletoned');
-      })
-      .catch((err) => {
-        console.error('Failed to load artwork:', err);
-      });
+  if (mounted?.root !== root) {
+    mounted?.destroy();
+    mounted = mount(root);
   }
-
-  // Only update text if changed
-  if (SongNameSpan && SongName) {
-    SpotifyPlayer.GetSongName()
-      .then((title) => {
-        if (SongNameSpan.textContent !== title) {
-          SongNameSpan.textContent = title;
-        }
-        SongName.classList.remove('Skeletoned');
-      })
-      .catch((err) => {
-        console.error('Failed to get song name:', err);
-      });
-  }
-
-  if (ArtistsSpan && ArtistsDiv) {
-    SpotifyPlayer.GetArtists()
-      .then((artists) => {
-        const joined = SpotifyPlayer.JoinArtists(artists);
-        if (ArtistsSpan.textContent !== joined) {
-          ArtistsSpan.textContent = joined;
-        }
-        ArtistsDiv.classList.remove('Skeletoned');
-      })
-      .catch((err) => {
-        console.error('Failed to get artists:', err);
-      });
-  }
-
-  if (Fullscreen.IsOpen) {
-    const NowBarAlbum = NowBar.querySelector<HTMLDivElement>('.Header .MediaBox .AlbumData');
-    if (NowBarAlbum) {
-      NowBarAlbum.classList.add('Skeletoned');
-      const AlbumSpan = NowBarAlbum.querySelector('span');
-      if (AlbumSpan) {
-        AlbumSpan.textContent = SpotifyPlayer.GetAlbumName();
-      }
-      NowBarAlbum.classList.remove('Skeletoned');
-    }
-  }
+  root.classList.add('Active');
+  storage.set('IsNowBarOpen', 'true');
+  await mounted.refresh();
 }
 
-/**
- * Swaps the NowBar between left and right sides of the screen
- */
+/** Cleanup is independent of DOM presence and invalidates all pending metadata writes. */
+function CloseNowBar(): void {
+  const previous = mounted;
+  mounted = null;
+  previous?.destroy();
+  previous?.root.classList.remove('Active');
+  storage.set('IsNowBarOpen', 'false');
+}
+
+async function UpdateNowBar(force = false): Promise<void> {
+  if (!mounted || (!force && storage.get('IsNowBarOpen') === 'false')) return;
+  await mounted.refresh();
+}
+
+function Session_OpenNowBar() {
+  // A fresh page open clears the destroy latch; only the page's own open path may do this.
+  pageDestroyed = false;
+  void OpenNowBar();
+}
+
 function NowBar_SwapSides() {
-  const NowBar = document.querySelector('#AmaiLyricsPage .ContentBox .NowBar');
-  if (!NowBar) return;
-
-  const CurrentSide = storage.get('NowBarSide');
-  if (CurrentSide === 'left') {
-    // Switch to right side
-    storage.set('NowBarSide', 'right');
-    NowBar.classList.remove('LeftSide');
-    NowBar.classList.add('RightSide');
-  } else if (CurrentSide === 'right') {
-    // Switch to left side
-    storage.set('NowBarSide', 'left');
-    NowBar.classList.remove('RightSide');
-    NowBar.classList.add('LeftSide');
-  } else {
-    // Default to right side if no side is set
-    storage.set('NowBarSide', 'right');
-    NowBar.classList.remove('LeftSide');
-    NowBar.classList.add('RightSide');
-  }
+  const root = mounted?.root;
+  if (!root) return;
+  storage.set('NowBarSide', storage.get('NowBarSide') === 'left' ? 'right' : 'left');
+  Session_NowBar_SetSide();
 }
 
-/**
- * Restores the NowBar to its previous side (left or right) from session storage
- */
 function Session_NowBar_SetSide() {
-  const NowBar = document.querySelector('#AmaiLyricsPage .ContentBox .NowBar');
-  if (!NowBar) return;
-
-  const CurrentSide = storage.get('NowBarSide');
-  if (CurrentSide === 'left') {
-    // Set to left side
-    storage.set('NowBarSide', 'left');
-    NowBar.classList.remove('RightSide');
-    NowBar.classList.add('LeftSide');
-  } else if (CurrentSide === 'right') {
-    // Set to right side
-    storage.set('NowBarSide', 'right');
-    NowBar.classList.remove('LeftSide');
-    NowBar.classList.add('RightSide');
-  } else {
-    // Default to left side if no side is set
-    storage.set('NowBarSide', 'left');
-    NowBar.classList.remove('RightSide');
-    NowBar.classList.add('LeftSide');
-  }
+  const root = document.querySelector('#AmaiLyricsPage .ContentBox .NowBar');
+  if (!root) return;
+  const side = storage.get('NowBarSide') === 'right' ? 'right' : 'left';
+  storage.set('NowBarSide', side);
+  root.classList.toggle('RightSide', side === 'right');
+  root.classList.toggle('LeftSide', side === 'left');
 }
 
-/**
- * Removes the NowBar toggle button and its tooltip
- */
 function DeregisterNowBarBtn() {
-  // Remove the button from DOM
-  const nowBarButton = document.querySelector(
-    '#AmaiLyricsPage .ContentBox .ViewControls #NowBarToggle',
-  );
-  if (nowBarButton) {
-    nowBarButton.remove();
-  }
+  document.querySelector('#AmaiLyricsPage .ContentBox .ViewControls #NowBarToggle')?.remove();
 }
 
 export {
   OpenNowBar,
   CloseNowBar,
+  InvalidateNowBar,
   UpdateNowBar,
   Session_OpenNowBar,
   NowBar_SwapSides,

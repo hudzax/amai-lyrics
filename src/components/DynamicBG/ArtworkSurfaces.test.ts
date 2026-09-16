@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import Global from '../Global/Global';
 import {
   APP_BG_CHANGED_EVENT,
   ArtworkSurfaces,
@@ -57,6 +58,22 @@ describe('ArtworkSurfaces seam', () => {
     expect(APP_BG_CHANGED_EVENT).toBe('amai:appbg-changed');
   });
 
+  it('re-applies the page backdrop on fullscreen entry after a skipped paint', () => {
+    const { calls, adapters } = setupFakes();
+    surfaces = new ArtworkSurfaces(adapters);
+    surfaces.mount();
+    expect(calls.page).toBe(0);
+    Global.Event.evoke('fullscreen:open');
+    // The page backdrop skipped its paint while non-fullscreen; fullscreen
+    // entry is the transition that un-hides it, so it must re-apply.
+    expect(calls.page).toBe(1);
+    surfaces.destroy();
+    surfaces = null;
+    // Destroy must remove the listener: a later event reaches nothing.
+    Global.Event.evoke('fullscreen:open');
+    expect(calls.page).toBe(1);
+  });
+
   it('fans out once to every surface for the settled track', () => {
     const { calls, adapters } = setupFakes();
     surfaces = new ArtworkSurfaces(adapters);
@@ -70,7 +87,6 @@ describe('ArtworkSurfaces seam', () => {
     expect(calls.page).toBe(1);
     expect(calls.accents).toEqual(['track-c']);
   });
-
   it('drops settled work once cancelled', () => {
     const { calls, adapters } = setupFakes();
     surfaces = new ArtworkSurfaces(adapters);

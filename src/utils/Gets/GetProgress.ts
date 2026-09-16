@@ -519,6 +519,8 @@ export function syncPlaybackPosition(): void {
 export const PlaybackSurfaceOffset = {
   /** Active-line highlight: exact audio position. */
   highlight: 0,
+  /** Fullscreen timeline: raw audio position, independent consumer lifetime. */
+  nowbar: 0,
   /** Lyrics-page auto-scroll: arrive slightly ahead so the line is centred. */
   scroll: 370,
   /** Bottom-bar overlay: arrive further ahead to survive its slower tick. */

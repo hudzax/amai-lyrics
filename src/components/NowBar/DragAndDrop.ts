@@ -1,84 +1,76 @@
 import storage from '../../utils/storage';
-import Fullscreen from '../Utils/Fullscreen';
-import { DraggableElement, DroppableElement } from './types';
 
-export function setupDragAndDrop() {
-  // Cache DragBox and dropZones for reuse
-  const DragBox = Fullscreen.IsOpen
-    ? document.querySelector('#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent')
-    : document.querySelector('#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage');
-  if (!DragBox) return;
-
-  const dropZones = document.querySelectorAll<DroppableElement>(
-    '#AmaiLyricsPage .ContentBox .DropZone',
+/** Binds one NowBar's drag lifetime. Dispose before rebinding after a layout change. */
+export function setupDragAndDrop(root: HTMLElement, fullscreen: boolean): () => void {
+  const page = root.closest<HTMLElement>('#AmaiLyricsPage');
+  const dragBox = root.querySelector<HTMLElement>(
+    fullscreen ? '.Header .MediaBox .MediaContent' : '.Header .MediaBox .MediaImage',
   );
+  if (!page || !dragBox) return () => {};
 
-  // Use a flag to prevent duplicate event listeners
-  if (!(DragBox as DraggableElement)._dragEventsAdded) {
-    DragBox.addEventListener('dragstart', () => {
-      setTimeout(() => {
-        document.querySelector('#AmaiLyricsPage').classList.add('SomethingDragging');
-        const NowBar = document.querySelector('#AmaiLyricsPage .ContentBox .NowBar');
-        if (NowBar.classList.contains('LeftSide')) {
-          dropZones.forEach((zone) => {
-            if (zone.classList.contains('LeftSide')) {
-              zone.classList.add('Hidden');
-            } else {
-              zone.classList.remove('Hidden');
-            }
-          });
-        } else if (NowBar.classList.contains('RightSide')) {
-          dropZones.forEach((zone) => {
-            if (zone.classList.contains('RightSide')) {
-              zone.classList.add('Hidden');
-            } else {
-              zone.classList.remove('Hidden');
-            }
-          });
-        }
-        DragBox.classList.add('Dragging');
-      }, 0);
-    });
+  const dropZones = page.querySelectorAll<HTMLElement>('.ContentBox .DropZone');
+  const disposers: (() => void)[] = [];
+  let dragStartTimer: number | null = null;
+  let destroyed = false;
 
-    DragBox.addEventListener('dragend', () => {
-      document.querySelector('#AmaiLyricsPage').classList.remove('SomethingDragging');
-      dropZones.forEach((zone) => zone.classList.remove('Hidden'));
-      DragBox.classList.remove('Dragging');
-    });
-
-    (DragBox as DraggableElement)._dragEventsAdded = true;
+  function clearDragState(): void {
+    if (dragStartTimer !== null) {
+      window.clearTimeout(dragStartTimer);
+      dragStartTimer = null;
+    }
+    page.classList.remove('SomethingDragging');
+    dragBox.classList.remove('Dragging');
+    dropZones.forEach((zone) => zone.classList.remove('Hidden', 'DraggingOver'));
   }
 
-  dropZones.forEach((zone) => {
-    // Prevent duplicate listeners
-    if (!(zone as DroppableElement)._dropEventsAdded) {
-      zone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        zone.classList.add('DraggingOver');
+  function listen(target: Element, type: string, handler: EventListener): void {
+    target.addEventListener(type, handler);
+    disposers.push(() => target.removeEventListener(type, handler));
+  }
+
+  listen(dragBox, 'dragstart', () => {
+    clearDragState();
+    // Defer styling until the browser has captured the drag image.
+    dragStartTimer = window.setTimeout(() => {
+      dragStartTimer = null;
+      if (destroyed || !root.isConnected) return;
+      page.classList.add('SomethingDragging');
+      const side = root.classList.contains('LeftSide')
+        ? 'LeftSide'
+        : root.classList.contains('RightSide')
+          ? 'RightSide'
+          : null;
+      dropZones.forEach((zone) => {
+        zone.classList.toggle('Hidden', side !== null && zone.classList.contains(side));
       });
-
-      zone.addEventListener('dragleave', () => {
-        zone.classList.remove('DraggingOver');
-      });
-
-      zone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        zone.classList.remove('DraggingOver');
-
-        const NowBar = document.querySelector('#AmaiLyricsPage .ContentBox .NowBar');
-        const currentClass = NowBar.classList.contains('LeftSide') ? 'LeftSide' : 'RightSide';
-
-        const newClass = zone.classList.contains('RightSide') ? 'RightSide' : 'LeftSide';
-
-        if (currentClass !== newClass) {
-          NowBar.classList.remove(currentClass);
-          NowBar.classList.add(newClass);
-          const side = zone.classList.contains('RightSide') ? 'right' : 'left';
-          storage.set('NowBarSide', side);
-        }
-      });
-
-      (zone as DroppableElement)._dropEventsAdded = true;
-    }
+      dragBox.classList.add('Dragging');
+    }, 0);
   });
+  listen(dragBox, 'dragend', clearDragState);
+
+  dropZones.forEach((zone) => {
+    listen(zone, 'dragover', (event) => {
+      event.preventDefault();
+      zone.classList.add('DraggingOver');
+    });
+    listen(zone, 'dragleave', () => zone.classList.remove('DraggingOver'));
+    listen(zone, 'drop', (event) => {
+      event.preventDefault();
+      clearDragState();
+      const currentSide = root.classList.contains('LeftSide') ? 'left' : 'right';
+      const newSide = zone.classList.contains('RightSide') ? 'right' : 'left';
+      if (currentSide !== newSide) {
+        root.classList.toggle('LeftSide', newSide === 'left');
+        root.classList.toggle('RightSide', newSide === 'right');
+        storage.set('NowBarSide', newSide);
+      }
+    });
+  });
+
+  return () => {
+    if (destroyed) return;
+    destroyed = true;
+    disposers.splice(0).forEach((dispose) => dispose());
+    clearDragState();
+  };
 }

@@ -53,10 +53,18 @@ lives here. The position read crosses the PlaybackTime seam (getPositionFor,
 lead time included). One loop per surface, persisted on window so a hot
 re-injection reuses rather than duplicates.
 
-The NowBar progress bar is not yet a PositionConsumer: it still owns an
-IntervalManager and hand-rolled interpolation, and shares a second position
-delivery path with NowBar/EventListeners (the playback:position bus). Fold it
-in as part of the NowBarOverlay deepening, where both paths can be unified.
+The NowBar fullscreen timeline is also a PositionConsumer. Unlike lyric
+surfaces, it shows the audio position without a lead time.
+
+## NowBarOverlay
+
+The track-information panel on the lyrics page: artwork, title, artists, and
+vinyl playback state. Fullscreen adds album information, playback controls,
+and a seekable timeline; exiting fullscreen retains the normal panel.
+Opening an already-open panel does not create a second lifetime. Closing or
+removing the page cancels its pending display updates and releases its
+resources. Playback commands may appear immediately, but player observations
+remain authoritative.
 
 ## LyricsPipeline
 

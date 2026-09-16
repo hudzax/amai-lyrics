@@ -1,6 +1,7 @@
 export {
-  OpenNowBar,
   CloseNowBar,
+  InvalidateNowBar,
+  OpenNowBar,
   UpdateNowBar,
   Session_OpenNowBar,
   NowBar_SwapSides,

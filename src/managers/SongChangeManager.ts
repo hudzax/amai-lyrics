@@ -56,10 +56,6 @@ export class SongChangeManager {
       }
     }
 
-    if (document.querySelector('#AmaiLyricsPage .LyricsContainer')) {
-      // Update the page content (artwork, song name, artists)
-      const { default: PageView } = await import('../components/Pages/PageView');
-      PageView.UpdatePageContent();
-    }
+    // NowBar owns the page's track metadata too; no second writer through PageView.
   }
 }
