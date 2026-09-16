@@ -1,6 +1,6 @@
 import { SettingsSection } from '../edited_packages/spcr-settings/settingsSection';
 import storage from './storage';
-import { lyricsCache, loadAndApplyLyrics } from './Lyrics/fetchLyrics';
+import { invalidateLyrics } from './Lyrics/fetchLyrics';
 import Defaults from '../components/Global/Defaults';
 import { openTrustedExternalUrl } from './externalNavigation';
 
@@ -30,8 +30,8 @@ function devSettings() {
     'Delete all locally cached lyrics',
     'Clear Cache',
     () => {
-      void lyricsCache.destroy();
-      storage.set('currentLyricsData', null);
+      // Dev action: wipe everything cached and let the user reload Spotify.
+      void invalidateLyrics({ all: true });
       Spicetify.showNotification('Cache Destroyed Successfully!', false, 2000);
     },
   );
@@ -82,14 +82,9 @@ function generalSettings() {
   settings.addInput('gemini-api-key', 'Gemini API Key (required for translations)', '', () => {
     storage.set('GEMINI_API_KEY', settings.getFieldValue('gemini-api-key') as string);
 
-    // clear cache and current lyrics data
-    void lyricsCache.destroy();
-    storage.set('currentLyricsData', null);
-    // Refetch lyrics for the current song
-    const playerData = Spicetify.Player.data as Spicetify.PlayerState;
-    if (!playerData?.item?.uri) return; // Exit if `uri` is not available
-    const currentUri = playerData.item.uri;
-    loadAndApplyLyrics(currentUri).catch((e) =>
+    // A new key changes every enhancement: invalidate everything and reload the
+    // current track's lyrics through the pipeline seam.
+    invalidateLyrics({ all: true }, { reload: true }).catch((e) =>
       console.error('[Amai Lyrics] Refetch after API key change failed:', e),
     );
   });
@@ -108,9 +103,9 @@ function generalSettings() {
     'Show Romaji readings for Japanese lyrics',
     Defaults.enableRomaji,
     () => {
-      // clear cache and current lyrics data
-      void lyricsCache.destroy();
-      storage.set('currentLyricsData', null);
+      // Cached lyrics carry the old romaji setting: invalidate and reload so
+      // the current track re-fetches with phonetics applied (or removed).
+      void invalidateLyrics({ all: true }, { reload: true });
       storage.set('enable_romaji', settings.getFieldValue('enableRomaji') as string);
     },
   );
@@ -157,9 +152,8 @@ function generalSettings() {
       const selected = settings.getFieldValue('translation-language') as string;
       storage.set('translation_language', selected);
 
-      // clear cache and current lyrics data
-      void lyricsCache.destroy();
-      storage.set('currentLyricsData', null);
+      // Cached lyrics carry the old target language: invalidate and reload.
+      void invalidateLyrics({ all: true }, { reload: true });
     },
   );
 
@@ -168,9 +162,8 @@ function generalSettings() {
     'Turn off lyric translations',
     Defaults.disableTranslation,
     () => {
-      // clear cache and current lyrics data
-      void lyricsCache.destroy();
-      storage.set('currentLyricsData', null);
+      // Cached lyrics carry the old translation state: invalidate and reload.
+      void invalidateLyrics({ all: true }, { reload: true });
       storage.set('disable_translation', settings.getFieldValue('disableTranslation') as string);
     },
   );

@@ -1,8 +1,7 @@
 import { Maid } from '@hudzax/web-modules/Maid';
-import { IntervalManager } from '../IntervalManager';
 import Defaults from '../../components/Global/Defaults';
 import { SpotifyPlayer } from '../../components/Global/SpotifyPlayer';
-import { requestPositionTracking, resolveIsPlaying } from '../Gets/GetProgress';
+import { registerPositionConsumer } from '../PositionConsumer';
 import { Lyrics } from './Animator/Main';
 import { AutoScroll } from '../Scrolling/AutoScroll';
 
@@ -52,97 +51,46 @@ let lastRenderedPosition = -1;
 let hasRenderedInitial = false;
 let scrollTickCounter = 0;
 
-// Registers/unregisters the lyrics page as a position consumer so the sync loop
-// only does RPC work while lyrics are actually on screen.
-let pagePositionClient: (() => void) | null = null;
+// The render loop is owned by the PositionConsumer seam (interval, play-state
+// self-heal, lyrics-page gate, position refcount). Exposed via
+// ensureLyricsRenderLoop() for explicit init and lifecycle teardown; auto-starts
+// on first import for backward compat but can also be started from app.tsx.
+let renderLoopDisposer: (() => void) | null = null;
 
-// Render loop is window-persisted so re-injection (spicetify watch) doesn't
-// spawn duplicate loops. Exposed via ensureLyricsRenderLoop() for explicit
-// init and for lifecycle teardown; auto-starts on first import for backward
-// compat but can also be started explicitly from app.tsx.
-// SAFETY: window augmentation for hot-reload persistence; __amaiRenderLoop* are our isolated keys
-const windowRef = window as unknown as {
-  __amaiRenderLoopStarted?: boolean;
-  __amaiRenderLoop?: IntervalManager | null;
-};
+export function ensureLyricsRenderLoop(): void {
+  if (renderLoopDisposer) return;
+  renderLoopDisposer = registerPositionConsumer({
+    surface: 'highlight',
+    intervalSeconds: THROTTLE_TIME,
+    enabled: (ctx) => Defaults.LyricsContainerExists && ctx.onLyricsPage,
+    wantsTracking: (ctx) => ctx.onLyricsPage,
+    onPosition: (progress) => {
+      // Nothing moved since the last frame -> no re-render needed
+      if (hasRenderedInitial && progress === lastRenderedPosition) return;
 
-let renderLoop: IntervalManager | null = windowRef.__amaiRenderLoop ?? null;
-
-export function ensureLyricsRenderLoop(): IntervalManager {
-  if (renderLoop && windowRef.__amaiRenderLoopStarted) return renderLoop;
-  windowRef.__amaiRenderLoopStarted = true;
-  renderLoop = new IntervalManager(THROTTLE_TIME, () => {
-    if (!Defaults.LyricsContainerExists) return;
-    // Self-heal play state every tick: if the `onplaypause` payload shape
-    // changed after a Spotify client update, SpotifyPlayer.IsPlaying would go
-    // stale (frozen scroll/blur) even while GetProgress() keeps advancing.
-    // One shared seam keeps the active line moving regardless of events.
-    // (resolveIsPlaying never throws; worst case it reports paused for a tick.)
-    const livePlaying = resolveIsPlaying();
-    if (SpotifyPlayer.IsPlaying !== livePlaying) {
-      SpotifyPlayer.IsPlaying = livePlaying;
-    }
-    // Skip work entirely when the lyrics page isn't visible
-    let onLyricsPage = false;
-    try {
-      onLyricsPage = Spicetify.Platform.History.location.pathname === '/AmaiLyrics';
-    } catch {
-      onLyricsPage = false;
-    }
-    try {
-      if (onLyricsPage && !pagePositionClient) pagePositionClient = requestPositionTracking();
-      else if (!onLyricsPage && pagePositionClient) {
-        pagePositionClient();
-        pagePositionClient = null;
+      lastRenderedPosition = progress;
+      hasRenderedInitial = true;
+      Lyrics.TimeSetter(progress);
+      Lyrics.Animate();
+      scrollTickCounter++;
+      if (scrollTickCounter % 2 === 0) {
+        AutoScroll.sync();
       }
-    } catch {
-      // tracking is best-effort; position reads below still work
-    }
-    if (!onLyricsPage) return;
-
-    let progress: number;
-    try {
-      progress = SpotifyPlayer.GetTrackPosition();
-    } catch {
-      return;
-    }
-    if (typeof progress !== 'number' || !Number.isFinite(progress) || progress < 0) return;
-    // Nothing moved since the last frame -> no re-render needed
-    if (hasRenderedInitial && progress === lastRenderedPosition) return;
-
-    lastRenderedPosition = progress;
-    hasRenderedInitial = true;
-    Lyrics.TimeSetter(progress);
-    Lyrics.Animate();
-    scrollTickCounter++;
-    if (scrollTickCounter % 2 === 0) {
-      AutoScroll.sync();
-    }
+    },
   });
-  renderLoop.Start();
-  windowRef.__amaiRenderLoop = renderLoop;
-  return renderLoop;
 }
 
 export function destroyLyricsRenderLoop(): void {
-  if (pagePositionClient) {
-    pagePositionClient();
-    pagePositionClient = null;
+  if (renderLoopDisposer) {
+    renderLoopDisposer();
+    renderLoopDisposer = null;
   }
-  if (renderLoop) {
-    renderLoop.Destroy();
-    renderLoop = null;
-  }
-  windowRef.__amaiRenderLoop = null;
-  windowRef.__amaiRenderLoopStarted = false;
   lastRenderedPosition = -1;
   hasRenderedInitial = false;
 }
 
 // Auto-start for backward compat (existing entry points rely on import side-effect).
-if (!windowRef.__amaiRenderLoopStarted) {
-  ensureLyricsRenderLoop();
-}
+ensureLyricsRenderLoop();
 let LinesEvListenerMaid: Maid;
 let LinesEvListenerExists: boolean;
 

@@ -25,6 +25,7 @@ vi.mock('../src/utils/Lyrics/LyricsRenderer', () => ({
 vi.mock('../src/utils/Lyrics/cache', () => ({
   getLyricsFromLocalStorage: vi.fn(async () => null),
   getLyricsFromCache: vi.fn(async () => null),
+  removeLyricsFromCache: vi.fn(async () => undefined),
   lyricsCache: { get: vi.fn(), set: vi.fn(), remove: vi.fn(), destroy: vi.fn() },
 }));
 vi.mock('../src/utils/Lyrics/api', () => ({
@@ -49,12 +50,13 @@ import {
 import { updateLyricTranslations } from '../src/utils/Lyrics/LyricsRenderer';
 import { fetchLyricsFromAPI } from '../src/utils/Lyrics/api';
 import ApplyLyrics from '../src/utils/Lyrics/Global/Applyer';
-import fetchLyrics, { loadAndApplyLyrics } from '../src/utils/Lyrics/fetchLyrics';
+import fetchLyrics, { loadAndApplyLyrics, invalidateLyrics } from '../src/utils/Lyrics/fetchLyrics';
 import {
   beginLyricsRequest,
   isCurrentLyricsRequest,
   publishInitialLyrics,
   publishEnhancedLyrics,
+  publishNoLyrics,
 } from '../src/utils/Lyrics/publish';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -161,6 +163,70 @@ describe('publishEnhancedLyrics', () => {
     expect(publishEnhancedLyrics(stale, 'trackA', staticPayload('trackA') as never)).toBe(false);
     expect(updateLyricTranslations).not.toHaveBeenCalled();
     expect(mockedEvent.evoke).not.toHaveBeenCalled();
+  });
+});
+
+describe('publishNoLyrics', () => {
+  it('publishes the sentinel snapshot and the same bus event as the positive path', () => {
+    liveItem().uri = URI_A;
+    const token = beginLyricsRequest(URI_A);
+    const sentinel = JSON.stringify({ status: 'NO_LYRICS', id: 'trackA' });
+
+    expect(publishNoLyrics(token, 'trackA')).toBe(true);
+    expect(mockedStorage.set).toHaveBeenCalledWith('currentLyricsData', sentinel);
+    // Regression: without the bus event the playbar overlay kept rendering the
+    // previous track's line after a track with no lyrics.
+    expect(mockedEvent.evoke).toHaveBeenCalledWith('lyrics:data-updated', sentinel);
+  });
+
+  it('publishes nothing for a stale token', () => {
+    liveItem().uri = URI_A;
+    const stale = beginLyricsRequest(URI_A);
+    liveItem().uri = URI_B;
+    beginLyricsRequest(URI_B);
+
+    expect(publishNoLyrics(stale, 'trackA')).toBe(false);
+    expect(mockedStorage.set).not.toHaveBeenCalled();
+    expect(mockedEvent.evoke).not.toHaveBeenCalled();
+  });
+});
+
+describe('invalidateLyrics', () => {
+  it('destroys the whole cache and clears the snapshot without reloading', async () => {
+    const { lyricsCache } = await import('../src/utils/Lyrics/cache');
+
+    await invalidateLyrics({ all: true });
+
+    expect(lyricsCache.destroy).toHaveBeenCalledTimes(1);
+    expect(mockedStorage.set).toHaveBeenCalledWith('currentLyricsData', null);
+    expect(mockedApi).not.toHaveBeenCalled();
+  });
+
+  it('evicts a single track instead of destroying the cache', async () => {
+    const { lyricsCache, removeLyricsFromCache } = await import('../src/utils/Lyrics/cache');
+
+    await invalidateLyrics({ trackId: 'trackA' });
+
+    expect(removeLyricsFromCache).toHaveBeenCalledWith('trackA');
+    expect(lyricsCache.destroy).not.toHaveBeenCalled();
+  });
+
+  it('reloads the live track when asked', async () => {
+    liveItem().uri = URI_A;
+    mockedApi.mockResolvedValue(staticPayload('trackA') as never);
+    mockedApply.mockImplementation(() => true);
+
+    await invalidateLyrics({ all: true }, { reload: true });
+
+    expect(mockedApi).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips the reload when nothing is playing', async () => {
+    liveItem().uri = '';
+
+    await invalidateLyrics({ all: true }, { reload: true });
+
+    expect(mockedApi).not.toHaveBeenCalled();
   });
 });
 

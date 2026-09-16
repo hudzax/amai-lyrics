@@ -28,6 +28,7 @@ import { HideLoaderContainer, ClearLyricsPageContainer } from './ui';
 import { updateLyricTranslations } from './LyricsRenderer';
 import { liveTrackId } from './trackId';
 import type { LyricsData } from './conversion';
+import type { NoLyricsResult } from './ui';
 
 /** Opaque handle for one lyrics request (fetch or refresh). */
 export type LyricsRequestToken = number;
@@ -66,6 +67,22 @@ export function beginLyricsRequest(uri: string): LyricsRequestToken {
 export function isCurrentLyricsRequest(token: LyricsRequestToken): boolean {
   if (sharedRequest.token !== token) return false;
   return liveLyricsUri() === sharedRequest.uri;
+}
+
+/**
+ * Publishes the negative result: persists the typed NO_LYRICS sentinel and
+ * fires the same bus notification as the positive path. Without this, the
+ * playbar overlay kept rendering the previous track's line after a track with
+ * no lyrics — it syncs off the bus event, not the snapshot. Returns false
+ * without touching anything when the request went stale.
+ */
+export function publishNoLyrics(token: LyricsRequestToken, trackId: string): boolean {
+  if (!isCurrentLyricsRequest(token)) return false;
+  const sentinel: NoLyricsResult = { status: 'NO_LYRICS', id: trackId };
+  const serialized = JSON.stringify(sentinel);
+  storage.set('currentLyricsData', serialized);
+  Event.evoke('lyrics:data-updated', serialized);
+  return true;
 }
 
 /**

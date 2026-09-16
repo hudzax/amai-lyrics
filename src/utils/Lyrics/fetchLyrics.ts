@@ -24,6 +24,7 @@ import ApplyLyrics from './Global/Applyer';
 import {
   beginLyricsRequest,
   publishInitialLyrics,
+  publishNoLyrics,
   liveLyricsUri,
   type LyricsRequestToken,
 } from './publish';
@@ -61,6 +62,10 @@ async function applyLoadedLyrics(
   token: LyricsRequestToken,
 ): Promise<LyricsFetchResult> {
   if (isNoLyricsResult(result)) {
+    // The negative result crosses the same publication seam as the positive
+    // one: sentinel + bus event first (the playbar overlay syncs off the bus
+    // event, not the snapshot), then the page-visible transitions.
+    if (result.id) publishNoLyrics(token, result.id);
     return await noLyricsMessage(result.id);
   }
 
@@ -171,4 +176,31 @@ export async function refreshLyrics(uri: string): Promise<LyricsFetchResult> {
   return loadAndApplyLyrics(uri, { flush: true });
 }
 
-export { lyricsCache, clearLyricsUiTimeouts };
+/**
+ * Invalidation seam: evicts cached lyrics and clears the persisted snapshot.
+ *
+ * Replaces the hand-rolled `lyricsCache.destroy() + storage.set(null)` pair
+ * that settings handlers and startup used to inline — callers now state intent
+ * ("config changed → invalidate, and reload with the new settings") instead of
+ * crossing the cache and storage seams themselves. Reload re-fetches with
+ * `flush`, because an invalidated entry must never be served from an in-flight
+ * fetch that predates the invalidation.
+ */
+export async function invalidateLyrics(
+  target: { all: true } | { trackId: string },
+  opts: { reload?: boolean } = {},
+): Promise<void> {
+  if ('all' in target) {
+    await lyricsCache.destroy();
+  } else {
+    await removeLyricsFromCache(target.trackId);
+  }
+  storage.set('currentLyricsData', null);
+
+  if (opts.reload) {
+    const uri = liveLyricsUri();
+    if (uri) await loadAndApplyLyrics(uri, { flush: true });
+  }
+}
+
+export { clearLyricsUiTimeouts };

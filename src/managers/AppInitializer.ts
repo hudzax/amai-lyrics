@@ -1,6 +1,6 @@
 import { setSettingsMenu } from '../utils/settings';
 import Platform from '../components/Global/Platform';
-import { lyricsCache } from '../utils/Lyrics/fetchLyrics';
+import { invalidateLyrics } from '../utils/Lyrics/fetchLyrics';
 import lifecycle from '../utils/lifecycle';
 
 export class AppInitializer {
@@ -8,7 +8,7 @@ export class AppInitializer {
     // Clear lyrics cache on first startup only (a re-init must not wipe it).
     const windowRef = window as unknown as { __amaiCoreInitialized?: boolean };
     if (!windowRef.__amaiCoreInitialized) {
-      lyricsCache.destroy();
+      void invalidateLyrics({ all: true });
       windowRef.__amaiCoreInitialized = true;
     }
 

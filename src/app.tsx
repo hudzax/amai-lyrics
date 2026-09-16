@@ -76,14 +76,22 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
     songChangeManager.handleSongChange(event as never),
   );
 
-  // Initialize with current song if available
-  const currentUri = Spicetify.Player.data?.item?.uri;
-  if (currentUri) {
-    const { loadAndApplyLyrics } = await import('./utils/Lyrics/fetchLyrics');
-    loadAndApplyLyrics(currentUri).catch((e) =>
-      console.error('[Amai Lyrics] Failed to fetch initial lyrics:', e),
-    );
-  }
+  // Initialize with current song if available. Player.data.item is often
+  // empty at init (Platform ready != player ready), so poll until a track
+  // URI appears instead of a one-shot read that silently skips the fetch.
+  // Without this, nothing publishes until the next songchange — opening the
+  // lyrics page masked it because PageView.Open fetches on open.
+  const startupFetchWhen = Whentil.When(
+    () => Spicetify.Player.data?.item?.uri,
+    (uri) => {
+      void import('./utils/Lyrics/fetchLyrics').then(({ loadAndApplyLyrics }) =>
+        loadAndApplyLyrics(uri as string).catch((e) =>
+          console.error('[Amai Lyrics] Failed to fetch initial lyrics:', e),
+        ),
+      );
+    },
+  );
+  lifecycle.trackWhentil(startupFetchWhen);
 
   // Handle online/offline events
   const onOnline = async () => {

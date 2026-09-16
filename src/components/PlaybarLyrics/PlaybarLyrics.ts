@@ -1,11 +1,5 @@
 import storage from '../../utils/storage';
-import { IntervalManager } from '../../utils/IntervalManager';
-import { SpotifyPlayer } from '../Global/SpotifyPlayer';
-import {
-  getPositionFor,
-  requestPositionTracking,
-  resolveIsPlaying,
-} from '../../utils/Gets/GetProgress';
+import { registerPositionConsumer } from '../../utils/PositionConsumer';
 import { processPhoneticText } from '../../utils/Lyrics/phoneticPatterns';
 import { findActiveIndex } from '../../utils/Lyrics/findActiveIndex';
 import { convertLyrics } from '../../utils/Lyrics/conversion';
@@ -33,12 +27,9 @@ interface LineEntry {
 
 let lyricsElement: HTMLElement | null = null;
 let centerWrapper: HTMLElement | null = null;
-let intervalManager: IntervalManager | null = null;
+let positionConsumerDisposer: (() => void) | null = null;
 let resizeObserver: ResizeObserver | null = null;
 let lastText = '';
-// Registers the playbar as a position consumer while it's actually showing
-// lyrics, so the sync loop only does RPC work when needed.
-let playbarPositionClient: (() => void) | null = null;
 
 // Handle for the pending "wait for playbar" poll so it can be cancelled on teardown.
 let initWhen: ReturnType<typeof Whentil.When> | null = null;
@@ -204,47 +195,26 @@ function setLyricsText(html: string): void {
   }
 }
 
-function update(): void {
-  const enabled = isEnabled();
-  // Self-heal play state (same rationale as the lyrics page loop): stale
-  // IsPlaying would hide the overlay even while audio advances. One shared
-  // seam instead of a third copy of the Spicetify shape checks.
-  const live = resolveIsPlaying();
-  if (SpotifyPlayer.IsPlaying !== live) SpotifyPlayer.IsPlaying = live;
-  let onLyricsPage = false;
-  try {
-    onLyricsPage = Spicetify.Platform.History.location.pathname === '/AmaiLyrics';
-  } catch {
-    onLyricsPage = false;
-  }
-  const isPaused = !SpotifyPlayer.IsPlaying;
-
-  // Register/unregister as a position consumer based on whether the playbar is
-  // actually rendering lyrics (enabled, playing, and not on the lyrics page).
-  const needsPosition = enabled && !onLyricsPage && !isPaused;
-  try {
-    if (needsPosition && !playbarPositionClient) {
-      playbarPositionClient = requestPositionTracking();
-    } else if (!needsPosition && playbarPositionClient) {
-      playbarPositionClient();
-      playbarPositionClient = null;
+/**
+ * Restores the native controls and hides the overlay. Called on every tick the
+ * consumer is idle (disabled, on the lyrics page, or paused) and on teardown.
+ */
+function clearPlaybarOverlay(): void {
+  if (lyricsElement && centerWrapper) {
+    centerWrapper.classList.remove('amai-hide-controls');
+    if (lyricsElement.innerHTML !== '') {
+      lyricsElement.innerHTML = '';
+      lastText = '';
     }
-  } catch {
-    // tracking is best-effort
   }
+}
 
-  // Disabled, viewing the lyrics page, or paused -> restore native controls, hide overlay (no DOM query needed)
-  if (!enabled || onLyricsPage || isPaused) {
-    if (lyricsElement && centerWrapper) {
-      centerWrapper.classList.remove('amai-hide-controls');
-      if (lyricsElement.innerHTML !== '') {
-        lyricsElement.innerHTML = '';
-        lastText = '';
-      }
-    }
-    return;
-  }
-
+/**
+ * Renders the active line for `position`. The cadence, play-state self-heal,
+ * lyrics-page gate, position refcount, and the finite position guard are owned
+ * by the PositionConsumer seam; this is the per-position work only.
+ */
+function renderPlaybarLine(position: number): void {
   // Re-inject if Spotify re-rendered the playbar and removed our element — only when we actually need to show lyrics
   if (
     !lyricsElement ||
@@ -261,14 +231,6 @@ function update(): void {
   }
   if (!lyricsElement || !centerWrapper) return;
 
-  // Disabled, viewing the lyrics page, or paused -> restore native controls, hide overlay
-  if (!enabled || onLyricsPage || isPaused) {
-    centerWrapper.classList.remove('amai-hide-controls');
-    lyricsElement.innerHTML = '';
-    lastText = '';
-    return;
-  }
-
   const rawKey = inMemoryLyricsData;
   let lines: LineEntry[] | null;
   if (rawKey != null && rawKey === cachedLinesRaw) {
@@ -279,32 +241,16 @@ function update(): void {
     cachedLines = lines;
   }
   if (!lines) {
-    centerWrapper.classList.remove('amai-hide-controls');
-    if (lastText !== '') {
-      lyricsElement.innerHTML = '';
-      lastText = '';
-    }
+    clearPlaybarOverlay();
     return;
   }
-
-  let position: number;
-  try {
-    position = getPositionFor('playbar');
-  } catch {
-    return;
-  }
-  if (typeof position !== 'number' || !Number.isFinite(position) || position < 0) return;
 
   // Binary search — lines are sorted by StartTime
   const activeIdx = findActiveIndex(lines, position);
   const active = activeIdx === -1 ? null : lines[activeIdx]!;
 
   if (!active) {
-    centerWrapper.classList.remove('amai-hide-controls');
-    if (lastText !== '') {
-      lyricsElement.innerHTML = '';
-      lastText = '';
-    }
+    clearPlaybarOverlay();
     return;
   }
 
@@ -349,12 +295,9 @@ function inject(): void {
 }
 
 function cleanup(): void {
-  intervalManager?.Destroy();
-  intervalManager = null;
-  if (playbarPositionClient) {
-    playbarPositionClient();
-    playbarPositionClient = null;
-  }
+  positionConsumerDisposer?.();
+  positionConsumerDisposer = null;
+  clearPlaybarOverlay();
   resizeObserver?.disconnect();
   resizeObserver = null;
   window.removeEventListener('resize', positionLyrics);
@@ -392,8 +335,27 @@ export function InitializePlaybarLyrics(): void {
       });
 
       inject();
-      intervalManager = new IntervalManager(UPDATE_INTERVAL, update);
-      intervalManager.Start();
+      // Prime from the persisted snapshot: the startup fetch may have already
+      // published before this listener attached (init order), in which case
+      // the bus event was missed and inMemory would stay null until the next
+      // songchange. A stale prime is harmless — the next publish overwrites it.
+      try {
+        inMemoryLyricsData = storage.get('currentLyricsData');
+      } catch {
+        inMemoryLyricsData = null;
+      }
+      cachedLines = null;
+      cachedLinesRaw = null;
+      positionConsumerDisposer = registerPositionConsumer({
+        surface: 'playbar',
+        intervalSeconds: UPDATE_INTERVAL,
+        // The overlay only renders while enabled, playing, and the lyrics page
+        // is not occupying the screen.
+        enabled: (ctx) => isEnabled() && !ctx.onLyricsPage && ctx.isPlaying,
+        wantsTracking: (ctx) => isEnabled() && !ctx.onLyricsPage && ctx.isPlaying,
+        onPosition: (position) => renderPlaybarLine(position),
+        onIdle: () => clearPlaybarOverlay(),
+      });
     },
   );
 

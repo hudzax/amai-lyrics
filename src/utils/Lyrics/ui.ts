@@ -81,17 +81,9 @@ export async function noLyricsMessage(trackId?: string): Promise<NoLyricsResult>
       DeregisterNowBarBtn();
       // Show refresh button so user can try again
       showRefreshButton();
-      // Persist sentinel so subsequent localStorage checks and Fullscreen
-      // detection know this track has no lyrics (without this, they see
-      // stale lyrics from previous track).
-      if (trackId) {
-        try {
-          const { default: storage } = await import('../storage');
-          storage.set('currentLyricsData', JSON.stringify({ status: 'NO_LYRICS', id: trackId }));
-        } catch {
-          /* ignore storage failure */
-        }
-      }
+      // NOTE: the NO_LYRICS sentinel is persisted by the publication seam
+      // (publishNoLyrics) so the negative result fires the same bus event as
+      // the positive one. This function owns only page-visible transitions.
     }
   } catch (error) {
     console.error('Amai Lyrics: Error showing no lyrics message', error);
