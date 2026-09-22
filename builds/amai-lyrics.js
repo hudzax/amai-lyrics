@@ -5661,6 +5661,7 @@
       IDLE_HEARTBEAT_MS = 1e3;
       PlaybackSurfaceOffset = {
         highlight: 0,
+        nowbar: 0,
         scroll: 370,
         playbar: 600
       };
@@ -5826,19 +5827,7 @@
 
   // src/utils/Addons.ts
   function IsPlaying() {
-    try {
-      if (typeof Spicetify?.Player?.isPlaying === "function") {
-        return !!Spicetify.Player.isPlaying();
-      }
-    } catch {
-    }
-    try {
-      const paused = Spicetify?.Player?.data?.isPaused;
-      if (typeof paused === "boolean")
-        return !paused;
-    } catch {
-    }
-    return false;
+    return resolveIsPlaying();
   }
   function TOP_ApplyLyricsSpacer(Container) {
     const div = document.createElement("div");
@@ -5853,6 +5842,7 @@
   var ArabicPersianRegex;
   var init_Addons = __esm({
     "src/utils/Addons.ts"() {
+      init_GetProgress();
       ArabicPersianRegex = /[\u0600-\u06FF]/;
     }
   });
@@ -6289,7 +6279,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.5.7";
+      version = "1.5.8";
     }
   });
 
@@ -7045,9 +7035,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const key = options.surface;
     consumers.get(key)?.disposer();
     let releaseTracking = null;
-    let destroyed = false;
+    let destroyed2 = false;
     const tick = () => {
-      if (destroyed)
+      if (destroyed2)
         return;
       const livePlaying = resolveIsPlaying();
       if (SpotifyPlayer.IsPlaying !== livePlaying)
@@ -7083,9 +7073,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     };
     const interval = new IntervalManager(options.intervalSeconds, tick);
     const disposer = () => {
-      if (destroyed)
+      if (destroyed2)
         return;
-      destroyed = true;
+      destroyed2 = true;
       if (releaseTracking) {
         releaseTracking();
         releaseTracking = null;
@@ -9275,15 +9265,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-21388-9mfFiULhxwdS/1a0a7c380c6d/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58c2d/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-21388-9mfFiULhxwdS/1a0a7c380c6d/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58c2d/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-21388-9mfFiULhxwdS/1a0a7c380cae/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58c6e/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-21388-9mfFiULhxwdS/1a0a7c380cae/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58c6e/ProcessingIndicator.css"() {
     }
   });
 
@@ -9902,62 +9892,14 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     });
   }
   async function UpdatePageContent(isOpened) {
-    if (!isOpened)
-      return;
-    const mediaImage = document.querySelector(PageViewSelectors.MediaImage);
-    if (mediaImage) {
-      await Promise.all([
-        mutateAsync(() => {
-          if (mediaImage.classList.contains("loaded")) {
-            mediaImage.classList.remove("loaded");
-          }
-        }),
-        updateSongInfo(),
-        updateArtwork(mediaImage)
-      ]);
-    }
-  }
-  async function updateSongInfo() {
-    const songNamePromise = SpotifyPlayer.GetSongName();
-    const artistsPromise = SpotifyPlayer.GetArtists();
-    const [songName, artists] = await Promise.all([songNamePromise, artistsPromise]);
-    const songNameElem = document.querySelector(PageViewSelectors.SongName);
-    const artistsElem = document.querySelector(PageViewSelectors.Artists);
-    const joinedArtists = SpotifyPlayer.JoinArtists(artists);
-    return mutateAsync(() => {
-      if (songNameElem && songNameElem.textContent !== songName) {
-        songNameElem.textContent = songName;
-      }
-      if (artistsElem && artistsElem.textContent !== joinedArtists) {
-        artistsElem.textContent = joinedArtists;
-      }
-    });
-  }
-  async function updateArtwork(mediaImage) {
-    try {
-      const [standardUrl, highResUrl] = await Promise.all([
-        SpotifyPlayer.Artwork.Get("l"),
-        SpotifyPlayer.Artwork.Get("xl")
-      ]);
-      return mutateAsync(() => {
-        if (standardUrl && mediaImage.src !== standardUrl) {
-          mediaImage.src = standardUrl;
-        }
-        if (highResUrl && mediaImage.getAttribute("data-high-res") !== highResUrl) {
-          mediaImage.setAttribute("data-high-res", highResUrl);
-        }
-      });
-    } catch (error) {
-      console.error("Failed to load artwork:", error);
-    }
+    if (isOpened)
+      await UpdateNowBar();
   }
   var import_fastdom3;
   var init_pageContent = __esm({
     "src/components/Pages/pageContent.ts"() {
-      init_SpotifyPlayer();
+      init_NowBar2();
       import_fastdom3 = __toESM(require_fastdom());
-      init_fastdomAsync();
-      init_PageViewSelectors();
     }
   });
 
@@ -10541,6 +10483,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     });
   }
   async function DestroyPage() {
+    InvalidateNowBar();
     if (!PageView.IsOpened)
       return;
     if (Fullscreen_default.IsOpen)
@@ -10642,6 +10585,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const Root = document.body;
     if (SpicyPage) {
       let setupFullscreenUI = function() {
+        if (!Fullscreen.IsOpen || !SpicyPage.isConnected)
+          return;
         PageView_default.AppendViewControls();
         OpenNowBar();
         AutoScroll.reset();
@@ -10696,7 +10641,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           }
         }
         if (NoLyrics) {
-          OpenNowBar();
+          void UpdateNowBar();
           const lyricsContainer = document.querySelector(
             "#AmaiLyricsPage .ContentBox .LyricsContainer"
           );
@@ -10817,562 +10762,180 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // src/components/NowBar/DragAndDrop.ts
-  function setupDragAndDrop() {
-    const DragBox = Fullscreen_default.IsOpen ? document.querySelector("#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent") : document.querySelector("#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage");
-    if (!DragBox)
-      return;
-    const dropZones = document.querySelectorAll(
-      "#AmaiLyricsPage .ContentBox .DropZone"
-    );
-    if (!DragBox._dragEventsAdded) {
-      DragBox.addEventListener("dragstart", () => {
-        setTimeout(() => {
-          document.querySelector("#AmaiLyricsPage").classList.add("SomethingDragging");
-          const NowBar = document.querySelector("#AmaiLyricsPage .ContentBox .NowBar");
-          if (NowBar.classList.contains("LeftSide")) {
-            dropZones.forEach((zone) => {
-              if (zone.classList.contains("LeftSide")) {
-                zone.classList.add("Hidden");
-              } else {
-                zone.classList.remove("Hidden");
-              }
-            });
-          } else if (NowBar.classList.contains("RightSide")) {
-            dropZones.forEach((zone) => {
-              if (zone.classList.contains("RightSide")) {
-                zone.classList.add("Hidden");
-              } else {
-                zone.classList.remove("Hidden");
-              }
-            });
-          }
-          DragBox.classList.add("Dragging");
-        }, 0);
-      });
-      DragBox.addEventListener("dragend", () => {
-        document.querySelector("#AmaiLyricsPage").classList.remove("SomethingDragging");
-        dropZones.forEach((zone) => zone.classList.remove("Hidden"));
-        DragBox.classList.remove("Dragging");
-      });
-      DragBox._dragEventsAdded = true;
+  // src/constants/intervals.ts
+  var INTERVALS;
+  var init_intervals = __esm({
+    "src/constants/intervals.ts"() {
+      INTERVALS = {
+        PROGRESS_BAR_UPDATE: 0.1
+      };
     }
-    dropZones.forEach((zone) => {
-      if (!zone._dropEventsAdded) {
-        zone.addEventListener("dragover", (e) => {
-          e.preventDefault();
-          zone.classList.add("DraggingOver");
-        });
-        zone.addEventListener("dragleave", () => {
-          zone.classList.remove("DraggingOver");
-        });
-        zone.addEventListener("drop", (e) => {
-          e.preventDefault();
-          zone.classList.remove("DraggingOver");
-          const NowBar = document.querySelector("#AmaiLyricsPage .ContentBox .NowBar");
-          const currentClass = NowBar.classList.contains("LeftSide") ? "LeftSide" : "RightSide";
-          const newClass = zone.classList.contains("RightSide") ? "RightSide" : "LeftSide";
-          if (currentClass !== newClass) {
-            NowBar.classList.remove(currentClass);
-            NowBar.classList.add(newClass);
-            const side = zone.classList.contains("RightSide") ? "right" : "left";
-            storage_default.set("NowBarSide", side);
-          }
-        });
-        zone._dropEventsAdded = true;
+  });
+
+  // src/components/NowBar/DragAndDrop.ts
+  function setupDragAndDrop(root2, fullscreen) {
+    const page = root2.closest("#AmaiLyricsPage");
+    const dragBox = root2.querySelector(
+      fullscreen ? ".Header .MediaBox .MediaContent" : ".Header .MediaBox .MediaImage"
+    );
+    if (!page || !dragBox)
+      return () => {
+      };
+    const dropZones = page.querySelectorAll(".ContentBox .DropZone");
+    const disposers = [];
+    let dragStartTimer = null;
+    let destroyed2 = false;
+    function clearDragState() {
+      if (dragStartTimer !== null) {
+        window.clearTimeout(dragStartTimer);
+        dragStartTimer = null;
       }
+      page.classList.remove("SomethingDragging");
+      dragBox.classList.remove("Dragging");
+      dropZones.forEach((zone) => zone.classList.remove("Hidden", "DraggingOver"));
+    }
+    function listen2(target, type, handler) {
+      target.addEventListener(type, handler);
+      disposers.push(() => target.removeEventListener(type, handler));
+    }
+    listen2(dragBox, "dragstart", () => {
+      clearDragState();
+      dragStartTimer = window.setTimeout(() => {
+        dragStartTimer = null;
+        if (destroyed2 || !root2.isConnected)
+          return;
+        page.classList.add("SomethingDragging");
+        const side = root2.classList.contains("LeftSide") ? "LeftSide" : root2.classList.contains("RightSide") ? "RightSide" : null;
+        dropZones.forEach((zone) => {
+          zone.classList.toggle("Hidden", side !== null && zone.classList.contains(side));
+        });
+        dragBox.classList.add("Dragging");
+      }, 0);
     });
+    listen2(dragBox, "dragend", clearDragState);
+    dropZones.forEach((zone) => {
+      listen2(zone, "dragover", (event) => {
+        event.preventDefault();
+        zone.classList.add("DraggingOver");
+      });
+      listen2(zone, "dragleave", () => zone.classList.remove("DraggingOver"));
+      listen2(zone, "drop", (event) => {
+        event.preventDefault();
+        clearDragState();
+        const currentSide = root2.classList.contains("LeftSide") ? "left" : "right";
+        const newSide = zone.classList.contains("RightSide") ? "right" : "left";
+        if (currentSide !== newSide) {
+          root2.classList.toggle("LeftSide", newSide === "left");
+          root2.classList.toggle("RightSide", newSide === "right");
+          storage_default.set("NowBarSide", newSide);
+        }
+      });
+    });
+    return () => {
+      if (destroyed2)
+        return;
+      destroyed2 = true;
+      disposers.splice(0).forEach((dispose) => dispose());
+      clearDragState();
+    };
   }
   var init_DragAndDrop = __esm({
     "src/components/NowBar/DragAndDrop.ts"() {
       init_storage();
-      init_Fullscreen();
-    }
-  });
-
-  // src/components/NowBar/state.ts
-  function setActivePlaybackControlsInstance(instance) {
-    ActivePlaybackControlsInstance = instance;
-  }
-  function setActiveSetupSongProgressBarInstance(instance) {
-    ActiveSetupSongProgressBarInstance = instance;
-  }
-  var ActivePlaybackControlsInstance, progressBarState, ActiveSetupSongProgressBarInstance;
-  var init_state = __esm({
-    "src/components/NowBar/state.ts"() {
-      ActivePlaybackControlsInstance = null;
-      progressBarState = {
-        lastKnownPosition: 0,
-        lastUpdateTime: 0
-      };
-      ActiveSetupSongProgressBarInstance = null;
-    }
-  });
-
-  // src/components/NowBar/EventListeners.ts
-  function releaseFullscreenPositionClient() {
-    if (fullscreenPositionClient) {
-      fullscreenPositionClient();
-      fullscreenPositionClient = null;
-    }
-  }
-  function teardownNowBarListeners() {
-    for (const id of nowBarListenerIds) {
-      Global_default.Event.unListen(id);
-    }
-    nowBarListenerIds = [];
-    releaseFullscreenPositionClient();
-    if (nowBarInitWhen) {
-      nowBarInitWhen.Cancel();
-      nowBarInitWhen = null;
-    }
-  }
-  function destroyNowBarGlobalState() {
-    teardownNowBarListeners();
-  }
-  function setupEventListeners() {
-    teardownNowBarListeners();
-    nowBarListenerIds.push(
-      Global_default.Event.listen("playback:playpause", () => {
-        updateVinylSpinState();
-      })
-    );
-    nowBarListenerIds.push(
-      Global_default.Event.listen("playback:songchange", () => {
-        updateVinylSpinState();
-      })
-    );
-    nowBarInitWhen = Whentil_default.When(
-      () => document.querySelector("#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage"),
-      () => updateVinylSpinState()
-    );
-    nowBarListenerIds.push(
-      Global_default.Event.listen("playback:playpause", (e) => {
-        handlePlayPauseEvent(e);
-      })
-    );
-    nowBarListenerIds.push(
-      Global_default.Event.listen("playback:loop", (e) => {
-        handleLoopEvent(e);
-      })
-    );
-    nowBarListenerIds.push(
-      Global_default.Event.listen("playback:shuffle", (e) => {
-        handleShuffleEvent(e);
-      })
-    );
-    nowBarListenerIds.push(Global_default.Event.listen("playback:position", handlePositionUpdate));
-    nowBarListenerIds.push(Global_default.Event.listen("playback:progress", handlePositionUpdate));
-    nowBarListenerIds.push(
-      Global_default.Event.listen("fullscreen:open", () => {
-        releaseFullscreenPositionClient();
-        fullscreenPositionClient = requestPositionTracking();
-      })
-    );
-    nowBarListenerIds.push(
-      Global_default.Event.listen("fullscreen:exit", () => {
-        releaseFullscreenPositionClient();
-        CleanUpActiveComponents();
-      })
-    );
-    if (!nowBarTeardownTracked) {
-      nowBarTeardownTracked = true;
-      lifecycle_default.trackCallback(destroyNowBarGlobalState);
-      lifecycle_default.trackCallback(CleanUpActiveComponents);
-    }
-  }
-  function updateVinylSpinState() {
-    const MediaImage = document.querySelector(
-      "#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage"
-    );
-    if (!MediaImage)
-      return;
-    MediaImage.classList.toggle("Playing", SpotifyPlayer.IsPlaying);
-  }
-  function handlePlayPauseEvent(e) {
-    if (!Fullscreen_default.IsOpen)
-      return;
-    updatePlayPauseUI(e);
-    updateProgressBarState();
-  }
-  function updatePlayPauseUI(e) {
-    if (!ActivePlaybackControlsInstance)
-      return;
-    const playbackControls = ActivePlaybackControlsInstance.GetElement();
-    const playPauseButton = playbackControls?.querySelector(".PlayStateToggle");
-    if (!playPauseButton)
-      return;
-    const isPaused = e?.data?.isPaused;
-    const svg = playPauseButton.querySelector("svg");
-    if (isPaused) {
-      playPauseButton.classList.remove("Playing");
-      playPauseButton.classList.add("Paused");
-      if (svg)
-        svg.innerHTML = Icons.Play;
-    } else {
-      playPauseButton.classList.remove("Paused");
-      playPauseButton.classList.add("Playing");
-      if (svg)
-        svg.innerHTML = Icons.Pause;
-    }
-  }
-  function updateProgressBarState() {
-    if (!ActiveSetupSongProgressBarInstance)
-      return;
-    const actualPosition = SpotifyPlayer.GetTrackPosition() || 0;
-    progressBarState.lastKnownPosition = actualPosition;
-    progressBarState.lastUpdateTime = performance.now();
-    const updateTimelineState = progressBarState.updateTimelineState_Function;
-    if (updateTimelineState) {
-      updateTimelineState(actualPosition);
-    }
-  }
-  function handleLoopEvent(e) {
-    if (!Fullscreen_default.IsOpen || !ActivePlaybackControlsInstance)
-      return;
-    const playbackControls = ActivePlaybackControlsInstance.GetElement();
-    const loopButton = playbackControls.querySelector(".LoopToggle");
-    if (!loopButton)
-      return;
-    const svg = loopButton.querySelector("svg");
-    if (!svg)
-      return;
-    svg.style.filter = "";
-    svg.innerHTML = e === "track" ? Icons.LoopTrack : Icons.Loop;
-    if (e !== "none") {
-      loopButton.classList.add("Enabled");
-      svg.style.filter = "drop-shadow(0 0 5px white)";
-    } else {
-      loopButton.classList.remove("Enabled");
-    }
-  }
-  function handleShuffleEvent(e) {
-    if (!Fullscreen_default.IsOpen || !ActivePlaybackControlsInstance)
-      return;
-    const playbackControls = ActivePlaybackControlsInstance.GetElement();
-    const shuffleButton = playbackControls.querySelector(".ShuffleToggle");
-    if (!shuffleButton)
-      return;
-    const svg = shuffleButton.querySelector("svg");
-    if (!svg)
-      return;
-    svg.style.filter = "";
-    if (e !== "none") {
-      shuffleButton.classList.add("Enabled");
-      svg.style.filter = "drop-shadow(0 0 5px white)";
-    } else {
-      shuffleButton.classList.remove("Enabled");
-    }
-  }
-  function handlePositionUpdate(e) {
-    if (!Fullscreen_default.IsOpen || !ActiveSetupSongProgressBarInstance)
-      return;
-    let position = null;
-    if (typeof e === "number") {
-      position = e;
-    } else if (e && e.data && typeof e.data === "number") {
-      position = e.data;
-    }
-    if (position !== null) {
-      if (progressBarState.lastKnownPosition !== position) {
-        progressBarState.lastKnownPosition = position;
-        progressBarState.lastUpdateTime = performance.now();
-        const lastInterpolationUpdate = progressBarState.lastInterpolationUpdate || 0;
-        if (performance.now() - lastInterpolationUpdate > 500) {
-          const updateTimelineState = progressBarState.updateTimelineState_Function;
-          if (updateTimelineState) {
-            updateTimelineState(position);
-          }
-        }
-      }
-    }
-  }
-  function CleanUpActiveComponents() {
-    teardownNowBarListeners();
-    if (ActivePlaybackControlsInstance) {
-      ActivePlaybackControlsInstance.CleanUp();
-      setActivePlaybackControlsInstance(null);
-    }
-    if (ActiveSetupSongProgressBarInstance) {
-      ActiveSetupSongProgressBarInstance.CleanUp();
-      setActiveSetupSongProgressBarInstance(null);
-    }
-    Object.keys(progressBarState).forEach((key) => {
-      if (key !== "lastKnownPosition" && key !== "lastUpdateTime") {
-        delete progressBarState[key];
-      }
-    });
-    progressBarState.lastKnownPosition = 0;
-    progressBarState.lastUpdateTime = 0;
-    removeLeftoverElements();
-  }
-  function removeLeftoverElements() {
-    const MediaBox = document.querySelector(
-      "#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent"
-    );
-    if (MediaBox) {
-      const albumData = MediaBox.querySelector(".AlbumData");
-      if (albumData)
-        MediaBox.removeChild(albumData);
-      const playbackControls = MediaBox.querySelector(".PlaybackControls");
-      if (playbackControls)
-        MediaBox.removeChild(playbackControls);
-      const songProgressBar = MediaBox.querySelector(".SongProgressBar");
-      if (songProgressBar)
-        MediaBox.removeChild(songProgressBar);
-    }
-  }
-  var nowBarListenerIds, nowBarInitWhen, nowBarTeardownTracked, fullscreenPositionClient;
-  var init_EventListeners = __esm({
-    "src/components/NowBar/EventListeners.ts"() {
-      init_Global();
-      init_SpotifyPlayer();
-      init_Icons();
-      init_Fullscreen();
-      init_Whentil();
-      init_lifecycle();
-      init_GetProgress();
-      init_state();
-      nowBarListenerIds = [];
-      nowBarInitWhen = null;
-      nowBarTeardownTracked = false;
-      fullscreenPositionClient = null;
     }
   });
 
   // src/components/NowBar/PlaybackControls.ts
-  function createControlsElement() {
-    const ControlsElement = document.createElement("div");
-    ControlsElement.classList.add("PlaybackControls");
-    ControlsElement.innerHTML = `
-          <div class="PlaybackControl ShuffleToggle">
-            ${Icons.Shuffle} 
-          </div>
-          ${Icons.PrevTrack}
-          <div class="PlaybackControl PlayStateToggle ${SpotifyPlayer.IsPlaying ? "Playing" : "Paused"}">
-            ${SpotifyPlayer.IsPlaying ? Icons.Pause : Icons.Play}
-          </div>
-          ${Icons.NextTrack}
-          <div class="PlaybackControl LoopToggle">
-            ${SpotifyPlayer.LoopType === "track" ? Icons.LoopTrack : Icons.Loop}
-          </div>
-        `;
-    return ControlsElement;
-  }
-  function setupInitialControlState(element) {
-    if (SpotifyPlayer.LoopType !== "none") {
-      const loopToggle = element.querySelector(".LoopToggle");
-      const loopSvg = element.querySelector(".LoopToggle svg");
-      if (loopToggle)
-        loopToggle.classList.add("Enabled");
-      if (loopSvg)
-        loopSvg.style.filter = "drop-shadow(0 0 5px white)";
+  function createPlaybackControls() {
+    const element = document.createElement("div");
+    element.className = "PlaybackControls";
+    element.innerHTML = `
+    <div class="PlaybackControl ShuffleToggle"></div>
+    ${Icons.PrevTrack}
+    <div class="PlaybackControl PlayStateToggle"></div>
+    ${Icons.NextTrack}
+    <div class="PlaybackControl LoopToggle"></div>
+  `;
+    const play = element.querySelector(".PlayStateToggle");
+    const shuffle = element.querySelector(".ShuffleToggle");
+    const loop = element.querySelector(".LoopToggle");
+    const controls = element.querySelectorAll(".PlaybackControl");
+    const disposers = [];
+    let destroyed2 = false;
+    let playing;
+    let loopType;
+    let shuffleType;
+    function renderIcon(control, icon, enabled = false) {
+      control.innerHTML = icon;
+      control.querySelector("svg").style.filter = enabled ? "drop-shadow(0 0 5px white)" : "";
     }
-    if (SpotifyPlayer.ShuffleType !== "none") {
-      const shuffleToggle = element.querySelector(".ShuffleToggle");
-      const shuffleSvg = element.querySelector(".ShuffleToggle svg");
-      if (shuffleToggle)
-        shuffleToggle.classList.add("Enabled");
-      if (shuffleSvg)
-        shuffleSvg.style.filter = "drop-shadow(0 0 5px white)";
+    function render() {
+      play.classList.toggle("Playing", playing);
+      play.classList.toggle("Paused", !playing);
+      shuffle.classList.toggle("Enabled", shuffleType !== "none");
+      loop.classList.toggle("Enabled", loopType !== "none");
+      renderIcon(play, playing ? Icons.Pause : Icons.Play);
+      renderIcon(shuffle, Icons.Shuffle, shuffleType !== "none");
+      renderIcon(loop, loopType === "track" ? Icons.LoopTrack : Icons.Loop, loopType !== "none");
     }
-  }
-  function setupEventHandlers(element) {
-    const eventHandlers = {
-      pressHandlers: /* @__PURE__ */ new Map(),
-      releaseHandlers: /* @__PURE__ */ new Map(),
-      clickHandlers: /* @__PURE__ */ new Map()
-    };
-    setupPressReleaseHandlers(element, eventHandlers);
-    setupClickHandlers(element, eventHandlers);
-    return eventHandlers;
-  }
-  function setupPressReleaseHandlers(element, eventHandlers) {
-    const playbackControls = element.querySelectorAll(".PlaybackControl");
-    playbackControls.forEach((control) => {
-      const pressHandler = () => {
-        control.classList.add("Pressed");
-      };
-      const releaseHandler = () => {
-        control.classList.remove("Pressed");
-      };
-      eventHandlers.pressHandlers.set(control, pressHandler);
-      eventHandlers.releaseHandlers.set(control, releaseHandler);
-      control.addEventListener("mousedown", pressHandler);
-      control.addEventListener("touchstart", pressHandler);
-      control.addEventListener("mouseup", releaseHandler);
-      control.addEventListener("mouseleave", releaseHandler);
-      control.addEventListener("touchend", releaseHandler);
-    });
-  }
-  function setupClickHandlers(element, eventHandlers) {
-    const PlayPauseControl = element.querySelector(".PlayStateToggle");
-    const PrevTrackControl = element.querySelector(".PrevTrack");
-    const NextTrackControl = element.querySelector(".NextTrack");
-    const ShuffleControl = element.querySelector(".ShuffleToggle");
-    const LoopControl = element.querySelector(".LoopToggle");
-    if (!PlayPauseControl || !PrevTrackControl || !NextTrackControl || !ShuffleControl || !LoopControl) {
-      console.error("Missing required control elements");
-      return;
-    }
-    const playPauseHandler = createPlayPauseHandler(PlayPauseControl);
-    const prevTrackHandler = () => SpotifyPlayer.Skip.Prev();
-    const nextTrackHandler = () => SpotifyPlayer.Skip.Next();
-    const shuffleHandler = createShuffleHandler(ShuffleControl);
-    const loopHandler = createLoopHandler(LoopControl);
-    eventHandlers.clickHandlers.set(PlayPauseControl, playPauseHandler);
-    eventHandlers.clickHandlers.set(PrevTrackControl, prevTrackHandler);
-    eventHandlers.clickHandlers.set(NextTrackControl, nextTrackHandler);
-    eventHandlers.clickHandlers.set(ShuffleControl, shuffleHandler);
-    eventHandlers.clickHandlers.set(LoopControl, loopHandler);
-    PlayPauseControl.addEventListener("click", playPauseHandler);
-    PrevTrackControl.addEventListener("click", prevTrackHandler);
-    NextTrackControl.addEventListener("click", nextTrackHandler);
-    ShuffleControl.addEventListener("click", shuffleHandler);
-    LoopControl.addEventListener("click", loopHandler);
-  }
-  function createPlayPauseHandler(control) {
-    return () => {
-      const playSvg = control.querySelector("svg");
-      if (SpotifyPlayer.IsPlaying) {
-        SpotifyPlayer.IsPlaying = false;
-        SpotifyPlayer.Pause();
-        control.classList.remove("Playing");
-        control.classList.add("Paused");
-        if (playSvg) {
-          playSvg.innerHTML = Icons.Play;
-        }
-      } else {
-        SpotifyPlayer.IsPlaying = true;
-        SpotifyPlayer.Play();
-        control.classList.remove("Paused");
-        control.classList.add("Playing");
-        if (playSvg) {
-          playSvg.innerHTML = Icons.Pause;
-        }
-      }
-    };
-  }
-  function createShuffleHandler(control) {
-    return () => {
-      const shuffleSvg = control.querySelector("svg");
-      if (SpotifyPlayer.ShuffleType === "none") {
-        SpotifyPlayer.ShuffleType = "normal";
-        control.classList.add("Enabled");
-        if (shuffleSvg instanceof HTMLElement) {
-          shuffleSvg.style.filter = "drop-shadow(0 0 5px white)";
-        }
-        Spicetify.Player.setShuffle(true);
-      } else if (SpotifyPlayer.ShuffleType === "normal") {
-        SpotifyPlayer.ShuffleType = "none";
-        control.classList.remove("Enabled");
-        if (shuffleSvg instanceof HTMLElement) {
-          shuffleSvg.style.filter = "";
-        }
-        Spicetify.Player.setShuffle(false);
-      }
-    };
-  }
-  function createLoopHandler(control) {
-    return () => {
-      const loopSvg = control.querySelector("svg");
-      if (!loopSvg)
+    function refresh() {
+      if (destroyed2)
         return;
-      if (SpotifyPlayer.LoopType === "none") {
-        SpotifyPlayer.LoopType = "context";
-        Spicetify.Player.setRepeat(1);
-        control.classList.add("Enabled");
-        if (loopSvg instanceof HTMLElement) {
-          loopSvg.innerHTML = Icons.Loop;
-          loopSvg.style.filter = "drop-shadow(0 0 5px white)";
-        }
-      } else if (SpotifyPlayer.LoopType === "context") {
-        SpotifyPlayer.LoopType = "track";
-        Spicetify.Player.setRepeat(2);
-        if (loopSvg instanceof HTMLElement) {
-          loopSvg.innerHTML = Icons.LoopTrack;
-          loopSvg.style.filter = "drop-shadow(0 0 5px white)";
-        }
-      } else if (SpotifyPlayer.LoopType === "track") {
-        SpotifyPlayer.LoopType = "none";
-        Spicetify.Player.setRepeat(0);
-        control.classList.remove("Enabled");
-        if (loopSvg instanceof HTMLElement) {
-          loopSvg.innerHTML = Icons.Loop;
-          loopSvg.style.filter = "";
-        }
+      playing = SpotifyPlayer.IsPlaying;
+      loopType = SpotifyPlayer.LoopType;
+      shuffleType = SpotifyPlayer.ShuffleType;
+      render();
+    }
+    function listen2(control, type, handler) {
+      control.addEventListener(type, handler);
+      disposers.push(() => control.removeEventListener(type, handler));
+    }
+    controls.forEach((control) => {
+      const press = () => control.classList.add("Pressed");
+      const release = () => control.classList.remove("Pressed");
+      for (const type of ["mousedown", "touchstart"])
+        listen2(control, type, press);
+      for (const type of ["mouseup", "mouseleave", "touchend"])
+        listen2(control, type, release);
+    });
+    listen2(play, "click", () => {
+      playing = !playing;
+      render();
+      if (playing)
+        SpotifyPlayer.Play();
+      else
+        SpotifyPlayer.Pause();
+    });
+    listen2(shuffle, "click", () => {
+      shuffleType = shuffleType === "none" ? "normal" : "none";
+      render();
+      Spicetify.Player.setShuffle(shuffleType !== "none");
+    });
+    listen2(loop, "click", () => {
+      loopType = loopType === "none" ? "context" : loopType === "context" ? "track" : "none";
+      render();
+      Spicetify.Player.setRepeat(loopType === "context" ? 1 : loopType === "track" ? 2 : 0);
+    });
+    listen2(element.querySelector(".PrevTrack"), "click", () => SpotifyPlayer.Skip.Prev());
+    listen2(element.querySelector(".NextTrack"), "click", () => SpotifyPlayer.Skip.Next());
+    refresh();
+    return {
+      element,
+      refresh,
+      destroy: () => {
+        if (destroyed2)
+          return;
+        destroyed2 = true;
+        disposers.splice(0).forEach((dispose) => dispose());
+        controls.forEach((control) => control.classList.remove("Pressed"));
+        element.remove();
       }
     };
   }
-  function cleanupEventHandlers(element, eventHandlers) {
-    const playbackControls = element.querySelectorAll(".PlaybackControl");
-    const PlayPauseControl = element.querySelector(".PlayStateToggle");
-    const PrevTrackControl = element.querySelector(".PrevTrack");
-    const NextTrackControl = element.querySelector(".NextTrack");
-    const ShuffleControl = element.querySelector(".ShuffleToggle");
-    const LoopControl = element.querySelector(".LoopToggle");
-    playbackControls.forEach((control) => {
-      const pressHandler = eventHandlers.pressHandlers.get(control);
-      const releaseHandler = eventHandlers.releaseHandlers.get(control);
-      if (pressHandler) {
-        control.removeEventListener("mousedown", pressHandler);
-        control.removeEventListener("touchstart", pressHandler);
-      }
-      if (releaseHandler) {
-        control.removeEventListener("mouseup", releaseHandler);
-        control.removeEventListener("mouseleave", releaseHandler);
-        control.removeEventListener("touchend", releaseHandler);
-      }
-    });
-    if (PlayPauseControl) {
-      const handler = eventHandlers.clickHandlers.get(PlayPauseControl);
-      if (handler)
-        PlayPauseControl.removeEventListener("click", handler);
-    }
-    if (PrevTrackControl) {
-      const handler = eventHandlers.clickHandlers.get(PrevTrackControl);
-      if (handler)
-        PrevTrackControl.removeEventListener("click", handler);
-    }
-    if (NextTrackControl) {
-      const handler = eventHandlers.clickHandlers.get(NextTrackControl);
-      if (handler)
-        NextTrackControl.removeEventListener("click", handler);
-    }
-    if (ShuffleControl) {
-      const handler = eventHandlers.clickHandlers.get(ShuffleControl);
-      if (handler)
-        ShuffleControl.removeEventListener("click", handler);
-    }
-    if (LoopControl) {
-      const handler = eventHandlers.clickHandlers.get(LoopControl);
-      if (handler)
-        LoopControl.removeEventListener("click", handler);
-    }
-    eventHandlers.pressHandlers.clear();
-    eventHandlers.releaseHandlers.clear();
-    eventHandlers.clickHandlers.clear();
-    if (element.parentNode) {
-      element.parentNode.removeChild(element);
-    }
-  }
-  var SetupPlaybackControls;
   var init_PlaybackControls = __esm({
     "src/components/NowBar/PlaybackControls.ts"() {
       init_Icons();
       init_SpotifyPlayer();
-      SetupPlaybackControls = (AppendQueue) => {
-        const ControlsElement = createControlsElement();
-        setupInitialControlState(ControlsElement);
-        const eventHandlers = setupEventHandlers(ControlsElement);
-        return {
-          Apply: () => {
-            AppendQueue.push(ControlsElement);
-          },
-          CleanUp: () => cleanupEventHandlers(ControlsElement, eventHandlers),
-          GetElement: () => ControlsElement
-        };
-      };
     }
   });
 
@@ -11432,400 +10995,280 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // src/constants/intervals.ts
-  var INTERVALS;
-  var init_intervals = __esm({
-    "src/constants/intervals.ts"() {
-      INTERVALS = {
-        PROGRESS_BAR_UPDATE: 0.1
-      };
-    }
-  });
-
   // src/components/NowBar/ProgressBar.ts
-  function createProgressBarElements() {
-    const songProgressBar = new SongProgressBar();
-    songProgressBar.Update({
-      duration: SpotifyPlayer.GetTrackDuration() ?? 0,
-      position: SpotifyPlayer.GetTrackPosition() ?? 0
-    });
-    const timelineElement = document.createElement("div");
-    timelineElement.classList.add("Timeline");
-    const positionSpan = document.createElement("span");
-    positionSpan.className = "Time Position";
-    positionSpan.textContent = songProgressBar.GetFormattedPosition() ?? "0:00";
-    const sliderBarDiv = document.createElement("div");
-    sliderBarDiv.className = "SliderBar";
-    sliderBarDiv.style.setProperty(
-      "--SliderProgress",
-      String(songProgressBar.GetProgressPercentage() ?? 0)
-    );
-    const handleDiv = document.createElement("div");
-    handleDiv.className = "Handle";
-    sliderBarDiv.appendChild(handleDiv);
-    const durationSpan = document.createElement("span");
-    durationSpan.className = "Time Duration";
-    durationSpan.textContent = songProgressBar.GetFormattedDuration() ?? "0:00";
-    timelineElement.append(positionSpan, sliderBarDiv, durationSpan);
-    const sliderBar = timelineElement.querySelector(".SliderBar");
-    return { songProgressBar, timelineElement, sliderBar };
-  }
-  function createUpdateFunction(songProgressBar, timelineElement, sliderBar) {
-    return (e = null) => {
-      const positionElement = timelineElement.querySelector(".Time.Position");
-      const durationElement = timelineElement.querySelector(".Time.Duration");
-      if (!positionElement || !durationElement || !sliderBar) {
-        console.error("Missing required elements for timeline update");
+  function createProgressBar() {
+    const model = new SongProgressBar();
+    const element = document.createElement("div");
+    element.className = "Timeline";
+    const positionText = document.createElement("span");
+    positionText.className = "Time Position";
+    const slider = document.createElement("div");
+    slider.className = "SliderBar";
+    const handle = document.createElement("div");
+    handle.className = "Handle";
+    slider.appendChild(handle);
+    const durationText = document.createElement("span");
+    durationText.className = "Time Duration";
+    element.append(positionText, slider, durationText);
+    let destroyed2 = false;
+    const render = (position) => {
+      if (destroyed2 || !Number.isFinite(position))
         return;
-      }
-      let currentPosition;
-      if (e === null) {
-        currentPosition = SpotifyPlayer.GetTrackPosition();
-      } else if (typeof e === "number") {
-        currentPosition = e;
-      } else if (e && e.data && typeof e.data === "number") {
-        currentPosition = e.data;
-      } else {
-        currentPosition = SpotifyPlayer.GetTrackPosition();
-      }
-      songProgressBar.Update({
+      model.Update({
         duration: SpotifyPlayer.GetTrackDuration() ?? 0,
-        position: currentPosition ?? 0
+        position: Math.max(0, position)
       });
-      const sliderPercentage = songProgressBar.GetProgressPercentage();
-      const formattedPosition = songProgressBar.GetFormattedPosition();
-      const formattedDuration = songProgressBar.GetFormattedDuration();
-      sliderBar.style.setProperty("--SliderProgress", sliderPercentage.toString());
-      durationElement.textContent = formattedDuration;
-      positionElement.textContent = formattedPosition;
+      slider.style.setProperty("--SliderProgress", String(model.GetProgressPercentage()));
+      positionText.textContent = model.GetFormattedPosition();
+      durationText.textContent = model.GetFormattedDuration();
     };
-  }
-  function createSliderClickHandler(songProgressBar, sliderBar, timelineElement) {
-    return (event) => {
-      if (!Fullscreen_default.IsOpen)
+    const seek = (event) => {
+      if (destroyed2 || !element.isConnected || slider.getBoundingClientRect().width <= 0)
         return;
-      const positionMs = songProgressBar.CalculatePositionFromClick({
-        sliderBar,
-        event
-      });
-      if (typeof SpotifyPlayer !== "undefined" && SpotifyPlayer.Seek) {
-        SpotifyPlayer.Seek(positionMs);
-        progressBarState.lastKnownPosition = positionMs;
-        progressBarState.lastUpdateTime = performance.now();
-        songProgressBar.Update({
-          duration: SpotifyPlayer.GetTrackDuration() ?? 0,
-          position: positionMs
-        });
-        const sliderPercentage = songProgressBar.GetProgressPercentage();
-        const formattedPosition = songProgressBar.GetFormattedPosition();
-        sliderBar.style.setProperty("--SliderProgress", sliderPercentage.toString());
-        const positionElement = timelineElement.querySelector(".Time.Position");
-        if (positionElement) {
-          positionElement.textContent = formattedPosition;
-        }
+      const position = model.CalculatePositionFromClick({ sliderBar: slider, event });
+      if (!Number.isFinite(position))
+        return;
+      SpotifyPlayer.Seek(position);
+      render(position);
+    };
+    slider.addEventListener("click", seek);
+    return {
+      element,
+      render,
+      destroy: () => {
+        if (destroyed2)
+          return;
+        destroyed2 = true;
+        slider.removeEventListener("click", seek);
+        model.Destroy();
+        element.remove();
       }
     };
   }
-  function initializeTrackingVariables() {
-    progressBarState.lastKnownPosition = SpotifyPlayer.GetTrackPosition() || 0;
-    progressBarState.lastUpdateTime = performance.now();
-  }
-  function setupUpdateInterval(updateTimelineState) {
-    const updateInterval = new IntervalManager(INTERVALS.PROGRESS_BAR_UPDATE, () => {
-      if (!Fullscreen_default.IsOpen)
-        return;
-      if (!SpotifyPlayer.IsPlaying) {
-        return;
-      }
-      const { lastKnownPosition, lastUpdateTime } = progressBarState;
-      const now2 = performance.now();
-      const elapsed = now2 - (lastUpdateTime || now2);
-      if (elapsed > 3e3) {
-        const actualPosition = SpotifyPlayer.GetTrackPosition() || 0;
-        progressBarState.lastKnownPosition = actualPosition;
-        progressBarState.lastUpdateTime = now2;
-        updateTimelineState(actualPosition);
-      } else {
-        const interpolatedPosition = (lastKnownPosition || 0) + elapsed;
-        progressBarState.lastInterpolationUpdate = now2;
-        updateTimelineState(interpolatedPosition);
-      }
-    });
-    updateInterval.Start();
-    return updateInterval;
-  }
-  function cleanupProgressBar(sliderBar, sliderBarHandler) {
-    if (sliderBar) {
-      sliderBar.removeEventListener("click", sliderBarHandler);
-    }
-    const { updateInterval, SongProgressBar_ClassInstance, TimeLineElement } = progressBarState;
-    updateInterval?.Destroy();
-    if (SongProgressBar_ClassInstance) {
-      SongProgressBar_ClassInstance.Destroy();
-    }
-    if (TimeLineElement && TimeLineElement.parentNode) {
-      TimeLineElement.parentNode.removeChild(TimeLineElement);
-    }
-    Object.keys(progressBarState).forEach((key) => {
-      delete progressBarState[key];
-    });
-    progressBarState.lastKnownPosition = 0;
-    progressBarState.lastUpdateTime = 0;
-  }
-  var SetupSongProgressBar;
   var init_ProgressBar = __esm({
     "src/components/NowBar/ProgressBar.ts"() {
       init_SongProgressBar();
-      init_IntervalManager();
-      init_intervals();
       init_SpotifyPlayer();
-      init_Fullscreen();
-      init_state();
-      SetupSongProgressBar = (AppendQueue) => {
-        const { songProgressBar, timelineElement, sliderBar } = createProgressBarElements();
-        if (!sliderBar) {
-          console.error("Could not find SliderBar element");
-          return null;
-        }
-        const updateTimelineState = createUpdateFunction(songProgressBar, timelineElement, sliderBar);
-        const sliderBarHandler = createSliderClickHandler(songProgressBar, sliderBar, timelineElement);
-        sliderBar.addEventListener("click", sliderBarHandler);
-        updateTimelineState();
-        initializeTrackingVariables();
-        const updateInterval = setupUpdateInterval(updateTimelineState);
-        progressBarState.SongProgressBar_ClassInstance = songProgressBar;
-        progressBarState.TimeLineElement = timelineElement;
-        progressBarState.updateTimelineState_Function = updateTimelineState;
-        progressBarState.updateInterval = updateInterval;
-        return {
-          Apply: () => {
-            AppendQueue.push(timelineElement);
-          },
-          GetElement: () => timelineElement,
-          CleanUp: () => cleanupProgressBar(sliderBar, sliderBarHandler)
-        };
-      };
     }
   });
 
   // src/components/NowBar/NowBar.ts
-  function cancelViewControlsWhen() {
-    if (viewControlsWhen) {
-      viewControlsWhen.Cancel();
-      viewControlsWhen = null;
+  function InvalidateNowBar() {
+    pageDestroyed = true;
+    CloseNowBar();
+  }
+  function mount(root2) {
+    let disposed = false;
+    let metadataVersion = 0;
+    let fullscreen = null;
+    let controls = null;
+    let progress = null;
+    let stopPosition = null;
+    let stopDrag = null;
+    let artistData = null;
+    let albumData = null;
+    const listenerIds = [];
+    const image = root2.querySelector(".MediaImage");
+    const mediaContent = root2.querySelector(".MediaContent");
+    const refreshPlayback = () => {
+      if (disposed || !root2.isConnected)
+        return;
+      image?.classList.toggle("Playing", SpotifyPlayer.IsPlaying);
+      controls?.refresh();
+    };
+    const clearFullscreen = () => {
+      stopPosition?.();
+      stopPosition = null;
+      controls?.destroy();
+      controls = null;
+      progress?.destroy();
+      progress = null;
+      artistData?.remove();
+      artistData = null;
+      albumData?.remove();
+      albumData = null;
+    };
+    const syncMode = () => {
+      if (disposed || !root2.isConnected || fullscreen === Fullscreen_default.IsOpen)
+        return;
+      fullscreen = Fullscreen_default.IsOpen;
+      stopDrag?.();
+      clearFullscreen();
+      if (fullscreen && mediaContent) {
+        artistData = document.createElement("div");
+        artistData.className = "ArtistData";
+        artistData.appendChild(document.createElement("span"));
+        albumData = document.createElement("div");
+        albumData.className = "AlbumData";
+        albumData.appendChild(document.createElement("span"));
+        controls = createPlaybackControls();
+        progress = createProgressBar();
+        mediaContent.append(artistData, albumData, controls.element, progress.element);
+        progress.render(getPositionFor("nowbar"));
+        stopPosition = registerPositionConsumer({
+          surface: "nowbar",
+          intervalSeconds: INTERVALS.PROGRESS_BAR_UPDATE,
+          enabled: () => !disposed && root2.isConnected && Fullscreen_default.IsOpen,
+          wantsTracking: ({ isPlaying }) => isPlaying,
+          onPosition: (position) => {
+            progress?.render(position);
+            image?.classList.toggle("Playing", SpotifyPlayer.IsPlaying);
+          }
+        });
+      }
+      stopDrag = setupDragAndDrop(root2, fullscreen);
+      refreshPlayback();
+    };
+    const refresh = async () => {
+      if (disposed || !root2.isConnected)
+        return;
+      syncMode();
+      refreshPlayback();
+      const version2 = ++metadataVersion;
+      const uri = Spicetify.Player.data?.item?.uri;
+      const album = SpotifyPlayer.GetAlbumName();
+      const skeletons = root2.querySelectorAll(".Artists, .SongName, .MediaBox");
+      skeletons.forEach((node) => node.classList.add("Skeletoned"));
+      const current = () => !disposed && root2.isConnected && version2 === metadataVersion && uri === Spicetify.Player.data?.item?.uri;
+      try {
+        const [title, artists, artwork] = await Promise.allSettled([
+          SpotifyPlayer.GetSongName(),
+          SpotifyPlayer.GetArtists(),
+          SpotifyPlayer.Artwork.Get("xl")
+        ]);
+        if (!current())
+          return;
+        const setText = (selector, text) => {
+          const node = root2.querySelector(selector);
+          if (node && node.textContent !== text)
+            node.textContent = text;
+        };
+        const artistNames = artists.status === "fulfilled" ? SpotifyPlayer.JoinArtists(artists.value) : "";
+        if (title.status === "fulfilled")
+          setText(".Metadata .SongName span", title.value);
+        if (artists.status === "fulfilled") {
+          setText(".Metadata .Artists span", artistNames);
+          setText(".ArtistData span", artistNames);
+        }
+        setText(".AlbumData span", album);
+        if (artwork.status === "fulfilled" && image) {
+          if (artwork.value) {
+            if (image.getAttribute("src") !== artwork.value) {
+              image.classList.remove("loaded");
+              image.setAttribute("data-high-res", artwork.value);
+              image.src = artwork.value;
+            }
+          } else {
+            image.classList.remove("loaded");
+            image.removeAttribute("src");
+            image.removeAttribute("data-high-res");
+          }
+        }
+      } catch (error) {
+        if (current())
+          console.error("[Amai Lyrics] NowBar metadata failed:", error);
+      } finally {
+        if (current())
+          skeletons.forEach((node) => node.classList.remove("Skeletoned"));
+      }
+    };
+    for (const event of ["playback:playpause", "playback:loop", "playback:shuffle"]) {
+      listenerIds.push(Global_default.Event.listen(event, refreshPlayback));
     }
+    listenerIds.push(Global_default.Event.listen("playback:songchange", refreshPlayback));
+    for (const event of ["fullscreen:open", "fullscreen:exit"]) {
+      listenerIds.push(Global_default.Event.listen(event, () => void refresh()));
+    }
+    const instance = {
+      root: root2,
+      refresh,
+      destroy: () => {
+        if (disposed)
+          return;
+        disposed = true;
+        ++metadataVersion;
+        listenerIds.forEach((id) => Global_default.Event.unListen(id));
+        stopDrag?.();
+        stopDrag = null;
+        clearFullscreen();
+        image?.classList.remove("Playing");
+        root2.querySelectorAll(".Skeletoned").forEach((node) => node.classList.remove("Skeletoned"));
+      }
+    };
+    return instance;
   }
   async function OpenNowBar() {
-    const NowBar = document.querySelector("#AmaiLyricsPage .ContentBox .NowBar");
-    if (!NowBar)
+    if (destroyed || pageDestroyed)
       return;
-    UpdateNowBar(true);
-    if (!NowBar.classList.contains("Active"))
-      NowBar.classList.add("Active");
-    storage_default.set("IsNowBarOpen", "true");
-    if (Fullscreen_default.IsOpen) {
-      const MediaBox = document.querySelector(
-        "#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaContent"
-      );
-      if (!MediaBox)
-        return;
-      const existingAlbumData = MediaBox.querySelector(".AlbumData");
-      if (existingAlbumData)
-        MediaBox.removeChild(existingAlbumData);
-      const existingPlaybackControls = MediaBox.querySelector(".PlaybackControls");
-      if (existingPlaybackControls)
-        MediaBox.removeChild(existingPlaybackControls);
-      {
-        const AppendQueue = [];
-        {
-          const ArtistNameElement = document.createElement("div");
-          ArtistNameElement.classList.add("ArtistData");
-          const artistNames = SpotifyPlayer.JoinArtists(await SpotifyPlayer.GetArtists());
-          const artistSpan = document.createElement("span");
-          artistSpan.textContent = artistNames;
-          ArtistNameElement.appendChild(artistSpan);
-          AppendQueue.push(ArtistNameElement);
-        }
-        {
-          const AlbumNameElement = document.createElement("div");
-          AlbumNameElement.classList.add("AlbumData");
-          const albumSpan = document.createElement("span");
-          albumSpan.textContent = SpotifyPlayer.GetAlbumName();
-          AlbumNameElement.appendChild(albumSpan);
-          AppendQueue.push(AlbumNameElement);
-        }
-        const playbackControlsInstance = SetupPlaybackControls(AppendQueue);
-        setActivePlaybackControlsInstance(playbackControlsInstance);
-        ActivePlaybackControlsInstance.Apply();
-        const songProgressBarInstance = SetupSongProgressBar(AppendQueue);
-        setActiveSetupSongProgressBarInstance(songProgressBarInstance);
-        if (ActiveSetupSongProgressBarInstance) {
-          ActiveSetupSongProgressBarInstance.Apply();
-        }
-        if (viewControlsWhen) {
-          viewControlsWhen.Cancel();
-          viewControlsWhen = null;
-        }
-        viewControlsWhen = Whentil_default.When(
-          () => document.querySelector("#AmaiLyricsPage .ContentBox .NowBar .Header .ViewControls"),
-          () => {
-            viewControlsWhen = null;
-            if (!MediaBox.isConnected || !document.querySelector("#AmaiLyricsPage"))
-              return;
-            const viewControls = MediaBox.querySelector(".ViewControls");
-            const fragment = document.createDocumentFragment();
-            AppendQueue.forEach((element) => {
-              fragment.appendChild(element);
-            });
-            if (fragment.childNodes.length > 0) {
-              MediaBox.innerHTML = "";
-              if (viewControls)
-                MediaBox.appendChild(viewControls);
-              MediaBox.appendChild(fragment);
-            }
-          }
-        );
-      }
+    const root2 = document.querySelector("#AmaiLyricsPage .ContentBox .NowBar");
+    if (!root2 || !root2.isConnected) {
+      CloseNowBar();
+      return;
     }
-    setupDragAndDrop();
-    setupEventListeners();
+    if (mounted?.root !== root2) {
+      mounted?.destroy();
+      mounted = mount(root2);
+    }
+    root2.classList.add("Active");
+    storage_default.set("IsNowBarOpen", "true");
+    await mounted.refresh();
   }
   function CloseNowBar() {
-    cancelViewControlsWhen();
-    const NowBar = document.querySelector("#AmaiLyricsPage .ContentBox .NowBar");
-    if (!NowBar)
-      return;
-    NowBar.classList.remove("Active");
+    const previous = mounted;
+    mounted = null;
+    previous?.destroy();
+    previous?.root.classList.remove("Active");
     storage_default.set("IsNowBarOpen", "false");
-    CleanUpActiveComponents();
+  }
+  async function UpdateNowBar(force = false) {
+    if (!mounted || !force && storage_default.get("IsNowBarOpen") === "false")
+      return;
+    await mounted.refresh();
   }
   function Session_OpenNowBar() {
-    OpenNowBar();
-  }
-  function UpdateNowBar(force = false) {
-    const NowBar = document.querySelector("#AmaiLyricsPage .ContentBox .NowBar");
-    if (!NowBar)
-      return;
-    const ArtistsDiv = NowBar.querySelector(".Header .Metadata .Artists");
-    const ArtistsSpan = NowBar.querySelector(".Header .Metadata .Artists span");
-    const MediaImage = NowBar.querySelector(".Header .MediaBox .MediaImage");
-    const SongNameSpan = NowBar.querySelector(".Header .Metadata .SongName span");
-    const MediaBox = NowBar.querySelector(".Header .MediaBox");
-    const SongName = NowBar.querySelector(".Header .Metadata .SongName");
-    if (!ArtistsDiv || !MediaBox || !SongName) {
-      console.error("Required elements not found in UpdateNowBar");
-      return;
-    }
-    ArtistsDiv.classList.add("Skeletoned");
-    MediaBox.classList.add("Skeletoned");
-    SongName.classList.add("Skeletoned");
-    const IsNowBarOpen = storage_default.get("IsNowBarOpen");
-    if (IsNowBarOpen == "false" && !force)
-      return;
-    if (MediaImage) {
-      SpotifyPlayer.Artwork.Get("xl").then((artwork) => {
-        if (MediaImage.src !== artwork) {
-          MediaImage.src = artwork;
-        }
-        MediaBox.classList.remove("Skeletoned");
-      }).catch((err2) => {
-        console.error("Failed to load artwork:", err2);
-      });
-    }
-    if (SongNameSpan && SongName) {
-      SpotifyPlayer.GetSongName().then((title) => {
-        if (SongNameSpan.textContent !== title) {
-          SongNameSpan.textContent = title;
-        }
-        SongName.classList.remove("Skeletoned");
-      }).catch((err2) => {
-        console.error("Failed to get song name:", err2);
-      });
-    }
-    if (ArtistsSpan && ArtistsDiv) {
-      SpotifyPlayer.GetArtists().then((artists) => {
-        const joined = SpotifyPlayer.JoinArtists(artists);
-        if (ArtistsSpan.textContent !== joined) {
-          ArtistsSpan.textContent = joined;
-        }
-        ArtistsDiv.classList.remove("Skeletoned");
-      }).catch((err2) => {
-        console.error("Failed to get artists:", err2);
-      });
-    }
-    if (Fullscreen_default.IsOpen) {
-      const NowBarAlbum = NowBar.querySelector(".Header .MediaBox .AlbumData");
-      if (NowBarAlbum) {
-        NowBarAlbum.classList.add("Skeletoned");
-        const AlbumSpan = NowBarAlbum.querySelector("span");
-        if (AlbumSpan) {
-          AlbumSpan.textContent = SpotifyPlayer.GetAlbumName();
-        }
-        NowBarAlbum.classList.remove("Skeletoned");
-      }
-    }
+    pageDestroyed = false;
+    void OpenNowBar();
   }
   function NowBar_SwapSides() {
-    const NowBar = document.querySelector("#AmaiLyricsPage .ContentBox .NowBar");
-    if (!NowBar)
+    const root2 = mounted?.root;
+    if (!root2)
       return;
-    const CurrentSide = storage_default.get("NowBarSide");
-    if (CurrentSide === "left") {
-      storage_default.set("NowBarSide", "right");
-      NowBar.classList.remove("LeftSide");
-      NowBar.classList.add("RightSide");
-    } else if (CurrentSide === "right") {
-      storage_default.set("NowBarSide", "left");
-      NowBar.classList.remove("RightSide");
-      NowBar.classList.add("LeftSide");
-    } else {
-      storage_default.set("NowBarSide", "right");
-      NowBar.classList.remove("LeftSide");
-      NowBar.classList.add("RightSide");
-    }
+    storage_default.set("NowBarSide", storage_default.get("NowBarSide") === "left" ? "right" : "left");
+    Session_NowBar_SetSide();
   }
   function Session_NowBar_SetSide() {
-    const NowBar = document.querySelector("#AmaiLyricsPage .ContentBox .NowBar");
-    if (!NowBar)
+    const root2 = document.querySelector("#AmaiLyricsPage .ContentBox .NowBar");
+    if (!root2)
       return;
-    const CurrentSide = storage_default.get("NowBarSide");
-    if (CurrentSide === "left") {
-      storage_default.set("NowBarSide", "left");
-      NowBar.classList.remove("RightSide");
-      NowBar.classList.add("LeftSide");
-    } else if (CurrentSide === "right") {
-      storage_default.set("NowBarSide", "right");
-      NowBar.classList.remove("LeftSide");
-      NowBar.classList.add("RightSide");
-    } else {
-      storage_default.set("NowBarSide", "left");
-      NowBar.classList.remove("RightSide");
-      NowBar.classList.add("LeftSide");
-    }
+    const side = storage_default.get("NowBarSide") === "right" ? "right" : "left";
+    storage_default.set("NowBarSide", side);
+    root2.classList.toggle("RightSide", side === "right");
+    root2.classList.toggle("LeftSide", side === "left");
   }
   function DeregisterNowBarBtn() {
-    const nowBarButton = document.querySelector(
-      "#AmaiLyricsPage .ContentBox .ViewControls #NowBarToggle"
-    );
-    if (nowBarButton) {
-      nowBarButton.remove();
-    }
+    document.querySelector("#AmaiLyricsPage .ContentBox .ViewControls #NowBarToggle")?.remove();
   }
-  var viewControlsWhen;
+  var mounted, destroyed, pageDestroyed;
   var init_NowBar = __esm({
     "src/components/NowBar/NowBar.ts"() {
       init_storage();
-      init_Whentil();
       init_SpotifyPlayer();
       init_Fullscreen();
+      init_Global();
       init_lifecycle();
+      init_GetProgress();
+      init_PositionConsumer();
+      init_intervals();
       init_DragAndDrop();
-      init_EventListeners();
       init_PlaybackControls();
       init_ProgressBar();
-      init_state();
-      viewControlsWhen = null;
-      lifecycle_default.trackCallback(cancelViewControlsWhen);
+      mounted = null;
+      destroyed = false;
+      lifecycle_default.trackCallback(() => {
+        destroyed = true;
+        CloseNowBar();
+      });
+      pageDestroyed = false;
     }
   });
 
@@ -11834,6 +11277,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   __export(NowBar_exports, {
     CloseNowBar: () => CloseNowBar,
     DeregisterNowBarBtn: () => DeregisterNowBarBtn,
+    InvalidateNowBar: () => InvalidateNowBar,
     NowBar_SwapSides: () => NowBar_SwapSides,
     OpenNowBar: () => OpenNowBar,
     Session_NowBar_SetSide: () => Session_NowBar_SetSide,
@@ -12267,6 +11711,572 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var init_conversion = __esm({
     "src/utils/Lyrics/conversion.ts"() {
       JAPANESE_REGEX = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
+    }
+  });
+
+  // src/utils/CSS/Styles.ts
+  function applyStyles(element, styles) {
+    if (!element) {
+      console.warn("Element not found for applying styles");
+      return false;
+    }
+    try {
+      for (const key in styles) {
+        if (Object.prototype.hasOwnProperty.call(styles, key)) {
+          element.style.setProperty(key, String(styles[key]));
+        }
+      }
+      return true;
+    } catch (error) {
+      console.error("Error applying styles:", error);
+      return false;
+    }
+  }
+  function removeAllStyles(element) {
+    if (!element) {
+      console.warn("Element not found for removing styles");
+      return false;
+    }
+    try {
+      element.removeAttribute("style");
+      return true;
+    } catch (error) {
+      console.error("Error removing styles:", error);
+      return false;
+    }
+  }
+  var init_Styles = __esm({
+    "src/utils/CSS/Styles.ts"() {
+    }
+  });
+
+  // src/utils/Lyrics/ConvertTime.ts
+  function ConvertTime(time) {
+    return time * 1e3;
+  }
+  var init_ConvertTime = __esm({
+    "src/utils/Lyrics/ConvertTime.ts"() {
+    }
+  });
+
+  // src/utils/Lyrics/Applyer/Credits/ApplyLyricsCredits.ts
+  function ApplyLyricsCredits(data) {
+    const LyricsContainer = document.querySelector("#AmaiLyricsPage .LyricsContainer .LyricsContent");
+    if (!data?.SongWriters)
+      return;
+    const CreditsElement = document.createElement("div");
+    CreditsElement.classList.add("Credits");
+    const SongWriters = data.SongWriters.join(", ");
+    CreditsElement.textContent = `Credits: ${SongWriters}`;
+    LyricsContainer.appendChild(CreditsElement);
+  }
+  var init_ApplyLyricsCredits = __esm({
+    "src/utils/Lyrics/Applyer/Credits/ApplyLyricsCredits.ts"() {
+    }
+  });
+
+  // src/utils/Lyrics/Applyer/Utils/createMusicalLine.ts
+  function createDotGroup(startTime, endTime) {
+    const dotGroup = document.createElement("div");
+    dotGroup.classList.add("dotGroup");
+    dotGroup.setAttribute("aria-hidden", "true");
+    const totalTime = endTime - startTime;
+    const dotTime = totalTime / 3;
+    for (let i = 0; i < 3; i++) {
+      const dot = document.createElement("span");
+      dot.classList.add("word", "dot");
+      dot.textContent = DOT_GLYPH;
+      const target = LyricsObject.Types.Line.Lines;
+      const idx = target.length - 1;
+      if (idx >= 0 && target[idx]?.Syllables?.Lead) {
+        target[idx].Syllables.Lead.push({
+          HTMLElement: dot,
+          StartTime: startTime + dotTime * i,
+          EndTime: i === 2 ? endTime - 400 : startTime + dotTime * (i + 1),
+          TotalTime: dotTime,
+          Dot: true
+        });
+      }
+      dotGroup.appendChild(dot);
+    }
+    return dotGroup;
+  }
+  function createInstrumentalPill(startMs, endMs) {
+    const pill = document.createElement("div");
+    pill.classList.add("instrumental-pill");
+    pill.setAttribute("role", "img");
+    pill.setAttribute("aria-label", INSTRUMENTAL_LABEL);
+    pill.appendChild(createDotGroup(startMs, endMs));
+    return pill;
+  }
+  function registerMusicalLine(startMs, endMs) {
+    const line = document.createElement("div");
+    line.classList.add("line", "musical-line");
+    LyricsObject.Types.Line.Lines.push({
+      HTMLElement: line,
+      StartTime: startMs,
+      EndTime: endMs,
+      TotalTime: endMs - startMs,
+      DotLine: true
+    });
+    SetWordArrayInCurentLine_LINE_SYNCED();
+    return line;
+  }
+  function createMusicalLineMs(startMs, endMs, oppositeAligned) {
+    const line = registerMusicalLine(startMs, endMs);
+    if (oppositeAligned)
+      line.classList.add("OppositeAligned");
+    line.appendChild(createInstrumentalPill(startMs, endMs));
+    return line;
+  }
+  var DOT_GLYPH, INSTRUMENTAL_LABEL;
+  var init_createMusicalLine = __esm({
+    "src/utils/Lyrics/Applyer/Utils/createMusicalLine.ts"() {
+      init_ConvertTime();
+      init_lyrics();
+      DOT_GLYPH = "\u2022";
+      INSTRUMENTAL_LABEL = "Instrumental";
+    }
+  });
+
+  // src/utils/sanitize.ts
+  function escapeHtml(text) {
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  function sanitizeRubyHtml(html) {
+    const escaped = escapeHtml(html);
+    return escaped.split(RUBY_ROMAJA_OPEN).join('<ruby class="romaja">').split(RUBY_OPEN).join("<ruby>").split(RUBY_CLOSE).join("</ruby>").split(RT_OPEN).join("<rt>").split(RT_CLOSE).join("</rt>");
+  }
+  function createRubyFragment(html) {
+    const safe = sanitizeRubyHtml(html);
+    const tpl = document.createElement("template");
+    tpl.innerHTML = safe;
+    return tpl.content;
+  }
+  var RUBY_OPEN, RUBY_CLOSE, RUBY_ROMAJA_OPEN, RT_OPEN, RT_CLOSE;
+  var init_sanitize = __esm({
+    "src/utils/sanitize.ts"() {
+      RUBY_OPEN = "&lt;ruby&gt;";
+      RUBY_CLOSE = "&lt;/ruby&gt;";
+      RUBY_ROMAJA_OPEN = "&lt;ruby class=&quot;romaja&quot;&gt;";
+      RT_OPEN = "&lt;rt&gt;";
+      RT_CLOSE = "&lt;/rt&gt;";
+    }
+  });
+
+  // src/utils/Lyrics/isRtl.ts
+  function isRtl(text) {
+    if (!text || text.length === 0)
+      return false;
+    const rtlRegex = /[\u0590-\u05FF\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB1D-\uFB4F\uFB50-\uFDFF\uFE70-\uFEFF]/;
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      if (/[\d\s,.;:?!()[\]{}"'\\/<>@#$%^&*_=+-]/.test(char)) {
+        continue;
+      }
+      return rtlRegex.test(char);
+    }
+    return false;
+  }
+  var isRtl_default;
+  var init_isRtl = __esm({
+    "src/utils/Lyrics/isRtl.ts"() {
+      isRtl_default = isRtl;
+    }
+  });
+
+  // src/utils/Lyrics/phoneticPatterns.ts
+  function isJapaneseText(text) {
+    return !!text && JAPANESE_CHAR_REGEX.test(text);
+  }
+  function applyPhoneticPatterns(text, enableRomaji) {
+    if (text === void 0)
+      return void 0;
+    if (JAPANESE_CHAR_REGEX.test(text)) {
+      if (enableRomaji) {
+        return text.replace(JAPANESE_ROMAJI_REGEX, (_match, _p1, p2, p3, p4) => {
+          const base = p2 || p3;
+          return `<ruby>${base}<rt>${p4}</rt></ruby>`;
+        });
+      }
+      return text.replace(JAPANESE_FURIGANA_REGEX, "<ruby>$1<rt>$2</rt></ruby>");
+    }
+    return text.replace(KOREAN_ROMAJA_REGEX, '<ruby class="romaja">$1<rt>$2</rt></ruby>');
+  }
+  function phoneticCacheKey(text, enableRomaji) {
+    return `${enableRomaji ? "r" : "f"}\0${text}`;
+  }
+  function processPhoneticText(text, enableRomaji) {
+    if (text === void 0)
+      return void 0;
+    const key = phoneticCacheKey(text, enableRomaji);
+    const cached = phoneticTextCache.get(key);
+    if (cached !== void 0)
+      return cached;
+    const result = applyPhoneticPatterns(text, enableRomaji);
+    if (phoneticTextCache.size >= PHONETIC_CACHE_MAX) {
+      const firstKey = phoneticTextCache.keys().next().value;
+      if (firstKey !== void 0)
+        phoneticTextCache.delete(firstKey);
+    }
+    phoneticTextCache.set(key, result);
+    return result;
+  }
+  var JAPANESE_CHAR_REGEX, JAPANESE_ROMAJI_REGEX, JAPANESE_FURIGANA_REGEX, KOREAN_ROMAJA_REGEX, phoneticTextCache, PHONETIC_CACHE_MAX;
+  var init_phoneticPatterns = __esm({
+    "src/utils/Lyrics/phoneticPatterns.ts"() {
+      JAPANESE_CHAR_REGEX = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/;
+      JAPANESE_ROMAJI_REGEX = /(([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)|[(\uFF08]([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)[)\uFF09])(?:{|\uFF5B)([^}\uFF5D]+)(?:}|\uFF5D)/g;
+      JAPANESE_FURIGANA_REGEX = /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^}]+)}/g;
+      KOREAN_ROMAJA_REGEX = /((?:\([0-9\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)(?:[a-zA-Z]*)[?.!,"']?){([^}]+)}/g;
+      phoneticTextCache = /* @__PURE__ */ new Map();
+      PHONETIC_CACHE_MAX = 100;
+    }
+  });
+
+  // src/utils/Lyrics/Applyer/Utils/decorateLine.ts
+  function processLinePhonetics(line, data) {
+    if (isJapaneseText(line.Text)) {
+      if (!data.Info && (!storage_default.get("disable_romaji_toggle_notification") || storage_default.get("disable_romaji_toggle_notification") === "false")) {
+        data.Info = "Toggle between Romaji or Furigana in settings. Disable this notification there as well.";
+      }
+      line.Text = applyPhoneticPatterns(line.Text, storage_default.get("enable_romaji") === "true");
+    } else {
+      line.Text = applyPhoneticPatterns(line.Text, false);
+    }
+  }
+  function decorateLineElement(lineElem, mainTextContainer, line, rawText) {
+    const hasDistinctTranslation = !!line.Translation && line.Translation.trim() !== "" && (!rawText || line.Translation.trim() !== rawText.trim());
+    if (hasDistinctTranslation) {
+      const translationElem = document.createElement("div");
+      translationElem.classList.add("translation");
+      translationElem.textContent = line.Translation;
+      mainTextContainer.appendChild(translationElem);
+    }
+    if (isRtl_default(line.Text) && !lineElem.classList.contains("rtl")) {
+      lineElem.classList.add("rtl");
+    }
+    if (ArabicPersianRegex.test(line.Text)) {
+      lineElem.setAttribute("font", "Vazirmatn");
+    }
+  }
+  var init_decorateLine = __esm({
+    "src/utils/Lyrics/Applyer/Utils/decorateLine.ts"() {
+      init_Addons();
+      init_isRtl();
+      init_storage();
+      init_phoneticPatterns();
+    }
+  });
+
+  // src/utils/Lyrics/LyricsRenderer.ts
+  function resolveContainer() {
+    if (!Defaults_default.LyricsContainerExists)
+      return null;
+    const container = document.querySelector(LYRICS_CONTAINER_SELECTOR);
+    if (!container) {
+      console.error("Lyrics container not found");
+      return null;
+    }
+    return container;
+  }
+  function inferType(data) {
+    if (data.Type === "Line" || data.Type === "Static")
+      return data.Type;
+    return Array.isArray(data.Content) ? "Line" : "Static";
+  }
+  function renderLyrics(data) {
+    const container = resolveContainer();
+    if (!container)
+      return;
+    const type = inferType(data);
+    container.setAttribute("data-lyrics-type", type);
+    ClearLyricsContentArrays();
+    ClearScrollSimplebar();
+    TOP_ApplyLyricsSpacer(container);
+    if (type === "Line") {
+      renderLineRows(container, data);
+    } else {
+      renderStaticRows(container, data);
+    }
+    finishRender(container, data);
+  }
+  function renderLineRows(container, data) {
+    const content = data.Content ?? [];
+    const fragment = document.createDocumentFragment();
+    const convertStartTime = ConvertTime(data.StartTime ?? 0);
+    if ((data.StartTime ?? 0) >= lyricsBetweenShow) {
+      const musicalLine = createMusicalLineMs(0, convertStartTime, !!content[0]?.OppositeAligned);
+      fragment.appendChild(musicalLine);
+    }
+    content.forEach((line, index, arr) => {
+      const lineElem = document.createElement("div");
+      processLinePhonetics(line, data);
+      const mainTextContainer = document.createElement("span");
+      mainTextContainer.classList.add("main-lyrics-text");
+      mainTextContainer.classList.add("line");
+      mainTextContainer.appendChild(createRubyFragment(line.Text));
+      lineElem.appendChild(mainTextContainer);
+      decorateLineElement(lineElem, mainTextContainer, line, data.Raw?.[index]);
+      const startTime = ConvertTime(line.StartTime);
+      const endTime = ConvertTime(line.EndTime);
+      LyricsObject.Types.Line.Lines.push({
+        HTMLElement: mainTextContainer,
+        StartTime: startTime,
+        EndTime: endTime,
+        TotalTime: endTime - startTime
+      });
+      if (line.OppositeAligned) {
+        lineElem.classList.add("OppositeAligned");
+      }
+      fragment.appendChild(lineElem);
+      const nextLine = arr[index + 1];
+      const hasMusicalBreak = nextLine && nextLine.StartTime - line.EndTime >= lyricsBetweenShow;
+      if (hasMusicalBreak) {
+        const musicalLine = createMusicalLineMs(
+          endTime,
+          ConvertTime(nextLine.StartTime),
+          !!nextLine.OppositeAligned
+        );
+        fragment.appendChild(musicalLine);
+      }
+    });
+    container.appendChild(fragment);
+  }
+  function renderStaticRows(container, data) {
+    const lines = data.Lines ?? [];
+    const fragment = document.createDocumentFragment();
+    lines.forEach((line, index) => {
+      const lineElem = document.createElement("div");
+      processLinePhonetics(line, data);
+      const mainTextContainer = document.createElement("span");
+      mainTextContainer.classList.add("main-lyrics-text");
+      if (line.Text?.includes("[DEF=font_size:small]")) {
+        lineElem.style.fontSize = "35px";
+        mainTextContainer.appendChild(
+          createRubyFragment(line.Text.replace("[DEF=font_size:small]", ""))
+        );
+      } else {
+        mainTextContainer.appendChild(createRubyFragment(line.Text));
+      }
+      lineElem.appendChild(mainTextContainer);
+      decorateLineElement(lineElem, mainTextContainer, line, data.Raw?.[index]);
+      lineElem.classList.add("line", "static");
+      LyricsObject.Types.Static.Lines.push({
+        HTMLElement: lineElem
+      });
+      fragment.appendChild(lineElem);
+    });
+    container.appendChild(fragment);
+  }
+  function finishRender(container, data) {
+    ApplyInfo(data);
+    ApplyLyricsCredits(data);
+    BOTTOM_ApplyLyricsSpacer(container);
+    AutoScroll.mount();
+    const stylingContainer = document.querySelector(STYLING_CONTAINER_SELECTOR);
+    if (!stylingContainer)
+      return;
+    if (data.offline) {
+      stylingContainer.classList.add("offline");
+    }
+    removeAllStyles(stylingContainer);
+    if (data.classes) {
+      stylingContainer.className = data.classes;
+    }
+    if (data.styles) {
+      applyStyles(stylingContainer, data.styles);
+    }
+  }
+  function applyScrollReanchor(scrollEl, activeLine, activeLineTopBefore, fallbackScrollTop) {
+    if (!scrollEl)
+      return;
+    if (activeLine && activeLine.isConnected && activeLineTopBefore !== null) {
+      const delta = activeLine.getBoundingClientRect().top - activeLineTopBefore;
+      if (delta !== 0)
+        scrollEl.scrollTop += delta;
+    } else {
+      scrollEl.scrollTop = fallbackScrollTop;
+    }
+  }
+  function updateLyricTranslations(lyricsData) {
+    try {
+      if (!Defaults_default.LyricsContainerExists)
+        return;
+      const lyricsContainer = document.querySelector(LYRICS_CONTAINER_SELECTOR);
+      if (!lyricsContainer)
+        return;
+      const simplebarContent = lyricsContainer.querySelector(
+        ".simplebar-content-wrapper"
+      );
+      const fallbackScrollTop = simplebarContent?.scrollTop || 0;
+      const activeLine = LyricsObject.Types.Line.Lines.find(
+        (line) => line.Status === "Active" && line.HTMLElement?.isConnected
+      )?.HTMLElement ?? lyricsContainer.querySelector(".main-lyrics-text.line.Active");
+      const activeLineTopBefore = activeLine ? activeLine.getBoundingClientRect().top : null;
+      const enableRomaji = storage_default.get("enable_romaji") === "true";
+      if (lyricsData.Type === "Line" && lyricsData.Content) {
+        updateLineLyricsTranslations(lyricsData.Content, enableRomaji, lyricsData.Raw);
+      } else if (lyricsData.Type === "Static" && lyricsData.Lines) {
+        updateStaticLyricsTranslations(lyricsData.Lines, enableRomaji, lyricsData.Raw);
+      }
+      applyScrollReanchor(simplebarContent, activeLine, activeLineTopBefore, fallbackScrollTop);
+      RecalculateScrollSimplebar();
+    } catch (error) {
+      console.error("Amai Lyrics: Error updating translations", error);
+    }
+  }
+  function updateLineElement(lineElement, text, translation, enableRomaji, rawText) {
+    text = text.replace("[DEF=font_size:small]", "");
+    const processedText = processPhoneticText(text, enableRomaji);
+    const hasDistinctTranslation = !!translation && translation.trim() !== "" && (!rawText || translation.trim() !== rawText.trim());
+    const appliedTranslation = hasDistinctTranslation ? translation : "";
+    const previous = appliedLineState.get(lineElement);
+    if (previous && previous.text === processedText && previous.translation === appliedTranslation) {
+      return;
+    }
+    if (previous && previous.text === processedText) {
+      const updatedTranslation = lineElement.querySelector(".translation");
+      if (appliedTranslation) {
+        if (updatedTranslation) {
+          updatedTranslation.textContent = appliedTranslation;
+        } else {
+          const translationElem = document.createElement("div");
+          translationElem.classList.add("translation");
+          translationElem.textContent = appliedTranslation;
+          lineElement.appendChild(translationElem);
+        }
+      } else if (updatedTranslation) {
+        updatedTranslation.remove();
+      }
+      appliedLineState.set(lineElement, { text: processedText, translation: appliedTranslation });
+      return;
+    }
+    lineElement.textContent = "";
+    lineElement.appendChild(createRubyFragment(processedText));
+    if (appliedTranslation) {
+      const translationElem = document.createElement("div");
+      translationElem.classList.add("translation");
+      translationElem.textContent = appliedTranslation;
+      lineElement.appendChild(translationElem);
+    }
+    appliedLineState.set(lineElement, { text: processedText, translation: appliedTranslation });
+  }
+  function updateLineLyricsTranslations(content, enableRomaji, rawLyrics) {
+    const lineElements = document.querySelectorAll(LINE_ROW_SELECTOR);
+    content.forEach((line, index) => {
+      if (index >= lineElements.length)
+        return;
+      updateLineElement(
+        lineElements[index],
+        line.Text,
+        line.Translation,
+        enableRomaji,
+        rawLyrics?.[index]
+      );
+    });
+  }
+  function updateStaticLyricsTranslations(lines, enableRomaji, rawLyrics) {
+    const lineElements = document.querySelectorAll(STATIC_ROW_SELECTOR);
+    lines.forEach((line, index) => {
+      if (index >= lineElements.length)
+        return;
+      updateLineElement(
+        lineElements[index],
+        line.Text,
+        line.Translation,
+        enableRomaji,
+        rawLyrics?.[index]
+      );
+    });
+  }
+  var LYRICS_CONTAINER_SELECTOR, STYLING_CONTAINER_SELECTOR, LINE_ROW_SELECTOR, STATIC_ROW_SELECTOR, appliedLineState;
+  var init_LyricsRenderer = __esm({
+    "src/utils/Lyrics/LyricsRenderer.ts"() {
+      init_Addons();
+      init_Defaults();
+      init_Styles();
+      init_ScrollSimplebar();
+      init_AutoScroll();
+      init_ConvertTime();
+      init_lyrics();
+      init_ApplyLyricsCredits();
+      init_ApplyInfo();
+      init_createMusicalLine();
+      init_sanitize();
+      init_decorateLine();
+      init_storage();
+      init_phoneticPatterns();
+      init_ScrollSimplebar();
+      LYRICS_CONTAINER_SELECTOR = "#AmaiLyricsPage .LyricsContainer .LyricsContent";
+      STYLING_CONTAINER_SELECTOR = "#AmaiLyricsPage .LyricsContainer .LyricsContent .simplebar-content";
+      LINE_ROW_SELECTOR = `${LYRICS_CONTAINER_SELECTOR} .main-lyrics-text.line`;
+      STATIC_ROW_SELECTOR = `${LYRICS_CONTAINER_SELECTOR} .line.static .main-lyrics-text`;
+      appliedLineState = /* @__PURE__ */ new WeakMap();
+    }
+  });
+
+  // src/utils/Lyrics/publish.ts
+  function liveLyricsUri() {
+    try {
+      const uri = Spicetify?.Player?.data?.item?.uri;
+      return typeof uri === "string" && uri.includes(":") ? uri : null;
+    } catch {
+      return null;
+    }
+  }
+  function beginLyricsRequest(uri) {
+    sharedRequest.token += 1;
+    sharedRequest.uri = uri;
+    return sharedRequest.token;
+  }
+  function isCurrentLyricsRequest(token) {
+    if (sharedRequest.token !== token)
+      return false;
+    return liveLyricsUri() === sharedRequest.uri;
+  }
+  function publishNoLyrics(token, trackId) {
+    if (!isCurrentLyricsRequest(token))
+      return false;
+    const sentinel = { status: "NO_LYRICS", id: trackId };
+    const serialized = JSON.stringify(sentinel);
+    storage_default.set("currentLyricsData", serialized);
+    EventManager_default.evoke("lyrics:data-updated", serialized);
+    return true;
+  }
+  function publishInitialLyrics(token, data) {
+    if (!isCurrentLyricsRequest(token))
+      return false;
+    Defaults_default.CurrentLyricsType = data.Type;
+    const serialized = JSON.stringify(data);
+    storage_default.set("currentLyricsData", serialized);
+    EventManager_default.evoke("lyrics:data-updated", serialized);
+    HideLoaderContainer();
+    ClearLyricsPageContainer();
+    return true;
+  }
+  function publishEnhancedLyrics(token, trackId, data) {
+    if (!isCurrentLyricsRequest(token))
+      return false;
+    if (liveTrackId() !== trackId)
+      return false;
+    updateLyricTranslations(data);
+    const serialized = JSON.stringify(data);
+    storage_default.set("currentLyricsData", serialized);
+    EventManager_default.evoke("lyrics:data-updated", serialized);
+    return true;
+  }
+  var windowRef8, sharedRequest;
+  var init_publish = __esm({
+    "src/utils/Lyrics/publish.ts"() {
+      init_storage();
+      init_Defaults();
+      init_EventManager();
+      init_ui();
+      init_LyricsRenderer();
+      init_trackId();
+      windowRef8 = window;
+      sharedRequest = windowRef8.__amaiLyricsRequest ?? (windowRef8.__amaiLyricsRequest = { token: 0, uri: "" });
     }
   });
 
@@ -14265,21 +14275,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
-  function blobToMldev$4(fromObject) {
-    const toObject = {};
-    const fromData = getValueByPath(fromObject, ["data"]);
-    if (fromData != null) {
-      setValueByPath(toObject, ["data"], fromData);
-    }
-    if (getValueByPath(fromObject, ["displayName"]) !== void 0) {
-      throw new Error("displayName parameter is only supported in Gemini Enterprise Agent Platform mode, not in Gemini Developer API mode.");
-    }
-    const fromMimeType = getValueByPath(fromObject, ["mimeType"]);
-    if (fromMimeType != null) {
-      setValueByPath(toObject, ["mimeType"], fromMimeType);
-    }
-    return toObject;
-  }
   function cancelBatchJobParametersToMldev(apiClient, fromObject) {
     const toObject = {};
     const fromName = getValueByPath(fromObject, ["name"]);
@@ -14596,21 +14591,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ]);
     if (fromInlinedRequests != null) {
       setValueByPath(toObject, ["requests"], embedContentBatchToMldev(apiClient, fromInlinedRequests));
-    }
-    return toObject;
-  }
-  function fileDataToMldev$4(fromObject) {
-    const toObject = {};
-    if (getValueByPath(fromObject, ["displayName"]) !== void 0) {
-      throw new Error("displayName parameter is only supported in Gemini Enterprise Agent Platform mode, not in Gemini Developer API mode.");
-    }
-    const fromFileUri = getValueByPath(fromObject, ["fileUri"]);
-    if (fromFileUri != null) {
-      setValueByPath(toObject, ["fileUri"], fromFileUri);
-    }
-    const fromMimeType = getValueByPath(fromObject, ["mimeType"]);
-    if (fromMimeType != null) {
-      setValueByPath(toObject, ["mimeType"], fromMimeType);
     }
     return toObject;
   }
@@ -15127,7 +15107,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     const fromFileData = getValueByPath(fromObject, ["fileData"]);
     if (fromFileData != null) {
-      setValueByPath(toObject, ["fileData"], fileDataToMldev$4(fromFileData));
+      setValueByPath(toObject, ["fileData"], fromFileData);
     }
     const fromFunctionCall = getValueByPath(fromObject, ["functionCall"]);
     if (fromFunctionCall != null) {
@@ -15141,7 +15121,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     const fromInlineData = getValueByPath(fromObject, ["inlineData"]);
     if (fromInlineData != null) {
-      setValueByPath(toObject, ["inlineData"], blobToMldev$4(fromInlineData));
+      setValueByPath(toObject, ["inlineData"], fromInlineData);
     }
     const fromText = getValueByPath(fromObject, ["text"]);
     if (fromText != null) {
@@ -15172,6 +15152,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ]);
     if (fromMediaProcessing != null) {
       setValueByPath(toObject, ["mediaProcessing"], fromMediaProcessing);
+    }
+    const fromSpeechMetadata = getValueByPath(fromObject, [
+      "speechMetadata"
+    ]);
+    if (fromSpeechMetadata != null) {
+      setValueByPath(toObject, ["speechMetadata"], fromSpeechMetadata);
     }
     return toObject;
   }
@@ -15335,22 +15321,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
-  function blobToMldev$3(fromObject) {
-    const toObject = {};
-    const fromData = getValueByPath(fromObject, ["data"]);
-    if (fromData != null) {
-      setValueByPath(toObject, ["data"], fromData);
-    }
-    if (getValueByPath(fromObject, ["displayName"]) !== void 0) {
-      throw new Error("displayName parameter is only supported in Gemini Enterprise Agent Platform mode, not in Gemini Developer API mode.");
-    }
-    const fromMimeType = getValueByPath(fromObject, ["mimeType"]);
-    if (fromMimeType != null) {
-      setValueByPath(toObject, ["mimeType"], fromMimeType);
-    }
-    return toObject;
-  }
-  function computerUseToVertex$2(fromObject) {
+  function computerUseToVertex$3(fromObject) {
     const toObject = {};
     const fromEnablePromptInjectionDetection = getValueByPath(fromObject, [
       "enablePromptInjectionDetection"
@@ -15493,7 +15464,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       let transformedList = fromTools;
       if (Array.isArray(transformedList)) {
         transformedList = transformedList.map((item) => {
-          return toolToVertex$2(item);
+          return toolToVertex$3(item);
         });
       }
       setValueByPath(parentObject, ["tools"], transformedList);
@@ -15565,21 +15536,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ]);
     if (fromSdkHttpResponse != null) {
       setValueByPath(toObject, ["sdkHttpResponse"], fromSdkHttpResponse);
-    }
-    return toObject;
-  }
-  function fileDataToMldev$3(fromObject) {
-    const toObject = {};
-    if (getValueByPath(fromObject, ["displayName"]) !== void 0) {
-      throw new Error("displayName parameter is only supported in Gemini Enterprise Agent Platform mode, not in Gemini Developer API mode.");
-    }
-    const fromFileUri = getValueByPath(fromObject, ["fileUri"]);
-    if (fromFileUri != null) {
-      setValueByPath(toObject, ["fileUri"], fromFileUri);
-    }
-    const fromMimeType = getValueByPath(fromObject, ["mimeType"]);
-    if (fromMimeType != null) {
-      setValueByPath(toObject, ["mimeType"], fromMimeType);
     }
     return toObject;
   }
@@ -15769,7 +15725,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
-  function mcpServerToVertex$2(fromObject) {
+  function mcpServerToVertex$3(fromObject) {
     const toObject = {};
     if (getValueByPath(fromObject, ["name"]) !== void 0) {
       throw new Error("name parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
@@ -15815,7 +15771,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     const fromFileData = getValueByPath(fromObject, ["fileData"]);
     if (fromFileData != null) {
-      setValueByPath(toObject, ["fileData"], fileDataToMldev$3(fromFileData));
+      setValueByPath(toObject, ["fileData"], fromFileData);
     }
     const fromFunctionCall = getValueByPath(fromObject, ["functionCall"]);
     if (fromFunctionCall != null) {
@@ -15829,7 +15785,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     const fromInlineData = getValueByPath(fromObject, ["inlineData"]);
     if (fromInlineData != null) {
-      setValueByPath(toObject, ["inlineData"], blobToMldev$3(fromInlineData));
+      setValueByPath(toObject, ["inlineData"], fromInlineData);
     }
     const fromText = getValueByPath(fromObject, ["text"]);
     if (fromText != null) {
@@ -15860,6 +15816,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ]);
     if (fromMediaProcessing != null) {
       setValueByPath(toObject, ["mediaProcessing"], fromMediaProcessing);
+    }
+    const fromSpeechMetadata = getValueByPath(fromObject, [
+      "speechMetadata"
+    ]);
+    if (fromSpeechMetadata != null) {
+      setValueByPath(toObject, ["speechMetadata"], fromSpeechMetadata);
     }
     return toObject;
   }
@@ -15941,6 +15903,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ]);
     if (fromMediaProcessing != null) {
       setValueByPath(toObject, ["mediaProcessing"], fromMediaProcessing);
+    }
+    const fromSpeechMetadata = getValueByPath(fromObject, [
+      "speechMetadata"
+    ]);
+    if (fromSpeechMetadata != null) {
+      setValueByPath(toObject, ["speechMetadata"], fromSpeechMetadata);
     }
     return toObject;
   }
@@ -16053,7 +16021,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
-  function toolToVertex$2(fromObject) {
+  function toolToVertex$3(fromObject) {
     const toObject = {};
     const fromRetrieval = getValueByPath(fromObject, ["retrieval"]);
     if (fromRetrieval != null) {
@@ -16068,7 +16036,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       let transformedList = fromMcpServers;
       if (Array.isArray(transformedList)) {
         transformedList = transformedList.map((item) => {
-          return mcpServerToVertex$2(item);
+          return mcpServerToVertex$3(item);
         });
       }
       setValueByPath(toObject, ["mcpServers"], transformedList);
@@ -16081,7 +16049,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     const fromComputerUse = getValueByPath(fromObject, ["computerUse"]);
     if (fromComputerUse != null) {
-      setValueByPath(toObject, ["computerUse"], computerUseToVertex$2(fromComputerUse));
+      setValueByPath(toObject, ["computerUse"], computerUseToVertex$3(fromComputerUse));
     }
     const fromEnterpriseWebSearch = getValueByPath(fromObject, [
       "enterpriseWebSearch"
@@ -16477,22 +16445,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
-  function blobToMldev$2(fromObject) {
-    const toObject = {};
-    const fromData = getValueByPath(fromObject, ["data"]);
-    if (fromData != null) {
-      setValueByPath(toObject, ["data"], fromData);
-    }
-    if (getValueByPath(fromObject, ["displayName"]) !== void 0) {
-      throw new Error("displayName parameter is only supported in Gemini Enterprise Agent Platform mode, not in Gemini Developer API mode.");
-    }
-    const fromMimeType = getValueByPath(fromObject, ["mimeType"]);
-    if (fromMimeType != null) {
-      setValueByPath(toObject, ["mimeType"], fromMimeType);
-    }
-    return toObject;
-  }
-  function computerUseToVertex$1(fromObject) {
+  function computerUseToVertex$2(fromObject) {
     const toObject = {};
     const fromEnablePromptInjectionDetection = getValueByPath(fromObject, [
       "enablePromptInjectionDetection"
@@ -16548,21 +16501,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const fromRole = getValueByPath(fromObject, ["role"]);
     if (fromRole != null) {
       setValueByPath(toObject, ["role"], fromRole);
-    }
-    return toObject;
-  }
-  function fileDataToMldev$2(fromObject) {
-    const toObject = {};
-    if (getValueByPath(fromObject, ["displayName"]) !== void 0) {
-      throw new Error("displayName parameter is only supported in Gemini Enterprise Agent Platform mode, not in Gemini Developer API mode.");
-    }
-    const fromFileUri = getValueByPath(fromObject, ["fileUri"]);
-    if (fromFileUri != null) {
-      setValueByPath(toObject, ["fileUri"], fromFileUri);
-    }
-    const fromMimeType = getValueByPath(fromObject, ["mimeType"]);
-    if (fromMimeType != null) {
-      setValueByPath(toObject, ["mimeType"], fromMimeType);
     }
     return toObject;
   }
@@ -16731,8 +16669,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (getValueByPath(fromObject, ["enableEnhancedCivicAnswers"]) !== void 0) {
       throw new Error("enableEnhancedCivicAnswers parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
     }
-    if (getValueByPath(fromObject, ["translationConfig"]) !== void 0) {
-      throw new Error("translationConfig parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
+    const fromTranslationConfig = getValueByPath(fromObject, [
+      "translationConfig"
+    ]);
+    if (fromTranslationConfig != null) {
+      setValueByPath(toObject, ["translationConfig"], fromTranslationConfig);
     }
     return toObject;
   }
@@ -16975,7 +16916,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       let transformedList = tTools(fromTools);
       if (Array.isArray(transformedList)) {
         transformedList = transformedList.map((item) => {
-          return toolToVertex$1(tTool(item));
+          return toolToVertex$2(tTool(item));
         });
       }
       setValueByPath(parentObject, ["setup", "tools"], transformedList);
@@ -17036,8 +16977,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       }
       setValueByPath(parentObject, ["setup", "safetySettings"], transformedList);
     }
-    if (getValueByPath(fromObject, ["translationConfig"]) !== void 0) {
-      throw new Error("translationConfig parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
+    const fromTranslationConfig = getValueByPath(fromObject, [
+      "translationConfig"
+    ]);
+    if (parentObject !== void 0 && fromTranslationConfig != null) {
+      setValueByPath(parentObject, ["setup", "generationConfig", "translationConfig"], fromTranslationConfig);
     }
     return toObject;
   }
@@ -17098,14 +17042,14 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       let transformedList = tBlobs(fromMedia);
       if (Array.isArray(transformedList)) {
         transformedList = transformedList.map((item) => {
-          return blobToMldev$2(item);
+          return item;
         });
       }
       setValueByPath(toObject, ["mediaChunks"], transformedList);
     }
     const fromAudio = getValueByPath(fromObject, ["audio"]);
     if (fromAudio != null) {
-      setValueByPath(toObject, ["audio"], blobToMldev$2(tAudioBlob(fromAudio)));
+      setValueByPath(toObject, ["audio"], tAudioBlob(fromAudio));
     }
     const fromAudioStreamEnd = getValueByPath(fromObject, [
       "audioStreamEnd"
@@ -17115,7 +17059,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     const fromVideo = getValueByPath(fromObject, ["video"]);
     if (fromVideo != null) {
-      setValueByPath(toObject, ["video"], blobToMldev$2(tImageBlob(fromVideo)));
+      setValueByPath(toObject, ["video"], tImageBlob(fromVideo));
     }
     const fromText = getValueByPath(fromObject, ["text"]);
     if (fromText != null) {
@@ -17229,7 +17173,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
-  function mcpServerToVertex$1(fromObject) {
+  function mcpServerToVertex$2(fromObject) {
     const toObject = {};
     if (getValueByPath(fromObject, ["name"]) !== void 0) {
       throw new Error("name parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
@@ -17291,7 +17235,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     const fromFileData = getValueByPath(fromObject, ["fileData"]);
     if (fromFileData != null) {
-      setValueByPath(toObject, ["fileData"], fileDataToMldev$2(fromFileData));
+      setValueByPath(toObject, ["fileData"], fromFileData);
     }
     const fromFunctionCall = getValueByPath(fromObject, ["functionCall"]);
     if (fromFunctionCall != null) {
@@ -17305,7 +17249,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     const fromInlineData = getValueByPath(fromObject, ["inlineData"]);
     if (fromInlineData != null) {
-      setValueByPath(toObject, ["inlineData"], blobToMldev$2(fromInlineData));
+      setValueByPath(toObject, ["inlineData"], fromInlineData);
     }
     const fromText = getValueByPath(fromObject, ["text"]);
     if (fromText != null) {
@@ -17336,6 +17280,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ]);
     if (fromMediaProcessing != null) {
       setValueByPath(toObject, ["mediaProcessing"], fromMediaProcessing);
+    }
+    const fromSpeechMetadata = getValueByPath(fromObject, [
+      "speechMetadata"
+    ]);
+    if (fromSpeechMetadata != null) {
+      setValueByPath(toObject, ["speechMetadata"], fromSpeechMetadata);
     }
     return toObject;
   }
@@ -17417,6 +17367,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ]);
     if (fromMediaProcessing != null) {
       setValueByPath(toObject, ["mediaProcessing"], fromMediaProcessing);
+    }
+    const fromSpeechMetadata = getValueByPath(fromObject, [
+      "speechMetadata"
+    ]);
+    if (fromSpeechMetadata != null) {
+      setValueByPath(toObject, ["speechMetadata"], fromSpeechMetadata);
     }
     return toObject;
   }
@@ -17566,7 +17522,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
-  function toolToVertex$1(fromObject) {
+  function toolToVertex$2(fromObject) {
     const toObject = {};
     const fromRetrieval = getValueByPath(fromObject, ["retrieval"]);
     if (fromRetrieval != null) {
@@ -17581,7 +17537,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       let transformedList = fromMcpServers;
       if (Array.isArray(transformedList)) {
         transformedList = transformedList.map((item) => {
-          return mcpServerToVertex$1(item);
+          return mcpServerToVertex$2(item);
         });
       }
       setValueByPath(toObject, ["mcpServers"], transformedList);
@@ -17594,7 +17550,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     const fromComputerUse = getValueByPath(fromObject, ["computerUse"]);
     if (fromComputerUse != null) {
-      setValueByPath(toObject, ["computerUse"], computerUseToVertex$1(fromComputerUse));
+      setValueByPath(toObject, ["computerUse"], computerUseToVertex$2(fromComputerUse));
     }
     const fromEnterpriseWebSearch = getValueByPath(fromObject, [
       "enterpriseWebSearch"
@@ -17761,6 +17717,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (fromPrebuiltVoiceConfig != null) {
       setValueByPath(toObject, ["prebuiltVoiceConfig"], fromPrebuiltVoiceConfig);
     }
+    const fromVoice = getValueByPath(fromObject, ["voice"]);
+    if (fromVoice != null) {
+      setValueByPath(toObject, ["voice"], fromVoice);
+    }
     return toObject;
   }
   function authConfigToMldev$1(fromObject, _rootObject) {
@@ -17786,21 +17746,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     if (getValueByPath(fromObject, ["oidcConfig"]) !== void 0) {
       throw new Error("oidcConfig parameter is only supported in Gemini Enterprise Agent Platform mode, not in Gemini Developer API mode.");
-    }
-    return toObject;
-  }
-  function blobToMldev$1(fromObject, _rootObject) {
-    const toObject = {};
-    const fromData = getValueByPath(fromObject, ["data"]);
-    if (fromData != null) {
-      setValueByPath(toObject, ["data"], fromData);
-    }
-    if (getValueByPath(fromObject, ["displayName"]) !== void 0) {
-      throw new Error("displayName parameter is only supported in Gemini Enterprise Agent Platform mode, not in Gemini Developer API mode.");
-    }
-    const fromMimeType = getValueByPath(fromObject, ["mimeType"]);
-    if (fromMimeType != null) {
-      setValueByPath(toObject, ["mimeType"], fromMimeType);
     }
     return toObject;
   }
@@ -17916,7 +17861,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
-  function computerUseToVertex(fromObject, _rootObject) {
+  function computerUseToVertex$1(fromObject, _rootObject) {
     const toObject = {};
     const fromEnablePromptInjectionDetection = getValueByPath(fromObject, [
       "enablePromptInjectionDetection"
@@ -18051,7 +17996,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       let transformedList = fromTools;
       if (Array.isArray(transformedList)) {
         transformedList = transformedList.map((item) => {
-          return toolToVertex(item);
+          return toolToVertex$1(item);
         });
       }
       setValueByPath(parentObject, ["tools"], transformedList);
@@ -18622,21 +18567,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
-  function fileDataToMldev$1(fromObject, _rootObject) {
-    const toObject = {};
-    if (getValueByPath(fromObject, ["displayName"]) !== void 0) {
-      throw new Error("displayName parameter is only supported in Gemini Enterprise Agent Platform mode, not in Gemini Developer API mode.");
-    }
-    const fromFileUri = getValueByPath(fromObject, ["fileUri"]);
-    if (fromFileUri != null) {
-      setValueByPath(toObject, ["fileUri"], fromFileUri);
-    }
-    const fromMimeType = getValueByPath(fromObject, ["mimeType"]);
-    if (fromMimeType != null) {
-      setValueByPath(toObject, ["mimeType"], fromMimeType);
-    }
-    return toObject;
-  }
   function functionCallToMldev$1(fromObject, _rootObject) {
     const toObject = {};
     const fromArgs = getValueByPath(fromObject, ["args"]);
@@ -18964,7 +18894,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       let transformedList = tTools(fromTools);
       if (Array.isArray(transformedList)) {
         transformedList = transformedList.map((item) => {
-          return toolToVertex(tTool(item));
+          return toolToVertex$1(tTool(item));
         });
       }
       setValueByPath(parentObject, ["tools"], transformedList);
@@ -19884,8 +19814,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (getValueByPath(fromObject, ["enableEnhancedCivicAnswers"]) !== void 0) {
       throw new Error("enableEnhancedCivicAnswers parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
     }
-    if (getValueByPath(fromObject, ["translationConfig"]) !== void 0) {
-      throw new Error("translationConfig parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
+    const fromTranslationConfig = getValueByPath(fromObject, [
+      "translationConfig"
+    ]);
+    if (fromTranslationConfig != null) {
+      setValueByPath(toObject, ["translationConfig"], fromTranslationConfig);
     }
     return toObject;
   }
@@ -20184,7 +20117,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
-  function mcpServerToVertex(fromObject, _rootObject) {
+  function mcpServerToVertex$1(fromObject, _rootObject) {
     const toObject = {};
     if (getValueByPath(fromObject, ["name"]) !== void 0) {
       throw new Error("name parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
@@ -20364,7 +20297,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     const fromFileData = getValueByPath(fromObject, ["fileData"]);
     if (fromFileData != null) {
-      setValueByPath(toObject, ["fileData"], fileDataToMldev$1(fromFileData));
+      setValueByPath(toObject, ["fileData"], fromFileData);
     }
     const fromFunctionCall = getValueByPath(fromObject, ["functionCall"]);
     if (fromFunctionCall != null) {
@@ -20378,7 +20311,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     const fromInlineData = getValueByPath(fromObject, ["inlineData"]);
     if (fromInlineData != null) {
-      setValueByPath(toObject, ["inlineData"], blobToMldev$1(fromInlineData));
+      setValueByPath(toObject, ["inlineData"], fromInlineData);
     }
     const fromText = getValueByPath(fromObject, ["text"]);
     if (fromText != null) {
@@ -20409,6 +20342,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ]);
     if (fromMediaProcessing != null) {
       setValueByPath(toObject, ["mediaProcessing"], fromMediaProcessing);
+    }
+    const fromSpeechMetadata = getValueByPath(fromObject, [
+      "speechMetadata"
+    ]);
+    if (fromSpeechMetadata != null) {
+      setValueByPath(toObject, ["speechMetadata"], fromSpeechMetadata);
     }
     return toObject;
   }
@@ -20490,6 +20429,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ]);
     if (fromMediaProcessing != null) {
       setValueByPath(toObject, ["mediaProcessing"], fromMediaProcessing);
+    }
+    const fromSpeechMetadata = getValueByPath(fromObject, [
+      "speechMetadata"
+    ]);
+    if (fromSpeechMetadata != null) {
+      setValueByPath(toObject, ["speechMetadata"], fromSpeechMetadata);
     }
     return toObject;
   }
@@ -20947,7 +20892,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
-  function toolToVertex(fromObject, rootObject) {
+  function toolToVertex$1(fromObject, rootObject) {
     const toObject = {};
     const fromRetrieval = getValueByPath(fromObject, ["retrieval"]);
     if (fromRetrieval != null) {
@@ -20962,7 +20907,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       let transformedList = fromMcpServers;
       if (Array.isArray(transformedList)) {
         transformedList = transformedList.map((item) => {
-          return mcpServerToVertex(item);
+          return mcpServerToVertex$1(item);
         });
       }
       setValueByPath(toObject, ["mcpServers"], transformedList);
@@ -20975,7 +20920,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     const fromComputerUse = getValueByPath(fromObject, ["computerUse"]);
     if (fromComputerUse != null) {
-      setValueByPath(toObject, ["computerUse"], computerUseToVertex(fromComputerUse));
+      setValueByPath(toObject, ["computerUse"], computerUseToVertex$1(fromComputerUse));
     }
     const fromEnterpriseWebSearch = getValueByPath(fromObject, [
       "enterpriseWebSearch"
@@ -21346,6 +21291,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ]);
     if (fromPrebuiltVoiceConfig != null) {
       setValueByPath(toObject, ["prebuiltVoiceConfig"], fromPrebuiltVoiceConfig);
+    }
+    const fromVoice = getValueByPath(fromObject, ["voice"]);
+    if (fromVoice != null) {
+      setValueByPath(toObject, ["voice"], fromVoice);
     }
     return toObject;
   }
@@ -21890,21 +21839,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return toObject;
   }
-  function blobToMldev(fromObject) {
-    const toObject = {};
-    const fromData = getValueByPath(fromObject, ["data"]);
-    if (fromData != null) {
-      setValueByPath(toObject, ["data"], fromData);
-    }
-    if (getValueByPath(fromObject, ["displayName"]) !== void 0) {
-      throw new Error("displayName parameter is only supported in Gemini Enterprise Agent Platform mode, not in Gemini Developer API mode.");
-    }
-    const fromMimeType = getValueByPath(fromObject, ["mimeType"]);
-    if (fromMimeType != null) {
-      setValueByPath(toObject, ["mimeType"], fromMimeType);
-    }
-    return toObject;
-  }
   function contentToMldev(fromObject) {
     const toObject = {};
     const fromParts = getValueByPath(fromObject, ["parts"]);
@@ -21958,21 +21892,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const fromConfig = getValueByPath(fromObject, ["config"]);
     if (fromConfig != null) {
       setValueByPath(toObject, ["config"], createAuthTokenConfigToMldev(apiClient, fromConfig, toObject));
-    }
-    return toObject;
-  }
-  function fileDataToMldev(fromObject) {
-    const toObject = {};
-    if (getValueByPath(fromObject, ["displayName"]) !== void 0) {
-      throw new Error("displayName parameter is only supported in Gemini Enterprise Agent Platform mode, not in Gemini Developer API mode.");
-    }
-    const fromFileUri = getValueByPath(fromObject, ["fileUri"]);
-    if (fromFileUri != null) {
-      setValueByPath(toObject, ["fileUri"], fromFileUri);
-    }
-    const fromMimeType = getValueByPath(fromObject, ["mimeType"]);
-    if (fromMimeType != null) {
-      setValueByPath(toObject, ["mimeType"], fromMimeType);
     }
     return toObject;
   }
@@ -22216,7 +22135,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     const fromFileData = getValueByPath(fromObject, ["fileData"]);
     if (fromFileData != null) {
-      setValueByPath(toObject, ["fileData"], fileDataToMldev(fromFileData));
+      setValueByPath(toObject, ["fileData"], fromFileData);
     }
     const fromFunctionCall = getValueByPath(fromObject, ["functionCall"]);
     if (fromFunctionCall != null) {
@@ -22230,7 +22149,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     const fromInlineData = getValueByPath(fromObject, ["inlineData"]);
     if (fromInlineData != null) {
-      setValueByPath(toObject, ["inlineData"], blobToMldev(fromInlineData));
+      setValueByPath(toObject, ["inlineData"], fromInlineData);
     }
     const fromText = getValueByPath(fromObject, ["text"]);
     if (fromText != null) {
@@ -22261,6 +22180,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ]);
     if (fromMediaProcessing != null) {
       setValueByPath(toObject, ["mediaProcessing"], fromMediaProcessing);
+    }
+    const fromSpeechMetadata = getValueByPath(fromObject, [
+      "speechMetadata"
+    ]);
+    if (fromSpeechMetadata != null) {
+      setValueByPath(toObject, ["speechMetadata"], fromSpeechMetadata);
     }
     return toObject;
   }
@@ -22724,6 +22649,94 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       writable: false
     });
   }
+  function matchContentType(response, pattern) {
+    var _a3;
+    if (pattern === "*") {
+      return true;
+    }
+    let contentType = ((_a3 = response.headers.get("content-type")) === null || _a3 === void 0 ? void 0 : _a3.trim()) || "application/octet-stream";
+    contentType = contentType.toLowerCase();
+    const wantParts = pattern.toLowerCase().trim().split(mediaParamSeparator);
+    const [wantType = "", ...wantParams] = wantParts;
+    if (wantType.split("/").length !== 2) {
+      return false;
+    }
+    const gotParts = contentType.split(mediaParamSeparator);
+    const [gotType = "", ...gotParams] = gotParts;
+    const [type = "", subtype = ""] = gotType.split("/");
+    if (!type || !subtype) {
+      return false;
+    }
+    if (wantType !== "*/*" && gotType !== wantType && `${type}/*` !== wantType && `*/${subtype}` !== wantType) {
+      return false;
+    }
+    if (gotParams.length < wantParams.length) {
+      return false;
+    }
+    const params = new Set(gotParams);
+    for (const wantParam of wantParams) {
+      if (!params.has(wantParam)) {
+        return false;
+      }
+    }
+    return true;
+  }
+  function matchStatusCode(response, codes) {
+    const actual = `${response.status}`;
+    const expectedCodes = Array.isArray(codes) ? codes : [codes];
+    if (!expectedCodes.length) {
+      return false;
+    }
+    return expectedCodes.some((ec) => {
+      const code = `${ec}`;
+      if (code === "default") {
+        return true;
+      }
+      if (!codeRangeRE$1.test(`${code}`)) {
+        return code === actual;
+      }
+      const expectFamily = code.charAt(0);
+      if (!expectFamily) {
+        throw new Error("Invalid status code range");
+      }
+      const actualFamily = actual.charAt(0);
+      if (!actualFamily) {
+        throw new Error(`Invalid response status code: ${actual}`);
+      }
+      return actualFamily === expectFamily;
+    });
+  }
+  function matchResponse(response, code, contentTypePattern) {
+    return matchStatusCode(response, code) && matchContentType(response, contentTypePattern);
+  }
+  function isConnectionError(err2) {
+    if (typeof err2 !== "object" || err2 == null) {
+      return false;
+    }
+    const isBrowserErr = err2 instanceof TypeError && err2.message.toLowerCase().startsWith("failed to fetch");
+    const isNodeErr = err2 instanceof TypeError && err2.message.toLowerCase().startsWith("fetch failed");
+    const isBunErr = "name" in err2 && err2.name === "ConnectionError";
+    const isGenericErr = "code" in err2 && typeof err2.code === "string" && err2.code.toLowerCase() === "econnreset";
+    return isBrowserErr || isNodeErr || isGenericErr || isBunErr;
+  }
+  function isTimeoutError(err2) {
+    if (typeof err2 !== "object" || err2 == null) {
+      return false;
+    }
+    const isNative = "name" in err2 && err2.name === "TimeoutError";
+    const isLegacyNative = "code" in err2 && err2.code === 23;
+    const isGenericErr = "code" in err2 && typeof err2.code === "string" && err2.code.toLowerCase() === "econnaborted";
+    return isNative || isLegacyNative || isGenericErr;
+  }
+  function isAbortError(err2) {
+    if (typeof err2 !== "object" || err2 == null) {
+      return false;
+    }
+    const isNative = "name" in err2 && err2.name === "AbortError";
+    const isLegacyNative = "code" in err2 && err2.code === 20;
+    const isGenericErr = "code" in err2 && typeof err2.code === "string" && err2.code.toLowerCase() === "econnaborted";
+    return isNative || isLegacyNative || isGenericErr;
+  }
   function initHooks(hooks) {
     const googleGenAIAuthHook = new GoogleGenAIAuthHook();
     hooks.registerBeforeCreateRequestHook(googleGenAIAuthHook);
@@ -22847,6 +22860,19 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return false;
     }
   }
+  function encodeKeyChars(v, charEncoding) {
+    return encodeChars(v, charEncoding === "percentExceptReserved" ? "percent" : charEncoding);
+  }
+  function encodeChars(v, charEncoding) {
+    switch (charEncoding) {
+      case "percent":
+        return encodeURIComponent(v);
+      case "percentExceptReserved":
+        return encodeURIComponent(v).replace(reservedEscapes, (m) => decodeURIComponent(m));
+      default:
+        return v;
+    }
+  }
   function formEncoder(sep) {
     return (key, value, options) => {
       let out = "";
@@ -22855,7 +22881,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         return;
       }
       const encodeString = (v) => {
-        return (options === null || options === void 0 ? void 0 : options.charEncoding) === "percent" ? encodeURIComponent(v) : v;
+        return encodeChars(v, options === null || options === void 0 ? void 0 : options.charEncoding);
       };
       const encodeValue = (v) => encodeString(serializeValue(v));
       const encodedSep = encodeString(sep);
@@ -22877,7 +22903,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         if (encValue == null) {
           return;
         }
-        tmp = `${encodeString(pk)}=${encValue}`;
+        tmp = `${encodeKeyChars(pk, options === null || options === void 0 ? void 0 : options.charEncoding)}=${encValue}`;
         if (!tmp || tmp === "=") {
           return;
         }
@@ -22891,10 +22917,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return;
     }
     const encodeString = (v) => {
-      return (options === null || options === void 0 ? void 0 : options.charEncoding) === "percent" ? encodeURIComponent(v) : v;
+      return encodeChars(v, options === null || options === void 0 ? void 0 : options.charEncoding);
     };
     const encVal = encodeString(JSON.stringify(value, jsonReplacer));
-    return (options === null || options === void 0 ? void 0 : options.explode) ? encVal : `${encodeString(key)}=${encVal}`;
+    return (options === null || options === void 0 ? void 0 : options.explode) ? encVal : `${encodeKeyChars(key, options === null || options === void 0 ? void 0 : options.charEncoding)}=${encVal}`;
   }
   function explode(key, value) {
     if (Array.isArray(value)) {
@@ -22972,94 +22998,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return queryJoin(...encoded);
     };
     return bulkEncode;
-  }
-  function matchContentType(response, pattern) {
-    var _a3;
-    if (pattern === "*") {
-      return true;
-    }
-    let contentType = ((_a3 = response.headers.get("content-type")) === null || _a3 === void 0 ? void 0 : _a3.trim()) || "application/octet-stream";
-    contentType = contentType.toLowerCase();
-    const wantParts = pattern.toLowerCase().trim().split(mediaParamSeparator);
-    const [wantType = "", ...wantParams] = wantParts;
-    if (wantType.split("/").length !== 2) {
-      return false;
-    }
-    const gotParts = contentType.split(mediaParamSeparator);
-    const [gotType = "", ...gotParams] = gotParts;
-    const [type = "", subtype = ""] = gotType.split("/");
-    if (!type || !subtype) {
-      return false;
-    }
-    if (wantType !== "*/*" && gotType !== wantType && `${type}/*` !== wantType && `*/${subtype}` !== wantType) {
-      return false;
-    }
-    if (gotParams.length < wantParams.length) {
-      return false;
-    }
-    const params = new Set(gotParams);
-    for (const wantParam of wantParams) {
-      if (!params.has(wantParam)) {
-        return false;
-      }
-    }
-    return true;
-  }
-  function matchStatusCode(response, codes) {
-    const actual = `${response.status}`;
-    const expectedCodes = Array.isArray(codes) ? codes : [codes];
-    if (!expectedCodes.length) {
-      return false;
-    }
-    return expectedCodes.some((ec) => {
-      const code = `${ec}`;
-      if (code === "default") {
-        return true;
-      }
-      if (!codeRangeRE$1.test(`${code}`)) {
-        return code === actual;
-      }
-      const expectFamily = code.charAt(0);
-      if (!expectFamily) {
-        throw new Error("Invalid status code range");
-      }
-      const actualFamily = actual.charAt(0);
-      if (!actualFamily) {
-        throw new Error(`Invalid response status code: ${actual}`);
-      }
-      return actualFamily === expectFamily;
-    });
-  }
-  function matchResponse(response, code, contentTypePattern) {
-    return matchStatusCode(response, code) && matchContentType(response, contentTypePattern);
-  }
-  function isConnectionError(err2) {
-    if (typeof err2 !== "object" || err2 == null) {
-      return false;
-    }
-    const isBrowserErr = err2 instanceof TypeError && err2.message.toLowerCase().startsWith("failed to fetch");
-    const isNodeErr = err2 instanceof TypeError && err2.message.toLowerCase().startsWith("fetch failed");
-    const isBunErr = "name" in err2 && err2.name === "ConnectionError";
-    const isGenericErr = "code" in err2 && typeof err2.code === "string" && err2.code.toLowerCase() === "econnreset";
-    return isBrowserErr || isNodeErr || isGenericErr || isBunErr;
-  }
-  function isTimeoutError(err2) {
-    if (typeof err2 !== "object" || err2 == null) {
-      return false;
-    }
-    const isNative = "name" in err2 && err2.name === "TimeoutError";
-    const isLegacyNative = "code" in err2 && err2.code === 23;
-    const isGenericErr = "code" in err2 && typeof err2.code === "string" && err2.code.toLowerCase() === "econnaborted";
-    return isNative || isLegacyNative || isGenericErr;
-  }
-  function isAbortError(err2) {
-    if (typeof err2 !== "object" || err2 == null) {
-      return false;
-    }
-    const isNative = "name" in err2 && err2.name === "AbortError";
-    const isLegacyNative = "code" in err2 && err2.code === 20;
-    const isGenericErr = "code" in err2 && typeof err2.code === "string" && err2.code.toLowerCase() === "econnaborted";
-    return isNative || isLegacyNative || isGenericErr;
   }
   async function retry(fetchFn, options) {
     var _a3;
@@ -23620,9 +23558,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return new APIPromise(data, callSource);
   }
   function agentsCreate(client, body, api_version, options) {
-    return new APIPromise($do$q(client, body, api_version, options));
+    return new APIPromise($do$A(client, body, api_version, options));
   }
-  async function $do$q(client, body, api_version, options) {
+  async function $do$A(client, body, api_version, options) {
     var _a3, _b, _c;
     const input = {
       body,
@@ -23691,9 +23629,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return [result, { status: "complete", request: req, response }];
   }
   function agentsDelete(client, id, api_version, options) {
-    return new APIPromise($do$p(client, id, api_version, options));
+    return new APIPromise($do$z(client, id, api_version, options));
   }
-  async function $do$p(client, id, api_version, options) {
+  async function $do$z(client, id, api_version, options) {
     var _a3, _b, _c;
     const input = {
       id,
@@ -23703,12 +23641,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const body = null;
     const pathParams = {
       api_version: encodeSimple("api_version", (_a3 = payload.api_version) !== null && _a3 !== void 0 ? _a3 : client._options.api_version, { explode: false, charEncoding: "percent" }),
-      id: encodeSimple("id", payload.id, {
+      agentsId: encodeSimple("agentsId", payload.id, {
         explode: false,
         charEncoding: "percent"
       })
     };
-    const path = pathToFunc("/{api_version}/agents/{id}")(pathParams);
+    const path = pathToFunc("/{api_version}/agents/{agentsId}")(pathParams);
     const headers = new Headers(compactMap({
       Accept: "application/json"
     }));
@@ -23765,9 +23703,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return [result, { status: "complete", request: req, response }];
   }
   function agentsGet(client, id, api_version, options) {
-    return new APIPromise($do$o(client, id, api_version, options));
+    return new APIPromise($do$y(client, id, api_version, options));
   }
-  async function $do$o(client, id, api_version, options) {
+  async function $do$y(client, id, api_version, options) {
     var _a3, _b, _c;
     const input = {
       id,
@@ -23777,12 +23715,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const body = null;
     const pathParams = {
       api_version: encodeSimple("api_version", (_a3 = payload.api_version) !== null && _a3 !== void 0 ? _a3 : client._options.api_version, { explode: false, charEncoding: "percent" }),
-      id: encodeSimple("id", payload.id, {
+      agentsId: encodeSimple("agentsId", payload.id, {
         explode: false,
         charEncoding: "percent"
       })
     };
-    const path = pathToFunc("/{api_version}/agents/{id}")(pathParams);
+    const path = pathToFunc("/{api_version}/agents/{agentsId}")(pathParams);
     const headers = new Headers(compactMap({
       Accept: "application/json"
     }));
@@ -23839,9 +23777,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return [result, { status: "complete", request: req, response }];
   }
   function agentsList(client, api_version, page_size, page_token, parent, options) {
-    return new APIPromise($do$n(client, api_version, page_size, page_token, parent, options));
+    return new APIPromise($do$x(client, api_version, page_size, page_token, parent, options));
   }
-  async function $do$n(client, api_version, page_size, page_token, parent, options) {
+  async function $do$x(client, api_version, page_size, page_token, parent, options) {
     var _a3, _b, _c;
     const input = {
       api_version,
@@ -23916,10 +23854,386 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return [result, { status: "complete", request: req, response }];
   }
-  function environmentsCreateEnvironment(client, body, api_version, options) {
-    return new APIPromise($do$m(client, body, api_version, options));
+  function credentialsCreate(client, body, api_version, options) {
+    return new APIPromise($do$w(client, body, api_version, options));
   }
-  async function $do$m(client, body, api_version, options) {
+  async function $do$w(client, body, api_version, options) {
+    var _a3, _b, _c;
+    const input = {
+      body,
+      api_version
+    };
+    const payload = input;
+    const body$ = encodeJSON("body", payload.body, { explode: true });
+    const pathParams = {
+      api_version: encodeSimple("api_version", (_a3 = payload.api_version) !== null && _a3 !== void 0 ? _a3 : client._options.api_version, { explode: false, charEncoding: "percent" })
+    };
+    const path = pathToFunc("/{api_version}/credentials")(pathParams);
+    const headers = new Headers(compactMap({
+      "Content-Type": "application/json",
+      Accept: "application/json"
+    }));
+    const securityInput = await extractSecurity(client._options.security);
+    const requestSecurity = resolveGlobalSecurity(securityInput);
+    const context = {
+      options: client._options,
+      base_url: (_c = (_b = options === null || options === void 0 ? void 0 : options.server_url) !== null && _b !== void 0 ? _b : client._baseURL) !== null && _c !== void 0 ? _c : "",
+      operation_id: "CreateCredential",
+      o_auth2_scopes: null,
+      resolved_security: requestSecurity,
+      security_source: client._options.security,
+      retry_config: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retry_config || {
+        strategy: "attempt-count-backoff",
+        backoff: {
+          initialInterval: 500,
+          maxInterval: 8e3,
+          exponent: 2,
+          maxElapsedTime: 3e4
+        },
+        retryConnectionErrors: true,
+        maxRetries: 4
+      },
+      retry_codes: (options === null || options === void 0 ? void 0 : options.retry_codes) || ["408", "409", "429", "5XX"]
+    };
+    const requestRes = client._createRequest(context, {
+      security: requestSecurity,
+      method: "POST",
+      baseURL: options === null || options === void 0 ? void 0 : options.server_url,
+      path,
+      headers,
+      body: body$,
+      userAgent: client._options.user_agent,
+      timeout_ms: (options === null || options === void 0 ? void 0 : options.timeout_ms) || client._options.timeout_ms || -1
+    }, options);
+    if (!requestRes.ok) {
+      return [requestRes, { status: "invalid" }];
+    }
+    const req = requestRes.value;
+    const doResult = await client._do(req, {
+      context,
+      isErrorStatusCode: (statusCode) => matchStatusCode({ status: statusCode }, ["4XX", "5XX"]),
+      retryConfig: context.retry_config,
+      retryCodes: context.retry_codes
+    });
+    if (!doResult.ok) {
+      return [doResult, { status: "request-error", request: req }];
+    }
+    const response = doResult.value;
+    const [result] = await match(fail("4XX"), fail("5XX"), json("default"))(response, req);
+    if (!result.ok) {
+      return [result, { status: "complete", request: req, response }];
+    }
+    return [result, { status: "complete", request: req, response }];
+  }
+  function credentialsDelete(client, id, api_version, options) {
+    return new APIPromise($do$v(client, id, api_version, options));
+  }
+  async function $do$v(client, id, api_version, options) {
+    var _a3, _b, _c;
+    const input = {
+      id,
+      api_version
+    };
+    const payload = input;
+    const body = null;
+    const pathParams = {
+      api_version: encodeSimple("api_version", (_a3 = payload.api_version) !== null && _a3 !== void 0 ? _a3 : client._options.api_version, { explode: false, charEncoding: "percent" }),
+      id: encodeSimple("id", payload.id, {
+        explode: false,
+        charEncoding: "percent"
+      })
+    };
+    const path = pathToFunc("/{api_version}/credentials/{id}")(pathParams);
+    const headers = new Headers(compactMap({
+      Accept: "application/json"
+    }));
+    const securityInput = await extractSecurity(client._options.security);
+    const requestSecurity = resolveGlobalSecurity(securityInput);
+    const context = {
+      options: client._options,
+      base_url: (_c = (_b = options === null || options === void 0 ? void 0 : options.server_url) !== null && _b !== void 0 ? _b : client._baseURL) !== null && _c !== void 0 ? _c : "",
+      operation_id: "DeleteCredential",
+      o_auth2_scopes: null,
+      resolved_security: requestSecurity,
+      security_source: client._options.security,
+      retry_config: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retry_config || {
+        strategy: "attempt-count-backoff",
+        backoff: {
+          initialInterval: 500,
+          maxInterval: 8e3,
+          exponent: 2,
+          maxElapsedTime: 3e4
+        },
+        retryConnectionErrors: true,
+        maxRetries: 4
+      },
+      retry_codes: (options === null || options === void 0 ? void 0 : options.retry_codes) || ["408", "409", "429", "5XX"]
+    };
+    const requestRes = client._createRequest(context, {
+      security: requestSecurity,
+      method: "DELETE",
+      baseURL: options === null || options === void 0 ? void 0 : options.server_url,
+      path,
+      headers,
+      body,
+      userAgent: client._options.user_agent,
+      timeout_ms: (options === null || options === void 0 ? void 0 : options.timeout_ms) || client._options.timeout_ms || -1
+    }, options);
+    if (!requestRes.ok) {
+      return [requestRes, { status: "invalid" }];
+    }
+    const req = requestRes.value;
+    const doResult = await client._do(req, {
+      context,
+      isErrorStatusCode: (statusCode) => matchStatusCode({ status: statusCode }, ["4XX", "5XX"]),
+      retryConfig: context.retry_config,
+      retryCodes: context.retry_codes
+    });
+    if (!doResult.ok) {
+      return [doResult, { status: "request-error", request: req }];
+    }
+    const response = doResult.value;
+    const [result] = await match(fail("4XX"), fail("5XX"), json("default"))(response, req);
+    if (!result.ok) {
+      return [result, { status: "complete", request: req, response }];
+    }
+    return [result, { status: "complete", request: req, response }];
+  }
+  function credentialsGet(client, id, api_version, options) {
+    return new APIPromise($do$u(client, id, api_version, options));
+  }
+  async function $do$u(client, id, api_version, options) {
+    var _a3, _b, _c;
+    const input = {
+      id,
+      api_version
+    };
+    const payload = input;
+    const body = null;
+    const pathParams = {
+      api_version: encodeSimple("api_version", (_a3 = payload.api_version) !== null && _a3 !== void 0 ? _a3 : client._options.api_version, { explode: false, charEncoding: "percent" }),
+      id: encodeSimple("id", payload.id, {
+        explode: false,
+        charEncoding: "percent"
+      })
+    };
+    const path = pathToFunc("/{api_version}/credentials/{id}")(pathParams);
+    const headers = new Headers(compactMap({
+      Accept: "application/json"
+    }));
+    const securityInput = await extractSecurity(client._options.security);
+    const requestSecurity = resolveGlobalSecurity(securityInput);
+    const context = {
+      options: client._options,
+      base_url: (_c = (_b = options === null || options === void 0 ? void 0 : options.server_url) !== null && _b !== void 0 ? _b : client._baseURL) !== null && _c !== void 0 ? _c : "",
+      operation_id: "GetCredential",
+      o_auth2_scopes: null,
+      resolved_security: requestSecurity,
+      security_source: client._options.security,
+      retry_config: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retry_config || {
+        strategy: "attempt-count-backoff",
+        backoff: {
+          initialInterval: 500,
+          maxInterval: 8e3,
+          exponent: 2,
+          maxElapsedTime: 3e4
+        },
+        retryConnectionErrors: true,
+        maxRetries: 4
+      },
+      retry_codes: (options === null || options === void 0 ? void 0 : options.retry_codes) || ["408", "409", "429", "5XX"]
+    };
+    const requestRes = client._createRequest(context, {
+      security: requestSecurity,
+      method: "GET",
+      baseURL: options === null || options === void 0 ? void 0 : options.server_url,
+      path,
+      headers,
+      body,
+      userAgent: client._options.user_agent,
+      timeout_ms: (options === null || options === void 0 ? void 0 : options.timeout_ms) || client._options.timeout_ms || -1
+    }, options);
+    if (!requestRes.ok) {
+      return [requestRes, { status: "invalid" }];
+    }
+    const req = requestRes.value;
+    const doResult = await client._do(req, {
+      context,
+      isErrorStatusCode: (statusCode) => matchStatusCode({ status: statusCode }, ["4XX", "5XX"]),
+      retryConfig: context.retry_config,
+      retryCodes: context.retry_codes
+    });
+    if (!doResult.ok) {
+      return [doResult, { status: "request-error", request: req }];
+    }
+    const response = doResult.value;
+    const [result] = await match(fail("4XX"), fail("5XX"), json("default"))(response, req);
+    if (!result.ok) {
+      return [result, { status: "complete", request: req, response }];
+    }
+    return [result, { status: "complete", request: req, response }];
+  }
+  function credentialsList(client, api_version, page_size, page_token, options) {
+    return new APIPromise($do$t(client, api_version, page_size, page_token, options));
+  }
+  async function $do$t(client, api_version, page_size, page_token, options) {
+    var _a3, _b, _c;
+    const input = {
+      api_version,
+      page_size,
+      page_token
+    };
+    const payload = input;
+    const body = null;
+    const pathParams = {
+      api_version: encodeSimple("api_version", (_a3 = payload === null || payload === void 0 ? void 0 : payload.api_version) !== null && _a3 !== void 0 ? _a3 : client._options.api_version, { explode: false, charEncoding: "percent" })
+    };
+    const path = pathToFunc("/{api_version}/credentials")(pathParams);
+    const query = encodeFormQuery({
+      "page_size": payload === null || payload === void 0 ? void 0 : payload.page_size,
+      "page_token": payload === null || payload === void 0 ? void 0 : payload.page_token
+    });
+    const headers = new Headers(compactMap({
+      Accept: "application/json"
+    }));
+    const securityInput = await extractSecurity(client._options.security);
+    const requestSecurity = resolveGlobalSecurity(securityInput);
+    const context = {
+      options: client._options,
+      base_url: (_c = (_b = options === null || options === void 0 ? void 0 : options.server_url) !== null && _b !== void 0 ? _b : client._baseURL) !== null && _c !== void 0 ? _c : "",
+      operation_id: "ListCredentials",
+      o_auth2_scopes: null,
+      resolved_security: requestSecurity,
+      security_source: client._options.security,
+      retry_config: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retry_config || {
+        strategy: "attempt-count-backoff",
+        backoff: {
+          initialInterval: 500,
+          maxInterval: 8e3,
+          exponent: 2,
+          maxElapsedTime: 3e4
+        },
+        retryConnectionErrors: true,
+        maxRetries: 4
+      },
+      retry_codes: (options === null || options === void 0 ? void 0 : options.retry_codes) || ["408", "409", "429", "5XX"]
+    };
+    const requestRes = client._createRequest(context, {
+      security: requestSecurity,
+      method: "GET",
+      baseURL: options === null || options === void 0 ? void 0 : options.server_url,
+      path,
+      headers,
+      query,
+      body,
+      userAgent: client._options.user_agent,
+      timeout_ms: (options === null || options === void 0 ? void 0 : options.timeout_ms) || client._options.timeout_ms || -1
+    }, options);
+    if (!requestRes.ok) {
+      return [requestRes, { status: "invalid" }];
+    }
+    const req = requestRes.value;
+    const doResult = await client._do(req, {
+      context,
+      isErrorStatusCode: (statusCode) => matchStatusCode({ status: statusCode }, ["4XX", "5XX"]),
+      retryConfig: context.retry_config,
+      retryCodes: context.retry_codes
+    });
+    if (!doResult.ok) {
+      return [doResult, { status: "request-error", request: req }];
+    }
+    const response = doResult.value;
+    const [result] = await match(fail("4XX"), fail("5XX"), json("default"))(response, req);
+    if (!result.ok) {
+      return [result, { status: "complete", request: req, response }];
+    }
+    return [result, { status: "complete", request: req, response }];
+  }
+  function credentialsUpdate(client, id, body, api_version, update_mask, options) {
+    return new APIPromise($do$s(client, id, body, api_version, update_mask, options));
+  }
+  async function $do$s(client, id, body, api_version, update_mask, options) {
+    var _a3, _b, _c;
+    const input = {
+      id,
+      body,
+      api_version,
+      update_mask
+    };
+    const payload = input;
+    const body$ = encodeJSON("body", payload.body, { explode: true });
+    const pathParams = {
+      api_version: encodeSimple("api_version", (_a3 = payload.api_version) !== null && _a3 !== void 0 ? _a3 : client._options.api_version, { explode: false, charEncoding: "percent" }),
+      id: encodeSimple("id", payload.id, {
+        explode: false,
+        charEncoding: "percent"
+      })
+    };
+    const path = pathToFunc("/{api_version}/credentials/{id}")(pathParams);
+    const query = encodeFormQuery({
+      "update_mask": payload.update_mask
+    });
+    const headers = new Headers(compactMap({
+      "Content-Type": "application/json",
+      Accept: "application/json"
+    }));
+    const securityInput = await extractSecurity(client._options.security);
+    const requestSecurity = resolveGlobalSecurity(securityInput);
+    const context = {
+      options: client._options,
+      base_url: (_c = (_b = options === null || options === void 0 ? void 0 : options.server_url) !== null && _b !== void 0 ? _b : client._baseURL) !== null && _c !== void 0 ? _c : "",
+      operation_id: "UpdateCredential",
+      o_auth2_scopes: null,
+      resolved_security: requestSecurity,
+      security_source: client._options.security,
+      retry_config: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retry_config || {
+        strategy: "attempt-count-backoff",
+        backoff: {
+          initialInterval: 500,
+          maxInterval: 8e3,
+          exponent: 2,
+          maxElapsedTime: 3e4
+        },
+        retryConnectionErrors: true,
+        maxRetries: 4
+      },
+      retry_codes: (options === null || options === void 0 ? void 0 : options.retry_codes) || ["408", "409", "429", "5XX"]
+    };
+    const requestRes = client._createRequest(context, {
+      security: requestSecurity,
+      method: "PATCH",
+      baseURL: options === null || options === void 0 ? void 0 : options.server_url,
+      path,
+      headers,
+      query,
+      body: body$,
+      userAgent: client._options.user_agent,
+      timeout_ms: (options === null || options === void 0 ? void 0 : options.timeout_ms) || client._options.timeout_ms || -1
+    }, options);
+    if (!requestRes.ok) {
+      return [requestRes, { status: "invalid" }];
+    }
+    const req = requestRes.value;
+    const doResult = await client._do(req, {
+      context,
+      isErrorStatusCode: (statusCode) => matchStatusCode({ status: statusCode }, ["4XX", "5XX"]),
+      retryConfig: context.retry_config,
+      retryCodes: context.retry_codes
+    });
+    if (!doResult.ok) {
+      return [doResult, { status: "request-error", request: req }];
+    }
+    const response = doResult.value;
+    const [result] = await match(fail("4XX"), fail("5XX"), json("default"))(response, req);
+    if (!result.ok) {
+      return [result, { status: "complete", request: req, response }];
+    }
+    return [result, { status: "complete", request: req, response }];
+  }
+  function environmentsCreateEnvironment(client, body, api_version, options) {
+    return new APIPromise($do$r(client, body, api_version, options));
+  }
+  async function $do$r(client, body, api_version, options) {
     var _a3, _b, _c;
     const input = {
       body,
@@ -23988,9 +24302,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return [result, { status: "complete", request: req, response }];
   }
   function environmentsDeleteEnvironment(client, id, api_version, options) {
-    return new APIPromise($do$l(client, id, api_version, options));
+    return new APIPromise($do$q(client, id, api_version, options));
   }
-  async function $do$l(client, id, api_version, options) {
+  async function $do$q(client, id, api_version, options) {
     var _a3, _b, _c;
     const input = {
       id,
@@ -24062,9 +24376,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return [result, { status: "complete", request: req, response }];
   }
   function environmentsGetEnvironment(client, id, api_version, options) {
-    return new APIPromise($do$k(client, id, api_version, options));
+    return new APIPromise($do$p(client, id, api_version, options));
   }
-  async function $do$k(client, id, api_version, options) {
+  async function $do$p(client, id, api_version, options) {
     var _a3, _b, _c;
     const input = {
       id,
@@ -24136,9 +24450,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return [result, { status: "complete", request: req, response }];
   }
   function environmentsListEnvironments(client, api_version, page_size, page_token, options) {
-    return new APIPromise($do$j(client, api_version, page_size, page_token, options));
+    return new APIPromise($do$o(client, api_version, page_size, page_token, options));
   }
-  async function $do$j(client, api_version, page_size, page_token, options) {
+  async function $do$o(client, api_version, page_size, page_token, options) {
     var _a3, _b, _c;
     const input = {
       api_version,
@@ -24212,9 +24526,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return [result, { status: "complete", request: req, response }];
   }
   function environmentsFilesList(client, environment, path, api_version, page_size, page_token, recursive, options) {
-    return new APIPromise($do$i(client, environment, path, api_version, page_size, page_token, recursive, options));
+    return new APIPromise($do$n(client, environment, path, api_version, page_size, page_token, recursive, options));
   }
-  async function $do$i(client, environment, path, api_version, page_size, page_token, recursive, options) {
+  async function $do$n(client, environment, path, api_version, page_size, page_token, recursive, options) {
     var _a3, _b, _c;
     const input = {
       environment,
@@ -24234,7 +24548,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       }),
       path: encodeSimple("path", payload.path, {
         explode: false,
-        charEncoding: "percent"
+        charEncoding: "percentExceptReserved"
       })
     };
     const path$ = pathToFunc("/{api_version}/environments/{environment}/files/{path}")(pathParams);
@@ -24299,10 +24613,109 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return [result, { status: "complete", request: req, response }];
   }
-  function interactionsCancel(client, id, api_version, options) {
-    return new APIPromise($do$h(client, id, api_version, options));
+  function environmentsInternalStartUpload(client, environment, path, x_goog_upload_command, x_goog_upload_header_content_length, x_goog_upload_header_content_type, x_goog_upload_protocol, api_version, extract, overwrite, options) {
+    return new APIPromise($do$m(client, environment, path, x_goog_upload_command, x_goog_upload_header_content_length, x_goog_upload_header_content_type, x_goog_upload_protocol, api_version, extract, overwrite, options));
   }
-  async function $do$h(client, id, api_version, options) {
+  async function $do$m(client, environment, path, x_goog_upload_command, x_goog_upload_header_content_length, x_goog_upload_header_content_type, x_goog_upload_protocol, api_version, extract, overwrite, options) {
+    var _a3, _b, _c;
+    const input = {
+      environment,
+      path,
+      "X-Goog-Upload-Command": x_goog_upload_command,
+      "X-Goog-Upload-Header-Content-Length": x_goog_upload_header_content_length,
+      "X-Goog-Upload-Header-Content-Type": x_goog_upload_header_content_type,
+      "X-Goog-Upload-Protocol": x_goog_upload_protocol,
+      api_version,
+      extract,
+      overwrite
+    };
+    const payload = input;
+    const body = null;
+    const pathParams = {
+      api_version: encodeSimple("api_version", (_a3 = payload.api_version) !== null && _a3 !== void 0 ? _a3 : client._options.api_version, { explode: false, charEncoding: "percent" }),
+      environment: encodeSimple("environment", payload.environment, {
+        explode: false,
+        charEncoding: "percent"
+      }),
+      path: encodeSimple("path", payload.path, {
+        explode: false,
+        charEncoding: "percentExceptReserved"
+      })
+    };
+    const path$ = pathToFunc("/upload/{api_version}/environments/{environment}/files/{path}")(pathParams);
+    const query = encodeFormQuery({
+      "extract": payload.extract,
+      "overwrite": payload.overwrite
+    });
+    const headers = new Headers(compactMap({
+      Accept: "*/*",
+      "X-Goog-Upload-Command": encodeSimple("X-Goog-Upload-Command", payload["X-Goog-Upload-Command"], { explode: false, charEncoding: "none" }),
+      "X-Goog-Upload-Header-Content-Length": encodeSimple("X-Goog-Upload-Header-Content-Length", payload["X-Goog-Upload-Header-Content-Length"], { explode: false, charEncoding: "none" }),
+      "X-Goog-Upload-Header-Content-Type": encodeSimple("X-Goog-Upload-Header-Content-Type", payload["X-Goog-Upload-Header-Content-Type"], { explode: false, charEncoding: "none" }),
+      "X-Goog-Upload-Protocol": encodeSimple("X-Goog-Upload-Protocol", payload["X-Goog-Upload-Protocol"], { explode: false, charEncoding: "none" })
+    }));
+    const securityInput = await extractSecurity(client._options.security);
+    const requestSecurity = resolveGlobalSecurity(securityInput);
+    const context = {
+      options: client._options,
+      base_url: (_c = (_b = options === null || options === void 0 ? void 0 : options.server_url) !== null && _b !== void 0 ? _b : client._baseURL) !== null && _c !== void 0 ? _c : "",
+      operation_id: "StartEnvironmentFileUpload",
+      o_auth2_scopes: null,
+      resolved_security: requestSecurity,
+      security_source: client._options.security,
+      retry_config: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retry_config || {
+        strategy: "attempt-count-backoff",
+        backoff: {
+          initialInterval: 500,
+          maxInterval: 8e3,
+          exponent: 2,
+          maxElapsedTime: 3e4
+        },
+        retryConnectionErrors: true,
+        maxRetries: 4
+      },
+      retry_codes: (options === null || options === void 0 ? void 0 : options.retry_codes) || ["408", "409", "429", "5XX"]
+    };
+    const requestRes = client._createRequest(context, {
+      security: requestSecurity,
+      method: "PUT",
+      baseURL: options === null || options === void 0 ? void 0 : options.server_url,
+      path: path$,
+      headers,
+      query,
+      body,
+      userAgent: client._options.user_agent,
+      timeout_ms: (options === null || options === void 0 ? void 0 : options.timeout_ms) || client._options.timeout_ms || -1
+    }, options);
+    if (!requestRes.ok) {
+      return [requestRes, { status: "invalid" }];
+    }
+    const req = requestRes.value;
+    const doResult = await client._do(req, {
+      context,
+      isErrorStatusCode: (statusCode) => matchStatusCode({ status: statusCode }, ["4XX", "5XX"]),
+      retryConfig: context.retry_config,
+      retryCodes: context.retry_codes
+    });
+    if (!doResult.ok) {
+      return [doResult, { status: "request-error", request: req }];
+    }
+    const response = doResult.value;
+    const responseFields = {
+      httpMeta: { response, request: req }
+    };
+    const [result] = await match(nil(200, {
+      hdrs: true
+    }), fail("4XX"), fail("5XX"))(response, req, { extraFields: responseFields });
+    if (!result.ok) {
+      return [result, { status: "complete", request: req, response }];
+    }
+    return [result, { status: "complete", request: req, response }];
+  }
+  function interactionsCancel(client, id, api_version, options) {
+    return new APIPromise($do$l(client, id, api_version, options));
+  }
+  async function $do$l(client, id, api_version, options) {
     var _a3, _b, _c;
     const input = {
       id,
@@ -24312,12 +24725,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const body = null;
     const pathParams = {
       api_version: encodeSimple("api_version", (_a3 = payload.api_version) !== null && _a3 !== void 0 ? _a3 : client._options.api_version, { explode: false, charEncoding: "percent" }),
-      id: encodeSimple("id", payload.id, {
+      interactionsId: encodeSimple("interactionsId", payload.id, {
         explode: false,
         charEncoding: "percent"
       })
     };
-    const path = pathToFunc("/{api_version}/interactions/{id}/cancel")(pathParams);
+    const path = pathToFunc("/{api_version}/interactions/{interactionsId}/cancel")(pathParams);
     const headers = new Headers(compactMap({
       Accept: "application/json"
     }));
@@ -24377,9 +24790,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return [result, { status: "complete", request: req, response }];
   }
   function interactionsCreate(client, body, api_version, options) {
-    return new APIPromise($do$g(client, body, api_version, options));
+    return new APIPromise($do$k(client, body, api_version, options));
   }
-  async function $do$g(client, body, api_version, options) {
+  async function $do$k(client, body, api_version, options) {
     var _a3, _b, _c, _d;
     const input = {
       body,
@@ -24454,9 +24867,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return [result, { status: "complete", request: req, response }];
   }
   function interactionsDelete(client, id, api_version, options) {
-    return new APIPromise($do$f(client, id, api_version, options));
+    return new APIPromise($do$j(client, id, api_version, options));
   }
-  async function $do$f(client, id, api_version, options) {
+  async function $do$j(client, id, api_version, options) {
     var _a3, _b, _c;
     const input = {
       id,
@@ -24466,12 +24879,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const body = null;
     const pathParams = {
       api_version: encodeSimple("api_version", (_a3 = payload.api_version) !== null && _a3 !== void 0 ? _a3 : client._options.api_version, { explode: false, charEncoding: "percent" }),
-      id: encodeSimple("id", payload.id, {
+      interactionsId: encodeSimple("interactionsId", payload.id, {
         explode: false,
         charEncoding: "percent"
       })
     };
-    const path = pathToFunc("/{api_version}/interactions/{id}")(pathParams);
+    const path = pathToFunc("/{api_version}/interactions/{interactionsId}")(pathParams);
     const headers = new Headers(compactMap({
       Accept: "application/json"
     }));
@@ -24531,9 +24944,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return [result, { status: "complete", request: req, response }];
   }
   function interactionsGet(client, id, api_version, include_input, last_event_id, stream, options) {
-    return new APIPromise($do$e(client, id, api_version, include_input, last_event_id, stream, options));
+    return new APIPromise($do$i(client, id, api_version, include_input, last_event_id, stream, options));
   }
-  async function $do$e(client, id, api_version, include_input, last_event_id, stream, options) {
+  async function $do$i(client, id, api_version, include_input, last_event_id, stream, options) {
     var _a3, _b, _c;
     const input = {
       id,
@@ -24546,12 +24959,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const body = null;
     const pathParams = {
       api_version: encodeSimple("api_version", (_a3 = payload.api_version) !== null && _a3 !== void 0 ? _a3 : client._options.api_version, { explode: false, charEncoding: "percent" }),
-      id: encodeSimple("id", payload.id, {
+      interactionsId: encodeSimple("interactionsId", payload.id, {
         explode: false,
         charEncoding: "percent"
       })
     };
-    const path = pathToFunc("/{api_version}/interactions/{id}")(pathParams);
+    const path = pathToFunc("/{api_version}/interactions/{interactionsId}")(pathParams);
     const query = encodeFormQuery({
       "include_input": payload.include_input,
       "last_event_id": payload.last_event_id,
@@ -24620,9 +25033,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return [result, { status: "complete", request: req, response }];
   }
   function triggersCreate(client, body, api_version, options) {
-    return new APIPromise($do$d(client, body, api_version, options));
+    return new APIPromise($do$h(client, body, api_version, options));
   }
-  async function $do$d(client, body, api_version, options) {
+  async function $do$h(client, body, api_version, options) {
     var _a3, _b, _c;
     const input = {
       body,
@@ -24684,16 +25097,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return [doResult, { status: "request-error", request: req }];
     }
     const response = doResult.value;
-    const [result] = await match(json(200), fail("4XX"), fail("5XX"))(response, req);
+    const [result] = await match(fail("4XX"), fail("5XX"), json("default"))(response, req);
     if (!result.ok) {
       return [result, { status: "complete", request: req, response }];
     }
     return [result, { status: "complete", request: req, response }];
   }
   function triggersDelete(client, id, api_version, options) {
-    return new APIPromise($do$c(client, id, api_version, options));
+    return new APIPromise($do$g(client, id, api_version, options));
   }
-  async function $do$c(client, id, api_version, options) {
+  async function $do$g(client, id, api_version, options) {
     var _a3, _b, _c;
     const input = {
       id,
@@ -24758,16 +25171,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return [doResult, { status: "request-error", request: req }];
     }
     const response = doResult.value;
-    const [result] = await match(json(200), fail("4XX"), fail("5XX"))(response, req);
+    const [result] = await match(fail("4XX"), fail("5XX"), json("default"))(response, req);
     if (!result.ok) {
       return [result, { status: "complete", request: req, response }];
     }
     return [result, { status: "complete", request: req, response }];
   }
   function triggersGet(client, id, api_version, options) {
-    return new APIPromise($do$b(client, id, api_version, options));
+    return new APIPromise($do$f(client, id, api_version, options));
   }
-  async function $do$b(client, id, api_version, options) {
+  async function $do$f(client, id, api_version, options) {
     var _a3, _b, _c;
     const input = {
       id,
@@ -24832,16 +25245,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return [doResult, { status: "request-error", request: req }];
     }
     const response = doResult.value;
-    const [result] = await match(json(200), fail("4XX"), fail("5XX"))(response, req);
+    const [result] = await match(fail("4XX"), fail("5XX"), json("default"))(response, req);
     if (!result.ok) {
       return [result, { status: "complete", request: req, response }];
     }
     return [result, { status: "complete", request: req, response }];
   }
   function triggersListExecutions(client, trigger_id, api_version, page_size, page_token, options) {
-    return new APIPromise($do$a(client, trigger_id, api_version, page_size, page_token, options));
+    return new APIPromise($do$e(client, trigger_id, api_version, page_size, page_token, options));
   }
-  async function $do$a(client, trigger_id, api_version, page_size, page_token, options) {
+  async function $do$e(client, trigger_id, api_version, page_size, page_token, options) {
     var _a3, _b, _c;
     const input = {
       trigger_id,
@@ -24853,12 +25266,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const body = null;
     const pathParams = {
       api_version: encodeSimple("api_version", (_a3 = payload.api_version) !== null && _a3 !== void 0 ? _a3 : client._options.api_version, { explode: false, charEncoding: "percent" }),
-      trigger_id: encodeSimple("trigger_id", payload.trigger_id, {
+      triggerId: encodeSimple("triggerId", payload.trigger_id, {
         explode: false,
         charEncoding: "percent"
       })
     };
-    const path = pathToFunc("/{api_version}/triggers/{trigger_id}/executions")(pathParams);
+    const path = pathToFunc("/{api_version}/triggers/{triggerId}/executions")(pathParams);
     const query = encodeFormQuery({
       "page_size": payload.page_size,
       "page_token": payload.page_token
@@ -24913,16 +25326,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return [doResult, { status: "request-error", request: req }];
     }
     const response = doResult.value;
-    const [result] = await match(json(200), fail("4XX"), fail("5XX"))(response, req);
+    const [result] = await match(fail("4XX"), fail("5XX"), json("default"))(response, req);
     if (!result.ok) {
       return [result, { status: "complete", request: req, response }];
     }
     return [result, { status: "complete", request: req, response }];
   }
   function triggersList(client, api_version, filter, page_size, page_token, options) {
-    return new APIPromise($do$9(client, api_version, filter, page_size, page_token, options));
+    return new APIPromise($do$d(client, api_version, filter, page_size, page_token, options));
   }
-  async function $do$9(client, api_version, filter, page_size, page_token, options) {
+  async function $do$d(client, api_version, filter, page_size, page_token, options) {
     var _a3, _b, _c;
     const input = {
       api_version,
@@ -24991,16 +25404,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return [doResult, { status: "request-error", request: req }];
     }
     const response = doResult.value;
-    const [result] = await match(json(200), fail("4XX"), fail("5XX"))(response, req);
+    const [result] = await match(fail("4XX"), fail("5XX"), json("default"))(response, req);
     if (!result.ok) {
       return [result, { status: "complete", request: req, response }];
     }
     return [result, { status: "complete", request: req, response }];
   }
   function triggersRun(client, trigger_id, api_version, options) {
-    return new APIPromise($do$8(client, trigger_id, api_version, options));
+    return new APIPromise($do$c(client, trigger_id, api_version, options));
   }
-  async function $do$8(client, trigger_id, api_version, options) {
+  async function $do$c(client, trigger_id, api_version, options) {
     var _a3, _b, _c;
     const input = {
       trigger_id,
@@ -25010,12 +25423,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const body = null;
     const pathParams = {
       api_version: encodeSimple("api_version", (_a3 = payload.api_version) !== null && _a3 !== void 0 ? _a3 : client._options.api_version, { explode: false, charEncoding: "percent" }),
-      trigger_id: encodeSimple("trigger_id", payload.trigger_id, {
+      triggerId: encodeSimple("triggerId", payload.trigger_id, {
         explode: false,
         charEncoding: "percent"
       })
     };
-    const path = pathToFunc("/{api_version}/triggers/{trigger_id}/executions")(pathParams);
+    const path = pathToFunc("/{api_version}/triggers/{triggerId}/executions")(pathParams);
     const headers = new Headers(compactMap({
       Accept: "application/json"
     }));
@@ -25065,16 +25478,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return [doResult, { status: "request-error", request: req }];
     }
     const response = doResult.value;
-    const [result] = await match(json(200), fail("4XX"), fail("5XX"))(response, req);
+    const [result] = await match(fail("4XX"), fail("5XX"), json("default"))(response, req);
     if (!result.ok) {
       return [result, { status: "complete", request: req, response }];
     }
     return [result, { status: "complete", request: req, response }];
   }
   function triggersUpdate(client, id, body, api_version, options) {
-    return new APIPromise($do$7(client, id, body, api_version, options));
+    return new APIPromise($do$b(client, id, body, api_version, options));
   }
-  async function $do$7(client, id, body, api_version, options) {
+  async function $do$b(client, id, body, api_version, options) {
     var _a3, _b, _c;
     const input = {
       id,
@@ -25141,7 +25554,320 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return [doResult, { status: "request-error", request: req }];
     }
     const response = doResult.value;
-    const [result] = await match(json(200), fail("4XX"), fail("5XX"))(response, req);
+    const [result] = await match(fail("4XX"), fail("5XX"), json("default"))(response, req);
+    if (!result.ok) {
+      return [result, { status: "complete", request: req, response }];
+    }
+    return [result, { status: "complete", request: req, response }];
+  }
+  function voicesCreate(client, body, api_version, options) {
+    return new APIPromise($do$a(client, body, api_version, options));
+  }
+  async function $do$a(client, body, api_version, options) {
+    var _a3, _b, _c;
+    const input = {
+      body,
+      api_version
+    };
+    const payload = input;
+    const body$ = encodeJSON("body", payload.body, { explode: true });
+    const pathParams = {
+      api_version: encodeSimple("api_version", (_a3 = payload.api_version) !== null && _a3 !== void 0 ? _a3 : client._options.api_version, { explode: false, charEncoding: "percent" })
+    };
+    const path = pathToFunc("/{api_version}/voices")(pathParams);
+    const headers = new Headers(compactMap({
+      "Content-Type": "application/json",
+      Accept: "application/json"
+    }));
+    const securityInput = await extractSecurity(client._options.security);
+    const requestSecurity = resolveGlobalSecurity(securityInput);
+    const context = {
+      options: client._options,
+      base_url: (_c = (_b = options === null || options === void 0 ? void 0 : options.server_url) !== null && _b !== void 0 ? _b : client._baseURL) !== null && _c !== void 0 ? _c : "",
+      operation_id: "CreateVoice",
+      o_auth2_scopes: null,
+      resolved_security: requestSecurity,
+      security_source: client._options.security,
+      retry_config: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retry_config || {
+        strategy: "attempt-count-backoff",
+        backoff: {
+          initialInterval: 500,
+          maxInterval: 8e3,
+          exponent: 2,
+          maxElapsedTime: 3e4
+        },
+        retryConnectionErrors: true,
+        maxRetries: 4
+      },
+      retry_codes: (options === null || options === void 0 ? void 0 : options.retry_codes) || ["408", "409", "429", "5XX"]
+    };
+    const requestRes = client._createRequest(context, {
+      security: requestSecurity,
+      method: "POST",
+      baseURL: options === null || options === void 0 ? void 0 : options.server_url,
+      path,
+      headers,
+      body: body$,
+      userAgent: client._options.user_agent,
+      timeout_ms: (options === null || options === void 0 ? void 0 : options.timeout_ms) || client._options.timeout_ms || -1
+    }, options);
+    if (!requestRes.ok) {
+      return [requestRes, { status: "invalid" }];
+    }
+    const req = requestRes.value;
+    const doResult = await client._do(req, {
+      context,
+      isErrorStatusCode: (statusCode) => matchStatusCode({ status: statusCode }, ["4XX", "5XX"]),
+      retryConfig: context.retry_config,
+      retryCodes: context.retry_codes
+    });
+    if (!doResult.ok) {
+      return [doResult, { status: "request-error", request: req }];
+    }
+    const response = doResult.value;
+    const [result] = await match(fail("4XX"), fail("5XX"), json("default"))(response, req);
+    if (!result.ok) {
+      return [result, { status: "complete", request: req, response }];
+    }
+    return [result, { status: "complete", request: req, response }];
+  }
+  function voicesDelete(client, id, api_version, options) {
+    return new APIPromise($do$9(client, id, api_version, options));
+  }
+  async function $do$9(client, id, api_version, options) {
+    var _a3, _b, _c;
+    const input = {
+      id,
+      api_version
+    };
+    const payload = input;
+    const body = null;
+    const pathParams = {
+      api_version: encodeSimple("api_version", (_a3 = payload.api_version) !== null && _a3 !== void 0 ? _a3 : client._options.api_version, { explode: false, charEncoding: "percent" }),
+      voicesId: encodeSimple("voicesId", payload.id, {
+        explode: false,
+        charEncoding: "percent"
+      })
+    };
+    const path = pathToFunc("/{api_version}/voices/{voicesId}")(pathParams);
+    const headers = new Headers(compactMap({
+      Accept: "application/json"
+    }));
+    const securityInput = await extractSecurity(client._options.security);
+    const requestSecurity = resolveGlobalSecurity(securityInput);
+    const context = {
+      options: client._options,
+      base_url: (_c = (_b = options === null || options === void 0 ? void 0 : options.server_url) !== null && _b !== void 0 ? _b : client._baseURL) !== null && _c !== void 0 ? _c : "",
+      operation_id: "DeleteVoice",
+      o_auth2_scopes: null,
+      resolved_security: requestSecurity,
+      security_source: client._options.security,
+      retry_config: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retry_config || {
+        strategy: "attempt-count-backoff",
+        backoff: {
+          initialInterval: 500,
+          maxInterval: 8e3,
+          exponent: 2,
+          maxElapsedTime: 3e4
+        },
+        retryConnectionErrors: true,
+        maxRetries: 4
+      },
+      retry_codes: (options === null || options === void 0 ? void 0 : options.retry_codes) || ["408", "409", "429", "5XX"]
+    };
+    const requestRes = client._createRequest(context, {
+      security: requestSecurity,
+      method: "DELETE",
+      baseURL: options === null || options === void 0 ? void 0 : options.server_url,
+      path,
+      headers,
+      body,
+      userAgent: client._options.user_agent,
+      timeout_ms: (options === null || options === void 0 ? void 0 : options.timeout_ms) || client._options.timeout_ms || -1
+    }, options);
+    if (!requestRes.ok) {
+      return [requestRes, { status: "invalid" }];
+    }
+    const req = requestRes.value;
+    const doResult = await client._do(req, {
+      context,
+      isErrorStatusCode: (statusCode) => matchStatusCode({ status: statusCode }, ["4XX", "5XX"]),
+      retryConfig: context.retry_config,
+      retryCodes: context.retry_codes
+    });
+    if (!doResult.ok) {
+      return [doResult, { status: "request-error", request: req }];
+    }
+    const response = doResult.value;
+    const [result] = await match(fail("4XX"), fail("5XX"), json("default"))(response, req);
+    if (!result.ok) {
+      return [result, { status: "complete", request: req, response }];
+    }
+    return [result, { status: "complete", request: req, response }];
+  }
+  function voicesGet(client, id, api_version, options) {
+    return new APIPromise($do$8(client, id, api_version, options));
+  }
+  async function $do$8(client, id, api_version, options) {
+    var _a3, _b, _c;
+    const input = {
+      id,
+      api_version
+    };
+    const payload = input;
+    const body = null;
+    const pathParams = {
+      api_version: encodeSimple("api_version", (_a3 = payload.api_version) !== null && _a3 !== void 0 ? _a3 : client._options.api_version, { explode: false, charEncoding: "percent" }),
+      voicesId: encodeSimple("voicesId", payload.id, {
+        explode: false,
+        charEncoding: "percent"
+      })
+    };
+    const path = pathToFunc("/{api_version}/voices/{voicesId}")(pathParams);
+    const headers = new Headers(compactMap({
+      Accept: "application/json"
+    }));
+    const securityInput = await extractSecurity(client._options.security);
+    const requestSecurity = resolveGlobalSecurity(securityInput);
+    const context = {
+      options: client._options,
+      base_url: (_c = (_b = options === null || options === void 0 ? void 0 : options.server_url) !== null && _b !== void 0 ? _b : client._baseURL) !== null && _c !== void 0 ? _c : "",
+      operation_id: "GetVoice",
+      o_auth2_scopes: null,
+      resolved_security: requestSecurity,
+      security_source: client._options.security,
+      retry_config: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retry_config || {
+        strategy: "attempt-count-backoff",
+        backoff: {
+          initialInterval: 500,
+          maxInterval: 8e3,
+          exponent: 2,
+          maxElapsedTime: 3e4
+        },
+        retryConnectionErrors: true,
+        maxRetries: 4
+      },
+      retry_codes: (options === null || options === void 0 ? void 0 : options.retry_codes) || ["408", "409", "429", "5XX"]
+    };
+    const requestRes = client._createRequest(context, {
+      security: requestSecurity,
+      method: "GET",
+      baseURL: options === null || options === void 0 ? void 0 : options.server_url,
+      path,
+      headers,
+      body,
+      userAgent: client._options.user_agent,
+      timeout_ms: (options === null || options === void 0 ? void 0 : options.timeout_ms) || client._options.timeout_ms || -1
+    }, options);
+    if (!requestRes.ok) {
+      return [requestRes, { status: "invalid" }];
+    }
+    const req = requestRes.value;
+    const doResult = await client._do(req, {
+      context,
+      isErrorStatusCode: (statusCode) => matchStatusCode({ status: statusCode }, ["4XX", "5XX"]),
+      retryConfig: context.retry_config,
+      retryCodes: context.retry_codes
+    });
+    if (!doResult.ok) {
+      return [doResult, { status: "request-error", request: req }];
+    }
+    const response = doResult.value;
+    const [result] = await match(fail("4XX"), fail("5XX"), json("default"))(response, req);
+    if (!result.ok) {
+      return [result, { status: "complete", request: req, response }];
+    }
+    return [result, { status: "complete", request: req, response }];
+  }
+  function voicesList(client, api_version, accent, contexts, gender, language_code, page_size, page_token, persona, pitch, region_code, search, type, options) {
+    return new APIPromise($do$7(client, api_version, accent, contexts, gender, language_code, page_size, page_token, persona, pitch, region_code, search, type, options));
+  }
+  async function $do$7(client, api_version, accent, contexts, gender, language_code, page_size, page_token, persona, pitch, region_code, search, type, options) {
+    var _a3, _b, _c;
+    const input = {
+      api_version,
+      accent,
+      contexts,
+      gender,
+      language_code,
+      page_size,
+      page_token,
+      persona,
+      pitch,
+      region_code,
+      search,
+      type
+    };
+    const payload = input;
+    const body = null;
+    const pathParams = {
+      api_version: encodeSimple("api_version", (_a3 = payload === null || payload === void 0 ? void 0 : payload.api_version) !== null && _a3 !== void 0 ? _a3 : client._options.api_version, { explode: false, charEncoding: "percent" })
+    };
+    const path = pathToFunc("/{api_version}/voices")(pathParams);
+    const query = encodeFormQuery({
+      "accent": payload === null || payload === void 0 ? void 0 : payload.accent,
+      "context": payload === null || payload === void 0 ? void 0 : payload.contexts,
+      "gender": payload === null || payload === void 0 ? void 0 : payload.gender,
+      "language_code": payload === null || payload === void 0 ? void 0 : payload.language_code,
+      "page_size": payload === null || payload === void 0 ? void 0 : payload.page_size,
+      "page_token": payload === null || payload === void 0 ? void 0 : payload.page_token,
+      "persona": payload === null || payload === void 0 ? void 0 : payload.persona,
+      "pitch": payload === null || payload === void 0 ? void 0 : payload.pitch,
+      "region_code": payload === null || payload === void 0 ? void 0 : payload.region_code,
+      "search": payload === null || payload === void 0 ? void 0 : payload.search,
+      "type": payload === null || payload === void 0 ? void 0 : payload.type
+    });
+    const headers = new Headers(compactMap({
+      Accept: "application/json"
+    }));
+    const securityInput = await extractSecurity(client._options.security);
+    const requestSecurity = resolveGlobalSecurity(securityInput);
+    const context = {
+      options: client._options,
+      base_url: (_c = (_b = options === null || options === void 0 ? void 0 : options.server_url) !== null && _b !== void 0 ? _b : client._baseURL) !== null && _c !== void 0 ? _c : "",
+      operation_id: "ListVoices",
+      o_auth2_scopes: null,
+      resolved_security: requestSecurity,
+      security_source: client._options.security,
+      retry_config: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retry_config || {
+        strategy: "attempt-count-backoff",
+        backoff: {
+          initialInterval: 500,
+          maxInterval: 8e3,
+          exponent: 2,
+          maxElapsedTime: 3e4
+        },
+        retryConnectionErrors: true,
+        maxRetries: 4
+      },
+      retry_codes: (options === null || options === void 0 ? void 0 : options.retry_codes) || ["408", "409", "429", "5XX"]
+    };
+    const requestRes = client._createRequest(context, {
+      security: requestSecurity,
+      method: "GET",
+      baseURL: options === null || options === void 0 ? void 0 : options.server_url,
+      path,
+      headers,
+      query,
+      body,
+      userAgent: client._options.user_agent,
+      timeout_ms: (options === null || options === void 0 ? void 0 : options.timeout_ms) || client._options.timeout_ms || -1
+    }, options);
+    if (!requestRes.ok) {
+      return [requestRes, { status: "invalid" }];
+    }
+    const req = requestRes.value;
+    const doResult = await client._do(req, {
+      context,
+      isErrorStatusCode: (statusCode) => matchStatusCode({ status: statusCode }, ["4XX", "5XX"]),
+      retryConfig: context.retry_config,
+      retryCodes: context.retry_codes
+    });
+    if (!doResult.ok) {
+      return [doResult, { status: "request-error", request: req }];
+    }
+    const response = doResult.value;
+    const [result] = await match(fail("4XX"), fail("5XX"), json("default"))(response, req);
     if (!result.ok) {
       return [result, { status: "complete", request: req, response }];
     }
@@ -25692,11 +26418,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return apiVersion;
   }
   function buildGoogleGenAIClient(parentClient, options = {}) {
-    var _a3, _b, _c, _d, _e;
-    const sdk = new GoogleGenAI$1(Object.assign(Object.assign({}, options), { api_version: (_a3 = options.api_version) !== null && _a3 !== void 0 ? _a3 : getGoogleGenAIAPIVersion(parentClient), security: (_b = options.security) !== null && _b !== void 0 ? _b : new GoogleGenAISecurityProvider({
-      defaultHeaders: Object.assign(Object.assign({}, (_c = parentClient.getDefaultHeaders) === null || _c === void 0 ? void 0 : _c.call(parentClient)), (_d = parentClient.getHeaders) === null || _d === void 0 ? void 0 : _d.call(parentClient)),
+    var _a3, _b, _c, _d, _e, _f, _g;
+    const fetchFn = options.http_client ? void 0 : (_a3 = parentClient.getFetch) === null || _a3 === void 0 ? void 0 : _a3.call(parentClient);
+    const httpClient = (_b = options.http_client) !== null && _b !== void 0 ? _b : fetchFn ? new HTTPClient({ fetcher: fetchFn }) : void 0;
+    const sdk = new GoogleGenAI$1(Object.assign(Object.assign({}, options), { http_client: httpClient, api_version: (_c = options.api_version) !== null && _c !== void 0 ? _c : getGoogleGenAIAPIVersion(parentClient), security: (_d = options.security) !== null && _d !== void 0 ? _d : new GoogleGenAISecurityProvider({
+      defaultHeaders: Object.assign(Object.assign({}, (_e = parentClient.getDefaultHeaders) === null || _e === void 0 ? void 0 : _e.call(parentClient)), (_f = parentClient.getHeaders) === null || _f === void 0 ? void 0 : _f.call(parentClient)),
       getAuthHeaders: (url) => parentClient.getAuthHeaders(url)
-    }), server_url: (_e = options.server_url) !== null && _e !== void 0 ? _e : getGoogleGenAIServerURL(parentClient) }));
+    }), server_url: (_g = options.server_url) !== null && _g !== void 0 ? _g : getGoogleGenAIServerURL(parentClient) }));
     return sdk;
   }
   function trimSlashes(value) {
@@ -25918,6 +26646,33 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   function normalizeDateLike(value) {
     return value instanceof Date ? value.toISOString() : value;
   }
+  function inferMimeType(filePath) {
+    const ext = filePath.slice(filePath.lastIndexOf(".") + 1).toLowerCase();
+    const mimeTypes = {
+      txt: "text/plain",
+      json: "application/json",
+      js: "text/javascript",
+      mjs: "text/javascript",
+      ts: "text/plain",
+      py: "text/x-python",
+      html: "text/html",
+      htm: "text/html",
+      css: "text/css",
+      csv: "text/csv",
+      xml: "application/xml",
+      png: "image/png",
+      jpg: "image/jpeg",
+      jpeg: "image/jpeg",
+      gif: "image/gif",
+      webp: "image/webp",
+      svg: "image/svg+xml",
+      pdf: "application/pdf",
+      zip: "application/zip",
+      tar: "application/x-tar",
+      gz: "application/gzip"
+    };
+    return mimeTypes[ext];
+  }
   function cancelTuningJobParametersToMldev(fromObject, _rootObject) {
     const toObject = {};
     const fromName = getValueByPath(fromObject, ["name"]);
@@ -25951,6 +26706,29 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ]);
     if (fromSdkHttpResponse != null) {
       setValueByPath(toObject, ["sdkHttpResponse"], fromSdkHttpResponse);
+    }
+    return toObject;
+  }
+  function computerUseToVertex(fromObject, _rootObject) {
+    const toObject = {};
+    const fromEnablePromptInjectionDetection = getValueByPath(fromObject, [
+      "enablePromptInjectionDetection"
+    ]);
+    if (fromEnablePromptInjectionDetection != null) {
+      setValueByPath(toObject, ["enablePromptInjectionDetection"], fromEnablePromptInjectionDetection);
+    }
+    const fromEnvironment = getValueByPath(fromObject, ["environment"]);
+    if (fromEnvironment != null) {
+      setValueByPath(toObject, ["environment"], fromEnvironment);
+    }
+    const fromExcludedPredefinedFunctions = getValueByPath(fromObject, [
+      "excludedPredefinedFunctions"
+    ]);
+    if (fromExcludedPredefinedFunctions != null) {
+      setValueByPath(toObject, ["excludedPredefinedFunctions"], fromExcludedPredefinedFunctions);
+    }
+    if (getValueByPath(fromObject, ["disabledSafetyPolicies"]) !== void 0) {
+      throw new Error("disabledSafetyPolicies parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
     }
     return toObject;
   }
@@ -26701,6 +27479,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (fromTopP != null) {
       setValueByPath(toObject, ["topP"], fromTopP);
     }
+    const fromTranslationConfig = getValueByPath(fromObject, [
+      "translationConfig"
+    ]);
+    if (fromTranslationConfig != null) {
+      setValueByPath(toObject, ["translationConfig"], fromTranslationConfig);
+    }
     return toObject;
   }
   function getTuningJobParametersToMldev(fromObject, _rootObject) {
@@ -26766,6 +27550,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         });
       }
       setValueByPath(toObject, ["tuningJobs"], transformedList);
+    }
+    return toObject;
+  }
+  function mcpServerToVertex(fromObject, _rootObject) {
+    const toObject = {};
+    if (getValueByPath(fromObject, ["name"]) !== void 0) {
+      throw new Error("name parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
+    }
+    if (getValueByPath(fromObject, ["streamableHttpTransport"]) !== void 0) {
+      throw new Error("streamableHttpTransport parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
     }
     return toObject;
   }
@@ -26848,6 +27642,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (fromMediaProcessing != null) {
       setValueByPath(toObject, ["mediaProcessing"], fromMediaProcessing);
     }
+    const fromSpeechMetadata = getValueByPath(fromObject, [
+      "speechMetadata"
+    ]);
+    if (fromSpeechMetadata != null) {
+      setValueByPath(toObject, ["speechMetadata"], fromSpeechMetadata);
+    }
     return toObject;
   }
   function reinforcementTuningExampleToVertex(fromObject, rootObject) {
@@ -26871,6 +27671,93 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     ]);
     if (fromSystemInstruction != null) {
       setValueByPath(toObject, ["systemInstruction"], contentToVertex(fromSystemInstruction));
+    }
+    const fromTools = getValueByPath(fromObject, ["tools"]);
+    if (fromTools != null) {
+      let transformedList = fromTools;
+      if (Array.isArray(transformedList)) {
+        transformedList = transformedList.map((item) => {
+          return toolToVertex(item);
+        });
+      }
+      setValueByPath(toObject, ["tools"], transformedList);
+    }
+    return toObject;
+  }
+  function toolToVertex(fromObject, rootObject) {
+    const toObject = {};
+    const fromRetrieval = getValueByPath(fromObject, ["retrieval"]);
+    if (fromRetrieval != null) {
+      setValueByPath(toObject, ["retrieval"], fromRetrieval);
+    }
+    const fromGoogleMaps = getValueByPath(fromObject, ["googleMaps"]);
+    if (fromGoogleMaps != null) {
+      setValueByPath(toObject, ["googleMaps"], fromGoogleMaps);
+    }
+    const fromMcpServers = getValueByPath(fromObject, ["mcpServers"]);
+    if (fromMcpServers != null) {
+      let transformedList = fromMcpServers;
+      if (Array.isArray(transformedList)) {
+        transformedList = transformedList.map((item) => {
+          return mcpServerToVertex(item);
+        });
+      }
+      setValueByPath(toObject, ["mcpServers"], transformedList);
+    }
+    const fromCodeExecution = getValueByPath(fromObject, [
+      "codeExecution"
+    ]);
+    if (fromCodeExecution != null) {
+      setValueByPath(toObject, ["codeExecution"], fromCodeExecution);
+    }
+    const fromComputerUse = getValueByPath(fromObject, ["computerUse"]);
+    if (fromComputerUse != null) {
+      setValueByPath(toObject, ["computerUse"], computerUseToVertex(fromComputerUse));
+    }
+    const fromEnterpriseWebSearch = getValueByPath(fromObject, [
+      "enterpriseWebSearch"
+    ]);
+    if (fromEnterpriseWebSearch != null) {
+      setValueByPath(toObject, ["enterpriseWebSearch"], fromEnterpriseWebSearch);
+    }
+    const fromExaAiSearch = getValueByPath(fromObject, ["exaAiSearch"]);
+    if (fromExaAiSearch != null) {
+      setValueByPath(toObject, ["exaAiSearch"], fromExaAiSearch);
+    }
+    const fromFunctionDeclarations = getValueByPath(fromObject, [
+      "functionDeclarations"
+    ]);
+    if (fromFunctionDeclarations != null) {
+      let transformedList = fromFunctionDeclarations;
+      if (Array.isArray(transformedList)) {
+        transformedList = transformedList.map((item) => {
+          return item;
+        });
+      }
+      setValueByPath(toObject, ["functionDeclarations"], transformedList);
+    }
+    const fromGoogleSearch = getValueByPath(fromObject, ["googleSearch"]);
+    if (fromGoogleSearch != null) {
+      setValueByPath(toObject, ["googleSearch"], fromGoogleSearch);
+    }
+    const fromGoogleSearchRetrieval = getValueByPath(fromObject, [
+      "googleSearchRetrieval"
+    ]);
+    if (fromGoogleSearchRetrieval != null) {
+      setValueByPath(toObject, ["googleSearchRetrieval"], fromGoogleSearchRetrieval);
+    }
+    const fromParallelAiSearch = getValueByPath(fromObject, [
+      "parallelAiSearch"
+    ]);
+    if (fromParallelAiSearch != null) {
+      setValueByPath(toObject, ["parallelAiSearch"], fromParallelAiSearch);
+    }
+    const fromUrlContext = getValueByPath(fromObject, ["urlContext"]);
+    if (fromUrlContext != null) {
+      setValueByPath(toObject, ["urlContext"], fromUrlContext);
+    }
+    if (getValueByPath(fromObject, ["fileSearch"]) !== void 0) {
+      throw new Error("fileSearch parameter is only supported in Gemini Developer API mode, not in Gemini Enterprise Agent Platform mode.");
     }
     return toObject;
   }
@@ -27352,7 +28239,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       let retryCount = 0;
       let currentDelayMs = INITIAL_RETRY_DELAY_MS;
       while (retryCount < MAX_RETRY_COUNT) {
-        const mergedHeaders = Object.assign(Object.assign({}, (httpOptions === null || httpOptions === void 0 ? void 0 : httpOptions.headers) || {}), { "X-Goog-Upload-Command": uploadCommand, "X-Goog-Upload-Offset": String(offset), "Content-Length": String(chunkSize) });
+        const mergedHeaders = Object.assign(Object.assign({}, (httpOptions === null || httpOptions === void 0 ? void 0 : httpOptions.headers) || {}), { "X-Goog-Upload-Command": uploadCommand, "X-Goog-Upload-Offset": String(offset) });
         response = await apiClient.request({
           path: "",
           body: chunk,
@@ -27383,7 +28270,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   function sleep(ms) {
     return new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
   }
-  var import_p_retry, _defaultBaseGeminiUrl, _defaultBaseVertexUrl, BaseModule, Outcome, Language, FunctionResponseScheduling, Type, AuthType, HttpElementLocation, ApiSpec, Environment, SafetyPolicy, PhishBlockThreshold, Behavior, DynamicRetrievalConfigMode, ThinkingLevel, PersonGeneration, ProminentPeople, HarmCategory, HarmBlockMethod, HarmBlockThreshold, FunctionCallingConfigMode, FinishReason, HarmProbability, HarmSeverity, UrlRetrievalStatus, BlockedReason, TrafficType, MediaModality, ModelStage, MediaResolution, Modality, Delivery, AspectRatio, ImageSize, TuningMode, AdapterSize, ResponseParseType, MatchOperation, ReinforcementTuningThinkingLevel, JobState, TuningJobState, AggregationMetric, PairwiseChoice, VideoOrientation, TuningSpeed, TuningTask, DocumentState, ServiceTier, MediaProcessing, PartMediaResolutionLevel, ToolType, ResourceScope, FeatureSelectionPreference, EmbeddingApiType, SafetyFilterLevel, ImagePromptLanguage, MaskReferenceMode, ControlReferenceType, SubjectReferenceType, EditMode, SegmentMode, VideoGenerationReferenceType, VideoGenerationMaskMode, VideoCompressionQuality, ImageResizeMode, TuningMethod, FileState, FileSource, TurnCompleteReason, InteractionStatus, VadSignalType, VoiceActivityType, StartSensitivity, EndSensitivity, ActivityHandling, TurnCoverage, AudioTranscriptionConfigMode, Scale, MusicGenerationMode, LiveMusicPlaybackControl, ToolResponse, FunctionResponseFileData, FunctionResponseBlob, FunctionResponsePart, FunctionResponse, HttpResponse, GenerateContentResponsePromptFeedback, GenerateContentResponseUsageMetadata, GenerateContentResponse, EmbedContentResponse, GenerateImagesResponse, EditImageResponse, UpscaleImageResponse, RecontextImageResponse, SegmentImageResponse, ListModelsResponse, DeleteModelResponse, AudioResponseFormat, ImageResponseFormat, TextResponseFormat, VideoResponseFormat, ResponseFormat, CountTokensResponse, ComputeTokensResponse, GenerateVideosResponse, GenerateVideosOperation, ReinforcementTuningParseResponseConfig, ReinforcementTuningAutoraterScorerParsedResponseConversionScorer, EvaluateDatasetResponse, ListTuningJobsResponse, CancelTuningJobResponse, ValidateRewardResponse, DeleteCachedContentResponse, ListCachedContentsResponse, ListDocumentsResponse, ListFileSearchStoresResponse, UploadToFileSearchStoreResumableResponse, ImportFileResponse, ImportFileOperation, ListFilesResponse, CreateFileResponse, DeleteFileResponse, RegisterFilesResponse, InlinedResponse, SingleEmbedContentResponse, InlinedEmbedContentResponse, ListBatchJobsResponse, ReplayResponse, RawReferenceImage, MaskReferenceImage, ControlReferenceImage, StyleReferenceImage, SubjectReferenceImage, ContentReferenceImage, LiveServerMessage, LiveClientToolResponse, LiveSendToolResponseParameters, LiveMusicServerMessage, UploadToFileSearchStoreResponse, UploadToFileSearchStoreOperation, PagedItem, Pager, Batches, Caches, Chats, Chat, ApiError, Files$1, CONTENT_TYPE_HEADER, SERVER_TIMEOUT_HEADER, USER_AGENT_HEADER, GOOGLE_API_CLIENT_HEADER, SDK_VERSION, LIBRARY_LABEL, VERTEX_AI_API_DEFAULT_VERSION, GOOGLE_AI_API_DEFAULT_VERSION, MULTI_REGIONAL_LOCATIONS, DEFAULT_RETRY_ATTEMPTS, DEFAULT_RETRY_INITIAL_DELAY, DEFAULT_RETRY_MAX_DELAY, DEFAULT_RETRY_EXP_BASE, DEFAULT_RETRY_JITTER, DEFAULT_RETRY_HTTP_STATUS_CODES, ApiClient, MCP_LABEL, hasMcpToolUsageFromMcpToTool, McpCallableTool, LiveMusic, LiveMusicSession, FUNCTION_RESPONSE_REQUIRES_ID, Live, defaultLiveSendClientContentParamerters, Session2, DEFAULT_MAX_REMOTE_CALLS, Models, Operations, Tokens, Documents, FileSearchStores, envMemo, GoogleGenAISecurityProvider, GoogleGenAIAuthHook, HTTPClientError, UnexpectedClientError, InvalidRequestError, RequestAbortedError, RequestTimeoutError, ConnectionError, GoogleGenAiError, GeminiNextGenAPIClientError, APIError, APIUserAbortError, APIConnectionError, APIConnectionTimeoutError, BadRequestError, AuthenticationError, PermissionDeniedError, NotFoundError, ConflictError, UnprocessableEntityError, RateLimitError, InternalServerError, SDKHooks, hasOwn, ServerList, SDK_METADATA, encodeForm, encodeSimple, encodeFormQuery, DEFAULT_FETCHER, HTTPClient, mediaParamSeparator, codeRangeRE$1, defaultBackoff, PermanentError, TemporaryError, codeRangeRE, gt, webWorkerLike, isBrowserLike, ClientSDK, jsonLikeContentTypeRE, jsonlLikeContentTypeRE, GoogleGenAiDefaultError, Stream, CR, LF, BOUNDARIES, MAX_BOUNDARY_LEN, DEFAULT_CONTENT_TYPES, headerValRE, SecurityErrorCode, SecurityError, _a2, APIPromise, Agents, Files2, Environments, CancelInteractionByIdServerError, CancelInteractionByIdClientError, CreateInteractionServerError, CreateInteractionClientError, DeleteInteractionServerError, DeleteInteractionClientError, GetInteractionByIdServerError, GetInteractionByIdClientError, Interactions, Triggers, Webhooks, GoogleGenAI$1, LEGACY_LYRIA_MODELS, GeminiNextGenInteractions, GeminiNextGenAgents, GeminiNextGenWebhooks, GeminiNextGenTriggers, GeminiNextGenEnvironmentFiles, GeminiNextGenEnvironments, Tunings, BrowserDownloader, MAX_CHUNK_SIZE, MAX_RETRY_COUNT, INITIAL_RETRY_DELAY_MS, DELAY_MULTIPLIER, X_GOOG_UPLOAD_STATUS_HEADER_FIELD, BrowserUploader, BrowserWebSocketFactory, BrowserWebSocket, GOOGLE_API_KEY_HEADER, WebAuth, LANGUAGE_LABEL_PREFIX, GoogleGenAI2;
+  var import_p_retry, _defaultBaseGeminiUrl, _defaultBaseVertexUrl, BaseModule, MediaProcessing, Outcome, Language, FunctionResponseScheduling, Type, AuthType, HttpElementLocation, ApiSpec, Environment, SafetyPolicy, PhishBlockThreshold, Behavior, DynamicRetrievalConfigMode, ThinkingLevel, PersonGeneration, ProminentPeople, HarmCategory, HarmBlockMethod, HarmBlockThreshold, FunctionCallingConfigMode, AudioTranscriptionConfigMode, FinishReason, HarmProbability, HarmSeverity, UrlRetrievalStatus, BlockedReason, TrafficType, MediaModality, ModelStage, MediaResolution, Modality, Delivery, AspectRatio, ImageSize, TuningMode, AdapterSize, ResponseParseType, MatchOperation, ReinforcementTuningThinkingLevel, JobState, TuningJobState, AggregationMetric, PairwiseChoice, VideoOrientation, TuningSpeed, TuningTask, DocumentState, ServiceTier, PartMediaResolutionLevel, ToolType, ResourceScope, FeatureSelectionPreference, EmbeddingApiType, SafetyFilterLevel, ImagePromptLanguage, MaskReferenceMode, ControlReferenceType, SubjectReferenceType, EditMode, SegmentMode, VideoGenerationReferenceType, VideoGenerationMaskMode, VideoCompressionQuality, ImageResizeMode, TuningMethod, FileState, FileSource, TurnCompleteReason, InteractionStatus, VadSignalType, VoiceActivityType, StartSensitivity, EndSensitivity, ActivityHandling, TurnCoverage, Scale, MusicGenerationMode, LiveMusicPlaybackControl, ToolResponse, FunctionResponseFileData, FunctionResponseBlob, FunctionResponsePart, FunctionResponse, HttpResponse, GenerateContentResponsePromptFeedback, GenerateContentResponseUsageMetadata, GenerateContentResponse, EmbedContentResponse, GenerateImagesResponse, EditImageResponse, UpscaleImageResponse, RecontextImageResponse, SegmentImageResponse, ListModelsResponse, DeleteModelResponse, AudioResponseFormat, ImageResponseFormat, TextResponseFormat, VideoResponseFormat, ResponseFormat, CountTokensResponse, ComputeTokensResponse, GenerateVideosResponse, GenerateVideosOperation, ReinforcementTuningParseResponseConfig, ReinforcementTuningAutoraterScorerParsedResponseConversionScorer, EvaluateDatasetResponse, ListTuningJobsResponse, CancelTuningJobResponse, ValidateRewardResponse, DeleteCachedContentResponse, ListCachedContentsResponse, ListDocumentsResponse, ListFileSearchStoresResponse, UploadToFileSearchStoreResumableResponse, ImportFileResponse, ImportFileOperation, ListFilesResponse, CreateFileResponse, DeleteFileResponse, RegisterFilesResponse, InlinedResponse, SingleEmbedContentResponse, InlinedEmbedContentResponse, ListBatchJobsResponse, ReplayResponse, RawReferenceImage, MaskReferenceImage, ControlReferenceImage, StyleReferenceImage, SubjectReferenceImage, ContentReferenceImage, LiveServerMessage, LiveClientToolResponse, LiveSendToolResponseParameters, LiveMusicServerMessage, UploadToFileSearchStoreResponse, UploadToFileSearchStoreOperation, PagedItem, Pager, Batches, Caches, Chats, Chat, ApiError, Files$1, CONTENT_TYPE_HEADER, SERVER_TIMEOUT_HEADER, USER_AGENT_HEADER, GOOGLE_API_CLIENT_HEADER, SDK_VERSION, LIBRARY_LABEL, VERTEX_AI_API_DEFAULT_VERSION, GOOGLE_AI_API_DEFAULT_VERSION, MULTI_REGIONAL_LOCATIONS, DEFAULT_RETRY_ATTEMPTS, DEFAULT_RETRY_INITIAL_DELAY, DEFAULT_RETRY_MAX_DELAY, DEFAULT_RETRY_EXP_BASE, DEFAULT_RETRY_JITTER, DEFAULT_RETRY_HTTP_STATUS_CODES, ApiClient, MCP_LABEL, hasMcpToolUsageFromMcpToTool, McpCallableTool, LiveMusic, LiveMusicSession, FUNCTION_RESPONSE_REQUIRES_ID, Live, defaultLiveSendClientContentParamerters, Session2, DEFAULT_MAX_REMOTE_CALLS, Models, Operations, Tokens, Documents, FileSearchStores, envMemo, GoogleGenAISecurityProvider, GoogleGenAIAuthHook, HTTPClientError, UnexpectedClientError, InvalidRequestError, RequestAbortedError, RequestTimeoutError, ConnectionError, GoogleGenAiError, GeminiNextGenAPIClientError, APIError, APIUserAbortError, APIConnectionError, APIConnectionTimeoutError, BadRequestError, AuthenticationError, PermissionDeniedError, NotFoundError, ConflictError, UnprocessableEntityError, RateLimitError, InternalServerError, DEFAULT_FETCHER, HTTPClient, mediaParamSeparator, codeRangeRE$1, SDKHooks, hasOwn, ServerList, SDK_METADATA, reservedEscapes, encodeForm, encodeSimple, encodeFormQuery, defaultBackoff, PermanentError, TemporaryError, codeRangeRE, gt, webWorkerLike, isBrowserLike, ClientSDK, jsonLikeContentTypeRE, jsonlLikeContentTypeRE, GoogleGenAiDefaultError, Stream, CR, LF, BOUNDARIES, MAX_BOUNDARY_LEN, DEFAULT_CONTENT_TYPES, headerValRE, SecurityErrorCode, SecurityError, _a2, APIPromise, Agents, Credentials, Files2, Internal, Environments, CancelInteractionByIdServerError, CancelInteractionByIdClientError, CreateInteractionServerError, CreateInteractionClientError, DeleteInteractionServerError, DeleteInteractionClientError, GetInteractionByIdServerError, GetInteractionByIdClientError, Interactions, Triggers, Voices, Webhooks, GoogleGenAI$1, LEGACY_LYRIA_MODELS, GeminiNextGenInteractions, GeminiNextGenAgents, GeminiNextGenWebhooks, GeminiNextGenTriggers, GeminiNextGenEnvironmentFiles, GeminiNextGenEnvironments, GeminiNextGenCredentials, GeminiNextGenVoices, Tunings, BrowserDownloader, MAX_CHUNK_SIZE, MAX_RETRY_COUNT, INITIAL_RETRY_DELAY_MS, DELAY_MULTIPLIER, X_GOOG_UPLOAD_STATUS_HEADER_FIELD, BrowserUploader, BrowserWebSocketFactory, BrowserWebSocket, GOOGLE_API_KEY_HEADER, WebAuth, LANGUAGE_LABEL_PREFIX, GoogleGenAI2;
   var init_web = __esm({
     "node_modules/@google/genai/dist/web/index.mjs"() {
       import_p_retry = __toESM(require_p_retry(), 1);
@@ -27391,6 +28278,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       _defaultBaseVertexUrl = void 0;
       BaseModule = class {
       };
+      (function(MediaProcessing2) {
+        MediaProcessing2["MEDIA_PROCESSING_UNSPECIFIED"] = "MEDIA_PROCESSING_UNSPECIFIED";
+        MediaProcessing2["STATIC"] = "STATIC";
+        MediaProcessing2["AGENTIC"] = "AGENTIC";
+      })(MediaProcessing || (MediaProcessing = {}));
       (function(Outcome2) {
         Outcome2["OUTCOME_UNSPECIFIED"] = "OUTCOME_UNSPECIFIED";
         Outcome2["OUTCOME_OK"] = "OUTCOME_OK";
@@ -27523,6 +28415,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         FunctionCallingConfigMode2["NONE"] = "NONE";
         FunctionCallingConfigMode2["VALIDATED"] = "VALIDATED";
       })(FunctionCallingConfigMode || (FunctionCallingConfigMode = {}));
+      (function(AudioTranscriptionConfigMode2) {
+        AudioTranscriptionConfigMode2["MODE_UNSPECIFIED"] = "MODE_UNSPECIFIED";
+        AudioTranscriptionConfigMode2["VERBATIM"] = "VERBATIM";
+        AudioTranscriptionConfigMode2["SMART"] = "SMART";
+      })(AudioTranscriptionConfigMode || (AudioTranscriptionConfigMode = {}));
       (function(FinishReason2) {
         FinishReason2["FINISH_REASON_UNSPECIFIED"] = "FINISH_REASON_UNSPECIFIED";
         FinishReason2["STOP"] = "STOP";
@@ -27579,6 +28476,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         TrafficType2["ON_DEMAND"] = "ON_DEMAND";
         TrafficType2["ON_DEMAND_PRIORITY"] = "ON_DEMAND_PRIORITY";
         TrafficType2["ON_DEMAND_FLEX"] = "ON_DEMAND_FLEX";
+        TrafficType2["ON_DEMAND_OFFPEAK"] = "ON_DEMAND_OFFPEAK";
         TrafficType2["PROVISIONED_THROUGHPUT"] = "PROVISIONED_THROUGHPUT";
       })(TrafficType || (TrafficType = {}));
       (function(MediaModality2) {
@@ -27740,11 +28638,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         ServiceTier2["STANDARD"] = "standard";
         ServiceTier2["PRIORITY"] = "priority";
       })(ServiceTier || (ServiceTier = {}));
-      (function(MediaProcessing2) {
-        MediaProcessing2["MEDIA_PROCESSING_UNSPECIFIED"] = "MEDIA_PROCESSING_UNSPECIFIED";
-        MediaProcessing2["STATIC"] = "STATIC";
-        MediaProcessing2["AGENTIC"] = "AGENTIC";
-      })(MediaProcessing || (MediaProcessing = {}));
       (function(PartMediaResolutionLevel2) {
         PartMediaResolutionLevel2["MEDIA_RESOLUTION_UNSPECIFIED"] = "MEDIA_RESOLUTION_UNSPECIFIED";
         PartMediaResolutionLevel2["MEDIA_RESOLUTION_LOW"] = "MEDIA_RESOLUTION_LOW";
@@ -27929,11 +28822,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         TurnCoverage2["TURN_INCLUDES_ALL_INPUT"] = "TURN_INCLUDES_ALL_INPUT";
         TurnCoverage2["TURN_INCLUDES_AUDIO_ACTIVITY_AND_ALL_VIDEO"] = "TURN_INCLUDES_AUDIO_ACTIVITY_AND_ALL_VIDEO";
       })(TurnCoverage || (TurnCoverage = {}));
-      (function(AudioTranscriptionConfigMode2) {
-        AudioTranscriptionConfigMode2["MODE_UNSPECIFIED"] = "MODE_UNSPECIFIED";
-        AudioTranscriptionConfigMode2["VERBATIM"] = "VERBATIM";
-        AudioTranscriptionConfigMode2["SMART"] = "SMART";
-      })(AudioTranscriptionConfigMode || (AudioTranscriptionConfigMode = {}));
       (function(Scale2) {
         Scale2["SCALE_UNSPECIFIED"] = "SCALE_UNSPECIFIED";
         Scale2["C_MAJOR_A_MINOR"] = "C_MAJOR_A_MINOR";
@@ -29380,7 +30268,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       SERVER_TIMEOUT_HEADER = "X-Server-Timeout";
       USER_AGENT_HEADER = "User-Agent";
       GOOGLE_API_CLIENT_HEADER = "x-goog-api-client";
-      SDK_VERSION = "2.19.0";
+      SDK_VERSION = "2.24.0";
       LIBRARY_LABEL = `google-genai-sdk/${SDK_VERSION}`;
       VERTEX_AI_API_DEFAULT_VERSION = "v1beta1";
       GOOGLE_AI_API_DEFAULT_VERSION = "v1beta";
@@ -29478,6 +30366,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             throw new Error("Headers are not set.");
           }
         }
+        getFetch() {
+          var _a3;
+          return (_a3 = this.clientOptions.httpOptions) === null || _a3 === void 0 ? void 0 : _a3.fetch;
+        }
         getRequestUrlInternal(httpOptions) {
           if (!httpOptions || httpOptions.baseUrl === void 0 || httpOptions.apiVersion === void 0) {
             throw new Error("HTTP options are not correctly set.");
@@ -29558,10 +30450,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             requestInit.body = request.body;
           }
           requestInit = await this.includeExtraHttpOptionsToRequestInit(requestInit, patchedHttpOptions, url.toString());
-          return this.unaryApiCall(url, requestInit, request.httpMethod, patchedHttpOptions.retryOptions, patchedHttpOptions.timeout, request.abortSignal);
+          return this.unaryApiCall(url, requestInit, request.httpMethod, patchedHttpOptions.retryOptions, patchedHttpOptions.timeout, request.abortSignal, patchedHttpOptions.fetch);
         }
         patchHttpOptions(baseHttpOptions, requestHttpOptions) {
           const patchedHttpOptions = JSON.parse(JSON.stringify(baseHttpOptions));
+          if (baseHttpOptions.fetch) {
+            patchedHttpOptions.fetch = baseHttpOptions.fetch;
+          }
           for (const [key, value] of Object.entries(requestHttpOptions)) {
             if (typeof value === "object") {
               patchedHttpOptions[key] = Object.assign(Object.assign({}, patchedHttpOptions[key]), value);
@@ -29584,7 +30479,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           let requestInit = {};
           requestInit.body = request.body;
           requestInit = await this.includeExtraHttpOptionsToRequestInit(requestInit, patchedHttpOptions, url.toString());
-          return this.streamApiCall(url, requestInit, request.httpMethod, patchedHttpOptions.retryOptions, patchedHttpOptions.timeout, request.abortSignal);
+          return this.streamApiCall(url, requestInit, request.httpMethod, patchedHttpOptions.retryOptions, patchedHttpOptions.timeout, request.abortSignal, patchedHttpOptions.fetch);
         }
         async includeExtraHttpOptionsToRequestInit(requestInit, httpOptions, url) {
           if ((httpOptions === null || httpOptions === void 0 ? void 0 : httpOptions.timeout) && httpOptions.timeout > 0) {
@@ -29596,8 +30491,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           requestInit.headers = await this.getHeadersInternal(httpOptions, url);
           return requestInit;
         }
-        async unaryApiCall(url, requestInit, httpMethod, retryOptions, timeout, abortSignal) {
-          return this.apiCall(url.toString(), Object.assign(Object.assign({}, requestInit), { method: httpMethod }), retryOptions, timeout, abortSignal).then(async (response) => {
+        async unaryApiCall(url, requestInit, httpMethod, retryOptions, timeout, abortSignal, fetchFn) {
+          return this.apiCall(url.toString(), Object.assign(Object.assign({}, requestInit), { method: httpMethod }), retryOptions, timeout, abortSignal, fetchFn).then(async (response) => {
             await throwErrorIfNotOK(response);
             return new HttpResponse(response);
           }).catch((e) => {
@@ -29608,8 +30503,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             }
           });
         }
-        async streamApiCall(url, requestInit, httpMethod, retryOptions, timeout, abortSignal) {
-          return this.apiCall(url.toString(), Object.assign(Object.assign({}, requestInit), { method: httpMethod }), retryOptions, timeout, abortSignal).then(async (response) => {
+        async streamApiCall(url, requestInit, httpMethod, retryOptions, timeout, abortSignal, fetchFn) {
+          return this.apiCall(url.toString(), Object.assign(Object.assign({}, requestInit), { method: httpMethod }), retryOptions, timeout, abortSignal, fetchFn).then(async (response) => {
             await throwErrorIfNotOK(response);
             return this.processStreamResponse(response);
           }).catch((e) => {
@@ -29701,14 +30596,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             }
           });
         }
-        async apiCall(url, requestInit, retryOptions, timeout, abortSignal) {
+        async apiCall(url, requestInit, retryOptions, timeout, abortSignal, fetchFn) {
           var _a3, _b, _c, _d, _e, _f;
+          const fetchFunc = fetchFn !== null && fetchFn !== void 0 ? fetchFn : fetch;
           const retryableStatusCodes = (_a3 = retryOptions === null || retryOptions === void 0 ? void 0 : retryOptions.httpStatusCodes) !== null && _a3 !== void 0 ? _a3 : DEFAULT_RETRY_HTTP_STATUS_CODES;
           const runFetch = async () => {
             const attempt = createAttemptSignal(timeout, abortSignal);
             let response;
             try {
-              response = await fetch(url, Object.assign(Object.assign({}, requestInit), { signal: attempt.signal }));
+              response = await fetchFunc(url, Object.assign(Object.assign({}, requestInit), { signal: attempt.signal }));
             } catch (e) {
               attempt.dispose();
               throw e;
@@ -30086,8 +30982,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             onopen: onopenAwaitedCallback,
             onmessage: (event) => {
               void handleWebSocketMessage(apiClient, (msg) => {
-                if (msg.setupComplete && !session.setupComplete) {
-                  session.setupComplete = msg.setupComplete;
+                if (msg["setupComplete"] && !session.setupComplete) {
+                  session.setupComplete = msg["setupComplete"];
                   setupCompleteResolve({});
                 }
                 if (sessionResolved) {
@@ -32019,6 +32915,81 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       };
       InternalServerError = class extends APIError {
       };
+      DEFAULT_FETCHER = (input, init) => {
+        if (init == null) {
+          return fetch(input);
+        } else {
+          return fetch(input, init);
+        }
+      };
+      HTTPClient = class {
+        constructor(options = {}) {
+          this.requestHooks = [];
+          this.requestErrorHooks = [];
+          this.responseHooks = [];
+          this.options = options;
+          this.fetcher = options.fetcher || DEFAULT_FETCHER;
+        }
+        async request(request) {
+          let req = request;
+          for (const hook of this.requestHooks) {
+            const nextRequest = await hook(req);
+            if (nextRequest) {
+              req = nextRequest;
+            }
+          }
+          try {
+            const res = await this.fetcher(req);
+            for (const hook of this.responseHooks) {
+              await hook(res, req);
+            }
+            return res;
+          } catch (err2) {
+            for (const hook of this.requestErrorHooks) {
+              await hook(err2, req);
+            }
+            throw err2;
+          }
+        }
+        addHook(...args) {
+          if (args[0] === "beforeRequest") {
+            this.requestHooks.push(args[1]);
+          } else if (args[0] === "requestError") {
+            this.requestErrorHooks.push(args[1]);
+          } else if (args[0] === "response") {
+            this.responseHooks.push(args[1]);
+          } else {
+            throw new Error(`Invalid hook type: ${args[0]}`);
+          }
+          return this;
+        }
+        removeHook(...args) {
+          let target;
+          if (args[0] === "beforeRequest") {
+            target = this.requestHooks;
+          } else if (args[0] === "requestError") {
+            target = this.requestErrorHooks;
+          } else if (args[0] === "response") {
+            target = this.responseHooks;
+          } else {
+            throw new Error(`Invalid hook type: ${args[0]}`);
+          }
+          const index = target.findIndex((v) => v === args[1]);
+          if (index >= 0) {
+            target.splice(index, 1);
+          }
+          return this;
+        }
+        clone() {
+          const child = new HTTPClient(this.options);
+          child.requestHooks = this.requestHooks.slice();
+          child.requestErrorHooks = this.requestErrorHooks.slice();
+          child.responseHooks = this.responseHooks.slice();
+          return child;
+        }
+      };
+      mediaParamSeparator = /\s*;\s*/g;
+      codeRangeRE$1 = new RegExp("^[0-9]xx$", "i");
       SDKHooks = class {
         constructor() {
           this.sdkInitHooks = [];
@@ -32103,6 +33074,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       SDK_METADATA = {
         userAgent: "speakeasy-sdk/typescript 2.4.1-preview.4 internal v1beta @google/genai"
       };
+      reservedEscapes = /%(2[346bcf]|3[abdf]|40|5[bd])/gi;
       encodeForm = formEncoder(",");
       encodeSimple = (key, value, options) => {
         let out = "";
@@ -32111,7 +33083,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           return;
         }
         const encodeString = (v) => {
-          return (options === null || options === void 0 ? void 0 : options.charEncoding) === "percent" ? encodeURIComponent(v) : v;
+          return encodeChars(v, options === null || options === void 0 ? void 0 : options.charEncoding);
         };
         const encodeValue = (v) => encodeString(serializeValue(v));
         pairs.forEach(([pk, pv]) => {
@@ -32135,81 +33107,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         return out.slice(1);
       };
       encodeFormQuery = queryEncoder(encodeForm);
-      DEFAULT_FETCHER = (input, init) => {
-        if (init == null) {
-          return fetch(input);
-        } else {
-          return fetch(input, init);
-        }
-      };
-      HTTPClient = class {
-        constructor(options = {}) {
-          this.requestHooks = [];
-          this.requestErrorHooks = [];
-          this.responseHooks = [];
-          this.options = options;
-          this.fetcher = options.fetcher || DEFAULT_FETCHER;
-        }
-        async request(request) {
-          let req = request;
-          for (const hook of this.requestHooks) {
-            const nextRequest = await hook(req);
-            if (nextRequest) {
-              req = nextRequest;
-            }
-          }
-          try {
-            const res = await this.fetcher(req);
-            for (const hook of this.responseHooks) {
-              await hook(res, req);
-            }
-            return res;
-          } catch (err2) {
-            for (const hook of this.requestErrorHooks) {
-              await hook(err2, req);
-            }
-            throw err2;
-          }
-        }
-        addHook(...args) {
-          if (args[0] === "beforeRequest") {
-            this.requestHooks.push(args[1]);
-          } else if (args[0] === "requestError") {
-            this.requestErrorHooks.push(args[1]);
-          } else if (args[0] === "response") {
-            this.responseHooks.push(args[1]);
-          } else {
-            throw new Error(`Invalid hook type: ${args[0]}`);
-          }
-          return this;
-        }
-        removeHook(...args) {
-          let target;
-          if (args[0] === "beforeRequest") {
-            target = this.requestHooks;
-          } else if (args[0] === "requestError") {
-            target = this.requestErrorHooks;
-          } else if (args[0] === "response") {
-            target = this.responseHooks;
-          } else {
-            throw new Error(`Invalid hook type: ${args[0]}`);
-          }
-          const index = target.findIndex((v) => v === args[1]);
-          if (index >= 0) {
-            target.splice(index, 1);
-          }
-          return this;
-        }
-        clone() {
-          const child = new HTTPClient(this.options);
-          child.requestHooks = this.requestHooks.slice();
-          child.requestErrorHooks = this.requestErrorHooks.slice();
-          child.responseHooks = this.responseHooks.slice();
-          return child;
-        }
-      };
-      mediaParamSeparator = /\s*;\s*/g;
-      codeRangeRE$1 = new RegExp("^[0-9]xx$", "i");
       defaultBackoff = {
         initialInterval: 500,
         maxInterval: 6e4,
@@ -32664,12 +33561,40 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           return unwrapAsAPIPromise(agentsGet(this, id, params === null || params === void 0 ? void 0 : params.api_version, options));
         }
       };
+      Credentials = class extends ClientSDK {
+        list(params, options) {
+          return unwrapAsAPIPromise(credentialsList(this, params === null || params === void 0 ? void 0 : params.api_version, params === null || params === void 0 ? void 0 : params.page_size, params === null || params === void 0 ? void 0 : params.page_token, options));
+        }
+        create(params, options) {
+          const { api_version } = params, body = __rest(params, ["api_version"]);
+          return unwrapAsAPIPromise(credentialsCreate(this, body, api_version, options));
+        }
+        delete(id, params, options) {
+          return unwrapAsAPIPromise(credentialsDelete(this, id, params === null || params === void 0 ? void 0 : params.api_version, options));
+        }
+        get(id, params, options) {
+          return unwrapAsAPIPromise(credentialsGet(this, id, params === null || params === void 0 ? void 0 : params.api_version, options));
+        }
+        update(id, params, options) {
+          const { api_version, update_mask } = params, body = __rest(params, ["api_version", "update_mask"]);
+          return unwrapAsAPIPromise(credentialsUpdate(this, id, body, api_version, update_mask, options));
+        }
+      };
       Files2 = class extends ClientSDK {
         list(environment, path, params, options) {
           return unwrapAsAPIPromise(environmentsFilesList(this, environment, path, params === null || params === void 0 ? void 0 : params.api_version, params === null || params === void 0 ? void 0 : params.page_size, params === null || params === void 0 ? void 0 : params.page_token, params === null || params === void 0 ? void 0 : params.recursive, options));
         }
       };
+      Internal = class extends ClientSDK {
+        startUpload(environment, path, params, options) {
+          return unwrapAsAPIPromise(environmentsInternalStartUpload(this, environment, path, params["X-Goog-Upload-Command"], params["X-Goog-Upload-Header-Content-Length"], params["X-Goog-Upload-Header-Content-Type"], params["X-Goog-Upload-Protocol"], params.api_version, params.extract, params.overwrite, options));
+        }
+      };
       Environments = class extends ClientSDK {
+        get internal() {
+          var _a3;
+          return (_a3 = this._internal) !== null && _a3 !== void 0 ? _a3 : this._internal = new Internal(this._options);
+        }
         get files() {
           var _a3;
           return (_a3 = this._files) !== null && _a3 !== void 0 ? _a3 : this._files = new Files2(this._options);
@@ -32807,6 +33732,20 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           return unwrapAsAPIPromise(triggersRun(this, trigger_id, params === null || params === void 0 ? void 0 : params.api_version, options));
         }
       };
+      Voices = class extends ClientSDK {
+        list(params, options) {
+          return unwrapAsAPIPromise(voicesList(this, params === null || params === void 0 ? void 0 : params.api_version, params === null || params === void 0 ? void 0 : params.accent, params === null || params === void 0 ? void 0 : params.contexts, params === null || params === void 0 ? void 0 : params.gender, params === null || params === void 0 ? void 0 : params.language_code, params === null || params === void 0 ? void 0 : params.page_size, params === null || params === void 0 ? void 0 : params.page_token, params === null || params === void 0 ? void 0 : params.persona, params === null || params === void 0 ? void 0 : params.pitch, params === null || params === void 0 ? void 0 : params.region_code, params === null || params === void 0 ? void 0 : params.search, params === null || params === void 0 ? void 0 : params.type, options));
+        }
+        create(body, api_version, options) {
+          return unwrapAsAPIPromise(voicesCreate(this, body, api_version, options));
+        }
+        delete(id, params, options) {
+          return unwrapAsAPIPromise(voicesDelete(this, id, params === null || params === void 0 ? void 0 : params.api_version, options));
+        }
+        get(id, params, options) {
+          return unwrapAsAPIPromise(voicesGet(this, id, params === null || params === void 0 ? void 0 : params.api_version, options));
+        }
+      };
       Webhooks = class extends ClientSDK {
         list(params, options) {
           return unwrapAsAPIPromise(webhooksList(this, params === null || params === void 0 ? void 0 : params.api_version, params === null || params === void 0 ? void 0 : params.page_size, params === null || params === void 0 ? void 0 : params.page_token, options));
@@ -32834,13 +33773,17 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         }
       };
       GoogleGenAI$1 = class GoogleGenAI extends ClientSDK {
+        get environments() {
+          var _a3;
+          return (_a3 = this._environments) !== null && _a3 !== void 0 ? _a3 : this._environments = new Environments(this._options);
+        }
         get agents() {
           var _a3;
           return (_a3 = this._agents) !== null && _a3 !== void 0 ? _a3 : this._agents = new Agents(this._options);
         }
-        get environments() {
+        get credentials() {
           var _a3;
-          return (_a3 = this._environments) !== null && _a3 !== void 0 ? _a3 : this._environments = new Environments(this._options);
+          return (_a3 = this._credentials) !== null && _a3 !== void 0 ? _a3 : this._credentials = new Credentials(this._options);
         }
         get interactions() {
           var _a3;
@@ -32849,6 +33792,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         get triggers() {
           var _a3;
           return (_a3 = this._triggers) !== null && _a3 !== void 0 ? _a3 : this._triggers = new Triggers(this._options);
+        }
+        get voices() {
+          var _a3;
+          return (_a3 = this._voices) !== null && _a3 !== void 0 ? _a3 : this._voices = new Voices(this._options);
         }
         get webhooks() {
           var _a3;
@@ -32907,8 +33854,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           return unwrapWithSdkHttpResponse(agentsCreate(this.getClient(api_version), body, api_version, toGoogleGenAIRequestOptions(options)));
         }
         async list(params = {}, options) {
-          const { api_version, pageSize, pageToken, parent } = params !== null && params !== void 0 ? params : {};
-          return unwrapWithSdkHttpResponse(agentsList(this.getClient(api_version), api_version, pageSize, pageToken, parent, toGoogleGenAIRequestOptions(options)));
+          const { api_version, page_size, page_token, parent } = params !== null && params !== void 0 ? params : {};
+          return unwrapWithSdkHttpResponse(agentsList(this.getClient(api_version), api_version, page_size, page_token, parent, toGoogleGenAIRequestOptions(options)));
         }
         async get(id, params = {}, options) {
           return unwrapWithSdkHttpResponse(agentsGet(this.getClient(params === null || params === void 0 ? void 0 : params.api_version), id, params === null || params === void 0 ? void 0 : params.api_version, toGoogleGenAIRequestOptions(options)));
@@ -32972,8 +33919,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           return unwrapWithSdkHttpResponse(triggersCreate(this.getClient(api_version), body, api_version, toGoogleGenAIRequestOptions(options)));
         }
         async list(params = {}, options) {
-          const { api_version, filter, pageSize, pageToken } = params !== null && params !== void 0 ? params : {};
-          return unwrapWithSdkHttpResponse(triggersList(this.getClient(api_version), api_version, filter, pageSize, pageToken, toGoogleGenAIRequestOptions(options)));
+          const { api_version, filter, page_size, page_token } = params !== null && params !== void 0 ? params : {};
+          return unwrapWithSdkHttpResponse(triggersList(this.getClient(api_version), api_version, filter, page_size, page_token, toGoogleGenAIRequestOptions(options)));
         }
         async get(id, params = {}, options) {
           return unwrapWithSdkHttpResponse(triggersGet(this.getClient(params === null || params === void 0 ? void 0 : params.api_version), id, params === null || params === void 0 ? void 0 : params.api_version, toGoogleGenAIRequestOptions(options)));
@@ -32989,8 +33936,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           return unwrapWithSdkHttpResponse(triggersRun(this.getClient(params === null || params === void 0 ? void 0 : params.api_version), trigger_id, params === null || params === void 0 ? void 0 : params.api_version, toGoogleGenAIRequestOptions(options)));
         }
         async listExecutions(trigger_id, params = {}, options) {
-          const { api_version, pageSize, pageToken } = params !== null && params !== void 0 ? params : {};
-          return unwrapWithSdkHttpResponse(triggersListExecutions(this.getClient(api_version), trigger_id, api_version, pageSize, pageToken, toGoogleGenAIRequestOptions(options)));
+          const { api_version, page_size, page_token } = params !== null && params !== void 0 ? params : {};
+          return unwrapWithSdkHttpResponse(triggersListExecutions(this.getClient(api_version), trigger_id, api_version, page_size, page_token, toGoogleGenAIRequestOptions(options)));
         }
         getClient(apiVersion) {
           var _a3;
@@ -33004,18 +33951,154 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         }
       };
       GeminiNextGenEnvironmentFiles = class {
-        constructor(resolveClient) {
+        constructor(resolveClient, parentClient) {
           this.resolveClient = resolveClient;
+          this.parentClient = parentClient;
         }
         async list(params, options) {
-          const { environment, path, page_size, page_token, recursive, api_version } = params;
-          return unwrapWithSdkHttpResponse(environmentsFilesList(this.resolveClient(api_version), environment, path, api_version, page_size, page_token, recursive, toGoogleGenAIRequestOptions(options)));
+          return unwrapWithSdkHttpResponse(environmentsFilesList(this.resolveClient(params.api_version), params.environment, params.path, params.api_version, params.page_size, params.page_token, params.recursive, toGoogleGenAIRequestOptions(options)));
+        }
+        async download(params, options) {
+          var _a3, _b;
+          const targetEnv = params.environment;
+          if (!targetEnv) {
+            throw new Error("environment is required.");
+          }
+          const envName = targetEnv.startsWith("environments/") ? targetEnv : `environments/${targetEnv}`;
+          const cleanPath = params.path.replace(/^\/+/, "");
+          const downloadPath = `${envName}/files/${cleanPath}`;
+          const apiClient = this.parentClient;
+          if (!apiClient || typeof apiClient.request !== "function") {
+            throw new Error("apiClient is required to download files.");
+          }
+          const response = await apiClient.request({
+            path: downloadPath,
+            httpMethod: "GET",
+            queryParams: { alt: "media" },
+            httpOptions: Object.assign(Object.assign({}, options === null || options === void 0 ? void 0 : options.httpOptions), { apiVersion: (_a3 = params.api_version) !== null && _a3 !== void 0 ? _a3 : (_b = options === null || options === void 0 ? void 0 : options.httpOptions) === null || _b === void 0 ? void 0 : _b.apiVersion })
+          });
+          if (response && response.responseInternal && typeof response.responseInternal.arrayBuffer === "function") {
+            const arrayBuffer = await response.responseInternal.arrayBuffer();
+            return new Uint8Array(arrayBuffer);
+          }
+          throw new Error("Unexpected response type from download");
+        }
+        async upload(params, options) {
+          var _a3, _b, _c, _d, _e, _f, _g, _h;
+          const targetEnv = params.environment;
+          if (!targetEnv) {
+            throw new Error("environment is required.");
+          }
+          targetEnv.startsWith("environments/") ? targetEnv : `environments/${targetEnv}`;
+          const cleanPath = params.path.replace(/^\/+/, "");
+          const apiClient = this.parentClient;
+          if (!apiClient || typeof apiClient.request !== "function") {
+            throw new Error("apiClient is required to upload files.");
+          }
+          let fileData;
+          let sizeBytes = 0;
+          let mimeType = params.mime_type;
+          if (typeof params.file === "string") {
+            let buffer;
+            try {
+              const req = globalThis.require;
+              if (req) {
+                const fs = req("fs");
+                buffer = fs.readFileSync(params.file);
+              }
+            } catch (_j) {
+            }
+            if (!buffer && typeof globalThis.process !== "undefined") {
+              try {
+                const mod = (_b = (_a3 = globalThis.process.mainModule) === null || _a3 === void 0 ? void 0 : _a3.require) !== null && _b !== void 0 ? _b : globalThis.require;
+                if (mod) {
+                  const fs = mod("fs");
+                  buffer = fs.readFileSync(params.file);
+                }
+              } catch (_k) {
+              }
+            }
+            if (buffer) {
+              fileData = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+              sizeBytes = fileData.byteLength;
+            } else {
+              throw new Error(`Unable to read file from path "${params.file}". File path string inputs are only supported in Node.js environments.`);
+            }
+            if (!mimeType) {
+              mimeType = inferMimeType(params.file);
+            }
+          } else if (typeof Blob !== "undefined" && params.file instanceof Blob) {
+            fileData = params.file;
+            sizeBytes = params.file.size;
+            if (!mimeType && params.file.type) {
+              mimeType = params.file.type;
+            }
+          } else if (params.file instanceof Uint8Array || params.file instanceof ArrayBuffer) {
+            fileData = params.file instanceof ArrayBuffer ? new Uint8Array(params.file) : params.file;
+            sizeBytes = fileData.byteLength;
+          } else if (typeof globalThis.Buffer !== "undefined" && typeof globalThis.Buffer.isBuffer === "function" && globalThis.Buffer.isBuffer(params.file)) {
+            const buf = params.file;
+            fileData = new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+            sizeBytes = fileData.byteLength;
+          } else {
+            throw new Error("Unsupported file type for upload.");
+          }
+          if (!mimeType) {
+            mimeType = "application/octet-stream";
+          }
+          const cleanEnv = targetEnv.startsWith("environments/") ? targetEnv.replace(/^environments\//, "") : targetEnv;
+          const [result, call] = await environmentsInternalStartUpload(this.resolveClient(params.api_version), cleanEnv, cleanPath, "start", sizeBytes, mimeType, "resumable", params.api_version, params.extract, params.overwrite, toGoogleGenAIRequestOptions(options)).$inspect();
+          if (!result.ok) {
+            throw wrapSDKError(result.error);
+          }
+          const uploadUrl = call.status === "complete" ? (_e = (_d = (_c = call.response) === null || _c === void 0 ? void 0 : _c.headers) === null || _d === void 0 ? void 0 : _d.get("x-goog-upload-url")) !== null && _e !== void 0 ? _e : (_g = (_f = call.response) === null || _f === void 0 ? void 0 : _f.headers) === null || _g === void 0 ? void 0 : _g.get("X-Goog-Upload-URL") : void 0;
+          if (!uploadUrl) {
+            throw new Error("Failed to get upload URL from upload handshake response.");
+          }
+          const CHUNK_SIZE = 8 * 1024 * 1024;
+          let offset = 0;
+          let uploadResponse;
+          const blob = fileData instanceof Blob ? fileData : new Blob([fileData]);
+          while (offset < sizeBytes || sizeBytes === 0 && offset === 0) {
+            const end = Math.min(offset + CHUNK_SIZE, sizeBytes);
+            const chunk = blob.slice(offset, end);
+            const isFinal = end >= sizeBytes;
+            const uploadCommand = isFinal ? "upload, finalize" : "upload";
+            uploadResponse = await apiClient.request({
+              path: "",
+              body: chunk,
+              httpMethod: "POST",
+              httpOptions: Object.assign(Object.assign({}, options === null || options === void 0 ? void 0 : options.httpOptions), { apiVersion: "", baseUrl: uploadUrl, headers: Object.assign(Object.assign({}, ((_h = options === null || options === void 0 ? void 0 : options.httpOptions) === null || _h === void 0 ? void 0 : _h.headers) || {}), { "X-Goog-Upload-Command": uploadCommand, "X-Goog-Upload-Offset": `${offset}` }) })
+            });
+            offset = end;
+            if (isFinal) {
+              break;
+            }
+          }
+          let resJson;
+          if (uploadResponse && typeof uploadResponse.json === "function") {
+            resJson = await uploadResponse.json();
+          } else if (uploadResponse && uploadResponse.responseInternal && typeof uploadResponse.responseInternal.json === "function") {
+            resJson = await uploadResponse.responseInternal.json();
+          }
+          if (resJson && typeof resJson === "object") {
+            if (Array.isArray(resJson.files)) {
+              return resJson;
+            }
+            if (resJson.name || resJson.path) {
+              return { files: [resJson] };
+            }
+            if (resJson.file && typeof resJson.file === "object") {
+              return { files: [resJson.file] };
+            }
+          }
+          return resJson;
         }
       };
       GeminiNextGenEnvironments = class {
         constructor(parentClient) {
           this.parentClient = parentClient;
-          this.files = new GeminiNextGenEnvironmentFiles((apiVersion) => this.getClient(apiVersion));
+          this.files = new GeminiNextGenEnvironmentFiles((apiVersion) => this.getClient(apiVersion), this.parentClient);
         }
         async create(params, options) {
           const { api_version } = params, body = __rest(params, ["api_version"]);
@@ -33030,6 +34113,68 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         }
         async delete(id, params = {}, options) {
           return unwrapWithSdkHttpResponse(environmentsDeleteEnvironment(this.getClient(params === null || params === void 0 ? void 0 : params.api_version), id, params === null || params === void 0 ? void 0 : params.api_version, toGoogleGenAIRequestOptions(options)));
+        }
+        getClient(apiVersion) {
+          var _a3;
+          if (apiVersion) {
+            return buildGoogleGenAIClient(this.parentClient, {
+              api_version: apiVersion
+            });
+          }
+          (_a3 = this.sdk) !== null && _a3 !== void 0 ? _a3 : this.sdk = buildGoogleGenAIClient(this.parentClient);
+          return this.sdk;
+        }
+      };
+      GeminiNextGenCredentials = class {
+        constructor(parentClient) {
+          this.parentClient = parentClient;
+        }
+        async create(params, options) {
+          const { api_version } = params, body = __rest(params, ["api_version"]);
+          return unwrapWithSdkHttpResponse(credentialsCreate(this.getClient(api_version), body, api_version, toGoogleGenAIRequestOptions(options)));
+        }
+        async list(params = {}, options) {
+          const { api_version, page_size, page_token } = params !== null && params !== void 0 ? params : {};
+          return unwrapWithSdkHttpResponse(credentialsList(this.getClient(api_version), api_version, page_size, page_token, toGoogleGenAIRequestOptions(options)));
+        }
+        async get(id, params = {}, options) {
+          return unwrapWithSdkHttpResponse(credentialsGet(this.getClient(params === null || params === void 0 ? void 0 : params.api_version), id, params === null || params === void 0 ? void 0 : params.api_version, toGoogleGenAIRequestOptions(options)));
+        }
+        async update(id, params, options) {
+          const { api_version, update_mask } = params, body = __rest(params, ["api_version", "update_mask"]);
+          return unwrapWithSdkHttpResponse(credentialsUpdate(this.getClient(api_version), id, body, api_version, update_mask, toGoogleGenAIRequestOptions(options)));
+        }
+        async delete(id, params = {}, options) {
+          return unwrapWithSdkHttpResponse(credentialsDelete(this.getClient(params === null || params === void 0 ? void 0 : params.api_version), id, params === null || params === void 0 ? void 0 : params.api_version, toGoogleGenAIRequestOptions(options)));
+        }
+        getClient(apiVersion) {
+          var _a3;
+          if (apiVersion) {
+            return buildGoogleGenAIClient(this.parentClient, {
+              api_version: apiVersion
+            });
+          }
+          (_a3 = this.sdk) !== null && _a3 !== void 0 ? _a3 : this.sdk = buildGoogleGenAIClient(this.parentClient);
+          return this.sdk;
+        }
+      };
+      GeminiNextGenVoices = class {
+        constructor(parentClient) {
+          this.parentClient = parentClient;
+        }
+        async create(params, options) {
+          const { api_version } = params, body = __rest(params, ["api_version"]);
+          return unwrapWithSdkHttpResponse(voicesCreate(this.getClient(api_version), body, api_version, toGoogleGenAIRequestOptions(options)));
+        }
+        async list(params = {}, options) {
+          const { api_version, accent, contexts, gender, language_code, page_size, page_token, persona, pitch, region_code, search, type } = params !== null && params !== void 0 ? params : {};
+          return unwrapWithSdkHttpResponse(voicesList(this.getClient(api_version), api_version, accent, contexts, gender, language_code, page_size, page_token, persona, pitch, region_code, search, type, toGoogleGenAIRequestOptions(options)));
+        }
+        async get(id, params = {}, options) {
+          return unwrapWithSdkHttpResponse(voicesGet(this.getClient(params === null || params === void 0 ? void 0 : params.api_version), id, params === null || params === void 0 ? void 0 : params.api_version, toGoogleGenAIRequestOptions(options)));
+        }
+        async delete(id, params = {}, options) {
+          return unwrapWithSdkHttpResponse(voicesDelete(this.getClient(params === null || params === void 0 ? void 0 : params.api_version), id, params === null || params === void 0 ? void 0 : params.api_version, toGoogleGenAIRequestOptions(options)));
         }
         getClient(apiVersion) {
           var _a3;
@@ -33485,6 +34630,21 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           this._environments = new GeminiNextGenEnvironments(this.apiClient);
           return this._environments;
         }
+        get credentials() {
+          if (this._credentials !== void 0) {
+            return this._credentials;
+          }
+          console.warn("GoogleGenAI.credentials: Credentials usage is experimental and may change in future versions.");
+          this._credentials = new GeminiNextGenCredentials(this.apiClient);
+          return this._credentials;
+        }
+        get voices() {
+          if (this._voices !== void 0) {
+            return this._voices;
+          }
+          this._voices = new GeminiNextGenVoices(this.apiClient);
+          return this._voices;
+        }
         constructor(options = {}) {
           var _a3;
           if (options.apiKey == null) {
@@ -33567,17 +34727,16 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       }
     };
   }
-  async function fetchGeminiTranslations(lyricsOnly, prompt) {
+  async function fetchGeminiTranslations(lyricsOnly, prompt, apiKey, systemInstruction) {
     try {
       console.log("[Amai Lyrics] Translation fetch started");
-      const geminiApiKey = storage_default.get("GEMINI_API_KEY")?.toString();
-      if (!geminiApiKey || geminiApiKey === "") {
+      if (!apiKey) {
         console.error("Amai Lyrics: Gemini API Key missing for translation");
-        return lyricsOnly.map(() => "");
+        return [];
       }
       const { GoogleGenAI: GoogleGenAI3 } = await loadGenAI();
-      const ai = new GoogleGenAI3({ apiKey: geminiApiKey });
-      const generationConfig = buildGeminiConfig(Defaults_default.systemInstruction, 0.85);
+      const ai = new GoogleGenAI3({ apiKey });
+      const generationConfig = buildGeminiConfig(systemInstruction, 0.85);
       const response = await ai.models.generateContent({
         config: generationConfig,
         model: AI_MODELS.TRANSLATION,
@@ -33595,59 +34754,47 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return [];
     }
   }
-  async function processLyricsUsingGemini(lyricsJson, lyricsOnly, systemInstruction, prompt) {
-    try {
-      const geminiApiKey = storage_default.get("GEMINI_API_KEY")?.toString();
-      const { GoogleGenAI: GoogleGenAI3 } = await loadGenAI();
-      const ai = new GoogleGenAI3({ apiKey: geminiApiKey });
-      const generationConfig = buildGeminiConfig(systemInstruction, 0.258);
-      if (lyricsOnly.length === 0)
-        return lyricsJson;
-      const makeRequest = async () => {
-        const response = await ai.models.generateContent({
-          config: generationConfig,
-          model: AI_MODELS.PHONETIC,
-          contents: `${prompt} Here are the lyrics:
+  async function fetchGeminiPhonetic(lyricsOnly, prompt, systemInstruction, apiKey) {
+    if (!apiKey || lyricsOnly.length === 0)
+      return [];
+    const { GoogleGenAI: GoogleGenAI3 } = await loadGenAI();
+    const ai = new GoogleGenAI3({ apiKey });
+    const generationConfig = buildGeminiConfig(systemInstruction, 0.258);
+    const makeRequest = async () => {
+      const response = await ai.models.generateContent({
+        config: generationConfig,
+        model: AI_MODELS.PHONETIC,
+        contents: `${prompt} Here are the lyrics:
 ${JSON.stringify(lyricsOnly)}`
-        });
-        return response.text;
-      };
-      let retries = 2;
-      let lines;
-      while (retries >= 0) {
-        try {
-          const responseText = await makeRequest();
-          const parsed = JSON.parse(responseText.replace(/\\n/g, ""));
-          if (parsed && Array.isArray(parsed.lines)) {
-            lines = parsed.lines;
-            break;
-          } else {
-            if (retries === 0) {
-              console.error("Amai Lyrics: Invalid response format", parsed);
-            }
-          }
-        } catch (err2) {
+      });
+      return response.text;
+    };
+    let retries = 2;
+    let lines;
+    while (retries >= 0) {
+      try {
+        const responseText = await makeRequest();
+        const parsed = JSON.parse(responseText.replace(/\\n/g, ""));
+        if (parsed && Array.isArray(parsed.lines)) {
+          lines = parsed.lines;
+          break;
+        } else {
           if (retries === 0) {
-            console.error("Amai Lyrics: Error parsing response", err2);
+            console.error("Amai Lyrics: Invalid response format", parsed);
           }
         }
-        retries--;
+      } catch (err2) {
+        if (retries === 0) {
+          console.error("Amai Lyrics: Error parsing response", err2);
+        }
       }
-      if (lines) {
-        updateLyricsWithText(lyricsJson, lines);
-      }
-    } catch (error) {
-      console.error("Amai Lyrics:", error);
-      lyricsJson.Info = "Amai Lyrics: Fetch Error. Please double check your API key. Click here to open settings page.";
+      retries--;
     }
-    return lyricsJson;
+    return lines ?? [];
   }
   var genAIModulePromise, AI_MODELS;
   var init_gemini = __esm({
     "src/utils/Lyrics/ai/gemini.ts"() {
-      init_storage();
-      init_Defaults();
-      init_conversion();
       genAIModulePromise = null;
       AI_MODELS = {
         TRANSLATION: "gemini-flash-lite-latest",
@@ -33657,671 +34804,132 @@ ${JSON.stringify(lyricsOnly)}`
   });
 
   // src/utils/Lyrics/ai/index.ts
-  async function fetchPhoneticLyrics(lyricsJson, hasKanji, hasKorean, lyricsOnly) {
-    if (hasKanji) {
-      if (storage_default.get("enable_romaji") === "true") {
-        return await generateRomajiLyrics(lyricsJson, lyricsOnly);
-      } else {
-        return await generateFuriganaLyrics(lyricsJson, lyricsOnly);
-      }
-    } else if (hasKorean) {
-      return await generateRomajaLyrics(lyricsJson, lyricsOnly);
-    } else {
-      return lyricsJson;
-    }
+  function hasUsableLines(lines) {
+    return lines.length > 0 && lines.some((line) => line.trim() !== "");
   }
-  async function fetchLyricTranslations(lyricsOnly) {
-    if (storage_default.get("disable_translation") === "true") {
-      console.log("[Amai Lyrics] Translation disabled");
-      return lyricsOnly.map(() => "");
+  function attachTranslations(lyricsJson, translations) {
+    if (lyricsJson.Type === "Line" && lyricsJson.Content) {
+      lyricsJson.Content.forEach((line, idx) => {
+        line.Translation = translations[idx] || "";
+      });
+    } else if (lyricsJson.Type === "Static" && lyricsJson.Lines) {
+      lyricsJson.Lines.forEach((line, idx) => {
+        line.Translation = translations[idx] || "";
+      });
     }
-    const targetLang = storage_default.get("translation_language")?.toString() || Defaults_default.translationLanguage;
-    const prompt = buildTranslationPrompt(targetLang);
-    const geminiApiKey = storage_default.get("GEMINI_API_KEY")?.toString();
-    if (geminiApiKey && geminiApiKey.trim() !== "") {
-      console.log("[Amai Lyrics] Using Gemini for translations");
-      const geminiTranslations = await fetchGeminiTranslations(lyricsOnly, prompt);
-      if (geminiTranslations.length > 0 && geminiTranslations.some((line) => line.trim() !== "")) {
-        return geminiTranslations;
-      }
-      console.log("[Amai Lyrics] Gemini failed, falling back to Amai API for translations");
-    }
-    const amaiTranslations = await fetchAmaiTranslations(lyricsOnly, prompt);
-    if (amaiTranslations.length > 0 && amaiTranslations.some((line) => line.trim() !== "")) {
-      return amaiTranslations;
-    }
-    return await fetchGeminiTranslations(lyricsOnly, prompt);
   }
   function buildTranslationPrompt(targetLang) {
     const escapedLang = targetLang.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     return Defaults_default.translationPrompt.replace(/{language}/g, escapedLang) + ` Translate the following lyrics into ${targetLang}:
 `;
   }
-  async function generateFuriganaLyrics(lyricsJson, lyricsOnly) {
-    return await generateLyricsUsingPrompt(lyricsJson, lyricsOnly, Defaults_default.furiganaPrompt);
-  }
-  async function generateRomajaLyrics(lyricsJson, lyricsOnly) {
-    return await generateLyricsUsingPrompt(lyricsJson, lyricsOnly, Defaults_default.romajaPrompt);
-  }
-  async function generateRomajiLyrics(lyricsJson, lyricsOnly) {
-    return await generateLyricsUsingPrompt(lyricsJson, lyricsOnly, Defaults_default.romajiPrompt);
-  }
-  async function generateLyricsUsingPrompt(lyricsJson, lyricsOnly, prompt) {
-    const geminiApiKey = storage_default.get("GEMINI_API_KEY")?.toString();
-    if (geminiApiKey && geminiApiKey.trim() !== "") {
-      console.log("[Amai Lyrics] Using Gemini for phonetic lyrics");
-      const resultJson = await processLyricsUsingGemini(
-        lyricsJson,
-        lyricsOnly,
-        Defaults_default.systemInstruction,
-        prompt
-      );
-      if (resultJson.Info && resultJson.Info.includes("Fetch Error")) {
-        console.log("[Amai Lyrics] Gemini failed, falling back to Amai API for phonetic lyrics");
-        const errorMsg = resultJson.Info;
-        resultJson.Info = void 0;
-        const amaiLines2 = await fetchAmaiPhonetic(lyricsOnly, prompt);
-        if (amaiLines2.length > 0 && amaiLines2.some((line) => line.trim() !== "")) {
-          updateLyricsWithText(resultJson, amaiLines2);
-        } else {
-          resultJson.Info = errorMsg;
-        }
-      }
-      return resultJson;
+  function selectPhoneticPrompt(flags, enableRomaji) {
+    if (flags.hasKanji) {
+      return enableRomaji ? Defaults_default.romajiPrompt : Defaults_default.furiganaPrompt;
     }
-    const amaiLines = await fetchAmaiPhonetic(lyricsOnly, prompt);
-    if (amaiLines.length > 0 && amaiLines.some((line) => line.trim() !== "")) {
-      updateLyricsWithText(lyricsJson, amaiLines);
-      return lyricsJson;
+    if (flags.hasKorean) {
+      return Defaults_default.romajaPrompt;
+    }
+    return null;
+  }
+  async function enhanceLyrics(prepared, lyricsOnly, flags, token, providerOverrides = {}) {
+    const apiKey = (storage_default.get("GEMINI_API_KEY")?.toString() ?? "").trim();
+    const hasKey = apiKey !== "";
+    const enableRomaji = storage_default.get("enable_romaji") === "true";
+    const translationsDisabled = storage_default.get("disable_translation") === "true";
+    const targetLang = storage_default.get("translation_language")?.toString() || Defaults_default.translationLanguage;
+    const providers = {
+      fetchGeminiPhonetic: (lines, prompt) => fetchGeminiPhonetic(lines, prompt, Defaults_default.systemInstruction, apiKey),
+      fetchGeminiTranslations: (lines, prompt) => fetchGeminiTranslations(lines, prompt, apiKey, Defaults_default.systemInstruction),
+      fetchAmaiPhonetic,
+      fetchAmaiTranslations,
+      ...providerOverrides
+    };
+    const live = () => isCurrentLyricsRequest(token);
+    if (!live())
+      return null;
+    const phoneticPrompt = selectPhoneticPrompt(flags, enableRomaji);
+    const [translations] = await Promise.all([
+      enhanceTranslations(lyricsOnly, targetLang, translationsDisabled, hasKey, providers, live),
+      enhancePhonetics(prepared, lyricsOnly, phoneticPrompt, hasKey, providers, live)
+    ]);
+    if (!live())
+      return null;
+    attachTranslations(prepared, translations);
+    return prepared;
+  }
+  async function enhancePhonetics(prepared, lyricsOnly, prompt, hasKey, providers, live) {
+    if (!prompt)
+      return;
+    if (hasKey) {
+      console.log("[Amai Lyrics] Using Gemini for phonetic lyrics");
+      if (!live())
+        return;
+      try {
+        const lines = await providers.fetchGeminiPhonetic(lyricsOnly, prompt);
+        updateLyricsWithText(prepared, lines);
+        return;
+      } catch {
+        console.log("[Amai Lyrics] Gemini failed, falling back to Amai API for phonetic lyrics");
+      }
+      if (!live())
+        return;
+      const amaiLines2 = await providers.fetchAmaiPhonetic(lyricsOnly, prompt);
+      if (hasUsableLines(amaiLines2)) {
+        updateLyricsWithText(prepared, amaiLines2);
+      } else {
+        prepared.Info = FETCH_ERROR_INFO;
+      }
+      return;
+    }
+    if (!live())
+      return;
+    const amaiLines = await providers.fetchAmaiPhonetic(lyricsOnly, prompt);
+    if (hasUsableLines(amaiLines)) {
+      updateLyricsWithText(prepared, amaiLines);
+      return;
     }
     console.log("[Amai Lyrics] Falling back to Gemini for phonetic lyrics");
-    if (!await verifyGeminiAPIKey(lyricsJson)) {
-      return lyricsJson;
-    }
-    return await processLyricsUsingGemini(lyricsJson, lyricsOnly, Defaults_default.systemInstruction, prompt);
+    console.error("Amai Lyrics: Gemini API Key missing");
+    prepared.Info = MISSING_KEY_INFO;
   }
-  async function verifyGeminiAPIKey(lyricsJson) {
-    const geminiApiKey = storage_default.get("GEMINI_API_KEY")?.toString();
-    if (!geminiApiKey || geminiApiKey === "") {
-      console.error("Amai Lyrics: Gemini API Key missing");
-      lyricsJson.Info = "Amai Lyrics: Gemini API Key missing. Click here to add your own API key.";
-      return false;
+  async function enhanceTranslations(lyricsOnly, targetLang, disabled, hasKey, providers, live) {
+    if (disabled) {
+      console.log("[Amai Lyrics] Translation disabled");
+      return lyricsOnly.map(() => "");
     }
-    return true;
+    const prompt = buildTranslationPrompt(targetLang);
+    if (hasKey) {
+      console.log("[Amai Lyrics] Using Gemini for translations");
+      if (!live())
+        return [];
+      const geminiTranslations = await providers.fetchGeminiTranslations(lyricsOnly, prompt);
+      if (hasUsableLines(geminiTranslations)) {
+        return geminiTranslations;
+      }
+      console.log("[Amai Lyrics] Gemini failed, falling back to Amai API for translations");
+    }
+    if (!live())
+      return [];
+    const amaiTranslations = await providers.fetchAmaiTranslations(lyricsOnly, prompt);
+    if (hasUsableLines(amaiTranslations)) {
+      return amaiTranslations;
+    }
+    if (!live())
+      return [];
+    return await providers.fetchGeminiTranslations(lyricsOnly, prompt);
   }
+  var FETCH_ERROR_INFO, MISSING_KEY_INFO;
   var init_ai = __esm({
     "src/utils/Lyrics/ai/index.ts"() {
       init_storage();
       init_Defaults();
       init_conversion();
+      init_publish();
       init_amai();
       init_gemini();
-    }
-  });
-
-  // src/utils/CSS/Styles.ts
-  function applyStyles(element, styles) {
-    if (!element) {
-      console.warn("Element not found for applying styles");
-      return false;
-    }
-    try {
-      for (const key in styles) {
-        if (Object.prototype.hasOwnProperty.call(styles, key)) {
-          element.style.setProperty(key, String(styles[key]));
-        }
-      }
-      return true;
-    } catch (error) {
-      console.error("Error applying styles:", error);
-      return false;
-    }
-  }
-  function removeAllStyles(element) {
-    if (!element) {
-      console.warn("Element not found for removing styles");
-      return false;
-    }
-    try {
-      element.removeAttribute("style");
-      return true;
-    } catch (error) {
-      console.error("Error removing styles:", error);
-      return false;
-    }
-  }
-  var init_Styles = __esm({
-    "src/utils/CSS/Styles.ts"() {
-    }
-  });
-
-  // src/utils/Lyrics/ConvertTime.ts
-  function ConvertTime(time) {
-    return time * 1e3;
-  }
-  var init_ConvertTime = __esm({
-    "src/utils/Lyrics/ConvertTime.ts"() {
-    }
-  });
-
-  // src/utils/Lyrics/Applyer/Credits/ApplyLyricsCredits.ts
-  function ApplyLyricsCredits(data) {
-    const LyricsContainer = document.querySelector("#AmaiLyricsPage .LyricsContainer .LyricsContent");
-    if (!data?.SongWriters)
-      return;
-    const CreditsElement = document.createElement("div");
-    CreditsElement.classList.add("Credits");
-    const SongWriters = data.SongWriters.join(", ");
-    CreditsElement.textContent = `Credits: ${SongWriters}`;
-    LyricsContainer.appendChild(CreditsElement);
-  }
-  var init_ApplyLyricsCredits = __esm({
-    "src/utils/Lyrics/Applyer/Credits/ApplyLyricsCredits.ts"() {
-    }
-  });
-
-  // src/utils/Lyrics/Applyer/Utils/createMusicalLine.ts
-  function createDotGroup(startTime, endTime) {
-    const dotGroup = document.createElement("div");
-    dotGroup.classList.add("dotGroup");
-    dotGroup.setAttribute("aria-hidden", "true");
-    const totalTime = endTime - startTime;
-    const dotTime = totalTime / 3;
-    for (let i = 0; i < 3; i++) {
-      const dot = document.createElement("span");
-      dot.classList.add("word", "dot");
-      dot.textContent = DOT_GLYPH;
-      const target = LyricsObject.Types.Line.Lines;
-      const idx = target.length - 1;
-      if (idx >= 0 && target[idx]?.Syllables?.Lead) {
-        target[idx].Syllables.Lead.push({
-          HTMLElement: dot,
-          StartTime: startTime + dotTime * i,
-          EndTime: i === 2 ? endTime - 400 : startTime + dotTime * (i + 1),
-          TotalTime: dotTime,
-          Dot: true
-        });
-      }
-      dotGroup.appendChild(dot);
-    }
-    return dotGroup;
-  }
-  function createInstrumentalPill(startMs, endMs) {
-    const pill = document.createElement("div");
-    pill.classList.add("instrumental-pill");
-    pill.setAttribute("role", "img");
-    pill.setAttribute("aria-label", INSTRUMENTAL_LABEL);
-    pill.appendChild(createDotGroup(startMs, endMs));
-    return pill;
-  }
-  function registerMusicalLine(startMs, endMs) {
-    const line = document.createElement("div");
-    line.classList.add("line", "musical-line");
-    LyricsObject.Types.Line.Lines.push({
-      HTMLElement: line,
-      StartTime: startMs,
-      EndTime: endMs,
-      TotalTime: endMs - startMs,
-      DotLine: true
-    });
-    SetWordArrayInCurentLine_LINE_SYNCED();
-    return line;
-  }
-  function createMusicalLineMs(startMs, endMs, oppositeAligned) {
-    const line = registerMusicalLine(startMs, endMs);
-    if (oppositeAligned)
-      line.classList.add("OppositeAligned");
-    line.appendChild(createInstrumentalPill(startMs, endMs));
-    return line;
-  }
-  var DOT_GLYPH, INSTRUMENTAL_LABEL;
-  var init_createMusicalLine = __esm({
-    "src/utils/Lyrics/Applyer/Utils/createMusicalLine.ts"() {
-      init_ConvertTime();
-      init_lyrics();
-      DOT_GLYPH = "\u2022";
-      INSTRUMENTAL_LABEL = "Instrumental";
-    }
-  });
-
-  // src/utils/sanitize.ts
-  function escapeHtml(text) {
-    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-  }
-  function sanitizeRubyHtml(html) {
-    const escaped = escapeHtml(html);
-    return escaped.split(RUBY_ROMAJA_OPEN).join('<ruby class="romaja">').split(RUBY_OPEN).join("<ruby>").split(RUBY_CLOSE).join("</ruby>").split(RT_OPEN).join("<rt>").split(RT_CLOSE).join("</rt>");
-  }
-  function createRubyFragment(html) {
-    const safe = sanitizeRubyHtml(html);
-    const tpl = document.createElement("template");
-    tpl.innerHTML = safe;
-    return tpl.content;
-  }
-  var RUBY_OPEN, RUBY_CLOSE, RUBY_ROMAJA_OPEN, RT_OPEN, RT_CLOSE;
-  var init_sanitize = __esm({
-    "src/utils/sanitize.ts"() {
-      RUBY_OPEN = "&lt;ruby&gt;";
-      RUBY_CLOSE = "&lt;/ruby&gt;";
-      RUBY_ROMAJA_OPEN = "&lt;ruby class=&quot;romaja&quot;&gt;";
-      RT_OPEN = "&lt;rt&gt;";
-      RT_CLOSE = "&lt;/rt&gt;";
-    }
-  });
-
-  // src/utils/Lyrics/isRtl.ts
-  function isRtl(text) {
-    if (!text || text.length === 0)
-      return false;
-    const rtlRegex = /[\u0590-\u05FF\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB1D-\uFB4F\uFB50-\uFDFF\uFE70-\uFEFF]/;
-    for (let i = 0; i < text.length; i++) {
-      const char = text[i];
-      if (/[\d\s,.;:?!()[\]{}"'\\/<>@#$%^&*_=+-]/.test(char)) {
-        continue;
-      }
-      return rtlRegex.test(char);
-    }
-    return false;
-  }
-  var isRtl_default;
-  var init_isRtl = __esm({
-    "src/utils/Lyrics/isRtl.ts"() {
-      isRtl_default = isRtl;
-    }
-  });
-
-  // src/utils/Lyrics/phoneticPatterns.ts
-  function isJapaneseText(text) {
-    return !!text && JAPANESE_CHAR_REGEX.test(text);
-  }
-  function applyPhoneticPatterns(text, enableRomaji) {
-    if (text === void 0)
-      return void 0;
-    if (JAPANESE_CHAR_REGEX.test(text)) {
-      if (enableRomaji) {
-        return text.replace(JAPANESE_ROMAJI_REGEX, (_match, _p1, p2, p3, p4) => {
-          const base = p2 || p3;
-          return `<ruby>${base}<rt>${p4}</rt></ruby>`;
-        });
-      }
-      return text.replace(JAPANESE_FURIGANA_REGEX, "<ruby>$1<rt>$2</rt></ruby>");
-    }
-    return text.replace(KOREAN_ROMAJA_REGEX, '<ruby class="romaja">$1<rt>$2</rt></ruby>');
-  }
-  function phoneticCacheKey(text, enableRomaji) {
-    return `${enableRomaji ? "r" : "f"}\0${text}`;
-  }
-  function processPhoneticText(text, enableRomaji) {
-    if (text === void 0)
-      return void 0;
-    const key = phoneticCacheKey(text, enableRomaji);
-    const cached = phoneticTextCache.get(key);
-    if (cached !== void 0)
-      return cached;
-    const result = applyPhoneticPatterns(text, enableRomaji);
-    if (phoneticTextCache.size >= PHONETIC_CACHE_MAX) {
-      const firstKey = phoneticTextCache.keys().next().value;
-      if (firstKey !== void 0)
-        phoneticTextCache.delete(firstKey);
-    }
-    phoneticTextCache.set(key, result);
-    return result;
-  }
-  var JAPANESE_CHAR_REGEX, JAPANESE_ROMAJI_REGEX, JAPANESE_FURIGANA_REGEX, KOREAN_ROMAJA_REGEX, phoneticTextCache, PHONETIC_CACHE_MAX;
-  var init_phoneticPatterns = __esm({
-    "src/utils/Lyrics/phoneticPatterns.ts"() {
-      JAPANESE_CHAR_REGEX = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/;
-      JAPANESE_ROMAJI_REGEX = /(([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)|[(\uFF08]([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)[)\uFF09])(?:{|\uFF5B)([^}\uFF5D]+)(?:}|\uFF5D)/g;
-      JAPANESE_FURIGANA_REGEX = /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^}]+)}/g;
-      KOREAN_ROMAJA_REGEX = /((?:\([0-9\uAC00-\uD7AF\u1100-\u11FF]+\)|[\uAC00-\uD7AF\u1100-\u11FF]+)(?:[a-zA-Z]*)[?.!,"']?){([^}]+)}/g;
-      phoneticTextCache = /* @__PURE__ */ new Map();
-      PHONETIC_CACHE_MAX = 100;
-    }
-  });
-
-  // src/utils/Lyrics/Applyer/Utils/decorateLine.ts
-  function processLinePhonetics(line, data) {
-    if (isJapaneseText(line.Text)) {
-      if (!data.Info && (!storage_default.get("disable_romaji_toggle_notification") || storage_default.get("disable_romaji_toggle_notification") === "false")) {
-        data.Info = "Toggle between Romaji or Furigana in settings. Disable this notification there as well.";
-      }
-      line.Text = applyPhoneticPatterns(line.Text, storage_default.get("enable_romaji") === "true");
-    } else {
-      line.Text = applyPhoneticPatterns(line.Text, false);
-    }
-  }
-  function decorateLineElement(lineElem, mainTextContainer, line, rawText) {
-    const hasDistinctTranslation = !!line.Translation && line.Translation.trim() !== "" && (!rawText || line.Translation.trim() !== rawText.trim());
-    if (hasDistinctTranslation) {
-      const translationElem = document.createElement("div");
-      translationElem.classList.add("translation");
-      translationElem.textContent = line.Translation;
-      mainTextContainer.appendChild(translationElem);
-    }
-    if (isRtl_default(line.Text) && !lineElem.classList.contains("rtl")) {
-      lineElem.classList.add("rtl");
-    }
-    if (ArabicPersianRegex.test(line.Text)) {
-      lineElem.setAttribute("font", "Vazirmatn");
-    }
-  }
-  var init_decorateLine = __esm({
-    "src/utils/Lyrics/Applyer/Utils/decorateLine.ts"() {
-      init_Addons();
-      init_isRtl();
-      init_storage();
-      init_phoneticPatterns();
-    }
-  });
-
-  // src/utils/Lyrics/LyricsRenderer.ts
-  function resolveContainer() {
-    if (!Defaults_default.LyricsContainerExists)
-      return null;
-    const container = document.querySelector(LYRICS_CONTAINER_SELECTOR);
-    if (!container) {
-      console.error("Lyrics container not found");
-      return null;
-    }
-    return container;
-  }
-  function inferType(data) {
-    if (data.Type === "Line" || data.Type === "Static")
-      return data.Type;
-    return Array.isArray(data.Content) ? "Line" : "Static";
-  }
-  function renderLyrics(data) {
-    const container = resolveContainer();
-    if (!container)
-      return;
-    const type = inferType(data);
-    container.setAttribute("data-lyrics-type", type);
-    ClearLyricsContentArrays();
-    ClearScrollSimplebar();
-    TOP_ApplyLyricsSpacer(container);
-    if (type === "Line") {
-      renderLineRows(container, data);
-    } else {
-      renderStaticRows(container, data);
-    }
-    finishRender(container, data);
-  }
-  function renderLineRows(container, data) {
-    const content = data.Content ?? [];
-    const fragment = document.createDocumentFragment();
-    const convertStartTime = ConvertTime(data.StartTime ?? 0);
-    if ((data.StartTime ?? 0) >= lyricsBetweenShow) {
-      const musicalLine = createMusicalLineMs(0, convertStartTime, !!content[0]?.OppositeAligned);
-      fragment.appendChild(musicalLine);
-    }
-    content.forEach((line, index, arr) => {
-      const lineElem = document.createElement("div");
-      processLinePhonetics(line, data);
-      const mainTextContainer = document.createElement("span");
-      mainTextContainer.classList.add("main-lyrics-text");
-      mainTextContainer.classList.add("line");
-      mainTextContainer.appendChild(createRubyFragment(line.Text));
-      lineElem.appendChild(mainTextContainer);
-      decorateLineElement(lineElem, mainTextContainer, line, data.Raw?.[index]);
-      const startTime = ConvertTime(line.StartTime);
-      const endTime = ConvertTime(line.EndTime);
-      LyricsObject.Types.Line.Lines.push({
-        HTMLElement: mainTextContainer,
-        StartTime: startTime,
-        EndTime: endTime,
-        TotalTime: endTime - startTime
-      });
-      if (line.OppositeAligned) {
-        lineElem.classList.add("OppositeAligned");
-      }
-      fragment.appendChild(lineElem);
-      const nextLine = arr[index + 1];
-      const hasMusicalBreak = nextLine && nextLine.StartTime - line.EndTime >= lyricsBetweenShow;
-      if (hasMusicalBreak) {
-        const musicalLine = createMusicalLineMs(
-          endTime,
-          ConvertTime(nextLine.StartTime),
-          !!nextLine.OppositeAligned
-        );
-        fragment.appendChild(musicalLine);
-      }
-    });
-    container.appendChild(fragment);
-  }
-  function renderStaticRows(container, data) {
-    const lines = data.Lines ?? [];
-    const fragment = document.createDocumentFragment();
-    lines.forEach((line, index) => {
-      const lineElem = document.createElement("div");
-      processLinePhonetics(line, data);
-      const mainTextContainer = document.createElement("span");
-      mainTextContainer.classList.add("main-lyrics-text");
-      if (line.Text?.includes("[DEF=font_size:small]")) {
-        lineElem.style.fontSize = "35px";
-        mainTextContainer.appendChild(
-          createRubyFragment(line.Text.replace("[DEF=font_size:small]", ""))
-        );
-      } else {
-        mainTextContainer.appendChild(createRubyFragment(line.Text));
-      }
-      lineElem.appendChild(mainTextContainer);
-      decorateLineElement(lineElem, mainTextContainer, line, data.Raw?.[index]);
-      lineElem.classList.add("line", "static");
-      LyricsObject.Types.Static.Lines.push({
-        HTMLElement: lineElem
-      });
-      fragment.appendChild(lineElem);
-    });
-    container.appendChild(fragment);
-  }
-  function finishRender(container, data) {
-    ApplyInfo(data);
-    ApplyLyricsCredits(data);
-    BOTTOM_ApplyLyricsSpacer(container);
-    AutoScroll.mount();
-    const stylingContainer = document.querySelector(STYLING_CONTAINER_SELECTOR);
-    if (!stylingContainer)
-      return;
-    if (data.offline) {
-      stylingContainer.classList.add("offline");
-    }
-    removeAllStyles(stylingContainer);
-    if (data.classes) {
-      stylingContainer.className = data.classes;
-    }
-    if (data.styles) {
-      applyStyles(stylingContainer, data.styles);
-    }
-  }
-  function applyScrollReanchor(scrollEl, activeLine, activeLineTopBefore, fallbackScrollTop) {
-    if (!scrollEl)
-      return;
-    if (activeLine && activeLine.isConnected && activeLineTopBefore !== null) {
-      const delta = activeLine.getBoundingClientRect().top - activeLineTopBefore;
-      if (delta !== 0)
-        scrollEl.scrollTop += delta;
-    } else {
-      scrollEl.scrollTop = fallbackScrollTop;
-    }
-  }
-  function updateLyricTranslations(lyricsData) {
-    try {
-      if (!Defaults_default.LyricsContainerExists)
-        return;
-      const lyricsContainer = document.querySelector(LYRICS_CONTAINER_SELECTOR);
-      if (!lyricsContainer)
-        return;
-      const simplebarContent = lyricsContainer.querySelector(
-        ".simplebar-content-wrapper"
-      );
-      const fallbackScrollTop = simplebarContent?.scrollTop || 0;
-      const activeLine = LyricsObject.Types.Line.Lines.find(
-        (line) => line.Status === "Active" && line.HTMLElement?.isConnected
-      )?.HTMLElement ?? lyricsContainer.querySelector(".main-lyrics-text.line.Active");
-      const activeLineTopBefore = activeLine ? activeLine.getBoundingClientRect().top : null;
-      const enableRomaji = storage_default.get("enable_romaji") === "true";
-      if (lyricsData.Type === "Line" && lyricsData.Content) {
-        updateLineLyricsTranslations(lyricsData.Content, enableRomaji, lyricsData.Raw);
-      } else if (lyricsData.Type === "Static" && lyricsData.Lines) {
-        updateStaticLyricsTranslations(lyricsData.Lines, enableRomaji, lyricsData.Raw);
-      }
-      applyScrollReanchor(simplebarContent, activeLine, activeLineTopBefore, fallbackScrollTop);
-      RecalculateScrollSimplebar();
-    } catch (error) {
-      console.error("Amai Lyrics: Error updating translations", error);
-    }
-  }
-  function updateLineElement(lineElement, text, translation, enableRomaji, rawText) {
-    text = text.replace("[DEF=font_size:small]", "");
-    const processedText = processPhoneticText(text, enableRomaji);
-    const hasDistinctTranslation = !!translation && translation.trim() !== "" && (!rawText || translation.trim() !== rawText.trim());
-    const appliedTranslation = hasDistinctTranslation ? translation : "";
-    const previous = appliedLineState.get(lineElement);
-    if (previous && previous.text === processedText && previous.translation === appliedTranslation) {
-      return;
-    }
-    if (previous && previous.text === processedText) {
-      const updatedTranslation = lineElement.querySelector(".translation");
-      if (appliedTranslation) {
-        if (updatedTranslation) {
-          updatedTranslation.textContent = appliedTranslation;
-        } else {
-          const translationElem = document.createElement("div");
-          translationElem.classList.add("translation");
-          translationElem.textContent = appliedTranslation;
-          lineElement.appendChild(translationElem);
-        }
-      } else if (updatedTranslation) {
-        updatedTranslation.remove();
-      }
-      appliedLineState.set(lineElement, { text: processedText, translation: appliedTranslation });
-      return;
-    }
-    lineElement.textContent = "";
-    lineElement.appendChild(createRubyFragment(processedText));
-    if (appliedTranslation) {
-      const translationElem = document.createElement("div");
-      translationElem.classList.add("translation");
-      translationElem.textContent = appliedTranslation;
-      lineElement.appendChild(translationElem);
-    }
-    appliedLineState.set(lineElement, { text: processedText, translation: appliedTranslation });
-  }
-  function updateLineLyricsTranslations(content, enableRomaji, rawLyrics) {
-    const lineElements = document.querySelectorAll(LINE_ROW_SELECTOR);
-    content.forEach((line, index) => {
-      if (index >= lineElements.length)
-        return;
-      updateLineElement(
-        lineElements[index],
-        line.Text,
-        line.Translation,
-        enableRomaji,
-        rawLyrics?.[index]
-      );
-    });
-  }
-  function updateStaticLyricsTranslations(lines, enableRomaji, rawLyrics) {
-    const lineElements = document.querySelectorAll(STATIC_ROW_SELECTOR);
-    lines.forEach((line, index) => {
-      if (index >= lineElements.length)
-        return;
-      updateLineElement(
-        lineElements[index],
-        line.Text,
-        line.Translation,
-        enableRomaji,
-        rawLyrics?.[index]
-      );
-    });
-  }
-  var LYRICS_CONTAINER_SELECTOR, STYLING_CONTAINER_SELECTOR, LINE_ROW_SELECTOR, STATIC_ROW_SELECTOR, appliedLineState;
-  var init_LyricsRenderer = __esm({
-    "src/utils/Lyrics/LyricsRenderer.ts"() {
-      init_Addons();
-      init_Defaults();
-      init_Styles();
-      init_ScrollSimplebar();
-      init_AutoScroll();
-      init_ConvertTime();
-      init_lyrics();
-      init_ApplyLyricsCredits();
-      init_ApplyInfo();
-      init_createMusicalLine();
-      init_sanitize();
-      init_decorateLine();
-      init_storage();
-      init_phoneticPatterns();
-      init_ScrollSimplebar();
-      LYRICS_CONTAINER_SELECTOR = "#AmaiLyricsPage .LyricsContainer .LyricsContent";
-      STYLING_CONTAINER_SELECTOR = "#AmaiLyricsPage .LyricsContainer .LyricsContent .simplebar-content";
-      LINE_ROW_SELECTOR = `${LYRICS_CONTAINER_SELECTOR} .main-lyrics-text.line`;
-      STATIC_ROW_SELECTOR = `${LYRICS_CONTAINER_SELECTOR} .line.static .main-lyrics-text`;
-      appliedLineState = /* @__PURE__ */ new WeakMap();
-    }
-  });
-
-  // src/utils/Lyrics/publish.ts
-  function liveLyricsUri() {
-    try {
-      const uri = Spicetify?.Player?.data?.item?.uri;
-      return typeof uri === "string" && uri.includes(":") ? uri : null;
-    } catch {
-      return null;
-    }
-  }
-  function beginLyricsRequest(uri) {
-    sharedRequest.token += 1;
-    sharedRequest.uri = uri;
-    return sharedRequest.token;
-  }
-  function isCurrentLyricsRequest(token) {
-    if (sharedRequest.token !== token)
-      return false;
-    return liveLyricsUri() === sharedRequest.uri;
-  }
-  function publishNoLyrics(token, trackId) {
-    if (!isCurrentLyricsRequest(token))
-      return false;
-    const sentinel = { status: "NO_LYRICS", id: trackId };
-    const serialized = JSON.stringify(sentinel);
-    storage_default.set("currentLyricsData", serialized);
-    EventManager_default.evoke("lyrics:data-updated", serialized);
-    return true;
-  }
-  function publishInitialLyrics(token, data) {
-    if (!isCurrentLyricsRequest(token))
-      return false;
-    Defaults_default.CurrentLyricsType = data.Type;
-    const serialized = JSON.stringify(data);
-    storage_default.set("currentLyricsData", serialized);
-    EventManager_default.evoke("lyrics:data-updated", serialized);
-    HideLoaderContainer();
-    ClearLyricsPageContainer();
-    return true;
-  }
-  function publishEnhancedLyrics(token, trackId, data) {
-    if (!isCurrentLyricsRequest(token))
-      return false;
-    if (liveTrackId() !== trackId)
-      return false;
-    updateLyricTranslations(data);
-    const serialized = JSON.stringify(data);
-    storage_default.set("currentLyricsData", serialized);
-    EventManager_default.evoke("lyrics:data-updated", serialized);
-    return true;
-  }
-  var windowRef8, sharedRequest;
-  var init_publish = __esm({
-    "src/utils/Lyrics/publish.ts"() {
-      init_storage();
-      init_Defaults();
-      init_EventManager();
-      init_ui();
-      init_LyricsRenderer();
-      init_trackId();
-      windowRef8 = window;
-      sharedRequest = windowRef8.__amaiLyricsRequest ?? (windowRef8.__amaiLyricsRequest = { token: 0, uri: "" });
+      FETCH_ERROR_INFO = "Amai Lyrics: Fetch Error. Please double check your API key. Click here to open settings page.";
+      MISSING_KEY_INFO = "Amai Lyrics: Gemini API Key missing. Click here to add your own API key.";
     }
   });
 
@@ -34378,13 +34986,11 @@ ${JSON.stringify(lyricsOnly)}`
   async function processLyricsEnhancementsAsync(token, trackId, lyricsJson, hasKanji, hasKorean, lyricsOnly) {
     try {
       ShowProcessingIndicator();
-      const [processedLyricsJson, translations] = await Promise.all([
-        fetchPhoneticLyrics(lyricsJson, hasKanji, hasKorean, lyricsOnly),
-        fetchLyricTranslations(lyricsOnly)
-      ]);
-      attachTranslations(processedLyricsJson, translations);
-      await cacheLyrics(trackId, { ...processedLyricsJson, id: trackId });
-      publishEnhancedLyrics(token, trackId, { ...processedLyricsJson, id: trackId });
+      const enhanced = await enhanceLyrics(lyricsJson, lyricsOnly, { hasKanji, hasKorean }, token);
+      if (!enhanced)
+        return;
+      await cacheLyrics(trackId, { ...enhanced, id: trackId });
+      publishEnhancedLyrics(token, trackId, { ...enhanced, id: trackId });
     } catch (error) {
       console.error("Amai Lyrics: Error processing enhancements", error);
     } finally {
@@ -34414,17 +35020,6 @@ ${JSON.stringify(lyricsOnly)}`
       }
     }
     return { hasKanji, hasKorean };
-  }
-  function attachTranslations(lyricsJson, translations) {
-    if (lyricsJson.Type === "Line" && lyricsJson.Content) {
-      lyricsJson.Content.forEach((line, idx) => {
-        line.Translation = translations[idx] || "";
-      });
-    } else if (lyricsJson.Type === "Static" && lyricsJson.Lines) {
-      lyricsJson.Lines.forEach((line, idx) => {
-        line.Translation = translations[idx] || "";
-      });
-    }
   }
   function prepareLyricsForGemini(lyricsJson) {
     const lyricsOnly = extractLyrics(lyricsJson);
@@ -34766,8 +35361,8 @@ ${JSON.stringify(lyricsOnly)}`
       "Show Romaji readings for Japanese lyrics",
       Defaults_default.enableRomaji,
       () => {
-        void invalidateLyrics({ all: true }, { reload: true });
         storage_default.set("enable_romaji", settings.getFieldValue("enableRomaji"));
+        void invalidateLyrics({ all: true }, { reload: true });
       }
     );
     settings.addToggle(
@@ -34817,8 +35412,8 @@ ${JSON.stringify(lyricsOnly)}`
       "Turn off lyric translations",
       Defaults_default.disableTranslation,
       () => {
-        void invalidateLyrics({ all: true }, { reload: true });
         storage_default.set("disable_translation", settings.getFieldValue("disableTranslation"));
+        void invalidateLyrics({ all: true }, { reload: true });
       }
     );
     const translationFontSizeOptions = ["Extra Small", "Small", "Normal", "Large", "Extra Large"];
@@ -35571,7 +36166,6 @@ ${JSON.stringify(lyricsOnly)}`
 
   // src/managers/EventManager.ts
   init_SpotifyPlayer();
-  init_IntervalManager();
   init_GetProgress();
 
   // src/utils/playerState.ts
@@ -35587,7 +36181,6 @@ ${JSON.stringify(lyricsOnly)}`
   init_Session();
   init_Whentil();
   init_lifecycle();
-  init_Fullscreen();
   var _EventManager = class {
     static safeGetRepeat() {
       try {
@@ -35650,22 +36243,9 @@ ${JSON.stringify(lyricsOnly)}`
       const { shuffle, smartShuffle } = _EventManager.safeGetShuffle();
       SpotifyPlayer.ShuffleType = deriveShuffleType(shuffle, smartShuffle);
       Global_default.Event.evoke("playback:shuffle", SpotifyPlayer.ShuffleType);
-      let lastPosition = 0;
-      const positionInterval = new IntervalManager(0.5, () => {
-        if (!Fullscreen_default.IsOpen)
-          return;
-        const pos = SpotifyPlayer.GetTrackPosition();
-        if (pos !== lastPosition) {
-          Global_default.Event.evoke("playback:position", pos);
-        }
-        lastPosition = pos;
-      });
-      positionInterval.Start();
-      lifecycle_default.trackInterval(positionInterval);
     }
     static setupPlayerEvents() {
       lifecycle_default.trackPlayerEvent("onplaypause", _EventManager.onPlayPause);
-      lifecycle_default.trackPlayerEvent("onprogress", _EventManager.onProgress);
       lifecycle_default.trackPlayerEvent("songchange", _EventManager.onSongChange);
       lifecycle_default.trackPlayerEvent("repeat_mode_changed", _EventManager.onRepeatModeChanged);
       lifecycle_default.trackPlayerEvent("shuffle_changed", _EventManager.onShuffleChanged);
@@ -35711,9 +36291,6 @@ ${JSON.stringify(lyricsOnly)}`
       syncPlaybackPosition();
     }
     Global_default.Event.evoke("playback:playpause", e);
-  };
-  EventManager.onProgress = (e) => {
-    Global_default.Event.evoke("playback:progress", e);
   };
   EventManager.onSongChange = (e) => {
     Global_default.Event.evoke("playback:songchange", e);
@@ -35811,16 +36388,13 @@ ${JSON.stringify(lyricsOnly)}`
           UpdateNowBar2();
         }
       }
-      if (document.querySelector("#AmaiLyricsPage .LyricsContainer")) {
-        const { default: PageView2 } = await Promise.resolve().then(() => (init_PageView(), PageView_exports));
-        PageView2.UpdatePageContent();
-      }
     }
   };
 
   // src/components/DynamicBG/ArtworkSurfaces.ts
   init_lifecycle();
   init_Whentil();
+  init_Global();
   init_debounce2();
   init_AppBackground();
 
@@ -35997,6 +36571,7 @@ ${JSON.stringify(lyricsOnly)}`
       this.gridObserver = null;
       this.appFrameRafQueued = false;
       this.firstPaintWaiter = null;
+      this.fullscreenOpenId = null;
       this.sidebarBg = new NowPlayingBarBackground();
       this.adapters = adapters ?? createDefaultAdapters(this.sidebarBg);
       this.debouncedFanOut = debounce2((coverUrl) => {
@@ -36035,6 +36610,11 @@ ${JSON.stringify(lyricsOnly)}`
       lifecycle_default.trackCallback(
         () => window.removeEventListener(APP_BG_CHANGED_EVENT, this.toggleHandler)
       );
+      this.fullscreenOpenId = Global_default.Event.listen(
+        "fullscreen:open",
+        () => this.adapters.applyLyricsPage()
+      );
+      lifecycle_default.trackGlobalEvent(this.fullscreenOpenId);
     }
     destroy() {
       this.cancelPending();
@@ -36044,6 +36624,10 @@ ${JSON.stringify(lyricsOnly)}`
       this.sidebarLateObserver?.disconnect();
       this.appFrameObserver?.disconnect();
       this.gridObserver?.disconnect();
+      if (this.fullscreenOpenId !== null) {
+        Global_default.Event.unListen(this.fullscreenOpenId);
+        this.fullscreenOpenId = null;
+      }
       this.sidebarObserver = null;
       this.sidebarLateObserver = null;
       this.appFrameObserver = null;
@@ -36410,7 +36994,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21388-9mfFiULhxwdS/1a0a7c380c6d/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58c2d/DotLoader.css */
 #DotLoader {
   --dot-color: var(--amai-accent-1);
   --dot-color-dim: color-mix(in srgb, var(--amai-accent-1) 22%, transparent);
@@ -36445,7 +37029,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21388-9mfFiULhxwdS/1a0a7c380cae/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58c6e/ProcessingIndicator.css */
 #AmaiLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -36527,7 +37111,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21388-9mfFiULhxwdS/1a0a7c380530/tokens.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58360/tokens.css */
 :root {
   --amai-accent-1: #1ed760;
   --amai-accent-2: #1db954;
@@ -36580,7 +37164,7 @@ ${JSON.stringify(lyricsOnly)}`
   --amai-scrollbar-thumb: rgba(255, 255, 255, 0.6);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21388-9mfFiULhxwdS/1a0a7c380791/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58641/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -36818,7 +37402,7 @@ button:has(#AmaiLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21388-9mfFiULhxwdS/1a0a7c380822/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f586e2/Simplebar.css */
 #AmaiLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -37026,7 +37610,7 @@ button:has(#AmaiLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21388-9mfFiULhxwdS/1a0a7c380883/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58763/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -37630,7 +38214,7 @@ button:has(#AmaiLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21388-9mfFiULhxwdS/1a0a7c380934/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58824/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -37788,7 +38372,7 @@ body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingVi
   animation: none !important;
   filter: none !important;
 }
-@media (prefers-reduced-motion), (max-width: 768px) {
+@media (prefers-reduced-motion: reduce), (max-width: 768px) {
   .sweet-dynamic-bg {
     --bg-saturation: 1.2;
     --bg-brightness: 0.5;
@@ -37821,8 +38405,41 @@ body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingVi
   -o-object-fit: cover;
   object-fit: cover;
   border-radius: 0;
-  animation: none;
   mix-blend-mode: normal;
+}
+:is(.Root, .Root__top-container).amai-app-bg-host > .sweet-dynamic-bg.amai-app-bg > img.bg-image.primary {
+  animation: amaiAppDriftA 42s ease-in-out infinite alternate;
+}
+:is(.Root, .Root__top-container).amai-app-bg-host > .sweet-dynamic-bg.amai-app-bg > img.bg-image.secondary {
+  animation: amaiAppDriftB 56s ease-in-out infinite alternate-reverse;
+}
+@keyframes amaiAppDriftA {
+  from {
+    transform: translate3d(-1.2%, -0.8%, 0) scale(1.04);
+  }
+  to {
+    transform: translate3d(1.2%, 0.8%, 0) scale(1.09);
+  }
+}
+@keyframes amaiAppDriftB {
+  from {
+    transform: translate3d(1%, -1%, 0) scale(1.06);
+  }
+  to {
+    transform: translate3d(-1%, 1%, 0) scale(1.11);
+  }
+}
+@media (max-width: 768px) {
+  :is(.Root, .Root__top-container).amai-app-bg-host > .sweet-dynamic-bg.amai-app-bg > img.bg-image.primary,
+  :is(.Root, .Root__top-container).amai-app-bg-host > .sweet-dynamic-bg.amai-app-bg > img.bg-image.secondary {
+    animation-duration: 120s;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.Root, .Root__top-container).amai-app-bg-host > .sweet-dynamic-bg.amai-app-bg > img.bg-image.primary,
+  :is(.Root, .Root__top-container).amai-app-bg-host > .sweet-dynamic-bg.amai-app-bg > img.bg-image.secondary {
+    animation: none;
+  }
 }
 :is(.Root, .Root__top-container).amai-app-bg-host > .sweet-dynamic-bg.amai-app-bg::after {
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0) 22%, rgba(0, 0, 0, 0) 72%, rgba(0, 0, 0, 0.6) 100%);
@@ -37945,7 +38562,7 @@ body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingVi
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21388-9mfFiULhxwdS/1a0a7c3809a5/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f588a5/main.css */
 #AmaiLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -38196,7 +38813,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21388-9mfFiULhxwdS/1a0a7c380a06/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58906/Mixed.css */
 #AmaiLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -38583,7 +39200,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21388-9mfFiULhxwdS/1a0a7c380a67/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58977/LoaderContainer.css */
 #AmaiLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -38605,7 +39222,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21388-9mfFiULhxwdS/1a0a7c380a98/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f589a8/FullscreenTransition.css */
 #AmaiLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -38632,7 +39249,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21388-9mfFiULhxwdS/1a0a7c380ab9/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f589c9/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
@@ -38731,7 +39348,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21388-9mfFiULhxwdS/1a0a7c380aea/Settings.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58a0a/Settings.css */
 :is(#amai-settings, #amai-dev-settings, #amai-info) {
   display: grid;
   gap: 8px;
@@ -38958,7 +39575,7 @@ ruby > rt {
   border: 1px solid var(--essential-subdued, #818181);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21388-9mfFiULhxwdS/1a0a7c380b3b/SettingsModal.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58a5b/SettingsModal.css */
 .amai-settings-overlay {
   position: fixed;
   inset: 0;
@@ -39034,7 +39651,7 @@ ruby > rt {
   min-width: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21388-9mfFiULhxwdS/1a0a7c380b5c/Tooltips.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58a8c/Tooltips.css */
 .tippy-box[data-theme~=amai-lyrics] {
   position: relative;
   background-color: rgba(18, 18, 18, 0.92);
