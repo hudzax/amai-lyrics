@@ -29,6 +29,11 @@ npx vitest run src/components/PlaybarLyrics/PlaybarLyrics.test.ts  # colocated e
 
 Verify before commit: `npm run lint && npm run typecheck && npm test` — no CI workflow exists; these scripts are the only checks.
 
+## Definition of Done
+
+- Mandatory self-verification: never declare completion on assumption. Audit the final diff for scope violations, regressions, and unintended edits.
+- Substantiate every claim with executed evidence: `npm run lint && npm run typecheck && npm test` (or focused equivalent). Unrun checks count as failed.
+
 ## Build & Deploy
 
 - Tool: `spicetify-creator@^1.0.17` (esbuild wrapper, no Vite). Config is convention-based; `manifest.json` declares `main: ./builds/amai-lyrics-main.js`.
