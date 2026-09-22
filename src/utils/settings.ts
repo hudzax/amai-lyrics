@@ -103,10 +103,11 @@ function generalSettings() {
     'Show Romaji readings for Japanese lyrics',
     Defaults.enableRomaji,
     () => {
-      // Cached lyrics carry the old romaji setting: invalidate and reload so
-      // the current track re-fetches with phonetics applied (or removed).
-      void invalidateLyrics({ all: true }, { reload: true });
+      // Cached lyrics carry the old romaji setting: write the new value first,
+      // then invalidate and reload so the current track re-fetches with
+      // phonetics applied (or removed) under the new setting.
       storage.set('enable_romaji', settings.getFieldValue('enableRomaji') as string);
+      void invalidateLyrics({ all: true }, { reload: true });
     },
   );
 
@@ -162,9 +163,10 @@ function generalSettings() {
     'Turn off lyric translations',
     Defaults.disableTranslation,
     () => {
-      // Cached lyrics carry the old translation state: invalidate and reload.
-      void invalidateLyrics({ all: true }, { reload: true });
+      // Cached lyrics carry the old translation state: write the new value
+      // first, then invalidate and reload so the re-fetch sees it.
       storage.set('disable_translation', settings.getFieldValue('disableTranslation') as string);
+      void invalidateLyrics({ all: true }, { reload: true });
     },
   );
 

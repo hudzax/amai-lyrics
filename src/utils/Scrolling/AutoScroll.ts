@@ -23,7 +23,13 @@ export interface AutoScrollSyncOverrides {
   position?: number;
   lines?: AutoScrollLine[];
   container?: HTMLElement | null;
-  scroller?: (container: HTMLElement, element: HTMLElement) => { cancel: () => void };
+  scroller?: (
+    container: HTMLElement,
+    element: HTMLElement,
+    duration?: number,
+    offset?: number,
+    axis?: 'vertical' | 'horizontal',
+  ) => { cancel: () => void };
   isPlaying?: boolean;
   onLyricsPage?: boolean;
 }

@@ -1,20 +1,10 @@
+import { resolveIsPlaying } from './Gets/GetProgress';
+
 function IsPlaying(): boolean {
-  // Prefer the maintained public API; fall back to memory state so a client
-  // update that changes one source cannot freeze play-state detection.
-  try {
-    if (typeof Spicetify?.Player?.isPlaying === 'function') {
-      return !!Spicetify.Player.isPlaying();
-    }
-  } catch {
-    // fall through to data check
-  }
-  try {
-    const paused = Spicetify?.Player?.data?.isPaused;
-    if (typeof paused === 'boolean') return !paused;
-  } catch {
-    // ignore
-  }
-  return false;
+  // Legacy alias over the PlaybackTime seam: the live play-state read lives in
+  // GetProgress.resolveIsPlaying (public API with memory fallback). Kept as a
+  // named entry so the init path keeps crossing a stable interface.
+  return resolveIsPlaying();
 }
 
 function TOP_ApplyLyricsSpacer(Container: HTMLElement) {
