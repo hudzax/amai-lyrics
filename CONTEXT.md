@@ -87,3 +87,10 @@ page content.
   `lyrics:data-updated` event as the positive path, so the playbar overlay
   clears instead of freezing on the previous track's line. ui.noLyricsMessage
   owns only the page-visible transitions.
+
+## EnhancementPolicy
+
+The single place that turns prepared lyrics into enhanced lyrics: backend
+selection, fallback order, prompt construction, mutation, and the user-visible
+error message. It sits behind the LyricsPipeline seam. Callers cross it
+through `enhanceLyrics` - never through the Gemini/Amai providers directly.

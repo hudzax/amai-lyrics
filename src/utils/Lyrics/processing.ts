@@ -4,7 +4,7 @@
 
 import { ShowProcessingIndicator, EnsureProcessingIndicatorHidden } from './ui';
 import { cacheLyrics } from './cache';
-import { fetchPhoneticLyrics, fetchLyricTranslations } from './ai';
+import { enhanceLyrics } from './ai';
 import {
   convertLyrics,
   LyricsData,
@@ -123,7 +123,13 @@ export async function processAndEnhanceLyrics(
 
 /**
  * Processes lyrics enhancements (phonetic and translations) asynchronously
- * and updates the UI when complete
+ * and updates the UI when complete.
+ *
+ * Enhancement itself is owned by the EnhancementPolicy seam (`./ai`): this
+ * function only owns the two-phase orchestration around it — the processing
+ * indicator, the enhanced cache write, and publication. A null result means
+ * the request went stale mid-flight, so cache and publication are skipped
+ * (publication would no-op anyway via its own token guard).
  *
  * @param trackId - Spotify track ID
  * @param lyricsJson - Lyrics data to enhance
@@ -143,19 +149,14 @@ async function processLyricsEnhancementsAsync(
     // Show processing indicator
     ShowProcessingIndicator();
 
-    // Process phonetic and translations in parallel
-    const [processedLyricsJson, translations] = await Promise.all([
-      fetchPhoneticLyrics(lyricsJson, hasKanji, hasKorean, lyricsOnly),
-      fetchLyricTranslations(lyricsOnly),
-    ]);
-
-    attachTranslations(processedLyricsJson, translations);
+    const enhanced = await enhanceLyrics(lyricsJson, lyricsOnly, { hasKanji, hasKorean }, token);
+    if (!enhanced) return;
 
     // Update cache with enhanced lyrics
-    await cacheLyrics(trackId, { ...processedLyricsJson, id: trackId });
+    await cacheLyrics(trackId, { ...enhanced, id: trackId });
 
     // Publish in place (scroll/animation-safe). No-op when stale.
-    publishEnhancedLyrics(token, trackId, { ...processedLyricsJson, id: trackId });
+    publishEnhancedLyrics(token, trackId, { ...enhanced, id: trackId });
   } catch (error) {
     console.error('Amai Lyrics: Error processing enhancements', error);
     // Don't show error to user - keep original lyrics visible
@@ -193,24 +194,6 @@ export function detectLanguages(lyricsJson: LyricsData): {
   }
 
   return { hasKanji, hasKorean };
-}
-
-/**
- * Attaches translations to lyrics lines
- *
- * @param lyricsJson - Lyrics data
- * @param translations - Array of translated lines
- */
-export function attachTranslations(lyricsJson: LyricsData, translations: string[]): void {
-  if (lyricsJson.Type === 'Line' && lyricsJson.Content) {
-    lyricsJson.Content.forEach((line, idx: number) => {
-      line.Translation = translations[idx] || '';
-    });
-  } else if (lyricsJson.Type === 'Static' && lyricsJson.Lines) {
-    lyricsJson.Lines.forEach((line, idx: number) => {
-      line.Translation = translations[idx] || '';
-    });
-  }
 }
 
 /**

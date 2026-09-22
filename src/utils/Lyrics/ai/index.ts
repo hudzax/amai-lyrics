@@ -1,77 +1,69 @@
 /**
- * AI integration facade for Amai Lyrics (Gemini + Amai Worker).
+ * EnhancementPolicy for Amai Lyrics (Gemini + Amai Worker).
  *
- * Owns the orchestration policy — which backend serves a request and how it
- * falls back — while the provider implementations live in ./gemini and ./amai.
- * This is the only AI module the rest of the app imports.
+ * The single place that turns prepared lyrics into enhanced lyrics: backend
+ * selection, fallback order, prompt construction, mutation, and the
+ * user-visible error message. Callers cross it through `enhanceLyrics` —
+ * never through the Gemini/Amai providers directly.
+ *
+ * Backend priority is Gemini-first with Amai fallback in both directions
+ * (phonetics and translations), unchanged from the legacy orchestration.
+ * Settings are read once per call so providers stay key-agnostic; the request
+ * token is checked before each provider call so a superseded request stops
+ * spending network work (publication still guards via `publishEnhancedLyrics`).
  */
 
 import storage from '../../storage';
 import Defaults from '../../../components/Global/Defaults';
 import { LyricsData, updateLyricsWithText } from '../conversion';
+import { isCurrentLyricsRequest, type LyricsRequestToken } from '../publish';
 import { fetchAmaiPhonetic, fetchAmaiTranslations } from './amai';
-import { fetchGeminiTranslations, processLyricsUsingGemini } from './gemini';
+import { fetchGeminiPhonetic, fetchGeminiTranslations } from './gemini';
+
+/** One line-array provider: phonetic or translation lines for the given input. */
+export type EnhancementLineProvider = (lines: string[], prompt: string) => Promise<string[]>;
+
+/** The four provider slots the policy fans out to. All share one shape, so
+ * Gemini and Amai are interchangeable adapters — and tests can inject fakes. */
+export interface EnhancementProviders {
+  fetchGeminiPhonetic: EnhancementLineProvider;
+  fetchGeminiTranslations: EnhancementLineProvider;
+  fetchAmaiPhonetic: EnhancementLineProvider;
+  fetchAmaiTranslations: EnhancementLineProvider;
+}
+
+/** Language flags from `detectLanguages` — picks the phonetic prompt. */
+export interface EnhancementFlags {
+  hasKanji: boolean;
+  hasKorean: boolean;
+}
+
+const FETCH_ERROR_INFO =
+  'Amai Lyrics: Fetch Error. Please double check your API key. Click here to open settings page.';
+const MISSING_KEY_INFO = 'Amai Lyrics: Gemini API Key missing. Click here to add your own API key.';
+
+/** The legacy fallback convention: non-empty with at least one real line. */
+function hasUsableLines(lines: string[]): boolean {
+  return lines.length > 0 && lines.some((line) => line.trim() !== '');
+}
 
 /**
- * Gets phonetic lyrics based on detected language
+ * Attaches translations to lyrics lines by index, defaulting gaps to ''.
  */
-export async function fetchPhoneticLyrics(
-  lyricsJson: LyricsData,
-  hasKanji: boolean,
-  hasKorean: boolean,
-  lyricsOnly: string[],
-): Promise<LyricsData> {
-  if (hasKanji) {
-    if (storage.get('enable_romaji') === 'true') {
-      return await generateRomajiLyrics(lyricsJson, lyricsOnly);
-    } else {
-      return await generateFuriganaLyrics(lyricsJson, lyricsOnly);
-    }
-  } else if (hasKorean) {
-    return await generateRomajaLyrics(lyricsJson, lyricsOnly);
-  } else {
-    return lyricsJson;
+function attachTranslations(lyricsJson: LyricsData, translations: string[]): void {
+  if (lyricsJson.Type === 'Line' && lyricsJson.Content) {
+    lyricsJson.Content.forEach((line, idx: number) => {
+      line.Translation = translations[idx] || '';
+    });
+  } else if (lyricsJson.Type === 'Static' && lyricsJson.Lines) {
+    lyricsJson.Lines.forEach((line, idx: number) => {
+      line.Translation = translations[idx] || '';
+    });
   }
 }
 
 /**
- * Fetches translations, prioritizing Gemini if an API key is set, and falling back to Amai.
- *
- * @param lyricsOnly An array of strings representing the lyrics to be translated.
- * @returns A promise that resolves to an array of translated strings.
- */
-export async function fetchLyricTranslations(lyricsOnly: string[]): Promise<string[]> {
-  if (storage.get('disable_translation') === 'true') {
-    console.log('[Amai Lyrics] Translation disabled');
-    return lyricsOnly.map(() => '');
-  }
-
-  const targetLang =
-    storage.get('translation_language')?.toString() || Defaults.translationLanguage;
-  const prompt = buildTranslationPrompt(targetLang);
-
-  const geminiApiKey = storage.get('GEMINI_API_KEY')?.toString();
-  if (geminiApiKey && geminiApiKey.trim() !== '') {
-    console.log('[Amai Lyrics] Using Gemini for translations');
-    const geminiTranslations = await fetchGeminiTranslations(lyricsOnly, prompt);
-    if (geminiTranslations.length > 0 && geminiTranslations.some((line) => line.trim() !== '')) {
-      return geminiTranslations;
-    }
-    console.log('[Amai Lyrics] Gemini failed, falling back to Amai API for translations');
-  }
-
-  // Try fetching from Amai
-  const amaiTranslations = await fetchAmaiTranslations(lyricsOnly, prompt);
-  if (amaiTranslations.length > 0 && amaiTranslations.some((line) => line.trim() !== '')) {
-    return amaiTranslations;
-  }
-
-  // Fallback to Gemini (this will trigger missing key or empty strings)
-  return await fetchGeminiTranslations(lyricsOnly, prompt);
-}
-
-/**
- * Creates a translation prompt for Gemini
+ * Creates a translation prompt for the target language.
  */
 function buildTranslationPrompt(targetLang: string): string {
   // Escape special regex characters in the target language
@@ -84,95 +76,157 @@ function buildTranslationPrompt(targetLang: string): string {
 }
 
 /**
- * Generates furigana for Japanese lyrics
+ * Picks the phonetic prompt for the detected languages, or null when no
+ * phonetics apply. Japanese honours the romaji toggle; Korean gets romaja.
  */
-async function generateFuriganaLyrics(
-  lyricsJson: LyricsData,
-  lyricsOnly: string[],
-): Promise<LyricsData> {
-  return await generateLyricsUsingPrompt(lyricsJson, lyricsOnly, Defaults.furiganaPrompt);
+function selectPhoneticPrompt(flags: EnhancementFlags, enableRomaji: boolean): string | null {
+  if (flags.hasKanji) {
+    return enableRomaji ? Defaults.romajiPrompt : Defaults.furiganaPrompt;
+  }
+  if (flags.hasKorean) {
+    return Defaults.romajaPrompt;
+  }
+  return null;
 }
 
 /**
- * Generates romaja for Korean lyrics
+ * Enhances prepared lyrics with phonetics and translations.
+ *
+ * Runs both phases in parallel (same as the legacy fan-out), mutates
+ * `prepared` in place, and returns it — or null when the token went stale
+ * mid-flight, in which case the caller must skip cache and publication.
+ * Never throws for provider failures: they degrade to unenhanced lyrics
+ * with a user-visible `Info` message where the legacy code set one.
  */
-async function generateRomajaLyrics(
-  lyricsJson: LyricsData,
+export async function enhanceLyrics(
+  prepared: LyricsData,
   lyricsOnly: string[],
-): Promise<LyricsData> {
-  return await generateLyricsUsingPrompt(lyricsJson, lyricsOnly, Defaults.romajaPrompt);
+  flags: EnhancementFlags,
+  token: LyricsRequestToken,
+  providerOverrides: Partial<EnhancementProviders> = {},
+): Promise<LyricsData | null> {
+  // Read settings once so every branch below sees one consistent snapshot.
+  const apiKey = (storage.get('GEMINI_API_KEY')?.toString() ?? '').trim();
+  const hasKey = apiKey !== '';
+  const enableRomaji = storage.get('enable_romaji') === 'true';
+  const translationsDisabled = storage.get('disable_translation') === 'true';
+  const targetLang =
+    storage.get('translation_language')?.toString() || Defaults.translationLanguage;
+
+  const providers: EnhancementProviders = {
+    fetchGeminiPhonetic: (lines, prompt) =>
+      fetchGeminiPhonetic(lines, prompt, Defaults.systemInstruction, apiKey),
+    fetchGeminiTranslations: (lines, prompt) =>
+      fetchGeminiTranslations(lines, prompt, apiKey, Defaults.systemInstruction),
+    fetchAmaiPhonetic,
+    fetchAmaiTranslations,
+    ...providerOverrides,
+  };
+
+  const live = () => isCurrentLyricsRequest(token);
+  if (!live()) return null;
+
+  const phoneticPrompt = selectPhoneticPrompt(flags, enableRomaji);
+
+  const [translations] = await Promise.all([
+    enhanceTranslations(lyricsOnly, targetLang, translationsDisabled, hasKey, providers, live),
+    enhancePhonetics(prepared, lyricsOnly, phoneticPrompt, hasKey, providers, live),
+  ]);
+
+  if (!live()) return null;
+
+  attachTranslations(prepared, translations);
+  return prepared;
 }
 
 /**
- * Generates romaji for Japanese lyrics
+ * Phonetic phase: mutates `prepared.Text` via the key-first fallback chain.
+ * With a key, Gemini setup failure falls back to Amai (replacing the legacy
+ * `Info`-sniff); malformed Gemini output applies as a no-op with no fallback.
+ * Without a key, Amai is tried first and a missing key message is set only
+ * when Amai also yields nothing — same as the legacy behaviour.
  */
-async function generateRomajiLyrics(
-  lyricsJson: LyricsData,
+async function enhancePhonetics(
+  prepared: LyricsData,
   lyricsOnly: string[],
-): Promise<LyricsData> {
-  return await generateLyricsUsingPrompt(lyricsJson, lyricsOnly, Defaults.romajiPrompt);
-}
+  prompt: string | null,
+  hasKey: boolean,
+  providers: EnhancementProviders,
+  live: () => boolean,
+): Promise<void> {
+  if (!prompt) return;
 
-/**
- * Generic function to generate lyrics with a specific prompt
- */
-async function generateLyricsUsingPrompt(
-  lyricsJson: LyricsData,
-  lyricsOnly: string[],
-  prompt: string,
-): Promise<LyricsData> {
-  const geminiApiKey = storage.get('GEMINI_API_KEY')?.toString();
-
-  if (geminiApiKey && geminiApiKey.trim() !== '') {
+  if (hasKey) {
     console.log('[Amai Lyrics] Using Gemini for phonetic lyrics');
-    const resultJson = await processLyricsUsingGemini(
-      lyricsJson,
-      lyricsOnly,
-      Defaults.systemInstruction,
-      prompt,
-    );
-
-    // Fall back to Amai if Gemini encountered a fetch error
-    if (resultJson.Info && resultJson.Info.includes('Fetch Error')) {
+    if (!live()) return;
+    try {
+      const lines = await providers.fetchGeminiPhonetic(lyricsOnly, prompt);
+      updateLyricsWithText(prepared, lines);
+      return;
+    } catch {
       console.log('[Amai Lyrics] Gemini failed, falling back to Amai API for phonetic lyrics');
-      const errorMsg = resultJson.Info;
-      resultJson.Info = undefined;
-
-      const amaiLines = await fetchAmaiPhonetic(lyricsOnly, prompt);
-      if (amaiLines.length > 0 && amaiLines.some((line) => line.trim() !== '')) {
-        updateLyricsWithText(resultJson, amaiLines);
-      } else {
-        resultJson.Info = errorMsg; // Restore error if Amai also fails
-      }
     }
-    return resultJson;
+    if (!live()) return;
+    const amaiLines = await providers.fetchAmaiPhonetic(lyricsOnly, prompt);
+    if (hasUsableLines(amaiLines)) {
+      updateLyricsWithText(prepared, amaiLines);
+    } else {
+      prepared.Info = FETCH_ERROR_INFO;
+    }
+    return;
   }
 
-  // Try fetching from Amai first if no Gemini key is set
-  const amaiLines = await fetchAmaiPhonetic(lyricsOnly, prompt);
-  if (amaiLines.length > 0 && amaiLines.some((line) => line.trim() !== '')) {
-    updateLyricsWithText(lyricsJson, amaiLines);
-    return lyricsJson;
+  // No key: try Amai first, then Gemini (which reports the missing key).
+  if (!live()) return;
+  const amaiLines = await providers.fetchAmaiPhonetic(lyricsOnly, prompt);
+  if (hasUsableLines(amaiLines)) {
+    updateLyricsWithText(prepared, amaiLines);
+    return;
   }
 
-  // Fallback to Gemini
   console.log('[Amai Lyrics] Falling back to Gemini for phonetic lyrics');
-  if (!(await verifyGeminiAPIKey(lyricsJson))) {
-    return lyricsJson;
-  }
-
-  return await processLyricsUsingGemini(lyricsJson, lyricsOnly, Defaults.systemInstruction, prompt);
+  console.error('Amai Lyrics: Gemini API Key missing');
+  prepared.Info = MISSING_KEY_INFO;
 }
 
 /**
- * Checks if Gemini API key is available
+ * Translation phase: resolves the translation lines via the key-first
+ * fallback chain (Gemini → Amai → Gemini last resort). Disabled translations
+ * resolve to blanks with no network, same as the legacy behaviour.
  */
-async function verifyGeminiAPIKey(lyricsJson: LyricsData): Promise<boolean> {
-  const geminiApiKey = storage.get('GEMINI_API_KEY')?.toString();
-  if (!geminiApiKey || geminiApiKey === '') {
-    console.error('Amai Lyrics: Gemini API Key missing');
-    lyricsJson.Info = 'Amai Lyrics: Gemini API Key missing. Click here to add your own API key.';
-    return false;
+async function enhanceTranslations(
+  lyricsOnly: string[],
+  targetLang: string,
+  disabled: boolean,
+  hasKey: boolean,
+  providers: EnhancementProviders,
+  live: () => boolean,
+): Promise<string[]> {
+  if (disabled) {
+    console.log('[Amai Lyrics] Translation disabled');
+    return lyricsOnly.map(() => '');
   }
-  return true;
+
+  const prompt = buildTranslationPrompt(targetLang);
+
+  if (hasKey) {
+    console.log('[Amai Lyrics] Using Gemini for translations');
+    if (!live()) return [];
+    const geminiTranslations = await providers.fetchGeminiTranslations(lyricsOnly, prompt);
+    if (hasUsableLines(geminiTranslations)) {
+      return geminiTranslations;
+    }
+    console.log('[Amai Lyrics] Gemini failed, falling back to Amai API for translations');
+  }
+
+  // Try fetching from Amai
+  if (!live()) return [];
+  const amaiTranslations = await providers.fetchAmaiTranslations(lyricsOnly, prompt);
+  if (hasUsableLines(amaiTranslations)) {
+    return amaiTranslations;
+  }
+
+  // Fallback to Gemini (this will trigger missing key or empty strings)
+  if (!live()) return [];
+  return await providers.fetchGeminiTranslations(lyricsOnly, prompt);
 }

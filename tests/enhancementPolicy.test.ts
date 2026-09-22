@@ -1,0 +1,373 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// Controllable settings snapshot: key, romaji flag, translation flag, language.
+vi.mock('../src/utils/storage', () => ({
+  default: { get: vi.fn(() => null), set: vi.fn() },
+}));
+
+vi.mock('../src/components/Global/Defaults', () => ({
+  default: {
+    translationLanguage: 'English',
+    translationPrompt: 'Translate into {language}:',
+    systemInstruction: 'SYS',
+    furiganaPrompt: 'FURIGANA-PROMPT',
+    romajiPrompt: 'ROMAJI-PROMPT',
+    romajaPrompt: 'ROMAJA-PROMPT',
+  },
+}));
+
+// Currency is publish's job; here it is a controllable stub.
+vi.mock('../src/utils/Lyrics/publish', () => ({
+  isCurrentLyricsRequest: vi.fn(() => true),
+}));
+
+import storage from '../src/utils/storage';
+import { isCurrentLyricsRequest } from '../src/utils/Lyrics/publish';
+import { enhanceLyrics, type EnhancementProviders } from '../src/utils/Lyrics/ai';
+import type { LyricsData } from '../src/utils/Lyrics/conversion';
+
+const FETCH_ERROR_INFO =
+  'Amai Lyrics: Fetch Error. Please double check your API key. Click here to open settings page.';
+const MISSING_KEY_INFO = 'Amai Lyrics: Gemini API Key missing. Click here to add your own API key.';
+
+function lineData(texts: string[]): LyricsData {
+  return {
+    Type: 'Line',
+    Content: texts.map((Text, i) => ({ Text, StartTime: i, EndTime: i + 1 })),
+    Raw: [...texts],
+  } as unknown as LyricsData;
+}
+
+function staticData(texts: string[]): LyricsData {
+  return { Type: 'Static', Lines: texts.map((Text) => ({ Text })) } as unknown as LyricsData;
+}
+
+/** Fake providers; every slot records calls and resolves per-test values. */
+function fakes(): EnhancementProviders & {
+  [K in keyof EnhancementProviders]: ReturnType<typeof vi.fn>;
+} {
+  return {
+    fetchGeminiPhonetic: vi.fn(async () => []),
+    fetchGeminiTranslations: vi.fn(async () => []),
+    fetchAmaiPhonetic: vi.fn(async () => []),
+    fetchAmaiTranslations: vi.fn(async () => []),
+  } as unknown as EnhancementProviders & {
+    [K in keyof EnhancementProviders]: ReturnType<typeof vi.fn>;
+  };
+}
+
+function settings(map: Record<string, string | null>): void {
+  vi.mocked(storage.get).mockImplementation((key: string) => map[key] ?? null);
+}
+
+const KEY = { GEMINI_API_KEY: 'test-key' };
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(isCurrentLyricsRequest).mockReturnValue(true);
+  settings({});
+});
+
+describe('phonetic backend selection', () => {
+  it('uses Gemini with the romaji prompt when the key is set and romaji is on', async () => {
+    settings({ ...KEY, enable_romaji: 'true' });
+    const providers = fakes();
+    providers.fetchGeminiPhonetic.mockResolvedValue(['r1', 'r2']);
+    providers.fetchGeminiTranslations.mockResolvedValue(['t1', 't2']);
+
+    const data = lineData(['l1', 'l2']);
+    const result = await enhanceLyrics(
+      data,
+      ['l1', 'l2'],
+      { hasKanji: true, hasKorean: false },
+      1,
+      providers,
+    );
+
+    expect(result).not.toBeNull();
+    expect(providers.fetchGeminiPhonetic).toHaveBeenCalledWith(['l1', 'l2'], 'ROMAJI-PROMPT');
+    expect(providers.fetchAmaiPhonetic).not.toHaveBeenCalled();
+    expect(data.Type === 'Line' && data.Content?.[0].Text).toBe('r1');
+    expect(data.Info).toBeUndefined();
+  });
+
+  it('uses the furigana prompt when romaji is off', async () => {
+    settings({ ...KEY, enable_romaji: 'false' });
+    const providers = fakes();
+    providers.fetchGeminiPhonetic.mockResolvedValue(['f1']);
+
+    await enhanceLyrics(
+      lineData(['l1']),
+      ['l1'],
+      { hasKanji: true, hasKorean: false },
+      1,
+      providers,
+    );
+
+    expect(providers.fetchGeminiPhonetic).toHaveBeenCalledWith(['l1'], 'FURIGANA-PROMPT');
+  });
+
+  it('uses the romaja prompt for Korean lyrics', async () => {
+    settings({ ...KEY });
+    const providers = fakes();
+    providers.fetchGeminiPhonetic.mockResolvedValue(['rj1']);
+
+    await enhanceLyrics(
+      lineData(['l1']),
+      ['l1'],
+      { hasKanji: false, hasKorean: true },
+      1,
+      providers,
+    );
+
+    expect(providers.fetchGeminiPhonetic).toHaveBeenCalledWith(['l1'], 'ROMAJA-PROMPT');
+  });
+
+  it('skips phonetics entirely when neither flag is set', async () => {
+    settings({ ...KEY });
+    const providers = fakes();
+    providers.fetchGeminiTranslations.mockResolvedValue(['t1']);
+
+    const result = await enhanceLyrics(
+      lineData(['l1']),
+      ['l1'],
+      { hasKanji: false, hasKorean: false },
+      1,
+      providers,
+    );
+
+    expect(providers.fetchGeminiPhonetic).not.toHaveBeenCalled();
+    expect(providers.fetchAmaiPhonetic).not.toHaveBeenCalled();
+    expect(result).not.toBeNull();
+  });
+
+  it('falls back to Amai when Gemini setup throws, with no Info set', async () => {
+    settings({ ...KEY, enable_romaji: 'true' });
+    const providers = fakes();
+    providers.fetchGeminiPhonetic.mockRejectedValue(new Error('sdk load failed'));
+    providers.fetchAmaiPhonetic.mockResolvedValue(['a1']);
+    providers.fetchGeminiTranslations.mockResolvedValue(['t1']);
+
+    const data = lineData(['l1']);
+    await enhanceLyrics(data, ['l1'], { hasKanji: true, hasKorean: false }, 1, providers);
+
+    expect(providers.fetchAmaiPhonetic).toHaveBeenCalledWith(['l1'], 'ROMAJI-PROMPT');
+    expect(data.Type === 'Line' && data.Content?.[0].Text).toBe('a1');
+    expect(data.Info).toBeUndefined();
+  });
+
+  it('sets the fetch-error Info when Gemini throws and Amai yields nothing', async () => {
+    settings({ ...KEY, enable_romaji: 'true' });
+    const providers = fakes();
+    providers.fetchGeminiPhonetic.mockRejectedValue(new Error('sdk load failed'));
+    providers.fetchAmaiPhonetic.mockResolvedValue([]);
+    providers.fetchGeminiTranslations.mockResolvedValue([]);
+
+    const data = lineData(['l1']);
+    await enhanceLyrics(data, ['l1'], { hasKanji: true, hasKorean: false }, 1, providers);
+
+    expect(data.Info).toBe(FETCH_ERROR_INFO);
+  });
+
+  it('applies malformed Gemini output as a no-op with no Amai fallback and no Info', async () => {
+    settings({ ...KEY, enable_romaji: 'true' });
+    const providers = fakes();
+    providers.fetchGeminiPhonetic.mockResolvedValue([]);
+    providers.fetchGeminiTranslations.mockResolvedValue(['t1']);
+
+    const data = lineData(['l1']);
+    await enhanceLyrics(data, ['l1'], { hasKanji: true, hasKorean: false }, 1, providers);
+
+    expect(data.Type === 'Line' && data.Content?.[0].Text).toBe('l1');
+    expect(providers.fetchAmaiPhonetic).not.toHaveBeenCalled();
+    expect(data.Info).toBeUndefined();
+  });
+
+  it('tries Amai first without a key and never touches Gemini phonetics', async () => {
+    settings({});
+    const providers = fakes();
+    providers.fetchAmaiPhonetic.mockResolvedValue(['a1']);
+    providers.fetchGeminiTranslations.mockResolvedValue([]);
+
+    const data = lineData(['l1']);
+    await enhanceLyrics(data, ['l1'], { hasKanji: true, hasKorean: false }, 1, providers);
+
+    expect(providers.fetchAmaiPhonetic).toHaveBeenCalled();
+    expect(providers.fetchGeminiPhonetic).not.toHaveBeenCalled();
+    expect(data.Type === 'Line' && data.Content?.[0].Text).toBe('a1');
+    expect(data.Info).toBeUndefined();
+  });
+
+  it('sets the missing-key Info when keyless Amai yields nothing', async () => {
+    settings({});
+    const providers = fakes();
+    providers.fetchAmaiPhonetic.mockResolvedValue([]);
+    providers.fetchAmaiTranslations.mockResolvedValue([]);
+
+    const data = lineData(['l1']);
+    await enhanceLyrics(data, ['l1'], { hasKanji: true, hasKorean: false }, 1, providers);
+
+    expect(providers.fetchGeminiPhonetic).not.toHaveBeenCalled();
+    expect(data.Info).toBe(MISSING_KEY_INFO);
+  });
+});
+
+describe('translation fallback chain', () => {
+  it('returns blanks with no network when translations are disabled', async () => {
+    settings({ ...KEY, disable_translation: 'true' });
+    const providers = fakes();
+    providers.fetchGeminiPhonetic.mockResolvedValue(['r1']);
+
+    const data = lineData(['l1']);
+    const result = await enhanceLyrics(
+      data,
+      ['l1'],
+      { hasKanji: true, hasKorean: false },
+      1,
+      providers,
+    );
+
+    expect(providers.fetchGeminiTranslations).not.toHaveBeenCalled();
+    expect(providers.fetchAmaiTranslations).not.toHaveBeenCalled();
+    expect(data.Type === 'Line' && data.Content?.[0].Translation).toBe('');
+    expect(result).not.toBeNull();
+  });
+
+  it('prefers Gemini translations and skips Amai when usable', async () => {
+    settings({ ...KEY });
+    const providers = fakes();
+    providers.fetchGeminiTranslations.mockResolvedValue(['g1', '']);
+
+    const data = lineData(['l1', 'l2']);
+    await enhanceLyrics(data, ['l1', 'l2'], { hasKanji: false, hasKorean: false }, 1, providers);
+
+    expect(providers.fetchAmaiTranslations).not.toHaveBeenCalled();
+    expect(data.Type === 'Line' && data.Content?.[0].Translation).toBe('g1');
+    expect(data.Type === 'Line' && data.Content?.[1].Translation).toBe('');
+  });
+
+  it('falls back to Amai when Gemini translations are blank, then to Gemini last resort', async () => {
+    settings({ ...KEY });
+    const providers = fakes();
+    providers.fetchGeminiTranslations
+      .mockResolvedValueOnce(['', '']) // first attempt: unusable
+      .mockResolvedValueOnce(['last', 'resort']); // last resort
+    providers.fetchAmaiTranslations.mockResolvedValue(['', '']);
+
+    const data = lineData(['l1', 'l2']);
+    await enhanceLyrics(data, ['l1', 'l2'], { hasKanji: false, hasKorean: false }, 1, providers);
+
+    expect(providers.fetchAmaiTranslations).toHaveBeenCalledTimes(1);
+    expect(providers.fetchGeminiTranslations).toHaveBeenCalledTimes(2);
+    expect(data.Type === 'Line' && data.Content?.[0].Translation).toBe('last');
+  });
+
+  it('builds the prompt from the configured language', async () => {
+    settings({ ...KEY, translation_language: 'Spanish' });
+    const providers = fakes();
+    providers.fetchGeminiTranslations.mockResolvedValue(['s1']);
+
+    await enhanceLyrics(
+      lineData(['l1']),
+      ['l1'],
+      { hasKanji: false, hasKorean: false },
+      1,
+      providers,
+    );
+
+    expect(providers.fetchGeminiTranslations).toHaveBeenCalledWith(
+      ['l1'],
+      expect.stringContaining('Spanish'),
+    );
+  });
+
+  it('attaches short translation arrays with empty-string gaps', async () => {
+    settings({ ...KEY });
+    const providers = fakes();
+    providers.fetchGeminiTranslations.mockResolvedValue(['only-first']);
+
+    const data = lineData(['l1', 'l2']);
+    await enhanceLyrics(data, ['l1', 'l2'], { hasKanji: false, hasKorean: false }, 1, providers);
+
+    expect(data.Type === 'Line' && data.Content?.[0].Translation).toBe('only-first');
+    expect(data.Type === 'Line' && data.Content?.[1].Translation).toBe('');
+  });
+
+  it('attaches translations to static payloads', async () => {
+    settings({ ...KEY });
+    const providers = fakes();
+    providers.fetchGeminiTranslations.mockResolvedValue(['ta', 'tb']);
+
+    const data = staticData(['a', 'b']);
+    await enhanceLyrics(data, ['a', 'b'], { hasKanji: false, hasKorean: false }, 1, providers);
+
+    expect(data.Type === 'Static' && data.Lines?.[0].Translation).toBe('ta');
+    expect(data.Type === 'Static' && data.Lines?.[1].Translation).toBe('tb');
+  });
+});
+
+describe('staleness', () => {
+  it('returns null without touching providers when the token is already stale', async () => {
+    settings({ ...KEY });
+    vi.mocked(isCurrentLyricsRequest).mockReturnValue(false);
+    const providers = fakes();
+
+    const result = await enhanceLyrics(
+      lineData(['l1']),
+      ['l1'],
+      { hasKanji: true, hasKorean: false },
+      99,
+      providers,
+    );
+
+    expect(result).toBeNull();
+    expect(providers.fetchGeminiPhonetic).not.toHaveBeenCalled();
+    expect(providers.fetchGeminiTranslations).not.toHaveBeenCalled();
+    expect(providers.fetchAmaiPhonetic).not.toHaveBeenCalled();
+    expect(providers.fetchAmaiTranslations).not.toHaveBeenCalled();
+  });
+
+  it('returns null when the token goes stale mid-flight', async () => {
+    settings({ ...KEY });
+    vi.mocked(isCurrentLyricsRequest)
+      .mockReturnValueOnce(true) // enhanceLyrics entry
+      .mockReturnValue(false); // every check after
+    const providers = fakes();
+    providers.fetchGeminiPhonetic.mockResolvedValue(['r1']);
+    providers.fetchGeminiTranslations.mockResolvedValue(['t1']);
+
+    const result = await enhanceLyrics(
+      lineData(['l1']),
+      ['l1'],
+      { hasKanji: true, hasKorean: false },
+      1,
+      providers,
+    );
+
+    expect(result).toBeNull();
+  });
+});
+
+describe('settings snapshot', () => {
+  it('reads key, romaji, translation flag and language once per call', async () => {
+    settings({ ...KEY, enable_romaji: 'true' });
+    const providers = fakes();
+
+    await enhanceLyrics(
+      lineData(['l1']),
+      ['l1'],
+      { hasKanji: false, hasKorean: false },
+      1,
+      providers,
+    );
+
+    for (const key of [
+      'GEMINI_API_KEY',
+      'enable_romaji',
+      'disable_translation',
+      'translation_language',
+    ]) {
+      expect(vi.mocked(storage.get)).toHaveBeenCalledWith(key);
+    }
+  });
+});

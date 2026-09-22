@@ -4,12 +4,19 @@
  * Owns the GenAI SDK loading, the generation config, and the two Gemini calls
  * (translation + phonetic generation). Nothing here is imported outside the ai
  * facade; the rest of the app speaks to ../ai instead.
+ *
+ * Both providers are key-agnostic adapters behind the EnhancementPolicy seam:
+ * the policy reads settings once and passes key + config in. SDK setup
+ * failures throw so the policy can fall back to Amai (this replaces the
+ * legacy `'Fetch Error'` substring sniffed out of `Info`, which likewise only
+ * fired on setup failures — per-request errors were retried, then swallowed).
+ * Malformed responses and per-request failures resolve to []: applied as a
+ * no-op, with no fallback and no user-visible message, same as the legacy
+ * behaviour. The policy owns the user-visible `Info` message; nothing here
+ * touches `LyricsData`.
  */
 
-import storage from '../../storage';
-import Defaults from '../../../components/Global/Defaults';
 import type { GenerateContentConfig, Schema, Type } from '@google/genai';
-import { LyricsData, updateLyricsWithText } from '../conversion';
 
 type GenAILoader = typeof import('@google/genai');
 let genAIModulePromise: Promise<GenAILoader> | null = null;
@@ -75,24 +82,26 @@ function buildGeminiConfig(systemInstruction: string, temperature: number): Gemi
 }
 
 /**
- * Fetches translations using Gemini AI
+ * Fetches translations using Gemini AI. Resolves to [] when the key is
+ * missing or the request fails — the policy treats empty as "try Amai".
  */
 export async function fetchGeminiTranslations(
   lyricsOnly: string[],
   prompt: string,
+  apiKey: string,
+  systemInstruction: string,
 ): Promise<string[]> {
   try {
     console.log('[Amai Lyrics] Translation fetch started');
 
-    const geminiApiKey = storage.get('GEMINI_API_KEY')?.toString();
-    if (!geminiApiKey || geminiApiKey === '') {
+    if (!apiKey) {
       console.error('Amai Lyrics: Gemini API Key missing for translation');
-      return lyricsOnly.map(() => '');
+      return [];
     }
 
     const { GoogleGenAI } = await loadGenAI();
-    const ai = new GoogleGenAI({ apiKey: geminiApiKey });
-    const generationConfig = buildGeminiConfig(Defaults.systemInstruction, 0.85);
+    const ai = new GoogleGenAI({ apiKey });
+    const generationConfig = buildGeminiConfig(systemInstruction, 0.85);
     const response = await ai.models.generateContent({
       config: generationConfig,
       model: AI_MODELS.TRANSLATION,
@@ -113,63 +122,58 @@ export async function fetchGeminiTranslations(
 }
 
 /**
- * Processes lyrics with Gemini AI
+ * Fetches phonetic (furigana / romaji / romaja) lines using Gemini AI.
+ *
+ * Throws on SDK setup failure so the policy can fall back to Amai (this
+ * replaces the legacy `'Fetch Error'` substring sniffed out of `Info`, which
+ * likewise only fired on setup failures). Per-request errors are retried,
+ * then resolve to [] — applied as a no-op, with no fallback and no
+ * user-visible message, same as the legacy behaviour.
  */
-export async function processLyricsUsingGemini(
-  lyricsJson: LyricsData,
+export async function fetchGeminiPhonetic(
   lyricsOnly: string[],
-  systemInstruction: string,
   prompt: string,
-): Promise<LyricsData> {
-  try {
-    const geminiApiKey = storage.get('GEMINI_API_KEY')?.toString();
+  systemInstruction: string,
+  apiKey: string,
+): Promise<string[]> {
+  if (!apiKey || lyricsOnly.length === 0) return [];
 
-    const { GoogleGenAI } = await loadGenAI();
-    const ai = new GoogleGenAI({ apiKey: geminiApiKey });
+  const { GoogleGenAI } = await loadGenAI();
+  const ai = new GoogleGenAI({ apiKey });
 
-    const generationConfig = buildGeminiConfig(systemInstruction, 0.258);
+  const generationConfig = buildGeminiConfig(systemInstruction, 0.258);
 
-    if (lyricsOnly.length === 0) return lyricsJson;
+  const makeRequest = async () => {
+    const response = await ai.models.generateContent({
+      config: generationConfig,
+      model: AI_MODELS.PHONETIC,
+      contents: `${prompt} Here are the lyrics:\n${JSON.stringify(lyricsOnly)}`,
+    });
+    return response.text;
+  };
 
-    const makeRequest = async () => {
-      const response = await ai.models.generateContent({
-        config: generationConfig,
-        model: AI_MODELS.PHONETIC,
-        contents: `${prompt} Here are the lyrics:\n${JSON.stringify(lyricsOnly)}`,
-      });
-      return response.text;
-    };
+  let retries = 2;
+  let lines: string[] | undefined;
 
-    let retries = 2;
-    let lines: string[] | undefined;
-
-    while (retries >= 0) {
-      try {
-        const responseText = await makeRequest();
-        const parsed = JSON.parse(responseText.replace(/\\n/g, ''));
-        if (parsed && Array.isArray(parsed.lines)) {
-          lines = parsed.lines;
-          break;
-        } else {
-          if (retries === 0) {
-            console.error('Amai Lyrics: Invalid response format', parsed);
-          }
-        }
-      } catch (err) {
+  while (retries >= 0) {
+    try {
+      const responseText = await makeRequest();
+      const parsed = JSON.parse(responseText.replace(/\\n/g, ''));
+      if (parsed && Array.isArray(parsed.lines)) {
+        lines = parsed.lines;
+        break;
+      } else {
         if (retries === 0) {
-          console.error('Amai Lyrics: Error parsing response', err);
+          console.error('Amai Lyrics: Invalid response format', parsed);
         }
       }
-      retries--;
+    } catch (err) {
+      if (retries === 0) {
+        console.error('Amai Lyrics: Error parsing response', err);
+      }
     }
-
-    if (lines) {
-      updateLyricsWithText(lyricsJson, lines);
-    }
-  } catch (error) {
-    console.error('Amai Lyrics:', error);
-    lyricsJson.Info =
-      'Amai Lyrics: Fetch Error. Please double check your API key. Click here to open settings page.';
+    retries--;
   }
-  return lyricsJson;
+
+  return lines ?? [];
 }

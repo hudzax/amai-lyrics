@@ -30,7 +30,6 @@ vi.mock('../src/utils/EventManager', () => ({
 
 import {
   detectLanguages,
-  attachTranslations,
   prepareLyricsForGemini,
   extractLyrics,
 } from '../src/utils/Lyrics/processing';
@@ -80,37 +79,6 @@ describe('detectLanguages', () => {
       hasKanji: false,
       hasKorean: false,
     });
-  });
-});
-
-describe('attachTranslations', () => {
-  it('attaches translations to line content by index', () => {
-    const data = {
-      Type: 'Line',
-      Content: [
-        { Text: 'one', StartTime: 0, EndTime: 1 },
-        { Text: 'two', StartTime: 1, EndTime: 2 },
-      ],
-    } as never;
-    attachTranslations(data, ['uno', 'dos']);
-    expect(data.Content[0].Translation).toBe('uno');
-    expect(data.Content[1].Translation).toBe('dos');
-  });
-
-  it('defaults missing translations to empty string', () => {
-    const data = {
-      Type: 'Line',
-      Content: [{ Text: 'one', StartTime: 0, EndTime: 1 }],
-    } as never;
-    attachTranslations(data, []);
-    expect(data.Content[0].Translation).toBe('');
-  });
-
-  it('attaches translations to static lines', () => {
-    const data = { Type: 'Static', Lines: [{ Text: 'a' }, { Text: 'b' }] } as never;
-    attachTranslations(data, ['ta', 'tb']);
-    expect(data.Lines[0].Translation).toBe('ta');
-    expect(data.Lines[1].Translation).toBe('tb');
   });
 });
 
