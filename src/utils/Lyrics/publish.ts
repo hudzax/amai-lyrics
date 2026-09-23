@@ -18,14 +18,16 @@
  *
  * NOTE on imports: this module deliberately does not import fetchLyrics,
  * api, or processing — it is a leaf they all share, so the pipeline keeps a
- * single direction (fetchLyrics -> api -> processing -> publish).
+ * single direction (fetchLyrics -> api -> processing -> publish). The
+ * snapshot's serialized format lives in the `snapshot` leaf (LyricsSnapshot);
+ * this module owns currency, the bus notification, and the UI epilogue.
  */
 
-import storage from '../storage';
 import Defaults from '../../components/Global/Defaults';
 import Event from '../EventManager';
 import { HideLoaderContainer, ClearLyricsPageContainer } from './ui';
 import { updateLyricTranslations } from './LyricsRenderer';
+import { writeSnapshot } from './snapshot';
 import { liveTrackId } from './trackId';
 import type { LyricsData } from './conversion';
 import type { NoLyricsResult } from './ui';
@@ -79,8 +81,7 @@ export function isCurrentLyricsRequest(token: LyricsRequestToken): boolean {
 export function publishNoLyrics(token: LyricsRequestToken, trackId: string): boolean {
   if (!isCurrentLyricsRequest(token)) return false;
   const sentinel: NoLyricsResult = { status: 'NO_LYRICS', id: trackId };
-  const serialized = JSON.stringify(sentinel);
-  storage.set('currentLyricsData', serialized);
+  const serialized = writeSnapshot(sentinel);
   Event.evoke('lyrics:data-updated', serialized);
   return true;
 }
@@ -93,8 +94,7 @@ export function publishNoLyrics(token: LyricsRequestToken, trackId: string): boo
 export function publishInitialLyrics(token: LyricsRequestToken, data: LyricsData): boolean {
   if (!isCurrentLyricsRequest(token)) return false;
   Defaults.CurrentLyricsType = data.Type;
-  const serialized = JSON.stringify(data);
-  storage.set('currentLyricsData', serialized);
+  const serialized = writeSnapshot(data);
   Event.evoke('lyrics:data-updated', serialized);
   HideLoaderContainer();
   ClearLyricsPageContainer();
@@ -114,8 +114,7 @@ export function publishEnhancedLyrics(
   if (!isCurrentLyricsRequest(token)) return false;
   if (liveTrackId() !== trackId) return false;
   updateLyricTranslations(data);
-  const serialized = JSON.stringify(data);
-  storage.set('currentLyricsData', serialized);
+  const serialized = writeSnapshot(data);
   Event.evoke('lyrics:data-updated', serialized);
   return true;
 }

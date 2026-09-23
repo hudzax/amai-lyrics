@@ -23,7 +23,6 @@ vi.mock('../src/utils/Lyrics/LyricsRenderer', () => ({
   updateLyricTranslations: vi.fn(),
 }));
 vi.mock('../src/utils/Lyrics/cache', () => ({
-  getLyricsFromLocalStorage: vi.fn(async () => null),
   getLyricsFromCache: vi.fn(async () => null),
   removeLyricsFromCache: vi.fn(async () => undefined),
   lyricsCache: { get: vi.fn(), set: vi.fn(), remove: vi.fn(), destroy: vi.fn() },

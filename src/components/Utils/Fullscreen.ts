@@ -1,6 +1,6 @@
 import Animator from '../../utils/Animator';
 import { AutoScroll } from '../../utils/Scrolling/AutoScroll';
-import storage from '../../utils/storage';
+import { isPublishedNoLyrics } from '../../utils/Lyrics/snapshot';
 import Global from '../Global/Global';
 import PageView, { PageRoot } from '../Pages/PageView';
 import { DeregisterNowBarBtn, OpenNowBar, UpdateNowBar } from './NowBar';
@@ -214,20 +214,10 @@ function Close() {
       // Update controls for non-fullscreen mode
       PageView.AppendViewControls();
 
-      // Handle no lyrics case — support both legacy string and new JSON sentinel
-      const currentLyrics = storage.get('currentLyricsData');
-      let NoLyrics = false;
-      if (typeof currentLyrics === 'string' && currentLyrics.includes('NO_LYRICS')) {
-        NoLyrics = true;
-      } else if (currentLyrics) {
-        try {
-          const parsed = JSON.parse(currentLyrics as string) as { status?: string };
-          NoLyrics = parsed?.status === 'NO_LYRICS';
-        } catch {
-          /* not JSON */
-        }
-      }
-      if (NoLyrics) {
+      // Handle no lyrics case: the LyricsSnapshot seam owns the sentinel
+      // rule (typed payload and legacy plain-string form alike). Ungated —
+      // restoreUI only ever runs against the live track.
+      if (isPublishedNoLyrics()) {
         // Refresh an existing lifetime; never resurrect a destroyed page's NowBar.
         void UpdateNowBar();
         const lyricsContainer = document.querySelector(

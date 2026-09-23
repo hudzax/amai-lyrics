@@ -12,12 +12,8 @@ import {
   EnsureProcessingIndicatorHidden,
   clearLyricsUiTimeouts,
 } from './ui';
-import {
-  getLyricsFromLocalStorage,
-  getLyricsFromCache,
-  removeLyricsFromCache,
-  lyricsCache,
-} from './cache';
+import { getLyricsFromCache, removeLyricsFromCache, lyricsCache } from './cache';
+import { readSnapshot, clearSnapshot } from './snapshot';
 import { fetchLyricsFromAPI } from './api';
 import { hideRefreshButton } from '../../components/Pages/pageButtons';
 import ApplyLyrics from './Global/Applyer';
@@ -29,7 +25,6 @@ import {
   type LyricsRequestToken,
 } from './publish';
 import { parseTrackId } from './trackId';
-import storage from '../storage';
 
 import { LyricsData } from './conversion';
 import { NoLyricsResult } from './ui';
@@ -107,7 +102,7 @@ export default async function fetchLyrics(uri: string, flush = false): Promise<L
     return await noLyricsMessage();
   }
 
-  const localLyrics = await getLyricsFromLocalStorage(trackId);
+  const localLyrics = readSnapshot(trackId);
   if (localLyrics) return applyLoadedLyrics(localLyrics, token);
 
   const cachedLyrics = await getLyricsFromCache(trackId);
@@ -165,14 +160,14 @@ export async function loadAndApplyLyrics(
  * Refresh seam: evict cache + snapshot, then force a fresh fetch-and-apply.
  * Replaces the hand-rolled `removeLyricsFromCache + storage.set(null) +
  * loadAndApplyLyrics(flush:true)` triple (the refresh button) so callers never
- * cross the cache or storage seams directly.
+ * cross the cache or snapshot seams directly.
  */
 export async function refreshLyrics(uri: string): Promise<LyricsFetchResult> {
   const trackId = parseTrackId(uri);
   if (trackId) {
     await removeLyricsFromCache(trackId);
   }
-  storage.set('currentLyricsData', null);
+  clearSnapshot();
   return loadAndApplyLyrics(uri, { flush: true });
 }
 
@@ -182,7 +177,7 @@ export async function refreshLyrics(uri: string): Promise<LyricsFetchResult> {
  * Replaces the hand-rolled `lyricsCache.destroy() + storage.set(null)` pair
  * that settings handlers and startup used to inline — callers now state intent
  * ("config changed → invalidate, and reload with the new settings") instead of
- * crossing the cache and storage seams themselves. Reload re-fetches with
+ * crossing the cache and snapshot seams themselves. Reload re-fetches with
  * `flush`, because an invalidated entry must never be served from an in-flight
  * fetch that predates the invalidation.
  */
@@ -195,7 +190,7 @@ export async function invalidateLyrics(
   } else {
     await removeLyricsFromCache(target.trackId);
   }
-  storage.set('currentLyricsData', null);
+  clearSnapshot();
 
   if (opts.reload) {
     const uri = liveLyricsUri();

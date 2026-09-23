@@ -2,7 +2,8 @@ import storage from '../../utils/storage';
 import { registerPositionConsumer } from '../../utils/PositionConsumer';
 import { processPhoneticText } from '../../utils/Lyrics/phoneticPatterns';
 import { findActiveIndex } from '../../utils/Lyrics/findActiveIndex';
-import { convertLyrics } from '../../utils/Lyrics/conversion';
+import { publishedTimedLines, invalidateSnapshotCache } from '../../utils/Lyrics/snapshot';
+import { liveTrackId } from '../../utils/Lyrics/trackId';
 import { createRubyFragment } from '../../utils/sanitize';
 import Whentil from '../../utils/Whentil';
 import lifecycle from '../../utils/lifecycle';
@@ -19,12 +20,6 @@ import Event from '../../utils/EventManager';
 // construction instead of by matching comments.
 const UPDATE_INTERVAL = 0.3; // seconds
 
-interface LineEntry {
-  text: string;
-  StartTime: number; // ms
-  EndTime: number; // ms
-}
-
 let lyricsElement: HTMLElement | null = null;
 let centerWrapper: HTMLElement | null = null;
 let positionConsumerDisposer: (() => void) | null = null;
@@ -33,14 +28,6 @@ let lastText = '';
 
 // Handle for the pending "wait for playbar" poll so it can be cancelled on teardown.
 let initWhen: ReturnType<typeof Whentil.When> | null = null;
-
-// Cache the parsed line list so we don't JSON.parse the full lyrics blob every tick
-let cachedLines: LineEntry[] | null = null;
-let cachedLinesRaw: string | null = null;
-
-// In-memory lyrics data kept in sync on song change + AI enhancement so the
-// update loop never reads from localStorage (synchronous I/O) on its hot path.
-let inMemoryLyricsData: string | null = null;
 
 let lyricsDataListenerId: number | null = null;
 
@@ -65,62 +52,6 @@ if (typeof window !== 'undefined') {
   });
 }
 
-interface StoredLyrics {
-  id: string;
-  Type: string;
-  Content: unknown;
-}
-
-interface TimedLyricItem {
-  StartTime?: number | null;
-  EndTime?: number | null;
-  Text?: string;
-}
-
-/**
- * Reads the globally stored parsed lyrics and builds a timed line list for the
- * current track. Only timed lyrics (Line / Syllable) are supported.
- */
-function getLinesFromStorage(rawOverride?: string): LineEntry[] | null {
-  const raw = rawOverride ?? storage.get('currentLyricsData');
-  if (!raw) return null;
-
-  let data: StoredLyrics;
-  try {
-    data = JSON.parse(String(raw)) as StoredLyrics;
-  } catch {
-    return null;
-  }
-  if (!data || !data.id) return null;
-
-  // Only show lyrics for the track that is currently playing
-  const currentTrackId = Spicetify.Player.data?.item?.uri?.split(':')[2];
-  if (currentTrackId !== data.id) return null;
-
-  let content: TimedLyricItem[] | undefined;
-  if (data.Type === 'Line' && Array.isArray(data.Content)) {
-    content = data.Content as TimedLyricItem[];
-  } else if (data.Type === 'Syllable' && Array.isArray(data.Content)) {
-    content = convertLyrics(data.Content as Parameters<typeof convertLyrics>[0]);
-  } else {
-    // Static lyrics have no timing information
-    return null;
-  }
-
-  const lines: LineEntry[] = [];
-  for (const item of content) {
-    if (item.StartTime == null || item.EndTime == null) continue;
-    const text = (item.Text || '').trim();
-    if (!text) continue;
-    lines.push({
-      text,
-      StartTime: item.StartTime * 1000,
-      EndTime: item.EndTime * 1000,
-    });
-  }
-  return lines.length ? lines : null;
-}
-
 /**
  * Positions the lyrics overlay exactly over the native playback controls so it
  * visually replaces them.
@@ -140,10 +71,7 @@ function positionLyrics(): void {
 
 function onSongChange(): void {
   lastText = '';
-  cachedLines = null;
-  cachedLinesRaw = null;
   cachedPlaybarEnabled = null;
-  inMemoryLyricsData = storage.get('currentLyricsData');
   if (lyricsElement) {
     lyricsElement.innerHTML = '';
   }
@@ -231,15 +159,10 @@ function renderPlaybarLine(position: number): void {
   }
   if (!lyricsElement || !centerWrapper) return;
 
-  const rawKey = inMemoryLyricsData;
-  let lines: LineEntry[] | null;
-  if (rawKey != null && rawKey === cachedLinesRaw) {
-    lines = cachedLines;
-  } else {
-    cachedLinesRaw = rawKey;
-    lines = getLinesFromStorage(inMemoryLyricsData ?? undefined);
-    cachedLines = lines;
-  }
+  // The LyricsSnapshot seam owns the snapshot's format and caches the parse
+  // internally (keyed on the stored string), so a hot-path tick here is one
+  // storage read plus a string comparison.
+  const lines = publishedTimedLines(liveTrackId());
   if (!lines) {
     clearPlaybarOverlay();
     return;
@@ -326,26 +249,15 @@ export function InitializePlaybarLyrics(): void {
       window.addEventListener('resize', positionLyrics);
       Spicetify.Player.addEventListener('songchange', onSongChange);
 
-      // Listen for in-memory lyrics data updates from AI enhancements — avoids
-      // reading localStorage every tick in the update loop.
-      lyricsDataListenerId = Event.listen('lyrics:data-updated', (data: unknown) => {
-        inMemoryLyricsData = typeof data === 'string' ? data : null;
-        cachedLines = null;
-        cachedLinesRaw = null;
+      // Snapshot-change notification (every publish and every clear evokes
+      // it): invalidate the LyricsSnapshot memo so the next tick re-reads.
+      // A missed notification self-heals — the memo compares the stored
+      // string's content, so an unseen change is picked up on the next read.
+      lyricsDataListenerId = Event.listen('lyrics:data-updated', () => {
+        invalidateSnapshotCache();
       });
 
       inject();
-      // Prime from the persisted snapshot: the startup fetch may have already
-      // published before this listener attached (init order), in which case
-      // the bus event was missed and inMemory would stay null until the next
-      // songchange. A stale prime is harmless — the next publish overwrites it.
-      try {
-        inMemoryLyricsData = storage.get('currentLyricsData');
-      } catch {
-        inMemoryLyricsData = null;
-      }
-      cachedLines = null;
-      cachedLinesRaw = null;
       positionConsumerDisposer = registerPositionConsumer({
         surface: 'playbar',
         intervalSeconds: UPDATE_INTERVAL,

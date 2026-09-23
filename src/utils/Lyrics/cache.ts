@@ -1,13 +1,14 @@
 /**
- * Lyrics caching and storage functions for Amai Lyrics
+ * Lyrics disk-cache functions for Amai Lyrics (SpikyCache layer).
  *
- * Pure storage layer: these functions read and write lyrics data but never
- * touch the DOM or app-wide UI state. The caller (fetchLyrics) owns turning a
- * cache hit/miss into loader + page-container + CurrentLyricsType transitions.
+ * Pure storage layer: these functions read and write the per-track disk cache
+ * but never touch the DOM or app-wide UI state. The caller (fetchLyrics) owns
+ * turning a cache hit/miss into loader + page-container + CurrentLyricsType
+ * transitions. The persisted snapshot of the *current* track is not this
+ * module's business — it lives behind the `snapshot` leaf (LyricsSnapshot).
  */
 
 import { SpikyCache } from '@hudzax/web-modules/SpikyCache';
-import storage from '../storage';
 import type { LyricsData } from './conversion';
 import type { NoLyricsResult } from './ui';
 
@@ -95,52 +96,6 @@ export async function getLyricsFromCache(
     console.log('[Amai Lyrics] Error parsing saved lyrics data:', error);
     return null;
   }
-}
-
-/**
- * Gets lyrics from local storage (pure read — no DOM/UI side effects).
- *
- * @param trackId - Spotify track ID
- * @returns Stored lyrics, an explicit NO_LYRICS sentinel, or null (miss)
- */
-export async function getLyricsFromLocalStorage(
-  trackId: string,
-): Promise<LyricsData | NoLyricsResult | null> {
-  const savedLyricsData = storage.get('currentLyricsData')?.toString();
-  if (!savedLyricsData) return null;
-
-  try {
-    const parsed = JSON.parse(savedLyricsData) as {
-      status?: string;
-      id?: string;
-      Type?: string;
-    };
-    if (parsed?.status === 'NO_LYRICS') {
-      if (!parsed.id || parsed.id === trackId) {
-        return { status: 'NO_LYRICS', id: parsed.id ?? trackId };
-      }
-      return null;
-    }
-    if (parsed?.id === trackId) {
-      return parsed as LyricsData;
-    }
-  } catch (error) {
-    // Fallback for legacy plain-string payloads (e.g. old NO_LYRICS:xxx format)
-    if (savedLyricsData.includes('NO_LYRICS')) {
-      try {
-        const legacySplit = savedLyricsData.split(':');
-        const legacyId = legacySplit[1]?.replace(/[^a-zA-Z0-9]/g, '');
-        if (!legacyId || legacyId === trackId) {
-          return { status: 'NO_LYRICS', id: legacyId ?? trackId };
-        }
-      } catch {
-        /* ignore legacy parse failure */
-      }
-    }
-    console.error('Error parsing saved lyrics data:', error);
-  }
-
-  return null;
 }
 
 // Remove lyrics from cache

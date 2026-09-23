@@ -102,10 +102,30 @@ page content.
   is internal to the composition (only loadAndApplyLyrics calls it) and the
   `{ trackId }` branch currently has no callers (all use `{ all: true }`).
 - `publishNoLyrics(token, id)` in publish.ts is the negative result's
-  publication: it persists the typed sentinel and fires the same
-  `lyrics:data-updated` event as the positive path, so the playbar overlay
-  clears instead of freezing on the previous track's line. ui.noLyricsMessage
-  owns only the page-visible transitions.
+  publication: it persists the typed sentinel through LyricsSnapshot and
+  fires the same `lyrics:data-updated` notification as the positive path;
+  the playbar overlay re-reads through LyricsSnapshot, so it clears instead
+  of freezing on the previous track's line. ui.noLyricsMessage owns only the
+  page-visible transitions.
+
+## LyricsSnapshot
+
+The single owner of the published-lyrics snapshot (the `currentLyricsData`
+storage key): its serialized format, the legacy plain-string `NO_LYRICS:<id>`
+form, the sentinel rule, the track gate, the seconds→ms scaling, and the
+Syllable→Line shape. Lives in src/utils/Lyrics/snapshot.ts. Callers cross it
+through writeSnapshot (the only writer, used behind publish's currency check;
+returns the serialized payload for the publisher to carry on the bus),
+clearSnapshot (the refresh/invalidate clear — it notifies on its own, because
+its callers are not publishers), readSnapshot (the track-gated typed view the
+pipeline reads), publishedTimedLines (the ms-scaled, Syllable-normalized view
+the playbar overlay ticks through), isPublishedNoLyrics (the ungated boolean
+the fullscreen exit checks), and invalidateSnapshotCache (what the playbar
+listener calls when the notification fires) - never through the raw storage
+key. The parse memo reads storage on every read and skips re-parsing only
+while the stored string is unchanged, so an unseen write self-heals on the
+next read. `lyrics:data-updated` is a pure "the snapshot changed"
+notification.
 
 ## EnhancementPolicy
 
