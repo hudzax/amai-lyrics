@@ -150,4 +150,69 @@ describe('AppBackground', () => {
     syncAppBgMarker();
     expect(document.documentElement.classList.contains(APP_BG_ON_CLASS)).toBe(false);
   });
+
+  it('resolveAppBgHost prefers the fullscreen lyrics page over .Root', () => {
+    expect(resolveAppBgHost()?.classList.contains('Root')).toBe(true);
+    const page = document.createElement('div');
+    page.id = 'AmaiLyricsPage';
+    page.className = 'Fullscreen';
+    document.body.appendChild(page);
+    expect(resolveAppBgHost()).toBe(page);
+  });
+
+  it('carries the canvas into the fullscreen page and back without duplicating', () => {
+    const bg = new AppBackground();
+    bg.apply('spotify:image:abc123');
+    const root = document.querySelector<HTMLElement>('.Root')!;
+    const canvas = root.querySelector<HTMLElement>(':scope > .sweet-dynamic-bg.amai-app-bg')!;
+    expect(root.classList.contains('amai-app-bg-host')).toBe(true);
+
+    // Fullscreen.Open() transfers the page to <body> and tags it; the
+    // fullscreen:open listener re-applies with resolveAppBgHost pointing at it.
+    const page = document.createElement('div');
+    page.id = 'AmaiLyricsPage';
+    page.className = 'Fullscreen';
+    document.body.appendChild(page);
+    bg.apply('spotify:image:abc123');
+
+    // Same node carried over — not orphaned and re-created (the old code path
+    // re-resolved findAppBg on a host switch and built a duplicate canvas).
+    expect(page.querySelector(':scope > .sweet-dynamic-bg.amai-app-bg')).toBe(canvas);
+    expect(document.querySelectorAll('.amai-app-bg')).toHaveLength(1);
+    expect(page.classList.contains('amai-app-bg-host')).toBe(true);
+    // The vacated .Root releases its classes even though this apply() dedups.
+    expect(root.classList.contains('amai-app-bg-host')).toBe(false);
+    expect(root.classList.contains('sweet-dynamic-bg-in-this')).toBe(false);
+
+    // Exit: the fullscreen:exit listener re-applies with the class gone.
+    page.classList.remove('Fullscreen');
+    bg.apply('spotify:image:abc123');
+
+    expect(root.querySelector(':scope > .sweet-dynamic-bg.amai-app-bg')).toBe(canvas);
+    expect(document.querySelectorAll('.amai-app-bg')).toHaveLength(1);
+    expect(root.classList.contains('amai-app-bg-host')).toBe(true);
+    expect(page.classList.contains('amai-app-bg-host')).toBe(false);
+    expect(page.classList.contains('sweet-dynamic-bg-in-this')).toBe(false);
+    bg.remove();
+  });
+
+  it('remove() while fullscreen also releases the .Root host classes behind it', () => {
+    const bg = new AppBackground();
+    bg.apply('spotify:image:abc123');
+    const root = document.querySelector<HTMLElement>('.Root')!;
+    const page = document.createElement('div');
+    page.id = 'AmaiLyricsPage';
+    page.className = 'Fullscreen';
+    document.body.appendChild(page);
+    bg.apply('spotify:image:abc123'); // canvas parks in the page
+
+    bg.remove();
+
+    expect(document.querySelector('.amai-app-bg')).toBeNull();
+    // Regression guard: cached.host is the page here, so a host-only cleanup
+    // would leave .Root transparent-UI classes leaking over Spotify's frame.
+    expect(root.classList.contains('amai-app-bg-host')).toBe(false);
+    expect(root.classList.contains('sweet-dynamic-bg-in-this')).toBe(false);
+    expect(page.classList.contains('amai-app-bg-host')).toBe(false);
+  });
 });

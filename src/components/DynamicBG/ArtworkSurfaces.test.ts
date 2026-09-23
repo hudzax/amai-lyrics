@@ -74,6 +74,29 @@ describe('ArtworkSurfaces seam', () => {
     expect(calls.page).toBe(1);
   });
 
+  it('pulls the app canvas with the page on fullscreen open and back on exit', () => {
+    const { calls, adapters } = setupFakes();
+    surfaces = new ArtworkSurfaces(adapters);
+    surfaces.mount();
+    const atMount = calls.appFrame.length;
+
+    // Fullscreen transfers the page out of `.Root` into the UA top layer;
+    // re-applying the app frame re-homes the canvas inside it
+    // (resolveAppBgHost follows the page).
+    Global.Event.evoke('fullscreen:open');
+    expect(calls.appFrame.length).toBe(atMount + 1);
+    expect(calls.appFrame[calls.appFrame.length - 1]).toBe('live-cover');
+
+    // ...and pulls it back out when the page returns.
+    Global.Event.evoke('fullscreen:exit');
+    expect(calls.appFrame.length).toBe(atMount + 2);
+
+    surfaces.destroy();
+    surfaces = null;
+    Global.Event.evoke('fullscreen:exit');
+    expect(calls.appFrame.length).toBe(atMount + 2);
+  });
+
   it('fans out once to every surface for the settled track', () => {
     const { calls, adapters } = setupFakes();
     surfaces = new ArtworkSurfaces(adapters);

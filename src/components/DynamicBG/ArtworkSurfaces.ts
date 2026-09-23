@@ -100,6 +100,7 @@ export class ArtworkSurfaces {
   private appFrameRafQueued = false;
   private firstPaintWaiter: ReturnType<typeof Whentil.When> | null = null;
   private fullscreenOpenId: number | null = null;
+  private fullscreenExitId: number | null = null;
 
   constructor(adapters?: ArtworkSurfaceAdapters) {
     this.sidebarBg = new NowPlayingBarBackground();
@@ -150,14 +151,22 @@ export class ArtworkSurfaces {
     lifecycle.trackCallback(() =>
       window.removeEventListener(APP_BG_CHANGED_EVENT, this.toggleHandler),
     );
-    // Fullscreen entry is the one transition that un-hides the lyrics page's own
-    // backdrop (the app canvas hides it otherwise). If ApplyDynamicBackground
-    // skipped creation while the page was non-fullscreen, the node doesn't exist
-    // yet — re-apply here so the backdrop is painted before it is shown.
-    this.fullscreenOpenId = Global.Event.listen('fullscreen:open', () =>
-      this.adapters.applyLyricsPage(),
-    );
+    // Fullscreen moves the lyrics page out of `.Root` (TransferElement) and
+    // into the UA top layer, where a `.Root`-child canvas would be buried behind
+    // Spotify's own UI — `resolveAppBgHost` follows the page, so re-applying the
+    // app frame pulls the canvas in with it on entry and back out on exit. The
+    // page's own backdrop stays hidden while the app canvas is live (see
+    // `dynamicBackground.isHiddenByAppCanvas`); applyLyricsPage still covers the
+    // app-bg-off case where the backdrop node may be missing.
+    this.fullscreenOpenId = Global.Event.listen('fullscreen:open', () => {
+      this.adapters.applyAppFrame(this.adapters.readCoverUrl());
+      this.adapters.applyLyricsPage();
+    });
     lifecycle.trackGlobalEvent(this.fullscreenOpenId);
+    this.fullscreenExitId = Global.Event.listen('fullscreen:exit', () =>
+      this.adapters.applyAppFrame(this.adapters.readCoverUrl()),
+    );
+    lifecycle.trackGlobalEvent(this.fullscreenExitId);
   }
 
   /** Disconnect, cancel, and clear canvases (hot-reload safe). */
@@ -172,6 +181,10 @@ export class ArtworkSurfaces {
     if (this.fullscreenOpenId !== null) {
       Global.Event.unListen(this.fullscreenOpenId);
       this.fullscreenOpenId = null;
+    }
+    if (this.fullscreenExitId !== null) {
+      Global.Event.unListen(this.fullscreenExitId);
+      this.fullscreenExitId = null;
     }
     this.sidebarObserver = null;
     this.sidebarLateObserver = null;

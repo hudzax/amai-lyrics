@@ -132,8 +132,9 @@
   opacity: 0.8; /* Secondary is slightly transparent when active */
 }
 
-/* Fullscreen mode optimizations */
-#AmaiLyricsPage.Fullscreen .sweet-dynamic-bg {
+/* Fullscreen mode optimizations — scoped to the page's own backdrop; the app
+   canvas (.amai-app-bg) transfers in at full size instead of being scaled. */
+#AmaiLyricsPage.Fullscreen .sweet-dynamic-bg:not(.amai-app-bg) {
   max-height: 60%;
   max-width: 20%;
   scale: 500% 170%; /* Keep existing scaling */
@@ -166,8 +167,9 @@
   z-index: 10;
   position: relative;
 }
-/* Lyrics page specific styling */
-#AmaiLyricsPage .sweet-dynamic-bg {
+/* Lyrics page specific styling — again the page's own backdrop only; the app
+   canvas keeps its host positioning/sizing wherever it is parented. */
+#AmaiLyricsPage .sweet-dynamic-bg:not(.amai-app-bg) {
   --bg-saturation: 2.5;
   --bg-brightness: 0.45;
   max-height: 55%;
@@ -330,6 +332,31 @@ body:has(#AmaiLyricsPage.Fullscreen)
     animation: none;
   }
 }
+/* WebGL2 shader canvas: the fullscreen pass bakes artwork sampling, dimming,
+   legibility scrims, vignette and dither into one draw. Neutralize the CSS
+   layers around it — filters on the container would re-filter the canvas every
+   frame, and the ::after scrim would double-darken over the shader's own.
+   Deliberately NOT host-scoped: the canvas follows the lyrics page into
+   fullscreen, where it is no longer a direct child of the app-frame host.
+   The doubled class raises specificity above the base .sweet-dynamic-bg
+   filter/vars without needing the host ancestor. */
+.amai-app-bg.amai-app-bg.amai-bg-gpu {
+  filter: none;
+  will-change: auto;
+}
+.amai-app-bg.amai-app-bg.amai-bg-gpu::after,
+.amai-app-bg.amai-app-bg.amai-bg-gpu .placeholder,
+.amai-app-bg.amai-app-bg.amai-bg-gpu > img.bg-image {
+  display: none;
+}
+.amai-app-bg.amai-app-bg.amai-bg-gpu > canvas.amai-bg-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 /* Stronger top/bottom scrims so top-bar and playbar controls stay legible. */
 :is(.Root, .Root__top-container).amai-app-bg-host > .sweet-dynamic-bg.amai-app-bg::after {
   background: linear-gradient(
@@ -502,11 +529,16 @@ body:has(#AmaiLyricsPage.Fullscreen)
   filter: none !important;
 }
 /* The app canvas stays live behind the open lyrics page — hide the lyrics
-   page's own background instead so the canvas is its backdrop. Scoped inside
-   #AmaiLyricsPage so the Root-level canvas can never match. Fullscreen keeps
-   its own scaled backdrop (it has no other background) on top of the canvas. */
-.amai-app-bg-on #AmaiLyricsPage:not(.Fullscreen) .sweet-dynamic-bg,
-.amai-app-bg-on #AmaiLyricsPage:not(.Fullscreen) .sweet-dynamic-bg * {
+   page's own background instead so the canvas is its backdrop, in BOTH
+   presentations: windowed the canvas sits behind the page in `.Root`,
+   fullscreen the canvas transfers INTO the page (`resolveAppBgHost` follows
+   `#AmaiLyricsPage.Fullscreen`, driven by the fullscreen listeners in
+   ArtworkSurfaces), so the page's own backdrop must stay hidden there too.
+   The `:not(.amai-app-bg)` exclusion keeps the transferred canvas visible
+   while its own node is hidden. Scoped inside #AmaiLyricsPage so the
+   Root-level canvas can never match. */
+.amai-app-bg-on #AmaiLyricsPage .sweet-dynamic-bg:not(.amai-app-bg),
+.amai-app-bg-on #AmaiLyricsPage .sweet-dynamic-bg:not(.amai-app-bg) * {
   display: none !important;
   animation: none !important;
   filter: none !important;

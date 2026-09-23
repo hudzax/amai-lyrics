@@ -6,14 +6,14 @@ import { APP_BG_ON_CLASS } from './AppBackground';
 /**
  * True while `element`'s background is hidden behind the app-frame canvas and
  * would only waste a fetch/decode. The app canvas stays live behind the open
- * lyrics page (non-fullscreen), so that page's own node is display:none;
- * fullscreen keeps its own backdrop and must still update.
+ * lyrics page in BOTH presentations now: windowed it sits behind the page in
+ * `.Root`, and fullscreen the page transfers the canvas in with it
+ * (`resolveAppBgHost` follows `#AmaiLyricsPage.Fullscreen`) — so the page's
+ * own backdrop never shows while the app canvas is enabled.
  */
 function isHiddenByAppCanvas(element: HTMLElement): boolean {
   if (!document.documentElement.classList.contains(APP_BG_ON_CLASS)) return false;
-  const page = element.closest?.('#AmaiLyricsPage');
-  if (!page) return false;
-  return !page.classList.contains('Fullscreen');
+  return !!element.closest?.('#AmaiLyricsPage');
 }
 
 /**
