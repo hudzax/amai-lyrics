@@ -1,0 +1,460 @@
+/* ============================================================
+   Amai Lyrics — Optical Glass Material
+   ------------------------------------------------------------
+   Final theme layer. It unifies the app frame, lyrics controls,
+   and tooltips without changing Spotify's layout.
+
+   Performance contract:
+   - backdrop-filter is limited to bounded, non-scrolling surfaces
+   - the main page and full lyrics scroller stay unfiltered over the
+     continuously animated WebGL canvas
+   - no persistent will-change or layout-animating properties
+   ============================================================ */
+
+/* ============================================================
+   App frame — navigation, search and library
+   ============================================================ */
+
+.amai-app-bg-host .Root__nav-bar:not(.amai-lib-grid) {
+  isolation: isolate;
+  background: var(--amai-glass-sheen), var(--amai-glass-veil), var(--amai-glass-base) !important;
+  border: 1px solid var(--amai-glass-border) !important;
+  border-radius: 12px;
+  box-shadow: var(--amai-glass-rim), var(--amai-glass-shadow) !important;
+  -webkit-backdrop-filter: var(--amai-glass-backdrop);
+  backdrop-filter: var(--amai-glass-backdrop);
+  transition:
+    background var(--amai-glass-dur) var(--amai-glass-ease),
+    border-color var(--amai-glass-dur) var(--amai-glass-ease),
+    box-shadow var(--amai-glass-dur) var(--amai-glass-ease);
+}
+
+/* Expanded card grids keep the same material, but denser and darker so
+   cover tiles and labels retain contrast over a moving background. */
+.amai-app-bg-host .Root__nav-bar.amai-lib-grid {
+  background:
+    var(--amai-glass-sheen), var(--amai-glass-veil-subtle), var(--amai-glass-base-strong) !important;
+  -webkit-backdrop-filter: var(--amai-glass-backdrop-soft);
+  backdrop-filter: var(--amai-glass-backdrop-soft);
+}
+
+.amai-app-bg-host .Root__nav-bar [role='row']:hover,
+.amai-app-bg-host .Root__nav-bar [role='listitem']:hover,
+.amai-app-bg-host .Root__nav-bar [data-encore-id='listRow']:hover,
+.amai-app-bg-host .Root__nav-bar [data-encore-id='listRow']:hover::before,
+.amai-app-bg-host .Root__nav-bar [data-encore-id='listRow']:hover::after {
+  background: var(--amai-glass-sheen), rgba(255, 255, 255, 0.055) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+.amai-app-bg-host .Root__nav-bar [aria-selected='true'] {
+  background:
+    linear-gradient(90deg, rgba(var(--amai-accent-rgb), 0.2), rgba(var(--amai-accent-rgb), 0.055)),
+    rgba(8, 10, 16, 0.56) !important;
+  box-shadow:
+    inset 2px 0 0 rgba(var(--amai-accent-rgb), 0.88),
+    inset 0 1px 0 rgba(255, 255, 255, 0.09) !important;
+}
+
+/* Search remains a compact floating island rather than a full-width navbar. */
+.amai-app-bg-host #global-nav-bar input {
+  background:
+    var(--amai-glass-sheen), var(--amai-glass-veil), var(--amai-glass-base-soft) !important;
+  border: 1px solid var(--amai-glass-border) !important;
+  border-radius: 999px !important;
+  box-shadow: var(--amai-glass-rim), var(--amai-glass-shadow-control) !important;
+  -webkit-backdrop-filter: var(--amai-glass-backdrop-soft);
+  backdrop-filter: var(--amai-glass-backdrop-soft);
+  color: var(--amai-text-hi);
+  transition:
+    background var(--amai-glass-dur) var(--amai-glass-ease),
+    border-color var(--amai-glass-dur) var(--amai-glass-ease),
+    box-shadow var(--amai-glass-dur) var(--amai-glass-ease),
+    color var(--amai-glass-dur) var(--amai-glass-ease);
+}
+
+.amai-app-bg-host #global-nav-bar input::placeholder {
+  color: var(--amai-text-muted);
+}
+
+.amai-app-bg-host #global-nav-bar input:hover {
+  border-color: var(--amai-glass-border-strong) !important;
+  background:
+    var(--amai-glass-sheen), var(--amai-glass-veil-strong), var(--amai-glass-base) !important;
+}
+
+.amai-app-bg-host #global-nav-bar input:focus {
+  border-color: rgba(var(--amai-accent-rgb), 0.58) !important;
+  box-shadow: var(--amai-glass-rim-strong), var(--amai-glass-accent-shadow) !important;
+  color: #fff;
+}
+
+/* ============================================================
+   App frame — content, now-playing cards and playbar
+   ============================================================ */
+
+/* One hovered row at a time is a bounded region, so a lighter frost is safe.
+   The large track-list scroller itself remains unfiltered. */
+.amai-app-bg-host .main-trackList-trackListRow:hover,
+.amai-app-bg-host .main-trackList-trackListRow:focus-within {
+  background: var(--amai-glass-sheen), rgba(8, 10, 16, 0.54) !important;
+  border: 0 !important;
+  outline: 1px solid var(--amai-glass-border) !important;
+  outline-offset: -1px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.11),
+    0 10px 28px rgba(2, 3, 8, 0.16) !important;
+  -webkit-backdrop-filter: var(--amai-glass-backdrop-soft);
+  backdrop-filter: var(--amai-glass-backdrop-soft);
+}
+
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section {
+  isolation: isolate;
+  background: var(--amai-glass-sheen), var(--amai-glass-veil), var(--amai-glass-base) !important;
+  border: 1px solid var(--amai-glass-border) !important;
+  border-radius: 18px;
+  box-shadow: var(--amai-glass-rim), var(--amai-glass-shadow) !important;
+  -webkit-backdrop-filter: var(--amai-glass-backdrop);
+  backdrop-filter: var(--amai-glass-backdrop);
+  animation: amai-glass-settle 520ms var(--amai-glass-ease) backwards;
+}
+
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas)
+  .main-nowPlayingView-section
+  button[type='button']:not(
+    :where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)
+  ) {
+  background:
+    var(--amai-glass-sheen), var(--amai-glass-veil), var(--amai-glass-base-soft) !important;
+  border: 1px solid var(--amai-glass-border) !important;
+  border-radius: 999px;
+  box-shadow: var(--amai-glass-rim), var(--amai-glass-shadow-control) !important;
+  color: var(--amai-text-hi) !important;
+  transition:
+    transform var(--amai-glass-dur-fast) var(--amai-glass-ease),
+    background var(--amai-glass-dur) var(--amai-glass-ease),
+    border-color var(--amai-glass-dur) var(--amai-glass-ease),
+    box-shadow var(--amai-glass-dur) var(--amai-glass-ease);
+}
+
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas)
+  .main-nowPlayingView-section
+  button[type='button']:not(
+    :where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)
+  ):hover {
+  background:
+    var(--amai-glass-sheen), var(--amai-glass-veil-strong), rgba(var(--amai-accent-rgb), 0.12) !important;
+  border-color: rgba(var(--amai-accent-rgb), 0.42) !important;
+  box-shadow: var(--amai-glass-rim-strong), var(--amai-glass-accent-shadow) !important;
+  transform: translateY(-1px);
+}
+
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas)
+  .main-nowPlayingView-section
+  button[type='button']:not(
+    :where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)
+  ):active {
+  transform: translateY(0) scale(0.96);
+}
+
+/* ============================================================
+   Lyrics page — nested action island and controls
+   ============================================================ */
+
+#AmaiLyricsPage .AmaiPageButtonContainer {
+  position: static;
+  box-sizing: border-box;
+  width: 20cqw;
+  max-width: 100%;
+  margin-inline: auto;
+  padding: 10px !important;
+  align-items: center;
+  text-align: center;
+}
+
+#AmaiLyricsPage .AmaiPageButton {
+  position: relative;
+  width: 100%;
+  min-width: 160px;
+  margin: 0;
+  background:
+    var(--amai-glass-sheen), var(--amai-glass-veil), var(--amai-glass-base-soft) !important;
+  border: 1px solid var(--amai-glass-border) !important;
+  border-radius: 999px;
+  box-shadow: var(--amai-glass-rim) !important;
+  color: var(--amai-text-mid);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transition:
+    transform var(--amai-glass-dur-fast) var(--amai-glass-ease),
+    background var(--amai-glass-dur) var(--amai-glass-ease),
+    border-color var(--amai-glass-dur) var(--amai-glass-ease),
+    color var(--amai-glass-dur) var(--amai-glass-ease),
+    box-shadow var(--amai-glass-dur) var(--amai-glass-ease);
+}
+
+#AmaiLyricsPage .AmaiPageButton:hover {
+  background:
+    var(--amai-glass-sheen), var(--amai-glass-veil-strong), rgba(var(--amai-accent-rgb), 0.12) !important;
+  border-color: rgba(var(--amai-accent-rgb), 0.48) !important;
+  color: #fff;
+  box-shadow: var(--amai-glass-rim-strong), var(--amai-glass-accent-shadow) !important;
+  transform: translateY(-1px);
+}
+
+#AmaiLyricsPage .AmaiPageButton:active {
+  transform: translateY(0) scale(0.97);
+}
+
+#AmaiLyricsPage .AmaiPageButton.hidden {
+  transform: scale(0.82);
+}
+
+#AmaiLyricsPage .AmaiPageButton:focus-visible,
+#AmaiLyricsPage .ViewControls .ViewControl:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--amai-accent-1) 72%, white);
+  outline-offset: 3px;
+}
+
+#AmaiLyricsPage .ViewControls .ViewControl {
+  background:
+    var(--amai-glass-sheen), var(--amai-glass-veil), var(--amai-glass-base-soft) !important;
+  border: 1px solid var(--amai-glass-border) !important;
+  box-shadow: var(--amai-glass-rim), var(--amai-glass-shadow-control) !important;
+  -webkit-backdrop-filter: var(--amai-glass-backdrop-soft);
+  backdrop-filter: var(--amai-glass-backdrop-soft);
+  transition:
+    transform var(--amai-glass-dur-fast) var(--amai-glass-ease),
+    background var(--amai-glass-dur) var(--amai-glass-ease),
+    border-color var(--amai-glass-dur) var(--amai-glass-ease),
+    box-shadow var(--amai-glass-dur) var(--amai-glass-ease),
+    color var(--amai-glass-dur) var(--amai-glass-ease);
+}
+
+#AmaiLyricsPage .ViewControls .ViewControl:hover {
+  background:
+    var(--amai-glass-sheen), var(--amai-glass-veil-strong), rgba(var(--amai-accent-rgb), 0.13) !important;
+  border-color: rgba(var(--amai-accent-rgb), 0.46) !important;
+  box-shadow: var(--amai-glass-rim-strong), var(--amai-glass-accent-shadow) !important;
+  transform: translateY(-1px) scale(1.025);
+}
+
+#AmaiLyricsPage .ViewControls .ViewControl:active {
+  transform: translateY(0) scale(0.93);
+}
+
+#AmaiLyricsPage .amai-version-number {
+  padding: 4px 10px 2px;
+  color: var(--amai-text-faint);
+}
+
+/* The lyrics surface is deliberately unfiltered: it covers the viewport and
+   scrolls above the live canvas. Layered translucency + inner light still
+   gives it a glass read without a full-surface re-filter every frame. */
+#AmaiLyricsPage
+  .ContentBox
+  .NowBar.Active
+  + .LyricsContainer
+  .LyricsContent
+  .simplebar-content-wrapper
+  .simplebar-content {
+  background: var(--amai-glass-veil), var(--amai-glass-base-soft) !important;
+  border: 1px solid var(--amai-glass-border) !important;
+  border-radius: 1.2cqh;
+  box-shadow: var(--amai-glass-rim), var(--amai-glass-shadow) !important;
+}
+
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill {
+  background: var(--amai-glass-veil), var(--amai-glass-base-soft) !important;
+  border: 1px solid var(--amai-glass-border) !important;
+  box-shadow: var(--amai-glass-rim), var(--amai-glass-shadow-control) !important;
+  -webkit-backdrop-filter: var(--amai-glass-backdrop-soft);
+  backdrop-filter: var(--amai-glass-backdrop-soft);
+}
+
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill {
+  background: var(--amai-glass-veil-strong), rgba(var(--amai-accent-rgb), 0.11) !important;
+  border-color: rgba(var(--amai-accent-rgb), 0.48) !important;
+  box-shadow: var(--amai-glass-rim-strong), var(--amai-glass-accent-shadow) !important;
+}
+
+#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox::before {
+  box-shadow:
+    inset 0 0 20px rgba(0, 0, 0, 0.78),
+    0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 0 34px rgba(var(--amai-accent-rgb), 0.08),
+    var(--amai-shadow-vinyl);
+}
+
+#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+    0 10px 24px rgba(2, 3, 8, 0.42);
+}
+
+#AmaiLyricsPage .Timeline .SliderBar {
+  outline: 1px solid rgba(255, 255, 255, 0.13);
+  outline-offset: 2px;
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.34),
+    0 0 12px rgba(2, 3, 8, 0.22);
+}
+
+.BoxComponent-box-elevated {
+  background: var(--amai-glass-sheen), var(--amai-glass-veil), var(--amai-glass-base) !important;
+  border: 1px solid var(--amai-glass-border) !important;
+  border-radius: 14px;
+  box-shadow: var(--amai-glass-rim), var(--amai-glass-shadow) !important;
+  -webkit-backdrop-filter: var(--amai-glass-backdrop);
+  backdrop-filter: var(--amai-glass-backdrop);
+}
+
+/* Notifications become compact floating glass toasts rather than a full-width
+   colour band. Each state keeps a low-alpha semantic accent. */
+#AmaiLyricsPage .NotificationContainer {
+  --amai-toast-accent: rgba(255, 255, 255, 0.2);
+  left: 50%;
+  right: auto;
+  width: min(520px, calc(100% - 32px));
+  padding: 10px 18px;
+  background:
+    var(--amai-glass-sheen), var(--amai-glass-veil), var(--amai-glass-base-strong) !important;
+  border: 1px solid var(--amai-glass-border);
+  border-radius: 18px;
+  box-shadow: var(--amai-glass-rim-strong), var(--amai-glass-shadow) !important;
+  transform: translateX(-50%);
+  -webkit-backdrop-filter: var(--amai-glass-backdrop-strong);
+  backdrop-filter: var(--amai-glass-backdrop-strong);
+}
+
+#AmaiLyricsPage .NotificationContainer.Visible {
+  animation: amai-toast-in 420ms var(--amai-glass-ease) both;
+}
+
+#AmaiLyricsPage .NotificationContainer.Danger {
+  --amai-toast-accent: rgba(255, 118, 118, 0.52);
+}
+
+#AmaiLyricsPage .NotificationContainer.Information {
+  --amai-toast-accent: rgba(158, 158, 255, 0.52);
+}
+
+#AmaiLyricsPage .NotificationContainer.Success {
+  --amai-toast-accent: rgba(148, 255, 148, 0.52);
+}
+
+#AmaiLyricsPage .NotificationContainer.Warning {
+  --amai-toast-accent: rgba(255, 208, 19, 0.52);
+}
+
+#AmaiLyricsPage .NotificationContainer {
+  box-shadow:
+    var(--amai-glass-rim-strong),
+    0 0 0 1px var(--amai-toast-accent),
+    var(--amai-glass-shadow) !important;
+}
+
+/* ============================================================
+   Tooltips
+   ============================================================ */
+
+.tippy-box[data-theme~='amai-lyrics'],
+#context-menu > .main-contextMenu-tippy {
+  background:
+    var(--amai-glass-sheen), var(--amai-glass-veil), var(--amai-glass-base-strong) !important;
+  border: 1px solid var(--amai-glass-border) !important;
+  border-radius: 14px !important;
+  box-shadow: var(--amai-glass-rim-strong), var(--amai-glass-shadow) !important;
+  -webkit-backdrop-filter: var(--amai-glass-backdrop-strong);
+  backdrop-filter: var(--amai-glass-backdrop-strong);
+  transition:
+    opacity var(--amai-glass-dur-fast) var(--amai-glass-ease),
+    transform var(--amai-glass-dur-fast) var(--amai-glass-ease);
+}
+
+/* ============================================================
+   Motion
+   ============================================================ */
+
+@keyframes amai-glass-settle {
+  from {
+    opacity: 0.72;
+    transform: translateY(8px) scale(0.992);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes amai-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+/* ============================================================
+   Capability, viewport and motion fallbacks
+   ============================================================ */
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .amai-app-bg-host .Root__nav-bar,
+  .amai-app-bg-host #global-nav-bar input,
+  .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section,
+  #AmaiLyricsPage .ViewControls .ViewControl,
+  #AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill,
+  .BoxComponent-box-elevated,
+  #AmaiLyricsPage .NotificationContainer,
+  .tippy-box[data-theme~='amai-lyrics'],
+  #context-menu > .main-contextMenu-tippy {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background:
+      var(--amai-glass-sheen), var(--amai-glass-veil-strong), var(--amai-glass-base-strong) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --amai-glass-backdrop-soft: blur(8px) saturate(126%) brightness(0.96);
+    --amai-glass-backdrop: blur(12px) saturate(136%) brightness(0.92);
+    --amai-glass-backdrop-strong: blur(15px) saturate(142%) brightness(0.9);
+    --amai-glass-shadow: 0 14px 38px rgba(2, 3, 8, 0.28), 0 3px 10px rgba(2, 3, 8, 0.16);
+  }
+
+  .amai-app-bg-host .main-trackList-trackListRow:hover,
+  .amai-app-bg-host .main-trackList-trackListRow:focus-within {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  #AmaiLyricsPage .AmaiPageButtonContainer {
+    padding: 8px !important;
+  }
+
+  .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section {
+    border-radius: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .amai-app-bg-host .Root__nav-bar,
+  .amai-app-bg-host #global-nav-bar input,
+  .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section,
+  .Root__right-sidebar:has(.main-nowPlayingView-section, canvas)
+    .main-nowPlayingView-section
+    button:not(:where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)),
+  #AmaiLyricsPage .AmaiPageButton,
+  #AmaiLyricsPage .ViewControls .ViewControl,
+  #AmaiLyricsPage .NotificationContainer,
+  .tippy-box[data-theme~='amai-lyrics'],
+  #context-menu > .main-contextMenu-tippy {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -439,9 +439,9 @@ body:has(#AmaiLyricsPage.Fullscreen)
   background-color: transparent !important;
   background-image: none !important;
 }
-/* Left sidebar as a floating glass panel over the canvas — mirrors the
-   lyric-line panel (fill + hairline + shadow, no backdrop blur: blur over an
-   always-animating background would re-filter every frame). */
+/* Left sidebar base glass over the canvas. The final Glassmorphism layer adds
+   bounded backdrop frosting to this navigation shell; large scrolling regions
+   remain unfiltered above the continuously animated background. */
 .amai-app-bg-host .Root__nav-bar {
   background-color: var(--amai-fill-glass) !important;
   background-image: none !important;

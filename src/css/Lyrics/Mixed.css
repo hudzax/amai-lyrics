@@ -209,7 +209,7 @@
   justify-content: flex-end;
 }
 
-/* --- Instrumental shimmer pill (Apple-style, ambient-only, no progress) --- */
+/* --- Instrumental pill (ambient-only, no progress) --- */
 #AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill {
   --pill-pad-y: 0.28em;
   --pill-pad-x: 0.9em;
@@ -249,22 +249,6 @@
   text-shadow: none;
 }
 
-/* Shimmer sweep — runs only while the break is Active (ambient, not progress) */
-#AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill::after {
-  content: '';
-  position: absolute;
-  inset: -20%;
-  z-index: 1;
-  pointer-events: none;
-  background: linear-gradient(
-    100deg,
-    transparent 25%,
-    rgba(255, 255, 255, 0.22) 50%,
-    transparent 75%
-  );
-  transform: translateX(-130%);
-}
-
 #AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill {
   color: var(--amai-text-hi);
   border-color: color-mix(in srgb, var(--amai-accent-1) 45%, transparent);
@@ -272,14 +256,6 @@
     0 0 24px rgba(var(--amai-accent-rgb), 0.22),
     var(--amai-shadow-card);
   animation: instrumental-breathe 2.6s var(--amai-ease-io) infinite;
-}
-
-#AmaiLyricsPage
-  .LyricsContainer
-  .LyricsContent
-  .line.musical-line.Active
-  .instrumental-pill::after {
-  animation: instrumental-shimmer 2.6s var(--amai-ease-io) infinite;
 }
 
 #AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line.NotSung .instrumental-pill {
@@ -297,24 +273,6 @@
   }
   50% {
     scale: 1.03;
-  }
-}
-
-@keyframes instrumental-shimmer {
-  0% {
-    transform: translateX(-130%);
-    opacity: 0;
-  }
-  15% {
-    opacity: 1;
-  }
-  60% {
-    transform: translateX(130%);
-    opacity: 1;
-  }
-  100% {
-    transform: translateX(130%);
-    opacity: 0;
   }
 }
 
@@ -571,17 +529,9 @@
     .LyricsContainer
     .LyricsContent
     .line.musical-line.Active
-    .instrumental-pill::after,
-  #AmaiLyricsPage
-    .LyricsContainer
-    .LyricsContent
-    .line.musical-line.Active
     .instrumental-pill
     .dotGroup
     .dot {
     animation: none !important;
-  }
-  #AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill::after {
-    display: none !important;
   }
 }

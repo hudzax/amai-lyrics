@@ -106,16 +106,16 @@ body:has(#AmaiLyricsPage) .main-view-container__scroll-node-child-spacer {
   width: 100cqw;
   bottom: -8cqh;
   --PageHoverOffset: -2.2cqh;
-  --ControlsHoverOffset: 1.5cqh;
+  --ControlsHoverOffset: 0.75cqh;
 }
 
-/* Pinned to the bottom of the left-side panel — hidden until the lyrics page is hovered */
+/* Pin view controls near the bottom edge of the left lyrics panel. */
 #AmaiLyricsPage:not(.Fullscreen) .AmaiPageButtonContainer .ViewControls {
   position: absolute;
-  bottom: 1.5cqh;
+  bottom: 0.75cqh;
   left: 50%;
   transform: translateX(-50%) translateY(6px);
-  width: auto;
+  width: 100%;
   height: 5cqh;
   margin-top: 0;
   opacity: 0;
@@ -189,7 +189,7 @@ body:has(#AmaiLyricsPage) .main-view-container__scroll-node-child-spacer {
 }
 
 #AmaiLyricsPage:not(.Fullscreen):hover .AmaiPageButtonContainer .ViewControls {
-  bottom: 1.5cqh;
+  bottom: 0.75cqh;
 }
 
 #AmaiLyricsPage .ViewControls button {

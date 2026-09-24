@@ -31,6 +31,58 @@
   --amai-scrim: rgba(0, 0, 0, 0.2);
   --amai-scrim-strong: rgba(0, 0, 0, 0.55);
 
+  /* ---- Optical glass material ----
+     Shared by the app frame, lyrics controls, settings and tooltips.
+     Backgrounds are layered as sheen + veil + base so the material still
+     reads correctly when backdrop-filter is unavailable. */
+  --amai-glass-base-soft: rgba(9, 11, 18, 0.34);
+  --amai-glass-base: rgba(7, 9, 15, 0.48);
+  --amai-glass-base-strong: rgba(5, 7, 12, 0.68);
+  --amai-glass-veil-subtle: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.09) 0%,
+    rgba(255, 255, 255, 0.025) 52%,
+    rgba(255, 255, 255, 0.055) 100%
+  );
+  --amai-glass-veil: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.13) 0%,
+    rgba(255, 255, 255, 0.04) 46%,
+    rgba(255, 255, 255, 0.075) 100%
+  );
+  --amai-glass-veil-strong: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.17) 0%,
+    rgba(255, 255, 255, 0.055) 48%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  --amai-glass-sheen: linear-gradient(
+    112deg,
+    rgba(255, 255, 255, 0.16) 0%,
+    rgba(255, 255, 255, 0.025) 24%,
+    transparent 54%,
+    rgba(var(--amai-accent-rgb), 0.055) 100%
+  );
+  --amai-glass-backdrop-soft: blur(12px) saturate(132%) brightness(0.96);
+  --amai-glass-backdrop: blur(18px) saturate(145%) brightness(0.92);
+  --amai-glass-backdrop-strong: blur(24px) saturate(155%) brightness(0.88);
+  --amai-glass-border: rgba(255, 255, 255, 0.14);
+  --amai-glass-border-strong: rgba(255, 255, 255, 0.22);
+  --amai-glass-rim:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18), inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.16);
+  --amai-glass-rim-strong:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24), inset 0 0 0 1px rgba(255, 255, 255, 0.055),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+  --amai-glass-shadow: 0 20px 52px rgba(2, 3, 8, 0.32), 0 4px 14px rgba(2, 3, 8, 0.18);
+  --amai-glass-shadow-hover: 0 24px 64px rgba(2, 3, 8, 0.38), 0 6px 18px rgba(2, 3, 8, 0.2);
+  --amai-glass-shadow-control: 0 10px 28px rgba(2, 3, 8, 0.24), 0 2px 7px rgba(2, 3, 8, 0.16);
+  --amai-glass-accent-shadow:
+    0 0 0 1px rgba(var(--amai-accent-rgb), 0.3), 0 14px 38px rgba(var(--amai-accent-rgb), 0.14);
+  --amai-glass-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --amai-glass-dur-fast: 180ms;
+  --amai-glass-dur: 280ms;
+
   /* ---- Strokes ---- */
   --amai-stroke-1: rgba(255, 255, 255, 0.15);
   --amai-stroke-2: rgba(255, 255, 255, 0.2);

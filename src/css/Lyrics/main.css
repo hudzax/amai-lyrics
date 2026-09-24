@@ -217,10 +217,10 @@ header.main-topBar-container .amai-info {
   .simplebar-content {
   padding: 3cqh 3cqh 1.8cqh 3cqh;
   background-color: var(--amai-fill-glass); /* Lowered opacity for stronger acrylic effect */
-  /* No backdrop-filter here: this surface covers the whole lyrics area and sits
-     directly on top of the always-animating dynamic background, so the blur
-     would force a full-surface re-filter every frame. A translucent fill keeps
-     the look at a fraction of the compositing cost. */
+  /* No backdrop-filter here: this surface covers the whole lyrics area and
+     scrolls directly above the animated background. The final glass layer
+     adds optical depth with layered translucency and inner light, while bounded
+     controls around it receive the actual backdrop frost. */
   border: 1px solid var(--amai-stroke-2); /* Optional: enhances the frosted look */
   box-shadow: var(--amai-shadow-panel); /* Optional shadow */
 }
@@ -228,7 +228,8 @@ header.main-topBar-container .amai-info {
 .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section {
   background-color: var(--amai-fill-glass); /* Lowered opacity for stronger acrylic effect */
   border-radius: 1cqh;
-  /* No backdrop-filter — same reasoning as the lyrics content panel above. */
+  /* Bounded sidebar cards receive selective frosting in Glassmorphism.css;
+     their large scrolling parent stays transparent above the live canvas. */
   border: 1px solid var(--amai-stroke-2); /* Optional: enhances the frosted look */
   box-shadow: var(--amai-shadow-panel); /* Optional shadow */
 }

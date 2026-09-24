@@ -32,6 +32,7 @@ import './css/PlaybarLyrics.css';
 import './css/Settings.css'; // Spotify preferences page (Amai settings sections)
 import './css/SettingsModal.css'; // lyrics-page settings modal shell
 import './css/Tooltips.css'; // global Tippy tooltip theme (must stay unscoped)
+import './css/Glassmorphism.css'; // final optical-glass material layer
 
 function setupUI(): ButtonManager {
   AppInitializer.setupSkeletonStyles();
