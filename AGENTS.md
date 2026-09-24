@@ -56,6 +56,7 @@ src/css/ + src/types/ (global.d.ts, spicetify.d.ts)
 
 - Managers own lifecycle; `src/app.tsx` wires `IntervalManager` + `lifecycle.track*` + `Whentil.When` for `Spicetify.Platform.PlaybackAPI` readiness.
 - Hot-reload: Spicetify re-injects script and re-evaluates modules. Code gates on `window.__amaiCoreInitialized` and `window.__amaiLyricsTeardown` — never remove those guards.
+- Development live reload is always active in the user's Spotify environment. Never launch, stop, reconfigure, or manually trigger it. The user owns all manual runtime and end-to-end verification; agents must distinguish automated check results from unverified app behavior and must not claim the latter was tested.
 
 ## Spicetify Runtime
 
