@@ -122,6 +122,42 @@ export async function processAndEnhanceLyrics(
 }
 
 /**
+ * Runs the STEP 2 enhancement for lyrics a *different* request already prepared.
+ *
+ * The dedupe join path needs this. Joining a shared in-flight promise stamps a
+ * newer token, which makes the originator's token stale — so its STEP 2 gate
+ * fails, and `enhanceLyrics` would bail on the same check even if it didn't.
+ * Without a re-run under the joiner's token the joined track never receives
+ * translations or phonetics, and the unenhanced payload is what gets persisted
+ * to the snapshot and cache, so the loss survives restarts.
+ *
+ * `prepared` must be the payload STEP 1 produced: offsets already applied,
+ * empty lines already stripped, `Raw` holding the plain-text lines. Re-running
+ * prepareLyricsForGemini would shift every StartTime a second time, so the text
+ * lines are read straight from `Raw`.
+ *
+ * @param token - Request token of the caller that will publish the result
+ * @param trackId - Spotify track ID
+ * @param prepared - Already-prepared lyrics from STEP 1
+ */
+export async function enhancePreparedLyrics(
+  token: LyricsRequestToken,
+  trackId: string,
+  prepared: LyricsData,
+): Promise<void> {
+  if (!isCurrentLyricsRequest(token)) return;
+  const { hasKanji, hasKorean } = detectLanguages(prepared);
+  await processLyricsEnhancementsAsync(
+    token,
+    trackId,
+    structuredClone(prepared),
+    hasKanji,
+    hasKorean,
+    prepared.Raw ?? [],
+  );
+}
+
+/**
  * Processes lyrics enhancements (phonetic and translations) asynchronously
  * and updates the UI when complete.
  *

@@ -23,7 +23,10 @@ function syncLoaderTimeout(value: number | null): void {
   uiState.containerShowLoaderTimeout = value;
 }
 
-/** Called on teardown to avoid orphan timeout holding detached DOM. */
+/**
+ * Called on teardown and on page (re)creation, so no orphan timeout survives to
+ * hold detached DOM or paint a loader no request is left to hide.
+ */
 export function clearLyricsUiTimeouts(): void {
   // Check both module var and window state (covers timeout set by previous injection)
   const timeoutId = ContainerShowLoaderTimeout ?? uiState.containerShowLoaderTimeout;
@@ -99,27 +102,42 @@ export function ShowLoaderContainer(): void {
   const loaderContainer = document.querySelector(
     '#AmaiLyricsPage .LyricsContainer .loaderContainer',
   );
-  if (loaderContainer) {
-    const id = window.setTimeout(() => loaderContainer.classList.add('active'), 1000);
-    syncLoaderTimeout(id as unknown as number);
+  if (!loaderContainer) return;
+  // A superseded request may have left a pending delayed-show behind. Clear
+  // it first: otherwise its callback fires after the current request's Hide
+  // and re-adds `.active`, sticking the overlay on top of loaded lyrics.
+  const pending = ContainerShowLoaderTimeout ?? uiState.containerShowLoaderTimeout;
+  if (pending) {
+    clearTimeout(pending);
+    syncLoaderTimeout(null);
   }
+  if (loaderContainer.classList.contains('active')) return;
+  const id = window.setTimeout(() => {
+    syncLoaderTimeout(null);
+    // Re-query instead of closing over the element found above: the page is
+    // recreated on open, so a captured node may be detached by fire time.
+    document
+      .querySelector('#AmaiLyricsPage .LyricsContainer .loaderContainer')
+      ?.classList.add('active');
+  }, 1000);
+  syncLoaderTimeout(id as unknown as number);
 }
 
 /**
  * Hides the loader container
  */
 export function HideLoaderContainer(): void {
-  const loaderContainer = document.querySelector(
-    '#AmaiLyricsPage .LyricsContainer .loaderContainer',
-  );
-  if (loaderContainer) {
-    const timeoutId = ContainerShowLoaderTimeout ?? uiState.containerShowLoaderTimeout;
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      syncLoaderTimeout(null);
-    }
-    loaderContainer.classList.remove('active');
+  // Always drop the pending delayed-show, even when the page isn't mounted:
+  // a Show from before a page recreation must never fire onto the new page
+  // after the lyrics already landed.
+  const pending = ContainerShowLoaderTimeout ?? uiState.containerShowLoaderTimeout;
+  if (pending) {
+    clearTimeout(pending);
+    syncLoaderTimeout(null);
   }
+  document
+    .querySelector('#AmaiLyricsPage .LyricsContainer .loaderContainer')
+    ?.classList.remove('active');
 }
 
 /**

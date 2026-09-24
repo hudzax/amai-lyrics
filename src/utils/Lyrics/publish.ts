@@ -72,6 +72,18 @@ export function isCurrentLyricsRequest(token: LyricsRequestToken): boolean {
 }
 
 /**
+ * True while no newer request has been opened, ignoring player movement.
+ *
+ * Deliberately narrower than isCurrentLyricsRequest: the pipeline's render
+ * guard must yield only to a *newer request*, which now owns the page. A
+ * mid-flight track change is what the pipeline's single retry exists for, and
+ * swallowing that case here would drop the retry.
+ */
+export function isLatestLyricsRequest(token: LyricsRequestToken | null): boolean {
+  return token !== null && sharedRequest.token === token;
+}
+
+/**
  * Publishes the negative result: persists the typed NO_LYRICS sentinel and
  * fires the same bus notification as the positive path. Without this, the
  * playbar overlay kept rendering the previous track's line after a track with

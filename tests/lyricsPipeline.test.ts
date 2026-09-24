@@ -30,6 +30,9 @@ vi.mock('../src/utils/Lyrics/cache', () => ({
 vi.mock('../src/utils/Lyrics/api', () => ({
   fetchLyricsFromAPI: vi.fn(),
 }));
+vi.mock('../src/utils/Lyrics/processing', () => ({
+  enhancePreparedLyrics: vi.fn(async () => undefined),
+}));
 vi.mock('../src/utils/Lyrics/Global/Applyer', () => ({
   default: vi.fn(),
 }));
@@ -48,6 +51,7 @@ import {
 } from '../src/utils/Lyrics/ui';
 import { updateLyricTranslations } from '../src/utils/Lyrics/LyricsRenderer';
 import { fetchLyricsFromAPI } from '../src/utils/Lyrics/api';
+import { enhancePreparedLyrics } from '../src/utils/Lyrics/processing';
 import ApplyLyrics from '../src/utils/Lyrics/Global/Applyer';
 import fetchLyrics, { loadAndApplyLyrics, invalidateLyrics } from '../src/utils/Lyrics/fetchLyrics';
 import {
@@ -66,6 +70,7 @@ const mockedStorage = vi.mocked(storage);
 const mockedEvent = vi.mocked(Event);
 const mockedApi = vi.mocked(fetchLyricsFromAPI);
 const mockedApply = vi.mocked(ApplyLyrics);
+const mockedEnhance = vi.mocked(enhancePreparedLyrics);
 
 const URI_A = 'spotify:track:trackA';
 const URI_B = 'spotify:track:trackB';
@@ -278,5 +283,113 @@ describe('loadAndApplyLyrics', () => {
     expect(mockedApi).not.toHaveBeenCalled();
     expect(mockedApply).not.toHaveBeenCalled();
     expect(noLyricsMessage).toHaveBeenCalled();
+  });
+});
+
+describe('in-flight dedupe', () => {
+  // `vi.clearAllMocks` resets call records but not implementations, and an
+  // earlier suite leaves the cache returning a hit for trackA — which would
+  // short-circuit the fetch before it ever reaches the dedupe branch.
+  beforeEach(async () => {
+    const { getLyricsFromCache } = await import('../src/utils/Lyrics/cache');
+    vi.mocked(getLyricsFromCache).mockResolvedValue(null);
+  });
+
+  /**
+   * Holds the API call open so two fetches for the same track overlap: the
+   * first owns the in-flight promise, the second joins it and — by stamping a
+   * newer token — makes the first one stale.
+   */
+  function deferredApi() {
+    let settle: (value: unknown) => void = () => {};
+    mockedApi.mockImplementation(
+      () =>
+        new Promise((r) => {
+          settle = r;
+        }) as never,
+    );
+    return {
+      resolve: (value: unknown) => settle(value),
+      originatorToken: () => mockedApi.mock.calls[0][2],
+    };
+  }
+
+  async function overlap(uri: string) {
+    const originator = fetchLyrics(uri);
+    const joiner = fetchLyrics(uri);
+    await vi.waitFor(() => expect(mockedApi).toHaveBeenCalled());
+    return { originator, joiner };
+  }
+
+  it('shares one request and re-publishes under the joining token', async () => {
+    liveItem().uri = URI_A;
+    const { resolve } = deferredApi();
+    const { originator, joiner } = await overlap(URI_A);
+
+    resolve(staticPayload('trackA'));
+    const [first, second] = await Promise.all([originator, joiner]);
+
+    expect(mockedApi).toHaveBeenCalledTimes(1);
+    expect(first).toMatchObject({ id: 'trackA' });
+    expect(second).toMatchObject({ id: 'trackA' });
+    // Regression: the originator publishes under a token the joiner superseded,
+    // so without the joiner re-publishing nothing ever hides the loader.
+    expect(HideLoaderContainer).toHaveBeenCalledTimes(1);
+    expect(Defaults.CurrentLyricsType).toBe('Static');
+  });
+
+  it('hands the enhancement to the joining request', async () => {
+    liveItem().uri = URI_A;
+    const { resolve, originatorToken } = deferredApi();
+    const { originator, joiner } = await overlap(URI_A);
+    const stale = originatorToken();
+
+    resolve(staticPayload('trackA'));
+    await Promise.all([originator, joiner]);
+
+    // Regression: the same supersession that strands the originator's publish
+    // also fails its enhancement gate, so the joined track would never receive
+    // translations or phonetics.
+    expect(mockedEnhance).toHaveBeenCalledTimes(1);
+    const [token, trackId, payload] = mockedEnhance.mock.calls[0];
+    expect(token).not.toBe(stale);
+    expect(trackId).toBe('trackA');
+    expect(payload).toMatchObject({ id: 'trackA' });
+  });
+
+  it('renders once when two pipelines race for the same track', async () => {
+    liveItem().uri = URI_A;
+    const { resolve } = deferredApi();
+    mockedApply.mockImplementation(() => true);
+
+    const originator = loadAndApplyLyrics(URI_A);
+    const joiner = loadAndApplyLyrics(URI_A);
+    await vi.waitFor(() => expect(mockedApi).toHaveBeenCalled());
+    resolve(staticPayload('trackA'));
+    await Promise.all([originator, joiner]);
+
+    // Regression: both pipelines used to paint. renderLyrics appends without
+    // clearing the container, so every line was duplicated and LyricsObject
+    // ended up bound to the second copy — the visible copy never highlighted
+    // and the scroll target sat one full copy below it.
+    expect(mockedApply).toHaveBeenCalledTimes(1);
+    expect(mockedEnhance).toHaveBeenCalledTimes(1);
+    expect(HideLoaderContainer).toHaveBeenCalledTimes(1);
+  });
+
+  it('publishes the sentinel when the joined result is NO_LYRICS', async () => {
+    liveItem().uri = URI_A;
+    const { resolve } = deferredApi();
+    const { originator, joiner } = await overlap(URI_A);
+
+    resolve({ status: 'NO_LYRICS', id: 'trackA' });
+    const [, joined] = await Promise.all([originator, joiner]);
+
+    expect(joined).toMatchObject({ status: 'NO_LYRICS', id: 'trackA' });
+    // Regression: the playbar overlay syncs off the bus event, not the snapshot.
+    const sentinel = JSON.stringify({ status: 'NO_LYRICS', id: 'trackA' });
+    expect(mockedStorage.set).toHaveBeenCalledWith('currentLyricsData', sentinel);
+    expect(mockedEvent.evoke).toHaveBeenCalledWith('lyrics:data-updated', sentinel);
+    expect(mockedEnhance).not.toHaveBeenCalled();
   });
 });

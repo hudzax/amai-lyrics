@@ -41,6 +41,12 @@ async function OpenPage() {
 
   initializePageRoot();
   await createPageElement();
+  // A fresh page must not inherit a pending delayed loader-show from the page
+  // generation createPageElement just replaced: ShowLoaderContainer re-queries
+  // when it fires, so an orphaned timer would paint the overlay onto the new
+  // page with no request left to hide it — OpenPage only fetches when a track
+  // is playing.
+  clearLyricsUiTimeouts();
 
   Defaults.LyricsContainerExists = true;
 

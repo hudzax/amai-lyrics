@@ -15,10 +15,12 @@ import {
 import { getLyricsFromCache, removeLyricsFromCache, lyricsCache } from './cache';
 import { readSnapshot, clearSnapshot } from './snapshot';
 import { fetchLyricsFromAPI } from './api';
+import { enhancePreparedLyrics } from './processing';
 import { hideRefreshButton } from '../../components/Pages/pageButtons';
 import ApplyLyrics from './Global/Applyer';
 import {
   beginLyricsRequest,
+  isLatestLyricsRequest,
   publishInitialLyrics,
   publishNoLyrics,
   liveLyricsUri,
@@ -30,6 +32,16 @@ import { LyricsData } from './conversion';
 import { NoLyricsResult } from './ui';
 
 export type LyricsFetchResult = LyricsData | NoLyricsResult;
+
+/**
+ * Out-param reporting the request token `fetchLyrics` stamped. The pipeline
+ * needs it to know, after the await, whether it still owns the render — a
+ * request superseded by a newer one must not paint. `null` means the uri was
+ * rejected before any request was opened.
+ */
+export interface LyricsRequestRef {
+  token: LyricsRequestToken | null;
+}
 
 export function isNoLyricsResult(v: LyricsFetchResult): v is NoLyricsResult {
   return typeof v === 'object' && v !== null && (v as NoLyricsResult).status === 'NO_LYRICS';
@@ -78,15 +90,23 @@ async function applyLoadedLyrics(
  * behind this interface, never in callers.
  *
  * @param uri - Spotify track URI
+ * @param flush - Force a fresh fetch, bypassing the in-flight dedupe
+ * @param requestRef - Optional out-param receiving the token stamped for this
+ *   request, so the caller can check whether it still owns the render
  * @returns Processed lyrics data or typed NO_LYRICS sentinel
  */
-export default async function fetchLyrics(uri: string, flush = false): Promise<LyricsFetchResult> {
+export default async function fetchLyrics(
+  uri: string,
+  flush = false,
+  requestRef: LyricsRequestRef = { token: null },
+): Promise<LyricsFetchResult> {
   if (!uri || typeof uri !== 'string' || !uri.includes(':')) {
     return await noLyricsMessage();
   }
   // Stamp the request before the first await: any earlier request is stale
   // from here on, no matter where its continuations land.
   const token = beginLyricsRequest(uri);
+  requestRef.token = token;
   resetLyricsUI();
   ClearLyricsPageContainer();
   // A stuck processing indicator from a previous track must never survive
@@ -115,7 +135,20 @@ export default async function fetchLyrics(uri: string, flush = false): Promise<L
   // forcing a fresh fetch via `flush`), reuse its promise instead of launching
   // a second identical request. Different tracks are never blocked by each other.
   if (!flush && inFlight.has(trackId)) {
-    return inFlight.get(trackId)!;
+    // Joining stamps a newer token, so every publish the originator attempts
+    // under its own token no-ops as stale. Re-publish under this token once the
+    // shared promise settles, or the loader is never hidden — the stuck loader
+    // seen on startup when the startup fetch and the PageView open fetch race
+    // for the same track.
+    ShowLoaderContainer();
+    const result = await inFlight.get(trackId)!;
+    const applied = await applyLoadedLyrics(result, token);
+    // The same supersession strands the originator's enhancement gate, so this
+    // request owns the enhancement or the track never gets translations.
+    if (!isNoLyricsResult(result)) {
+      void enhancePreparedLyrics(token, result.id ?? trackId, result);
+    }
+    return applied;
   }
 
   ShowLoaderContainer();
@@ -145,9 +178,17 @@ export async function loadAndApplyLyrics(
   let flush = opts.flush ?? false;
   let last: LyricsFetchResult = await noLyricsMessage();
   for (let attempt = 0; attempt < 2; attempt++) {
-    last = await fetchLyrics(target, flush);
+    const requestRef: LyricsRequestRef = { token: null };
+    last = await fetchLyrics(target, flush, requestRef);
     flush = false; // only the explicit request is ever forced
     if (isNoLyricsResult(last)) return last;
+    // A request that a newer one superseded must not paint. renderLyrics
+    // appends into the container without clearing it, so two pipelines
+    // rendering the same track duplicate every line and leave LyricsObject
+    // bound to the second copy — no visible highlight, and a scroll target
+    // that no longer matches what is on screen. This is the startup race
+    // between the player poll and PageView.Open, which both load the live track.
+    if (!isLatestLyricsRequest(requestRef.token)) return last;
     if (ApplyLyrics(last)) return last;
     const live = liveLyricsUri();
     if (!live || live === target) return last;
