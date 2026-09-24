@@ -6279,7 +6279,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.5.8";
+      version = "1.6.0";
     }
   });
 
@@ -9265,15 +9265,212 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58c2d/DotLoader.css
-  var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58c2d/DotLoader.css"() {
+  // src/utils/Lyrics/conversion.ts
+  function collectSyllableText(syllables) {
+    let text = "";
+    let prevIsJapanese = null;
+    let i = 0;
+    while (i < syllables.length) {
+      let syl = syllables[i];
+      let word = syl.Text;
+      while (syl.IsPartOfWord && i + 1 < syllables.length) {
+        i++;
+        syl = syllables[i];
+        word += syl.Text;
+        if (!syl.IsPartOfWord)
+          break;
+      }
+      if (JAPANESE_REGEX.test(word)) {
+        if (prevIsJapanese === false && text)
+          text += " ";
+        text += word;
+        prevIsJapanese = true;
+      } else {
+        text += (text ? " " : "") + word;
+        prevIsJapanese = false;
+      }
+      i++;
+    }
+    return text;
+  }
+  function convertLyrics(data) {
+    return data.map((item) => {
+      if (!item.Lead || !item.Lead.Syllables || !Array.isArray(item.Lead.Syllables)) {
+        console.error("Amai Lyrics: Invalid lyrics structure", item);
+        return {
+          Type: item.Type,
+          OppositeAligned: item.OppositeAligned,
+          Text: "",
+          StartTime: 0,
+          EndTime: 0
+        };
+      }
+      const leadText = collectSyllableText(item.Lead.Syllables);
+      let startTime = item.Lead.StartTime;
+      let endTime = item.Lead.EndTime;
+      let fullText = leadText;
+      if (item.Background && Array.isArray(item.Background)) {
+        const bgTexts = item.Background.map((bg) => {
+          if (typeof bg.StartTime === "number") {
+            startTime = Math.min(startTime, bg.StartTime);
+          }
+          if (typeof bg.EndTime === "number") {
+            endTime = Math.max(endTime, bg.EndTime);
+          }
+          if (!bg.Syllables || !Array.isArray(bg.Syllables))
+            return "";
+          return collectSyllableText(bg.Syllables);
+        });
+        fullText += " (" + bgTexts.join(" ") + ")";
+      }
+      return {
+        Type: item.Type,
+        OppositeAligned: item.OppositeAligned,
+        Text: fullText,
+        StartTime: startTime,
+        EndTime: endTime
+      };
+    });
+  }
+  function updateLyricsWithText(lyricsJson, lines) {
+    if (lyricsJson.Type === "Line" && lyricsJson.Content) {
+      lyricsJson.Content = lyricsJson.Content.map((item, index) => ({
+        ...item,
+        Text: lines[index] || item.Text
+      }));
+    } else if (lyricsJson.Type === "Static" && lyricsJson.Lines) {
+      lyricsJson.Lines = lyricsJson.Lines.map((item, index) => ({
+        ...item,
+        Text: lines[index] || item.Text
+      }));
+    }
+  }
+  var JAPANESE_REGEX;
+  var init_conversion = __esm({
+    "src/utils/Lyrics/conversion.ts"() {
+      JAPANESE_REGEX = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58c6e/ProcessingIndicator.css
+  // src/utils/Lyrics/snapshot.ts
+  function isNoLyricsSentinel(value) {
+    return value.status === "NO_LYRICS";
+  }
+  function parseSnapshotPayload(raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed?.status === "NO_LYRICS") {
+        return { kind: "noLyrics", id: parsed.id || void 0 };
+      }
+      if (parsed?.id) {
+        return { kind: "lyrics", data: parsed };
+      }
+      return null;
+    } catch {
+      if (raw.includes("NO_LYRICS")) {
+        const legacyId = raw.split(":")[1]?.replace(/[^a-zA-Z0-9]/g, "") || void 0;
+        return { kind: "noLyrics", id: legacyId };
+      }
+      return null;
+    }
+  }
+  function readRaw() {
+    try {
+      return storage_default.get(SNAPSHOT_KEY)?.toString() ?? null;
+    } catch {
+      return null;
+    }
+  }
+  function readParsed() {
+    const raw = readRaw();
+    if (memoValid && raw === memoRaw)
+      return memoParsed;
+    memoRaw = raw;
+    memoParsed = raw ? parseSnapshotPayload(raw) : null;
+    memoValid = true;
+    return memoParsed;
+  }
+  function invalidateSnapshotCache() {
+    memoValid = false;
+  }
+  function writeSnapshot(data) {
+    const serialized = JSON.stringify(data);
+    storage_default.set(SNAPSHOT_KEY, serialized);
+    invalidateSnapshotCache();
+    return serialized;
+  }
+  function clearSnapshot() {
+    storage_default.set(SNAPSHOT_KEY, null);
+    invalidateSnapshotCache();
+    EventManager_default.evoke("lyrics:data-updated", null);
+  }
+  function readSnapshot(trackId) {
+    const parsed = readParsed();
+    if (!parsed)
+      return null;
+    if (parsed.kind === "noLyrics") {
+      if (!parsed.id || parsed.id === trackId) {
+        return { status: "NO_LYRICS", id: parsed.id ?? trackId };
+      }
+      return null;
+    }
+    return parsed.data.id === trackId ? parsed.data : null;
+  }
+  function isPublishedNoLyrics() {
+    return readParsed()?.kind === "noLyrics";
+  }
+  function publishedTimedLines(trackId) {
+    const snapshot = readSnapshot(trackId);
+    if (!snapshot || isNoLyricsSentinel(snapshot))
+      return null;
+    const payload = snapshot;
+    if (!Array.isArray(payload.Content))
+      return null;
+    let items;
+    if (payload.Type === "Line") {
+      items = payload.Content;
+    } else if (payload.Type === "Syllable") {
+      items = convertLyrics(payload.Content);
+    } else {
+      return null;
+    }
+    const lines = [];
+    for (const item of items) {
+      if (item.StartTime == null || item.EndTime == null)
+        continue;
+      const text = (item.Text || "").trim();
+      if (!text)
+        continue;
+      lines.push({
+        text,
+        StartTime: item.StartTime * 1e3,
+        EndTime: item.EndTime * 1e3
+      });
+    }
+    return lines.length ? lines : null;
+  }
+  var SNAPSHOT_KEY, memoRaw, memoParsed, memoValid;
+  var init_snapshot = __esm({
+    "src/utils/Lyrics/snapshot.ts"() {
+      init_storage();
+      init_EventManager();
+      init_conversion();
+      SNAPSHOT_KEY = "currentLyricsData";
+      memoRaw = null;
+      memoParsed = null;
+      memoValid = false;
+    }
+  });
+
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d2390062d/DotLoader.css
+  var init_ = __esm({
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d2390062d/DotLoader.css"() {
+    }
+  });
+
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d2390071e/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58c6e/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d2390071e/ProcessingIndicator.css"() {
     }
   });
 
@@ -9397,10 +9594,534 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
+  // src/components/DynamicBG/inkShader.ts
+  var VERTEX_SHADER, FRAGMENT_SHADER;
+  var init_inkShader = __esm({
+    "src/components/DynamicBG/inkShader.ts"() {
+      VERTEX_SHADER = `#version 300 es
+// Attribute-less fullscreen triangle: positions from gl_VertexID, no buffers.
+void main() {
+  vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
+  gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
+}
+`;
+      FRAGMENT_SHADER = `#version 300 es
+precision highp float;
+
+uniform float uTime;
+uniform float uMix;
+uniform float uAspect;
+uniform float uWidth;
+uniform float uHeight;
+uniform sampler2D uTexOld;
+uniform sampler2D uTexNew;
+
+out vec4 outColor;
+
+float hash(vec2 p) {
+  vec2 q = fract(p * vec2(123.34, 456.21));
+  q += dot(q, q + 45.32);
+  return fract(q.x * q.y);
+}
+
+float vnoise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+  float a = hash(i);
+  float b = hash(i + vec2(1.0, 0.0));
+  float c = hash(i + vec2(0.0, 1.0));
+  float d = hash(i + vec2(1.0, 1.0));
+  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
+float fbm(vec2 p) {
+  float v = 0.0;
+  float a = 0.5;
+  vec2 q = p;
+  for (int i = 0; i < 4; i++) {
+    v += a * vnoise(q);
+    q = q * 2.03 + vec2(1.7, 9.2);
+    a *= 0.5;
+  }
+  return v;
+}
+
+void main() {
+  vec2 uv = vec2(gl_FragCoord.x, uHeight - gl_FragCoord.y) / vec2(uWidth, uHeight);
+  vec2 st = (uv - 0.5) * vec2(uAspect, 1.0);
+
+  // ---- flow: one mass of ink moving as a whole ------------------------
+  // Steady glacial wind + bounded sine-eased meander per layer. Motion
+  // level is deliberately unchanged from the old design; only the FORM is
+  // new \u2014 the abstraction comes from shape, not speed.
+  float s = uTime;
+  vec2 wind1 = vec2(0.020, -0.011) * s;
+  vec2 sway1 = vec2(sin(s * 0.045), cos(s * 0.033)) * 0.35;
+  vec2 wind2 = vec2(-0.013, 0.008) * s;
+  vec2 sway2 = vec2(sin(s * 0.028 + 1.9), cos(s * 0.051 + 0.6)) * 0.30;
+
+  // ---- form: isotropic double domain warp (marbling, no ribbons) ------
+  // No anisotropic stretch: the ink curls in all directions instead of
+  // being pulled into horizontal bands.
+  vec2 p = st;
+  vec2 q = vec2(
+    fbm(p + wind1 + sway1),
+    fbm(p + vec2(5.2, 1.3) + wind2 + sway2)
+  );
+  vec2 r = vec2(
+    fbm(p + 1.60 * q + vec2(1.7, 9.2) + wind2.yx + sway1.yx),
+    fbm(p + 1.60 * q + vec2(8.3, 2.8) - wind1.yx + sway2.xy)
+  );
+
+  // ---- palette-only artwork lookup ------------------------------------
+  // Lookup coordinates come from noise (+ the warp field for coherence),
+  // never from screen position: neighbouring pixels land on nearby palette
+  // texels (coherent colour masses), but no screen-to-image correspondence
+  // exists \u2014 the cover's imagery and composition cannot survive the trip.
+  vec2 palCoord = clamp(
+    vec2(
+      fbm(p * 0.55 + r + wind1 + 3.7),
+      fbm(p * 0.55 - r.yx + wind2 + 7.1)
+    ),
+    vec2(0.003),
+    vec2(0.997)
+  );
+  vec3 oldC = texture(uTexOld, palCoord).rgb;
+  vec3 newC = texture(uTexNew, palCoord).rgb;
+
+  // ---- crossfade: coherent veil dissolve ------------------------------
+  // Exact endpoints (w=0 at uMix=0, w=1 at uMix=1 for EVERY pixel) keep the
+  // ping-pong swap frame-identical. Thresholds ride the warp field + the
+  // outgoing cover's luminance, so the fade travels as coherent veils that
+  // follow the flow; per-cell jitter stays tiny (no salt-and-pepper).
+  float lold = dot(oldC, vec3(0.2126, 0.7152, 0.0722));
+  float cell = hash(floor(gl_FragCoord.xy / 3.0) + 7.7);
+  float soft = 0.32;
+  float nFlow = smoothstep(0.30, 0.70, r.x);
+  float nLum = smoothstep(0.05, 0.55, lold);
+  float thr = clamp(nFlow * 0.55 + nLum * 0.39 + cell * 0.06, 0.0, 1.0) * (1.0 - soft);
+  float w = smoothstep(thr, thr + soft, uMix);
+  vec3 pigment = mix(oldC, newC, w);
+
+  // ---- ink: billows of pigment suspended in a dark medium -------------
+  // Two warped density layers at different scales, thresholded softly \u2014
+  // cloud edges, never the old contour veins (filigree removed on purpose:
+  // linework reads as structure, not abstraction). The pigment boost
+  // offsets the medium blend to keep the old pipeline's mean luminance, so
+  // legibility is unchanged.
+  float dBig = fbm(p * 1.15 + 1.35 * q + wind1 + sway2);
+  float dFine = fbm(p * 2.40 + vec2(4.7, 2.9) - 1.10 * r + wind2);
+  float dens = smoothstep(0.20, 0.66, mix(dBig, dFine, 0.35));
+  vec3 medium = vec3(0.045, 0.045, 0.062);
+  vec3 col = mix(medium, pigment * 1.5, dens);
+
+  // ---- grade: deep blacks, one slow global breath ---------------------
+  float lum = dot(col, vec3(0.2126, 0.7152, 0.0722));
+  col = mix(vec3(lum), col, 1.22);
+  col = clamp(col, 0.0, 1.0);
+  col = mix(col, col * col * (3.0 - 2.0 * col), 0.55);
+  col *= 0.35 * (1.0 + 0.05 * sin(s * 0.10));
+  col *= 1.0 + 0.10 * (r.x - 0.5);
+
+  // Top/bottom legibility scrims \u2014 same contract as the old CSS ::after.
+  float scrim = mix(0.42, 1.0,
+    smoothstep(0.0, 0.20, uv.y) * (1.0 - smoothstep(0.74, 0.97, uv.y)));
+  col *= scrim;
+  col *= 1.0 - 0.28 * smoothstep(0.35, 1.15, length(st));
+
+  // ---- film grain, weighted into the shadows where banding lives -------
+  float lum2 = dot(col, vec3(0.2126, 0.7152, 0.0722));
+  float g = hash(gl_FragCoord.xy + vec2(fract(s * 0.70) * 43.0, fract(s * 0.31) * 17.0)) - 0.5;
+  col += g * mix(0.020, 0.006, smoothstep(0.0, 0.45, lum2));
+
+  outColor = vec4(max(col, 0.0), 1.0);
+}
+`;
+    }
+  });
+
+  // src/components/DynamicBG/GlAppBackground.ts
+  var GlAppBackground_exports = {};
+  __export(GlAppBackground_exports, {
+    GL_REVEAL_MS: () => GL_REVEAL_MS,
+    GlAppBackground: () => GlAppBackground
+  });
+  async function loadArtworkBitmap(url) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok)
+        return null;
+      const blob = await res.blob();
+      return await createImageBitmap(blob, {
+        resizeWidth: ART_SIZE,
+        resizeHeight: ART_SIZE,
+        resizeQuality: "high"
+      });
+    } catch {
+      return null;
+    }
+  }
+  function compile(gl, type, source, label) {
+    const shader = gl.createShader(type);
+    if (!shader)
+      throw new Error(`WebGL2: could not create ${label} shader`);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      const log = gl.getShaderInfoLog(shader) ?? "no log";
+      gl.deleteShader(shader);
+      throw new Error(`WebGL2 ${label} shader failed to compile: ${log}`);
+    }
+    return shader;
+  }
+  var ART_SIZE, CROSSFADE_SECONDS, BG_FPS, FRAME_INTERVAL_MS, STATIC_TIME, MAX_FRAME_DT_MS, MAX_DPR, GL_REVEAL_MS, GlAppBackground;
+  var init_GlAppBackground = __esm({
+    "src/components/DynamicBG/GlAppBackground.ts"() {
+      init_AppBackground();
+      init_inkShader();
+      ART_SIZE = 32;
+      CROSSFADE_SECONDS = 1.6;
+      BG_FPS = 30;
+      FRAME_INTERVAL_MS = 1e3 / BG_FPS;
+      STATIC_TIME = 9.5;
+      MAX_FRAME_DT_MS = 1e3 / 15;
+      MAX_DPR = 1.5;
+      GL_REVEAL_MS = 900;
+      GlAppBackground = class {
+        constructor(opts) {
+          this.rafId = null;
+          this.resizeRafQueued = false;
+          this.lastTickMs = 0;
+          this.elapsed = 0;
+          this.mix = 0;
+          this.mixStart = 0;
+          this.crossfading = false;
+          this.loadToken = 0;
+          this.currentUrl = null;
+          this.backingW = 0;
+          this.backingH = 0;
+          this.mountedOnce = false;
+          this.disposed = false;
+          this.handleContextLost = (event) => {
+            event.preventDefault();
+            if (this.disposed)
+              return;
+            this.disposed = true;
+            this.stopLoop();
+            document.removeEventListener("visibilitychange", this.handleVisibility);
+            window.removeEventListener("resize", this.handleResize);
+            this.motionQuery.removeEventListener("change", this.handleMotionChange);
+            this.container.remove();
+            this.onFail();
+          };
+          this.handleVisibility = () => {
+            if (this.disposed)
+              return;
+            if (document.hidden)
+              this.stopLoop();
+            else
+              this.ensureLoop();
+          };
+          this.handleMotionChange = () => {
+            if (this.disposed)
+              return;
+            this.motionEnabled = !this.motionQuery.matches;
+            this.ensureLoop();
+          };
+          this.handleResize = () => {
+            if (this.disposed || this.resizeRafQueued)
+              return;
+            this.resizeRafQueued = true;
+            requestAnimationFrame(() => {
+              this.resizeRafQueued = false;
+              if (this.disposed)
+                return;
+              this.resizeBackingStore();
+              this.drawFrame();
+            });
+          };
+          this.tick = (now2) => {
+            if (this.disposed)
+              return;
+            if (this.lastTickMs === 0)
+              this.lastTickMs = now2;
+            const delta = now2 - this.lastTickMs;
+            if (delta < FRAME_INTERVAL_MS - 1) {
+              this.rafId = requestAnimationFrame(this.tick);
+              return;
+            }
+            this.lastTickMs = now2;
+            this.elapsed += Math.min(delta, MAX_FRAME_DT_MS) / 1e3;
+            if (this.crossfading) {
+              const p = Math.min(1, (this.elapsed - this.mixStart) / CROSSFADE_SECONDS);
+              this.mix = p * p * (3 - 2 * p);
+              if (p >= 1)
+                this.finishCrossfade();
+            }
+            this.resizeBackingStore();
+            this.drawFrame();
+            if (!this.motionEnabled && !this.crossfading) {
+              this.rafId = null;
+              return;
+            }
+            this.rafId = requestAnimationFrame(this.tick);
+          };
+          this.onFail = opts.onFail;
+          this.container = createAppBgContainer(true);
+          this.canvas = document.createElement("canvas");
+          this.canvas.className = "amai-bg-canvas";
+          this.container.appendChild(this.canvas);
+          const gl = this.canvas.getContext("webgl2", {
+            alpha: false,
+            antialias: false,
+            depth: false,
+            stencil: false,
+            powerPreference: "low-power",
+            desynchronized: true
+          });
+          if (!gl)
+            throw new Error("WebGL2: context unavailable in this runtime");
+          this.gl = gl;
+          const vs = compile(gl, gl.VERTEX_SHADER, VERTEX_SHADER, "vertex");
+          const fs = compile(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER, "fragment");
+          const program = gl.createProgram();
+          if (!program)
+            throw new Error("WebGL2: could not create program");
+          gl.attachShader(program, vs);
+          gl.attachShader(program, fs);
+          gl.linkProgram(program);
+          gl.deleteShader(vs);
+          gl.deleteShader(fs);
+          if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            const log = gl.getProgramInfoLog(program) ?? "no log";
+            gl.deleteProgram(program);
+            throw new Error(`WebGL2 program failed to link: ${log}`);
+          }
+          this.program = program;
+          gl.useProgram(program);
+          this.uniforms = {
+            uTime: gl.getUniformLocation(program, "uTime"),
+            uMix: gl.getUniformLocation(program, "uMix"),
+            uAspect: gl.getUniformLocation(program, "uAspect"),
+            uWidth: gl.getUniformLocation(program, "uWidth"),
+            uHeight: gl.getUniformLocation(program, "uHeight"),
+            uTexOld: gl.getUniformLocation(program, "uTexOld"),
+            uTexNew: gl.getUniformLocation(program, "uTexNew")
+          };
+          gl.uniform1i(this.uniforms.uTexOld, 0);
+          gl.uniform1i(this.uniforms.uTexNew, 1);
+          this.vao = gl.createVertexArray() ?? {};
+          gl.bindVertexArray(this.vao);
+          this.texOld = this.createArtTexture();
+          this.texCurrent = this.createArtTexture();
+          this.motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+          this.motionEnabled = !this.motionQuery.matches;
+          this.canvas.addEventListener("webglcontextlost", this.handleContextLost);
+          document.addEventListener("visibilitychange", this.handleVisibility);
+          window.addEventListener("resize", this.handleResize, { passive: true });
+          this.motionQuery.addEventListener("change", this.handleMotionChange);
+        }
+        static async create(host, coverUrl, opts) {
+          const glBg = new GlAppBackground(opts);
+          try {
+            await glBg.seedArtwork(coverUrl);
+            glBg.reattach(host);
+            glBg.ensureLoop();
+            return glBg;
+          } catch (error) {
+            glBg.remove();
+            throw error;
+          }
+        }
+        getElement() {
+          return this.container;
+        }
+        hasArtwork() {
+          return this.currentUrl !== null;
+        }
+        isApplied() {
+          return !this.disposed && this.container.isConnected;
+        }
+        reattach(host) {
+          if (this.disposed || this.container.parentElement === host)
+            return;
+          ensureAppBgHostClasses(host);
+          host.appendChild(this.container);
+          this.resizeBackingStore();
+          this.drawFrame();
+          if (!this.mountedOnce && host.isConnected) {
+            this.mountedOnce = true;
+            if (this.motionEnabled) {
+              this.container.animate?.([{ opacity: 0 }, { opacity: 1 }], {
+                duration: GL_REVEAL_MS,
+                easing: "ease"
+              });
+            }
+          }
+        }
+        apply(coverUrl) {
+          if (this.disposed || coverUrl === this.currentUrl)
+            return;
+          this.currentUrl = coverUrl;
+          const token = ++this.loadToken;
+          void loadArtworkBitmap(coverUrl).then((bitmap) => {
+            if (this.disposed || token !== this.loadToken) {
+              bitmap?.close();
+              return;
+            }
+            if (!bitmap)
+              return;
+            if (this.crossfading) {
+              this.mix = 1;
+              this.finishCrossfade();
+            }
+            this.uploadArtwork(this.texCurrent, bitmap);
+            bitmap.close();
+            this.container.setAttribute("current-img", coverUrl);
+            this.mixStart = this.elapsed;
+            this.crossfading = true;
+            this.ensureLoop();
+          });
+        }
+        remove() {
+          if (this.disposed)
+            return;
+          this.disposed = true;
+          this.stopLoop();
+          this.canvas.removeEventListener("webglcontextlost", this.handleContextLost);
+          document.removeEventListener("visibilitychange", this.handleVisibility);
+          window.removeEventListener("resize", this.handleResize);
+          this.motionQuery.removeEventListener("change", this.handleMotionChange);
+          this.gl.getExtension("WEBGL_lose_context")?.loseContext();
+          this.gl.deleteTexture(this.texOld);
+          this.gl.deleteTexture(this.texCurrent);
+          this.gl.deleteProgram(this.program);
+          this.gl.deleteVertexArray(this.vao);
+          this.container.remove();
+        }
+        createArtTexture() {
+          const gl = this.gl;
+          const tex = gl.createTexture();
+          if (!tex)
+            throw new Error("WebGL2: could not create texture");
+          gl.bindTexture(gl.TEXTURE_2D, tex);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+          return tex;
+        }
+        texImage(source) {
+          const gl = this.gl;
+          if (source instanceof Uint8Array) {
+            gl.texImage2D(
+              gl.TEXTURE_2D,
+              0,
+              gl.RGBA8,
+              ART_SIZE,
+              ART_SIZE,
+              0,
+              gl.RGBA,
+              gl.UNSIGNED_BYTE,
+              source
+            );
+          } else {
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, source);
+          }
+        }
+        seedArtwork(coverUrl) {
+          return loadArtworkBitmap(coverUrl).then((bitmap) => {
+            this.gl.pixelStorei(this.gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+            this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, false);
+            if (!bitmap) {
+              const dark = new Uint8Array(ART_SIZE * ART_SIZE * 4);
+              for (let i = 0; i < ART_SIZE * ART_SIZE; i++) {
+                dark[i * 4] = 28;
+                dark[i * 4 + 1] = 28;
+                dark[i * 4 + 2] = 34;
+                dark[i * 4 + 3] = 255;
+              }
+              this.gl.bindTexture(this.gl.TEXTURE_2D, this.texOld);
+              this.texImage(dark);
+              this.gl.bindTexture(this.gl.TEXTURE_2D, this.texCurrent);
+              this.texImage(dark);
+              return;
+            }
+            this.uploadArtwork(this.texOld, bitmap);
+            this.uploadArtwork(this.texCurrent, bitmap);
+            bitmap.close();
+            this.currentUrl = coverUrl;
+            this.container.setAttribute("current-img", coverUrl);
+          });
+        }
+        uploadArtwork(target, bitmap) {
+          const gl = this.gl;
+          gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+          gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+          gl.bindTexture(gl.TEXTURE_2D, target);
+          this.texImage(bitmap);
+        }
+        ensureLoop() {
+          if (this.disposed || this.rafId !== null || document.hidden)
+            return;
+          this.lastTickMs = 0;
+          this.rafId = requestAnimationFrame(this.tick);
+        }
+        stopLoop() {
+          if (this.rafId !== null) {
+            cancelAnimationFrame(this.rafId);
+            this.rafId = null;
+          }
+        }
+        resizeBackingStore() {
+          const w = this.canvas.clientWidth;
+          const h = this.canvas.clientHeight;
+          if (!w || !h)
+            return;
+          const dpr = Math.min(MAX_DPR, window.devicePixelRatio || 1);
+          const bw = Math.max(1, Math.round(w * dpr));
+          const bh = Math.max(1, Math.round(h * dpr));
+          if (bw === this.backingW && bh === this.backingH)
+            return;
+          this.backingW = bw;
+          this.backingH = bh;
+          this.canvas.width = bw;
+          this.canvas.height = bh;
+          const gl = this.gl;
+          gl.viewport(0, 0, bw, bh);
+          gl.uniform1f(this.uniforms.uAspect, w / h);
+          gl.uniform1f(this.uniforms.uWidth, bw);
+          gl.uniform1f(this.uniforms.uHeight, bh);
+        }
+        drawFrame() {
+          const gl = this.gl;
+          gl.useProgram(this.program);
+          gl.bindVertexArray(this.vao);
+          gl.uniform1f(this.uniforms.uTime, this.motionEnabled ? this.elapsed : STATIC_TIME);
+          gl.uniform1f(this.uniforms.uMix, this.mix);
+          gl.activeTexture(gl.TEXTURE0);
+          gl.bindTexture(gl.TEXTURE_2D, this.texOld);
+          gl.activeTexture(gl.TEXTURE1);
+          gl.bindTexture(gl.TEXTURE_2D, this.texCurrent);
+          gl.drawArrays(gl.TRIANGLES, 0, 3);
+        }
+        finishCrossfade() {
+          this.crossfading = false;
+          this.mix = 0;
+          const incoming = this.texOld;
+          this.texOld = this.texCurrent;
+          this.texCurrent = incoming;
+        }
+      };
+    }
+  });
+
   // src/components/DynamicBG/AppBackground.ts
   var AppBackground_exports = {};
   __export(AppBackground_exports, {
     APP_BG_CLASS: () => APP_BG_CLASS,
+    APP_BG_GPU_CLASS: () => APP_BG_GPU_CLASS,
     APP_BG_HOST_CLASS: () => APP_BG_HOST_CLASS,
     APP_BG_HOST_FALLBACK_SELECTOR: () => APP_BG_HOST_FALLBACK_SELECTOR,
     APP_BG_HOST_SELECTOR: () => APP_BG_HOST_SELECTOR,
@@ -9410,12 +10131,38 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     APP_BG_ON_CLASS: () => APP_BG_ON_CLASS,
     AppBackground: () => AppBackground,
     appBackgroundSingleton: () => appBackgroundSingleton,
+    createAppBgContainer: () => createAppBgContainer,
+    ensureAppBgHostClasses: () => ensureAppBgHostClasses,
     isAppBackgroundEnabled: () => isAppBackgroundEnabled,
     resolveAppBgHost: () => resolveAppBgHost,
     syncAppBgMarker: () => syncAppBgMarker,
     syncLibraryGridState: () => syncLibraryGridState,
     watchLibraryGridState: () => watchLibraryGridState
   });
+  function createAppBgContainer(gpuMode = false) {
+    const div = document.createElement("div");
+    div.className = `${APP_BG_CONTAINER_CLASS} ${APP_BG_CLASS}${gpuMode ? ` ${APP_BG_GPU_CLASS}` : ""}`;
+    return div;
+  }
+  function ensureAppBgHostClasses(host) {
+    host.classList.add(APP_BG_HOST_HELPER_CLASS, APP_BG_HOST_CLASS);
+    syncLibraryGridState(host);
+  }
+  function detachDomCanvas(el) {
+    if (el instanceof HTMLElement && el.classList.contains(APP_BG_CLASS) && !el.classList.contains(APP_BG_GPU_CLASS)) {
+      el.remove();
+    }
+  }
+  function releaseAppBgHostIfEmpty(host) {
+    if (!host || findAppBg(host))
+      return;
+    host.classList.remove(APP_BG_HOST_HELPER_CLASS, APP_BG_HOST_CLASS);
+  }
+  function isGpuEnvironmentFailure(error) {
+    const err2 = error;
+    const text = `${err2?.name ?? ""} ${err2?.message ?? String(error)}`;
+    return /context unavailable|context lost/i.test(text);
+  }
   function isAppBackgroundEnabled() {
     const raw = storage_default.get("enable_app_background");
     if (raw === "true")
@@ -9425,6 +10172,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return Defaults_default.enableAppBackground ?? false;
   }
   function resolveAppBgHost() {
+    const fullscreenPage = document.querySelector("#AmaiLyricsPage.Fullscreen");
+    if (fullscreenPage)
+      return fullscreenPage;
     return document.querySelector(APP_BG_HOST_SELECTOR) ?? document.querySelector(APP_BG_HOST_FALLBACK_SELECTOR);
   }
   function syncAppBgMarker(force) {
@@ -9455,7 +10205,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     obs.observe(navBar, { childList: true, subtree: true });
     return obs;
   }
-  var APP_BG_HOST_SELECTOR, APP_BG_HOST_FALLBACK_SELECTOR, APP_BG_ON_CLASS, APP_BG_HOST_CLASS, APP_BG_CLASS, APP_BG_IMG_A_ID, APP_BG_IMG_B_ID, APP_BG_LIB_GRID_CLASS, APP_BG_CONTAINER_CLASS, APP_BG_HOST_HELPER_CLASS, AppBackground, appBackgroundSingleton;
+  var APP_BG_HOST_SELECTOR, APP_BG_HOST_FALLBACK_SELECTOR, APP_BG_ON_CLASS, APP_BG_HOST_CLASS, APP_BG_CLASS, APP_BG_IMG_A_ID, APP_BG_IMG_B_ID, APP_BG_LIB_GRID_CLASS, APP_BG_CONTAINER_CLASS, APP_BG_HOST_HELPER_CLASS, APP_BG_GPU_CLASS, AppBackground, appBackgroundSingleton;
   var init_AppBackground = __esm({
     "src/components/DynamicBG/AppBackground.ts"() {
       init_storage();
@@ -9471,6 +10221,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       APP_BG_LIB_GRID_CLASS = "amai-lib-grid";
       APP_BG_CONTAINER_CLASS = "sweet-dynamic-bg";
       APP_BG_HOST_HELPER_CLASS = "sweet-dynamic-bg-in-this";
+      APP_BG_GPU_CLASS = "amai-bg-gpu";
       AppBackground = class {
         constructor() {
           this.cached = {
@@ -9478,6 +10229,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
             dynamicBg: null,
             lastImgUrl: null
           };
+          this.glBg = null;
+          this.glState = "idle";
+          this.bootGeneration = 0;
+          this.lastCoverUrl = null;
+          this.domDetachTimer = null;
         }
         apply(coverUrl) {
           const enabled = isAppBackgroundEnabled();
@@ -9494,14 +10250,40 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
               this.clearCache();
               return;
             }
+            let vacatedHost = null;
+            const releaseVacatedHost = () => {
+              if (vacatedHost && vacatedHost !== host)
+                releaseAppBgHostIfEmpty(vacatedHost);
+            };
             if (this.cached.host !== host) {
+              vacatedHost = this.cached.host;
               this.cached.host = host;
+              const carried = this.cached.dynamicBg;
               this.cached.dynamicBg = findAppBg(host);
+              if (!this.cached.dynamicBg && carried?.isConnected && !carried.classList.contains(APP_BG_GPU_CLASS)) {
+                ensureAppBgHostClasses(host);
+                host.appendChild(carried);
+                this.cached.dynamicBg = carried;
+              }
             }
             const cachedBg = this.cached.dynamicBg;
             if (cachedBg && (!cachedBg.isConnected || cachedBg.parentElement !== host)) {
               this.cached.dynamicBg = findAppBg(host);
             }
+            this.lastCoverUrl = coverUrl;
+            if (this.glBg) {
+              if (!this.cached.dynamicBg || this.cached.dynamicBg.parentElement !== host) {
+                this.glBg.reattach(host);
+                this.cached.dynamicBg = this.glBg.getElement();
+              }
+              releaseVacatedHost();
+              this.glBg.apply(coverUrl);
+              this.cached.lastImgUrl = coverUrl;
+              return;
+            }
+            releaseVacatedHost();
+            if (this.glState === "idle")
+              this.bootGl(host, coverUrl);
             if (coverUrl === this.cached.lastImgUrl && this.cached.dynamicBg)
               return;
             if (!this.cached.dynamicBg) {
@@ -9526,6 +10308,18 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         }
         remove() {
           try {
+            this.bootGeneration++;
+            if (this.domDetachTimer) {
+              clearTimeout(this.domDetachTimer);
+              this.domDetachTimer = null;
+            }
+            if (this.glBg) {
+              const dying = this.glBg;
+              this.glBg = null;
+              dying.remove();
+            }
+            if (this.glState === "ready" || this.glState === "booting")
+              this.glState = "idle";
             const host = this.cached.host ?? resolveAppBgHost();
             const bg = host ? findAppBg(host) : null;
             bg?.remove();
@@ -9535,6 +10329,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
               }
               host.classList.remove(APP_BG_HOST_CLASS);
               host.querySelector(".Root__nav-bar")?.classList.remove(APP_BG_LIB_GRID_CLASS);
+            }
+            const backHost = document.querySelector(
+              `${APP_BG_HOST_SELECTOR}, ${APP_BG_HOST_FALLBACK_SELECTOR}`
+            );
+            if (backHost && backHost !== host) {
+              findAppBg(backHost)?.remove();
+              releaseAppBgHostIfEmpty(backHost);
             }
             document.documentElement.classList.remove(APP_BG_ON_CLASS);
             this.clearCache();
@@ -9557,9 +10358,95 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           this.cached.dynamicBg = null;
           this.cached.host = null;
         }
+        bootGl(host, coverUrl) {
+          this.glState = "booting";
+          const generation = ++this.bootGeneration;
+          const abandon = (retryable) => {
+            if (generation !== this.bootGeneration)
+              return;
+            this.glState = retryable ? "idle" : "failed";
+          };
+          void (async () => {
+            if (typeof WebGL2RenderingContext === "undefined") {
+              abandon(false);
+              return;
+            }
+            try {
+              const mod = await Promise.resolve().then(() => (init_GlAppBackground(), GlAppBackground_exports));
+              if (generation !== this.bootGeneration || !isAppBackgroundEnabled()) {
+                abandon(true);
+                return;
+              }
+              const seedUrl = this.lastCoverUrl ?? coverUrl;
+              const gl = await mod.GlAppBackground.create(host, seedUrl, {
+                onFail: () => this.handleGlFail()
+              });
+              if (!gl) {
+                abandon(false);
+                return;
+              }
+              if (generation !== this.bootGeneration || !isAppBackgroundEnabled()) {
+                gl.remove();
+                releaseAppBgHostIfEmpty(host);
+                releaseAppBgHostIfEmpty(this.cached.host);
+                releaseAppBgHostIfEmpty(resolveAppBgHost());
+                abandon(true);
+                return;
+              }
+              const domNode = this.cached.dynamicBg;
+              const liveHost = resolveAppBgHost() ?? host;
+              const staleHosts = /* @__PURE__ */ new Set();
+              if (this.cached.host && this.cached.host !== liveHost)
+                staleHosts.add(this.cached.host);
+              if (host !== liveHost)
+                staleHosts.add(host);
+              gl.reattach(liveHost);
+              staleHosts.forEach((staleHost) => detachDomCanvas(findAppBg(staleHost)));
+              this.scheduleDomDetach(domNode, mod.GL_REVEAL_MS);
+              this.glBg = gl;
+              this.glState = "ready";
+              this.cached.host = liveHost;
+              this.cached.dynamicBg = gl.getElement();
+              const pushUrl = this.lastCoverUrl ?? seedUrl;
+              if (pushUrl !== seedUrl || !gl.hasArtwork())
+                gl.apply(pushUrl);
+            } catch (error) {
+              abandon(false);
+              if (isGpuEnvironmentFailure(error)) {
+                console.warn(
+                  "amai-lyrics: WebGL2 is not available in this runtime \u2014 keeping the CSS dynamic background."
+                );
+              } else {
+                console.error("Error booting the WebGL2 app background:", error);
+              }
+            }
+          })();
+        }
+        scheduleDomDetach(el, revealMs) {
+          if (!el || !el.isConnected) {
+            detachDomCanvas(el);
+            return;
+          }
+          if (this.domDetachTimer)
+            clearTimeout(this.domDetachTimer);
+          this.domDetachTimer = setTimeout(() => {
+            this.domDetachTimer = null;
+            detachDomCanvas(el);
+          }, revealMs + 50);
+        }
+        handleGlFail() {
+          if (this.glState === "failed")
+            return;
+          this.bootGeneration++;
+          this.glBg = null;
+          this.glState = "failed";
+          this.cached.dynamicBg = null;
+          this.cached.lastImgUrl = null;
+          if (isAppBackgroundEnabled())
+            this.apply(this.lastCoverUrl ?? void 0);
+        }
         createNewBackground(host, coverUrl) {
-          const dynamicBackground = document.createElement("div");
-          dynamicBackground.className = `${APP_BG_CONTAINER_CLASS} ${APP_BG_CLASS}`;
+          const dynamicBackground = createAppBgContainer(false);
           dynamicBackground.setAttribute("current-img", coverUrl);
           setRandomCSSVariables(dynamicBackground);
           findAppBg(host)?.remove();
@@ -9575,9 +10462,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           dynamicBackground.appendChild(imgA);
           const imgB = createBackgroundImage(APP_BG_IMG_B_ID, "bg-image secondary", "", "lazy");
           dynamicBackground.appendChild(imgB);
-          host.classList.add(APP_BG_HOST_HELPER_CLASS, APP_BG_HOST_CLASS);
+          ensureAppBgHostClasses(host);
           host.appendChild(dynamicBackground);
-          syncLibraryGridState(host);
           imgA.onload = () => {
             requestAnimationFrame(() => {
               dynamicBackground.classList.add("sweet-dynamic-bg-loaded");
@@ -9623,10 +10509,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   function isHiddenByAppCanvas(element) {
     if (!document.documentElement.classList.contains(APP_BG_ON_CLASS))
       return false;
-    const page = element.closest?.("#AmaiLyricsPage");
-    if (!page)
-      return false;
-    return !page.classList.contains("Fullscreen");
+    return !!element.closest?.("#AmaiLyricsPage");
   }
   async function setupDynamicBackground(element, imageUrl) {
     let bgContainer = element.querySelector(".sweet-dynamic-bg");
@@ -10629,18 +11512,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         SpicyPage.classList.remove("Fullscreen");
         Fullscreen.IsOpen = false;
         PageView_default.AppendViewControls();
-        const currentLyrics = storage_default.get("currentLyricsData");
-        let NoLyrics = false;
-        if (typeof currentLyrics === "string" && currentLyrics.includes("NO_LYRICS")) {
-          NoLyrics = true;
-        } else if (currentLyrics) {
-          try {
-            const parsed = JSON.parse(currentLyrics);
-            NoLyrics = parsed?.status === "NO_LYRICS";
-          } catch {
-          }
-        }
-        if (NoLyrics) {
+        if (isPublishedNoLyrics()) {
           void UpdateNowBar();
           const lyricsContainer = document.querySelector(
             "#AmaiLyricsPage .ContentBox .LyricsContainer"
@@ -10700,7 +11572,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     "src/components/Utils/Fullscreen.ts"() {
       init_Animator();
       init_AutoScroll();
-      init_storage();
+      init_snapshot();
       init_Global();
       init_PageView();
       init_NowBar2();
@@ -11482,36 +12354,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return null;
     }
   }
-  async function getLyricsFromLocalStorage(trackId) {
-    const savedLyricsData = storage_default.get("currentLyricsData")?.toString();
-    if (!savedLyricsData)
-      return null;
-    try {
-      const parsed = JSON.parse(savedLyricsData);
-      if (parsed?.status === "NO_LYRICS") {
-        if (!parsed.id || parsed.id === trackId) {
-          return { status: "NO_LYRICS", id: parsed.id ?? trackId };
-        }
-        return null;
-      }
-      if (parsed?.id === trackId) {
-        return parsed;
-      }
-    } catch (error) {
-      if (savedLyricsData.includes("NO_LYRICS")) {
-        try {
-          const legacySplit = savedLyricsData.split(":");
-          const legacyId = legacySplit[1]?.replace(/[^a-zA-Z0-9]/g, "");
-          if (!legacyId || legacyId === trackId) {
-            return { status: "NO_LYRICS", id: legacyId ?? trackId };
-          }
-        } catch {
-        }
-      }
-      console.error("Error parsing saved lyrics data:", error);
-    }
-    return null;
-  }
   async function removeLyricsFromCache(trackId) {
     if (!lyricsCache)
       return;
@@ -11525,7 +12367,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var init_cache = __esm({
     "src/utils/Lyrics/cache.ts"() {
       init_SpikyCache();
-      init_storage();
       CACHE_EXPIRATION_TIME = 1e3 * 60 * 60 * 24 * 7;
       lyricsCache = new SpikyCache({
         name: "Cache_Lyrics"
@@ -11624,93 +12465,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_Defaults();
       init_SpotifyPlayer();
       API_URL = Defaults_default.lyrics.api.url;
-    }
-  });
-
-  // src/utils/Lyrics/conversion.ts
-  function collectSyllableText(syllables) {
-    let text = "";
-    let prevIsJapanese = null;
-    let i = 0;
-    while (i < syllables.length) {
-      let syl = syllables[i];
-      let word = syl.Text;
-      while (syl.IsPartOfWord && i + 1 < syllables.length) {
-        i++;
-        syl = syllables[i];
-        word += syl.Text;
-        if (!syl.IsPartOfWord)
-          break;
-      }
-      if (JAPANESE_REGEX.test(word)) {
-        if (prevIsJapanese === false && text)
-          text += " ";
-        text += word;
-        prevIsJapanese = true;
-      } else {
-        text += (text ? " " : "") + word;
-        prevIsJapanese = false;
-      }
-      i++;
-    }
-    return text;
-  }
-  function convertLyrics(data) {
-    return data.map((item) => {
-      if (!item.Lead || !item.Lead.Syllables || !Array.isArray(item.Lead.Syllables)) {
-        console.error("Amai Lyrics: Invalid lyrics structure", item);
-        return {
-          Type: item.Type,
-          OppositeAligned: item.OppositeAligned,
-          Text: "",
-          StartTime: 0,
-          EndTime: 0
-        };
-      }
-      const leadText = collectSyllableText(item.Lead.Syllables);
-      let startTime = item.Lead.StartTime;
-      let endTime = item.Lead.EndTime;
-      let fullText = leadText;
-      if (item.Background && Array.isArray(item.Background)) {
-        const bgTexts = item.Background.map((bg) => {
-          if (typeof bg.StartTime === "number") {
-            startTime = Math.min(startTime, bg.StartTime);
-          }
-          if (typeof bg.EndTime === "number") {
-            endTime = Math.max(endTime, bg.EndTime);
-          }
-          if (!bg.Syllables || !Array.isArray(bg.Syllables))
-            return "";
-          return collectSyllableText(bg.Syllables);
-        });
-        fullText += " (" + bgTexts.join(" ") + ")";
-      }
-      return {
-        Type: item.Type,
-        OppositeAligned: item.OppositeAligned,
-        Text: fullText,
-        StartTime: startTime,
-        EndTime: endTime
-      };
-    });
-  }
-  function updateLyricsWithText(lyricsJson, lines) {
-    if (lyricsJson.Type === "Line" && lyricsJson.Content) {
-      lyricsJson.Content = lyricsJson.Content.map((item, index) => ({
-        ...item,
-        Text: lines[index] || item.Text
-      }));
-    } else if (lyricsJson.Type === "Static" && lyricsJson.Lines) {
-      lyricsJson.Lines = lyricsJson.Lines.map((item, index) => ({
-        ...item,
-        Text: lines[index] || item.Text
-      }));
-    }
-  }
-  var JAPANESE_REGEX;
-  var init_conversion = __esm({
-    "src/utils/Lyrics/conversion.ts"() {
-      JAPANESE_REGEX = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
     }
   });
 
@@ -12239,8 +12993,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (!isCurrentLyricsRequest(token))
       return false;
     const sentinel = { status: "NO_LYRICS", id: trackId };
-    const serialized = JSON.stringify(sentinel);
-    storage_default.set("currentLyricsData", serialized);
+    const serialized = writeSnapshot(sentinel);
     EventManager_default.evoke("lyrics:data-updated", serialized);
     return true;
   }
@@ -12248,8 +13001,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (!isCurrentLyricsRequest(token))
       return false;
     Defaults_default.CurrentLyricsType = data.Type;
-    const serialized = JSON.stringify(data);
-    storage_default.set("currentLyricsData", serialized);
+    const serialized = writeSnapshot(data);
     EventManager_default.evoke("lyrics:data-updated", serialized);
     HideLoaderContainer();
     ClearLyricsPageContainer();
@@ -12261,19 +13013,18 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (liveTrackId() !== trackId)
       return false;
     updateLyricTranslations(data);
-    const serialized = JSON.stringify(data);
-    storage_default.set("currentLyricsData", serialized);
+    const serialized = writeSnapshot(data);
     EventManager_default.evoke("lyrics:data-updated", serialized);
     return true;
   }
   var windowRef8, sharedRequest;
   var init_publish = __esm({
     "src/utils/Lyrics/publish.ts"() {
-      init_storage();
       init_Defaults();
       init_EventManager();
       init_ui();
       init_LyricsRenderer();
+      init_snapshot();
       init_trackId();
       windowRef8 = window;
       sharedRequest = windowRef8.__amaiLyricsRequest ?? (windowRef8.__amaiLyricsRequest = { token: 0, uri: "" });
@@ -22820,10 +23571,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     function abort() {
       controller.abort(this.reason);
-      clean();
+      clean2();
     }
     const signalRefs = [];
-    function clean() {
+    function clean2() {
       for (const signalRef of signalRefs) {
         const signal = signalRef.deref();
         if (signal) {
@@ -35216,7 +35967,7 @@ ${JSON.stringify(lyricsOnly)}`
     if (!trackId) {
       return await noLyricsMessage();
     }
-    const localLyrics = await getLyricsFromLocalStorage(trackId);
+    const localLyrics = readSnapshot(trackId);
     if (localLyrics)
       return applyLoadedLyrics(localLyrics, token);
     const cachedLyrics = await getLyricsFromCache(trackId);
@@ -35257,7 +36008,7 @@ ${JSON.stringify(lyricsOnly)}`
     if (trackId) {
       await removeLyricsFromCache(trackId);
     }
-    storage_default.set("currentLyricsData", null);
+    clearSnapshot();
     return loadAndApplyLyrics(uri, { flush: true });
   }
   async function invalidateLyrics(target, opts = {}) {
@@ -35266,7 +36017,7 @@ ${JSON.stringify(lyricsOnly)}`
     } else {
       await removeLyricsFromCache(target.trackId);
     }
-    storage_default.set("currentLyricsData", null);
+    clearSnapshot();
     if (opts.reload) {
       const uri = liveLyricsUri();
       if (uri)
@@ -35278,12 +36029,12 @@ ${JSON.stringify(lyricsOnly)}`
     "src/utils/Lyrics/fetchLyrics.ts"() {
       init_ui();
       init_cache();
+      init_snapshot();
       init_api();
       init_pageButtons();
       init_Applyer();
       init_publish();
       init_trackId();
-      init_storage();
       inFlight = /* @__PURE__ */ new Map();
     }
   });
@@ -35643,26 +36394,26 @@ ${JSON.stringify(lyricsOnly)}`
     return promise;
   }
   function hexToRgb(hex) {
-    const clean = hex.replace("#", "");
-    const r = parseInt(clean.substring(0, 2), 16);
-    const g = parseInt(clean.substring(2, 4), 16);
-    const b = parseInt(clean.substring(4, 6), 16);
+    const clean2 = hex.replace("#", "");
+    const r = parseInt(clean2.substring(0, 2), 16);
+    const g = parseInt(clean2.substring(2, 4), 16);
+    const b = parseInt(clean2.substring(4, 6), 16);
     return `${r}, ${g}, ${b}`;
   }
   function hexLuminance(hex) {
-    const clean = hex.replace("#", "");
-    const r = parseInt(clean.substring(0, 2), 16);
-    const g = parseInt(clean.substring(2, 4), 16);
-    const b = parseInt(clean.substring(4, 6), 16);
+    const clean2 = hex.replace("#", "");
+    const r = parseInt(clean2.substring(0, 2), 16);
+    const g = parseInt(clean2.substring(2, 4), 16);
+    const b = parseInt(clean2.substring(4, 6), 16);
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
   }
   function liftToLuminance(hex, minLum) {
     if (hexLuminance(hex) >= minLum)
       return hex;
-    const clean = hex.replace("#", "");
-    let r = parseInt(clean.substring(0, 2), 16);
-    let g = parseInt(clean.substring(2, 4), 16);
-    let b = parseInt(clean.substring(4, 6), 16);
+    const clean2 = hex.replace("#", "");
+    let r = parseInt(clean2.substring(0, 2), 16);
+    let g = parseInt(clean2.substring(2, 4), 16);
+    let b = parseInt(clean2.substring(4, 6), 16);
     const steps = 8;
     for (let i = 1; i <= steps; i++) {
       const t = i / steps;
@@ -35751,44 +36502,6 @@ ${JSON.stringify(lyricsOnly)}`
     cachedPlaybarEnabledAt = now2;
     return cachedPlaybarEnabled;
   }
-  function getLinesFromStorage(rawOverride) {
-    const raw = rawOverride ?? storage_default.get("currentLyricsData");
-    if (!raw)
-      return null;
-    let data;
-    try {
-      data = JSON.parse(String(raw));
-    } catch {
-      return null;
-    }
-    if (!data || !data.id)
-      return null;
-    const currentTrackId = Spicetify.Player.data?.item?.uri?.split(":")[2];
-    if (currentTrackId !== data.id)
-      return null;
-    let content;
-    if (data.Type === "Line" && Array.isArray(data.Content)) {
-      content = data.Content;
-    } else if (data.Type === "Syllable" && Array.isArray(data.Content)) {
-      content = convertLyrics(data.Content);
-    } else {
-      return null;
-    }
-    const lines = [];
-    for (const item of content) {
-      if (item.StartTime == null || item.EndTime == null)
-        continue;
-      const text = (item.Text || "").trim();
-      if (!text)
-        continue;
-      lines.push({
-        text,
-        StartTime: item.StartTime * 1e3,
-        EndTime: item.EndTime * 1e3
-      });
-    }
-    return lines.length ? lines : null;
-  }
   function positionLyrics() {
     if (!lyricsElement || !centerWrapper)
       return;
@@ -35803,10 +36516,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
   function onSongChange() {
     lastText = "";
-    cachedLines = null;
-    cachedLinesRaw = null;
     cachedPlaybarEnabled = null;
-    inMemoryLyricsData = storage_default.get("currentLyricsData");
     if (lyricsElement) {
       lyricsElement.innerHTML = "";
     }
@@ -35865,15 +36575,7 @@ ${JSON.stringify(lyricsOnly)}`
     }
     if (!lyricsElement || !centerWrapper)
       return;
-    const rawKey = inMemoryLyricsData;
-    let lines;
-    if (rawKey != null && rawKey === cachedLinesRaw) {
-      lines = cachedLines;
-    } else {
-      cachedLinesRaw = rawKey;
-      lines = getLinesFromStorage(inMemoryLyricsData ?? void 0);
-      cachedLines = lines;
-    }
+    const lines = publishedTimedLines(liveTrackId());
     if (!lines) {
       clearPlaybarOverlay();
       return;
@@ -35943,19 +36645,10 @@ ${JSON.stringify(lyricsOnly)}`
       () => {
         window.addEventListener("resize", positionLyrics);
         Spicetify.Player.addEventListener("songchange", onSongChange);
-        lyricsDataListenerId = EventManager_default.listen("lyrics:data-updated", (data) => {
-          inMemoryLyricsData = typeof data === "string" ? data : null;
-          cachedLines = null;
-          cachedLinesRaw = null;
+        lyricsDataListenerId = EventManager_default.listen("lyrics:data-updated", () => {
+          invalidateSnapshotCache();
         });
         inject();
-        try {
-          inMemoryLyricsData = storage_default.get("currentLyricsData");
-        } catch {
-          inMemoryLyricsData = null;
-        }
-        cachedLines = null;
-        cachedLinesRaw = null;
         positionConsumerDisposer = registerPositionConsumer({
           surface: "playbar",
           intervalSeconds: UPDATE_INTERVAL,
@@ -35969,14 +36662,15 @@ ${JSON.stringify(lyricsOnly)}`
     lifecycle_default.trackCallback(cleanup);
     lifecycle_default.trackWhentil(initWhen);
   }
-  var UPDATE_INTERVAL, lyricsElement, centerWrapper, positionConsumerDisposer, resizeObserver, lastText, initWhen, cachedLines, cachedLinesRaw, inMemoryLyricsData, lyricsDataListenerId, cachedPlaybarEnabled, cachedPlaybarEnabledAt, PLAYBAR_ENABLED_TTL_MS, PlaybarLyrics_default;
+  var UPDATE_INTERVAL, lyricsElement, centerWrapper, positionConsumerDisposer, resizeObserver, lastText, initWhen, lyricsDataListenerId, cachedPlaybarEnabled, cachedPlaybarEnabledAt, PLAYBAR_ENABLED_TTL_MS, PlaybarLyrics_default;
   var init_PlaybarLyrics = __esm({
     "src/components/PlaybarLyrics/PlaybarLyrics.ts"() {
       init_storage();
       init_PositionConsumer();
       init_phoneticPatterns();
       init_findActiveIndex();
-      init_conversion();
+      init_snapshot();
+      init_trackId();
       init_sanitize();
       init_Whentil();
       init_lifecycle();
@@ -35988,9 +36682,6 @@ ${JSON.stringify(lyricsOnly)}`
       resizeObserver = null;
       lastText = "";
       initWhen = null;
-      cachedLines = null;
-      cachedLinesRaw = null;
-      inMemoryLyricsData = null;
       lyricsDataListenerId = null;
       cachedPlaybarEnabled = null;
       cachedPlaybarEnabledAt = 0;
@@ -36572,6 +37263,7 @@ ${JSON.stringify(lyricsOnly)}`
       this.appFrameRafQueued = false;
       this.firstPaintWaiter = null;
       this.fullscreenOpenId = null;
+      this.fullscreenExitId = null;
       this.sidebarBg = new NowPlayingBarBackground();
       this.adapters = adapters ?? createDefaultAdapters(this.sidebarBg);
       this.debouncedFanOut = debounce2((coverUrl) => {
@@ -36610,11 +37302,16 @@ ${JSON.stringify(lyricsOnly)}`
       lifecycle_default.trackCallback(
         () => window.removeEventListener(APP_BG_CHANGED_EVENT, this.toggleHandler)
       );
-      this.fullscreenOpenId = Global_default.Event.listen(
-        "fullscreen:open",
-        () => this.adapters.applyLyricsPage()
-      );
+      this.fullscreenOpenId = Global_default.Event.listen("fullscreen:open", () => {
+        this.adapters.applyAppFrame(this.adapters.readCoverUrl());
+        this.adapters.applyLyricsPage();
+      });
       lifecycle_default.trackGlobalEvent(this.fullscreenOpenId);
+      this.fullscreenExitId = Global_default.Event.listen(
+        "fullscreen:exit",
+        () => this.adapters.applyAppFrame(this.adapters.readCoverUrl())
+      );
+      lifecycle_default.trackGlobalEvent(this.fullscreenExitId);
     }
     destroy() {
       this.cancelPending();
@@ -36627,6 +37324,10 @@ ${JSON.stringify(lyricsOnly)}`
       if (this.fullscreenOpenId !== null) {
         Global_default.Event.unListen(this.fullscreenOpenId);
         this.fullscreenOpenId = null;
+      }
+      if (this.fullscreenExitId !== null) {
+        Global_default.Event.unListen(this.fullscreenExitId);
+        this.fullscreenExitId = null;
       }
       this.sidebarObserver = null;
       this.sidebarLateObserver = null;
@@ -36881,6 +37582,662 @@ ${JSON.stringify(lyricsOnly)}`
     startStartupPoll();
   }
 
+  // src/utils/nativeHoverTooltipSuppressor.ts
+  init_lifecycle();
+
+  // src/utils/hoverTooltipContent.ts
+  function clean(value) {
+    const text = (value ?? "").replace(/\s+/g, " ").trim();
+    return text || null;
+  }
+  function textFromLabelledBy(element) {
+    const ids = (element.getAttribute("aria-labelledby") ?? "").split(/\s+/).filter(Boolean);
+    if (ids.length === 0)
+      return null;
+    const documentRef = element.ownerDocument;
+    const parts = ids.map((id) => documentRef.getElementById(id)?.textContent ?? "").map((value) => clean(value)).filter((value) => value !== null);
+    return parts.length > 0 ? parts.join(" ") : null;
+  }
+  function textFromLeaves(element) {
+    const parts = [];
+    const walk = (node) => {
+      for (const child of Array.from(node.childNodes)) {
+        if (child.nodeType === 3) {
+          const text = clean(child.textContent);
+          if (text)
+            parts.push(text);
+        } else if (child.nodeType === 1) {
+          walk(child);
+        }
+      }
+    };
+    walk(element);
+    return parts.length > 0 ? parts.join(" ") : null;
+  }
+  function getHoverTooltipContent(trigger) {
+    const ariaLabel = clean(trigger.getAttribute("aria-label"));
+    if (ariaLabel)
+      return ariaLabel;
+    const labelledBy = textFromLabelledBy(trigger);
+    if (labelledBy)
+      return labelledBy;
+    const ariaDescription = clean(trigger.getAttribute("aria-description"));
+    if (ariaDescription)
+      return ariaDescription;
+    const title = clean(trigger.getAttribute("title"));
+    if (title)
+      return title;
+    const dataTooltip = clean(trigger.getAttribute("data-tooltip-content"));
+    if (dataTooltip)
+      return dataTooltip;
+    const placeholder = clean(trigger.getAttribute("placeholder"));
+    if (placeholder)
+      return placeholder;
+    if (trigger.tagName === "IMG") {
+      const alt = clean(trigger.getAttribute("alt"));
+      if (alt)
+        return alt;
+    }
+    if (trigger.tagName === "BUTTON")
+      return clean(trigger.textContent);
+    const anchorText = [];
+    for (const child of Array.from(trigger.children)) {
+      if (child.tagName !== "A")
+        continue;
+      const anchor = child;
+      const text = clean(anchor.getAttribute("aria-label")) ?? textFromLabelledBy(anchor) ?? clean(anchor.getAttribute("title")) ?? clean(anchor.textContent);
+      if (text)
+        anchorText.push(text);
+    }
+    if (anchorText.length > 0)
+      return anchorText.join(", ");
+    return textFromLeaves(trigger);
+  }
+
+  // src/utils/nativeHoverTooltipSuppressor.ts
+  var REDISPATCHED_FLAG = "__amaiRedispatchedHover";
+  var eventChains = /* @__PURE__ */ new WeakMap();
+  function rememberHoverTooltipChain(event, chain) {
+    eventChains.set(event, chain);
+  }
+  function getRememberedHoverTooltipChain(event) {
+    return eventChains.get(event);
+  }
+  var NATIVE_HOVER_TOOLTIP_ACTIVE_CLASS = "amai-native-hover-tooltip-fix";
+  var NATIVE_HOVER_TOOLTIP_OWNED_PROPERTY = "__amaiNativeHoverTooltipOwned";
+  function hasUnownedTippy(element) {
+    const candidate = element;
+    return Boolean(candidate._tippy) && candidate[NATIVE_HOVER_TOOLTIP_OWNED_PROPERTY] !== candidate._tippy;
+  }
+  var REACT_PROPS_PREFIX = "__reactProps$";
+  var reactPropsKeys = /* @__PURE__ */ new WeakMap();
+  function asReactProps(value) {
+    return value && typeof value === "object" ? value : null;
+  }
+  function hasReactTooltipHandlers(props) {
+    if (!props)
+      return false;
+    const hasHandlerPair = (enter, leave) => typeof props[enter] === "function" && typeof props[leave] === "function";
+    return hasHandlerPair("onMouseEnter", "onMouseLeave") || hasHandlerPair("onMouseOver", "onMouseOut") || hasHandlerPair("onFocus", "onBlur") || hasHandlerPair("onFocusIn", "onFocusOut");
+  }
+  function getReactTooltipProps(element) {
+    let key;
+    if (reactPropsKeys.has(element)) {
+      key = reactPropsKeys.get(element) ?? null;
+    } else {
+      key = Object.getOwnPropertyNames(element).find((name) => name.startsWith(REACT_PROPS_PREFIX)) ?? null;
+      reactPropsKeys.set(element, key);
+    }
+    if (!key)
+      return null;
+    return asReactProps(element[key]);
+  }
+  function hasExplicitTooltipLabel(element) {
+    if (!element.hasAttribute("aria-label") && !element.hasAttribute("aria-labelledby") && !element.hasAttribute("title") && !element.hasAttribute("data-tooltip-content") && !element.hasAttribute("aria-description")) {
+      return false;
+    }
+    if (element.hasAttribute("title") || element.hasAttribute("data-tooltip-content") || element.hasAttribute("aria-description")) {
+      return true;
+    }
+    const role = element.getAttribute("role");
+    if (element.tagName === "BUTTON" || element.tagName === "A" || element.tagName === "INPUT" || element.tagName === "SELECT" || element.tagName === "TEXTAREA" || role !== null && /^(button|link|menuitem|menuitemcheckbox|menuitemradio|tab|gridcell)$/i.test(role)) {
+      return true;
+    }
+    return element.children.length === 0;
+  }
+  function hasNativeTooltipSignal(element) {
+    return hasExplicitTooltipLabel(element) || hasReactTooltipHandlers(getReactTooltipProps(element));
+  }
+  var TRACK_ROW_SCOPE = '.main-trackList-trackListRow, .main-trackList-row, [data-testid="tracklist-row"]';
+  var PLAYBAR_SCOPE = ".Root__now-playing-bar";
+  var SIDEBAR_SCOPE = ".Root__nav-bar";
+  var FUNCTIONAL_LINK_WRAPPER_SELECTOR = [
+    '[role="button"]',
+    '[data-testid*="action"]',
+    '[data-testid*="control"]',
+    '[data-testid*="button"]',
+    ".main-trackList-rowMoreButton",
+    ".main-trackList-rowHeartButton",
+    ".main-trackList-rowHideButton",
+    ".main-trackList-rowImagePlayButton",
+    ".main-row-playPauseButton"
+  ].join(", ");
+  var TRACK_TITLE_TRIGGER_SELECTOR = ".main-trackList-rowTitle.standalone-ellipsis-one-line";
+  var SIDEBAR_LIBRARY_CELL_SELECTOR = [
+    ".main-yourLibraryX-libraryCard",
+    ".main-yourLibraryX-libraryItem",
+    '[data-testid="side-bar-library-card"]',
+    '[data-testid="your-library-item"]'
+  ].join(", ");
+  var TRACK_TOOLTIP_BUTTON_SELECTOR = [
+    '[data-testid="add-button"]',
+    '[data-testid="more-button"]',
+    '[data-testid="row-heart-button"]',
+    '[data-testid="hide-button"]',
+    ".main-addButton-button",
+    ".main-moreButton-button",
+    ".main-trackList-rowMoreButton",
+    ".main-trackList-rowHeartButton",
+    ".main-trackList-rowHideButton",
+    'button[data-encore-id="buttonTertiary"]'
+  ].join(", ");
+  var SIDEBAR_TOOLTIP_BUTTON_SELECTOR = [
+    ".main-yourLibraryX-iconOnly",
+    ".main-yourLibraryX-collapseButtonWrapper",
+    ".main-yourLibraryX-headerContent button",
+    ".main-yourLibraryX-filterArea button",
+    ".main-yourLibraryX-libraryFilter button",
+    'button[data-testid="create-playlist"]',
+    'button[data-testid^="your-library-"]'
+  ].join(", ");
+  function isTrackRow(element) {
+    return Boolean(element.closest(TRACK_ROW_SCOPE));
+  }
+  function isKnownTooltipButton(element, nativeSignal = hasNativeTooltipSignal(element)) {
+    if (hasUnownedTippy(element))
+      return false;
+    if (nativeSignal)
+      return true;
+    if (isTrackRow(element))
+      return element.matches(TRACK_TOOLTIP_BUTTON_SELECTOR);
+    if (element.closest(PLAYBAR_SCOPE))
+      return true;
+    if (element.closest(SIDEBAR_SCOPE))
+      return element.matches(SIDEBAR_TOOLTIP_BUTTON_SELECTOR);
+    return false;
+  }
+  function isSidebarLibraryCell(element) {
+    if (element.getAttribute("role") !== "gridcell")
+      return false;
+    const nav = element.closest(SIDEBAR_SCOPE);
+    if (!nav)
+      return false;
+    const row = element.closest('[role="row"]');
+    if (row && row.closest(SIDEBAR_SCOPE) === nav) {
+      if (element.matches(SIDEBAR_LIBRARY_CELL_SELECTOR) || element.querySelector(SIDEBAR_LIBRARY_CELL_SELECTOR)) {
+        return true;
+      }
+      const cells = Array.from(row.children).filter(
+        (child) => child.getAttribute("role") === "gridcell"
+      );
+      return cells[0] === element;
+    }
+    if (element.parentElement !== nav)
+      return false;
+    return element.matches(SIDEBAR_LIBRARY_CELL_SELECTOR) || Boolean(element.querySelector(SIDEBAR_LIBRARY_CELL_SELECTOR));
+  }
+  function hasDirectAnchorChild(element) {
+    for (const child of element.children) {
+      if (child.tagName === "A")
+        return true;
+    }
+    return false;
+  }
+  function isHoverTrigger(element) {
+    if (hasUnownedTippy(element))
+      return false;
+    const nativeSignal = hasNativeTooltipSignal(element);
+    const isButton = element.tagName === "BUTTON";
+    const isSidebarCell = isSidebarLibraryCell(element);
+    const isTextWrapper = element.tagName === "SPAN" || element.tagName === "DIV";
+    const isTitleTrigger = isTextWrapper && element.matches(TRACK_TITLE_TRIGGER_SELECTOR) && isTrackRow(element);
+    const hasDirectAnchor = isTextWrapper && hasDirectAnchorChild(element);
+    if (!nativeSignal && !isButton && !isSidebarCell && !hasDirectAnchor && !isTitleTrigger) {
+      return false;
+    }
+    const content = getHoverTooltipContent(element);
+    if (nativeSignal)
+      return content !== null;
+    if (isButton) {
+      return isKnownTooltipButton(element, false) && content !== null;
+    }
+    if (isSidebarCell)
+      return content !== null;
+    if (element.closest(SIDEBAR_SCOPE))
+      return false;
+    if (!isTextWrapper)
+      return false;
+    const inTrackRow = isTrackRow(element);
+    if (isTitleTrigger) {
+      return content !== null;
+    }
+    const children = element.children;
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      if (child.tagName !== "A")
+        continue;
+      if (hasUnownedTippy(child))
+        return false;
+      if (hasNativeTooltipSignal(child))
+        return content !== null;
+      if (inTrackRow && (element.matches(FUNCTIONAL_LINK_WRAPPER_SELECTOR) || child.matches(FUNCTIONAL_LINK_WRAPPER_SELECTOR))) {
+        return false;
+      }
+      if (inTrackRow || element.closest(PLAYBAR_SCOPE))
+        return content !== null;
+    }
+    return false;
+  }
+  function findHoverTooltipTriggerChain(start) {
+    if (!start || start.nodeType !== 1)
+      return [];
+    const element = start;
+    const ownerDocument = element.ownerDocument;
+    const boundary = ownerDocument.body ?? ownerDocument.documentElement;
+    const chain = [];
+    let current = element;
+    while (current && current !== boundary) {
+      if (isHoverTrigger(current))
+        chain.push(current);
+      current = current.parentElement;
+    }
+    return chain;
+  }
+  function containsEventTarget(trigger, target) {
+    if (!target || target.nodeType !== 1)
+      return false;
+    const node = target;
+    return node === trigger || trigger.contains(node);
+  }
+  function findCrossingTrigger(start, other, knownChain) {
+    const chain = knownChain ?? findHoverTooltipTriggerChain(start);
+    if (chain.length === 0)
+      return null;
+    const outer = chain[chain.length - 1];
+    const crossesNestedTrigger = chain.some((candidate) => !containsEventTarget(candidate, other));
+    if (containsEventTarget(outer, other) && !crossesNestedTrigger)
+      return null;
+    return outer;
+  }
+  function handleHover(event) {
+    if (event.__amaiRedispatchedHover)
+      return;
+    if (event.type !== "mouseover" && event.type !== "mouseout")
+      return;
+    const mouse = event;
+    const entering = mouse.type === "mouseover";
+    const start = entering ? mouse.target : mouse.relatedTarget;
+    const other = entering ? mouse.relatedTarget : mouse.target;
+    const chain = findHoverTooltipTriggerChain(start);
+    rememberHoverTooltipChain(event, chain);
+    const trigger = findCrossingTrigger(start, other, chain);
+    if (!trigger)
+      return;
+    const parent = trigger.parentElement;
+    const dispatchTarget = entering ? parent : mouse.target;
+    if (!parent || !dispatchTarget)
+      return;
+    mouse.stopPropagation();
+    const clone = new MouseEvent(mouse.type, {
+      bubbles: true,
+      cancelable: mouse.cancelable,
+      view: mouse.view ?? null,
+      detail: mouse.detail,
+      screenX: mouse.screenX,
+      screenY: mouse.screenY,
+      clientX: mouse.clientX,
+      clientY: mouse.clientY,
+      button: mouse.button,
+      buttons: mouse.buttons,
+      ctrlKey: mouse.ctrlKey,
+      shiftKey: mouse.shiftKey,
+      altKey: mouse.altKey,
+      metaKey: mouse.metaKey,
+      relatedTarget: entering ? mouse.relatedTarget : parent
+    });
+    Object.defineProperty(clone, REDISPATCHED_FLAG, { value: true });
+    dispatchTarget.dispatchEvent(clone);
+  }
+  function handleFocus(event) {
+    if (event.__amaiRedispatchedHover)
+      return;
+    if (event.type !== "focusin" && event.type !== "focusout")
+      return;
+    const focus = event;
+    const entering = focus.type === "focusin";
+    const start = entering ? focus.target : focus.relatedTarget;
+    const other = entering ? focus.relatedTarget : focus.target;
+    const chain = findHoverTooltipTriggerChain(start);
+    rememberHoverTooltipChain(event, chain);
+    const trigger = findCrossingTrigger(start, other, chain);
+    if (!trigger)
+      return;
+    const parent = trigger.parentElement;
+    const dispatchTarget = entering ? parent : focus.target;
+    if (!parent || !dispatchTarget)
+      return;
+    focus.stopPropagation();
+    const clone = new FocusEvent(focus.type, {
+      bubbles: true,
+      cancelable: focus.cancelable,
+      relatedTarget: entering ? focus.relatedTarget : parent
+    });
+    Object.defineProperty(clone, REDISPATCHED_FLAG, { value: true });
+    dispatchTarget.dispatchEvent(clone);
+  }
+  function installNativeHoverTooltipSuppressor() {
+    lifecycle_default.trackWindow("mouseover", handleHover, true);
+    lifecycle_default.trackWindow("mouseout", handleHover, true);
+    lifecycle_default.trackWindow("focusin", handleFocus, true);
+    lifecycle_default.trackWindow("focusout", handleFocus, true);
+    const root2 = typeof document === "undefined" ? null : document.documentElement;
+    root2?.classList.add(NATIVE_HOVER_TOOLTIP_ACTIVE_CLASS);
+    lifecycle_default.trackCallback(() => {
+      root2?.classList.remove(NATIVE_HOVER_TOOLTIP_ACTIVE_CLASS);
+    });
+  }
+
+  // src/utils/amaiHoverTooltips.ts
+  init_lifecycle();
+  init_Whentil();
+  var SHOW_DELAY_MS = 200;
+  function markTooltipOwned(trigger, owner) {
+    trigger[NATIVE_HOVER_TOOLTIP_OWNED_PROPERTY] = owner;
+  }
+  function syncTooltipOwnership(trigger, instance) {
+    const element = trigger;
+    markTooltipOwned(trigger, element._tippy ?? instance);
+  }
+  function clearTooltipOwnership(trigger, instance) {
+    const element = trigger;
+    const owner = element[NATIVE_HOVER_TOOLTIP_OWNED_PROPERTY];
+    if (owner === instance || owner === element._tippy) {
+      delete element[NATIVE_HOVER_TOOLTIP_OWNED_PROPERTY];
+    }
+  }
+  var shown = null;
+  var pendingTrigger = null;
+  var pendingTimer = null;
+  var readinessTask = null;
+  var referenceObserver = null;
+  var ownedInstances = /* @__PURE__ */ new Set();
+  var ownedTriggers = /* @__PURE__ */ new WeakMap();
+  var destroyingInstances = /* @__PURE__ */ new WeakSet();
+  function destroyInstance(instance) {
+    if (!ownedInstances.has(instance) || destroyingInstances.has(instance))
+      return;
+    destroyingInstances.add(instance);
+    try {
+      instance.destroy();
+    } catch {
+    } finally {
+      const trigger = ownedTriggers.get(instance);
+      if (trigger)
+        clearTooltipOwnership(trigger, instance);
+      ownedTriggers.delete(instance);
+      ownedInstances.delete(instance);
+      destroyingInstances.delete(instance);
+    }
+  }
+  function getTippyFactory() {
+    if (typeof Spicetify === "undefined" || typeof Spicetify.Tippy !== "function")
+      return null;
+    return Spicetify.Tippy;
+  }
+  function maybeStopReferenceObserver() {
+    if (pendingTimer === null && pendingTrigger === null && shown === null) {
+      referenceObserver?.disconnect();
+      referenceObserver = null;
+    }
+  }
+  function mutationTouchesTrigger(mutation, trigger) {
+    const target = mutation.target;
+    if (target === trigger || trigger.contains(target))
+      return true;
+    if (mutation.type !== "attributes" && mutation.type !== "characterData")
+      return false;
+    const labelledBy = (trigger.getAttribute("aria-labelledby") ?? "").split(/\s+/).filter(Boolean);
+    if (labelledBy.length === 0)
+      return false;
+    let current = target;
+    while (current) {
+      if (current.nodeType === 1 && labelledBy.includes(current.id))
+        return true;
+      current = current.parentNode;
+    }
+    return false;
+  }
+  function ensureReferenceObserver() {
+    if (referenceObserver || typeof MutationObserver === "undefined" || typeof document === "undefined" || !document.body) {
+      return;
+    }
+    const observer = new MutationObserver((mutations) => {
+      if (referenceObserver !== observer)
+        return;
+      if (pendingTrigger && !pendingTrigger.isConnected)
+        clearPending();
+      const visible = shown;
+      if (visible && !visible.trigger.isConnected)
+        hideShown();
+      else if (visible && mutations.some((mutation) => mutationTouchesTrigger(mutation, visible.trigger))) {
+        updateShown(visible.trigger);
+      }
+      maybeStopReferenceObserver();
+    });
+    referenceObserver = observer;
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ["aria-label", "aria-labelledby", "title"]
+    });
+  }
+  function clearPending() {
+    if (pendingTimer !== null)
+      clearTimeout(pendingTimer);
+    readinessTask?.Cancel();
+    readinessTask = null;
+    pendingTimer = null;
+    pendingTrigger = null;
+    maybeStopReferenceObserver();
+  }
+  function hideShown() {
+    if (!shown)
+      return;
+    const current = shown;
+    shown = null;
+    destroyInstance(current.instance);
+    maybeStopReferenceObserver();
+  }
+  function waitForTippy(trigger) {
+    if (readinessTask)
+      return;
+    const task = Whentil_default.When(
+      () => getTippyFactory() !== null,
+      () => {
+        readinessTask = null;
+        if (pendingTrigger === trigger)
+          showFor(trigger);
+      }
+    );
+    readinessTask = task;
+    lifecycle_default.trackWhentil(task);
+  }
+  function placementFor(trigger) {
+    return trigger.closest(".Root__nav-bar") ? "right" : "top";
+  }
+  function updateShown(trigger) {
+    if (shown?.trigger !== trigger)
+      return false;
+    if (shown.instance.state?.isVisible === false) {
+      hideShown();
+      return true;
+    }
+    const content = getHoverTooltipContent(trigger);
+    if (!content) {
+      hideShown();
+      return true;
+    }
+    if (content !== shown.content) {
+      shown.content = content;
+      try {
+        shown.instance.setContent?.(content);
+      } catch {
+        hideShown();
+      }
+    }
+    return true;
+  }
+  function showFor(trigger) {
+    pendingTimer = null;
+    if (pendingTrigger !== trigger)
+      return;
+    if (!trigger.isConnected) {
+      clearPending();
+      return;
+    }
+    const tippyFactory = getTippyFactory();
+    if (!tippyFactory) {
+      waitForTippy(trigger);
+      return;
+    }
+    const existing = trigger._tippy;
+    if (existing) {
+      if (!ownedInstances.has(existing)) {
+        clearPending();
+        return;
+      }
+      destroyInstance(existing);
+    }
+    const content = getHoverTooltipContent(trigger);
+    if (!content) {
+      clearPending();
+      return;
+    }
+    clearPending();
+    hideShown();
+    let instance = null;
+    try {
+      instance = tippyFactory(trigger, {
+        content,
+        theme: "amai-lyrics",
+        animation: "amai",
+        arrow: false,
+        placement: placementFor(trigger),
+        onHide: () => {
+          if (shown?.instance === instance)
+            shown = null;
+          if (instance)
+            destroyInstance(instance);
+          maybeStopReferenceObserver();
+        },
+        onDestroy: () => {
+          if (shown?.instance === instance)
+            shown = null;
+          if (instance) {
+            clearTooltipOwnership(trigger, instance);
+            ownedTriggers.delete(instance);
+            ownedInstances.delete(instance);
+          }
+          maybeStopReferenceObserver();
+        }
+      });
+      ownedInstances.add(instance);
+      ownedTriggers.set(instance, trigger);
+      markTooltipOwned(trigger, instance);
+      const record = { trigger, instance, content };
+      shown = record;
+      ensureReferenceObserver();
+      instance.show();
+      if (shown?.instance === instance && ownedInstances.has(instance)) {
+        syncTooltipOwnership(trigger, instance);
+      }
+    } catch (error) {
+      if (shown?.instance === instance)
+        shown = null;
+      if (instance)
+        destroyInstance(instance);
+      maybeStopReferenceObserver();
+      console.error("[Amai Lyrics] Failed to show track-row tooltip:", error);
+    }
+  }
+  function sync(event) {
+    if (event.__amaiRedispatchedHover)
+      return;
+    if (event.type !== "mouseover" && event.type !== "mouseout" && event.type !== "focusin" && event.type !== "focusout") {
+      return;
+    }
+    const pointer = event;
+    const entering = pointer.type === "mouseover" || pointer.type === "focusin";
+    const start = entering ? pointer.target : pointer.relatedTarget;
+    const chain = getRememberedHoverTooltipChain(event) ?? findHoverTooltipTriggerChain(start);
+    const trigger = chain.length > 0 ? chain[0] : null;
+    if (!trigger) {
+      clearPending();
+      hideShown();
+      return;
+    }
+    if (shown?.trigger === trigger || pendingTrigger === trigger) {
+      if (shown?.trigger === trigger)
+        updateShown(trigger);
+      return;
+    }
+    clearPending();
+    hideShown();
+    pendingTrigger = trigger;
+    ensureReferenceObserver();
+    pendingTimer = setTimeout(() => showFor(trigger), SHOW_DELAY_MS);
+  }
+  function cancelOnActivation() {
+    clearPending();
+    hideShown();
+  }
+  function installAmaiHoverTooltips() {
+    lifecycle_default.trackWindow("mouseover", sync, true);
+    lifecycle_default.trackWindow("mouseout", sync, true);
+    lifecycle_default.trackWindow("focusin", sync, true);
+    lifecycle_default.trackWindow("focusout", sync, true);
+    for (const type of [
+      "pointerdown",
+      "mousedown",
+      "click",
+      "contextmenu",
+      "dragstart",
+      "touchstart"
+    ]) {
+      lifecycle_default.trackWindow(type, cancelOnActivation, true);
+    }
+    lifecycle_default.trackWindow(
+      "scroll",
+      () => {
+        clearPending();
+        hideShown();
+      },
+      true
+    );
+    lifecycle_default.trackCallback(() => {
+      clearPending();
+      hideShown();
+      for (const instance of Array.from(ownedInstances)) {
+        destroyInstance(instance);
+      }
+      ownedInstances.clear();
+      referenceObserver?.disconnect();
+      referenceObserver = null;
+    });
+  }
+
   // src/app.tsx
   init_fastdomAsync();
   init_lifecycle();
@@ -36954,6 +38311,8 @@ ${JSON.stringify(lyricsOnly)}`
     }
     lifecycle_default.registerGlobalTeardown();
     installBlankToastSuppressor();
+    installNativeHoverTooltipSuppressor();
+    installAmaiHoverTooltips();
     installFastdomErrorHandler();
     try {
       await AppInitializer.initializeCore();
@@ -36994,7 +38353,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58c2d/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d2390062d/DotLoader.css */
 #DotLoader {
   --dot-color: var(--amai-accent-1);
   --dot-color-dim: color-mix(in srgb, var(--amai-accent-1) 22%, transparent);
@@ -37029,7 +38388,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58c6e/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d2390071e/ProcessingIndicator.css */
 #AmaiLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -37111,7 +38470,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58360/tokens.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d238ff8c0/tokens.css */
 :root {
   --amai-accent-1: #1ed760;
   --amai-accent-2: #1db954;
@@ -37164,12 +38523,17 @@ ${JSON.stringify(lyricsOnly)}`
   --amai-scrollbar-thumb: rgba(255, 255, 255, 0.6);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58641/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d238ffc31/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
 .main-nowPlayingView-contextItemInfo::before {
   display: none;
+}
+html.amai-native-hover-tooltip-fix .main-trackList-trackListRow a > .main-trackList-rowTitle.standalone-ellipsis-one-line,
+html.amai-native-hover-tooltip-fix .main-trackList-row a > .main-trackList-rowTitle.standalone-ellipsis-one-line,
+html.amai-native-hover-tooltip-fix [data-testid=tracklist-row] a > .main-trackList-rowTitle.standalone-ellipsis-one-line {
+  pointer-events: none;
 }
 #AmaiLyricsPage {
   margin: 0;
@@ -37402,7 +38766,7 @@ button:has(#AmaiLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f586e2/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d238ffdb2/Simplebar.css */
 #AmaiLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -37610,7 +38974,7 @@ button:has(#AmaiLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58763/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d238ffed3/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -38214,7 +39578,7 @@ button:has(#AmaiLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58824/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d23900024/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -38303,7 +39667,7 @@ button:has(#AmaiLyricsPageSvg):after {
 .sweet-dynamic-bg > img.secondary.active {
   opacity: 0.8;
 }
-#AmaiLyricsPage.Fullscreen .sweet-dynamic-bg {
+#AmaiLyricsPage.Fullscreen .sweet-dynamic-bg:not(.amai-app-bg) {
   max-height: 60%;
   max-width: 20%;
   scale: 500% 170%;
@@ -38331,7 +39695,7 @@ button:has(#AmaiLyricsPageSvg):after {
   z-index: 10;
   position: relative;
 }
-#AmaiLyricsPage .sweet-dynamic-bg {
+#AmaiLyricsPage .sweet-dynamic-bg:not(.amai-app-bg) {
   --bg-saturation: 2.5;
   --bg-brightness: 0.45;
   max-height: 55%;
@@ -38441,6 +39805,22 @@ body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingVi
     animation: none;
   }
 }
+.amai-app-bg.amai-app-bg.amai-bg-gpu {
+  filter: none;
+  will-change: auto;
+}
+.amai-app-bg.amai-app-bg.amai-bg-gpu::after,
+.amai-app-bg.amai-app-bg.amai-bg-gpu .placeholder,
+.amai-app-bg.amai-app-bg.amai-bg-gpu > img.bg-image {
+  display: none;
+}
+.amai-app-bg.amai-app-bg.amai-bg-gpu > canvas.amai-bg-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
 :is(.Root, .Root__top-container).amai-app-bg-host > .sweet-dynamic-bg.amai-app-bg::after {
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0) 22%, rgba(0, 0, 0, 0) 72%, rgba(0, 0, 0, 0.6) 100%);
 }
@@ -38549,8 +39929,8 @@ body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingVi
   animation: none !important;
   filter: none !important;
 }
-.amai-app-bg-on #AmaiLyricsPage:not(.Fullscreen) .sweet-dynamic-bg,
-.amai-app-bg-on #AmaiLyricsPage:not(.Fullscreen) .sweet-dynamic-bg * {
+.amai-app-bg-on #AmaiLyricsPage .sweet-dynamic-bg:not(.amai-app-bg),
+.amai-app-bg-on #AmaiLyricsPage .sweet-dynamic-bg:not(.amai-app-bg) * {
   display: none !important;
   animation: none !important;
   filter: none !important;
@@ -38562,7 +39942,7 @@ body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingVi
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f588a5/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d23900125/main.css */
 #AmaiLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -38813,7 +40193,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58906/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d23900206/Mixed.css */
 #AmaiLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -39200,7 +40580,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58977/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d23900307/LoaderContainer.css */
 #AmaiLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -39222,7 +40602,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f589a8/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d239003a8/FullscreenTransition.css */
 #AmaiLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -39249,7 +40629,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f589c9/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d239003e9/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
@@ -39348,7 +40728,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58a0a/Settings.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d2390044a/Settings.css */
 :is(#amai-settings, #amai-dev-settings, #amai-info) {
   display: grid;
   gap: 8px;
@@ -39575,7 +40955,7 @@ ruby > rt {
   border: 1px solid var(--essential-subdued, #818181);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58a5b/SettingsModal.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d239004bb/SettingsModal.css */
 .amai-settings-overlay {
   position: fixed;
   inset: 0;
@@ -39651,7 +41031,7 @@ ruby > rt {
   min-width: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-21416-exMaGnFwVGnm/1a0ca8f58a8c/Tooltips.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d239004ec/Tooltips.css */
 .tippy-box[data-theme~=amai-lyrics] {
   position: relative;
   background-color: rgba(18, 18, 18, 0.92);
