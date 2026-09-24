@@ -32,8 +32,8 @@
  * artist cells keep their (far cheaper) tooltips because their trigger div is
  * an ANCESTOR of the artist links: pointer-events:none there would break them.
  *
- * The root class is added by `installNativeHoverTooltipSuppressor` and
- * removed by lifecycle teardown. That matters for hot reload: the injected
+ * The root class is added by the HoverTooltip module and removed by its
+ * lifecycle disposer. That matters for hot reload: the injected
  * stylesheet can outlive the JavaScript instance, but a disabled extension
  * must not leave Spotify's title link permanently pointer-transparent. The
  * selector is limited to a known track row and a linked title; the JS trigger

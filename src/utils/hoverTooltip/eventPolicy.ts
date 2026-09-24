@@ -1,14 +1,9 @@
-import lifecycle from './lifecycle';
-import { getHoverTooltipContent } from './hoverTooltipContent';
+import { getHoverTooltipContent } from './content';
 
 /**
- * Suppresses Spotify's native hover and focus tooltip handlers anywhere in
- * the document, then the Amai replacement restores the same labels with a
- * lightweight Tippy instance. The primary signal is React's cloned
- * enter/leave/focus/blur props, so dynamically mounted pages, dialogs,
- * portals, and virtualized views do not need a page-specific selector list;
- * accessible-label/title and known Spotify structural shapes provide a
- * fallback when private props are unavailable.
+ * HoverEventPolicy owns Spotify tooltip trigger recognition and native
+ * retargeting for the HoverTooltip module. The replacement presenter receives
+ * the same trigger chain without sharing event state across modules.
  *
  * Root cause (Spotify bundle, module 12866's `y` clone): the tooltip wrapper
  * clones React `onMouseEnter`/`onMouseLeave`/`onFocus`/`onBlur` onto the
@@ -75,11 +70,9 @@ import { getHoverTooltipContent } from './hoverTooltipContent';
  *     later hovers without clobbering another extension.
  *   - Always on, no settings toggle — same posture as the title CSS fix.
  *
- * Registered through `lifecycle`, so the hot-reload teardown removes it.
- *
- * The labels this quiets come back through `amaiHoverTooltips`, which
- * shows Amai's own themed bubbles on these same triggers — plain tippy with
- * immediate text content, so none of the rAF/measuring machinery above.
+ * The event policy is instantiated by the HoverTooltip module. It does not
+ * own listeners itself; the module gives it normalized events and carries the
+ * trigger chain directly to the replacement presenter.
  */
 
 /**
@@ -88,18 +81,13 @@ import { getHoverTooltipContent } from './hoverTooltipContent';
  * re-retargeting in a loop.
  */
 const REDISPATCHED_FLAG = '__amaiRedispatchedHover';
-const eventChains = new WeakMap<Event, HTMLElement[]>();
 
-export function rememberHoverTooltipChain(event: Event, chain: HTMLElement[]): void {
-  eventChains.set(event, chain);
-}
-
-export function getRememberedHoverTooltipChain(event: Event): HTMLElement[] | undefined {
-  return eventChains.get(event);
+export function isRedispatchedHoverEvent(event: Event): boolean {
+  return Boolean((event as RedispatchedHover).__amaiRedispatchedHover);
 }
 
 /** CSS gate for the title-cell pointer-events rule. */
-export const NATIVE_HOVER_TOOLTIP_ACTIVE_CLASS = 'amai-native-hover-tooltip-fix';
+export const HOVER_TOOLTIP_ACTIVE_CLASS = 'amai-native-hover-tooltip-fix';
 
 /** DOM marker used to distinguish our replacement instances from Spotify's. */
 export const NATIVE_HOVER_TOOLTIP_OWNED_PROPERTY = '__amaiNativeHoverTooltipOwned';
@@ -382,15 +370,14 @@ function isHoverTrigger(element: Element): boolean {
  * no page/surface allowlist: dynamically mounted controls, dialogs, portals,
  * and virtualized views all use the same event path.
  *
- * Two consumers pick opposite ends of the chain:
+ * The chain is consumed inside one HoverTooltip implementation:
  *   - suppression takes the LAST (outermost): nested triggers collapse into a
  *     single retarget, and the retargeted trigger's parent is outside the
  *     chain, which keeps the LCA-preservation proof valid;
- *   - the Amai tooltip replacement (`amaiHoverTooltips`) takes the FIRST
- *     (innermost): the element the pointer/focus is actually over, so its
- *     label describes the right thing.
+ *   - replacement takes the FIRST (innermost): the element the pointer/focus
+ *     is actually over, so its label describes the right thing.
  */
-export function findHoverTooltipTriggerChain(start: EventTarget | null): HTMLElement[] {
+function findHoverTooltipTriggerChain(start: EventTarget | null): HTMLElement[] {
   if (!start || (start as Node).nodeType !== 1) return [];
   const element = start as Element;
   const ownerDocument = element.ownerDocument;
@@ -428,12 +415,9 @@ function findCrossingTrigger(
   return outer;
 }
 
-function handleHover(event: Event): void {
-  // Our own re-dispatched clones: pass through, never re-retarget them.
-  if ((event as RedispatchedHover).__amaiRedispatchedHover) return;
-  // Registration only ever subscribes to these two types; the guard keeps the
-  // entering/leaving split below honest if that ever changes.
-  if (event.type !== 'mouseover' && event.type !== 'mouseout') return;
+function handleHover(event: Event): HTMLElement[] {
+  if (isRedispatchedHoverEvent(event)) return [];
+  if (event.type !== 'mouseover' && event.type !== 'mouseout') return [];
 
   const mouse = event as MouseEvent;
   const entering = mouse.type === 'mouseover';
@@ -443,13 +427,12 @@ function handleHover(event: Event): void {
   const start = entering ? mouse.target : mouse.relatedTarget;
   const other = entering ? mouse.relatedTarget : mouse.target;
   const chain = findHoverTooltipTriggerChain(start);
-  rememberHoverTooltipChain(event, chain);
   const trigger = findCrossingTrigger(start, other, chain);
-  if (!trigger) return;
+  if (!trigger) return chain;
 
   const parent = trigger.parentElement;
   const dispatchTarget = (entering ? parent : mouse.target) as Element | null;
-  if (!parent || !dispatchTarget) return;
+  if (!parent || !dispatchTarget) return chain;
 
   // Stop the original before React's root listener can see it, then hand
   // every other listener a clone that no longer crosses the trigger.
@@ -479,24 +462,24 @@ function handleHover(event: Event): void {
   });
   Object.defineProperty(clone, REDISPATCHED_FLAG, { value: true });
   dispatchTarget.dispatchEvent(clone);
+  return chain;
 }
 
-function handleFocus(event: Event): void {
-  if ((event as RedispatchedHover).__amaiRedispatchedHover) return;
-  if (event.type !== 'focusin' && event.type !== 'focusout') return;
+function handleFocus(event: Event): HTMLElement[] {
+  if (isRedispatchedHoverEvent(event)) return [];
+  if (event.type !== 'focusin' && event.type !== 'focusout') return [];
 
   const focus = event as FocusEvent;
   const entering = focus.type === 'focusin';
   const start = entering ? focus.target : focus.relatedTarget;
   const other = entering ? focus.relatedTarget : focus.target;
   const chain = findHoverTooltipTriggerChain(start);
-  rememberHoverTooltipChain(event, chain);
   const trigger = findCrossingTrigger(start, other, chain);
-  if (!trigger) return;
+  if (!trigger) return chain;
 
   const parent = trigger.parentElement;
   const dispatchTarget = entering ? parent : focus.target;
-  if (!parent || !dispatchTarget) return;
+  if (!parent || !dispatchTarget) return chain;
 
   focus.stopPropagation();
   const clone = new FocusEvent(focus.type, {
@@ -506,25 +489,21 @@ function handleFocus(event: Event): void {
   });
   Object.defineProperty(clone, REDISPATCHED_FLAG, { value: true });
   dispatchTarget.dispatchEvent(clone);
+  return chain;
 }
 
-export function installNativeHoverTooltipSuppressor(): void {
-  // Capture on window: runs before React's root-container bubble listener, so
-  // stopPropagation() here means React never sees the original event. The
-  // handler reference is shared by both types — the DOM dedupes a double
-  // install of the identical (type, listener, capture) tuple.
-  lifecycle.trackWindow('mouseover', handleHover, true);
-  lifecycle.trackWindow('mouseout', handleHover, true);
-  lifecycle.trackWindow('focusin', handleFocus, true);
-  lifecycle.trackWindow('focusout', handleFocus, true);
-
-  // CSS is injected once per stylesheet lifetime, but this extension can be
-  // torn down and re-initialized by hot reload. Gate the title-cell rule on
-  // the live lifecycle so a disabled instance cannot leave pointer-events
-  // disabled in Spotify.
-  const root = typeof document === 'undefined' ? null : document.documentElement;
-  root?.classList.add(NATIVE_HOVER_TOOLTIP_ACTIVE_CLASS);
-  lifecycle.trackCallback(() => {
-    root?.classList.remove(NATIVE_HOVER_TOOLTIP_ACTIVE_CLASS);
-  });
+export class HoverEventPolicy {
+  /**
+   * Normalize one original event and return its trigger chain to the presenter.
+   * The policy has no cross-module event memory for callers to coordinate.
+   */
+  public handle(event: Event): HTMLElement[] {
+    if (event.type === 'mouseover' || event.type === 'mouseout') {
+      return handleHover(event);
+    }
+    if (event.type === 'focusin' || event.type === 'focusout') {
+      return handleFocus(event);
+    }
+    return [];
+  }
 }

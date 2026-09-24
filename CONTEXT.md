@@ -133,3 +133,12 @@ The single place that turns prepared lyrics into enhanced lyrics: backend
 selection, fallback order, prompt construction, mutation, and the user-visible
 error message. It sits behind the LyricsPipeline seam. Callers cross it
 through `enhanceLyrics` - never through the Gemini/Amai providers directly.
+
+## HoverTooltip
+
+The single place that replaces Spotify's native hover and focus labels with
+Amai's lightweight labels while preserving navigation, activation, and
+third-party tooltip ownership. It owns trigger recognition, label
+reconstruction, dwell, one-bubble ownership, and teardown behind one seam.
+Callers should not coordinate suppression, replacement, or Tippy instances
+separately.

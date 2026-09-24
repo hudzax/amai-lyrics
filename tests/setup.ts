@@ -54,7 +54,12 @@ if (!g.Spicetify) {
         this._store.delete(key);
       },
     },
-    Tippy: () => ({ destroy: () => {} }),
+    Tippy: () => ({
+      show: () => {},
+      destroy: () => {},
+      setContent: () => {},
+      state: { isVisible: true },
+    }),
     TippyProps: {},
     PopupModal: {
       display: () => {},

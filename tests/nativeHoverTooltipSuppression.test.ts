@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import lifecycle from '../src/utils/lifecycle';
-import {
-  installNativeHoverTooltipSuppressor,
-  NATIVE_HOVER_TOOLTIP_ACTIVE_CLASS,
-} from '../src/utils/nativeHoverTooltipSuppressor';
+import { installHoverTooltips } from '../src/utils/hoverTooltip';
 
 /**
+ * The HoverTooltip module suppresses native labels while preserving every
+ * other hover/focus path. This suite exercises its event-policy seam through
+ * the same install operation used by main().
+ *
  * Hovering an ARTIST/ALBUM cell, a row action button (`+`
  * add-to-playlist/save, `...` more options, heart, hide), any bottom-playbar
  * control with a reconstructible native label, or a left-sidebar library
@@ -158,7 +159,7 @@ beforeEach(() => {
     });
   }
   for (const type of DOC_TYPES) document.addEventListener(type, recordDocument);
-  installNativeHoverTooltipSuppressor();
+  installHoverTooltips();
 });
 
 afterEach(() => {
@@ -170,29 +171,34 @@ afterEach(() => {
 
 describe('native hover tooltip suppression', () => {
   it('gates the CSS title rule to the live extension lifecycle', () => {
-    expect(document.documentElement.classList.contains(NATIVE_HOVER_TOOLTIP_ACTIVE_CLASS)).toBe(
-      true,
-    );
+    expect(document.documentElement.classList.contains('amai-native-hover-tooltip-fix')).toBe(true);
 
     lifecycle.disposeAll();
 
-    expect(document.documentElement.classList.contains(NATIVE_HOVER_TOOLTIP_ACTIVE_CLASS)).toBe(
+    expect(document.documentElement.classList.contains('amai-native-hover-tooltip-fix')).toBe(
       false,
     );
   });
 
-  it('registers mouseover/mouseout on window in capture phase (idempotent)', () => {
-    const add = vi.spyOn(window, 'addEventListener');
-    installNativeHoverTooltipSuppressor(); // double install: same handler ref, DOM dedupes
-    const calls = add.mock.calls.filter((c) => c[0] === 'mouseover' || c[0] === 'mouseout');
-    expect(calls).toHaveLength(2);
-    expect(calls.every((c) => c[2] === true)).toBe(true);
+  it('registers one idempotent global installation', () => {
+    // The beforeEach installation already owns the window listeners. A second
+    // call must not stack another retargeting protocol.
+    installHoverTooltips();
+    installHoverTooltips();
 
-    // If the double install stacked two listeners, both would see the original
-    // (only clones are flagged) and we would get TWO retargeted clones here.
     fire('mouseover', el('artistLink1'), el('outside'));
     expect(seen).toHaveLength(1);
     expect(seen[0].flagged).toBe(true);
+  });
+
+  it('returns an idempotent disposer for the global installation', () => {
+    const destroy = installHoverTooltips();
+    destroy();
+
+    fire('mouseover', el('artistLink1'), el('outside'));
+    expect(seen).toHaveLength(1);
+    expect(seen[0].flagged).toBe(false);
+    expect(() => destroy()).not.toThrow();
   });
 
   it('blocks the artist trigger enter arriving via mouseout (entry from a sibling cell)', () => {
@@ -768,7 +774,7 @@ describe('native hover tooltip suppression', () => {
     expect(seen).toHaveLength(1);
     expect(seen[0]).toEqual({
       type: 'mouseover',
-      target: el('artistLink1'), // no retarget: the suppressor is gone
+      target: el('artistLink1'), // no retarget: the event policy is gone
       related: el('outside'),
       flagged: false,
     });

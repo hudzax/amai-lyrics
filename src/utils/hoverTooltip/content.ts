@@ -36,7 +36,7 @@ function textFromLeaves(element: Element): string | null {
 /**
  * Returns a plain-text label for a managed hover trigger. The native Spotify
  * tooltip may expose its label through any of these attributes, so the
- * suppressor must not remove a trigger until the replacement has equivalent
+ * HoverTooltip must not remove a trigger until the replacement has equivalent
  * text to show.
  */
 export function getHoverTooltipContent(trigger: HTMLElement): string | null {

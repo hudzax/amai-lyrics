@@ -1,14 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import lifecycle from '../src/utils/lifecycle';
-import { installNativeHoverTooltipSuppressor } from '../src/utils/nativeHoverTooltipSuppressor';
-import { installAmaiHoverTooltips } from '../src/utils/amaiHoverTooltips';
+import { installHoverTooltips } from '../src/utils/hoverTooltip';
 
 /**
- * The stutter fix (nativeHoverTooltipSuppressor) silences Spotify's hover
- * tooltips on the rows, bottom playbar and left sidebar; this module puts the
- * labels back as Amai's own bubbles — plain Spicetify.Tippy with the
- * amai-lyrics theme and text that is complete at creation time, so no rAF
- * measuring loop can reappear.
+ * The HoverTooltip module silences Spotify's hover tooltips on the rows,
+ * bottom playbar and left sidebar, then restores the labels as Amai's own
+ * bubbles — plain Spicetify.Tippy with the amai-lyrics theme and text that
+ * is complete at creation time, so no rAF measuring loop can reappear.
  *
  * These tests pin the contract:
  *   - creation only after the pointer DWELLS on one trigger (200ms; crossing
@@ -18,16 +16,16 @@ import { installAmaiHoverTooltips } from '../src/utils/amaiHoverTooltips';
  *     the trigger, in rows and on the now-playing bar alike), cell text for
  *     sidebar gridcell cards (leaf-joined, so JSX siblings don't glue),
  *   - at most one instance exists; leave / scroll / disposeAll destroy it,
- *   - flagged re-dispatched clones from the suppressor never drive show/hide,
- *     and the suppressor's stopPropagation does not starve this listener
+ *   - flagged re-dispatched clones from the event policy never drive show/hide,
+ *     and the event policy's stopPropagation does not starve this listener
  *     (same-node window-capture listeners still fire),
  *   - global surfaces are covered through React handler signals and accessible
  *     labels; ordinary elements without either signal remain untouched, and a
  *     missing Spicetify.Tippy never throws (it loads asynchronously in
  *     production).
  *
- * Both installers run in every test, mirroring main()'s wiring, so the
- * interplay between suppression and tooltips is exercised end to end.
+ * The single HoverTooltip installer runs in every test, mirroring main()'s
+ * wiring, so suppression and replacement are exercised through one interface.
  */
 
 interface FakeTippyInstance {
@@ -49,15 +47,10 @@ function fireFocus(type: 'focusin' | 'focusout', target: Element, related: Eleme
   target.dispatchEvent(new FocusEvent(type, { bubbles: true, relatedTarget: related }));
 }
 
-// Assignment target for Spicetify.Tippy: the ambient namespace const is
-// read-only to the type system, but the runtime object (from tests/setup.ts)
-// is a plain mutable stub.
-const g = globalThis as unknown as { Spicetify: { Tippy?: unknown } };
-
 let created: Array<{ element: Element; props: Record<string, unknown> }>;
 let instances: FakeTippyInstance[];
 let tippyFake: (element: Element, props: Record<string, unknown>) => FakeTippyInstance;
-let originalTippy: unknown;
+let tippyReady = true;
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -156,16 +149,17 @@ beforeEach(() => {
     instances.push(instance);
     return instance;
   };
-  originalTippy = g.Spicetify.Tippy;
-  g.Spicetify.Tippy = tippyFake;
-
-  installNativeHoverTooltipSuppressor();
-  installAmaiHoverTooltips();
+  tippyReady = true;
+  installHoverTooltips({
+    tippy: {
+      isReady: () => tippyReady,
+      create: tippyFake,
+    },
+  });
 });
 
 afterEach(() => {
   lifecycle.disposeAll();
-  g.Spicetify.Tippy = originalTippy;
   vi.useRealTimers();
   vi.restoreAllMocks();
   document.body.innerHTML = '';
@@ -173,7 +167,7 @@ afterEach(() => {
 
 describe('native Amai hover tooltips', () => {
   it('shows an Amai-themed tooltip on a row action button after the delay', () => {
-    // This entry is BLOCKED by the suppressor (the clone is dispatched nested,
+    // This entry is BLOCKED by the event policy (the clone is dispatched nested,
     // on the action bar), so the tooltip here also proves the same-node
     // property the design depends on: stopPropagation on window does not stop
     // sibling window-capture listeners — the original still reaches sync().
@@ -294,7 +288,7 @@ describe('native Amai hover tooltips', () => {
     expect(created[0].props).toMatchObject({ content: 'Artist A, Artist B' });
   });
 
-  it('ignores the suppressor’s flagged re-dispatched clones', () => {
+  it('ignores the event policy’s flagged re-dispatched clones', () => {
     fire('mouseover', el('artistLink1'), el('outside')); // pending for artist
     // A clone aimed OUTSIDE would clear the pending timer if the flag guard
     // were missing (its start side resolves to no trigger).
@@ -369,7 +363,7 @@ describe('native Amai hover tooltips', () => {
 
   it('leaves a matched playbar control with an existing Tippy untouched', () => {
     // A third-party/extension instance must receive the original event; the
-    // suppressor must not block it and then merely skip our replacement.
+    // event policy must not block it and then merely skip our replacement.
     const ownInstance = {};
     (el('playBtn') as unknown as { _tippy?: unknown })._tippy = ownInstance;
     const hoverSpy = vi.fn();
@@ -417,13 +411,13 @@ describe('native Amai hover tooltips', () => {
     expect(created).toHaveLength(2);
   });
 
-  it('skips gracefully while Spicetify.Tippy is still loading, then works on the same hover', () => {
-    g.Spicetify.Tippy = undefined;
+  it('skips gracefully while the Tippy adapter is loading, then works on the same hover', () => {
+    tippyReady = false;
     fire('mouseover', el('moreIcon'), el('outside'));
     expect(() => vi.advanceTimersByTime(200)).not.toThrow();
     expect(created).toHaveLength(0); // the dwell completed before Tippy loaded
 
-    g.Spicetify.Tippy = tippyFake;
+    tippyReady = true;
     vi.advanceTimersByTime(250);
 
     expect(created).toHaveLength(1);

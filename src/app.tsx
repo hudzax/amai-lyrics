@@ -14,8 +14,7 @@ import { ArtworkSurfaces } from './components/DynamicBG/ArtworkSurfaces';
 export { APP_BG_CHANGED_EVENT } from './components/DynamicBG/ArtworkSurfaces';
 import PageView from './components/Pages/PageView';
 import { installBlankToastSuppressor } from './utils/suppressBlankToasts';
-import { installNativeHoverTooltipSuppressor } from './utils/nativeHoverTooltipSuppressor';
-import { installAmaiHoverTooltips } from './utils/amaiHoverTooltips';
+import { installHoverTooltips } from './utils/hoverTooltip';
 import { installFastdomErrorHandler } from './utils/fastdomAsync';
 import lifecycle from './utils/lifecycle';
 
@@ -143,14 +142,10 @@ async function main() {
   lifecycle.registerGlobalTeardown();
 
   installBlankToastSuppressor();
-  // Stop native Spotify hover/focus tooltips across the app from mounting
-  // their rAF getBoundingClientRect loop — the whole-app stutter source. See
-  // the module doc for why this has to be event-level, not CSS.
-  installNativeHoverTooltipSuppressor();
-  // ...and put the labels back as Amai's own bubbles: same triggers, plain
-  // tippy with instant text content (theme amai-lyrics) — no rAF measuring
-  // loop, so restoring them cannot bring the stutter back.
-  installAmaiHoverTooltips();
+  // HoverTooltip owns native suppression, label reconstruction, replacement,
+  // and teardown behind one global seam. It waits for Spicetify.Tippy lazily
+  // and leaves pre-existing third-party instances untouched.
+  installHoverTooltips();
   // Route FastDOM batch errors to console.error instead of uncaught rAF throws.
   // (Also auto-installed on fastdomAsync import; called here so startup
   // ordering is explicit and the import is referenced.)
