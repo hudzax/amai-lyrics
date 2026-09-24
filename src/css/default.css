@@ -8,6 +8,52 @@
   display: none;
 }
 
+/*
+ * Stop the whole-app stutter when hovering a playlist/album track TITLE.
+ *
+ * The title cell renders as `<a data-testid="internal-track-link"><div class=
+ * "main-trackList-rowTitle standalone-ellipsis-one-line">…</div></a>`. The
+ * inner div (not the anchor) carries the React `onMouseEnter`/`onMouseLeave`
+ * that opens Spotify's hover context tooltip: mounting tippy + #context-menu
+ * into document.body, forcing a whole-document layout (offsetHeight), and
+ * running popper's getBoundingClientRect() every animation frame while the
+ * 1s-delayed content is still empty — that per-frame forced layout is the jank.
+ *
+ * Making only that inner div transparent to the pointer retargets the hover to
+ * its parent <a> / row, so no onMouseEnter ever fires on the title trigger and
+ * the tooltip never mounts. Everything else is preserved: clicks and
+ * right-clicks still land on the anchor (same navigation/context menu), the
+ * row-level :hover highlight still applies (the row is now the hit target),
+ * and text selection over the row is unaffected. Hovering the title now just
+ * behaves like hovering the rest of the row.
+ *
+ * Scoped to the exact two classes of that inner div only — never the anchor or
+ * the row — so no real link or clickable surface is disabled. The subtitle /
+ * artist cells keep their (far cheaper) tooltips because their trigger div is
+ * an ANCESTOR of the artist links: pointer-events:none there would break them.
+ *
+ * The root class is added by `installNativeHoverTooltipSuppressor` and
+ * removed by lifecycle teardown. That matters for hot reload: the injected
+ * stylesheet can outlive the JavaScript instance, but a disabled extension
+ * must not leave Spotify's title link permanently pointer-transparent. The
+ * selector is limited to a known track row and a linked title; the JS trigger
+ * detector handles the unlinked title variant without making it transparent.
+ */
+html.amai-native-hover-tooltip-fix
+  .main-trackList-trackListRow
+  a
+  > .main-trackList-rowTitle.standalone-ellipsis-one-line,
+html.amai-native-hover-tooltip-fix
+  .main-trackList-row
+  a
+  > .main-trackList-rowTitle.standalone-ellipsis-one-line,
+html.amai-native-hover-tooltip-fix
+  [data-testid='tracklist-row']
+  a
+  > .main-trackList-rowTitle.standalone-ellipsis-one-line {
+  pointer-events: none;
+}
+
 #AmaiLyricsPage {
   margin: 0;
   padding: 0;
