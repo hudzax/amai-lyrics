@@ -159,8 +159,7 @@ body:has(#AmaiLyricsPage) .main-view-container__scroll-node-child-spacer {
 }
 
 #AmaiLyricsPage .ViewControls .ViewControl:hover {
-  /* Accent-tinted glass: artwork hue over the dark glass base */
-  background: color-mix(in srgb, var(--amai-accent-1) 18%, var(--amai-fill-control-hover));
+  background: color-mix(in srgb, var(--amai-accent-1) 10%, var(--amai-fill-control-hover));
   transform: translateY(-1px);
   box-shadow: var(--amai-shadow-panel);
 }
@@ -170,7 +169,7 @@ body:has(#AmaiLyricsPage) .main-view-container__scroll-node-child-spacer {
 }
 
 #AmaiLyricsPage .ViewControls .ViewControl:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--amai-accent-1) 70%, white);
+  outline: 2px solid color-mix(in srgb, var(--amai-accent-1) 48%, white);
   outline-offset: 2px;
 }
 
@@ -300,7 +299,7 @@ button:has(#AmaiLyricsPageSvg):hover {
 
 button:has(#AmaiLyricsPageSvg):hover #AmaiLyricsPageSvg {
   transform: translateY(2px) scale(1.12);
-  filter: drop-shadow(0 0 8px rgba(var(--amai-accent-rgb, 30, 215, 96), 0.55));
+  filter: drop-shadow(0 0 7px rgba(var(--amai-accent-rgb, 30, 215, 96), 0.28));
 }
 
 button:has(#AmaiLyricsPageSvg):active #AmaiLyricsPageSvg {
@@ -309,7 +308,7 @@ button:has(#AmaiLyricsPageSvg):active #AmaiLyricsPageSvg {
 }
 
 button:has(#AmaiLyricsPageSvg):focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--amai-accent-1, #1ed760) 70%, white);
+  outline: 2px solid color-mix(in srgb, var(--amai-accent-1, #1ed760) 48%, white);
   outline-offset: 2px;
   border-radius: 6px;
 }

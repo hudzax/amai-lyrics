@@ -26,14 +26,12 @@
 
 .tippy-box[data-theme~='amai-lyrics'] {
   position: relative;
-  background-color: rgba(18, 18, 18, 0.92);
-  backdrop-filter: blur(12px) saturate(1.4);
-  -webkit-backdrop-filter: blur(12px) saturate(1.4);
-  border: 1px solid var(--amai-stroke-2, rgba(255, 255, 255, 0.2));
-  border-radius: 8px;
-  box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.45),
-    0 2px 8px rgba(0, 0, 0, 0.3);
+  background: var(--amai-glass-veil-strong), var(--amai-glass-base-strong) !important;
+  backdrop-filter: var(--amai-glass-backdrop-strong);
+  -webkit-backdrop-filter: var(--amai-glass-backdrop-strong);
+  border: 1px solid var(--amai-glass-border) !important;
+  border-radius: 10px;
+  box-shadow: var(--amai-glass-rim-strong), var(--amai-glass-shadow) !important;
   color: var(--amai-text-hi, rgba(255, 255, 255, 0.95));
   font-family: var(--amai-font-display, 'Manrope', sans-serif);
   font-size: 12.5px;
@@ -70,14 +68,12 @@
    tooltips keep the surrounding Spotify typeface. */
 
 #context-menu > .main-contextMenu-tippy {
-  background-color: rgba(18, 18, 18, 0.92);
-  backdrop-filter: blur(12px) saturate(1.4);
-  -webkit-backdrop-filter: blur(12px) saturate(1.4);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.45),
-    0 2px 8px rgba(0, 0, 0, 0.3);
+  background: var(--amai-glass-veil-strong), var(--amai-glass-base-strong) !important;
+  backdrop-filter: var(--amai-glass-backdrop-strong);
+  -webkit-backdrop-filter: var(--amai-glass-backdrop-strong);
+  border: 1px solid var(--amai-glass-border) !important;
+  border-radius: 10px;
+  box-shadow: var(--amai-glass-rim-strong), var(--amai-glass-shadow) !important;
   color: rgba(255, 255, 255, 0.95);
   font: inherit;
   font-size: 12.5px;

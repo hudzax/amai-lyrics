@@ -16,7 +16,9 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background-color: rgba(0, 0, 0, 0.6);
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.035), transparent 42%),
+    rgba(0, 0, 0, 0.66);
 }
 
 .amai-settings-dialog {
@@ -25,10 +27,15 @@
   width: min(640px, 100%);
   max-height: min(80vh, 720px);
   overflow: hidden;
-  border-radius: 8px;
-  background-color: var(--background-base, #121212);
+  border: 1px solid var(--amai-glass-border, rgba(255, 255, 255, 0.105));
+  border-radius: 16px;
+  background:
+    var(--amai-glass-veil, linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.022) 46%, rgba(255, 255, 255, 0.045))),
+    var(--amai-glass-base, rgba(10, 12, 17, 0.62));
   color: var(--text-base, #ffffff);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--amai-glass-rim, inset 0 1px 0 rgba(255, 255, 255, 0.12)), var(--amai-glass-shadow, 0 16px 42px rgba(2, 3, 8, 0.2));
+  -webkit-backdrop-filter: var(--amai-glass-backdrop, blur(16px) saturate(120%) brightness(0.92));
+  backdrop-filter: var(--amai-glass-backdrop, blur(16px) saturate(120%) brightness(0.92));
 }
 
 .amai-settings-dialog-header {
@@ -38,7 +45,7 @@
   justify-content: space-between;
   gap: 16px;
   padding: 16px 16px 12px 24px;
-  border-bottom: 1px solid var(--background-tinted-base, rgba(255, 255, 255, 0.1));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .amai-settings-dialog-title {
@@ -70,7 +77,7 @@
 }
 
 .amai-settings-dialog-close:hover {
-  background-color: var(--background-tinted-base, rgba(255, 255, 255, 0.1));
+  background: rgba(255, 255, 255, 0.07);
   color: var(--text-base, #ffffff);
   transform: scale(1.04);
 }

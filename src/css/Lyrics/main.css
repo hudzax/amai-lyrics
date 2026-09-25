@@ -126,11 +126,10 @@
 
 #AmaiLyricsPage .AmaiPageButton:hover {
   background: var(--amai-fill-raised);
-  /* Artwork-tinted border + soft accent glow on hover */
-  border-color: color-mix(in srgb, var(--amai-accent-1) 55%, transparent);
+  border-color: color-mix(in srgb, var(--amai-accent-1) 30%, transparent);
   color: rgba(255, 255, 255, 1);
   box-shadow:
-    0 4px 16px rgba(var(--amai-accent-rgb), 0.18),
+    0 4px 14px rgba(var(--amai-accent-rgb), 0.08),
     var(--amai-shadow-card);
 }
 
@@ -323,11 +322,11 @@ ruby > rt {
 .main-trackList-trackListRow:focus-within,
 .main-trackList-trackListRow:hover,
 .BoxComponent-group-card-naked-isInteractive-draggable:hover::after {
-  background-color: rgba(255, 255, 255, 0.1); /* Lowered opacity for stronger acrylic effect */
-  backdrop-filter: blur(20px); /* Increased blur for more acrylic */
-  -webkit-backdrop-filter: blur(20px); /* Safari support */
-  border: 1px solid rgba(255, 255, 255, 0.2); /* Optional: enhances the frosted look */
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Optional shadow */
+  background: var(--amai-glass-veil-subtle), rgba(8, 10, 16, 0.54) !important;
+  backdrop-filter: var(--amai-glass-backdrop-soft);
+  -webkit-backdrop-filter: var(--amai-glass-backdrop-soft);
+  border: 1px solid var(--amai-glass-border);
+  box-shadow: var(--amai-glass-rim), var(--amai-glass-shadow-control);
 }
 
 .main-nowPlayingView-credits .HeaderArea {
