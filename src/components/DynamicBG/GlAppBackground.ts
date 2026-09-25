@@ -34,8 +34,8 @@ const FRAME_INTERVAL_MS = 1000 / BG_FPS;
 const STATIC_TIME = 9.5;
 /** Clamp long rAF gaps (tab hidden, GC pause) so the warp never jumps. */
 const MAX_FRAME_DT_MS = 1000 / 15;
-/** Backing-store pixel ratio cap: soft warped gradients need no more. */
-const MAX_DPR = 1.5;
+/** Backing-store pixel ratio cap: soft warped gradients need no more than 1x. */
+const MAX_DPR = 1;
 /**
  * Reveal fade duration. The canvas is only mounted once its first frame is
  * drawn, then fades in over the DOM placeholder underneath it; `AppBackground`

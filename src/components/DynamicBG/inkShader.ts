@@ -36,7 +36,7 @@
  * here, matching the artwork upload orientation, so the rest needs no flips.
  *
  * Cost note: 8 four-octave fBm evaluations per pixel (warp ×4, palette ×2,
- * density ×2) inside one pass at 30 fps / DPR ≤ 1.5 — same budget class as
+ * density ×2) inside one pass at 30 fps / DPR ≤ 1 — same budget class as
  * the previous 4-evaluation design; drop a density layer first if a
  * low-end GPU ever shows up in profiling.
  */

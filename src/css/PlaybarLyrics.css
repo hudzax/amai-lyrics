@@ -55,6 +55,10 @@
 .amai-playbar-lyrics-inner {
   display: inline-block;
   white-space: nowrap;
+}
+
+.amai-playbar-lyrics-text {
+  display: inline-block;
 
   /*
    * Animate the text colour by using a wide gradient as the background,
@@ -91,7 +95,7 @@
 }
 
 /* Marquee scroll when text overflows the container — one-way: scroll to end and hold */
-.amai-playbar-lyrics-inner.amai-marquee {
+.amai-playbar-lyrics-text.amai-marquee {
   animation-name: playbar-lyrics-color-shift, playbar-lyrics-marquee;
   animation-duration: 12s, var(--scroll-dur, 8s);
   animation-timing-function: linear, ease-in-out;
@@ -151,7 +155,7 @@
    it at its 0% keyframe = --color-1) while keeping the marquee functional so
    overflowing text remains reachable. */
 @media (prefers-reduced-motion: reduce) {
-  .amai-playbar-lyrics-inner {
+  .amai-playbar-lyrics-text {
     animation-duration: 0s, var(--scroll-dur, 8s);
   }
 }

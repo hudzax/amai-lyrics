@@ -71,12 +71,26 @@ describe('PlaybarLyrics — artwork palette comes from the ArtworkSurfaces seam'
     }
   });
 
+  it('keeps the lyric text in a separate animation layer', () => {
+    InitializePlaybarLyrics();
+    vi.advanceTimersByTime(10);
+    vi.advanceTimersByTime(300);
+
+    const overlay = document.querySelector<HTMLElement>('.amai-playbar-lyrics');
+    const entranceLayer = overlay?.querySelector<HTMLElement>('.amai-playbar-lyrics-inner');
+    const textLayer = entranceLayer?.querySelector<HTMLElement>('.amai-playbar-lyrics-text');
+
+    expect(entranceLayer).not.toBeNull();
+    expect(textLayer).not.toBeNull();
+    expect(textLayer?.textContent).toContain('never gonna give you up');
+    expect(entranceLayer?.textContent).toBe(textLayer?.textContent);
+  });
+
   it('does not fetch artwork — the private extraction pipeline was removed', () => {
     const getSpy = vi.spyOn(SpotifyPlayer.Artwork, 'Get').mockResolvedValue('');
 
     InitializePlaybarLyrics();
     vi.advanceTimersByTime(10);
-    // Drive several render cycles; none may reach for the cover art.
     vi.advanceTimersByTime(3000);
 
     expect(getSpy).not.toHaveBeenCalled();

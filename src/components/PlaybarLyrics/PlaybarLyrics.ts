@@ -73,11 +73,7 @@ function onSongChange(): void {
   // skip-coalescing fan-out already runs on song change.
 }
 
-/**
- * Sets the lyric text on an inner span and plays a subtle entrance animation.
- * The animation targets the inner element so it doesn't conflict with the
- * container's centering transform.
- */
+/** Sets lyric content on a text layer independent of its entrance transform. */
 function setLyricsText(html: string): void {
   if (!lyricsElement) return;
 
@@ -88,20 +84,27 @@ function setLyricsText(html: string): void {
     lyricsElement.appendChild(inner);
   }
 
-  inner.textContent = '';
-  inner.appendChild(createRubyFragment(html));
+  let textLayer = inner.querySelector<HTMLElement>('.amai-playbar-lyrics-text');
+  if (!textLayer) {
+    textLayer = document.createElement('span');
+    textLayer.className = 'amai-playbar-lyrics-text';
+    inner.appendChild(textLayer);
+  }
+
+  textLayer.textContent = '';
+  textLayer.appendChild(createRubyFragment(html));
 
   requestAnimationFrame(() => {
     const cw = lyricsElement!.clientWidth;
-    if (inner.scrollWidth > cw) {
-      const dist = cw - inner.scrollWidth - 20;
-      inner.style.setProperty('--scroll-dist', `${dist}px`);
-      inner.style.setProperty('--scroll-dur', `${Math.max(3, Math.abs(dist) / 75)}s`);
-      inner.classList.add('amai-marquee');
+    if (textLayer!.scrollWidth > cw) {
+      const dist = cw - textLayer!.scrollWidth - 20;
+      textLayer.style.setProperty('--scroll-dist', `${dist}px`);
+      textLayer.style.setProperty('--scroll-dur', `${Math.max(3, Math.abs(dist) / 75)}s`);
+      textLayer.classList.add('amai-marquee');
     } else {
-      inner.classList.remove('amai-marquee');
-      inner.style.removeProperty('--scroll-dist');
-      inner.style.removeProperty('--scroll-dur');
+      textLayer.classList.remove('amai-marquee');
+      textLayer.style.removeProperty('--scroll-dist');
+      textLayer.style.removeProperty('--scroll-dur');
     }
   });
 
