@@ -15,7 +15,6 @@ export const StorageKeys = {
   ENABLE_PLAYBAR_LYRICS: 'enable_playbar_lyrics',
   ENABLE_APP_BACKGROUND: 'enable_app_background',
   CURRENT_LYRICS_DATA: 'currentLyricsData',
-  LAST_FETCHED_URI: 'lastFetchedUri',
 } as const;
 
 export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys] | (string & {});
@@ -39,37 +38,9 @@ function get(key: StorageKey): StorageValue {
   return (legacy as string) ?? null;
 }
 
-/** Typed helpers for boolean-backed settings stored as "true"/"false" strings. */
-function getBoolean(key: StorageKey, fallback = false): boolean {
-  const v = get(key);
-  if (v === 'true') return true;
-  if (v === 'false') return false;
-  return fallback;
-}
-function setBoolean(key: StorageKey, value: boolean): void {
-  set(key, value ? 'true' : 'false');
-}
-
-/**
- * Migrate a single legacy key to the new prefix once, then delete the legacy entry.
- */
-function migrateLegacyKey(key: StorageKey): void {
-  const legacyVal = Spicetify.LocalStorage.get(`${LEGACY_PREFIX}${key}`);
-  const newVal = Spicetify.LocalStorage.get(`${PREFIX}${key}`);
-  if (legacyVal != null && newVal == null) {
-    Spicetify.LocalStorage.set(`${PREFIX}${key}`, legacyVal as string);
-  }
-  if (legacyVal != null) {
-    Spicetify.LocalStorage.remove(`${LEGACY_PREFIX}${key}`);
-  }
-}
-
 export default {
   set,
   get,
-  getBoolean,
-  setBoolean,
-  migrateLegacyKey,
   PREFIX,
   LEGACY_PREFIX,
   Keys: StorageKeys,

@@ -1,16 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 
 // Mock heavy dependencies that pull Spicetify / network at import time
-vi.mock('../src/utils/storage', () => ({
-  default: { get: vi.fn(() => null), set: vi.fn() },
-}));
 
 vi.mock('../src/components/Global/Defaults', () => ({
   default: {
     CurrentLyricsType: 'Line',
     LyricsContainerExists: true,
-    translationFontSize: '0.575',
-    translationLanguage: 'English',
     Version: '1.0.0',
     lyrics: { api: { url: '', translationUrl: '', phoneticUrl: '' } },
     systemInstruction: '',

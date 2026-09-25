@@ -13,7 +13,7 @@
  * spending network work (publication still guards via `publishEnhancedLyrics`).
  */
 
-import storage from '../../storage';
+import settingsValues from '../../settingsValues';
 import Defaults from '../../../components/Global/Defaults';
 import { LyricsDocument, updateLyricsWithText } from '../conversion';
 import { isCurrentLyricsRequest, type LyricsRequestToken } from '../publish';
@@ -100,12 +100,11 @@ export async function enhanceLyrics(
   providerOverrides: Partial<EnhancementProviders> = {},
 ): Promise<LyricsDocument | null> {
   // Read settings once so every branch below sees one consistent snapshot.
-  const apiKey = (storage.get('GEMINI_API_KEY')?.toString() ?? '').trim();
+  const apiKey = settingsValues.get('geminiApiKey').trim();
   const hasKey = apiKey !== '';
-  const enableRomaji = storage.get('enable_romaji') === 'true';
-  const translationsDisabled = storage.get('disable_translation') === 'true';
-  const targetLang =
-    storage.get('translation_language')?.toString() || Defaults.translationLanguage;
+  const enableRomaji = settingsValues.get('enableRomaji');
+  const translationsDisabled = settingsValues.get('disableTranslation');
+  const targetLang = settingsValues.get('translationLanguage');
 
   const providers: EnhancementProviders = {
     fetchGeminiPhonetic: (lines, prompt) =>

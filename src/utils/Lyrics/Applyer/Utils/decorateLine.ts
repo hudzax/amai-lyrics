@@ -9,7 +9,7 @@
 
 import { ArabicPersianRegex } from '../../../Addons';
 import isRtl from '../../isRtl';
-import storage from '../../../storage';
+import settingsValues from '../../../settingsValues';
 import { applyPhoneticPatterns, isJapaneseText } from '../../phoneticPatterns';
 import type { LineView } from '../../conversion';
 
@@ -24,15 +24,11 @@ export interface InfoHolder {
  */
 export function processLinePhonetics(line: LineView, data: InfoHolder): void {
   if (isJapaneseText(line.text)) {
-    if (
-      !data.info &&
-      (!storage.get('disable_romaji_toggle_notification') ||
-        storage.get('disable_romaji_toggle_notification') === 'false')
-    ) {
+    if (!data.info && !settingsValues.get('disableRomajiToggleNotification')) {
       data.info =
         'Toggle between Romaji or Furigana in settings. Disable this notification there as well.';
     }
-    line.text = applyPhoneticPatterns(line.text, storage.get('enable_romaji') === 'true');
+    line.text = applyPhoneticPatterns(line.text, settingsValues.get('enableRomaji'));
   } else {
     line.text = applyPhoneticPatterns(line.text, false);
   }

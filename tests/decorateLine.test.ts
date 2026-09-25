@@ -1,10 +1,10 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-vi.mock('../src/utils/storage', () => ({
-  default: { get: vi.fn(() => null), set: vi.fn() },
+vi.mock('../src/utils/settingsValues', () => ({
+  default: { get: vi.fn(() => false), set: vi.fn() },
 }));
 
-import storage from '../src/utils/storage';
+import settingsValues from '../src/utils/settingsValues';
 import {
   processLinePhonetics,
   decorateLineElement,
@@ -13,7 +13,7 @@ import type { LineView } from '../src/utils/Lyrics/conversion';
 
 describe('processLinePhonetics', () => {
   beforeEach(() => {
-    vi.mocked(storage.get).mockClear().mockReturnValue(null);
+    vi.mocked(settingsValues.get).mockClear().mockReturnValue(false);
   });
 
   it('sets the romaji toggle notification the first time Japanese text is seen', () => {
@@ -22,7 +22,7 @@ describe('processLinePhonetics', () => {
     processLinePhonetics(line, data);
     expect(data.info).toBeDefined();
     expect(data.info).toContain('Romaji');
-    // enable_romaji is null (unset) -> furigana, not romaji
+    // enable_romaji unset/false -> furigana, not romaji
     expect(line.text).toContain('<rt>かんじ</rt>');
   });
 

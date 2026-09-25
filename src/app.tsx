@@ -1,7 +1,6 @@
 // Core imports
 import { SpotifyPlayer } from './components/Global/SpotifyPlayer';
 import { IsPlaying } from './utils/Addons';
-import storage from './utils/storage';
 import Whentil from './utils/Whentil';
 
 // Managers
@@ -97,7 +96,6 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
 
   // Handle online/offline events
   const onOnline = async () => {
-    storage.set('lastFetchedUri', null);
     const currentUri = Spicetify.Player.data?.item?.uri;
     if (currentUri) {
       const { loadAndApplyLyrics } = await import('./utils/Lyrics/fetchLyrics');

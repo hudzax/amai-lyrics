@@ -1,9 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Controllable settings snapshot: key, romaji flag, translation flag, language.
-vi.mock('../src/utils/storage', () => ({
-  default: { get: vi.fn(() => null), set: vi.fn() },
-}));
+// Unset names fall through to the real decoder, so the module's own defaults
+// are what the enhancement sees unless a test overrides them.
+const { settingsStore } = vi.hoisted(() => ({ settingsStore: {} as Record<string, unknown> }));
+
+vi.mock('../src/utils/settingsValues', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../src/utils/settingsValues')>();
+  return {
+    default: {
+      get: vi.fn((name: string) =>
+        name in settingsStore ? settingsStore[name] : actual.default.get(name as never),
+      ),
+      set: vi.fn(),
+    },
+  };
+});
 
 vi.mock('../src/components/Global/Defaults', () => ({
   default: {
@@ -21,7 +33,7 @@ vi.mock('../src/utils/Lyrics/publish', () => ({
   isCurrentLyricsRequest: vi.fn(() => true),
 }));
 
-import storage from '../src/utils/storage';
+import settingsValues from '../src/utils/settingsValues';
 import { isCurrentLyricsRequest } from '../src/utils/Lyrics/publish';
 import { enhanceLyrics, type EnhancementProviders } from '../src/utils/Lyrics/ai';
 import type { LyricsDocument } from '../src/utils/Lyrics/conversion';
@@ -55,11 +67,12 @@ function fakes(): EnhancementProviders & {
   };
 }
 
-function settings(map: Record<string, string | null>): void {
-  vi.mocked(storage.get).mockImplementation((key: string) => map[key] ?? null);
+function settings(map: Record<string, unknown>): void {
+  for (const name of Object.keys(settingsStore)) delete settingsStore[name];
+  Object.assign(settingsStore, map);
 }
 
-const KEY = { GEMINI_API_KEY: 'test-key' };
+const KEY = { geminiApiKey: 'test-key' };
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -69,7 +82,7 @@ beforeEach(() => {
 
 describe('phonetic backend selection', () => {
   it('uses Gemini with the romaji prompt when the key is set and romaji is on', async () => {
-    settings({ ...KEY, enable_romaji: 'true' });
+    settings({ ...KEY, enableRomaji: true });
     const providers = fakes();
     providers.fetchGeminiPhonetic.mockResolvedValue(['r1', 'r2']);
     providers.fetchGeminiTranslations.mockResolvedValue(['t1', 't2']);
@@ -91,7 +104,7 @@ describe('phonetic backend selection', () => {
   });
 
   it('uses the furigana prompt when romaji is off', async () => {
-    settings({ ...KEY, enable_romaji: 'false' });
+    settings({ ...KEY, enableRomaji: false });
     const providers = fakes();
     providers.fetchGeminiPhonetic.mockResolvedValue(['f1']);
 
@@ -141,7 +154,7 @@ describe('phonetic backend selection', () => {
   });
 
   it('falls back to Amai when Gemini setup throws, with no Info set', async () => {
-    settings({ ...KEY, enable_romaji: 'true' });
+    settings({ ...KEY, enableRomaji: true });
     const providers = fakes();
     providers.fetchGeminiPhonetic.mockRejectedValue(new Error('sdk load failed'));
     providers.fetchAmaiPhonetic.mockResolvedValue(['a1']);
@@ -156,7 +169,7 @@ describe('phonetic backend selection', () => {
   });
 
   it('sets the fetch-error Info when Gemini throws and Amai yields nothing', async () => {
-    settings({ ...KEY, enable_romaji: 'true' });
+    settings({ ...KEY, enableRomaji: true });
     const providers = fakes();
     providers.fetchGeminiPhonetic.mockRejectedValue(new Error('sdk load failed'));
     providers.fetchAmaiPhonetic.mockResolvedValue([]);
@@ -169,7 +182,7 @@ describe('phonetic backend selection', () => {
   });
 
   it('applies malformed Gemini output as a no-op with no Amai fallback and no Info', async () => {
-    settings({ ...KEY, enable_romaji: 'true' });
+    settings({ ...KEY, enableRomaji: true });
     const providers = fakes();
     providers.fetchGeminiPhonetic.mockResolvedValue([]);
     providers.fetchGeminiTranslations.mockResolvedValue(['t1']);
@@ -213,7 +226,7 @@ describe('phonetic backend selection', () => {
 
 describe('translation fallback chain', () => {
   it('returns blanks with no network when translations are disabled', async () => {
-    settings({ ...KEY, disable_translation: 'true' });
+    settings({ ...KEY, disableTranslation: true });
     const providers = fakes();
     providers.fetchGeminiPhonetic.mockResolvedValue(['r1']);
 
@@ -262,7 +275,7 @@ describe('translation fallback chain', () => {
   });
 
   it('builds the prompt from the configured language', async () => {
-    settings({ ...KEY, translation_language: 'Spanish' });
+    settings({ ...KEY, translationLanguage: 'Spanish' });
     const providers = fakes();
     providers.fetchGeminiTranslations.mockResolvedValue(['s1']);
 
@@ -349,7 +362,7 @@ describe('staleness', () => {
 
 describe('settings snapshot', () => {
   it('reads key, romaji, translation flag and language once per call', async () => {
-    settings({ ...KEY, enable_romaji: 'true' });
+    settings({ ...KEY, enableRomaji: true });
     const providers = fakes();
 
     await enhanceLyrics(
@@ -360,13 +373,13 @@ describe('settings snapshot', () => {
       providers,
     );
 
-    for (const key of [
-      'GEMINI_API_KEY',
-      'enable_romaji',
-      'disable_translation',
-      'translation_language',
+    for (const name of [
+      'geminiApiKey',
+      'enableRomaji',
+      'disableTranslation',
+      'translationLanguage',
     ]) {
-      expect(vi.mocked(storage.get)).toHaveBeenCalledWith(key);
+      expect(vi.mocked(settingsValues.get)).toHaveBeenCalledWith(name);
     }
   });
 });

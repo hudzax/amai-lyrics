@@ -1,5 +1,4 @@
-import storage from '../../utils/storage';
-import Defaults from '../Global/Defaults';
+import settingsValues from '../../utils/settingsValues';
 import { normalizeImageUrl, setRandomCSSVariables, createBackgroundImage } from './utils';
 import {
   APP_BG_CLASS,
@@ -71,12 +70,9 @@ function isGpuEnvironmentFailure(error: unknown): boolean {
   return /context unavailable|context lost/i.test(text);
 }
 
-/** Whether the main-view artwork background is enabled (settings toggle, default on). */
+/** Whether the main-view artwork background is enabled (settings toggle, default off). */
 export function isAppBackgroundEnabled(): boolean {
-  const raw = storage.get('enable_app_background');
-  if (raw === 'true') return true;
-  if (raw === 'false') return false;
-  return Defaults.enableAppBackground ?? false;
+  return settingsValues.get('enableAppBackground');
 }
 
 /**

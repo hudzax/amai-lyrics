@@ -1,13 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 
-vi.mock('../src/utils/storage', () => ({
-  default: { get: vi.fn(() => null), set: vi.fn() },
-}));
 vi.mock('../src/components/Global/Defaults', () => ({
   default: {
     CurrentLyricsType: 'Line',
     LyricsContainerExists: true,
-    translationFontSize: '0.575',
     Version: '1.0.0',
     lyrics: { api: { url: '', translationUrl: '', phoneticUrl: '' } },
     systemInstruction: '',

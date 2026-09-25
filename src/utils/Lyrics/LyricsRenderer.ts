@@ -33,7 +33,7 @@ import { ApplyInfo } from './Applyer/Info/ApplyInfo';
 import { createMusicalLineMs } from './Applyer/Utils/createMusicalLine';
 import { createRubyFragment } from '../sanitize';
 import { decorateLineElement, processLinePhonetics } from './Applyer/Utils/decorateLine';
-import storage from '../storage';
+import settingsValues from '../settingsValues';
 import { processPhoneticText } from './phoneticPatterns';
 import type { LyricsDocument } from './conversion';
 
@@ -264,7 +264,7 @@ export function updateLyricTranslations(): void {
     const activeLineTopBefore = activeLine ? activeLine.getBoundingClientRect().top : null;
 
     // Get romaji setting
-    const enableRomaji = storage.get('enable_romaji') === 'true';
+    const enableRomaji = settingsValues.get('enableRomaji');
 
     for (const painted of LyricsObject.Lines) {
       // Musical-break rows carry no lyric text to translate.

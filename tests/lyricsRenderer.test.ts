@@ -1,17 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 
-// Same mock set as translation-sync.test.ts: the render path pulls storage,
-// Defaults, the scroll container, the player, and the PlaybackTime seam.
-vi.mock('../src/utils/storage', () => ({
-  default: { get: vi.fn(() => null), set: vi.fn() },
-}));
+// Same mock set as translation-sync.test.ts: the render path pulls Defaults,
+// the scroll container, the player, and the PlaybackTime seam.
 
 vi.mock('../src/components/Global/Defaults', () => ({
   default: {
     CurrentLyricsType: 'Line',
     LyricsContainerExists: true,
-    translationFontSize: '0.575',
-    translationLanguage: 'English',
     Version: '1.0.0',
     lyrics: { api: { url: '', translationUrl: '', phoneticUrl: '' } },
     systemInstruction: '',

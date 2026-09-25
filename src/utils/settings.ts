@@ -1,5 +1,5 @@
 import { SettingsSection } from '../edited_packages/spcr-settings/settingsSection';
-import storage from './storage';
+import settingsValues from './settingsValues';
 import { invalidateLyrics } from './Lyrics/fetchLyrics';
 import Defaults from '../components/Global/Defaults';
 import { openTrustedExternalUrl } from './externalNavigation';
@@ -52,10 +52,10 @@ function generalSettings() {
   settings.addToggle(
     'enableAppBackground',
     'Enable Amai Theme (dynamic album-art background)',
-    Defaults.enableAppBackground,
+    settingsValues.get('enableAppBackground'),
     () => {
       const enabled = settings.getFieldValue('enableAppBackground') as boolean;
-      storage.set('enable_app_background', enabled ? 'true' : 'false');
+      settingsValues.set('enableAppBackground', enabled);
       // Shared singleton: preserves the lastImgUrl dedup cache (a throwaway
       // `new AppBackground()` per toggle always misses and rebuilds). The
       // change event lets app.tsx repaint hidden canvases (sidebar/page skip
@@ -81,7 +81,7 @@ function generalSettings() {
   );
 
   settings.addInput('gemini-api-key', 'Gemini API Key (required for translations)', '', () => {
-    storage.set('GEMINI_API_KEY', settings.getFieldValue('gemini-api-key') as string);
+    settingsValues.set('geminiApiKey', settings.getFieldValue('gemini-api-key') as string);
 
     // A new key changes every enhancement: invalidate everything and reload the
     // current track's lyrics through the pipeline seam.
@@ -102,12 +102,12 @@ function generalSettings() {
   settings.addToggle(
     'enableRomaji',
     'Show Romaji readings for Japanese lyrics',
-    Defaults.enableRomaji,
+    settingsValues.get('enableRomaji'),
     () => {
       // Cached lyrics carry the old romaji setting: write the new value first,
       // then invalidate and reload so the current track re-fetches with
       // phonetics applied (or removed) under the new setting.
-      storage.set('enable_romaji', settings.getFieldValue('enableRomaji') as string);
+      settingsValues.set('enableRomaji', settings.getFieldValue('enableRomaji') as boolean);
       void invalidateLyrics({ all: true }, { reload: true });
     },
   );
@@ -115,11 +115,11 @@ function generalSettings() {
   settings.addToggle(
     'disableRomajiToggleNotification',
     'Hide the popup shown when toggling Romaji/Furigana',
-    Defaults.disableRomajiToggleNotification,
+    settingsValues.get('disableRomajiToggleNotification'),
     () => {
-      storage.set(
-        'disable_romaji_toggle_notification',
-        settings.getFieldValue('disableRomajiToggleNotification') as string,
+      settingsValues.set(
+        'disableRomajiToggleNotification',
+        settings.getFieldValue('disableRomajiToggleNotification') as boolean,
       );
     },
   );
@@ -127,32 +127,46 @@ function generalSettings() {
   settings.addToggle(
     'enablePlaybarLyrics',
     'Show the current lyric line in the playbar',
-    true,
+    settingsValues.get('enablePlaybarLyrics'),
     () => {
-      storage.set('enable_playbar_lyrics', settings.getFieldValue('enablePlaybarLyrics') as string);
+      settingsValues.set(
+        'enablePlaybarLyrics',
+        settings.getFieldValue('enablePlaybarLyrics') as boolean,
+      );
     },
+  );
+
+  const translationLanguageOptions = [
+    'English',
+    'Spanish',
+    'French',
+    'German',
+    'Portuguese',
+    'Chinese (Simplified)',
+    'Thai',
+    'Indonesian',
+    'Malay',
+    'Japanese',
+    'Korean',
+  ];
+  // Seeded from the stored value, not the option order: the section instance is
+  // rebuilt on every injection, so a hardcoded index would show English while
+  // the engine translated into whatever the user picked.
+  const languageIndex = Math.max(
+    0,
+    translationLanguageOptions.indexOf(settingsValues.get('translationLanguage')),
   );
 
   settings.addDropDown(
     'translation-language',
     'Translate lyrics into',
-    [
-      'English',
-      'Spanish',
-      'French',
-      'German',
-      'Portuguese',
-      'Chinese (Simplified)',
-      'Thai',
-      'Indonesian',
-      'Malay',
-      'Japanese',
-      'Korean',
-    ],
-    0,
+    translationLanguageOptions,
+    languageIndex,
     () => {
-      const selected = settings.getFieldValue('translation-language') as string;
-      storage.set('translation_language', selected);
+      settingsValues.set(
+        'translationLanguage',
+        settings.getFieldValue('translation-language') as string,
+      );
 
       // Cached lyrics carry the old target language: invalidate and reload.
       void invalidateLyrics({ all: true }, { reload: true });
@@ -162,11 +176,14 @@ function generalSettings() {
   settings.addToggle(
     'disableTranslation',
     'Turn off lyric translations',
-    Defaults.disableTranslation,
+    settingsValues.get('disableTranslation'),
     () => {
       // Cached lyrics carry the old translation state: write the new value
       // first, then invalidate and reload so the re-fetch sees it.
-      storage.set('disable_translation', settings.getFieldValue('disableTranslation') as string);
+      settingsValues.set(
+        'disableTranslation',
+        settings.getFieldValue('disableTranslation') as boolean,
+      );
       void invalidateLyrics({ all: true }, { reload: true });
     },
   );
@@ -174,7 +191,7 @@ function generalSettings() {
   const translationFontSizeOptions = ['Extra Small', 'Small', 'Normal', 'Large', 'Extra Large'];
   // Values are multipliers of the main lyrics size so the translation scales with the screen
   const fontSizeValues = ['0.4', '0.475', '0.575', '0.7', '0.85'];
-  const currentSize = storage.get('translation_font_size') || Defaults.translationFontSize;
+  const currentSize = settingsValues.get('translationFontSize');
   const defaultIndex =
     fontSizeValues.indexOf(currentSize) !== -1 ? fontSizeValues.indexOf(currentSize) : 2;
 
@@ -187,7 +204,7 @@ function generalSettings() {
       const selected = settings.getFieldValue('translation-font-size') as string;
       const index = translationFontSizeOptions.indexOf(selected);
       const value = fontSizeValues[index >= 0 ? index : 2];
-      storage.set('translation_font_size', value);
+      settingsValues.set('translationFontSize', value);
 
       const container = document.querySelector<HTMLElement>(
         '#AmaiLyricsPage .LyricsContainer .LyricsContent',
@@ -200,7 +217,7 @@ function generalSettings() {
 
   const lyricsSizeOptions = ['Extra Small', 'Small', 'Normal', 'Large', 'Extra Large'];
   const lyricsSizeValues = ['1.2', '1.5', '', '2.5', '3'];
-  const currentLyricsSize = storage.get('default_lyrics_size') || '';
+  const currentLyricsSize = settingsValues.get('defaultLyricsSize');
   const defaultLyricsSizeIndex = currentLyricsSize
     ? Math.max(0, lyricsSizeValues.indexOf(currentLyricsSize))
     : 2;
@@ -214,7 +231,7 @@ function generalSettings() {
       const selected = settings.getFieldValue('default-lyrics-size') as string;
       const index = lyricsSizeOptions.indexOf(selected);
       const value = lyricsSizeValues[index >= 0 ? index : 2];
-      storage.set('default_lyrics_size', value);
+      settingsValues.set('defaultLyricsSize', value);
 
       const container = document.querySelector<HTMLElement>(
         '#AmaiLyricsPage .LyricsContainer .LyricsContent',

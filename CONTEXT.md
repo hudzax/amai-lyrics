@@ -183,3 +183,19 @@ third-party tooltip ownership. It owns trigger recognition, label
 reconstruction, dwell, one-bubble ownership, and teardown behind one seam.
 Callers should not coordinate suppression, replacement, or Tippy instances
 separately.
+
+## SettingsValues
+
+The single place that knows how a user setting is stored and what it means when
+unset: the storage key, the encoding, and the default. Lives in
+src/utils/settingsValues.ts. Callers cross it through `get` and `set` with the
+setting's name — never through `storage.get` plus a comparison, which let two
+readers of one key disagree about what unset means.
+
+The values are written by the settings UI (src/utils/settings.ts), which also
+seeds each vendored field from the same `get`, so the panel cannot show a
+different value than the engine reads. The vendored field store in
+spcr-settings is that UI's own persistence and stays behind the wiring; this
+seam owns only what the product reads. A stored value that is neither `'true'`
+nor `'false'` counts as unset and decodes to the default, so a corrupted entry
+can never flip a flag on.

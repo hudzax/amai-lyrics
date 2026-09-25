@@ -1,4 +1,4 @@
-import storage from '../../utils/storage';
+import settingsValues from '../../utils/settingsValues';
 import { registerPositionConsumer } from '../../utils/PositionConsumer';
 import { processPhoneticText } from '../../utils/Lyrics/phoneticPatterns';
 import { findActiveIndex } from '../../utils/Lyrics/findActiveIndex';
@@ -31,7 +31,7 @@ let initWhen: ReturnType<typeof Whentil.When> | null = null;
 
 let lyricsDataListenerId: number | null = null;
 
-// Cached read for hot path — storage.get hits Spicetify.LocalStorage each tick.
+// Cached read for the per-tick enable gate — a get hits Spicetify.LocalStorage.
 let cachedPlaybarEnabled: boolean | null = null;
 let cachedPlaybarEnabledAt = 0;
 const PLAYBAR_ENABLED_TTL_MS = 1500;
@@ -40,16 +40,9 @@ function isEnabled(): boolean {
   if (cachedPlaybarEnabled !== null && now - cachedPlaybarEnabledAt < PLAYBAR_ENABLED_TTL_MS) {
     return cachedPlaybarEnabled;
   }
-  const raw = storage.get('enable_playbar_lyrics');
-  cachedPlaybarEnabled = raw !== 'false';
+  cachedPlaybarEnabled = settingsValues.get('enablePlaybarLyrics');
   cachedPlaybarEnabledAt = now;
   return cachedPlaybarEnabled;
-}
-// Keep cache warm when settings change in this tab (storage event is cross-tab only)
-if (typeof window !== 'undefined') {
-  window.addEventListener('storage', () => {
-    cachedPlaybarEnabled = null;
-  });
 }
 
 /**
@@ -183,7 +176,7 @@ function renderPlaybarLine(position: number): void {
   if (active.text !== lastText) {
     lastText = active.text;
     // enable_romaji changes only via settings UI; reading here is per-lyric (every few seconds), not per-tick, so direct read is fine.
-    const enableRomaji = storage.get('enable_romaji') === 'true';
+    const enableRomaji = settingsValues.get('enableRomaji');
     setLyricsText(processPhoneticText(active.text, enableRomaji));
   }
 }

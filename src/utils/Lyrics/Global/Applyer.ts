@@ -4,8 +4,7 @@ import { isNoLyricsResult } from '../fetchLyrics';
 import { showRefreshButton } from '../../../components/Pages/pageButtons';
 import { addLinesEvListener } from '../lyrics';
 import { liveTrackId } from '../trackId';
-import storage from '../../storage';
-import Defaults from '../../../components/Global/Defaults';
+import settingsValues from '../../settingsValues';
 import { NoLyricsResult } from '../ui';
 import { LyricsDocument } from '../conversion';
 
@@ -26,11 +25,12 @@ export default function ApplyLyrics(
     '#AmaiLyricsPage .LyricsContainer .LyricsContent',
   );
   if (lyricsContent) {
-    const translationFontSize =
-      storage.get('translation_font_size') || Defaults.translationFontSize;
-    lyricsContent.style.setProperty('--TranslationFontSize', translationFontSize);
+    lyricsContent.style.setProperty(
+      '--TranslationFontSize',
+      settingsValues.get('translationFontSize'),
+    );
 
-    const defaultLyricsSize = storage.get('default_lyrics_size');
+    const defaultLyricsSize = settingsValues.get('defaultLyricsSize');
     if (defaultLyricsSize) {
       lyricsContent.style.setProperty('--DefaultLyricsSize', defaultLyricsSize + 'rem');
     }
