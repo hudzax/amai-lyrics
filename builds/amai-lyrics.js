@@ -6279,7 +6279,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.6.0";
+      version = "1.6.1";
     }
   });
 
@@ -9462,15 +9462,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d2390062d/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-19432-6iTCTBva2pPe/1a0d6d0c8d7e/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d2390062d/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-19432-6iTCTBva2pPe/1a0d6d0c8d7e/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d2390071e/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-19432-6iTCTBva2pPe/1a0d6d0c8ddf/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d2390071e/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-19432-6iTCTBva2pPe/1a0d6d0c8ddf/ProcessingIndicator.css"() {
     }
   });
 
@@ -11326,6 +11326,7 @@ void main() {
     maid = new Maid();
     initializePageRoot();
     await createPageElement();
+    clearLyricsUiTimeouts();
     Defaults_default.LyricsContainerExists = true;
     const contentBox = document.querySelector(PageViewSelectors.ContentBox);
     if (contentBox) {
@@ -12229,23 +12230,28 @@ void main() {
     const loaderContainer = document.querySelector(
       "#AmaiLyricsPage .LyricsContainer .loaderContainer"
     );
-    if (loaderContainer) {
-      const id = window.setTimeout(() => loaderContainer.classList.add("active"), 1e3);
-      syncLoaderTimeout(id);
+    if (!loaderContainer)
+      return;
+    const pending = ContainerShowLoaderTimeout ?? uiState.containerShowLoaderTimeout;
+    if (pending) {
+      clearTimeout(pending);
+      syncLoaderTimeout(null);
     }
+    if (loaderContainer.classList.contains("active"))
+      return;
+    const id = window.setTimeout(() => {
+      syncLoaderTimeout(null);
+      document.querySelector("#AmaiLyricsPage .LyricsContainer .loaderContainer")?.classList.add("active");
+    }, 1e3);
+    syncLoaderTimeout(id);
   }
   function HideLoaderContainer() {
-    const loaderContainer = document.querySelector(
-      "#AmaiLyricsPage .LyricsContainer .loaderContainer"
-    );
-    if (loaderContainer) {
-      const timeoutId = ContainerShowLoaderTimeout ?? uiState.containerShowLoaderTimeout;
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-        syncLoaderTimeout(null);
-      }
-      loaderContainer.classList.remove("active");
+    const pending = ContainerShowLoaderTimeout ?? uiState.containerShowLoaderTimeout;
+    if (pending) {
+      clearTimeout(pending);
+      syncLoaderTimeout(null);
     }
+    document.querySelector("#AmaiLyricsPage .LyricsContainer .loaderContainer")?.classList.remove("active");
   }
   function ClearLyricsPageContainer() {
     const lyricsContent = document.querySelector("#AmaiLyricsPage .LyricsContainer .LyricsContent");
@@ -12988,6 +12994,9 @@ void main() {
     if (sharedRequest.token !== token)
       return false;
     return liveLyricsUri() === sharedRequest.uri;
+  }
+  function isLatestLyricsRequest(token) {
+    return token !== null && sharedRequest.token === token;
   }
   function publishNoLyrics(token, trackId) {
     if (!isCurrentLyricsRequest(token))
@@ -35734,6 +35743,19 @@ ${JSON.stringify(lyricsOnly)}`
       fromCache: false
     };
   }
+  async function enhancePreparedLyrics(token, trackId, prepared) {
+    if (!isCurrentLyricsRequest(token))
+      return;
+    const { hasKanji, hasKorean } = detectLanguages(prepared);
+    await processLyricsEnhancementsAsync(
+      token,
+      trackId,
+      structuredClone(prepared),
+      hasKanji,
+      hasKorean,
+      prepared.Raw ?? []
+    );
+  }
   async function processLyricsEnhancementsAsync(token, trackId, lyricsJson, hasKanji, hasKorean, lyricsOnly) {
     try {
       ShowProcessingIndicator();
@@ -35954,11 +35976,12 @@ ${JSON.stringify(lyricsOnly)}`
     publishInitialLyrics(token, result);
     return result;
   }
-  async function fetchLyrics(uri, flush = false) {
+  async function fetchLyrics(uri, flush = false, requestRef = { token: null }) {
     if (!uri || typeof uri !== "string" || !uri.includes(":")) {
       return await noLyricsMessage();
     }
     const token = beginLyricsRequest(uri);
+    requestRef.token = token;
     resetLyricsUI();
     ClearLyricsPageContainer();
     EnsureProcessingIndicatorHidden();
@@ -35975,7 +35998,13 @@ ${JSON.stringify(lyricsOnly)}`
       return applyLoadedLyrics(cachedLyrics, token);
     hideRefreshButton();
     if (!flush && inFlight.has(trackId)) {
-      return inFlight.get(trackId);
+      ShowLoaderContainer();
+      const result = await inFlight.get(trackId);
+      const applied = await applyLoadedLyrics(result, token);
+      if (!isNoLyricsResult(result)) {
+        void enhancePreparedLyrics(token, result.id ?? trackId, result);
+      }
+      return applied;
     }
     ShowLoaderContainer();
     const promise = fetchLyricsFromAPI(trackId, flush, token).finally(() => {
@@ -35990,9 +36019,12 @@ ${JSON.stringify(lyricsOnly)}`
     let flush = opts.flush ?? false;
     let last = await noLyricsMessage();
     for (let attempt = 0; attempt < 2; attempt++) {
-      last = await fetchLyrics(target, flush);
+      const requestRef = { token: null };
+      last = await fetchLyrics(target, flush, requestRef);
       flush = false;
       if (isNoLyricsResult(last))
+        return last;
+      if (!isLatestLyricsRequest(requestRef.token))
         return last;
       if (ApplyLyrics(last))
         return last;
@@ -36031,6 +36063,7 @@ ${JSON.stringify(lyricsOnly)}`
       init_cache();
       init_snapshot();
       init_api();
+      init_processing();
       init_pageButtons();
       init_Applyer();
       init_publish();
@@ -37582,10 +37615,10 @@ ${JSON.stringify(lyricsOnly)}`
     startStartupPoll();
   }
 
-  // src/utils/nativeHoverTooltipSuppressor.ts
+  // src/utils/hoverTooltip/index.ts
   init_lifecycle();
 
-  // src/utils/hoverTooltipContent.ts
+  // src/utils/hoverTooltip/content.ts
   function clean(value) {
     const text = (value ?? "").replace(/\s+/g, " ").trim();
     return text || null;
@@ -37654,16 +37687,12 @@ ${JSON.stringify(lyricsOnly)}`
     return textFromLeaves(trigger);
   }
 
-  // src/utils/nativeHoverTooltipSuppressor.ts
+  // src/utils/hoverTooltip/eventPolicy.ts
   var REDISPATCHED_FLAG = "__amaiRedispatchedHover";
-  var eventChains = /* @__PURE__ */ new WeakMap();
-  function rememberHoverTooltipChain(event, chain) {
-    eventChains.set(event, chain);
+  function isRedispatchedHoverEvent(event) {
+    return Boolean(event.__amaiRedispatchedHover);
   }
-  function getRememberedHoverTooltipChain(event) {
-    return eventChains.get(event);
-  }
-  var NATIVE_HOVER_TOOLTIP_ACTIVE_CLASS = "amai-native-hover-tooltip-fix";
+  var HOVER_TOOLTIP_ACTIVE_CLASS = "amai-native-hover-tooltip-fix";
   var NATIVE_HOVER_TOOLTIP_OWNED_PROPERTY = "__amaiNativeHoverTooltipOwned";
   function hasUnownedTippy(element) {
     const candidate = element;
@@ -37870,23 +37899,22 @@ ${JSON.stringify(lyricsOnly)}`
     return outer;
   }
   function handleHover(event) {
-    if (event.__amaiRedispatchedHover)
-      return;
+    if (isRedispatchedHoverEvent(event))
+      return [];
     if (event.type !== "mouseover" && event.type !== "mouseout")
-      return;
+      return [];
     const mouse = event;
     const entering = mouse.type === "mouseover";
     const start = entering ? mouse.target : mouse.relatedTarget;
     const other = entering ? mouse.relatedTarget : mouse.target;
     const chain = findHoverTooltipTriggerChain(start);
-    rememberHoverTooltipChain(event, chain);
     const trigger = findCrossingTrigger(start, other, chain);
     if (!trigger)
-      return;
+      return chain;
     const parent = trigger.parentElement;
     const dispatchTarget = entering ? parent : mouse.target;
     if (!parent || !dispatchTarget)
-      return;
+      return chain;
     mouse.stopPropagation();
     const clone = new MouseEvent(mouse.type, {
       bubbles: true,
@@ -37907,25 +37935,25 @@ ${JSON.stringify(lyricsOnly)}`
     });
     Object.defineProperty(clone, REDISPATCHED_FLAG, { value: true });
     dispatchTarget.dispatchEvent(clone);
+    return chain;
   }
   function handleFocus(event) {
-    if (event.__amaiRedispatchedHover)
-      return;
+    if (isRedispatchedHoverEvent(event))
+      return [];
     if (event.type !== "focusin" && event.type !== "focusout")
-      return;
+      return [];
     const focus = event;
     const entering = focus.type === "focusin";
     const start = entering ? focus.target : focus.relatedTarget;
     const other = entering ? focus.relatedTarget : focus.target;
     const chain = findHoverTooltipTriggerChain(start);
-    rememberHoverTooltipChain(event, chain);
     const trigger = findCrossingTrigger(start, other, chain);
     if (!trigger)
-      return;
+      return chain;
     const parent = trigger.parentElement;
     const dispatchTarget = entering ? parent : focus.target;
     if (!parent || !dispatchTarget)
-      return;
+      return chain;
     focus.stopPropagation();
     const clone = new FocusEvent(focus.type, {
       bubbles: true,
@@ -37934,20 +37962,21 @@ ${JSON.stringify(lyricsOnly)}`
     });
     Object.defineProperty(clone, REDISPATCHED_FLAG, { value: true });
     dispatchTarget.dispatchEvent(clone);
+    return chain;
   }
-  function installNativeHoverTooltipSuppressor() {
-    lifecycle_default.trackWindow("mouseover", handleHover, true);
-    lifecycle_default.trackWindow("mouseout", handleHover, true);
-    lifecycle_default.trackWindow("focusin", handleFocus, true);
-    lifecycle_default.trackWindow("focusout", handleFocus, true);
-    const root2 = typeof document === "undefined" ? null : document.documentElement;
-    root2?.classList.add(NATIVE_HOVER_TOOLTIP_ACTIVE_CLASS);
-    lifecycle_default.trackCallback(() => {
-      root2?.classList.remove(NATIVE_HOVER_TOOLTIP_ACTIVE_CLASS);
-    });
-  }
+  var HoverEventPolicy = class {
+    handle(event) {
+      if (event.type === "mouseover" || event.type === "mouseout") {
+        return handleHover(event);
+      }
+      if (event.type === "focusin" || event.type === "focusout") {
+        return handleFocus(event);
+      }
+      return [];
+    }
+  };
 
-  // src/utils/amaiHoverTooltips.ts
+  // src/utils/hoverTooltip/presenter.ts
   init_lifecycle();
   init_Whentil();
   var SHOW_DELAY_MS = 200;
@@ -37963,41 +37992,6 @@ ${JSON.stringify(lyricsOnly)}`
     const owner = element[NATIVE_HOVER_TOOLTIP_OWNED_PROPERTY];
     if (owner === instance || owner === element._tippy) {
       delete element[NATIVE_HOVER_TOOLTIP_OWNED_PROPERTY];
-    }
-  }
-  var shown = null;
-  var pendingTrigger = null;
-  var pendingTimer = null;
-  var readinessTask = null;
-  var referenceObserver = null;
-  var ownedInstances = /* @__PURE__ */ new Set();
-  var ownedTriggers = /* @__PURE__ */ new WeakMap();
-  var destroyingInstances = /* @__PURE__ */ new WeakSet();
-  function destroyInstance(instance) {
-    if (!ownedInstances.has(instance) || destroyingInstances.has(instance))
-      return;
-    destroyingInstances.add(instance);
-    try {
-      instance.destroy();
-    } catch {
-    } finally {
-      const trigger = ownedTriggers.get(instance);
-      if (trigger)
-        clearTooltipOwnership(trigger, instance);
-      ownedTriggers.delete(instance);
-      ownedInstances.delete(instance);
-      destroyingInstances.delete(instance);
-    }
-  }
-  function getTippyFactory() {
-    if (typeof Spicetify === "undefined" || typeof Spicetify.Tippy !== "function")
-      return null;
-    return Spicetify.Tippy;
-  }
-  function maybeStopReferenceObserver() {
-    if (pendingTimer === null && pendingTrigger === null && shown === null) {
-      referenceObserver?.disconnect();
-      referenceObserver = null;
     }
   }
   function mutationTouchesTrigger(mutation, trigger) {
@@ -38017,225 +38011,307 @@ ${JSON.stringify(lyricsOnly)}`
     }
     return false;
   }
-  function ensureReferenceObserver() {
-    if (referenceObserver || typeof MutationObserver === "undefined" || typeof document === "undefined" || !document.body) {
-      return;
-    }
-    const observer = new MutationObserver((mutations) => {
-      if (referenceObserver !== observer)
-        return;
-      if (pendingTrigger && !pendingTrigger.isConnected)
-        clearPending();
-      const visible = shown;
-      if (visible && !visible.trigger.isConnected)
-        hideShown();
-      else if (visible && mutations.some((mutation) => mutationTouchesTrigger(mutation, visible.trigger))) {
-        updateShown(visible.trigger);
-      }
-      maybeStopReferenceObserver();
-    });
-    referenceObserver = observer;
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-      attributes: true,
-      attributeFilter: ["aria-label", "aria-labelledby", "title"]
-    });
-  }
-  function clearPending() {
-    if (pendingTimer !== null)
-      clearTimeout(pendingTimer);
-    readinessTask?.Cancel();
-    readinessTask = null;
-    pendingTimer = null;
-    pendingTrigger = null;
-    maybeStopReferenceObserver();
-  }
-  function hideShown() {
-    if (!shown)
-      return;
-    const current = shown;
-    shown = null;
-    destroyInstance(current.instance);
-    maybeStopReferenceObserver();
-  }
-  function waitForTippy(trigger) {
-    if (readinessTask)
-      return;
-    const task = Whentil_default.When(
-      () => getTippyFactory() !== null,
-      () => {
-        readinessTask = null;
-        if (pendingTrigger === trigger)
-          showFor(trigger);
-      }
-    );
-    readinessTask = task;
-    lifecycle_default.trackWhentil(task);
-  }
   function placementFor(trigger) {
     return trigger.closest(".Root__nav-bar") ? "right" : "top";
   }
-  function updateShown(trigger) {
-    if (shown?.trigger !== trigger)
-      return false;
-    if (shown.instance.state?.isVisible === false) {
-      hideShown();
-      return true;
+  var HoverTooltipPresenter = class {
+    constructor(adapter) {
+      this.shown = null;
+      this.pendingTrigger = null;
+      this.pendingTimer = null;
+      this.readinessTask = null;
+      this.referenceObserver = null;
+      this.ownedInstances = /* @__PURE__ */ new Set();
+      this.ownedTriggers = /* @__PURE__ */ new WeakMap();
+      this.destroyingInstances = /* @__PURE__ */ new WeakSet();
+      this.destroyed = false;
+      this.adapter = adapter;
     }
-    const content = getHoverTooltipContent(trigger);
-    if (!content) {
-      hideShown();
-      return true;
-    }
-    if (content !== shown.content) {
-      shown.content = content;
-      try {
-        shown.instance.setContent?.(content);
-      } catch {
-        hideShown();
-      }
-    }
-    return true;
-  }
-  function showFor(trigger) {
-    pendingTimer = null;
-    if (pendingTrigger !== trigger)
-      return;
-    if (!trigger.isConnected) {
-      clearPending();
-      return;
-    }
-    const tippyFactory = getTippyFactory();
-    if (!tippyFactory) {
-      waitForTippy(trigger);
-      return;
-    }
-    const existing = trigger._tippy;
-    if (existing) {
-      if (!ownedInstances.has(existing)) {
-        clearPending();
+    handle(event, chain) {
+      if (this.destroyed || isRedispatchedHoverEvent(event))
+        return;
+      if (event.type !== "mouseover" && event.type !== "mouseout" && event.type !== "focusin" && event.type !== "focusout") {
         return;
       }
-      destroyInstance(existing);
+      const trigger = chain[0] ?? null;
+      if (!trigger) {
+        this.clearPending();
+        this.hideShown();
+        return;
+      }
+      if (this.shown?.trigger === trigger || this.pendingTrigger === trigger) {
+        if (this.shown?.trigger === trigger)
+          this.updateShown(trigger);
+        return;
+      }
+      this.clearPending();
+      this.hideShown();
+      this.pendingTrigger = trigger;
+      this.ensureReferenceObserver();
+      this.pendingTimer = setTimeout(() => this.showFor(trigger), SHOW_DELAY_MS);
     }
-    const content = getHoverTooltipContent(trigger);
-    if (!content) {
-      clearPending();
-      return;
+    cancel() {
+      if (this.destroyed)
+        return;
+      this.clearPending();
+      this.hideShown();
     }
-    clearPending();
-    hideShown();
-    let instance = null;
-    try {
-      instance = tippyFactory(trigger, {
-        content,
-        theme: "amai-lyrics",
-        animation: "amai",
-        arrow: false,
-        placement: placementFor(trigger),
-        onHide: () => {
-          if (shown?.instance === instance)
-            shown = null;
-          if (instance)
-            destroyInstance(instance);
-          maybeStopReferenceObserver();
-        },
-        onDestroy: () => {
-          if (shown?.instance === instance)
-            shown = null;
-          if (instance) {
-            clearTooltipOwnership(trigger, instance);
-            ownedTriggers.delete(instance);
-            ownedInstances.delete(instance);
-          }
-          maybeStopReferenceObserver();
+    destroy() {
+      if (this.destroyed)
+        return;
+      this.destroyed = true;
+      this.clearPending();
+      this.hideShown();
+      for (const instance of Array.from(this.ownedInstances)) {
+        this.destroyInstance(instance);
+      }
+      this.ownedInstances.clear();
+      this.referenceObserver?.disconnect();
+      this.referenceObserver = null;
+    }
+    maybeStopReferenceObserver() {
+      if (this.pendingTimer === null && this.pendingTrigger === null && this.shown === null) {
+        this.referenceObserver?.disconnect();
+        this.referenceObserver = null;
+      }
+    }
+    ensureReferenceObserver() {
+      if (this.referenceObserver || typeof MutationObserver === "undefined" || typeof document === "undefined" || !document.body) {
+        return;
+      }
+      const observer = new MutationObserver((mutations) => {
+        if (this.destroyed || this.referenceObserver !== observer)
+          return;
+        if (this.pendingTrigger && !this.pendingTrigger.isConnected)
+          this.clearPending();
+        const visible = this.shown;
+        if (visible && !visible.trigger.isConnected) {
+          this.hideShown();
+        } else if (visible && mutations.some((mutation) => mutationTouchesTrigger(mutation, visible.trigger))) {
+          this.updateShown(visible.trigger);
         }
+        this.maybeStopReferenceObserver();
       });
-      ownedInstances.add(instance);
-      ownedTriggers.set(instance, trigger);
-      markTooltipOwned(trigger, instance);
-      const record = { trigger, instance, content };
-      shown = record;
-      ensureReferenceObserver();
-      instance.show();
-      if (shown?.instance === instance && ownedInstances.has(instance)) {
-        syncTooltipOwnership(trigger, instance);
+      this.referenceObserver = observer;
+      lifecycle_default.trackObserver(observer);
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+        attributes: true,
+        attributeFilter: ["aria-label", "aria-labelledby", "title"]
+      });
+    }
+    clearPending() {
+      if (this.pendingTimer !== null) {
+        clearTimeout(this.pendingTimer);
+        this.pendingTimer = null;
       }
-    } catch (error) {
-      if (shown?.instance === instance)
-        shown = null;
-      if (instance)
-        destroyInstance(instance);
-      maybeStopReferenceObserver();
-      console.error("[Amai Lyrics] Failed to show track-row tooltip:", error);
+      this.readinessTask?.Cancel();
+      this.readinessTask = null;
+      this.pendingTrigger = null;
+      this.maybeStopReferenceObserver();
     }
-  }
-  function sync(event) {
-    if (event.__amaiRedispatchedHover)
-      return;
-    if (event.type !== "mouseover" && event.type !== "mouseout" && event.type !== "focusin" && event.type !== "focusout") {
-      return;
+    hideShown() {
+      if (!this.shown)
+        return;
+      const current = this.shown;
+      this.shown = null;
+      this.destroyInstance(current.instance);
+      this.maybeStopReferenceObserver();
     }
-    const pointer = event;
-    const entering = pointer.type === "mouseover" || pointer.type === "focusin";
-    const start = entering ? pointer.target : pointer.relatedTarget;
-    const chain = getRememberedHoverTooltipChain(event) ?? findHoverTooltipTriggerChain(start);
-    const trigger = chain.length > 0 ? chain[0] : null;
-    if (!trigger) {
-      clearPending();
-      hideShown();
-      return;
+    waitForTippy(trigger) {
+      if (this.readinessTask)
+        return;
+      const task = Whentil_default.When(
+        () => this.adapter.isReady(),
+        () => {
+          this.readinessTask = null;
+          if (!this.destroyed && this.pendingTrigger === trigger)
+            this.showFor(trigger);
+        }
+      );
+      this.readinessTask = task;
+      lifecycle_default.trackWhentil(task);
     }
-    if (shown?.trigger === trigger || pendingTrigger === trigger) {
-      if (shown?.trigger === trigger)
-        updateShown(trigger);
-      return;
+    updateShown(trigger) {
+      if (this.shown?.trigger !== trigger)
+        return false;
+      if (this.shown.instance.state?.isVisible === false) {
+        this.hideShown();
+        return true;
+      }
+      const content = getHoverTooltipContent(trigger);
+      if (!content) {
+        this.hideShown();
+        return true;
+      }
+      if (content !== this.shown.content) {
+        this.shown.content = content;
+        try {
+          this.shown.instance.setContent?.(content);
+        } catch {
+          this.hideShown();
+        }
+      }
+      return true;
     }
-    clearPending();
-    hideShown();
-    pendingTrigger = trigger;
-    ensureReferenceObserver();
-    pendingTimer = setTimeout(() => showFor(trigger), SHOW_DELAY_MS);
-  }
-  function cancelOnActivation() {
-    clearPending();
-    hideShown();
-  }
-  function installAmaiHoverTooltips() {
-    lifecycle_default.trackWindow("mouseover", sync, true);
-    lifecycle_default.trackWindow("mouseout", sync, true);
-    lifecycle_default.trackWindow("focusin", sync, true);
-    lifecycle_default.trackWindow("focusout", sync, true);
-    for (const type of [
-      "pointerdown",
-      "mousedown",
-      "click",
-      "contextmenu",
-      "dragstart",
-      "touchstart"
-    ]) {
-      lifecycle_default.trackWindow(type, cancelOnActivation, true);
+    showFor(trigger) {
+      this.pendingTimer = null;
+      if (this.destroyed || this.pendingTrigger !== trigger)
+        return;
+      if (!trigger.isConnected) {
+        this.clearPending();
+        return;
+      }
+      if (!this.adapter.isReady()) {
+        this.waitForTippy(trigger);
+        return;
+      }
+      const existing = trigger._tippy;
+      if (existing) {
+        if (!this.ownedInstances.has(existing)) {
+          this.clearPending();
+          return;
+        }
+        this.destroyInstance(existing);
+      }
+      const content = getHoverTooltipContent(trigger);
+      if (!content) {
+        this.clearPending();
+        return;
+      }
+      this.clearPending();
+      this.hideShown();
+      let instance = null;
+      try {
+        instance = this.adapter.create(trigger, {
+          content,
+          theme: "amai-lyrics",
+          animation: "amai",
+          arrow: false,
+          placement: placementFor(trigger),
+          onHide: () => {
+            if (this.shown?.instance === instance)
+              this.shown = null;
+            if (instance)
+              this.destroyInstance(instance);
+            this.maybeStopReferenceObserver();
+          },
+          onDestroy: () => {
+            if (this.shown?.instance === instance)
+              this.shown = null;
+            if (instance) {
+              clearTooltipOwnership(trigger, instance);
+              this.ownedTriggers.delete(instance);
+              this.ownedInstances.delete(instance);
+            }
+            this.maybeStopReferenceObserver();
+          }
+        });
+        this.ownedInstances.add(instance);
+        this.ownedTriggers.set(instance, trigger);
+        markTooltipOwned(trigger, instance);
+        this.shown = { trigger, instance, content };
+        this.ensureReferenceObserver();
+        instance.show();
+        if (this.shown?.instance === instance && this.ownedInstances.has(instance)) {
+          syncTooltipOwnership(trigger, instance);
+        }
+      } catch (error) {
+        if (this.shown?.instance === instance)
+          this.shown = null;
+        if (instance)
+          this.destroyInstance(instance);
+        this.maybeStopReferenceObserver();
+        console.error("[Amai Lyrics] Failed to show hover tooltip:", error);
+      }
     }
-    lifecycle_default.trackWindow(
-      "scroll",
-      () => {
-        clearPending();
-        hideShown();
+    destroyInstance(instance) {
+      if (!this.ownedInstances.has(instance) || this.destroyingInstances.has(instance))
+        return;
+      this.destroyingInstances.add(instance);
+      try {
+        instance.destroy();
+      } catch {
+      } finally {
+        const trigger = this.ownedTriggers.get(instance);
+        if (trigger)
+          clearTooltipOwnership(trigger, instance);
+        this.ownedTriggers.delete(instance);
+        this.ownedInstances.delete(instance);
+        this.destroyingInstances.delete(instance);
+      }
+    }
+  };
+
+  // src/utils/hoverTooltip/tippy.ts
+  function createSpicetifyTippyAdapter() {
+    return {
+      isReady() {
+        return typeof Spicetify !== "undefined" && typeof Spicetify.Tippy === "function";
       },
-      true
-    );
-    lifecycle_default.trackCallback(() => {
-      clearPending();
-      hideShown();
-      for (const instance of Array.from(ownedInstances)) {
-        destroyInstance(instance);
+      create(element, props) {
+        if (typeof Spicetify === "undefined" || typeof Spicetify.Tippy !== "function") {
+          throw new Error("Spicetify.Tippy is not ready");
+        }
+        return Spicetify.Tippy(element, props);
       }
-      ownedInstances.clear();
-      referenceObserver?.disconnect();
-      referenceObserver = null;
-    });
+    };
+  }
+
+  // src/utils/hoverTooltip/index.ts
+  var HOVER_EVENTS = ["mouseover", "mouseout", "focusin", "focusout"];
+  var CANCEL_EVENTS = [
+    "pointerdown",
+    "mousedown",
+    "click",
+    "contextmenu",
+    "dragstart",
+    "touchstart"
+  ];
+  var activeInstallation = null;
+  function installHoverTooltips(options = {}) {
+    if (activeInstallation)
+      return activeInstallation.destroy;
+    const policy = new HoverEventPolicy();
+    const presenter = new HoverTooltipPresenter(options.tippy ?? createSpicetifyTippyAdapter());
+    const removeListeners = [];
+    let destroyed2 = false;
+    const addWindowListener = (type, handler, capture) => {
+      lifecycle_default.trackWindow(type, handler, capture);
+      removeListeners.push(() => window.removeEventListener(type, handler, capture));
+    };
+    const handleHoverEvent = (event) => {
+      if (destroyed2)
+        return;
+      const chain = policy.handle(event);
+      if (!isRedispatchedHoverEvent(event))
+        presenter.handle(event, chain);
+    };
+    for (const type of HOVER_EVENTS) {
+      addWindowListener(type, handleHoverEvent, true);
+    }
+    for (const type of CANCEL_EVENTS) {
+      addWindowListener(type, () => presenter.cancel(), true);
+    }
+    addWindowListener("scroll", () => presenter.cancel(), true);
+    const root2 = typeof document === "undefined" ? null : document.documentElement;
+    root2?.classList.add(HOVER_TOOLTIP_ACTIVE_CLASS);
+    removeListeners.push(() => root2?.classList.remove(HOVER_TOOLTIP_ACTIVE_CLASS));
+    const destroy = () => {
+      if (destroyed2)
+        return;
+      destroyed2 = true;
+      for (const remove of removeListeners.splice(0).reverse())
+        remove();
+      presenter.destroy();
+      if (activeInstallation?.destroy === destroy)
+        activeInstallation = null;
+    };
+    lifecycle_default.trackCallback(destroy);
+    activeInstallation = { destroy };
+    return destroy;
   }
 
   // src/app.tsx
@@ -38311,8 +38387,7 @@ ${JSON.stringify(lyricsOnly)}`
     }
     lifecycle_default.registerGlobalTeardown();
     installBlankToastSuppressor();
-    installNativeHoverTooltipSuppressor();
-    installAmaiHoverTooltips();
+    installHoverTooltips();
     installFastdomErrorHandler();
     try {
       await AppInitializer.initializeCore();
@@ -38353,7 +38428,7 @@ ${JSON.stringify(lyricsOnly)}`
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d2390062d/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19432-6iTCTBva2pPe/1a0d6d0c8d7e/DotLoader.css */
 #DotLoader {
   --dot-color: var(--amai-accent-1);
   --dot-color-dim: color-mix(in srgb, var(--amai-accent-1) 22%, transparent);
@@ -38388,7 +38463,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d2390071e/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19432-6iTCTBva2pPe/1a0d6d0c8ddf/ProcessingIndicator.css */
 #AmaiLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -38470,7 +38545,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d238ff8c0/tokens.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19432-6iTCTBva2pPe/1a0d6d0c8330/tokens.css */
 :root {
   --amai-accent-1: #1ed760;
   --amai-accent-2: #1db954;
@@ -38488,6 +38563,33 @@ ${JSON.stringify(lyricsOnly)}`
   --amai-fill-control-hover: rgba(0, 0, 0, 0.3);
   --amai-scrim: rgba(0, 0, 0, 0.2);
   --amai-scrim-strong: rgba(0, 0, 0, 0.55);
+  --amai-glass-base-soft: rgba(9, 11, 18, 0.34);
+  --amai-glass-base: rgba(7, 9, 15, 0.48);
+  --amai-glass-base-strong: rgba(5, 7, 12, 0.68);
+  --amai-glass-veil-subtle: linear-gradient( 135deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.025) 52%, rgba(255, 255, 255, 0.055) 100% );
+  --amai-glass-veil: linear-gradient( 135deg, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0.04) 46%, rgba(255, 255, 255, 0.075) 100% );
+  --amai-glass-veil-strong: linear-gradient( 135deg, rgba(255, 255, 255, 0.17) 0%, rgba(255, 255, 255, 0.055) 48%, rgba(255, 255, 255, 0.1) 100% );
+  --amai-glass-sheen: linear-gradient( 112deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.025) 24%, transparent 54%, rgba(var(--amai-accent-rgb), 0.055) 100% );
+  --amai-glass-backdrop-soft: blur(12px) saturate(132%) brightness(0.96);
+  --amai-glass-backdrop: blur(18px) saturate(145%) brightness(0.92);
+  --amai-glass-backdrop-strong: blur(24px) saturate(155%) brightness(0.88);
+  --amai-glass-border: rgba(255, 255, 255, 0.14);
+  --amai-glass-border-strong: rgba(255, 255, 255, 0.22);
+  --amai-glass-rim:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.16);
+  --amai-glass-rim-strong:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.055),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+  --amai-glass-shadow: 0 20px 52px rgba(2, 3, 8, 0.32), 0 4px 14px rgba(2, 3, 8, 0.18);
+  --amai-glass-shadow-hover: 0 24px 64px rgba(2, 3, 8, 0.38), 0 6px 18px rgba(2, 3, 8, 0.2);
+  --amai-glass-shadow-control: 0 10px 28px rgba(2, 3, 8, 0.24), 0 2px 7px rgba(2, 3, 8, 0.16);
+  --amai-glass-accent-shadow: 0 0 0 1px rgba(var(--amai-accent-rgb), 0.3), 0 14px 38px rgba(var(--amai-accent-rgb), 0.14);
+  --amai-glass-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --amai-glass-dur-fast: 180ms;
+  --amai-glass-dur: 280ms;
   --amai-stroke-1: rgba(255, 255, 255, 0.15);
   --amai-stroke-2: rgba(255, 255, 255, 0.2);
   --amai-stroke-3: rgba(255, 255, 255, 0.4);
@@ -38523,7 +38625,7 @@ ${JSON.stringify(lyricsOnly)}`
   --amai-scrollbar-thumb: rgba(255, 255, 255, 0.6);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d238ffc31/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19432-6iTCTBva2pPe/1a0d6d0c85e1/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -38587,14 +38689,14 @@ body:has(#AmaiLyricsPage) .main-view-container__scroll-node-child-spacer {
   width: 100cqw;
   bottom: -8cqh;
   --PageHoverOffset: -2.2cqh;
-  --ControlsHoverOffset: 1.5cqh;
+  --ControlsHoverOffset: 0.75cqh;
 }
 #AmaiLyricsPage:not(.Fullscreen) .AmaiPageButtonContainer .ViewControls {
   position: absolute;
-  bottom: 1.5cqh;
+  bottom: 0.75cqh;
   left: 50%;
   transform: translateX(-50%) translateY(6px);
-  width: auto;
+  width: 100%;
   height: 5cqh;
   margin-top: 0;
   opacity: 0;
@@ -38658,7 +38760,7 @@ body:has(#AmaiLyricsPage) .main-view-container__scroll-node-child-spacer {
   bottom: var(--PageHoverOffset);
 }
 #AmaiLyricsPage:not(.Fullscreen):hover .AmaiPageButtonContainer .ViewControls {
-  bottom: 1.5cqh;
+  bottom: 0.75cqh;
 }
 #AmaiLyricsPage .ViewControls button {
   cursor: pointer;
@@ -38766,7 +38868,7 @@ button:has(#AmaiLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d238ffdb2/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19432-6iTCTBva2pPe/1a0d6d0c86a2/Simplebar.css */
 #AmaiLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -38974,7 +39076,7 @@ button:has(#AmaiLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d238ffed3/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19432-6iTCTBva2pPe/1a0d6d0c8723/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -39578,7 +39680,7 @@ button:has(#AmaiLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d23900024/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19432-6iTCTBva2pPe/1a0d6d0c87e4/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -39942,7 +40044,7 @@ body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingVi
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d23900125/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19432-6iTCTBva2pPe/1a0d6d0c8865/main.css */
 #AmaiLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -40193,7 +40295,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d23900206/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19432-6iTCTBva2pPe/1a0d6d0c88c6/Mixed.css */
 #AmaiLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -40370,23 +40472,11 @@ ruby > rt {
   background-clip: border-box;
   text-shadow: none;
 }
-#AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill::after {
-  content: "";
-  position: absolute;
-  inset: -20%;
-  z-index: 1;
-  pointer-events: none;
-  background: linear-gradient(100deg, transparent 25%, rgba(255, 255, 255, 0.22) 50%, transparent 75%);
-  transform: translateX(-130%);
-}
 #AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill {
   color: var(--amai-text-hi);
   border-color: color-mix(in srgb, var(--amai-accent-1) 45%, transparent);
   box-shadow: 0 0 24px rgba(var(--amai-accent-rgb), 0.22), var(--amai-shadow-card);
   animation: instrumental-breathe 2.6s var(--amai-ease-io) infinite;
-}
-#AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill::after {
-  animation: instrumental-shimmer 2.6s var(--amai-ease-io) infinite;
 }
 #AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line.NotSung .instrumental-pill {
   opacity: 0.55;
@@ -40400,23 +40490,6 @@ ruby > rt {
   }
   50% {
     scale: 1.03;
-  }
-}
-@keyframes instrumental-shimmer {
-  0% {
-    transform: translateX(-130%);
-    opacity: 0;
-  }
-  15% {
-    opacity: 1;
-  }
-  60% {
-    transform: translateX(130%);
-    opacity: 1;
-  }
-  100% {
-    transform: translateX(130%);
-    opacity: 0;
   }
 }
 @keyframes instrumental-dot-bounce {
@@ -40571,16 +40644,12 @@ ruby > rt {
   }
   #AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill,
   #AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill,
-  #AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill::after,
   #AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill .dotGroup .dot {
     animation: none !important;
   }
-  #AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill::after {
-    display: none !important;
-  }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d23900307/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19432-6iTCTBva2pPe/1a0d6d0c8947/LoaderContainer.css */
 #AmaiLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -40602,7 +40671,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d239003a8/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19432-6iTCTBva2pPe/1a0d6d0c8978/FullscreenTransition.css */
 #AmaiLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -40629,7 +40698,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d239003e9/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19432-6iTCTBva2pPe/1a0d6d0c89a9/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
@@ -40728,7 +40797,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d2390044a/Settings.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19432-6iTCTBva2pPe/1a0d6d0c89da/Settings.css */
 :is(#amai-settings, #amai-dev-settings, #amai-info) {
   display: grid;
   gap: 8px;
@@ -40955,7 +41024,7 @@ ruby > rt {
   border: 1px solid var(--essential-subdued, #818181);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d239004bb/SettingsModal.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19432-6iTCTBva2pPe/1a0d6d0c8a2b/SettingsModal.css */
 .amai-settings-overlay {
   position: fixed;
   inset: 0;
@@ -41031,7 +41100,7 @@ ruby > rt {
   min-width: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5740-YDb0AKc1Ql4i/1a0d239004ec/Tooltips.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19432-6iTCTBva2pPe/1a0d6d0c8a6c/Tooltips.css */
 .tippy-box[data-theme~=amai-lyrics] {
   position: relative;
   background-color: rgba(18, 18, 18, 0.92);
@@ -41092,6 +41161,367 @@ ruby > rt {
   .tippy-box[data-theme~=amai-lyrics][data-animation=amai][data-state=hidden],
   #context-menu > .main-contextMenu-tippyEnter {
     transform: none;
+  }
+}
+
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19432-6iTCTBva2pPe/1a0d6d0c8a9d/Glassmorphism.css */
+.amai-app-bg-host .Root__nav-bar:not(.amai-lib-grid) {
+  isolation: isolate;
+  background:
+    var(--amai-glass-sheen),
+    var(--amai-glass-veil),
+    var(--amai-glass-base) !important;
+  border: 1px solid var(--amai-glass-border) !important;
+  border-radius: 12px;
+  box-shadow: var(--amai-glass-rim), var(--amai-glass-shadow) !important;
+  backdrop-filter: var(--amai-glass-backdrop);
+  transition:
+    background var(--amai-glass-dur) var(--amai-glass-ease),
+    border-color var(--amai-glass-dur) var(--amai-glass-ease),
+    box-shadow var(--amai-glass-dur) var(--amai-glass-ease);
+}
+.amai-app-bg-host .Root__nav-bar.amai-lib-grid {
+  background:
+    var(--amai-glass-sheen),
+    var(--amai-glass-veil-subtle),
+    var(--amai-glass-base-strong) !important;
+  backdrop-filter: var(--amai-glass-backdrop-soft);
+}
+.amai-app-bg-host .Root__nav-bar [role=row]:hover,
+.amai-app-bg-host .Root__nav-bar [role=listitem]:hover,
+.amai-app-bg-host .Root__nav-bar [data-encore-id=listRow]:hover,
+.amai-app-bg-host .Root__nav-bar [data-encore-id=listRow]:hover::before,
+.amai-app-bg-host .Root__nav-bar [data-encore-id=listRow]:hover::after {
+  background: var(--amai-glass-sheen), rgba(255, 255, 255, 0.055) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+.amai-app-bg-host .Root__nav-bar [aria-selected=true] {
+  background: linear-gradient(90deg, rgba(var(--amai-accent-rgb), 0.2), rgba(var(--amai-accent-rgb), 0.055)), rgba(8, 10, 16, 0.56) !important;
+  box-shadow: inset 2px 0 0 rgba(var(--amai-accent-rgb), 0.88), inset 0 1px 0 rgba(255, 255, 255, 0.09) !important;
+}
+.amai-app-bg-host #global-nav-bar input {
+  background:
+    var(--amai-glass-sheen),
+    var(--amai-glass-veil),
+    var(--amai-glass-base-soft) !important;
+  border: 1px solid var(--amai-glass-border) !important;
+  border-radius: 999px !important;
+  box-shadow: var(--amai-glass-rim), var(--amai-glass-shadow-control) !important;
+  backdrop-filter: var(--amai-glass-backdrop-soft);
+  color: var(--amai-text-hi);
+  transition:
+    background var(--amai-glass-dur) var(--amai-glass-ease),
+    border-color var(--amai-glass-dur) var(--amai-glass-ease),
+    box-shadow var(--amai-glass-dur) var(--amai-glass-ease),
+    color var(--amai-glass-dur) var(--amai-glass-ease);
+}
+.amai-app-bg-host #global-nav-bar input::-moz-placeholder {
+  color: var(--amai-text-muted);
+}
+.amai-app-bg-host #global-nav-bar input::placeholder {
+  color: var(--amai-text-muted);
+}
+.amai-app-bg-host #global-nav-bar input:hover {
+  border-color: var(--amai-glass-border-strong) !important;
+  background:
+    var(--amai-glass-sheen),
+    var(--amai-glass-veil-strong),
+    var(--amai-glass-base) !important;
+}
+.amai-app-bg-host #global-nav-bar input:focus {
+  border-color: rgba(var(--amai-accent-rgb), 0.58) !important;
+  box-shadow: var(--amai-glass-rim-strong), var(--amai-glass-accent-shadow) !important;
+  color: #fff;
+}
+.amai-app-bg-host .main-trackList-trackListRow:hover,
+.amai-app-bg-host .main-trackList-trackListRow:focus-within {
+  background: var(--amai-glass-sheen), rgba(8, 10, 16, 0.54) !important;
+  border: 0 !important;
+  outline: 1px solid var(--amai-glass-border) !important;
+  outline-offset: -1px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.11), 0 10px 28px rgba(2, 3, 8, 0.16) !important;
+  backdrop-filter: var(--amai-glass-backdrop-soft);
+}
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section {
+  isolation: isolate;
+  background:
+    var(--amai-glass-sheen),
+    var(--amai-glass-veil),
+    var(--amai-glass-base) !important;
+  border: 1px solid var(--amai-glass-border) !important;
+  border-radius: 18px;
+  box-shadow: var(--amai-glass-rim), var(--amai-glass-shadow) !important;
+  backdrop-filter: var(--amai-glass-backdrop);
+  animation: amai-glass-settle 520ms var(--amai-glass-ease) backwards;
+}
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section button[type=button]:not(:where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)) {
+  background:
+    var(--amai-glass-sheen),
+    var(--amai-glass-veil),
+    var(--amai-glass-base-soft) !important;
+  border: 1px solid var(--amai-glass-border) !important;
+  border-radius: 999px;
+  box-shadow: var(--amai-glass-rim), var(--amai-glass-shadow-control) !important;
+  color: var(--amai-text-hi) !important;
+  transition:
+    transform var(--amai-glass-dur-fast) var(--amai-glass-ease),
+    background var(--amai-glass-dur) var(--amai-glass-ease),
+    border-color var(--amai-glass-dur) var(--amai-glass-ease),
+    box-shadow var(--amai-glass-dur) var(--amai-glass-ease);
+}
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section button[type=button]:not(:where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)):hover {
+  background:
+    var(--amai-glass-sheen),
+    var(--amai-glass-veil-strong),
+    rgba(var(--amai-accent-rgb), 0.12) !important;
+  border-color: rgba(var(--amai-accent-rgb), 0.42) !important;
+  box-shadow: var(--amai-glass-rim-strong), var(--amai-glass-accent-shadow) !important;
+  transform: translateY(-1px);
+}
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section button[type=button]:not(:where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)):active {
+  transform: translateY(0) scale(0.96);
+}
+#AmaiLyricsPage .AmaiPageButtonContainer {
+  position: static;
+  box-sizing: border-box;
+  width: 20cqw;
+  max-width: 100%;
+  margin-inline: auto;
+  padding: 10px !important;
+  align-items: center;
+  text-align: center;
+}
+#AmaiLyricsPage .AmaiPageButton {
+  position: relative;
+  width: 100%;
+  min-width: 160px;
+  margin: 0;
+  background:
+    var(--amai-glass-sheen),
+    var(--amai-glass-veil),
+    var(--amai-glass-base-soft) !important;
+  border: 1px solid var(--amai-glass-border) !important;
+  border-radius: 999px;
+  box-shadow: var(--amai-glass-rim) !important;
+  color: var(--amai-text-mid);
+  backdrop-filter: none;
+  transition:
+    transform var(--amai-glass-dur-fast) var(--amai-glass-ease),
+    background var(--amai-glass-dur) var(--amai-glass-ease),
+    border-color var(--amai-glass-dur) var(--amai-glass-ease),
+    color var(--amai-glass-dur) var(--amai-glass-ease),
+    box-shadow var(--amai-glass-dur) var(--amai-glass-ease);
+}
+#AmaiLyricsPage .AmaiPageButton:hover {
+  background:
+    var(--amai-glass-sheen),
+    var(--amai-glass-veil-strong),
+    rgba(var(--amai-accent-rgb), 0.12) !important;
+  border-color: rgba(var(--amai-accent-rgb), 0.48) !important;
+  color: #fff;
+  box-shadow: var(--amai-glass-rim-strong), var(--amai-glass-accent-shadow) !important;
+  transform: translateY(-1px);
+}
+#AmaiLyricsPage .AmaiPageButton:active {
+  transform: translateY(0) scale(0.97);
+}
+#AmaiLyricsPage .AmaiPageButton.hidden {
+  transform: scale(0.82);
+}
+#AmaiLyricsPage .AmaiPageButton:focus-visible,
+#AmaiLyricsPage .ViewControls .ViewControl:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--amai-accent-1) 72%, white);
+  outline-offset: 3px;
+}
+#AmaiLyricsPage .ViewControls .ViewControl {
+  background:
+    var(--amai-glass-sheen),
+    var(--amai-glass-veil),
+    var(--amai-glass-base-soft) !important;
+  border: 1px solid var(--amai-glass-border) !important;
+  box-shadow: var(--amai-glass-rim), var(--amai-glass-shadow-control) !important;
+  backdrop-filter: var(--amai-glass-backdrop-soft);
+  transition:
+    transform var(--amai-glass-dur-fast) var(--amai-glass-ease),
+    background var(--amai-glass-dur) var(--amai-glass-ease),
+    border-color var(--amai-glass-dur) var(--amai-glass-ease),
+    box-shadow var(--amai-glass-dur) var(--amai-glass-ease),
+    color var(--amai-glass-dur) var(--amai-glass-ease);
+}
+#AmaiLyricsPage .ViewControls .ViewControl:hover {
+  background:
+    var(--amai-glass-sheen),
+    var(--amai-glass-veil-strong),
+    rgba(var(--amai-accent-rgb), 0.13) !important;
+  border-color: rgba(var(--amai-accent-rgb), 0.46) !important;
+  box-shadow: var(--amai-glass-rim-strong), var(--amai-glass-accent-shadow) !important;
+  transform: translateY(-1px) scale(1.025);
+}
+#AmaiLyricsPage .ViewControls .ViewControl:active {
+  transform: translateY(0) scale(0.93);
+}
+#AmaiLyricsPage .amai-version-number {
+  padding: 4px 10px 2px;
+  color: var(--amai-text-faint);
+}
+#AmaiLyricsPage .ContentBox .NowBar.Active + .LyricsContainer .LyricsContent .simplebar-content-wrapper .simplebar-content {
+  background: var(--amai-glass-veil), var(--amai-glass-base-soft) !important;
+  border: 1px solid var(--amai-glass-border) !important;
+  border-radius: 1.2cqh;
+  box-shadow: var(--amai-glass-rim), var(--amai-glass-shadow) !important;
+}
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill {
+  background: var(--amai-glass-veil), var(--amai-glass-base-soft) !important;
+  border: 1px solid var(--amai-glass-border) !important;
+  box-shadow: var(--amai-glass-rim), var(--amai-glass-shadow-control) !important;
+  backdrop-filter: var(--amai-glass-backdrop-soft);
+}
+#AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line.Active .instrumental-pill {
+  background: var(--amai-glass-veil-strong), rgba(var(--amai-accent-rgb), 0.11) !important;
+  border-color: rgba(var(--amai-accent-rgb), 0.48) !important;
+  box-shadow: var(--amai-glass-rim-strong), var(--amai-glass-accent-shadow) !important;
+}
+#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox::before {
+  box-shadow:
+    inset 0 0 20px rgba(0, 0, 0, 0.78),
+    0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 0 34px rgba(var(--amai-accent-rgb), 0.08),
+    var(--amai-shadow-vinyl);
+}
+#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2), 0 10px 24px rgba(2, 3, 8, 0.42);
+}
+#AmaiLyricsPage .Timeline .SliderBar {
+  outline: 1px solid rgba(255, 255, 255, 0.13);
+  outline-offset: 2px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.34), 0 0 12px rgba(2, 3, 8, 0.22);
+}
+.BoxComponent-box-elevated {
+  background:
+    var(--amai-glass-sheen),
+    var(--amai-glass-veil),
+    var(--amai-glass-base) !important;
+  border: 1px solid var(--amai-glass-border) !important;
+  border-radius: 14px;
+  box-shadow: var(--amai-glass-rim), var(--amai-glass-shadow) !important;
+  backdrop-filter: var(--amai-glass-backdrop);
+}
+#AmaiLyricsPage .NotificationContainer {
+  --amai-toast-accent: rgba(255, 255, 255, 0.2);
+  left: 50%;
+  right: auto;
+  width: min(520px, calc(100% - 32px));
+  padding: 10px 18px;
+  background:
+    var(--amai-glass-sheen),
+    var(--amai-glass-veil),
+    var(--amai-glass-base-strong) !important;
+  border: 1px solid var(--amai-glass-border);
+  border-radius: 18px;
+  box-shadow: var(--amai-glass-rim-strong), var(--amai-glass-shadow) !important;
+  transform: translateX(-50%);
+  backdrop-filter: var(--amai-glass-backdrop-strong);
+}
+#AmaiLyricsPage .NotificationContainer.Visible {
+  animation: amai-toast-in 420ms var(--amai-glass-ease) both;
+}
+#AmaiLyricsPage .NotificationContainer.Danger {
+  --amai-toast-accent: rgba(255, 118, 118, 0.52);
+}
+#AmaiLyricsPage .NotificationContainer.Information {
+  --amai-toast-accent: rgba(158, 158, 255, 0.52);
+}
+#AmaiLyricsPage .NotificationContainer.Success {
+  --amai-toast-accent: rgba(148, 255, 148, 0.52);
+}
+#AmaiLyricsPage .NotificationContainer.Warning {
+  --amai-toast-accent: rgba(255, 208, 19, 0.52);
+}
+#AmaiLyricsPage .NotificationContainer {
+  box-shadow:
+    var(--amai-glass-rim-strong),
+    0 0 0 1px var(--amai-toast-accent),
+    var(--amai-glass-shadow) !important;
+}
+.tippy-box[data-theme~=amai-lyrics],
+#context-menu > .main-contextMenu-tippy {
+  background:
+    var(--amai-glass-sheen),
+    var(--amai-glass-veil),
+    var(--amai-glass-base-strong) !important;
+  border: 1px solid var(--amai-glass-border) !important;
+  border-radius: 14px !important;
+  box-shadow: var(--amai-glass-rim-strong), var(--amai-glass-shadow) !important;
+  backdrop-filter: var(--amai-glass-backdrop-strong);
+  transition: opacity var(--amai-glass-dur-fast) var(--amai-glass-ease), transform var(--amai-glass-dur-fast) var(--amai-glass-ease);
+}
+@keyframes amai-glass-settle {
+  from {
+    opacity: 0.72;
+    transform: translateY(8px) scale(0.992);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes amai-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .amai-app-bg-host .Root__nav-bar,
+  .amai-app-bg-host #global-nav-bar input,
+  .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section,
+  #AmaiLyricsPage .ViewControls .ViewControl,
+  #AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill,
+  .BoxComponent-box-elevated,
+  #AmaiLyricsPage .NotificationContainer,
+  .tippy-box[data-theme~=amai-lyrics],
+  #context-menu > .main-contextMenu-tippy {
+    backdrop-filter: none;
+    background:
+      var(--amai-glass-sheen),
+      var(--amai-glass-veil-strong),
+      var(--amai-glass-base-strong) !important;
+  }
+}
+@media (max-width: 768px) {
+  :root {
+    --amai-glass-backdrop-soft: blur(8px) saturate(126%) brightness(0.96);
+    --amai-glass-backdrop: blur(12px) saturate(136%) brightness(0.92);
+    --amai-glass-backdrop-strong: blur(15px) saturate(142%) brightness(0.9);
+    --amai-glass-shadow: 0 14px 38px rgba(2, 3, 8, 0.28), 0 3px 10px rgba(2, 3, 8, 0.16);
+  }
+  .amai-app-bg-host .main-trackList-trackListRow:hover,
+  .amai-app-bg-host .main-trackList-trackListRow:focus-within {
+    backdrop-filter: none;
+  }
+  #AmaiLyricsPage .AmaiPageButtonContainer {
+    padding: 8px !important;
+  }
+  .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section {
+    border-radius: 14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .amai-app-bg-host .Root__nav-bar,
+  .amai-app-bg-host #global-nav-bar input,
+  .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section,
+  .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section button:not(:where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)),
+  #AmaiLyricsPage .AmaiPageButton,
+  #AmaiLyricsPage .ViewControls .ViewControl,
+  #AmaiLyricsPage .NotificationContainer,
+  .tippy-box[data-theme~=amai-lyrics],
+  #context-menu > .main-contextMenu-tippy {
+    animation: none !important;
+    transition: none !important;
   }
 }
 
