@@ -8,7 +8,8 @@ vi.mock('./GlAppBackground', () => ({
   GL_REVEAL_MS: 900,
 }));
 
-import { AppBackground, APP_BG_ON_CLASS, ensureAppBgHostClasses } from './AppBackground';
+import { AppBackground } from './AppBackground';
+import { APP_BG_ON_CLASS, ensureAppBgHostClasses } from './identity';
 
 const COVER_A = 'https://i.scdn.co/image/aaa';
 const COVER_B = 'https://i.scdn.co/image/bbb';

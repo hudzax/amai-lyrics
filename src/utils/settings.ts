@@ -62,14 +62,15 @@ function generalSettings() {
       // their work while the app canvas is live) through the LIVE instances.
       if (enabled) {
         const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url as string | undefined;
-        void import('../components/DynamicBG/AppBackground').then(
-          ({ appBackgroundSingleton, syncAppBgMarker, syncLibraryGridState }) => {
-            syncAppBgMarker(true);
-            appBackgroundSingleton.apply(coverUrl);
-            syncLibraryGridState();
-            window.dispatchEvent(new Event('amai:appbg-changed'));
-          },
-        );
+        void Promise.all([
+          import('../components/DynamicBG/AppBackground'),
+          import('../components/DynamicBG/identity'),
+        ]).then(([{ appBackgroundSingleton, syncAppBgMarker }, { syncLibraryGridState }]) => {
+          syncAppBgMarker(true);
+          appBackgroundSingleton.apply(coverUrl);
+          syncLibraryGridState();
+          window.dispatchEvent(new Event('amai:appbg-changed'));
+        });
       } else {
         void import('../components/DynamicBG/AppBackground').then(({ appBackgroundSingleton }) => {
           appBackgroundSingleton.remove();

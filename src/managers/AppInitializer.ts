@@ -2,6 +2,7 @@ import { setSettingsMenu } from '../utils/settings';
 import Platform from '../components/Global/Platform';
 import { invalidateLyrics } from '../utils/Lyrics/fetchLyrics';
 import lifecycle from '../utils/lifecycle';
+import { APP_BG_CONTAINER_CLASS, APP_BG_LOADED_CLASS } from '../components/DynamicBG/identity';
 
 export class AppInitializer {
   public static async initializeCore() {
@@ -46,21 +47,15 @@ export class AppInitializer {
   public static setupPostLoadOptimizations() {
     // Mark dynamic backgrounds as loaded after the page has fully loaded
     const onLoad = () => {
+      const markLoaded = () => {
+        document.querySelectorAll(`.${APP_BG_CONTAINER_CLASS}`).forEach((bg) => {
+          bg.classList.add(APP_BG_LOADED_CLASS);
+        });
+      };
       if (window.requestIdleCallback) {
-        requestIdleCallback(
-          () => {
-            document.querySelectorAll('.sweet-dynamic-bg').forEach((bg) => {
-              bg.classList.add('sweet-dynamic-bg-loaded');
-            });
-          },
-          { timeout: 2000 },
-        );
+        requestIdleCallback(markLoaded, { timeout: 2000 });
       } else {
-        setTimeout(() => {
-          document.querySelectorAll('.sweet-dynamic-bg').forEach((bg) => {
-            bg.classList.add('sweet-dynamic-bg-loaded');
-          });
-        }, 1000);
+        setTimeout(markLoaded, 1000);
       }
     };
     lifecycle.trackWindow('load', onLoad);

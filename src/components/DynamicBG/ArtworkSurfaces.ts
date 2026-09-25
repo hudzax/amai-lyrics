@@ -7,9 +7,9 @@ import {
   isAppBackgroundEnabled,
   resolveAppBgHost,
   syncAppBgMarker,
-  syncLibraryGridState,
   watchLibraryGridState,
 } from './AppBackground';
+import { syncLibraryGridState } from './identity';
 import { NowPlayingBarBackground } from './NowPlayingBarBackground';
 
 /**

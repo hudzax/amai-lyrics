@@ -1,7 +1,14 @@
 import fastdom from 'fastdom';
 import { measureAsync, mutateAsync } from '../../utils/fastdomAsync';
 import { normalizeImageUrl, setRandomCSSVariables, createBackgroundImage } from './utils';
-import { APP_BG_ON_CLASS } from './AppBackground';
+import {
+  APP_BG_CONTAINER_CLASS,
+  APP_BG_HOST_HELPER_CLASS,
+  APP_BG_LOADED_CLASS,
+  APP_BG_ON_CLASS,
+  NESTED_BG_IMG_A_ID,
+  NESTED_BG_IMG_B_ID,
+} from './identity';
 
 interface BackgroundCache {
   nowPlayingBar: Element | null;
@@ -45,8 +52,12 @@ export class NowPlayingBarBackground {
           const hasBg = !!this.cached.dynamicBg;
           const imgs = this.cached.dynamicBg
             ? {
-                imgA: this.cached.dynamicBg.querySelector('#bg-img-a') as HTMLImageElement,
-                imgB: this.cached.dynamicBg.querySelector('#bg-img-b') as HTMLImageElement,
+                imgA: this.cached.dynamicBg.querySelector(
+                  `#${NESTED_BG_IMG_A_ID}`,
+                ) as HTMLImageElement,
+                imgB: this.cached.dynamicBg.querySelector(
+                  `#${NESTED_BG_IMG_B_ID}`,
+                ) as HTMLImageElement,
               }
             : null;
           return { nowPlayingBar: bar, hasDynamicBg: hasBg, images: imgs };
@@ -94,7 +105,7 @@ export class NowPlayingBarBackground {
 
   private createNewBackground(nowPlayingBar: Element, coverUrl: string) {
     const dynamicBackground = document.createElement('div');
-    dynamicBackground.className = 'sweet-dynamic-bg';
+    dynamicBackground.className = APP_BG_CONTAINER_CLASS;
     dynamicBackground.setAttribute('current-img', coverUrl);
     // Scoped vars: inherit to the <img> children without a document-wide recalc.
     setRandomCSSVariables(dynamicBackground);
@@ -103,14 +114,19 @@ export class NowPlayingBarBackground {
     placeholder.className = 'placeholder';
     dynamicBackground.appendChild(placeholder);
 
-    const imgA = createBackgroundImage('bg-img-a', 'bg-image primary active', coverUrl, 'eager');
+    const imgA = createBackgroundImage(
+      NESTED_BG_IMG_A_ID,
+      'bg-image primary active',
+      coverUrl,
+      'eager',
+    );
     dynamicBackground.appendChild(imgA);
 
-    const imgB = createBackgroundImage('bg-img-b', 'bg-image secondary', '', 'lazy');
+    const imgB = createBackgroundImage(NESTED_BG_IMG_B_ID, 'bg-image secondary', '', 'lazy');
     dynamicBackground.appendChild(imgB);
 
     // Add container to DOM
-    nowPlayingBar.classList.add('sweet-dynamic-bg-in-this');
+    nowPlayingBar.classList.add(APP_BG_HOST_HELPER_CLASS);
     nowPlayingBar.appendChild(dynamicBackground);
 
     // Mark as loaded after image loads
@@ -118,7 +134,7 @@ export class NowPlayingBarBackground {
       if (!dynamicBackground.isConnected) return;
       fastdom.mutate(() => {
         if (!dynamicBackground.isConnected) return;
-        dynamicBackground.classList.add('sweet-dynamic-bg-loaded');
+        dynamicBackground.classList.add(APP_BG_LOADED_CLASS);
         // Drop the blurred placeholder layer once real pixels exist.
         placeholder.remove();
       });

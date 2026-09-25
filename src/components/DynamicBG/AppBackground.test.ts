@@ -7,10 +7,8 @@ import {
   syncAppBgMarker,
   APP_BG_HOST_SELECTOR,
   APP_BG_HOST_FALLBACK_SELECTOR,
-  APP_BG_IMG_A_ID,
-  APP_BG_IMG_B_ID,
-  APP_BG_ON_CLASS,
 } from './AppBackground';
+import { APP_BG_IMG_A_ID, APP_BG_IMG_B_ID, APP_BG_ON_CLASS } from './identity';
 
 function setupMainView(): HTMLElement {
   document.body.innerHTML =

@@ -1,44 +1,26 @@
 import storage from '../../utils/storage';
 import Defaults from '../Global/Defaults';
 import { normalizeImageUrl, setRandomCSSVariables, createBackgroundImage } from './utils';
+import {
+  APP_BG_CLASS,
+  APP_BG_CONTAINER_CLASS,
+  APP_BG_GPU_CLASS,
+  APP_BG_HOST_CLASS,
+  APP_BG_HOST_HELPER_CLASS,
+  APP_BG_IMG_A_ID,
+  APP_BG_IMG_B_ID,
+  APP_BG_LOADED_CLASS,
+  APP_BG_LIB_GRID_CLASS,
+  APP_BG_ON_CLASS,
+  createAppBgContainer,
+  ensureAppBgHostClasses,
+  syncLibraryGridState,
+} from './identity';
 
 type GlAppBackgroundInstance = import('./GlAppBackground').GlAppBackground;
 
 export const APP_BG_HOST_SELECTOR = '.Root';
 export const APP_BG_HOST_FALLBACK_SELECTOR = '.Root__top-container';
-/**
- * Marker on `<html>` while the app-frame background feature is enabled.
- * Contract: CSS selectors using it must LEAD with it
- * (`.amai-app-bg-on body ...`) — it is an ancestor of <body>, never a
- * descendant, so `body ... .amai-app-bg-on ...` can never match.
- */
-export const APP_BG_ON_CLASS = 'amai-app-bg-on';
-export const APP_BG_HOST_CLASS = 'amai-app-bg-host';
-export const APP_BG_CLASS = 'amai-app-bg';
-export const APP_BG_IMG_A_ID = 'amai-app-bg-img-a';
-export const APP_BG_IMG_B_ID = 'amai-app-bg-img-b';
-/** Toggled on `.Root__nav-bar` when the library shows cards (expanded grid).
- * Replaces the `:has([data-encore-id='card'])` selector, which forces the
- * style engine to re-evaluate on every descendant mutation. */
-export const APP_BG_LIB_GRID_CLASS = 'amai-lib-grid';
-const APP_BG_CONTAINER_CLASS = 'sweet-dynamic-bg';
-const APP_BG_HOST_HELPER_CLASS = 'sweet-dynamic-bg-in-this';
-/** Container class for the WebGL2 shader canvas. CSS layers/scrims/filters
- * must be neutralized while it is present — the shader paints everything. */
-export const APP_BG_GPU_CLASS = 'amai-bg-gpu';
-
-/** Build the shared background container node (DOM fallback or GPU canvas). */
-export function createAppBgContainer(gpuMode = false): HTMLDivElement {
-  const div = document.createElement('div');
-  div.className = `${APP_BG_CONTAINER_CLASS} ${APP_BG_CLASS}${gpuMode ? ` ${APP_BG_GPU_CLASS}` : ''}`;
-  return div;
-}
-
-/** Host/helper classes + nav grid sync — the positioning contract both backends share. */
-export function ensureAppBgHostClasses(host: Element): void {
-  host.classList.add(APP_BG_HOST_HELPER_CLASS, APP_BG_HOST_CLASS);
-  syncLibraryGridState(host);
-}
 
 interface AppBackgroundCache {
   host: Element | null;
@@ -122,15 +104,6 @@ export function resolveAppBgHost(): Element | null {
  * read instead of two. */
 export function syncAppBgMarker(force?: boolean): void {
   document.documentElement.classList.toggle(APP_BG_ON_CLASS, force ?? isAppBackgroundEnabled());
-}
-
-/** Sync the opaque-library-grid class (see `APP_BG_LIB_GRID_CLASS`).
- * Exported so the toggle handler and observers can refresh it without a
- * full `apply()` — cheap single `querySelector` inside the nav column. */
-export function syncLibraryGridState(scope?: ParentNode): void {
-  const navBar = (scope ?? document).querySelector?.('.Root__nav-bar');
-  if (!navBar) return;
-  navBar.classList.toggle(APP_BG_LIB_GRID_CLASS, !!navBar.querySelector("[data-encore-id='card']"));
 }
 
 /** Find this feature's background node without touching the lyrics page's nested BG. */
@@ -484,7 +457,7 @@ export class AppBackground {
 
     imgA.onload = () => {
       requestAnimationFrame(() => {
-        dynamicBackground.classList.add('sweet-dynamic-bg-loaded');
+        dynamicBackground.classList.add(APP_BG_LOADED_CLASS);
       });
       // Drop the blurred placeholder layer once real pixels exist — otherwise
       // it paints (radial-gradient + blur) behind every frame forever.

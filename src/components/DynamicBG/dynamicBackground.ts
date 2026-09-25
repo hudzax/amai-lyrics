@@ -1,7 +1,12 @@
 import { SpotifyPlayer } from '../Global/SpotifyPlayer';
 import { debounce } from '../../utils/debounce';
 import { normalizeImageUrl, setRandomCSSVariables, createBackgroundImage } from './utils';
-import { APP_BG_ON_CLASS } from './AppBackground';
+import {
+  APP_BG_CONTAINER_CLASS,
+  APP_BG_ON_CLASS,
+  NESTED_BG_IMG_A_ID,
+  NESTED_BG_IMG_B_ID,
+} from './identity';
 
 /**
  * True while `element`'s background is hidden behind the app-frame canvas and
@@ -25,18 +30,23 @@ async function setupDynamicBackground(
   element: HTMLElement,
   imageUrl: string,
 ): Promise<HTMLDivElement> {
-  let bgContainer = element.querySelector('.sweet-dynamic-bg') as HTMLDivElement | null;
+  let bgContainer = element.querySelector(`.${APP_BG_CONTAINER_CLASS}`) as HTMLDivElement | null;
 
   if (!bgContainer) {
     bgContainer = document.createElement('div');
-    bgContainer.className = 'sweet-dynamic-bg';
+    bgContainer.className = APP_BG_CONTAINER_CLASS;
     bgContainer.setAttribute('current-img', imageUrl);
 
     const placeholder = document.createElement('div');
     placeholder.className = 'placeholder';
     bgContainer.appendChild(placeholder);
 
-    const imgA = createBackgroundImage('bg-img-a', 'bg-image primary active', imageUrl, 'eager');
+    const imgA = createBackgroundImage(
+      NESTED_BG_IMG_A_ID,
+      'bg-image primary active',
+      imageUrl,
+      'eager',
+    );
     imgA.addEventListener(
       'load',
       () => {
@@ -46,7 +56,7 @@ async function setupDynamicBackground(
     );
     bgContainer.appendChild(imgA);
 
-    const imgB = createBackgroundImage('bg-img-b', 'bg-image secondary', '', 'lazy');
+    const imgB = createBackgroundImage(NESTED_BG_IMG_B_ID, 'bg-image secondary', '', 'lazy');
     bgContainer.appendChild(imgB);
 
     element.appendChild(bgContainer);
@@ -60,8 +70,8 @@ async function setupDynamicBackground(
  * Updates the dynamic background with a new image using crossfade.
  */
 const updateDynamicBackground = debounce((bgContainer: HTMLDivElement, newImageUrl: string) => {
-  const imgA = bgContainer.querySelector('#bg-img-a') as HTMLImageElement;
-  const imgB = bgContainer.querySelector('#bg-img-b') as HTMLImageElement;
+  const imgA = bgContainer.querySelector(`#${NESTED_BG_IMG_A_ID}`) as HTMLImageElement;
+  const imgB = bgContainer.querySelector(`#${NESTED_BG_IMG_B_ID}`) as HTMLImageElement;
 
   if (!imgA || !imgB) {
     console.error('Dynamic background image elements not found!');

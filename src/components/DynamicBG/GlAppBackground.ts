@@ -1,4 +1,4 @@
-import { createAppBgContainer, ensureAppBgHostClasses } from './AppBackground';
+import { createAppBgContainer, ensureAppBgHostClasses } from './identity';
 import { FRAGMENT_SHADER, VERTEX_SHADER } from './inkShader';
 
 /**
