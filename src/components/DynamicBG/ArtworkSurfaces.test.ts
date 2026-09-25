@@ -1,5 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import Global from '../Global/Global';
+// The real mode module drags the page/settings graph (and its React dep) in;
+// these two are all it needs from it here.
+vi.mock('../Pages/PageView', () => ({
+  default: { AppendViewControls: vi.fn() },
+  PageRoot: null,
+}));
+vi.mock('../NowBar/NowBar', () => ({
+  OpenNowBar: vi.fn(),
+  UpdateNowBar: vi.fn(),
+  DeregisterNowBarBtn: vi.fn(),
+}));
+vi.mock('../../utils/Scrolling/AutoScroll', () => ({ AutoScroll: { reset: vi.fn() } }));
+
+import Fullscreen from '../Utils/Fullscreen';
 import {
   APP_BG_CHANGED_EVENT,
   ArtworkSurfaces,
@@ -42,7 +55,10 @@ let surfaces: ArtworkSurfaces | null = null;
 
 beforeEach(() => {
   vi.useFakeTimers();
-  document.body.innerHTML = '';
+  // The mode module moves this page between hosts; the surfaces only react to
+  // the notification, so the fixture needs no page content.
+  document.body.innerHTML = '<div class="Root__main-view"><div id="AmaiLyricsPage"></div></div>';
+  vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
 afterEach(() => {
@@ -63,18 +79,18 @@ describe('ArtworkSurfaces seam', () => {
     surfaces = new ArtworkSurfaces(adapters);
     surfaces.mount();
     expect(calls.page).toBe(0);
-    Global.Event.evoke('fullscreen:open');
+    Fullscreen.enter();
     // The page backdrop skipped its paint while non-fullscreen; fullscreen
     // entry is the transition that un-hides it, so it must re-apply.
     expect(calls.page).toBe(1);
     surfaces.destroy();
     surfaces = null;
-    // Destroy must remove the listener: a later event reaches nothing.
-    Global.Event.evoke('fullscreen:open');
+    // Destroy must release the subscription: a later transition reaches nothing.
+    Fullscreen.leave();
     expect(calls.page).toBe(1);
   });
 
-  it('pulls the app canvas with the page on fullscreen open and back on exit', () => {
+  it('pulls the app canvas with the page on fullscreen open and back on exit', async () => {
     const { calls, adapters } = setupFakes();
     surfaces = new ArtworkSurfaces(adapters);
     surfaces.mount();
@@ -83,17 +99,19 @@ describe('ArtworkSurfaces seam', () => {
     // Fullscreen transfers the page out of `.Root` into the UA top layer;
     // re-applying the app frame re-homes the canvas inside it
     // (resolveAppBgHost follows the page).
-    Global.Event.evoke('fullscreen:open');
+    Fullscreen.enter();
     expect(calls.appFrame.length).toBe(atMount + 1);
     expect(calls.appFrame[calls.appFrame.length - 1]).toBe('live-cover');
 
     // ...and pulls it back out when the page returns.
-    Global.Event.evoke('fullscreen:exit');
+    Fullscreen.leave();
+    await Promise.resolve();
     expect(calls.appFrame.length).toBe(atMount + 2);
 
     surfaces.destroy();
     surfaces = null;
-    Global.Event.evoke('fullscreen:exit');
+    document.body.innerHTML = '<div class="Root__main-view"><div id="AmaiLyricsPage"></div></div>';
+    Fullscreen.enter();
     expect(calls.appFrame.length).toBe(atMount + 2);
   });
 

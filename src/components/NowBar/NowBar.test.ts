@@ -1,6 +1,35 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../Utils/Fullscreen', () => ({ default: { IsOpen: true } }));
+// A controllable adapter at the fullscreen seam, standing in for the page-DOM
+// implementation: NowBar must follow the mode's notifications and its
+// synchronous query — never a peer's mutable flag. The real mode module is
+// exercised in Utils/Fullscreen.test.ts.
+const mode = vi.hoisted(() => {
+  let fullscreen = true;
+  const subscribers = new Set<(fullscreen: boolean) => void>();
+  return {
+    isPageFullscreen: () => fullscreen,
+    subscribe(subscriber: (fullscreen: boolean) => void) {
+      subscribers.add(subscriber);
+      return () => {
+        subscribers.delete(subscriber);
+      };
+    },
+    set(value: boolean) {
+      fullscreen = value;
+      for (const subscriber of [...subscribers]) subscriber(value);
+    },
+  };
+});
+vi.mock('../Utils/Fullscreen', () => ({
+  default: {
+    isPageFullscreen: mode.isPageFullscreen,
+    subscribe: mode.subscribe,
+    enter: () => mode.set(true),
+    leave: () => mode.set(false),
+    toggle: () => mode.set(!mode.isPageFullscreen()),
+  },
+}));
 vi.mock('../../utils/API/SpicyFetch', () => ({ default: vi.fn() }));
 const playback = vi.hoisted(() => ({
   position: vi.fn(() => 12000),
@@ -45,7 +74,7 @@ function page() {
 beforeEach(() => {
   vi.useFakeTimers();
   page();
-  Fullscreen.IsOpen = true;
+  mode.set(true);
   SpotifyPlayer.IsPlaying = true;
   SpotifyPlayer.LoopType = 'none';
   SpotifyPlayer.ShuffleType = 'none';
@@ -119,8 +148,7 @@ describe('NowBar lifetime', () => {
   it('retains vinyl updates after fullscreen exit without a progress loop', async () => {
     await OpenNowBar();
     await vi.advanceTimersByTimeAsync(100);
-    Fullscreen.IsOpen = false;
-    Global.Event.evoke('fullscreen:exit');
+    Fullscreen.leave();
     expect(document.querySelector('.Timeline')).toBeNull();
     expect(document.querySelector('.ArtistData')).toBeNull();
     expect(vi.getTimerCount()).toBe(0);
@@ -130,8 +158,7 @@ describe('NowBar lifetime', () => {
     SpotifyPlayer.IsPlaying = true;
     Global.Event.evoke('playback:playpause', {});
     expect(document.querySelector('.MediaImage')?.classList.contains('Playing')).toBe(true);
-    Fullscreen.IsOpen = true;
-    Global.Event.evoke('fullscreen:open');
+    Fullscreen.enter();
     await vi.advanceTimersByTimeAsync(100);
     expect(document.querySelectorAll('.Timeline')).toHaveLength(1);
     expect(playback.track).toHaveBeenCalledTimes(2);
@@ -225,7 +252,8 @@ describe('NowBar lifetime', () => {
     await opening;
     // Page destroy begins (InvalidateNowBar), then a stale fullscreen setup completes.
     InvalidateNowBar();
-    Global.Event.evoke('fullscreen:open');
+    Fullscreen.leave();
+    Fullscreen.enter();
     await vi.advanceTimersByTimeAsync(300);
     expect(document.querySelector('.PlaybackControls')).toBeNull();
     expect(vi.getTimerCount()).toBe(0);

@@ -73,8 +73,8 @@ function mount(root: HTMLElement): MountedNowBar {
   };
 
   const syncMode = () => {
-    if (disposed || !root.isConnected || fullscreen === Fullscreen.IsOpen) return;
-    fullscreen = Fullscreen.IsOpen;
+    if (disposed || !root.isConnected || fullscreen === Fullscreen.isPageFullscreen()) return;
+    fullscreen = Fullscreen.isPageFullscreen();
     stopDrag?.();
     clearFullscreen();
     if (fullscreen && mediaContent) {
@@ -92,7 +92,7 @@ function mount(root: HTMLElement): MountedNowBar {
       stopPosition = registerPositionConsumer({
         surface: 'nowbar',
         intervalSeconds: INTERVALS.PROGRESS_BAR_UPDATE,
-        enabled: () => !disposed && root.isConnected && Fullscreen.IsOpen,
+        enabled: () => !disposed && root.isConnected && Fullscreen.isPageFullscreen(),
         // Paused seeks still need a position, but not continuous remote tracking.
         wantsTracking: ({ isPlaying }) => isPlaying,
         onPosition: (position) => {
@@ -165,9 +165,7 @@ function mount(root: HTMLElement): MountedNowBar {
     listenerIds.push(Global.Event.listen(event, refreshPlayback));
   }
   listenerIds.push(Global.Event.listen('playback:songchange', refreshPlayback));
-  for (const event of ['fullscreen:open', 'fullscreen:exit']) {
-    listenerIds.push(Global.Event.listen(event, () => void refresh()));
-  }
+  const unsubscribeFullscreen = Fullscreen.subscribe(() => void refresh());
 
   const instance: MountedNowBar = {
     root,
@@ -176,6 +174,7 @@ function mount(root: HTMLElement): MountedNowBar {
       if (disposed) return;
       disposed = true;
       ++metadataVersion;
+      unsubscribeFullscreen();
       listenerIds.forEach((id) => Global.Event.unListen(id));
       stopDrag?.();
       stopDrag = null;

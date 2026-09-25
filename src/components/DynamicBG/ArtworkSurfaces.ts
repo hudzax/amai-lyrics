@@ -1,6 +1,5 @@
 import lifecycle from '../../utils/lifecycle';
 import Whentil from '../../utils/Whentil';
-import Global from '../Global/Global';
 import { debounce } from '../../utils/debounce';
 import {
   appBackgroundSingleton,
@@ -10,6 +9,7 @@ import {
   watchLibraryGridState,
 } from './AppBackground';
 import { syncLibraryGridState } from './identity';
+import Fullscreen from '../Utils/Fullscreen';
 import { NowPlayingBarBackground } from './NowPlayingBarBackground';
 
 /**
@@ -99,8 +99,7 @@ export class ArtworkSurfaces {
   private gridObserver: MutationObserver | null = null;
   private appFrameRafQueued = false;
   private firstPaintWaiter: ReturnType<typeof Whentil.When> | null = null;
-  private fullscreenOpenId: number | null = null;
-  private fullscreenExitId: number | null = null;
+  private unsubscribeFullscreen: (() => void) | null = null;
 
   constructor(adapters?: ArtworkSurfaceAdapters) {
     this.sidebarBg = new NowPlayingBarBackground();
@@ -158,15 +157,11 @@ export class ArtworkSurfaces {
     // page's own backdrop stays hidden while the app canvas is live (see
     // `dynamicBackground.isHiddenByAppCanvas`); applyLyricsPage still covers the
     // app-bg-off case where the backdrop node may be missing.
-    this.fullscreenOpenId = Global.Event.listen('fullscreen:open', () => {
+    this.unsubscribeFullscreen = Fullscreen.subscribe((fullscreen) => {
       this.adapters.applyAppFrame(this.adapters.readCoverUrl());
-      this.adapters.applyLyricsPage();
+      if (fullscreen) this.adapters.applyLyricsPage();
     });
-    lifecycle.trackGlobalEvent(this.fullscreenOpenId);
-    this.fullscreenExitId = Global.Event.listen('fullscreen:exit', () =>
-      this.adapters.applyAppFrame(this.adapters.readCoverUrl()),
-    );
-    lifecycle.trackGlobalEvent(this.fullscreenExitId);
+    lifecycle.trackCallback(() => this.unsubscribeFullscreen?.());
   }
 
   /** Disconnect, cancel, and clear canvases (hot-reload safe). */
@@ -178,14 +173,8 @@ export class ArtworkSurfaces {
     this.sidebarLateObserver?.disconnect();
     this.appFrameObserver?.disconnect();
     this.gridObserver?.disconnect();
-    if (this.fullscreenOpenId !== null) {
-      Global.Event.unListen(this.fullscreenOpenId);
-      this.fullscreenOpenId = null;
-    }
-    if (this.fullscreenExitId !== null) {
-      Global.Event.unListen(this.fullscreenExitId);
-      this.fullscreenExitId = null;
-    }
+    this.unsubscribeFullscreen?.();
+    this.unsubscribeFullscreen = null;
     this.sidebarObserver = null;
     this.sidebarLateObserver = null;
     this.appFrameObserver = null;

@@ -165,8 +165,8 @@ describe('AppBackground', () => {
     const canvas = root.querySelector<HTMLElement>(':scope > .sweet-dynamic-bg.amai-app-bg')!;
     expect(root.classList.contains('amai-app-bg-host')).toBe(true);
 
-    // Fullscreen.Open() transfers the page to <body> and tags it; the
-    // fullscreen:open listener re-applies with resolveAppBgHost pointing at it.
+    // FullscreenMode.enter() transfers the page to <body> and tags it; the
+    // mode notification re-applies with resolveAppBgHost pointing at it.
     const page = document.createElement('div');
     page.id = 'AmaiLyricsPage';
     page.className = 'Fullscreen';
@@ -182,7 +182,7 @@ describe('AppBackground', () => {
     expect(root.classList.contains('amai-app-bg-host')).toBe(false);
     expect(root.classList.contains('sweet-dynamic-bg-in-this')).toBe(false);
 
-    // Exit: the fullscreen:exit listener re-applies with the class gone.
+    // Exit: the mode notification re-applies with the class gone.
     page.classList.remove('Fullscreen');
     bg.apply('spotify:image:abc123');
 

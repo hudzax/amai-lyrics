@@ -80,7 +80,7 @@ export function isAppBackgroundEnabled(): boolean {
  *
  * Normally the app frame (`.Root`, falling back to `.Root__top-container`).
  * While the lyrics page is fullscreen it resolves to `#AmaiLyricsPage.Fullscreen`
- * instead: `Fullscreen.Open()` transfers the page out of `.Root` to `<body>` and
+ * instead: `FullscreenMode.enter()` transfers the page out of `.Root` to `<body>` and
  * into the UA top layer, so a `.Root`-child canvas would sit behind Spotify's
  * own opaque UI and never show. Class-based rather than `document.fullscreenElement`
  * because the `requestFullscreen()`-refused fallback keeps the same `.Fullscreen`

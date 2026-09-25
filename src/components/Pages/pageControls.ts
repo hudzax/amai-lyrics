@@ -25,13 +25,13 @@ export async function AppendViewControls(maid: Maid | null) {
       document.createRange().createContextualFragment(`
             <button id="Close" class="ViewControl">${Icons.Close}</button>
             <button id="FullscreenToggle" class="ViewControl">${
-              Fullscreen.IsOpen ? Icons.CloseFullscreen : Icons.Fullscreen
+              Fullscreen.isPageFullscreen() ? Icons.CloseFullscreen : Icons.Fullscreen
             }</button>
         `),
     );
   });
 
-  if (Fullscreen.IsOpen) {
+  if (Fullscreen.isPageFullscreen()) {
     const headerElem = document.querySelector<HTMLElement>(PageViewSelectors.Header);
     if (headerElem) {
       await mutateAsync(() => {
@@ -111,7 +111,7 @@ function SetupTippy(elem: HTMLElement | null, maid: Maid | null) {
       placement: 'top',
     });
 
-    const fullscreenClickHandler = () => Fullscreen.Toggle();
+    const fullscreenClickHandler = () => Fullscreen.toggle();
     fullscreenBtn.addEventListener('click', fullscreenClickHandler);
     maid?.Give(() => fullscreenBtn.removeEventListener('click', fullscreenClickHandler));
   }

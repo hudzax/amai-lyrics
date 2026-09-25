@@ -1,29 +1,57 @@
 import Animator from '../../utils/Animator';
 import { AutoScroll } from '../../utils/Scrolling/AutoScroll';
 import { isPublishedNoLyrics } from '../../utils/Lyrics/snapshot';
-import Global from '../Global/Global';
 import PageView, { PageRoot } from '../Pages/PageView';
-import { DeregisterNowBarBtn, OpenNowBar, UpdateNowBar } from './NowBar';
+import { DeregisterNowBarBtn, OpenNowBar, UpdateNowBar } from '../NowBar/NowBar';
 import TransferElement from './TransferElement';
 import lifecycle from '../../utils/lifecycle';
 
-const Fullscreen = {
-  Open,
-  Close,
-  Toggle,
-  IsOpen: false,
-  handleEscapeKey: function (event) {
-    if (event.key === 'Escape' && this.IsOpen) {
-      this.Close();
-    }
-  },
-};
+const PAGE_SELECTOR = '#AmaiLyricsPage';
 
-// Keep IsOpen in sync with actual fullscreen state. Guarded to avoid
-// duplicate listeners on Spicetify watch re-injection (each re-eval would
-// otherwise stack another document listener). On hot-reload we remove stale
-// handlers that close over the previous Fullscreen object and replace them
-// with fresh closures that reference the new module's Fullscreen.
+/**
+ * FullscreenMode: whether the lyrics page is presented fullscreen.
+ *
+ * The `.Fullscreen` class on `#AmaiLyricsPage` is the single mark of that mode:
+ * it is added on entry and survives a refused `requestFullscreen()`, which is
+ * why the check stays class-based rather than reading `document.fullscreenElement`
+ * (see `resolveAppBgHost`). The native element is read for one thing only —
+ * noticing that the browser left fullscreen behind our back.
+ *
+ * Callers cross this seam through `isPageFullscreen()` (synchronous, for render
+ * and teardown paths), `subscribe(cb)` (transition-only — a subscriber that
+ * needs the current mode asks for it) and the `enter`/`leave`/`toggle`
+ * requests. Nobody reads a flag, writes the class, or re-derives the mode from
+ * the DOM.
+ */
+type ModeSubscriber = (fullscreen: boolean) => void;
+const subscribers = new Set<ModeSubscriber>();
+/** One leave at a time — see `leave`. */
+let leaving = false;
+
+function pageElement(): HTMLElement | null {
+  return document.querySelector<HTMLElement>(PAGE_SELECTOR);
+}
+
+export function isPageFullscreen(): boolean {
+  return !!document.querySelector(`${PAGE_SELECTOR}.Fullscreen`);
+}
+
+function publish(): void {
+  const fullscreen = isPageFullscreen();
+  for (const subscriber of [...subscribers]) subscriber(fullscreen);
+}
+
+export function subscribe(subscriber: ModeSubscriber): () => void {
+  subscribers.add(subscriber);
+  return () => {
+    subscribers.delete(subscriber);
+  };
+}
+
+// Guarded to avoid duplicate listeners on Spicetify watch re-injection (each
+// re-eval would otherwise stack another document listener). On hot-reload we
+// remove stale handlers that close over the previous module instance and
+// replace them with fresh closures.
 const windowRef = window as unknown as {
   __amaiFullscreenHandlers?: {
     onFullscreenChange: () => void;
@@ -32,7 +60,6 @@ const windowRef = window as unknown as {
 };
 
 function ensureGlobalFullscreenListeners(): void {
-  // Remove stale handlers from previous injection (they capture old Fullscreen closure).
   const existing = windowRef.__amaiFullscreenHandlers;
   if (existing) {
     document.removeEventListener('fullscreenchange', existing.onFullscreenChange);
@@ -40,18 +67,14 @@ function ensureGlobalFullscreenListeners(): void {
   }
 
   const onFullscreenChange = () => {
-    const wasFullscreen = Fullscreen.IsOpen;
-    const isNowFullscreen = !!document.fullscreenElement;
-
-    Fullscreen.IsOpen = isNowFullscreen;
-
-    // If browser exited fullscreen but our state didn't update, call Close()
-    if (wasFullscreen && !isNowFullscreen) {
-      Fullscreen.Close();
-    }
+    // The browser left fullscreen (Escape or a UA gesture) while the page is
+    // still presented fullscreen: restore it.
+    if (!document.fullscreenElement && isPageFullscreen()) leave();
   };
 
-  const onKeyDown = (e: KeyboardEvent) => Fullscreen.handleEscapeKey(e as unknown as KeyboardEvent);
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && isPageFullscreen()) leave();
+  };
 
   document.addEventListener('fullscreenchange', onFullscreenChange);
   document.addEventListener('keydown', onKeyDown);
@@ -117,166 +140,160 @@ const MediaBox_Data = {
   },
 };
 
-function Open() {
-  const SpicyPage = document.querySelector<HTMLElement>('.Root__main-view #AmaiLyricsPage');
-  const Root = document.body as HTMLElement;
+function mediaBoxParts(): { mediaBox: HTMLElement | null; mediaImage: HTMLElement | null } {
+  return {
+    mediaBox: document.querySelector<HTMLElement>(
+      '#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox',
+    ),
+    mediaImage: document.querySelector<HTMLElement>(
+      '#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage',
+    ),
+  };
+}
 
-  if (SpicyPage) {
-    // First, transfer the element and set up initial state
-    TransferElement(SpicyPage, Root);
-    SpicyPage.classList.add('Fullscreen');
-    Fullscreen.IsOpen = true;
+function enter(): void {
+  const page = document.querySelector<HTMLElement>(`.Root__main-view ${PAGE_SELECTOR}`);
+  if (!page) return;
 
-    // Request fullscreen first, then set up UI elements after transition
-    if (!document.fullscreenElement) {
-      Root.querySelector('#AmaiLyricsPage')
-        .requestFullscreen()
-        .then(() => {
-          // Set up UI controls after fullscreen transition completes
-          setupFullscreenUI();
-        })
-        .catch((err) => {
-          // If fullscreen fails, still set up UI (fallback)
-          setupFullscreenUI();
-          console.error('Fullscreen error:', err);
-          Spicetify.showNotification(`Fullscreen failed: ${err.message}`, true, 2000);
-        });
-    } else {
-      // Already in fullscreen, just set up UI
-      setupFullscreenUI();
-    }
+  TransferElement(page, document.body);
+  page.classList.add('Fullscreen');
+  publish();
 
-    // Function to set up UI elements after fullscreen transition
-    function setupFullscreenUI() {
-      if (!Fullscreen.IsOpen || !SpicyPage.isConnected) return;
-      // Ensure controls are properly added
-      PageView.AppendViewControls();
+  // Request fullscreen first, then set up UI elements after transition
+  if (!document.fullscreenElement) {
+    document
+      .querySelector<HTMLElement>(PAGE_SELECTOR)
+      .requestFullscreen()
+      .then(() => {
+        setupFullscreenUI();
+      })
+      .catch((err) => {
+        // If fullscreen fails, still set up UI (fallback)
+        setupFullscreenUI();
+        console.error('Fullscreen error:', err);
+        Spicetify.showNotification(`Fullscreen failed: ${err.message}`, true, 2000);
+      });
+  } else {
+    // Already in fullscreen, just set up UI
+    setupFullscreenUI();
+  }
 
-      // Open the now bar with playback controls
-      OpenNowBar();
+  // Function to set up UI elements after fullscreen transition
+  function setupFullscreenUI() {
+    if (!isPageFullscreen() || !page.isConnected) return;
+    // Ensure controls are properly added
+    PageView.AppendViewControls();
 
-      AutoScroll.reset();
+    // Open the now bar with playback controls
+    void OpenNowBar();
 
-      // Set up media box hover effects
-      const MediaBox = document.querySelector<HTMLElement>(
-        '#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox',
-      );
-      const MediaImage = document.querySelector<HTMLElement>(
-        '#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage',
-      );
+    AutoScroll.reset();
 
-      if (MediaBox && MediaImage) {
-        MediaBox_Data.Functions.Eventify(MediaImage);
+    // Set up media box hover effects
+    const { mediaBox, mediaImage } = mediaBoxParts();
+    if (mediaBox && mediaImage) {
+      MediaBox_Data.Functions.Eventify(mediaImage);
 
-        // Remove existing listeners first to prevent duplicates
-        MediaBox.removeEventListener('mouseenter', MediaBox_Data.Functions.MouseIn);
-        MediaBox.removeEventListener('mouseleave', MediaBox_Data.Functions.MouseOut);
+      // Remove existing listeners first to prevent duplicates
+      mediaBox.removeEventListener('mouseenter', MediaBox_Data.Functions.MouseIn);
+      mediaBox.removeEventListener('mouseleave', MediaBox_Data.Functions.MouseOut);
 
-        MediaBox.addEventListener('mouseenter', MediaBox_Data.Functions.MouseIn);
-        MediaBox.addEventListener('mouseleave', MediaBox_Data.Functions.MouseOut);
-      }
-
-      // Notify other components
-      Global.Event.evoke('fullscreen:open', null);
+      mediaBox.addEventListener('mouseenter', MediaBox_Data.Functions.MouseIn);
+      mediaBox.addEventListener('mouseleave', MediaBox_Data.Functions.MouseOut);
     }
   }
 }
 
-function Close() {
-  const SpicyPage = document.querySelector<HTMLElement>('#AmaiLyricsPage');
+function leave(): void {
+  // The browser's own exit (fullscreenchange) can arrive while our exit is in
+  // flight; that second entry would restore twice and notify twice.
+  if (leaving) return;
+  leaving = true;
+  const page = pageElement();
 
-  if (SpicyPage) {
-    // First exit browser fullscreen if active
-    if (document.fullscreenElement) {
-      document
-        .exitFullscreen()
-        .then(() => {
-          // Complete UI restoration after fullscreen exit
-          restoreUI();
-        })
-        .catch((err) => {
-          // If exiting fullscreen fails, still restore UI
-          console.error('Error exiting fullscreen:', err);
-          restoreUI();
-        });
-    } else {
-      // Not in browser fullscreen, just restore UI
-      restoreUI();
+  if (document.fullscreenElement) {
+    document
+      .exitFullscreen()
+      .then(() => {
+        restoreUI();
+      })
+      .catch((err) => {
+        // If exiting fullscreen fails, still restore UI
+        console.error('Error exiting fullscreen:', err);
+        restoreUI();
+      });
+  } else {
+    restoreUI();
+  }
+
+  // Function to restore UI after exiting fullscreen
+  function restoreUI() {
+    leaving = false;
+    // The page may have been destroyed while the exit was in flight: its node
+    // is then detached, and re-parenting a detached node would resurrect it.
+    // The mode still clears below — a reader must never see it stuck open.
+    if (page?.isConnected) {
+      TransferElement(page, PageRoot);
+      page.classList.remove('Fullscreen');
+    }
+    publish();
+
+    // Update controls for non-fullscreen mode
+    PageView.AppendViewControls();
+
+    // Handle no lyrics case: the LyricsSnapshot seam owns the sentinel
+    // rule (typed payload and legacy plain-string form alike). Ungated —
+    // restoreUI only ever runs against the live track.
+    if (isPublishedNoLyrics()) {
+      // Refresh an existing lifetime; never resurrect a destroyed page's NowBar.
+      void UpdateNowBar();
+      const lyricsContainer = document.querySelector(
+        '#AmaiLyricsPage .ContentBox .LyricsContainer',
+      );
+      if (lyricsContainer) {
+        lyricsContainer.classList.add('Hidden');
+      }
+      DeregisterNowBarBtn();
     }
 
-    // Function to restore UI after exiting fullscreen
-    function restoreUI() {
-      // Transfer element back to original container
-      TransferElement(SpicyPage, PageRoot);
-      SpicyPage.classList.remove('Fullscreen');
-      Fullscreen.IsOpen = false;
+    AutoScroll.reset();
 
-      // Update controls for non-fullscreen mode
-      PageView.AppendViewControls();
+    // Clean up media box event listeners
+    const { mediaBox, mediaImage } = mediaBoxParts();
+    if (mediaBox) {
+      mediaBox.removeEventListener('mouseenter', MediaBox_Data.Functions.MouseIn);
+      mediaBox.removeEventListener('mouseleave', MediaBox_Data.Functions.MouseOut);
+    }
 
-      // Handle no lyrics case: the LyricsSnapshot seam owns the sentinel
-      // rule (typed payload and legacy plain-string form alike). Ungated —
-      // restoreUI only ever runs against the live track.
-      if (isPublishedNoLyrics()) {
-        // Refresh an existing lifetime; never resurrect a destroyed page's NowBar.
-        void UpdateNowBar();
-        const lyricsContainer = document.querySelector(
-          '#AmaiLyricsPage .ContentBox .LyricsContainer',
-        );
-        if (lyricsContainer) {
-          lyricsContainer.classList.add('Hidden');
-        }
-        DeregisterNowBarBtn();
-      }
-
-      AutoScroll.reset();
-
-      // Clean up media box event listeners
-      const MediaBox = document.querySelector<HTMLElement>(
-        '#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox',
-      );
-      const MediaImage = document.querySelector<HTMLElement>(
-        '#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage',
-      );
-
-      if (MediaBox) {
-        MediaBox.removeEventListener('mouseenter', MediaBox_Data.Functions.MouseIn);
-        MediaBox.removeEventListener('mouseleave', MediaBox_Data.Functions.MouseOut);
-      }
-
-      if (MediaImage) {
-        MediaBox_Data.Functions.Reset(MediaImage);
-      }
-
-      // Notify other components
-      Global.Event.evoke('fullscreen:exit', null);
+    if (mediaImage) {
+      MediaBox_Data.Functions.Reset(mediaImage);
     }
   }
 }
 
-function Toggle() {
-  const SpicyPage = document.querySelector<HTMLElement>('#AmaiLyricsPage');
+function toggle(): void {
+  const page = pageElement();
 
-  if (SpicyPage) {
+  if (page) {
     // Prevent multiple rapid toggles by checking if a transition is in progress
-    if (SpicyPage.classList.contains('fullscreen-transition')) {
+    if (page.classList.contains('fullscreen-transition')) {
       return;
     }
 
     // Add transition class to prevent multiple toggles
-    SpicyPage.classList.add('fullscreen-transition');
+    page.classList.add('fullscreen-transition');
 
-    if (Fullscreen.IsOpen) {
-      Close();
+    if (isPageFullscreen()) {
+      leave();
     } else {
-      Open();
+      enter();
     }
 
     // Remove the transition class after a delay
     setTimeout(() => {
-      SpicyPage.classList.remove('fullscreen-transition');
+      page.classList.remove('fullscreen-transition');
     }, 1000); // 1 second should be enough for most transitions
   }
 }
 
-export default Fullscreen;
+export default { isPageFullscreen, subscribe, enter, leave, toggle };

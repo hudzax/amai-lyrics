@@ -3,7 +3,7 @@
  */
 
 import Defaults from '../../components/Global/Defaults';
-import { OpenNowBar, DeregisterNowBarBtn } from '../../components/Utils/NowBar';
+import { OpenNowBar, DeregisterNowBarBtn } from '../../components/NowBar/NowBar';
 import PageView from '../../components/Pages/PageView';
 import Fullscreen from '../../components/Utils/Fullscreen';
 import { showRefreshButton } from '../../components/Pages/pageButtons';
@@ -53,7 +53,7 @@ export function resetLyricsUI(): void {
     .querySelector('#AmaiLyricsPage .ContentBox .LyricsContainer')
     ?.classList.remove('Hidden');
 
-  if (!Fullscreen.IsOpen) PageView.AppendViewControls();
+  if (!Fullscreen.isPageFullscreen()) PageView.AppendViewControls();
 }
 
 export interface NoLyricsResult {

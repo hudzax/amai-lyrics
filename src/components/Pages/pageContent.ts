@@ -1,4 +1,4 @@
-import { UpdateNowBar } from '../Utils/NowBar';
+import { UpdateNowBar } from '../NowBar/NowBar';
 import fastdom from 'fastdom';
 import { Maid } from '@hudzax/web-modules/Maid';
 

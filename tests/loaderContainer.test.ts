@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 vi.mock('../src/components/Global/Defaults', () => ({
   default: { CurrentLyricsType: 'None' },
 }));
-vi.mock('../src/components/Utils/NowBar', () => ({
+vi.mock('../src/components/NowBar/NowBar', () => ({
   OpenNowBar: vi.fn(),
   DeregisterNowBarBtn: vi.fn(),
 }));
@@ -14,7 +14,13 @@ vi.mock('../src/components/Pages/PageView', () => ({
   default: { IsOpened: false, AppendViewControls: vi.fn() },
 }));
 vi.mock('../src/components/Utils/Fullscreen', () => ({
-  default: { IsOpen: false },
+  default: {
+    isPageFullscreen: () => false,
+    subscribe: vi.fn(),
+    enter: vi.fn(),
+    leave: vi.fn(),
+    toggle: vi.fn(),
+  },
 }));
 vi.mock('../src/components/Pages/pageButtons', () => ({
   showRefreshButton: vi.fn(),

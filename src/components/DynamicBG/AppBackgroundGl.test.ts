@@ -329,8 +329,8 @@ describe('AppBackground WebGL2 routing', () => {
     const root = document.querySelector('.Root')!;
     expect(root.querySelector(':scope > .amai-bg-gpu')).toBe(gl.element);
 
-    // Fullscreen.Open() transfers the page to <body> and tags it .Fullscreen;
-    // the fullscreen:open listener re-applies, and resolveAppBgHost now points
+    // FullscreenMode.enter() transfers the page to <body> and tags it .Fullscreen;
+    // the mode notification re-applies, and resolveAppBgHost now points
     // at the page — the canvas must move in with it (a .Root child would sit
     // behind the UA top layer, buried under Spotify's opaque UI).
     const page = document.createElement('div');
@@ -346,7 +346,7 @@ describe('AppBackground WebGL2 routing', () => {
     expect(root.classList.contains('amai-app-bg-host')).toBe(false);
     expect(root.classList.contains('sweet-dynamic-bg-in-this')).toBe(false);
 
-    // Exit: the fullscreen:exit listener re-applies with the class gone.
+    // Exit: the mode notification re-applies with the class gone.
     page.classList.remove('Fullscreen');
     bg.apply(COVER_A);
 

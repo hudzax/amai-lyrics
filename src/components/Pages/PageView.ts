@@ -6,7 +6,7 @@ import { clearApplyInfoTimeout } from '../../utils/Lyrics/Applyer/Info/ApplyInfo
 import ApplyDynamicBackground from '../DynamicBG/dynamicBackground';
 import Defaults from '../Global/Defaults';
 import { AutoScroll } from '../../utils/Scrolling/AutoScroll';
-import { InvalidateNowBar, Session_NowBar_SetSide, Session_OpenNowBar } from '../Utils/NowBar';
+import { InvalidateNowBar, Session_NowBar_SetSide, Session_OpenNowBar } from '../NowBar/NowBar';
 import Fullscreen from '../Utils/Fullscreen';
 
 import { mutateAsync } from '../../utils/fastdomAsync';
@@ -107,7 +107,7 @@ async function createPageElement() {
 async function DestroyPage() {
   InvalidateNowBar();
   if (!PageView.IsOpened) return;
-  if (Fullscreen.IsOpen) Fullscreen.Close();
+  if (Fullscreen.isPageFullscreen()) Fullscreen.leave();
   const amaiLyricsPage = document.querySelector<HTMLElement>(PageViewSelectors.AmaiLyricsPage);
   if (amaiLyricsPage) {
     // Await the removal before flipping LyricsContainerExists: otherwise the

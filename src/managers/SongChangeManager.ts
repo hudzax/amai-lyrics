@@ -51,7 +51,7 @@ export class SongChangeManager {
     // Update UI elements directly without waiting for track info
     if (Spicetify.Player.data.item?.type === 'track') {
       if (document.querySelector('#AmaiLyricsPage .ContentBox .NowBar')) {
-        const { UpdateNowBar } = await import('../components/Utils/NowBar');
+        const { UpdateNowBar } = await import('../components/NowBar/NowBar');
         UpdateNowBar();
       }
     }

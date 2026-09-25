@@ -184,6 +184,21 @@ reconstruction, dwell, one-bubble ownership, and teardown behind one seam.
 Callers should not coordinate suppression, replacement, or Tippy instances
 separately.
 
+## FullscreenMode
+
+Whether the lyrics page is presented fullscreen. Lives in
+src/components/Utils/Fullscreen.ts, which is also the only writer of the
+`.Fullscreen` class on `#AmaiLyricsPage` — the class is the mode, and it is
+deliberately not derived from `document.fullscreenElement`, because a refused
+`requestFullscreen()` keeps the same presentation (see AppBackground's host
+resolution). Callers cross it through `isPageFullscreen()` (synchronous, for
+render and teardown paths), `subscribe(cb)` (transition-only notifications),
+and the `enter`/`leave`/`toggle` requests — never by reading a flag, writing the
+class, or querying `document.fullscreenElement` themselves. The module owns the
+document listeners that notice the browser leaving fullscreen behind it, and
+`leave()` clears the mode and notifies even when the page node is already gone,
+so no reader can be left seeing a mode that is no longer presented.
+
 ## SettingsValues
 
 The single place that knows how a user setting is stored and what it means when

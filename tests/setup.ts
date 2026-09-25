@@ -102,3 +102,23 @@ if (typeof g.ResizeObserver === 'undefined') {
     disconnect() {}
   };
 }
+
+// jsdom implements no fullscreen API. The mode module re-reads
+// `document.fullscreenElement` (never `event.target`), so a writable pointer
+// plus resolving request/exit calls that dispatch the event is enough to drive
+// real transitions. Tests reset it with `(document as any).fullscreenElement = null`.
+Object.defineProperty(document, 'fullscreenElement', {
+  configurable: true,
+  writable: true,
+  value: null,
+});
+g.Element.prototype.requestFullscreen = function (this: Element) {
+  (document as unknown as { fullscreenElement: Element | null }).fullscreenElement = this;
+  document.dispatchEvent(new Event('fullscreenchange'));
+  return Promise.resolve();
+};
+document.exitFullscreen = function () {
+  (document as unknown as { fullscreenElement: Element | null }).fullscreenElement = null;
+  document.dispatchEvent(new Event('fullscreenchange'));
+  return Promise.resolve();
+};
