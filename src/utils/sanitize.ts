@@ -9,7 +9,7 @@
  *  - Escape the whole input first (so <script>, <img onerror=…>, etc.
  *    become harmless entities).
  *  - Then un-escape *only* the known-good ruby tokens produced by
- *    processPhoneticText / ApplyLineLyrics (which use predictable patterns).
+ *    processPhoneticText / renderLyrics (which use predictable patterns).
  *  - Finally build a DocumentFragment via <template> and return it, so
  *    callers never need to use innerHTML directly.
  */

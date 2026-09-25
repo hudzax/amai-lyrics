@@ -1,4 +1,3 @@
-import { ConvertTime } from '../../ConvertTime';
 import { LyricsObject } from '../../lyrics';
 import type { PaintedDot, PaintedLine } from '../../lyrics';
 
@@ -84,21 +83,9 @@ function buildMusicalLine(startMs: number, endMs: number, oppositeAligned?: bool
 }
 
 /**
- * Creates a .musical-line container, registers it, and appends the shimmer pill
- * (ambient dots only). Returns the element for fragment insertion.
- */
-export function createMusicalLine(opts: {
-  startTimeSec: number; // in seconds as received from API
-  endTimeSec: number;
-  oppositeAligned?: boolean;
-}): HTMLElement {
-  const { startTimeSec, endTimeSec, oppositeAligned } = opts;
-  return buildMusicalLine(ConvertTime(startTimeSec), ConvertTime(endTimeSec), oppositeAligned);
-}
-
-/**
- * Variant that takes already-converted ms times (for breaks computed from
- * ConvertTime values). Use when caller already has ms.
+ * Creates a .musical-line container, registers it in the painted-line list, and
+ * appends the shimmer pill (ambient dots only), from already-converted ms times.
+ * Returns the element for fragment insertion.
  */
 export function createMusicalLineMs(
   startMs: number,

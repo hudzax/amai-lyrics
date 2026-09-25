@@ -50,10 +50,7 @@ vi.mock('../src/utils/Gets/GetProgress', () => ({
   syncPlaybackPosition: vi.fn(),
 }));
 
-import {
-  createMusicalLine,
-  createMusicalLineMs,
-} from '../src/utils/Lyrics/Applyer/Utils/createMusicalLine';
+import { createMusicalLineMs } from '../src/utils/Lyrics/Applyer/Utils/createMusicalLine';
 import {
   LyricsObject,
   ClearLyricsContentArrays,
@@ -102,20 +99,5 @@ describe('createMusicalLineMs', () => {
   it('omits OppositeAligned by default', () => {
     const el = createMusicalLineMs(0, 1000);
     expect(el.classList.contains('OppositeAligned')).toBe(false);
-  });
-});
-
-describe('createMusicalLine', () => {
-  it('converts seconds to milliseconds', () => {
-    const el = createMusicalLine({ startTimeSec: 1, endTimeSec: 4 });
-    expect(el.classList.contains('musical-line')).toBe(true);
-    const lines = LyricsObject.Lines;
-    expect(lines[0].StartTime).toBe(1000);
-    expect(lines[0].EndTime).toBe(4000);
-  });
-
-  it('forwards the oppositeAligned flag', () => {
-    const el = createMusicalLine({ startTimeSec: 0, endTimeSec: 2, oppositeAligned: true });
-    expect(el.classList.contains('OppositeAligned')).toBe(true);
   });
 });

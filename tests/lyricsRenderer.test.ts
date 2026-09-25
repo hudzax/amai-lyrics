@@ -52,7 +52,6 @@ import {
   updateLyricTranslations,
   getPaintedLines,
 } from '../src/utils/Lyrics/LyricsRenderer';
-import { ApplyStaticLyrics } from '../src/utils/Lyrics/Applyer/Static';
 import {
   LyricsObject,
   ClearLyricsContentArrays,
@@ -134,12 +133,5 @@ describe('LyricsRenderer seam', () => {
     expect(after[1]).toBe(before[1]);
     expect(after[0].querySelector('.translation')?.textContent).toBe('translated first');
     expect(after[1].querySelector('.translation')).toBeNull();
-  });
-
-  it('keeps the Static adapter rendering through the seam', () => {
-    ApplyStaticLyrics({ type: 'Static', lines: [{ text: 'adapter line' }] });
-
-    expect(LyricsObject.Lines).toHaveLength(1);
-    expect(getPaintedLines()).toHaveLength(1);
   });
 });

@@ -73,11 +73,6 @@ vi.mock('../src/utils/API/Lyrics', () => ({
   getLyrics: vi.fn(),
 }));
 
-import { ApplyLineLyrics } from '../src/utils/Lyrics/Applyer/Synced/Line';
-import {
-  updateDisplayedLyricsWithTranslations,
-  applyScrollReanchor,
-} from '../src/utils/Lyrics/translationUpdater';
 import { TimeSetter } from '../src/utils/Lyrics/Animator/Lyrics/LyricsSetter';
 import {
   LyricsObject,
@@ -88,7 +83,11 @@ import {
 } from '../src/utils/Lyrics/lyrics';
 import { RecalculateScrollSimplebar } from '../src/utils/Scrolling/Simplebar/ScrollSimplebar';
 import { processAndEnhanceLyrics } from '../src/utils/Lyrics/processing';
-import { renderLyrics } from '../src/utils/Lyrics/LyricsRenderer';
+import {
+  renderLyrics,
+  updateLyricTranslations,
+  applyScrollReanchor,
+} from '../src/utils/Lyrics/LyricsRenderer';
 import { enhanceLyrics } from '../src/utils/Lyrics/ai';
 import { beginLyricsRequest } from '../src/utils/Lyrics/publish';
 import type { LyricsDocument } from '../src/utils/Lyrics/conversion';
@@ -137,7 +136,7 @@ afterAll(() => {
 describe('translation update keeps lyrics sync intact', () => {
   it('preserves line element identity, time maps and DOM structure after update', () => {
     const lyrics = lineLyrics();
-    ApplyLineLyrics(lyrics);
+    renderLyrics(lyrics);
     populateElementTimeMaps();
 
     const lines = LyricsObject.Lines;
@@ -150,7 +149,7 @@ describe('translation update keeps lyrics sync intact', () => {
     lyrics.lines[1].text = 'second 漢字{かんじ} line'; // forces a text rebuild
     lyrics.lines[2].translation = 'third line'; // non-distinct -> no node
 
-    updateDisplayedLyricsWithTranslations();
+    updateLyricTranslations();
 
     const after = document.querySelectorAll<HTMLElement>('.main-lyrics-text.line');
     expect(after).toHaveLength(3);
@@ -175,10 +174,10 @@ describe('translation update keeps lyrics sync intact', () => {
 
   it('skips the DOM rebuild for unchanged lines on subsequent updates', () => {
     const lyrics = lineLyrics();
-    ApplyLineLyrics(lyrics);
+    renderLyrics(lyrics);
 
     lyrics.lines[0].translation = 'translated first line';
-    updateDisplayedLyricsWithTranslations();
+    updateLyricTranslations();
 
     const elems = document.querySelectorAll<HTMLElement>('.main-lyrics-text.line');
     // Mark the current first child of every line
@@ -189,7 +188,7 @@ describe('translation update keeps lyrics sync intact', () => {
     });
 
     // Second identical update — every line is unchanged now
-    updateDisplayedLyricsWithTranslations();
+    updateLyricTranslations();
 
     const elems2 = document.querySelectorAll<HTMLElement>('.main-lyrics-text.line');
     elems2.forEach((el, i) => {
@@ -201,12 +200,12 @@ describe('translation update keeps lyrics sync intact', () => {
 
   it('keeps TimeSetter line statuses (highlight sync) after translation update', () => {
     const lyrics = lineLyrics();
-    ApplyLineLyrics(lyrics);
+    renderLyrics(lyrics);
 
     lyrics.lines.forEach((line) => {
       line.translation = 'T: ' + line.text;
     });
-    updateDisplayedLyricsWithTranslations();
+    updateLyricTranslations();
 
     TimeSetter(4000); // ms — inside line[1] (3500-6000)
     const lines = LyricsObject.Lines;
@@ -223,13 +222,13 @@ describe('translation update keeps lyrics sync intact', () => {
       type: 'Static',
       lines: [{ text: 'static line', raw: 'static line' }],
     };
-    ApplyLineLyrics(lyrics);
+    renderLyrics(lyrics);
 
     const span = document.querySelector<HTMLElement>('.line.static .main-lyrics-text');
     expect(span).not.toBeNull();
 
     lyrics.lines[0].translation = 'translated static line';
-    updateDisplayedLyricsWithTranslations();
+    updateLyricTranslations();
 
     expect(span!.querySelector('.translation')?.textContent).toBe('translated static line');
     expect(wrapper.scrollTop).toBe(42);
