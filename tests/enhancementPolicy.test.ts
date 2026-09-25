@@ -24,22 +24,21 @@ vi.mock('../src/utils/Lyrics/publish', () => ({
 import storage from '../src/utils/storage';
 import { isCurrentLyricsRequest } from '../src/utils/Lyrics/publish';
 import { enhanceLyrics, type EnhancementProviders } from '../src/utils/Lyrics/ai';
-import type { LyricsData } from '../src/utils/Lyrics/conversion';
+import type { LyricsDocument } from '../src/utils/Lyrics/conversion';
 
 const FETCH_ERROR_INFO =
   'Amai Lyrics: Fetch Error. Please double check your API key. Click here to open settings page.';
 const MISSING_KEY_INFO = 'Amai Lyrics: Gemini API Key missing. Click here to add your own API key.';
 
-function lineData(texts: string[]): LyricsData {
+function lineData(texts: string[]): LyricsDocument {
   return {
-    Type: 'Line',
-    Content: texts.map((Text, i) => ({ Text, StartTime: i, EndTime: i + 1 })),
-    Raw: [...texts],
-  } as unknown as LyricsData;
+    type: 'Line',
+    lines: texts.map((text, i) => ({ text, start: i, end: i + 1 })),
+  };
 }
 
-function staticData(texts: string[]): LyricsData {
-  return { Type: 'Static', Lines: texts.map((Text) => ({ Text })) } as unknown as LyricsData;
+function staticData(texts: string[]): LyricsDocument {
+  return { type: 'Static', lines: texts.map((text) => ({ text })) };
 }
 
 /** Fake providers; every slot records calls and resolves per-test values. */
@@ -87,8 +86,8 @@ describe('phonetic backend selection', () => {
     expect(result).not.toBeNull();
     expect(providers.fetchGeminiPhonetic).toHaveBeenCalledWith(['l1', 'l2'], 'ROMAJI-PROMPT');
     expect(providers.fetchAmaiPhonetic).not.toHaveBeenCalled();
-    expect(data.Type === 'Line' && data.Content?.[0].Text).toBe('r1');
-    expect(data.Info).toBeUndefined();
+    expect(data.lines[0].text).toBe('r1');
+    expect(data.info).toBeUndefined();
   });
 
   it('uses the furigana prompt when romaji is off', async () => {
@@ -152,8 +151,8 @@ describe('phonetic backend selection', () => {
     await enhanceLyrics(data, ['l1'], { hasKanji: true, hasKorean: false }, 1, providers);
 
     expect(providers.fetchAmaiPhonetic).toHaveBeenCalledWith(['l1'], 'ROMAJI-PROMPT');
-    expect(data.Type === 'Line' && data.Content?.[0].Text).toBe('a1');
-    expect(data.Info).toBeUndefined();
+    expect(data.lines[0].text).toBe('a1');
+    expect(data.info).toBeUndefined();
   });
 
   it('sets the fetch-error Info when Gemini throws and Amai yields nothing', async () => {
@@ -166,7 +165,7 @@ describe('phonetic backend selection', () => {
     const data = lineData(['l1']);
     await enhanceLyrics(data, ['l1'], { hasKanji: true, hasKorean: false }, 1, providers);
 
-    expect(data.Info).toBe(FETCH_ERROR_INFO);
+    expect(data.info).toBe(FETCH_ERROR_INFO);
   });
 
   it('applies malformed Gemini output as a no-op with no Amai fallback and no Info', async () => {
@@ -178,9 +177,9 @@ describe('phonetic backend selection', () => {
     const data = lineData(['l1']);
     await enhanceLyrics(data, ['l1'], { hasKanji: true, hasKorean: false }, 1, providers);
 
-    expect(data.Type === 'Line' && data.Content?.[0].Text).toBe('l1');
+    expect(data.lines[0].text).toBe('l1');
     expect(providers.fetchAmaiPhonetic).not.toHaveBeenCalled();
-    expect(data.Info).toBeUndefined();
+    expect(data.info).toBeUndefined();
   });
 
   it('tries Amai first without a key and never touches Gemini phonetics', async () => {
@@ -194,8 +193,8 @@ describe('phonetic backend selection', () => {
 
     expect(providers.fetchAmaiPhonetic).toHaveBeenCalled();
     expect(providers.fetchGeminiPhonetic).not.toHaveBeenCalled();
-    expect(data.Type === 'Line' && data.Content?.[0].Text).toBe('a1');
-    expect(data.Info).toBeUndefined();
+    expect(data.lines[0].text).toBe('a1');
+    expect(data.info).toBeUndefined();
   });
 
   it('sets the missing-key Info when keyless Amai yields nothing', async () => {
@@ -208,7 +207,7 @@ describe('phonetic backend selection', () => {
     await enhanceLyrics(data, ['l1'], { hasKanji: true, hasKorean: false }, 1, providers);
 
     expect(providers.fetchGeminiPhonetic).not.toHaveBeenCalled();
-    expect(data.Info).toBe(MISSING_KEY_INFO);
+    expect(data.info).toBe(MISSING_KEY_INFO);
   });
 });
 
@@ -229,7 +228,7 @@ describe('translation fallback chain', () => {
 
     expect(providers.fetchGeminiTranslations).not.toHaveBeenCalled();
     expect(providers.fetchAmaiTranslations).not.toHaveBeenCalled();
-    expect(data.Type === 'Line' && data.Content?.[0].Translation).toBe('');
+    expect(data.lines[0].translation).toBe('');
     expect(result).not.toBeNull();
   });
 
@@ -242,8 +241,8 @@ describe('translation fallback chain', () => {
     await enhanceLyrics(data, ['l1', 'l2'], { hasKanji: false, hasKorean: false }, 1, providers);
 
     expect(providers.fetchAmaiTranslations).not.toHaveBeenCalled();
-    expect(data.Type === 'Line' && data.Content?.[0].Translation).toBe('g1');
-    expect(data.Type === 'Line' && data.Content?.[1].Translation).toBe('');
+    expect(data.lines[0].translation).toBe('g1');
+    expect(data.lines[1].translation).toBe('');
   });
 
   it('falls back to Amai when Gemini translations are blank, then to Gemini last resort', async () => {
@@ -259,7 +258,7 @@ describe('translation fallback chain', () => {
 
     expect(providers.fetchAmaiTranslations).toHaveBeenCalledTimes(1);
     expect(providers.fetchGeminiTranslations).toHaveBeenCalledTimes(2);
-    expect(data.Type === 'Line' && data.Content?.[0].Translation).toBe('last');
+    expect(data.lines[0].translation).toBe('last');
   });
 
   it('builds the prompt from the configured language', async () => {
@@ -289,8 +288,8 @@ describe('translation fallback chain', () => {
     const data = lineData(['l1', 'l2']);
     await enhanceLyrics(data, ['l1', 'l2'], { hasKanji: false, hasKorean: false }, 1, providers);
 
-    expect(data.Type === 'Line' && data.Content?.[0].Translation).toBe('only-first');
-    expect(data.Type === 'Line' && data.Content?.[1].Translation).toBe('');
+    expect(data.lines[0].translation).toBe('only-first');
+    expect(data.lines[1].translation).toBe('');
   });
 
   it('attaches translations to static payloads', async () => {
@@ -301,8 +300,8 @@ describe('translation fallback chain', () => {
     const data = staticData(['a', 'b']);
     await enhanceLyrics(data, ['a', 'b'], { hasKanji: false, hasKorean: false }, 1, providers);
 
-    expect(data.Type === 'Static' && data.Lines?.[0].Translation).toBe('ta');
-    expect(data.Type === 'Static' && data.Lines?.[1].Translation).toBe('tb');
+    expect(data.lines[0].translation).toBe('ta');
+    expect(data.lines[1].translation).toBe('tb');
   });
 });
 

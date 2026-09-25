@@ -85,12 +85,13 @@ describe('createMusicalLineMs', () => {
     expect(dots[1].textContent).toBe('•');
     expect(dots[2].textContent).toBe('•');
 
-    const lines = LyricsObject.Types.Line.Lines;
+    const lines = LyricsObject.Lines;
     expect(lines).toHaveLength(1);
     expect(lines[0].StartTime).toBe(1000);
     expect(lines[0].EndTime).toBe(4000);
-    expect(lines[0].DotLine).toBe(true);
-    expect(lines[0].Syllables.Lead).toHaveLength(3);
+    // The musical-break marker is the presence of `dots` (was DotLine +
+    // Syllables.Lead).
+    expect(lines[0].dots).toHaveLength(3);
   });
 
   it('adds OppositeAligned when requested', () => {
@@ -108,7 +109,7 @@ describe('createMusicalLine', () => {
   it('converts seconds to milliseconds', () => {
     const el = createMusicalLine({ startTimeSec: 1, endTimeSec: 4 });
     expect(el.classList.contains('musical-line')).toBe(true);
-    const lines = LyricsObject.Types.Line.Lines;
+    const lines = LyricsObject.Lines;
     expect(lines[0].StartTime).toBe(1000);
     expect(lines[0].EndTime).toBe(4000);
   });

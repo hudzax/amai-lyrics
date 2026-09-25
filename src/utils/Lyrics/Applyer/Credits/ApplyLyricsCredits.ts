@@ -1,10 +1,10 @@
-export function ApplyLyricsCredits(data: { SongWriters?: string[] }) {
+export function ApplyLyricsCredits(data: { songWriters?: string[] }) {
   const LyricsContainer = document.querySelector('#AmaiLyricsPage .LyricsContainer .LyricsContent');
-  if (!data?.SongWriters) return;
+  if (!data?.songWriters) return;
   const CreditsElement = document.createElement('div');
   CreditsElement.classList.add('Credits');
 
-  const SongWriters = data.SongWriters.join(', ');
+  const SongWriters = data.songWriters.join(', ');
   CreditsElement.textContent = `Credits: ${SongWriters}`;
   LyricsContainer.appendChild(CreditsElement);
 }

@@ -28,10 +28,10 @@ import {
 } from './publish';
 import { parseTrackId } from './trackId';
 
-import { LyricsData } from './conversion';
+import { LyricsDocument } from './conversion';
 import { NoLyricsResult } from './ui';
 
-export type LyricsFetchResult = LyricsData | NoLyricsResult;
+export type LyricsFetchResult = LyricsDocument | NoLyricsResult;
 
 /**
  * Out-param reporting the request token `fetchLyrics` stamped. The pipeline

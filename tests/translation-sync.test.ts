@@ -87,13 +87,26 @@ import {
   destroyLyricsRenderLoop,
 } from '../src/utils/Lyrics/lyrics';
 import { RecalculateScrollSimplebar } from '../src/utils/Scrolling/Simplebar/ScrollSimplebar';
+import { processAndEnhanceLyrics } from '../src/utils/Lyrics/processing';
+import { renderLyrics } from '../src/utils/Lyrics/LyricsRenderer';
+import { enhanceLyrics } from '../src/utils/Lyrics/ai';
+import { beginLyricsRequest } from '../src/utils/Lyrics/publish';
+import type { LyricsDocument } from '../src/utils/Lyrics/conversion';
 
-const CONTENT = [
-  { Text: 'first line', StartTime: 1.0, EndTime: 3.0 },
-  { Text: 'second line', StartTime: 3.5, EndTime: 6.0 },
-  { Text: 'third line', StartTime: 7.0, EndTime: 9.0 },
-];
-const RAWS = ['first line', 'second line', 'third line'];
+/**
+ * A line-synced document in the shape `extractLyrics` leaves behind: seconds
+ * timings and `raw` holding the pre-enhancement text.
+ */
+function lineLyrics(): LyricsDocument {
+  return {
+    type: 'Line',
+    lines: [
+      { text: 'first line', raw: 'first line', start: 1.0, end: 3.0 },
+      { text: 'second line', raw: 'second line', start: 3.5, end: 6.0 },
+      { text: 'third line', raw: 'third line', start: 7.0, end: 9.0 },
+    ],
+  };
+}
 
 /** Makes scrollTop a plain writable own property — jsdom has no layout. */
 function stubScrollTop(el: HTMLElement, initial = 0): void {
@@ -123,20 +136,21 @@ afterAll(() => {
 
 describe('translation update keeps lyrics sync intact', () => {
   it('preserves line element identity, time maps and DOM structure after update', () => {
-    ApplyLineLyrics({ Content: CONTENT, StartTime: 0.5, Raw: RAWS } as never);
+    const lyrics = lineLyrics();
+    ApplyLineLyrics(lyrics);
     populateElementTimeMaps();
 
-    const lines = LyricsObject.Types.Line.Lines;
+    const lines = LyricsObject.Lines;
     expect(lines).toHaveLength(3);
     const before = document.querySelectorAll<HTMLElement>('.main-lyrics-text.line');
     expect(before).toHaveLength(3);
 
-    const enhanced = structuredClone({ Content: CONTENT, Raw: RAWS });
-    enhanced.Content[0].Translation = 'translated first line';
-    enhanced.Content[1].Text = 'second 漢字{かんじ} line'; // forces a text rebuild
-    enhanced.Content[2].Translation = enhanced.Raw[2]; // non-distinct -> no node
+    // Enhancement mutates the very line views the renderer registered.
+    lyrics.lines[0].translation = 'translated first line';
+    lyrics.lines[1].text = 'second 漢字{かんじ} line'; // forces a text rebuild
+    lyrics.lines[2].translation = 'third line'; // non-distinct -> no node
 
-    updateDisplayedLyricsWithTranslations({ Type: 'Line', Content: enhanced.Content, Raw: RAWS });
+    updateDisplayedLyricsWithTranslations();
 
     const after = document.querySelectorAll<HTMLElement>('.main-lyrics-text.line');
     expect(after).toHaveLength(3);
@@ -147,7 +161,7 @@ describe('translation update keeps lyrics sync intact', () => {
       expect(after[i].isConnected).toBe(true);
     }
     lines.forEach((line) => {
-      expect(lineElementToStartTimeMap.get(line.HTMLElement)).toBe(line.StartTime);
+      expect(lineElementToStartTimeMap.get(line.element)).toBe(line.StartTime);
     });
 
     // Translations landed on the correct lines
@@ -160,11 +174,11 @@ describe('translation update keeps lyrics sync intact', () => {
   });
 
   it('skips the DOM rebuild for unchanged lines on subsequent updates', () => {
-    ApplyLineLyrics({ Content: CONTENT, StartTime: 0.5, Raw: RAWS } as never);
+    const lyrics = lineLyrics();
+    ApplyLineLyrics(lyrics);
 
-    const enhanced = structuredClone({ Content: CONTENT, Raw: RAWS });
-    enhanced.Content[0].Translation = 'translated first line';
-    updateDisplayedLyricsWithTranslations({ Type: 'Line', Content: enhanced.Content, Raw: RAWS });
+    lyrics.lines[0].translation = 'translated first line';
+    updateDisplayedLyricsWithTranslations();
 
     const elems = document.querySelectorAll<HTMLElement>('.main-lyrics-text.line');
     // Mark the current first child of every line
@@ -175,7 +189,7 @@ describe('translation update keeps lyrics sync intact', () => {
     });
 
     // Second identical update — every line is unchanged now
-    updateDisplayedLyricsWithTranslations({ Type: 'Line', Content: enhanced.Content, Raw: RAWS });
+    updateDisplayedLyricsWithTranslations();
 
     const elems2 = document.querySelectorAll<HTMLElement>('.main-lyrics-text.line');
     elems2.forEach((el, i) => {
@@ -186,43 +200,94 @@ describe('translation update keeps lyrics sync intact', () => {
   });
 
   it('keeps TimeSetter line statuses (highlight sync) after translation update', () => {
-    ApplyLineLyrics({ Content: CONTENT, StartTime: 0.5, Raw: RAWS } as never);
+    const lyrics = lineLyrics();
+    ApplyLineLyrics(lyrics);
 
-    const enhanced = structuredClone({ Content: CONTENT, Raw: RAWS });
-    enhanced.Content.forEach((line: { Text: string; Translation: string }) => {
-      line.Translation = 'T: ' + line.Text;
+    lyrics.lines.forEach((line) => {
+      line.translation = 'T: ' + line.text;
     });
-    updateDisplayedLyricsWithTranslations({ Type: 'Line', Content: enhanced.Content, Raw: RAWS });
+    updateDisplayedLyricsWithTranslations();
 
     TimeSetter(4000); // ms — inside line[1] (3500-6000)
-    const lines = LyricsObject.Types.Line.Lines;
-    expect(lines[0].Status).toBe('Sung');
-    expect(lines[1].Status).toBe('Active');
-    expect(lines[2].Status).toBe('NotSung');
+    const lines = LyricsObject.Lines;
+    expect(lines[0].status).toBe('Sung');
+    expect(lines[1].status).toBe('Active');
+    expect(lines[2].status).toBe('NotSung');
   });
 
   it('falls back to raw scrollTop preservation for static lyrics', () => {
-    const container = document.querySelector<HTMLElement>(
-      '#AmaiLyricsPage .LyricsContainer .LyricsContent',
-    );
-    const lineElem = document.createElement('div');
-    lineElem.classList.add('line', 'static');
-    const span = document.createElement('span');
-    span.classList.add('main-lyrics-text');
-    span.textContent = 'static line';
-    lineElem.appendChild(span);
-    container!.appendChild(lineElem);
-
     const wrapper = document.querySelector<HTMLElement>('.simplebar-content-wrapper')!;
     stubScrollTop(wrapper, 42);
 
-    updateDisplayedLyricsWithTranslations({
-      Type: 'Static',
-      Lines: [{ Text: 'static line', Translation: 'translated static line' }],
-    } as never);
+    const lyrics: LyricsDocument = {
+      type: 'Static',
+      lines: [{ text: 'static line', raw: 'static line' }],
+    };
+    ApplyLineLyrics(lyrics);
 
-    expect(span.querySelector('.translation')?.textContent).toBe('translated static line');
+    const span = document.querySelector<HTMLElement>('.line.static .main-lyrics-text');
+    expect(span).not.toBeNull();
+
+    lyrics.lines[0].translation = 'translated static line';
+    updateDisplayedLyricsWithTranslations();
+
+    expect(span!.querySelector('.translation')?.textContent).toBe('translated static line');
     expect(wrapper.scrollTop).toBe(42);
+  });
+});
+
+describe('AI enhancement reaches the painted page', () => {
+  it('repaints the line objects the renderer registered, not a copy of them', async () => {
+    const uri = 'spotify:track:track1';
+    (
+      globalThis as unknown as { Spicetify: { Player: { data: { item: { uri: string } } } } }
+    ).Spicetify.Player.data.item.uri = uri;
+    const token = beginLyricsRequest(uri);
+
+    // The policy's contract: mutate `prepared` in place and return it.
+    vi.mocked(enhanceLyrics).mockImplementation(async (prepared) => {
+      prepared.lines[0]!.translation = 'translated first line';
+      prepared.lines[1]!.translation = 'translated second line';
+      return prepared;
+    });
+
+    const lyrics = await processAndEnhanceLyrics(
+      'track1',
+      {
+        id: 'track1',
+        Type: 'Line',
+        Content: [
+          {
+            Type: 'Line',
+            OppositeAligned: false,
+            Text: 'first line',
+            StartTime: 1.0,
+            EndTime: 3.0,
+          },
+          {
+            Type: 'Line',
+            OppositeAligned: false,
+            Text: 'second line',
+            StartTime: 3.5,
+            EndTime: 6.0,
+          },
+        ],
+      },
+      token,
+    );
+
+    renderLyrics(lyrics);
+    // The registry must hold the document's own line objects — if the pipeline
+    // hands enhancement a clone, the repaint below paints nothing.
+    expect(LyricsObject.Lines[0]!.view).toBe(lyrics.lines[0]);
+
+    // The enhancement is fire-and-forget; publication repaints on completion.
+    await vi.waitFor(() => {
+      const rows = document.querySelectorAll<HTMLElement>('.main-lyrics-text.line');
+      expect(rows[0]?.querySelector('.translation')?.textContent).toBe('translated first line');
+    });
+    const rows = document.querySelectorAll<HTMLElement>('.main-lyrics-text.line');
+    expect(rows[1]?.querySelector('.translation')?.textContent).toBe('translated second line');
   });
 });
 

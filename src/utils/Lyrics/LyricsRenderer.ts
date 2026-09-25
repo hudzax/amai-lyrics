@@ -1,27 +1,33 @@
 /**
  * LyricsRenderer — the single place that paints lyrics onto the page.
  *
- * Render (`renderLyrics`) owns the container lookup, clear, spacers, info and
- * credits, style application, `LyricsObject` registration, and the
+ * Render (`renderLyrics`) owns the container lookup, clear, spacers, row
+ * building, info and credits, style application, registry population, and the
  * `AutoScroll.mount` call. Update (`updateLyricTranslations`) owns the in-place
  * enhancement (phonetics + translations) with element-identity preservation,
  * scroll re-anchoring, and scrollbar recalculation.
  *
- * The Static and Line row builders used to duplicate the ~30-line preamble and
- * epilogue, and the translation updater wrote to the same live DOM through its
- * own state and its own scroll recalculation. They now live behind this seam:
- * callers cross `renderLyrics` / `updateLyricTranslations` (plus
- * `getLineRecords` for a uniform line view) — never the builders, the updater,
- * or the scroll container directly.
+ * Both take the document `processing` built, so nothing downstream of the
+ * pipeline branches on the payload kind except the two row builders — which
+ * differ for real reasons (timing, musical breaks, alignment on one side; the
+ * font-size tag on the other).
+ *
+ * Registered rows are the render path's unit: `LyricsObject.Lines` pairs each
+ * line view with the element the updater writes into, so the update path reads
+ * the registry it owns instead of re-selecting rows from the DOM.
  */
 
 import { BOTTOM_ApplyLyricsSpacer, TOP_ApplyLyricsSpacer } from '../Addons';
 import Defaults from '../../components/Global/Defaults';
 import { applyStyles, removeAllStyles } from '../CSS/Styles';
-import { ClearScrollSimplebar } from '../Scrolling/Simplebar/ScrollSimplebar';
+import {
+  ClearScrollSimplebar,
+  RecalculateScrollSimplebar,
+} from '../Scrolling/Simplebar/ScrollSimplebar';
 import { AutoScroll } from '../Scrolling/AutoScroll';
 import { ConvertTime } from './ConvertTime';
 import { ClearLyricsContentArrays, lyricsBetweenShow, LyricsObject } from './lyrics';
+import type { PaintedLine } from './lyrics';
 import { ApplyLyricsCredits } from './Applyer/Credits/ApplyLyricsCredits';
 import { ApplyInfo } from './Applyer/Info/ApplyInfo';
 import { createMusicalLineMs } from './Applyer/Utils/createMusicalLine';
@@ -29,60 +35,15 @@ import { createRubyFragment } from '../sanitize';
 import { decorateLineElement, processLinePhonetics } from './Applyer/Utils/decorateLine';
 import storage from '../storage';
 import { processPhoneticText } from './phoneticPatterns';
-import { RecalculateScrollSimplebar } from '../Scrolling/Simplebar/ScrollSimplebar';
-import type { LyricsData, LineBasedLyricItem, LyricsLine } from './conversion';
+import type { LyricsDocument } from './conversion';
 
 const LYRICS_CONTAINER_SELECTOR = '#AmaiLyricsPage .LyricsContainer .LyricsContent';
 const STYLING_CONTAINER_SELECTOR =
   '#AmaiLyricsPage .LyricsContainer .LyricsContent .simplebar-content';
-const LINE_ROW_SELECTOR = `${LYRICS_CONTAINER_SELECTOR} .main-lyrics-text.line`;
-const STATIC_ROW_SELECTOR = `${LYRICS_CONTAINER_SELECTOR} .line.static .main-lyrics-text`;
 
-/** Payload shape the render path accepts: the conversion union plus legacy display fields. */
-export interface RenderableLyricsData {
-  Type?: 'Line' | 'Static';
-  id?: string;
-  Content?: LineBasedLyricItem[];
-  Lines?: LyricsLine[];
-  StartTime?: number;
-  Raw?: string[];
-  Info?: string;
-  SongWriters?: string[];
-  styles?: Record<string, string>;
-  classes?: string;
-  offline?: boolean;
-}
-
-/**
- * One line on the page, whatever its source type. Line-synced rows carry
- * timings; static rows carry the element only. This makes the Static-vs-Line
- * element difference explicit instead of selector folklore downstream.
- */
-export interface LineRecord {
-  element: HTMLElement;
-  start?: number;
-  end?: number;
-}
-
-interface StoredLine {
-  HTMLElement?: HTMLElement;
-  StartTime?: number;
-  EndTime?: number;
-}
-
-/** Uniform view over the Line and Static registrations. */
-export function getLineRecords(): LineRecord[] {
-  const line = (LyricsObject.Types.Line.Lines as StoredLine[])
-    .filter((line) => line.HTMLElement)
-    .map((line) => ({
-      element: line.HTMLElement as HTMLElement,
-      start: line.StartTime,
-      end: line.EndTime,
-    }));
-  const stat = (LyricsObject.Types.Static.Lines as StoredLine[])
-    .filter((line) => line.HTMLElement)
-    .map((line) => ({ element: line.HTMLElement as HTMLElement }));
-  return [...line, ...stat];
+/** The painted lyric rows, musical-break rows excluded. */
+export function getPaintedLines(): PaintedLine[] {
+  return LyricsObject.Lines.filter((line) => !line.dots);
 }
 
 function resolveContainer(): HTMLElement | null {
@@ -96,76 +57,64 @@ function resolveContainer(): HTMLElement | null {
   return container;
 }
 
-function inferType(data: RenderableLyricsData): 'Line' | 'Static' {
-  if (data.Type === 'Line' || data.Type === 'Static') return data.Type;
-  // Legacy payloads without a discriminator: Content marks line-synced rows.
-  return Array.isArray(data.Content) ? 'Line' : 'Static';
-}
-
 /**
- * Mounts lyrics data onto the page. Owns container lookup, clear, spacers,
- * row building, info/credits, styling, registration, and scroll mount.
+ * Mounts a lyrics document onto the page. Owns container lookup, clear,
+ * spacers, row building, info/credits, styling, registry population, and
+ * scroll mount.
  */
-export function renderLyrics(data: RenderableLyricsData): void {
+export function renderLyrics(lyrics: LyricsDocument): void {
   const container = resolveContainer();
   if (!container) return;
 
-  const type = inferType(data);
-  container.setAttribute('data-lyrics-type', type);
+  container.setAttribute('data-lyrics-type', lyrics.type);
 
   // Clear previous content
   ClearLyricsContentArrays();
   ClearScrollSimplebar();
   TOP_ApplyLyricsSpacer(container);
 
-  if (type === 'Line') {
-    renderLineRows(container, data);
+  if (lyrics.type === 'Line') {
+    renderLineRows(container, lyrics);
   } else {
-    renderStaticRows(container, data);
+    renderStaticRows(container, lyrics);
   }
 
-  finishRender(container, data);
+  finishRender(container, lyrics);
 }
 
-function renderLineRows(container: HTMLElement, data: RenderableLyricsData): void {
-  const content = data.Content ?? [];
+function renderLineRows(container: HTMLElement, lyrics: LyricsDocument): void {
   const fragment = document.createDocumentFragment();
-  const convertStartTime = ConvertTime(data.StartTime ?? 0);
 
-  // Add initial dot group if there's a sufficient gap before the first line
-  if ((data.StartTime ?? 0) >= lyricsBetweenShow) {
-    const musicalLine = createMusicalLineMs(0, convertStartTime, !!content[0]?.OppositeAligned);
-    fragment.appendChild(musicalLine);
-  }
-
-  content.forEach((line, index, arr) => {
+  lyrics.lines.forEach((line, index, arr) => {
     const lineElem = document.createElement('div');
 
-    processLinePhonetics(line, data);
+    processLinePhonetics(line, lyrics);
 
     // Create main text container — use sanitized ruby fragment to prevent XSS
     const mainTextContainer = document.createElement('span');
     mainTextContainer.classList.add('main-lyrics-text');
     mainTextContainer.classList.add('line');
-    mainTextContainer.appendChild(createRubyFragment(line.Text));
+    mainTextContainer.appendChild(createRubyFragment(line.text));
     lineElem.appendChild(mainTextContainer);
 
-    decorateLineElement(lineElem, mainTextContainer, line, data.Raw?.[index]);
+    decorateLineElement(lineElem, mainTextContainer, line, line.raw);
 
     // Convert times to milliseconds
-    const startTime = ConvertTime(line.StartTime);
-    const endTime = ConvertTime(line.EndTime);
+    const startMs = ConvertTime(line.start ?? 0);
+    const endMs = ConvertTime(line.end ?? 0);
 
-    // Register the span: the animator and click-to-seek maps hold it by identity
-    LyricsObject.Types.Line.Lines.push({
-      HTMLElement: mainTextContainer,
-      StartTime: startTime,
-      EndTime: endTime,
-      TotalTime: endTime - startTime,
+    // Register the row: the setter, the animator and the click-to-seek map
+    // hold it by identity
+    LyricsObject.Lines.push({
+      view: line,
+      element: mainTextContainer,
+      rawText: line.raw,
+      StartTime: startMs,
+      EndTime: endMs,
     });
 
     // Handle alignment
-    if (line.OppositeAligned) {
+    if (line.oppositeAligned) {
       lineElem.classList.add('OppositeAligned');
     }
 
@@ -173,15 +122,13 @@ function renderLineRows(container: HTMLElement, data: RenderableLyricsData): voi
 
     // Check for musical break between this line and the next one
     const nextLine = arr[index + 1];
-    const hasMusicalBreak = nextLine && nextLine.StartTime - line.EndTime >= lyricsBetweenShow;
+    const hasMusicalBreak =
+      nextLine && (nextLine.start ?? 0) - (line.end ?? 0) >= lyricsBetweenShow;
 
     if (hasMusicalBreak) {
-      const musicalLine = createMusicalLineMs(
-        endTime,
-        ConvertTime(nextLine.StartTime),
-        !!nextLine.OppositeAligned,
+      fragment.appendChild(
+        createMusicalLineMs(endMs, ConvertTime(nextLine.start ?? 0), !!nextLine.oppositeAligned),
       );
-      fragment.appendChild(musicalLine);
     }
   });
 
@@ -189,35 +136,38 @@ function renderLineRows(container: HTMLElement, data: RenderableLyricsData): voi
   container.appendChild(fragment);
 }
 
-function renderStaticRows(container: HTMLElement, data: RenderableLyricsData): void {
-  const lines = data.Lines ?? [];
+function renderStaticRows(container: HTMLElement, lyrics: LyricsDocument): void {
   const fragment = document.createDocumentFragment();
 
-  lines.forEach((line, index) => {
+  lyrics.lines.forEach((line) => {
     const lineElem = document.createElement('div');
 
-    processLinePhonetics(line, data);
+    processLinePhonetics(line, lyrics);
 
     const mainTextContainer = document.createElement('span');
     mainTextContainer.classList.add('main-lyrics-text');
 
-    if (line.Text?.includes('[DEF=font_size:small]')) {
+    if (line.text.includes('[DEF=font_size:small]')) {
       lineElem.style.fontSize = '35px';
       mainTextContainer.appendChild(
-        createRubyFragment(line.Text.replace('[DEF=font_size:small]', '')),
+        createRubyFragment(line.text.replace('[DEF=font_size:small]', '')),
       );
     } else {
-      mainTextContainer.appendChild(createRubyFragment(line.Text));
+      mainTextContainer.appendChild(createRubyFragment(line.text));
     }
 
     lineElem.appendChild(mainTextContainer);
 
-    decorateLineElement(lineElem, mainTextContainer, line, data.Raw?.[index]);
+    decorateLineElement(lineElem, mainTextContainer, line, line.raw);
 
     lineElem.classList.add('line', 'static');
 
-    LyricsObject.Types.Static.Lines.push({
-      HTMLElement: lineElem,
+    // The span is the row, for both payload kinds: it is what the updater
+    // writes into and what the click-to-seek hit test looks for.
+    LyricsObject.Lines.push({
+      view: line,
+      element: mainTextContainer,
+      rawText: line.raw,
     });
 
     fragment.appendChild(lineElem);
@@ -226,10 +176,10 @@ function renderStaticRows(container: HTMLElement, data: RenderableLyricsData): v
   container.appendChild(fragment);
 }
 
-function finishRender(container: HTMLElement, data: RenderableLyricsData): void {
+function finishRender(container: HTMLElement, lyrics: LyricsDocument): void {
   // Apply additional information and credits
-  ApplyInfo(data);
-  ApplyLyricsCredits(data);
+  ApplyInfo(lyrics);
+  ApplyLyricsCredits(lyrics);
   BOTTOM_ApplyLyricsSpacer(container);
 
   // One scroll seam owns mount-vs-recalculate behind a single call.
@@ -239,7 +189,7 @@ function finishRender(container: HTMLElement, data: RenderableLyricsData): void 
   const stylingContainer = document.querySelector<HTMLElement>(STYLING_CONTAINER_SELECTOR);
   if (!stylingContainer) return;
 
-  if (data.offline) {
+  if (lyrics.offline) {
     stylingContainer.classList.add('offline');
   }
 
@@ -247,13 +197,13 @@ function finishRender(container: HTMLElement, data: RenderableLyricsData): void 
   removeAllStyles(stylingContainer);
 
   // Apply custom classes if provided
-  if (data.classes) {
-    stylingContainer.className = data.classes;
+  if (lyrics.classes) {
+    stylingContainer.className = lyrics.classes;
   }
 
   // Apply custom styles if provided
-  if (data.styles) {
-    applyStyles(stylingContainer, data.styles);
+  if (lyrics.styles) {
+    applyStyles(stylingContainer, lyrics.styles);
   }
 }
 
@@ -286,8 +236,12 @@ export function applyScrollReanchor(
 /**
  * Updates the currently displayed lyrics with translations and phonetics.
  * Preserves element identity, scroll position and animation state.
+ *
+ * Reads the registered rows rather than being handed a payload: enhancement
+ * mutates the same line views the renderer registered, so there is nothing for
+ * a caller to pass across.
  */
-export function updateLyricTranslations(lyricsData: LyricsData): void {
+export function updateLyricTranslations(): void {
   try {
     if (!Defaults.LyricsContainerExists) return;
 
@@ -305,19 +259,23 @@ export function updateLyricTranslations(lyricsData: LyricsData): void {
     // Capture the currently sung line so the scroll can be re-anchored on it
     // after the update (translation nodes change every line's height).
     const activeLine =
-      (LyricsObject.Types.Line.Lines as { Status?: string; HTMLElement?: HTMLElement }[]).find(
-        (line) => line.Status === 'Active' && line.HTMLElement?.isConnected,
-      )?.HTMLElement ?? lyricsContainer.querySelector<HTMLElement>('.main-lyrics-text.line.Active');
+      LyricsObject.Lines.find((line) => line.status === 'Active' && line.element.isConnected)
+        ?.element ?? lyricsContainer.querySelector<HTMLElement>('.main-lyrics-text.line.Active');
     const activeLineTopBefore = activeLine ? activeLine.getBoundingClientRect().top : null;
 
     // Get romaji setting
     const enableRomaji = storage.get('enable_romaji') === 'true';
 
-    // Update phonetics and translations based on lyrics type
-    if (lyricsData.Type === 'Line' && lyricsData.Content) {
-      updateLineLyricsTranslations(lyricsData.Content, enableRomaji, lyricsData.Raw);
-    } else if (lyricsData.Type === 'Static' && lyricsData.Lines) {
-      updateStaticLyricsTranslations(lyricsData.Lines, enableRomaji, lyricsData.Raw);
+    for (const painted of LyricsObject.Lines) {
+      // Musical-break rows carry no lyric text to translate.
+      if (painted.dots) continue;
+      updateLineElement(
+        painted.element,
+        painted.view.text,
+        painted.view.translation,
+        enableRomaji,
+        painted.rawText,
+      );
     }
 
     // Re-anchor scroll on the active line (or fall back to raw preservation)
@@ -395,48 +353,4 @@ function updateLineElement(
   }
 
   appliedLineState.set(lineElement, { text: processedText, translation: appliedTranslation });
-}
-
-/**
- * Updates line-synced lyrics with phonetics and translations.
- */
-function updateLineLyricsTranslations(
-  content: LineBasedLyricItem[],
-  enableRomaji: boolean,
-  rawLyrics?: string[],
-): void {
-  const lineElements = document.querySelectorAll(LINE_ROW_SELECTOR);
-
-  content.forEach((line, index) => {
-    if (index >= lineElements.length) return;
-    updateLineElement(
-      lineElements[index] as HTMLElement,
-      line.Text,
-      line.Translation,
-      enableRomaji,
-      rawLyrics?.[index],
-    );
-  });
-}
-
-/**
- * Updates static lyrics with phonetics and translations.
- */
-function updateStaticLyricsTranslations(
-  lines: LyricsLine[],
-  enableRomaji: boolean,
-  rawLyrics?: string[],
-): void {
-  const lineElements = document.querySelectorAll(STATIC_ROW_SELECTOR);
-
-  lines.forEach((line, index) => {
-    if (index >= lineElements.length) return;
-    updateLineElement(
-      lineElements[index] as HTMLElement,
-      line.Text,
-      line.Translation,
-      enableRomaji,
-      rawLyrics?.[index],
-    );
-  });
 }

@@ -9,10 +9,11 @@
  */
 
 import { SpikyCache } from '@hudzax/web-modules/SpikyCache';
-import type { LyricsData } from './conversion';
+import { stampDocument, toDocument } from './conversion';
+import type { LyricsDocument } from './conversion';
 import type { NoLyricsResult } from './ui';
 
-type CachedLyricsData = LyricsData & {
+type CachedLyricsData = LyricsDocument & {
   expiresAt: number;
 };
 
@@ -48,15 +49,15 @@ function trackLyricsCacheKey(trackId: string): void {
  * Caches processed lyrics for future use
  *
  * @param trackId - Spotify track ID
- * @param lyricsJson - Processed lyrics data
+ * @param document - Processed lyrics document
  */
-export async function cacheLyrics(trackId: string, lyricsJson: LyricsData): Promise<void> {
+export async function cacheLyrics(trackId: string, document: LyricsDocument): Promise<void> {
   if (!lyricsCache) return;
 
   const expiresAt = new Date().getTime() + CACHE_EXPIRATION_TIME;
   try {
     await lyricsCache.set(trackId, {
-      ...lyricsJson,
+      ...stampDocument(document),
       expiresAt,
     });
     trackLyricsCacheKey(trackId);
@@ -89,7 +90,15 @@ export async function getLyricsFromCache(
       return { status: 'NO_LYRICS', id: trackId };
     }
 
-    return { ...lyricsFromCache, fromCache: true };
+    const document = toDocument(lyricsFromCache);
+    if (!document) {
+      // Written by an older format version: evict and re-fetch rather than
+      // hand the pipeline a document its reader cannot decode.
+      await lyricsCache.remove(trackId);
+      return null;
+    }
+
+    return { ...document, expiresAt: lyricsFromCache.expiresAt, fromCache: true };
   } catch (error) {
     // A corrupt entry is a miss, not "no lyrics": let the caller fall through
     // to the API instead of pinning the page to an empty state.

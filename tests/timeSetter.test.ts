@@ -56,18 +56,24 @@ import {
   ClearLyricsContentArrays,
   destroyLyricsRenderLoop,
 } from '../src/utils/Lyrics/lyrics';
+import type { PaintedDot, PaintedLine } from '../src/utils/Lyrics/lyrics';
 import {
   TimeSetter,
   getActiveLineIndex,
   resetLyricsSetterCache,
 } from '../src/utils/Lyrics/Animator/Lyrics/LyricsSetter';
 
+function makeLine(startMs: number, endMs: number): PaintedLine {
+  return {
+    view: { text: '', start: startMs / 1000, end: endMs / 1000 },
+    element: document.createElement('span'),
+    StartTime: startMs,
+    EndTime: endMs,
+  };
+}
+
 function seedLines(): void {
-  LyricsObject.Types.Line.Lines.push(
-    { StartTime: 0, EndTime: 2000 } as never,
-    { StartTime: 3000, EndTime: 5000 } as never,
-    { StartTime: 6000, EndTime: 8000 } as never,
-  );
+  LyricsObject.Lines.push(makeLine(0, 2000), makeLine(3000, 5000), makeLine(6000, 8000));
 }
 
 beforeEach(() => {
@@ -84,29 +90,21 @@ describe('TimeSetter', () => {
   it('marks Sung/Active/NotSung around the current position', () => {
     seedLines();
     TimeSetter(4000);
-    const lines = LyricsObject.Types.Line.Lines as { Status: string }[];
-    expect(lines[0].Status).toBe('Sung');
-    expect(lines[1].Status).toBe('Active');
-    expect(lines[2].Status).toBe('NotSung');
+    const lines = LyricsObject.Lines;
+    expect(lines[0].status).toBe('Sung');
+    expect(lines[1].status).toBe('Active');
+    expect(lines[2].status).toBe('NotSung');
     expect(getActiveLineIndex()).toBe(1);
   });
 
   it('marks all NotSung before the first line and all Sung after the last', () => {
     seedLines();
     TimeSetter(-500);
-    expect(LyricsObject.Types.Line.Lines.map((l) => (l as { Status: string }).Status)).toEqual([
-      'NotSung',
-      'NotSung',
-      'NotSung',
-    ]);
+    expect(LyricsObject.Lines.map((l) => l.status)).toEqual(['NotSung', 'NotSung', 'NotSung']);
     expect(getActiveLineIndex()).toBe(-1);
 
     TimeSetter(9000);
-    expect(LyricsObject.Types.Line.Lines.map((l) => (l as { Status: string }).Status)).toEqual([
-      'Sung',
-      'Sung',
-      'Sung',
-    ]);
+    expect(LyricsObject.Lines.map((l) => l.status)).toEqual(['Sung', 'Sung', 'Sung']);
   });
 
   it('updates statuses when seeking backwards', () => {
@@ -114,10 +112,10 @@ describe('TimeSetter', () => {
     TimeSetter(7000);
     expect(getActiveLineIndex()).toBe(2);
     TimeSetter(1000);
-    const lines = LyricsObject.Types.Line.Lines as { Status: string }[];
-    expect(lines[0].Status).toBe('Active');
-    expect(lines[1].Status).toBe('NotSung');
-    expect(lines[2].Status).toBe('NotSung');
+    const lines = LyricsObject.Lines;
+    expect(lines[0].status).toBe('Active');
+    expect(lines[1].status).toBe('NotSung');
+    expect(lines[2].status).toBe('NotSung');
     expect(getActiveLineIndex()).toBe(0);
   });
 
@@ -125,30 +123,26 @@ describe('TimeSetter', () => {
     seedLines();
     (Defaults as { CurrentLyricsType: string }).CurrentLyricsType = 'None';
     TimeSetter(4000);
-    expect(LyricsObject.Types.Line.Lines[0]).not.toHaveProperty('Status');
+    expect(LyricsObject.Lines[0]).not.toHaveProperty('status');
     expect(getActiveLineIndex()).toBe(-1);
   });
 
-  it('updates dot-line syllable statuses for the active line', () => {
-    LyricsObject.Types.Line.Lines.push({
+  it('updates musical-break dot statuses for the active line', () => {
+    const dots: PaintedDot[] = [
+      { element: document.createElement('span'), StartTime: 0, EndTime: 2000 },
+      { element: document.createElement('span'), StartTime: 2000, EndTime: 5000 },
+    ];
+    LyricsObject.Lines.push({
+      view: { text: '', start: 0, end: 5 },
+      element: document.createElement('span'),
       StartTime: 0,
       EndTime: 5000,
-      DotLine: true,
-      Syllables: {
-        Lead: [
-          { StartTime: 0, EndTime: 2000 },
-          { StartTime: 2000, EndTime: 5000 },
-        ],
-      },
-    } as never);
+      dots,
+    });
     TimeSetter(3000);
-    const lead = (
-      LyricsObject.Types.Line.Lines[0] as unknown as {
-        Syllables: { Lead: { Status: string }[] };
-      }
-    ).Syllables.Lead;
-    expect(lead[0].Status).toBe('Sung');
-    expect(lead[1].Status).toBe('Active');
+    const registeredDots = LyricsObject.Lines[0].dots;
+    expect(registeredDots?.[0].status).toBe('Sung');
+    expect(registeredDots?.[1].status).toBe('Active');
   });
 
   it('resetLyricsSetterCache clears the active index', () => {

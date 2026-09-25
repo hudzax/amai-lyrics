@@ -1,14 +1,19 @@
 /**
  * LyricsSnapshot — the single owner of the published-lyrics snapshot
- * (`currentLyricsData`): its serialized format, the legacy plain-string
- * `NO_LYRICS:<id>` form, the sentinel rule, the track gate, the seconds→ms
- * scaling, and the Syllable→Line shape.
+ * (`currentLyricsData`): its serialized format, the document version stamp,
+ * the legacy plain-string `NO_LYRICS:<id>` form, the sentinel rule, the track
+ * gate, and the seconds→ms scaling.
  *
  * Before this module the snapshot was a wire blob written in four places and
  * hand-parsed in three readers (the pipeline's storage read, the playbar
  * overlay, and the fullscreen exit path), each re-deriving the sentinel rule,
  * the legacy fallback, and the units independently. Every read and write of
  * the key now crosses this module.
+ *
+ * The stored shape is the `LyricsDocument` that `processing` builds, stamped
+ * with `LYRICS_DOCUMENT_VERSION`. An entry written by an older format decodes
+ * to null — a miss, so the track re-fetches, rather than a payload that renders
+ * blank because the current code cannot read it.
  *
  * Leaf module by design (storage, conversion, Event, and type-only imports):
  * the fetch pipeline, the publish seam, and UI consumers all import it
@@ -24,8 +29,8 @@
 
 import storage from '../storage';
 import Event from '../EventManager';
-import { convertLyrics } from './conversion';
-import type { LyricsData } from './conversion';
+import { stampDocument, toDocument } from './conversion';
+import type { LyricsDocument } from './conversion';
 import type { NoLyricsResult } from './ui';
 import type { TimedLine } from './findActiveIndex';
 
@@ -38,35 +43,21 @@ export interface SnapshotTimedLine extends TimedLine {
 
 /** Result of decoding the stored payload — the sentinel rule lives right here. */
 type ParsedSnapshot =
-  { kind: 'lyrics'; data: LyricsData } | { kind: 'noLyrics'; id?: string } | null;
+  { kind: 'lyrics'; document: LyricsDocument } | { kind: 'noLyrics'; id?: string } | null;
 
 interface RawSnapshotPayload {
   id?: string;
   status?: string;
-  Type?: string;
-  Content?: unknown;
 }
 
-interface RawTimedItem {
-  StartTime?: number | null;
-  EndTime?: number | null;
-  Text?: string;
-}
-
-function isNoLyricsSentinel(value: LyricsData | NoLyricsResult): value is NoLyricsResult {
+function isNoLyricsSentinel(value: LyricsDocument | NoLyricsResult): value is NoLyricsResult {
   return (value as NoLyricsResult).status === 'NO_LYRICS';
 }
 
 function parseSnapshotPayload(raw: string): ParsedSnapshot {
+  let parsed: unknown;
   try {
-    const parsed = JSON.parse(raw) as RawSnapshotPayload;
-    if (parsed?.status === 'NO_LYRICS') {
-      return { kind: 'noLyrics', id: parsed.id || undefined };
-    }
-    if (parsed?.id) {
-      return { kind: 'lyrics', data: parsed as unknown as LyricsData };
-    }
-    return null;
+    parsed = JSON.parse(raw);
   } catch {
     // Fallback for legacy plain-string payloads (old `NO_LYRICS:<id>` format).
     if (raw.includes('NO_LYRICS')) {
@@ -75,6 +66,14 @@ function parseSnapshotPayload(raw: string): ParsedSnapshot {
     }
     return null;
   }
+
+  const payload = parsed as RawSnapshotPayload | null;
+  if (payload?.status === 'NO_LYRICS') {
+    return { kind: 'noLyrics', id: payload.id || undefined };
+  }
+
+  const document = toDocument(parsed);
+  return document ? { kind: 'lyrics', document } : null;
 }
 
 // Parse memo keyed on the raw string's content: a hot-path tick is one
@@ -116,8 +115,8 @@ export function invalidateSnapshotCache(): void {
  * publisher can carry it on the `lyrics:data-updated` notification — the
  * evoke itself stays with the publisher, whose currency check guards it.
  */
-export function writeSnapshot(data: LyricsData | NoLyricsResult): string {
-  const serialized = JSON.stringify(data);
+export function writeSnapshot(value: LyricsDocument | NoLyricsResult): string {
+  const serialized = JSON.stringify(isNoLyricsSentinel(value) ? value : stampDocument(value));
   storage.set(SNAPSHOT_KEY, serialized);
   invalidateSnapshotCache();
   return serialized;
@@ -140,12 +139,13 @@ export function clearSnapshot(): void {
 // ==============================
 
 /**
- * Reads the snapshot as the pipeline sees it: the typed payload when it is
- * for `trackId`, the sentinel when one is published for this track (or its
- * id was unrecoverable from a legacy payload), and null on any miss —
- * including stale payloads for another track and unparseable content.
+ * Reads the snapshot as the pipeline sees it: the document when it is for
+ * `trackId`, the sentinel when one is published for this track (or its id was
+ * unrecoverable from a legacy payload), and null on any miss — including stale
+ * documents for another track, unparseable content, and entries written by an
+ * older format version.
  */
-export function readSnapshot(trackId: string): LyricsData | NoLyricsResult | null {
+export function readSnapshot(trackId: string): LyricsDocument | NoLyricsResult | null {
   const parsed = readParsed();
   if (!parsed) return null;
   if (parsed.kind === 'noLyrics') {
@@ -154,7 +154,7 @@ export function readSnapshot(trackId: string): LyricsData | NoLyricsResult | nul
     }
     return null;
   }
-  return parsed.data.id === trackId ? parsed.data : null;
+  return parsed.document.id === trackId ? parsed.document : null;
 }
 
 /**
@@ -167,38 +167,23 @@ export function isPublishedNoLyrics(): boolean {
 }
 
 /**
- * Timed lines for `trackId` in render-path units (ms), Syllable payloads
- * normalized to lines. Null for a missing/stale/sentinel snapshot, Static
- * lyrics (no timing information), and snapshots with no usable lines.
+ * Timed lines for `trackId` in render-path units (ms). Null for a
+ * missing/stale/sentinel snapshot, for a document whose lines carry no timing
+ * (Static lyrics), and for documents with no usable lines.
  */
 export function publishedTimedLines(trackId: string): SnapshotTimedLine[] | null {
   const snapshot = readSnapshot(trackId);
   if (!snapshot || isNoLyricsSentinel(snapshot)) return null;
 
-  // Dispatch on the raw payload view, not the typed union: legacy snapshots
-  // can carry Type 'Syllable' even though the current model is Line | Static.
-  const payload = snapshot as RawSnapshotPayload;
-  if (!Array.isArray(payload.Content)) return null;
-
-  let items: RawTimedItem[];
-  if (payload.Type === 'Line') {
-    items = payload.Content as RawTimedItem[];
-  } else if (payload.Type === 'Syllable') {
-    items = convertLyrics(payload.Content as unknown as Parameters<typeof convertLyrics>[0]);
-  } else {
-    // Static lyrics have no timing information
-    return null;
-  }
-
   const lines: SnapshotTimedLine[] = [];
-  for (const item of items) {
-    if (item.StartTime == null || item.EndTime == null) continue;
-    const text = (item.Text || '').trim();
+  for (const line of snapshot.lines) {
+    if (typeof line.start !== 'number' || typeof line.end !== 'number') continue;
+    const text = line.text.trim();
     if (!text) continue;
     lines.push({
       text,
-      StartTime: item.StartTime * 1000,
-      EndTime: item.EndTime * 1000,
+      StartTime: line.start * 1000,
+      EndTime: line.end * 1000,
     });
   }
   return lines.length ? lines : null;

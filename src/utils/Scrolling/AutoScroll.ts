@@ -1,7 +1,9 @@
 import Defaults from '../../components/Global/Defaults';
 import { getPositionFor, resolveIsPlaying } from '../Gets/GetProgress';
 import { LyricsObject } from '../Lyrics/lyrics';
+import type { TimedPaintedLine } from '../Lyrics/lyrics';
 import { findActiveIndex } from '../Lyrics/findActiveIndex';
+import type { TimedLine } from '../Lyrics/findActiveIndex';
 import { scrollIntoCenterView } from '../ScrollIntoView';
 import {
   ClearScrollSimplebar,
@@ -10,13 +12,13 @@ import {
   ScrollSimplebar,
 } from './Simplebar/ScrollSimplebar';
 
-export interface AutoScrollLine {
-  // Optional because registrations are typed that way upstream (StoredLine in
-  // LyricsRenderer); the renderer always sets it, but a line without an element
-  // is simply not scrollable and the tick guards against it.
-  HTMLElement?: HTMLElement;
-  StartTime: number;
-  EndTime: number;
+/**
+ * The minimum a scroll tick needs: a row element and its millisecond span.
+ * The registry's timed rows satisfy this directly, so the live path reads them
+ * without mapping per tick.
+ */
+export interface AutoScrollLine extends TimedLine {
+  element: HTMLElement;
 }
 
 export interface AutoScrollSyncOverrides {
@@ -94,8 +96,10 @@ export function syncAutoScroll(overrides: AutoScrollSyncOverrides = {}): void {
     const onLyricsPage = overrides.onLyricsPage ?? resolveOnLyricsPage();
     if (!onLyricsPage) return;
 
-    const lines = (overrides.lines ?? LyricsObject.Types[Defaults.CurrentLyricsType]?.Lines) as
-      AutoScrollLine[] | undefined;
+    // Rows without timing (Static lyrics) are not scroll targets: the search
+    // finds nothing and the tick returns.
+    const lines: readonly AutoScrollLine[] =
+      overrides.lines ?? (LyricsObject.Lines as TimedPaintedLine[]);
 
     let position: number;
     try {
@@ -105,13 +109,12 @@ export function syncAutoScroll(overrides: AutoScrollSyncOverrides = {}): void {
       return;
     }
     if (typeof position !== 'number' || !Number.isFinite(position) || position < 0) return;
-    if (!lines) return;
 
     const activeIdx = findActiveIndex(lines, position);
     const currentLine = activeIdx !== -1 ? lines[activeIdx] : null;
     if (!currentLine) return;
 
-    const lineElem = currentLine.HTMLElement;
+    const lineElem = currentLine.element;
     if (!lineElem) return;
     if (lastLine === lineElem) return;
     if (!lineElem.isConnected) return;

@@ -1,5 +1,6 @@
 import Defaults from '../../../../components/Global/Defaults';
 import { LyricsObject } from '../../lyrics';
+import type { PaintedDot, TimedPaintedLine } from '../../lyrics';
 import { timeOffset } from '../Shared';
 import { findActiveIndex } from '../../findActiveIndex';
 
@@ -13,15 +14,9 @@ function getStatus(start: number, end: number, current: number): 'Active' | 'Not
   }
 }
 
-interface WordOrSyllable {
-  StartTime: number;
-  EndTime: number;
-  Status?: 'Active' | 'NotSung' | 'Sung';
-}
-
-function updateCollectionStatus(collection: WordOrSyllable[], current: number) {
+function updateCollectionStatus(collection: PaintedDot[], current: number) {
   for (const item of collection) {
-    item.Status = getStatus(item.StartTime, item.EndTime, current);
+    item.status = getStatus(item.StartTime, item.EndTime, current);
   }
 }
 
@@ -34,15 +29,7 @@ export function resetLyricsSetterCache(): void {
   lastCachedLength = -1;
 }
 
-type LineLike = {
-  StartTime: number;
-  EndTime: number;
-  Status?: string;
-  DotLine?: boolean;
-  Syllables?: { Lead: WordOrSyllable[] };
-};
-
-function applyNoActive(tLines: LineLike[], pos: number): void {
+function applyNoActive(tLines: TimedPaintedLine[], pos: number): void {
   for (const line of tLines) {
     const next =
       line.StartTime <= pos && pos <= line.EndTime
@@ -50,60 +37,62 @@ function applyNoActive(tLines: LineLike[], pos: number): void {
         : line.StartTime >= pos
           ? 'NotSung'
           : 'Sung';
-    if (line.Status !== next) line.Status = next;
+    if (line.status !== next) line.status = next;
   }
   lastActiveIndex = -1;
 }
 
-function applyDelta(tLines: LineLike[], activeIndex: number, pos: number): void {
+function applyDelta(tLines: TimedPaintedLine[], activeIndex: number, pos: number): void {
   if (lastActiveIndex === -1) {
     for (let i = 0; i < tLines.length; i++) {
       const line = tLines[i]!;
       const next = i === activeIndex ? 'Active' : i < activeIndex ? 'Sung' : 'NotSung';
-      if (line.Status !== next) line.Status = next;
+      if (line.status !== next) line.status = next;
     }
   } else if (activeIndex > lastActiveIndex) {
     const prev = tLines[lastActiveIndex]!;
-    if (prev.Status !== 'Sung') prev.Status = 'Sung';
+    if (prev.status !== 'Sung') prev.status = 'Sung';
     for (let i = lastActiveIndex + 1; i < activeIndex; i++) {
       const line = tLines[i]!;
-      if (line.Status !== 'Sung') line.Status = 'Sung';
+      if (line.status !== 'Sung') line.status = 'Sung';
     }
     const cur = tLines[activeIndex]!;
-    if (cur.Status !== 'Active') cur.Status = 'Active';
+    if (cur.status !== 'Active') cur.status = 'Active';
   } else {
     const prev = tLines[lastActiveIndex]!;
-    if (prev.Status !== 'NotSung') prev.Status = 'NotSung';
+    if (prev.status !== 'NotSung') prev.status = 'NotSung';
     for (let i = activeIndex + 1; i <= lastActiveIndex - 1; i++) {
       const line = tLines[i]!;
       const next = tLines[i]!.StartTime >= pos ? 'NotSung' : 'Sung';
-      if (line.Status !== next) line.Status = next;
+      if (line.status !== next) line.status = next;
     }
     const cur = tLines[activeIndex]!;
-    if (cur.Status !== 'Active') cur.Status = 'Active';
+    if (cur.status !== 'Active') cur.status = 'Active';
   }
   const activeLine = tLines[activeIndex]!;
-  if (activeLine.DotLine) updateCollectionStatus(activeLine.Syllables!.Lead, pos);
+  if (activeLine.dots) updateCollectionStatus(activeLine.dots, pos);
   lastActiveIndex = activeIndex;
 }
 
 export function TimeSetter(PreCurrentPosition: number) {
   const CurrentPosition = PreCurrentPosition + timeOffset;
-  const CurrentLyricsType = Defaults.CurrentLyricsType;
-  if (CurrentLyricsType && CurrentLyricsType === 'None') return;
-  const lines = LyricsObject.Types[CurrentLyricsType]?.Lines;
-  if (!lines) return;
-  if (CurrentLyricsType !== 'Line') return;
+  // The registry holds rows of both payload kinds; only line-synced ones carry
+  // timing, and only they can be searched.
+  if (Defaults.CurrentLyricsType !== 'Line') return;
+
+  const lines = LyricsObject.Lines;
+  if (!lines.length) return;
   if (lines.length !== lastCachedLength) {
     lastActiveIndex = -1;
     lastCachedLength = lines.length;
   }
-  // SAFETY: Lines from SpikyCache/network JSON; conversion.ts guarantees StartTime/EndTime for Line type
-  const tLines = lines as unknown as LineLike[];
+  // SAFETY: renderLineRows fills StartTime/EndTime for every row of a
+  // line-synced document.
+  const tLines = lines as TimedPaintedLine[];
   const activeIndex = findActiveIndex(tLines, CurrentPosition);
   if (activeIndex !== -1 && activeIndex === lastActiveIndex) {
     const al = tLines[activeIndex]!;
-    if (al.DotLine) updateCollectionStatus(al.Syllables!.Lead, CurrentPosition);
+    if (al.dots) updateCollectionStatus(al.dots, CurrentPosition);
     return;
   }
   if (activeIndex === -1) {

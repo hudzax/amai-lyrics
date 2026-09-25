@@ -36,21 +36,37 @@ describe('getLyricsFromCache (pure read)', () => {
 
   it('returns the cached lyrics marked fromCache when not expired', async () => {
     vi.mocked(lyricsCache.get).mockResolvedValue({
+      v: 2,
       id: 'track1',
-      Type: 'Line',
-      Content: [],
+      type: 'Line',
+      lines: [],
       expiresAt: Date.now() + 100000,
     } as never);
     const result = await getLyricsFromCache('track1');
-    expect(result).toMatchObject({ id: 'track1', fromCache: true });
+    expect(result).toMatchObject({ id: 'track1', type: 'Line', fromCache: true });
   });
 
   it('removes and returns null for an expired entry', async () => {
     vi.mocked(lyricsCache.get).mockResolvedValue({
+      v: 2,
+      id: 'track1',
+      type: 'Line',
+      lines: [],
+      expiresAt: Date.now() - 1000,
+    } as never);
+    await expect(getLyricsFromCache('track1')).resolves.toBeNull();
+    expect(lyricsCache.remove).toHaveBeenCalledWith('track1');
+  });
+
+  it('removes and returns null for an entry written by an older format version', async () => {
+    // Pre-v2 entries carry the old `Type`/`Content` shape and no version
+    // stamp; they must be evicted so the caller re-fetches instead of
+    // receiving a document it cannot decode.
+    vi.mocked(lyricsCache.get).mockResolvedValue({
       id: 'track1',
       Type: 'Line',
       Content: [],
-      expiresAt: Date.now() - 1000,
+      expiresAt: Date.now() + 100000,
     } as never);
     await expect(getLyricsFromCache('track1')).resolves.toBeNull();
     expect(lyricsCache.remove).toHaveBeenCalledWith('track1');

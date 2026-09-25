@@ -50,7 +50,7 @@ vi.mock('../src/utils/Gets/GetProgress', () => ({
 import {
   renderLyrics,
   updateLyricTranslations,
-  getLineRecords,
+  getPaintedLines,
 } from '../src/utils/Lyrics/LyricsRenderer';
 import { ApplyStaticLyrics } from '../src/utils/Lyrics/Applyer/Static';
 import {
@@ -58,12 +58,18 @@ import {
   ClearLyricsContentArrays,
   destroyLyricsRenderLoop,
 } from '../src/utils/Lyrics/lyrics';
+import type { LyricsDocument } from '../src/utils/Lyrics/conversion';
 
-const CONTENT = [
-  { Text: 'first line', StartTime: 1.0, EndTime: 3.0 },
-  { Text: 'second line', StartTime: 3.5, EndTime: 6.0 },
-];
-const RAWS = ['first line', 'second line'];
+/** A fresh line-synced document per test — the render path mutates line views. */
+function lineDocument(): LyricsDocument {
+  return {
+    type: 'Line',
+    lines: [
+      { text: 'first line', raw: 'first line', start: 1.0, end: 3.0 },
+      { text: 'second line', raw: 'second line', start: 3.5, end: 6.0 },
+    ],
+  };
+}
 
 function setupDom(): void {
   document.body.innerHTML = `
@@ -86,55 +92,54 @@ afterAll(() => {
 });
 
 describe('LyricsRenderer seam', () => {
-  it('renders Line payloads with uniform timed records', () => {
-    renderLyrics({ Type: 'Line', Content: CONTENT, StartTime: 0.5, Raw: RAWS } as never);
+  it('renders Line documents with uniform timed records', () => {
+    renderLyrics(lineDocument());
 
-    const records = getLineRecords();
+    const records = getPaintedLines();
     expect(records).toHaveLength(2);
-    expect(records[0].start).toBe(1000);
-    expect(records[0].end).toBe(3000);
+    expect(records[0].StartTime).toBe(1000);
+    expect(records[0].EndTime).toBe(3000);
     expect(records[0].element.classList.contains('line')).toBe(true);
-    expect(LyricsObject.Types.Line.Lines).toHaveLength(2);
+    expect(LyricsObject.Lines).toHaveLength(2);
     expect(document.querySelectorAll('.main-lyrics-text.line')).toHaveLength(2);
-  });
-
-  it('renders Static payloads with untimed records through the same call', () => {
-    renderLyrics({ Type: 'Static', Lines: [{ Text: 'static one' }] } as never);
-
-    const records = getLineRecords();
-    expect(records).toHaveLength(1);
-    expect(records[0].start).toBeUndefined();
-    expect(records[0].element.classList.contains('static')).toBe(true);
-    expect(LyricsObject.Types.Static.Lines).toHaveLength(1);
-  });
-
-  it('infers Line for legacy payloads without a Type discriminator', () => {
-    renderLyrics({ Content: CONTENT, StartTime: 0.5, Raw: RAWS } as never);
-
-    expect(LyricsObject.Types.Line.Lines).toHaveLength(2);
+    // The container is stamped from the document's declared type.
     expect(document.querySelector<HTMLElement>('.LyricsContent')?.dataset.lyricsType).toBe('Line');
   });
 
+  it('renders Static documents with untimed records through the same call', () => {
+    renderLyrics({ type: 'Static', lines: [{ text: 'static one' }] });
+
+    const records = getPaintedLines();
+    expect(records).toHaveLength(1);
+    expect(records[0].StartTime).toBeUndefined();
+    // The registered row is the `.main-lyrics-text` span for both payload
+    // kinds; the `.static` marker lives on the wrapper div it was built into.
+    expect(records[0].element.classList.contains('main-lyrics-text')).toBe(true);
+    expect(records[0].element.parentElement?.classList.contains('static')).toBe(true);
+    expect(LyricsObject.Lines).toHaveLength(1);
+  });
+
   it('updates translations in place without replacing elements', () => {
-    renderLyrics({ Type: 'Line', Content: CONTENT, StartTime: 0.5, Raw: RAWS } as never);
+    const doc = lineDocument();
+    renderLyrics(doc);
     const before = document.querySelectorAll<HTMLElement>('.main-lyrics-text.line');
 
-    updateLyricTranslations({
-      Type: 'Line',
-      Content: [{ ...CONTENT[0], Translation: 'translated first' }, { ...CONTENT[1] }],
-      Raw: RAWS,
-    } as never);
+    // Enhancement mutates the registered line views in place; the updater
+    // reads them back from the registry instead of being handed a payload.
+    doc.lines[0].translation = 'translated first';
+    updateLyricTranslations();
 
     const after = document.querySelectorAll<HTMLElement>('.main-lyrics-text.line');
     expect(after[0]).toBe(before[0]);
     expect(after[1]).toBe(before[1]);
     expect(after[0].querySelector('.translation')?.textContent).toBe('translated first');
+    expect(after[1].querySelector('.translation')).toBeNull();
   });
 
   it('keeps the Static adapter rendering through the seam', () => {
-    ApplyStaticLyrics({ Type: 'Static', Lines: [{ Text: 'adapter line' }] } as never);
+    ApplyStaticLyrics({ type: 'Static', lines: [{ text: 'adapter line' }] });
 
-    expect(LyricsObject.Types.Static.Lines).toHaveLength(1);
-    expect(getLineRecords()).toHaveLength(1);
+    expect(LyricsObject.Lines).toHaveLength(1);
+    expect(getPaintedLines()).toHaveLength(1);
   });
 });

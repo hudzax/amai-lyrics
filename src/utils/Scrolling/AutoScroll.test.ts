@@ -38,8 +38,8 @@ describe('AutoScroll seam', () => {
       cancel: vi.fn(),
     }));
     const lines = [
-      { HTMLElement: first, StartTime: 0, EndTime: 999 },
-      { HTMLElement: second, StartTime: 1000, EndTime: 2000 },
+      { element: first, StartTime: 0, EndTime: 999 },
+      { element: second, StartTime: 1000, EndTime: 2000 },
     ];
 
     syncAutoScroll({
@@ -67,7 +67,7 @@ describe('AutoScroll seam', () => {
     >(() => ({
       cancel: vi.fn(),
     }));
-    const lines = [{ HTMLElement: first, StartTime: 0, EndTime: 5000 }];
+    const lines = [{ element: first, StartTime: 0, EndTime: 5000 }];
 
     syncAutoScroll({
       isPlaying: true,
@@ -100,8 +100,8 @@ describe('AutoScroll seam', () => {
       .mockReturnValueOnce({ cancel: cancelFirst })
       .mockReturnValue({ cancel: vi.fn() });
     const lines = [
-      { HTMLElement: first, StartTime: 0, EndTime: 999 },
-      { HTMLElement: second, StartTime: 1000, EndTime: 2000 },
+      { element: first, StartTime: 0, EndTime: 999 },
+      { element: second, StartTime: 1000, EndTime: 2000 },
     ];
     const base = { isPlaying: true, onLyricsPage: true, lines, container, scroller };
 
@@ -122,7 +122,7 @@ describe('AutoScroll seam', () => {
     >(() => ({
       cancel: vi.fn(),
     }));
-    const lines = [{ HTMLElement: first, StartTime: 0, EndTime: 5000 }];
+    const lines = [{ element: first, StartTime: 0, EndTime: 5000 }];
     const base = { isPlaying: true, onLyricsPage: true, position: 100, lines, container, scroller };
 
     syncAutoScroll(base);
@@ -135,7 +135,7 @@ describe('AutoScroll seam', () => {
 
   it('never throws when paused, off-page, or containerless', () => {
     const line = makeLine();
-    const lines = [{ HTMLElement: line, StartTime: 0, EndTime: 5000 }];
+    const lines = [{ element: line, StartTime: 0, EndTime: 5000 }];
     const scroller = vi.fn<
       (container: HTMLElement, element: HTMLElement) => { cancel: () => void }
     >(() => ({

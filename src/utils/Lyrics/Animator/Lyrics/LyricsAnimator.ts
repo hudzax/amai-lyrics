@@ -1,6 +1,7 @@
 import Defaults from '../../../../components/Global/Defaults';
 import { SpotifyPlayer } from '../../../../components/Global/SpotifyPlayer';
 import { LyricsObject } from '../../lyrics';
+import type { PaintedDot, PaintedLine } from '../../lyrics';
 import { BlurMultiplier } from '../Shared';
 import { getActiveLineIndex } from './LyricsSetter';
 
@@ -40,11 +41,7 @@ let lastBlurActiveIndex: number | null = null;
 // unblur the WHOLE lyrics (not just the window around the active line), and
 // resuming must re-blur everything — both are full passes, not windowed ones.
 let lastBlurIsPlaying: boolean | null = null;
-const applyBlur = (
-  arr: Array<{ Status: string; HTMLElement: HTMLElement }>,
-  activeIndex: number,
-  BlurMultiplier: number,
-) => {
+const applyBlur = (arr: PaintedLine[], activeIndex: number, BlurMultiplier: number) => {
   const isPlaying = SpotifyPlayer.IsPlaying;
   const playStateChanged = isPlaying !== lastBlurIsPlaying;
   lastBlurIsPlaying = isPlaying;
@@ -69,8 +66,8 @@ const applyBlur = (
       const distance = Math.abs(i - activeIndex);
       const blurAmountRaw = BlurMultiplier * distance;
       const blurAmount = blurAmountRaw >= 5 ? 5 : blurAmountRaw;
-      const blurValue = isPlaying && arr[i]!.Status !== 'Active' ? `${blurAmount}px` : `0px`;
-      setStyleIfChanged(arr[i]!.HTMLElement, '--BlurAmount', blurValue);
+      const blurValue = isPlaying && arr[i]!.status !== 'Active' ? `${blurAmount}px` : `0px`;
+      setStyleIfChanged(arr[i]!.element, '--BlurAmount', blurValue);
     }
     return;
   }
@@ -84,8 +81,8 @@ const applyBlur = (
       const distance = Math.abs(i - activeIndex);
       const blurAmountRaw = BlurMultiplier * distance;
       const blurAmount = blurAmountRaw >= 5 ? 5 : blurAmountRaw;
-      const blurValue = isPlaying && arr[i]!.Status !== 'Active' ? `${blurAmount}px` : `0px`;
-      setStyleIfChanged(arr[i]!.HTMLElement, '--BlurAmount', blurValue);
+      const blurValue = isPlaying && arr[i]!.status !== 'Active' ? `${blurAmount}px` : `0px`;
+      setStyleIfChanged(arr[i]!.element, '--BlurAmount', blurValue);
     }
   }
   // Play-state flips are handled above via a full pass, so every line gets its
@@ -102,56 +99,39 @@ export function resetAnimatorCache(): void {
 // The parent .line Active/Sung/NotSung + nth-child delays own all visuals, so
 // helpers only toggle .dot-active for compat and clear stale inline styles
 // that would override the ambient keyframes (transform/opacity/scale).
-function clearDotInlineStyles(word) {
-  setStyleIfChanged(word.HTMLElement, 'transform', '');
-  setStyleIfChanged(word.HTMLElement, 'scale', '');
-  setStyleIfChanged(word.HTMLElement, 'opacity', '');
-  setStyleIfChanged(word.HTMLElement, '--text-shadow-blur-radius', '');
-  setStyleIfChanged(word.HTMLElement, '--text-shadow-opacity', '');
-  setStyleIfChanged(word.HTMLElement, '--dot-duration', '');
+function clearDotInlineStyles(word: PaintedDot) {
+  setStyleIfChanged(word.element, 'transform', '');
+  setStyleIfChanged(word.element, 'scale', '');
+  setStyleIfChanged(word.element, 'opacity', '');
+  setStyleIfChanged(word.element, '--text-shadow-blur-radius', '');
+  setStyleIfChanged(word.element, '--text-shadow-opacity', '');
+  setStyleIfChanged(word.element, '--dot-duration', '');
 }
 
-function activateDot(word) {
-  if (!word.HTMLElement.classList.contains('dot-active')) {
-    void word.HTMLElement.offsetWidth;
-    word.HTMLElement.classList.add('dot-active');
+function activateDot(word: PaintedDot) {
+  if (!word.element.classList.contains('dot-active')) {
+    void word.element.offsetWidth;
+    word.element.classList.add('dot-active');
   }
   clearDotInlineStyles(word);
-  word.scale = 1;
-  word.glow = 0.5;
 }
 
-function resetDotNotSung(word) {
-  word.HTMLElement.classList.remove('dot-active');
+function resetDotNotSung(word: PaintedDot) {
+  word.element.classList.remove('dot-active');
   clearDotInlineStyles(word);
-  word.translateY = 0.01;
-  word.scale = 0.75;
-  word.glow = 0;
 }
 
-function resetDotSung(word) {
-  word.HTMLElement.classList.remove('dot-active');
+function resetDotSung(word: PaintedDot) {
+  word.element.classList.remove('dot-active');
   clearDotInlineStyles(word);
-  word.scale = 1.2;
-  word.glow = 0.5;
 }
 
-function animateLineLines(
-  arr: Array<{
-    Status: string;
-    lastStatus?: string;
-    HTMLElement: HTMLElement;
-    DotLine?: boolean;
-    Syllables?: {
-      Lead: Array<{ Status: string; HTMLElement: HTMLElement; StartTime: number; EndTime: number }>;
-    };
-  }>,
-) {
+function animateLineLines(arr: PaintedLine[]) {
   // Fast path: if TimeSetter's cached active index matches current Active, only that window can have changed.
   // Fall back to scanning delta range derived from Status flips.
   const cachedActive = getActiveLineIndex();
   const activeIndex =
-    cachedActive !== -1 ? cachedActive : arr.findIndex((l) => l.Status === 'Active');
+    cachedActive !== -1 ? cachedActive : arr.findIndex((l) => l.status === 'Active');
 
   // Apply blur only when active changed — TimeSetter guarantees at most one Active.
   if (activeIndex !== -1) {
@@ -160,7 +140,7 @@ function animateLineLines(
       lastIsPlaying = SpotifyPlayer.IsPlaying;
     }
     if (Blurring_LastLine !== activeIndex) {
-      applyBlur(arr as never, activeIndex, BlurMultiplier);
+      applyBlur(arr, activeIndex, BlurMultiplier);
       Blurring_LastLine = activeIndex;
     }
   } else if (Blurring_LastLine !== null) {
@@ -178,49 +158,42 @@ function animateLineLines(
     const line = arr[index]!;
     const prevStatus = line.lastStatus;
     // Skip far lines whose Status hasn't changed and isn't Active — their DOM is already correct.
-    if (prevStatus === line.Status && line.Status !== 'Active') continue;
-    if (line.Status === 'Active') {
-      line.HTMLElement.classList.add('Active');
-      line.HTMLElement.classList.remove('NotSung', 'OverridenByScroller', 'Sung');
-      if (line.DotLine) {
-        const dots = line.Syllables!.Lead;
-        for (let i = 0; i < dots.length; i++) {
-          const dot = dots[i]!;
-          if (dot.Status === 'Active') activateDot(dot as never);
-          else if (dot.Status === 'NotSung') resetDotNotSung(dot as never);
-          else if (dot.Status === 'Sung') resetDotSung(dot as never);
+    if (prevStatus === line.status && line.status !== 'Active') continue;
+    if (line.status === 'Active') {
+      line.element.classList.add('Active');
+      line.element.classList.remove('NotSung', 'OverridenByScroller', 'Sung');
+      if (line.dots) {
+        for (const dot of line.dots) {
+          if (dot.status === 'Active') activateDot(dot);
+          else if (dot.status === 'NotSung') resetDotNotSung(dot);
+          else if (dot.status === 'Sung') resetDotSung(dot);
         }
       } else {
-        setStyleIfChanged(line.HTMLElement, '--gradient-position', `100%`);
+        setStyleIfChanged(line.element, '--gradient-position', `100%`);
       }
-    } else if (line.Status === 'NotSung') {
+    } else if (line.status === 'NotSung') {
       if (prevStatus !== 'NotSung') {
-        line.HTMLElement.classList.add('NotSung');
-        line.HTMLElement.classList.remove('Sung');
+        line.element.classList.add('NotSung');
+        line.element.classList.remove('Sung');
         if (
-          line.HTMLElement.classList.contains('Active') &&
-          !line.HTMLElement.classList.contains('OverridenByScroller')
+          line.element.classList.contains('Active') &&
+          !line.element.classList.contains('OverridenByScroller')
         )
-          line.HTMLElement.classList.remove('Active');
-        setStyleIfChanged(line.HTMLElement, '--gradient-position', `0%`);
+          line.element.classList.remove('Active');
+        setStyleIfChanged(line.element, '--gradient-position', `0%`);
       }
-    } else if (line.Status === 'Sung') {
+    } else if (line.status === 'Sung') {
       if (prevStatus !== 'Sung') {
-        line.HTMLElement.classList.add('Sung');
-        line.HTMLElement.classList.remove('Active', 'NotSung');
-        setStyleIfChanged(line.HTMLElement, '--gradient-position', `100%`);
+        line.element.classList.add('Sung');
+        line.element.classList.remove('Active', 'NotSung');
+        setStyleIfChanged(line.element, '--gradient-position', `100%`);
       }
     }
-    line.lastStatus = line.Status;
+    line.lastStatus = line.status;
   }
 }
 
 export function Animate() {
-  const CurrentLyricsType = Defaults.CurrentLyricsType;
-  if (!CurrentLyricsType || CurrentLyricsType === 'None') return;
-
-  if (CurrentLyricsType === 'Line') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    animateLineLines(LyricsObject.Types.Line.Lines as any[]);
-  }
+  if (Defaults.CurrentLyricsType !== 'Line') return;
+  animateLineLines(LyricsObject.Lines);
 }

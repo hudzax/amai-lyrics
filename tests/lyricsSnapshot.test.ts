@@ -52,13 +52,13 @@ describe('writeSnapshot / clearSnapshot (sole writers of the key)', () => {
   it('readSnapshot sees a written snapshot without an explicit invalidation', () => {
     faithfulStorage();
 
-    writeSnapshot({ id: 'track1', Type: 'Line', Content: [] } as never);
-    expect(readSnapshot('track1')).toMatchObject({ id: 'track1', Type: 'Line' });
+    writeSnapshot({ id: 'track1', type: 'Line', lines: [] });
+    expect(readSnapshot('track1')).toMatchObject({ id: 'track1', type: 'Line' });
   });
 
   it('clearSnapshot persists null and notifies consumers', () => {
     faithfulStorage();
-    writeSnapshot({ id: 'track1', Type: 'Line', Content: [] } as never);
+    writeSnapshot({ id: 'track1', type: 'Line', lines: [] });
     expect(readSnapshot('track1')).toMatchObject({ id: 'track1' });
 
     clearSnapshot();
@@ -76,12 +76,30 @@ describe('readSnapshot (track-gated pipeline view)', () => {
   });
 
   it('returns stored lyrics for the matching track id', () => {
-    setStored(JSON.stringify({ id: 'track1', Type: 'Line', Content: [] }));
-    expect(readSnapshot('track1')).toMatchObject({ id: 'track1', Type: 'Line' });
+    setStored(JSON.stringify({ v: 2, id: 'track1', type: 'Line', lines: [] }));
+    expect(readSnapshot('track1')).toMatchObject({ id: 'track1', type: 'Line' });
   });
 
   it('returns null for a different track id', () => {
-    setStored(JSON.stringify({ id: 'other', Type: 'Line' }));
+    setStored(JSON.stringify({ v: 2, id: 'other', type: 'Line', lines: [] }));
+    expect(readSnapshot('track1')).toBeNull();
+  });
+
+  it('returns null (a deliberate miss) for a payload stored without the version stamp', () => {
+    // Pre-v2 entries keep the old `Type`/`Content` shape; they must read as a
+    // miss so the track re-fetches instead of decoding into a blank document.
+    setStored(
+      JSON.stringify({
+        id: 'track1',
+        Type: 'Line',
+        Content: [{ StartTime: 1, EndTime: 2, Text: 'a' }],
+      }),
+    );
+    expect(readSnapshot('track1')).toBeNull();
+  });
+
+  it('returns null (a deliberate miss) for an entry stamped with an older version', () => {
+    setStored(JSON.stringify({ v: 1, id: 'track1', type: 'Line', lines: [] }));
     expect(readSnapshot('track1')).toBeNull();
   });
 
@@ -115,7 +133,7 @@ describe('isPublishedNoLyrics (ungated fullscreen check)', () => {
   it('is false when nothing is stored or the snapshot is positive', () => {
     setStored(null);
     expect(isPublishedNoLyrics()).toBe(false);
-    setStored(JSON.stringify({ id: 'track1', Type: 'Line', Content: [] }));
+    setStored(JSON.stringify({ v: 2, id: 'track1', type: 'Line', lines: [] }));
     expect(isPublishedNoLyrics()).toBe(false);
   });
 
@@ -134,13 +152,14 @@ describe('publishedTimedLines (playbar view)', () => {
   it('scales seconds to ms, trims text, and skips untimed/blank lines', () => {
     setStored(
       JSON.stringify({
+        v: 2,
         id: 'track1',
-        Type: 'Line',
-        Content: [
-          { StartTime: 1, EndTime: 2, Text: '  hello  ' },
-          { StartTime: 3, EndTime: 4, Text: '   ' },
-          { StartTime: null, EndTime: 5, Text: 'untimed' },
-          { StartTime: 6, EndTime: 7, Text: 'world' },
+        type: 'Line',
+        lines: [
+          { text: '  hello  ', start: 1, end: 2 },
+          { text: '   ', start: 3, end: 4 },
+          { text: 'untimed' },
+          { text: 'world', start: 6, end: 7 },
         ],
       }),
     );
@@ -151,7 +170,10 @@ describe('publishedTimedLines (playbar view)', () => {
     ]);
   });
 
-  it('normalizes a Syllable payload through the converter', () => {
+  it('treats a legacy Syllable snapshot as a miss — conversion happens at ingest', () => {
+    // Syllable payloads are normalized to a v2 Line document while fetching,
+    // so a snapshot still holding the old Syllable shape must decode to null
+    // rather than being converted a second time here.
     setStored(
       JSON.stringify({
         id: 'track1',
@@ -165,33 +187,29 @@ describe('publishedTimedLines (playbar view)', () => {
       }),
     );
 
-    const lines = publishedTimedLines('track1');
-    expect(lines).toHaveLength(1);
-    expect(lines![0].text).toContain('hello');
-    expect(lines![0].StartTime).toBe(1000);
-    expect(lines![0].EndTime).toBe(2000);
+    expect(publishedTimedLines('track1')).toBeNull();
   });
 
   it('is null for stale, sentinel, and static snapshots', () => {
-    setStored(JSON.stringify({ id: 'other', Type: 'Line', Content: [] }));
+    setStored(JSON.stringify({ v: 2, id: 'other', type: 'Line', lines: [] }));
     expect(publishedTimedLines('track1')).toBeNull();
 
     setStored(JSON.stringify({ status: 'NO_LYRICS', id: 'track1' }));
     expect(publishedTimedLines('track1')).toBeNull();
 
-    setStored(JSON.stringify({ id: 'track1', Type: 'Static', Lines: [{ Text: 'hi' }] }));
+    setStored(JSON.stringify({ v: 2, id: 'track1', type: 'Static', lines: [{ text: 'hi' }] }));
     expect(publishedTimedLines('track1')).toBeNull();
   });
 
   it('is null when no line survives filtering', () => {
-    setStored(JSON.stringify({ id: 'track1', Type: 'Line', Content: [{ Text: '  ' }] }));
+    setStored(JSON.stringify({ v: 2, id: 'track1', type: 'Line', lines: [{ text: '  ' }] }));
     expect(publishedTimedLines('track1')).toBeNull();
   });
 });
 
 describe('parse memo', () => {
   it('parses once per stored string across repeated reads', () => {
-    const raw = JSON.stringify({ id: 'track1', Type: 'Line', Content: [] });
+    const raw = JSON.stringify({ v: 2, id: 'track1', type: 'Line', lines: [] });
     setStored(raw);
     const parseSpy = vi.spyOn(JSON, 'parse');
 
@@ -204,7 +222,7 @@ describe('parse memo', () => {
   });
 
   it('reparses after explicit invalidation', () => {
-    const raw = JSON.stringify({ id: 'track1', Type: 'Line', Content: [] });
+    const raw = JSON.stringify({ v: 2, id: 'track1', type: 'Line', lines: [] });
     setStored(raw);
     readSnapshot('track1');
     const parseSpy = vi.spyOn(JSON, 'parse');
@@ -220,11 +238,15 @@ describe('parse memo', () => {
     // Deliberately no invalidateSnapshotCache here: the memo keys on the
     // stored string's content, so an external write is picked up on the
     // next read.
-    mockedStorage.get.mockReturnValue(JSON.stringify({ id: 'track1', Type: 'Line' }));
+    mockedStorage.get.mockReturnValue(
+      JSON.stringify({ v: 2, id: 'track1', type: 'Line', lines: [] }),
+    );
     invalidateSnapshotCache();
     expect(readSnapshot('other')).toBeNull();
 
-    mockedStorage.get.mockReturnValue(JSON.stringify({ id: 'other', Type: 'Line' }));
+    mockedStorage.get.mockReturnValue(
+      JSON.stringify({ v: 2, id: 'other', type: 'Line', lines: [] }),
+    );
     expect(readSnapshot('other')).toMatchObject({ id: 'other' });
   });
 });

@@ -29,14 +29,22 @@ used by mount and the launch waiter; it currently has no external callers.
 ## LyricsRenderer
 
 The single place that paints lyrics onto the page: container lookup, clear,
-row building for Line and Static payloads, info/credits, styling,
-registration, scroll mount, and the in-place translation update with scroll
-re-anchor. Lives in src/utils/Lyrics/LyricsRenderer.ts. Callers cross it
-through renderLyrics, updateLyricTranslations (+ applyScrollReanchor, owned
-here and re-exported by the updater), and getLineRecords (the uniform
-line view, currently test-only: production ticks still read LyricsObject
-directly) - never through the Static/Line builders for row building. The builders and updater remain as thin adapters over
-this seam with no src callers, kept for their historic names and tests.
+row building for the Line and Static document kinds, info/credits, styling,
+registry population, scroll mount, and the in-place translation update with
+scroll re-anchor. Lives in src/utils/Lyrics/LyricsRenderer.ts. Callers cross it
+through renderLyrics (which takes a `LyricsDocument`), updateLyricTranslations
+(which takes nothing — it reads the rows it registered), getPaintedLines (the
+registered lyric rows, musical-break rows excluded), and applyScrollReanchor —
+never through the Static/Line row builders, which stay private because the two
+row shapes differ for real reasons (timing, musical breaks and alignment on one
+side; the font-size tag on the other). The builders register into the one
+ordered `LyricsObject.Lines`, so a consumer reads one list instead of indexing
+by lyrics type, and each registered row pairs its `LineView` with the
+`.main-lyrics-text` element the updater writes into — for both kinds.
+Enhancement mutates those same line views in place, which is why the updater
+needs no payload handed to it. `translationUpdater` and the Static/Line Applyer
+files remain as thin adapters over this seam with no src callers, kept for
+their historic names and tests.
 Container CSS vars (Global Applyer, settings font-size handlers), the loader
 clear path (ui.ClearLyricsPageContainer via fetch/publish), and click-to-seek
 attach (lyrics.ts) touch the same container outside row building.
@@ -82,6 +90,36 @@ removing the page cancels its pending display updates and releases its
 resources. Playback commands may appear immediately, but player observations
 remain authoritative.
 
+## LyricsDocument
+
+The single shape the lyrics pipeline carries once it leaves ingest: the track's
+lyrics as one ordered list of lines plus the display metadata that travels with
+them (type, raw line text, info/credits, styles). Built in
+src/utils/Lyrics/processing.ts (`buildDocument`), which is also where a
+'Syllable' response is normalized to line-synced lines. Every stage downstream
+of it — cache, snapshot, publish, render, translate — crosses this shape and
+never the API's `Type`/`Content`/`Lines` union, which now stops at ingest
+(api.ts, conversion.ts). Callers cross it through `processAndEnhanceLyrics`,
+the cache's `cacheLyrics`/`getLyricsFromCache`, the snapshot's
+`writeSnapshot`/`readSnapshot`, `publishInitialLyrics`/`publishEnhancedLyrics`,
+`renderLyrics`, and the enhancement's `enhanceLyrics`.
+
+Each line is a `LineView`: `text`, `translation?`, `raw?`, `start?`, `end?`,
+`oppositeAligned?`. Times are seconds, matching the API unit. There is no
+discriminant: `start`/`end` are present exactly on line-synced rows, and that
+presence is what tells the two payload kinds apart downstream. `raw` is the
+line as prepared, captured before enhancement and phonetics overwrite `text`;
+it is what decides whether a translation adds information the line does not
+already carry. Enhancement mutates the document's line objects in place — they
+are the objects the renderer registered, so the update path picks the result up
+without anything being handed across, and nothing may clone the document on the
+way to enhancement.
+
+`LYRICS_DOCUMENT_VERSION` stamps the stored form (cache and snapshot).
+`toDocument` is the single decode point: a value written by an older version
+decodes to null, so a stale cache or snapshot entry reads as a miss and
+re-fetches instead of rendering blank.
+
 ## LyricsPipeline
 
 The single place that turns a track change into painted lyrics: request
@@ -111,18 +149,21 @@ page content.
 ## LyricsSnapshot
 
 The single owner of the published-lyrics snapshot (the `currentLyricsData`
-storage key): its serialized format, the legacy plain-string `NO_LYRICS:<id>`
-form, the sentinel rule, the track gate, the seconds→ms scaling, and the
-Syllable→Line shape. Lives in src/utils/Lyrics/snapshot.ts. Callers cross it
+storage key): its serialized format, the document version stamp, the legacy
+plain-string `NO_LYRICS:<id>` form, the sentinel rule, the track gate, and the
+seconds→ms scaling. Lives in src/utils/Lyrics/snapshot.ts. Callers cross it
 through writeSnapshot (the only writer, used behind publish's currency check;
 returns the serialized payload for the publisher to carry on the bus),
 clearSnapshot (the refresh/invalidate clear — it notifies on its own, because
 its callers are not publishers), readSnapshot (the track-gated typed view the
-pipeline reads), publishedTimedLines (the ms-scaled, Syllable-normalized view
-the playbar overlay ticks through), isPublishedNoLyrics (the ungated boolean
+pipeline reads), publishedTimedLines (the ms-scaled view the playbar overlay
+ticks through), isPublishedNoLyrics (the ungated boolean
 the fullscreen exit checks), and invalidateSnapshotCache (what the playbar
 listener calls when the notification fires) - never through the raw storage
-key. The parse memo reads storage on every read and skips re-parsing only
+key. The stored payload is the `LyricsDocument` stamped with
+`LYRICS_DOCUMENT_VERSION`, so decoding a stored value back into a document is
+`toDocument`'s job alone; an entry from an older version is a miss rather than
+a decode. The parse memo reads storage on every read and skips re-parsing only
 while the stored string is unchanged, so an unseen write self-heals on the
 next read. `lyrics:data-updated` is a pure "the snapshot changed"
 notification.

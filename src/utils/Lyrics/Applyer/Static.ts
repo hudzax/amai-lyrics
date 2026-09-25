@@ -1,5 +1,5 @@
 import { renderLyrics } from '../LyricsRenderer';
-import type { RenderableLyricsData } from '../LyricsRenderer';
+import type { LyricsDocument } from '../conversion';
 
 /**
  * Applies static (unsynced) lyrics to the lyrics container.
@@ -8,6 +8,6 @@ import type { RenderableLyricsData } from '../LyricsRenderer';
  * and scroll mount live behind `renderLyrics`. Kept as a named entry so
  * existing callers keep crossing a stable interface.
  */
-export function ApplyStaticLyrics(data: RenderableLyricsData): void {
+export function ApplyStaticLyrics(data: LyricsDocument): void {
   renderLyrics(data);
 }

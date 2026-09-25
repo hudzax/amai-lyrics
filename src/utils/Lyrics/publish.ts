@@ -29,7 +29,7 @@ import { HideLoaderContainer, ClearLyricsPageContainer } from './ui';
 import { updateLyricTranslations } from './LyricsRenderer';
 import { writeSnapshot } from './snapshot';
 import { liveTrackId } from './trackId';
-import type { LyricsData } from './conversion';
+import type { LyricsDocument } from './conversion';
 import type { NoLyricsResult } from './ui';
 
 /** Opaque handle for one lyrics request (fetch or refresh). */
@@ -103,10 +103,10 @@ export function publishNoLyrics(token: LyricsRequestToken, trackId: string): boo
  * domain state, persisted snapshot, bus notification, and loader teardown.
  * Returns false without touching anything when the request went stale.
  */
-export function publishInitialLyrics(token: LyricsRequestToken, data: LyricsData): boolean {
+export function publishInitialLyrics(token: LyricsRequestToken, document: LyricsDocument): boolean {
   if (!isCurrentLyricsRequest(token)) return false;
-  Defaults.CurrentLyricsType = data.Type;
-  const serialized = writeSnapshot(data);
+  Defaults.CurrentLyricsType = document.type;
+  const serialized = writeSnapshot(document);
   Event.evoke('lyrics:data-updated', serialized);
   HideLoaderContainer();
   ClearLyricsPageContainer();
@@ -115,18 +115,20 @@ export function publishInitialLyrics(token: LyricsRequestToken, data: LyricsData
 
 /**
  * Publishes the async AI enhancement (phonetics + translations) in place,
- * preserving element identity, scroll, and animation state. Returns false
- * without touching anything when the request went stale.
+ * preserving element identity, scroll, and animation state. The renderer reads
+ * the lines it already painted — enhancement mutated those same line objects —
+ * so nothing needs to be handed across. Returns false without touching
+ * anything when the request went stale.
  */
 export function publishEnhancedLyrics(
   token: LyricsRequestToken,
   trackId: string,
-  data: LyricsData,
+  document: LyricsDocument,
 ): boolean {
   if (!isCurrentLyricsRequest(token)) return false;
   if (liveTrackId() !== trackId) return false;
-  updateLyricTranslations(data);
-  const serialized = writeSnapshot(data);
+  updateLyricTranslations();
+  const serialized = writeSnapshot(document);
   Event.evoke('lyrics:data-updated', serialized);
   return true;
 }

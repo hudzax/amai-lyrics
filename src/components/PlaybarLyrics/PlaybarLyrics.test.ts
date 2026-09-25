@@ -29,9 +29,12 @@ describe('PlaybarLyrics — artwork palette comes from the ArtworkSurfaces seam'
     storage.set(
       'currentLyricsData',
       JSON.stringify({
+        v: 2,
         id: 'abc123',
-        Type: 'Line',
-        Content: [{ StartTime: 0, EndTime: 60000, Text: 'never gonna give you up' }],
+        type: 'Line',
+        lines: [
+          { text: 'never gonna give you up', raw: 'never gonna give you up', start: 0, end: 60 },
+        ],
       }),
     );
   });

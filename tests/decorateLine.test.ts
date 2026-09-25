@@ -9,6 +9,7 @@ import {
   processLinePhonetics,
   decorateLineElement,
 } from '../src/utils/Lyrics/Applyer/Utils/decorateLine';
+import type { LineView } from '../src/utils/Lyrics/conversion';
 
 describe('processLinePhonetics', () => {
   beforeEach(() => {
@@ -16,28 +17,28 @@ describe('processLinePhonetics', () => {
   });
 
   it('sets the romaji toggle notification the first time Japanese text is seen', () => {
-    const data: { Info?: string } = {};
-    const line = { Text: '漢字{かんじ}' };
+    const data: { info?: string } = {};
+    const line: LineView = { text: '漢字{かんじ}' };
     processLinePhonetics(line, data);
-    expect(data.Info).toBeDefined();
-    expect(data.Info).toContain('Romaji');
+    expect(data.info).toBeDefined();
+    expect(data.info).toContain('Romaji');
     // enable_romaji is null (unset) -> furigana, not romaji
-    expect(line.Text).toContain('<rt>かんじ</rt>');
+    expect(line.text).toContain('<rt>かんじ</rt>');
   });
 
-  it('does not re-set Info once already populated', () => {
-    const data = { Info: 'custom' };
-    const line = { Text: '漢字{かんじ}' };
+  it('does not re-set info once already populated', () => {
+    const data = { info: 'custom' };
+    const line: LineView = { text: '漢字{かんじ}' };
     processLinePhonetics(line, data);
-    expect(data.Info).toBe('custom');
+    expect(data.info).toBe('custom');
   });
 
-  it('leaves non-Japanese text alone and never sets Info', () => {
-    const data: { Info?: string } = {};
-    const line = { Text: 'hello world' };
+  it('leaves non-Japanese text alone and never sets info', () => {
+    const data: { info?: string } = {};
+    const line: LineView = { text: 'hello world' };
     processLinePhonetics(line, data);
-    expect(data.Info).toBeUndefined();
-    expect(line.Text).toBe('hello world');
+    expect(data.info).toBeUndefined();
+    expect(line.text).toBe('hello world');
   });
 });
 
@@ -45,21 +46,21 @@ describe('decorateLineElement', () => {
   it('appends a translation node for a distinct translation', () => {
     const lineElem = document.createElement('div');
     const main = document.createElement('span');
-    decorateLineElement(lineElem, main, { Text: 'hello', Translation: 'hola' });
+    decorateLineElement(lineElem, main, { text: 'hello', translation: 'hola' });
     expect(main.querySelector('.translation')?.textContent).toBe('hola');
   });
 
   it('skips translation when it matches the raw text', () => {
     const lineElem = document.createElement('div');
     const main = document.createElement('span');
-    decorateLineElement(lineElem, main, { Text: 'hello', Translation: 'hello' }, 'hello');
+    decorateLineElement(lineElem, main, { text: 'hello', translation: 'hello' }, 'hello');
     expect(main.querySelector('.translation')).toBeNull();
   });
 
   it('adds the rtl class for Hebrew text', () => {
     const lineElem = document.createElement('div');
     const main = document.createElement('span');
-    decorateLineElement(lineElem, main, { Text: 'שלום' });
+    decorateLineElement(lineElem, main, { text: 'שלום' });
     expect(lineElem.classList.contains('rtl')).toBe(true);
   });
 });

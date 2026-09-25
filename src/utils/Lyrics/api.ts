@@ -7,19 +7,19 @@ import { getLyrics, LyricsResult } from '../API/Lyrics';
 import { ClearLyricsPageContainer, noLyricsMessage, NoLyricsResult } from './ui';
 import { processAndEnhanceLyrics } from './processing';
 import { LyricsRequestToken } from './publish';
-import { LyricsData } from './conversion';
+import { LyricsDocument } from './conversion';
 
 /**
  * Fetches lyrics from Spotify API and processes them
  *
  * @param trackId - Spotify track ID
- * @returns Processed lyrics data or typed NO_LYRICS sentinel
+ * @returns Processed lyrics document or typed NO_LYRICS sentinel
  */
 export async function fetchLyricsFromAPI(
   trackId: string,
   flush = false,
   token: LyricsRequestToken,
-): Promise<LyricsData | NoLyricsResult> {
+): Promise<LyricsDocument | NoLyricsResult> {
   try {
     const spotifyAccessToken = await Platform.GetSpotifyAccessToken();
 

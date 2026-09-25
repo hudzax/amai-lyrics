@@ -76,7 +76,7 @@ const URI_A = 'spotify:track:trackA';
 const URI_B = 'spotify:track:trackB';
 
 function staticPayload(id: string) {
-  return { id, Type: 'Static', Lines: [{ Text: 'hi' }], Raw: ['hi'] };
+  return { id, type: 'Static', lines: [{ text: 'hi' }] };
 }
 
 beforeEach(() => {

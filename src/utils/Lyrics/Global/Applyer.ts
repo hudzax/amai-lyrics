@@ -7,16 +7,16 @@ import { liveTrackId } from '../trackId';
 import storage from '../../storage';
 import Defaults from '../../../components/Global/Defaults';
 import { NoLyricsResult } from '../ui';
-import { LyricsData } from '../conversion';
+import { LyricsDocument } from '../conversion';
 
 /**
- * Applies lyrics to the UI based on the lyrics type.
+ * Applies lyrics to the UI.
  * Returns true when the lyrics were mounted. Returns false (without fetching
- * anything) when the payload went stale — the pipeline owns the single retry
+ * anything) when the document went stale — the pipeline owns the single retry
  * for the live track, so this module never calls back into the fetch seam.
  */
 export default function ApplyLyrics(
-  lyrics: LyricsData | NoLyricsResult | null | undefined,
+  lyrics: LyricsDocument | NoLyricsResult | null | undefined,
 ): boolean {
   // Check if lyrics page exists
   if (!document.querySelector('#AmaiLyricsPage')) return false;
@@ -41,21 +41,19 @@ export default function ApplyLyrics(
 
   // Typed sentinel check — don't attempt to render NO_LYRICS payload
   if (!lyrics || isNoLyricsResult(lyrics)) return false;
-  const typedLyrics = lyrics as LyricsData;
-  if (!typedLyrics?.id) return false;
+  const lyricsDocument = lyrics;
+  if (!lyricsDocument.id) return false;
 
   // Stale payload (track moved mid-flight): decline and let the pipeline
   // retry once for the live track. No self-refetch here — the seam stays
   // one-directional (pipeline -> apply). Track-id parsing lives in the
   // trackId leaf so this gate never splits URIs itself.
   const currentTrackId = liveTrackId();
-  if (currentTrackId !== typedLyrics?.id) return false;
+  if (currentTrackId !== lyricsDocument.id) return false;
 
-  // Render behind the single LyricsRenderer seam. 'Syllable' lyrics are
-  // normalized to 'Line' on ingest (processing.ts); the word-by-word karaoke
-  // renderer has been removed.
-  if (typedLyrics.Type !== 'Line' && typedLyrics.Type !== 'Static') return false;
-  renderLyrics(typedLyrics);
+  // The document's kind is validated where it is built, so there is nothing
+  // left to check here.
+  renderLyrics(lyricsDocument);
   // Show refresh button after lyrics are applied
   showRefreshButton();
   addLinesEvListener(); // Attach event listener after lyrics are rendered

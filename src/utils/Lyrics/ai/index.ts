@@ -15,7 +15,7 @@
 
 import storage from '../../storage';
 import Defaults from '../../../components/Global/Defaults';
-import { LyricsData, updateLyricsWithText } from '../conversion';
+import { LyricsDocument, updateLyricsWithText } from '../conversion';
 import { isCurrentLyricsRequest, type LyricsRequestToken } from '../publish';
 import { fetchAmaiPhonetic, fetchAmaiTranslations } from './amai';
 import { fetchGeminiPhonetic, fetchGeminiTranslations } from './gemini';
@@ -50,16 +50,10 @@ function hasUsableLines(lines: string[]): boolean {
 /**
  * Attaches translations to lyrics lines by index, defaulting gaps to ''.
  */
-function attachTranslations(lyricsJson: LyricsData, translations: string[]): void {
-  if (lyricsJson.Type === 'Line' && lyricsJson.Content) {
-    lyricsJson.Content.forEach((line, idx: number) => {
-      line.Translation = translations[idx] || '';
-    });
-  } else if (lyricsJson.Type === 'Static' && lyricsJson.Lines) {
-    lyricsJson.Lines.forEach((line, idx: number) => {
-      line.Translation = translations[idx] || '';
-    });
-  }
+function attachTranslations(document: LyricsDocument, translations: string[]): void {
+  document.lines.forEach((line, idx: number) => {
+    line.translation = translations[idx] || '';
+  });
 }
 
 /**
@@ -99,12 +93,12 @@ function selectPhoneticPrompt(flags: EnhancementFlags, enableRomaji: boolean): s
  * with a user-visible `Info` message where the legacy code set one.
  */
 export async function enhanceLyrics(
-  prepared: LyricsData,
+  prepared: LyricsDocument,
   lyricsOnly: string[],
   flags: EnhancementFlags,
   token: LyricsRequestToken,
   providerOverrides: Partial<EnhancementProviders> = {},
-): Promise<LyricsData | null> {
+): Promise<LyricsDocument | null> {
   // Read settings once so every branch below sees one consistent snapshot.
   const apiKey = (storage.get('GEMINI_API_KEY')?.toString() ?? '').trim();
   const hasKey = apiKey !== '';
@@ -147,7 +141,7 @@ export async function enhanceLyrics(
  * when Amai also yields nothing — same as the legacy behaviour.
  */
 async function enhancePhonetics(
-  prepared: LyricsData,
+  prepared: LyricsDocument,
   lyricsOnly: string[],
   prompt: string | null,
   hasKey: boolean,
@@ -171,7 +165,7 @@ async function enhancePhonetics(
     if (hasUsableLines(amaiLines)) {
       updateLyricsWithText(prepared, amaiLines);
     } else {
-      prepared.Info = FETCH_ERROR_INFO;
+      prepared.info = FETCH_ERROR_INFO;
     }
     return;
   }
@@ -186,7 +180,7 @@ async function enhancePhonetics(
 
   console.log('[Amai Lyrics] Falling back to Gemini for phonetic lyrics');
   console.error('Amai Lyrics: Gemini API Key missing');
-  prepared.Info = MISSING_KEY_INFO;
+  prepared.info = MISSING_KEY_INFO;
 }
 
 /**

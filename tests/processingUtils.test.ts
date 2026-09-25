@@ -33,6 +33,7 @@ import {
   prepareLyricsForGemini,
   extractLyrics,
 } from '../src/utils/Lyrics/processing';
+import type { LyricsDocument } from '../src/utils/Lyrics/conversion';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -41,41 +42,42 @@ beforeEach(() => {
 describe('detectLanguages', () => {
   it('detects Japanese kanji in line lyrics', () => {
     const result = detectLanguages({
-      Type: 'Line',
-      Content: [
-        { Text: 'hello', StartTime: 0, EndTime: 1 },
-        { Text: '漢字テスト', StartTime: 1, EndTime: 2 },
+      type: 'Line',
+      lines: [
+        { text: 'hello', start: 0, end: 1 },
+        { text: '漢字テスト', start: 1, end: 2 },
       ],
-    } as never);
+    });
     expect(result).toEqual({ hasKanji: true, hasKorean: false });
   });
 
   it('detects Korean in static lyrics', () => {
     const result = detectLanguages({
-      Type: 'Static',
-      Lines: [{ Text: '한글 가사' }],
-    } as never);
+      type: 'Static',
+      lines: [{ text: '한글 가사' }],
+    });
     expect(result).toEqual({ hasKanji: false, hasKorean: true });
   });
 
   it('detects both languages and returns false for plain English', () => {
     expect(
       detectLanguages({
-        Type: 'Line',
-        Content: [{ Text: '漢字 and 한글', StartTime: 0, EndTime: 1 }],
-      } as never),
+        type: 'Line',
+        lines: [{ text: '漢字 and 한글', start: 0, end: 1 }],
+      }),
     ).toEqual({ hasKanji: true, hasKorean: true });
-    expect(
-      detectLanguages({ Type: 'Static', Lines: [{ Text: 'plain english' }] } as never),
-    ).toEqual({ hasKanji: false, hasKorean: false });
-  });
-
-  it('returns false flags for empty or unknown shapes', () => {
-    expect(detectLanguages({ Type: 'Line', Content: [] } as never)).toEqual({
+    expect(detectLanguages({ type: 'Static', lines: [{ text: 'plain english' }] })).toEqual({
       hasKanji: false,
       hasKorean: false,
     });
-    expect(detectLanguages({ Type: 'Static' } as never)).toEqual({
+  });
+
+  it('returns false flags for documents without lines', () => {
+    expect(detectLanguages({ type: 'Line', lines: [] })).toEqual({
+      hasKanji: false,
+      hasKorean: false,
+    });
+    expect(detectLanguages({ type: 'Static', lines: [] })).toEqual({
       hasKanji: false,
       hasKorean: false,
     });
@@ -83,52 +85,52 @@ describe('detectLanguages', () => {
 });
 
 describe('prepareLyricsForGemini', () => {
-  it('extracts lyricsOnly and stores them as Raw', () => {
-    const data = {
-      Type: 'Static',
-      Lines: [{ Text: 'first' }, { Text: 'second' }],
-    } as never;
-    const { lyricsJson, lyricsOnly } = prepareLyricsForGemini(data);
-    expect(lyricsOnly).toEqual(['first', 'second']);
-    expect(lyricsJson.Raw).toEqual(['first', 'second']);
+  it('extracts lyricsOnly and stores each line as its raw text', () => {
+    const document: LyricsDocument = {
+      type: 'Static',
+      lines: [{ text: 'first' }, { text: 'second' }],
+    };
+    const prepared = prepareLyricsForGemini(document);
+    expect(prepared.lyricsOnly).toEqual(['first', 'second']);
+    expect(prepared.document.lines.map((line) => line.raw)).toEqual(['first', 'second']);
   });
 });
 
 describe('extractLyrics', () => {
   it('removes empty lines and offsets start times for line lyrics', () => {
-    const data = {
-      Type: 'Line',
-      Content: [
-        { Text: '   ', StartTime: 5, EndTime: 6 },
-        { Text: 'hello', StartTime: 5, EndTime: 6 },
+    const document: LyricsDocument = {
+      type: 'Line',
+      lines: [
+        { text: '   ', start: 5, end: 6 },
+        { text: 'hello', start: 5, end: 6 },
       ],
-    } as never;
-    const out = extractLyrics(data);
+    };
+    const out = extractLyrics(document);
     expect(out).toEqual(['hello']);
-    expect(data.Content).toHaveLength(1);
-    expect(data.Content[0].StartTime).toBeCloseTo(4.45, 10);
+    expect(document.lines).toHaveLength(1);
+    expect(document.lines[0].start).toBeCloseTo(4.45, 10);
   });
 
   it('clamps the timing offset at zero', () => {
-    const data = {
-      Type: 'Line',
-      Content: [{ Text: 'early', StartTime: 0.2, EndTime: 1 }],
-    } as never;
-    extractLyrics(data);
-    expect(data.Content[0].StartTime).toBe(0);
+    const document: LyricsDocument = {
+      type: 'Line',
+      lines: [{ text: 'early', start: 0.2, end: 1 }],
+    };
+    extractLyrics(document);
+    expect(document.lines[0].start).toBe(0);
   });
 
   it('strips decorative punctuation and normalizes static lines', () => {
-    const data = {
-      Type: 'Static',
-      Lines: [{ Text: '「hello」, world!' }, { Text: '  ' }],
-    } as never;
-    const out = extractLyrics(data);
+    const document: LyricsDocument = {
+      type: 'Static',
+      lines: [{ text: '「hello」, world!' }, { text: '  ' }],
+    };
+    const out = extractLyrics(document);
     expect(out).toEqual(['hello world']);
   });
 
-  it('returns empty array for unknown shapes', () => {
-    expect(extractLyrics({ Type: 'Line' } as never)).toEqual([]);
-    expect(extractLyrics({ Type: 'Static' } as never)).toEqual([]);
+  it('returns an empty array for a document with no lines', () => {
+    expect(extractLyrics({ type: 'Line', lines: [] })).toEqual([]);
+    expect(extractLyrics({ type: 'Static', lines: [] })).toEqual([]);
   });
 });
