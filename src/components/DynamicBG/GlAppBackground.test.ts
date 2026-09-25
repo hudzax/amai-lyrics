@@ -5,6 +5,8 @@ const COVER_URL = 'https://i.scdn.co/image/test-cover';
 
 function createGlHarness() {
   const drawArrays = vi.fn();
+  /** Counts layout reads — the loop measuring the canvas every frame is the regression. */
+  const sizeReads = { width: 0, height: 0 };
   const gl = {
     COMPILE_STATUS: 0x8b81,
     LINK_STATUS: 0x8b82,
@@ -41,6 +43,8 @@ function createGlHarness() {
     getUniformLocation: vi.fn((_program: object, name: string) => ({ name })),
     uniform1i: vi.fn(),
     uniform1f: vi.fn(),
+    uniform2f: vi.fn(),
+    uniform4f: vi.fn(),
     activeTexture: vi.fn(),
     createVertexArray: vi.fn(() => ({})),
     bindVertexArray: vi.fn(),
@@ -56,7 +60,7 @@ function createGlHarness() {
     deleteVertexArray: vi.fn(),
   };
 
-  return { drawArrays, gl };
+  return { drawArrays, gl, sizeReads };
 }
 
 describe('GlAppBackground rendering budget', () => {
@@ -122,8 +126,20 @@ describe('GlAppBackground rendering budget', () => {
       .spyOn(HTMLCanvasElement.prototype, 'getContext')
       .mockImplementation(function (this: HTMLCanvasElement) {
         Object.defineProperties(this, {
-          clientWidth: { configurable: true, value: 100 },
-          clientHeight: { configurable: true, value: 50 },
+          clientWidth: {
+            configurable: true,
+            get: () => {
+              harness.sizeReads.width += 1;
+              return 100;
+            },
+          },
+          clientHeight: {
+            configurable: true,
+            get: () => {
+              harness.sizeReads.height += 1;
+              return 50;
+            },
+          },
         });
         return harness.gl as unknown as WebGL2RenderingContext;
       });
@@ -133,15 +149,36 @@ describe('GlAppBackground rendering budget', () => {
     return { ...harness, background };
   }
 
-  it('renders the backing store at 1x device pixels', async () => {
+  it('renders the backing store at BACKING_SCALE of the layout size', async () => {
     const { background } = await createBackground();
     const canvas = background.getElement().querySelector('canvas')!;
 
-    expect(canvas.width).toBe(100);
-    expect(canvas.height).toBe(50);
+    // Budget pin, not arithmetic: 0.6 of the 1x-capped device pixels. Raise
+    // BACKING_SCALE and these numbers move with it on purpose.
+    expect(canvas.width).toBe(60);
+    expect(canvas.height).toBe(30);
   });
 
-  it('draws again after 33 milliseconds', async () => {
+  it('asks for the strong adapter', async () => {
+    await createBackground();
+
+    expect(getContextSpy).toHaveBeenCalledWith(
+      'webgl2',
+      expect.objectContaining({ powerPreference: 'high-performance' }),
+    );
+  });
+
+  it('watches the canvas for layout changes', async () => {
+    const observe = vi.spyOn(ResizeObserver.prototype, 'observe');
+    const { background } = await createBackground();
+    const canvas = background.getElement().querySelector('canvas')!;
+
+    expect(observe).toHaveBeenCalledTimes(1);
+    expect(observe.mock.calls[0][0]).toBe(canvas);
+    observe.mockRestore();
+  });
+
+  it('draws again after 50 milliseconds', async () => {
     const { drawArrays } = await createBackground();
     expect(drawArrays).toHaveBeenCalledTimes(1);
 
@@ -149,12 +186,39 @@ describe('GlAppBackground rendering budget', () => {
     expect(drawArrays).toHaveBeenCalledTimes(1);
 
     frameCallbacks.shift()!(50);
+    expect(drawArrays).toHaveBeenCalledTimes(1);
+
+    frameCallbacks.shift()!(60);
     expect(drawArrays).toHaveBeenCalledTimes(2);
 
     frameCallbacks.shift()!(70);
     expect(drawArrays).toHaveBeenCalledTimes(2);
 
-    frameCallbacks.shift()!(90);
+    frameCallbacks.shift()!(110);
     expect(drawArrays).toHaveBeenCalledTimes(3);
+  });
+
+  it('never measures the canvas while the loop runs', async () => {
+    const { drawArrays, sizeReads } = await createBackground();
+    const readsAfterMount = { ...sizeReads };
+
+    frameCallbacks.shift()!(10); // skipped
+    frameCallbacks.shift()!(60); // drawn
+    expect(drawArrays).toHaveBeenCalledTimes(2);
+    expect(sizeReads).toEqual(readsAfterMount);
+  });
+
+  it('still re-measures and repaints when the size changes', async () => {
+    const { drawArrays, sizeReads } = await createBackground();
+    // The loop no longer polls, so the resize handler is the only path from a
+    // layout change to a new backing store — if it stops reading, nothing else
+    // will notice.
+    window.dispatchEvent(new Event('resize'));
+    const redraw = frameCallbacks[frameCallbacks.length - 1]; // queued after the tick
+    redraw(0);
+
+    expect(sizeReads.width).toBe(2);
+    expect(sizeReads.height).toBe(2);
+    expect(drawArrays).toHaveBeenCalledTimes(2);
   });
 });

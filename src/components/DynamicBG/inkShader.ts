@@ -16,8 +16,8 @@
  * - Motion: unchanged from the old design — a steady glacial wind plus
  *   bounded, sine-eased meander per warp layer (coprime periods). The ink
  *   drifts as one mass, never scrolls mechanically, never repeats visibly;
- *   with `uTime = STATIC_TIME` (reduced motion) every term freezes into a
- *   non-degenerate still.
+ *   when the caller evaluates the flow uniforms at `STATIC_TIME`
+ *   (`GlAppBackground`) every term freezes into a non-degenerate still.
  * - Crossfade: a flow-and-luminance-ordered soft dissolve ("veils") whose
  *   threshold is exactly 0 at `uMix = 0` and 1 at `uMix = 1` for every
  *   pixel, preserving the frame-identical ping-pong swap contract in
@@ -35,10 +35,12 @@
  * `uv` is top-origin (v grows downward): `gl_FragCoord` is flipped once
  * here, matching the artwork upload orientation, so the rest needs no flips.
  *
- * Cost note: 8 four-octave fBm evaluations per pixel (warp ×4, palette ×2,
- * density ×2) inside one pass at 30 fps / DPR ≤ 1 — same budget class as
- * the previous 4-evaluation design; drop a density layer first if a
- * low-end GPU ever shows up in profiling.
+ * Cost note: 8 fBm evaluations per pixel (warp ×4 and density ×2 at four
+ * octaves, palette ×2 at two). Everything constant across the frame — the
+ * winds, the sways, the global breath, the grain seed — is a uniform computed
+ * once per frame by `GlAppBackground`, not per pixel. Still fill-rate bound,
+ * so the real budget knobs live next to it: `BACKING_SCALE` and `BG_FPS`.
+ * If a low-end GPU ever shows up in profiling, drop a density layer first.
  */
 export const VERTEX_SHADER = `#version 300 es
 // Attribute-less fullscreen triangle: positions from gl_VertexID, no buffers.
@@ -51,7 +53,12 @@ void main() {
 export const FRAGMENT_SHADER = `#version 300 es
 precision highp float;
 
-uniform float uTime;
+// Frame-constant flow terms. Each one is identical for every pixel and used to
+// be recomputed per fragment; see GlAppBackground.computeFlow for the values.
+uniform vec4 uFlowA; // wind1.xy, sway1.xy
+uniform vec4 uFlowB; // wind2.xy, sway2.xy
+uniform float uBreath; // global luminance breath, incl. the base dim
+uniform vec2 uGrainSeed; // per-frame grain offset
 uniform float uMix;
 uniform float uAspect;
 uniform float uWidth;
@@ -90,6 +97,18 @@ float fbm(vec2 p) {
   return v;
 }
 
+// Two octaves instead of four, renormalised to fbm()'s value range (its weights
+// sum to 0.75 against fbm()'s 0.9375, hence the 1.25) so callers see the same
+// distribution and only lose the sub-detail.
+float fbmLow(vec2 p) {
+  float v = 0.0;
+  vec2 q = p;
+  v += 0.5 * vnoise(q);
+  q = q * 2.03 + vec2(1.7, 9.2);
+  v += 0.25 * vnoise(q);
+  return v * 1.25;
+}
+
 void main() {
   vec2 uv = vec2(gl_FragCoord.x, uHeight - gl_FragCoord.y) / vec2(uWidth, uHeight);
   vec2 st = (uv - 0.5) * vec2(uAspect, 1.0);
@@ -97,12 +116,12 @@ void main() {
   // ---- flow: one mass of ink moving as a whole ------------------------
   // Steady glacial wind + bounded sine-eased meander per layer. Motion
   // level is deliberately unchanged from the old design; only the FORM is
-  // new — the abstraction comes from shape, not speed.
-  float s = uTime;
-  vec2 wind1 = vec2(0.020, -0.011) * s;
-  vec2 sway1 = vec2(sin(s * 0.045), cos(s * 0.033)) * 0.35;
-  vec2 wind2 = vec2(-0.013, 0.008) * s;
-  vec2 sway2 = vec2(sin(s * 0.028 + 1.9), cos(s * 0.051 + 0.6)) * 0.30;
+  // new — the abstraction comes from shape, not speed. Both terms are
+  // frame-constant, so the CPU evaluates the sines (see uFlowA/uFlowB).
+  vec2 wind1 = uFlowA.xy;
+  vec2 sway1 = uFlowA.zw;
+  vec2 wind2 = uFlowB.xy;
+  vec2 sway2 = uFlowB.zw;
 
   // ---- form: isotropic double domain warp (marbling, no ribbons) ------
   // No anisotropic stretch: the ink curls in all directions instead of
@@ -122,10 +141,13 @@ void main() {
   // never from screen position: neighbouring pixels land on nearby palette
   // texels (coherent colour masses), but no screen-to-image correspondence
   // exists — the cover's imagery and composition cannot survive the trip.
+  // fbmLow, not fbm: the target is a 32x32 texture that is bilinear-upscaled,
+  // so the two finest octaves only jitter the coordinate inside one texel —
+  // cost that the source resolution throws away.
   vec2 palCoord = clamp(
     vec2(
-      fbm(p * 0.55 + r + wind1 + 3.7),
-      fbm(p * 0.55 - r.yx + wind2 + 7.1)
+      fbmLow(p * 0.55 + r + wind1 + 3.7),
+      fbmLow(p * 0.55 - r.yx + wind2 + 7.1)
     ),
     vec2(0.003),
     vec2(0.997)
@@ -164,7 +186,7 @@ void main() {
   col = mix(vec3(lum), col, 1.22);
   col = clamp(col, 0.0, 1.0);
   col = mix(col, col * col * (3.0 - 2.0 * col), 0.55);
-  col *= 0.35 * (1.0 + 0.05 * sin(s * 0.10));
+  col *= uBreath;
   col *= 1.0 + 0.10 * (r.x - 0.5);
 
   // Top/bottom legibility scrims — same contract as the old CSS ::after.
@@ -175,7 +197,7 @@ void main() {
 
   // ---- film grain, weighted into the shadows where banding lives -------
   float lum2 = dot(col, vec3(0.2126, 0.7152, 0.0722));
-  float g = hash(gl_FragCoord.xy + vec2(fract(s * 0.70) * 43.0, fract(s * 0.31) * 17.0)) - 0.5;
+  float g = hash(gl_FragCoord.xy + uGrainSeed) - 0.5;
   col += g * mix(0.020, 0.006, smoothstep(0.0, 0.45, lum2));
 
   outColor = vec4(max(col, 0.0), 1.0);

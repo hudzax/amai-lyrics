@@ -27,15 +27,31 @@ import { FRAGMENT_SHADER, VERTEX_SHADER } from './inkShader';
  */
 const ART_SIZE = 32;
 const CROSSFADE_SECONDS = 1.6;
-/** The drift is glacial; 30 fps halves the GPU cost with no visible change. */
-const BG_FPS = 30;
+/**
+ * The drift is glacial, and every frame costs twice: once rasterising the
+ * shader, again re-invalidating the glass surfaces' backdrop-filters that sit
+ * over the canvas. Chosen as a divisor of 60 Hz deliberately — rAF only fires
+ * on display frames, so a 24 fps target quantises to 20 anyway on the common
+ * panel while 20 lands evenly on every refresh rate in use.
+ */
+const BG_FPS = 20;
 const FRAME_INTERVAL_MS = 1000 / BG_FPS;
 /** Fixed warp position for prefers-reduced-motion (non-degenerate field). */
 const STATIC_TIME = 9.5;
 /** Clamp long rAF gaps (tab hidden, GC pause) so the warp never jumps. */
 const MAX_FRAME_DT_MS = 1000 / 15;
-/** Backing-store pixel ratio cap: soft warped gradients need no more than 1x. */
+/** Cap on backing-store pixels per CSS pixel: soft warped gradients need no more than 1x. */
 const MAX_DPR = 1;
+/**
+ * Backing store as a fraction of the layout size. This frame is a soft warped
+ * gradient — its finest feature is tens of CSS pixels — so resolution is
+ * nearly pure cost here, and it is cost paid twice: fewer fragments, and a
+ * smaller texture for the compositor to copy (and every backdrop-filter above
+ * it to re-blur) each frame. Chromium bilinear-upscales the canvas for free.
+ * The one thing this visibly softens is the film grain, now ~1.7 CSS px wide
+ * instead of 1 — raise it toward 1 if the grain reads as mush.
+ */
+const BACKING_SCALE = 0.6;
 /**
  * Reveal fade duration. The canvas is only mounted once its first frame is
  * drawn, then fades in over the DOM placeholder underneath it; `AppBackground`
@@ -92,9 +108,11 @@ export class GlAppBackground {
   private texCurrent: WebGLTexture;
   private readonly onFail: () => void;
   private readonly motionQuery: MediaQueryList;
+  /** Reports the canvas's layout size so the loop never has to measure it. */
+  private readonly sizeObserver: ResizeObserver;
   private motionEnabled: boolean;
   private rafId: number | null = null;
-  /** Coalesces window-resize redraws to at most one per frame. */
+  /** Coalesces resize redraws to at most one per frame. */
   private resizeRafQueued = false;
   private lastTickMs = 0;
   private elapsed = 0;
@@ -123,7 +141,10 @@ export class GlAppBackground {
       antialias: false,
       depth: false,
       stencil: false,
-      powerPreference: 'low-power',
+      // Fill-rate bound, so ask for the strong adapter: 'low-power' pinned this
+      // pass to the weakest GPU on a dual-GPU laptop. On a single-GPU machine
+      // the hint is a no-op.
+      powerPreference: 'high-performance',
       desynchronized: true,
     });
     if (!gl) throw new Error('WebGL2: context unavailable in this runtime');
@@ -146,7 +167,10 @@ export class GlAppBackground {
     this.program = program;
     gl.useProgram(program);
     this.uniforms = {
-      uTime: gl.getUniformLocation(program, 'uTime'),
+      uFlowA: gl.getUniformLocation(program, 'uFlowA'),
+      uFlowB: gl.getUniformLocation(program, 'uFlowB'),
+      uBreath: gl.getUniformLocation(program, 'uBreath'),
+      uGrainSeed: gl.getUniformLocation(program, 'uGrainSeed'),
       uMix: gl.getUniformLocation(program, 'uMix'),
       uAspect: gl.getUniformLocation(program, 'uAspect'),
       uWidth: gl.getUniformLocation(program, 'uWidth'),
@@ -169,6 +193,11 @@ export class GlAppBackground {
 
     this.canvas.addEventListener('webglcontextlost', this.handleContextLost);
     document.addEventListener('visibilitychange', this.handleVisibility);
+    // The window listener alone misses layout changes that don't resize the
+    // window (nav collapse, the host transfer into fullscreen); the observer
+    // covers those, and replaces the per-frame `clientWidth` read.
+    this.sizeObserver = new ResizeObserver(this.handleResize);
+    this.sizeObserver.observe(this.canvas);
     window.addEventListener('resize', this.handleResize, { passive: true });
     this.motionQuery.addEventListener('change', this.handleMotionChange);
   }
@@ -271,6 +300,7 @@ export class GlAppBackground {
     this.canvas.removeEventListener('webglcontextlost', this.handleContextLost);
     document.removeEventListener('visibilitychange', this.handleVisibility);
     window.removeEventListener('resize', this.handleResize);
+    this.sizeObserver.disconnect();
     this.motionQuery.removeEventListener('change', this.handleMotionChange);
     // Free the driver context eagerly — browsers cap concurrent contexts.
     this.gl.getExtension('WEBGL_lose_context')?.loseContext();
@@ -359,6 +389,7 @@ export class GlAppBackground {
     this.stopLoop();
     document.removeEventListener('visibilitychange', this.handleVisibility);
     window.removeEventListener('resize', this.handleResize);
+    this.sizeObserver.disconnect();
     this.motionQuery.removeEventListener('change', this.handleMotionChange);
     this.container.remove();
     this.onFail();
@@ -377,12 +408,13 @@ export class GlAppBackground {
   };
 
   /**
-   * Window resize / zoom / monitor change: nothing else refreshes the
-   * backing store or `uAspect`/`uWidth`/`uHeight` — the 30 fps loop picks
-   * them up on the next tick, but under prefers-reduced-motion that loop
-   * idles after one settled frame, so without this the canvas would keep
-   * rendering at the old size with a stale aspect until the next artwork.
-   * rAF-coalesced so a drag-resize reallocates at most once per frame.
+   * Anything that changes the canvas's layout size (the observer for layout,
+   * the window listener for zoom and monitor changes). Nothing else refreshes
+   * the backing store or `uAspect`/`uWidth`/`uHeight` — the draw loop never
+   * measures the element, and under prefers-reduced-motion it idles after one
+   * settled frame — so without this the canvas would keep rendering at the old
+   * size with a stale aspect until the next artwork. rAF-coalesced so a
+   * drag-resize reallocates at most once per frame.
    */
   private readonly handleResize = (): void => {
     if (this.disposed || this.resizeRafQueued) return;
@@ -412,7 +444,7 @@ export class GlAppBackground {
     const w = this.canvas.clientWidth;
     const h = this.canvas.clientHeight;
     if (!w || !h) return; // detached — keep the last backing size
-    const dpr = Math.min(MAX_DPR, window.devicePixelRatio || 1);
+    const dpr = Math.min(MAX_DPR, window.devicePixelRatio || 1) * BACKING_SCALE;
     const bw = Math.max(1, Math.round(w * dpr));
     const bh = Math.max(1, Math.round(h * dpr));
     if (bw === this.backingW && bh === this.backingH) return;
@@ -430,15 +462,45 @@ export class GlAppBackground {
   /** Encode one fullscreen draw with the current uniforms and textures. */
   private drawFrame(): void {
     const gl = this.gl;
-    gl.useProgram(this.program);
-    gl.bindVertexArray(this.vao);
-    gl.uniform1f(this.uniforms.uTime, this.motionEnabled ? this.elapsed : STATIC_TIME);
+    // Program and VAO are bound once in the constructor and nothing in this
+    // module touches them again, so the per-frame state is only what varies.
+    this.computeFlow();
     gl.uniform1f(this.uniforms.uMix, this.mix);
+    // Textures do re-bind every frame: `uploadArtwork` leaves the active unit
+    // elsewhere, and finishing a crossfade relabels both objects.
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.texOld);
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, this.texCurrent);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+
+  /**
+   * The shader's frame-constant terms — wind, sway, luminance breath, grain
+   * seed. Each used to be evaluated once per pixel. Under
+   * `prefers-reduced-motion` the field freezes because these are evaluated at
+   * the fixed `STATIC_TIME` position instead of the accumulated drift.
+   */
+  private computeFlow(): void {
+    const gl = this.gl;
+    const t = this.motionEnabled ? this.elapsed : STATIC_TIME;
+    gl.uniform4f(
+      this.uniforms.uFlowA,
+      0.02 * t,
+      -0.011 * t,
+      Math.sin(t * 0.045) * 0.35,
+      Math.cos(t * 0.033) * 0.35,
+    );
+    gl.uniform4f(
+      this.uniforms.uFlowB,
+      -0.013 * t,
+      0.008 * t,
+      Math.sin(t * 0.028 + 1.9) * 0.3,
+      Math.cos(t * 0.051 + 0.6) * 0.3,
+    );
+    gl.uniform1f(this.uniforms.uBreath, 0.35 * (1 + 0.05 * Math.sin(t * 0.1)));
+    // GLSL fract() of a non-negative operand is JS's remainder operator.
+    gl.uniform2f(this.uniforms.uGrainSeed, ((t * 0.7) % 1) * 43, ((t * 0.31) % 1) * 17);
   }
 
   private readonly tick = (now: number): void => {
@@ -458,7 +520,6 @@ export class GlAppBackground {
       if (p >= 1) this.finishCrossfade();
     }
 
-    this.resizeBackingStore();
     this.drawFrame();
 
     // Reduced motion: one settled frame is enough — idle the loop until the
