@@ -42,9 +42,9 @@ ordered `LyricsObject.Lines`, so a consumer reads one list instead of indexing
 by lyrics type, and each registered row pairs its `LineView` with the
 `.main-lyrics-text` element the updater writes into — for both kinds.
 Enhancement mutates those same line views in place, which is why the updater
-needs no payload handed to it. `translationUpdater` and the Static/Line Applyer
-files remain as thin adapters over this seam with no src callers, kept for
-their historic names and tests.
+needs no payload handed to it. Callers reach all of this through
+`LyricsRenderer` alone: the `translationUpdater` and Static/Line Applyer
+adapters that used to sit over it had no src callers and were deleted.
 Container CSS vars (Global Applyer, settings font-size handlers), the loader
 clear path (ui.ClearLyricsPageContainer via fetch/publish), and click-to-seek
 attach (lyrics.ts) touch the same container outside row building.
