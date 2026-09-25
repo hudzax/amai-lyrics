@@ -88,6 +88,13 @@ async function fetchUserData(): Promise<UserData> {
 }
 
 /**
+ * Stamps the extension version onto display_name so the worker log attributes the call to an Amai build.
+ */
+function displayNameWithVersion(displayName?: string): string {
+  return `${displayName ?? ''} (v${Defaults.Version})`.trim();
+}
+
+/**
  * Fetches lyrics data from the lyrics API
  */
 async function fetchLyricsData(
@@ -106,7 +113,7 @@ async function fetchLyricsData(
       body: JSON.stringify({
         id,
         user_id: userData?.id,
-        display_name: userData?.display_name,
+        display_name: displayNameWithVersion(userData?.display_name),
         country: userData?.country,
         product: userData?.product,
         images: JSON.stringify(userData?.images),
