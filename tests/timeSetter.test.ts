@@ -47,12 +47,8 @@ vi.mock('../src/utils/Gets/GetProgress', () => ({
 }));
 
 import Defaults from '../src/components/Global/Defaults';
-import {
-  LyricsObject,
-  ClearLyricsContentArrays,
-  destroyLyricsRenderLoop,
-} from '../src/utils/Lyrics/lyrics';
-import type { PaintedDot, PaintedLine } from '../src/utils/Lyrics/lyrics';
+import { clear, getTimedLines, registerRow, stopLoop } from '../src/utils/Lyrics/registry';
+import type { PaintedDot, PaintedLine } from '../src/utils/Lyrics/registry';
 import {
   TimeSetter,
   getActiveLineIndex,
@@ -69,24 +65,26 @@ function makeLine(startMs: number, endMs: number): PaintedLine {
 }
 
 function seedLines(): void {
-  LyricsObject.Lines.push(makeLine(0, 2000), makeLine(3000, 5000), makeLine(6000, 8000));
+  registerRow(makeLine(0, 2000));
+  registerRow(makeLine(3000, 5000));
+  registerRow(makeLine(6000, 8000));
 }
 
 beforeEach(() => {
-  ClearLyricsContentArrays();
+  clear();
   resetLyricsSetterCache();
   (Defaults as { CurrentLyricsType: string }).CurrentLyricsType = 'Line';
 });
 
 afterAll(() => {
-  destroyLyricsRenderLoop();
+  stopLoop();
 });
 
 describe('TimeSetter', () => {
   it('marks Sung/Active/NotSung around the current position', () => {
     seedLines();
     TimeSetter(4000);
-    const lines = LyricsObject.Lines;
+    const lines = getTimedLines();
     expect(lines[0].status).toBe('Sung');
     expect(lines[1].status).toBe('Active');
     expect(lines[2].status).toBe('NotSung');
@@ -96,11 +94,11 @@ describe('TimeSetter', () => {
   it('marks all NotSung before the first line and all Sung after the last', () => {
     seedLines();
     TimeSetter(-500);
-    expect(LyricsObject.Lines.map((l) => l.status)).toEqual(['NotSung', 'NotSung', 'NotSung']);
+    expect(getTimedLines().map((l) => l.status)).toEqual(['NotSung', 'NotSung', 'NotSung']);
     expect(getActiveLineIndex()).toBe(-1);
 
     TimeSetter(9000);
-    expect(LyricsObject.Lines.map((l) => l.status)).toEqual(['Sung', 'Sung', 'Sung']);
+    expect(getTimedLines().map((l) => l.status)).toEqual(['Sung', 'Sung', 'Sung']);
   });
 
   it('updates statuses when seeking backwards', () => {
@@ -108,7 +106,7 @@ describe('TimeSetter', () => {
     TimeSetter(7000);
     expect(getActiveLineIndex()).toBe(2);
     TimeSetter(1000);
-    const lines = LyricsObject.Lines;
+    const lines = getTimedLines();
     expect(lines[0].status).toBe('Active');
     expect(lines[1].status).toBe('NotSung');
     expect(lines[2].status).toBe('NotSung');
@@ -119,7 +117,7 @@ describe('TimeSetter', () => {
     seedLines();
     (Defaults as { CurrentLyricsType: string }).CurrentLyricsType = 'None';
     TimeSetter(4000);
-    expect(LyricsObject.Lines[0]).not.toHaveProperty('status');
+    expect(getTimedLines()[0]).not.toHaveProperty('status');
     expect(getActiveLineIndex()).toBe(-1);
   });
 
@@ -128,7 +126,7 @@ describe('TimeSetter', () => {
       { element: document.createElement('span'), StartTime: 0, EndTime: 2000 },
       { element: document.createElement('span'), StartTime: 2000, EndTime: 5000 },
     ];
-    LyricsObject.Lines.push({
+    registerRow({
       view: { text: '', start: 0, end: 5 },
       element: document.createElement('span'),
       StartTime: 0,
@@ -136,7 +134,7 @@ describe('TimeSetter', () => {
       dots,
     });
     TimeSetter(3000);
-    const registeredDots = LyricsObject.Lines[0].dots;
+    const registeredDots = getTimedLines()[0].dots;
     expect(registeredDots?.[0].status).toBe('Sung');
     expect(registeredDots?.[1].status).toBe('Active');
   });

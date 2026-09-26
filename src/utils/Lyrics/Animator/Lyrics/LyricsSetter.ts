@@ -1,6 +1,6 @@
 import Defaults from '../../../../components/Global/Defaults';
-import { LyricsObject } from '../../lyrics';
-import type { PaintedDot, TimedPaintedLine } from '../../lyrics';
+import { getTimedLines } from '../../registry';
+import type { PaintedDot, TimedPaintedLine } from '../../registry';
 import { timeOffset } from '../Shared';
 import { findActiveIndex } from '../../findActiveIndex';
 
@@ -80,15 +80,12 @@ export function TimeSetter(PreCurrentPosition: number) {
   // timing, and only they can be searched.
   if (Defaults.CurrentLyricsType !== 'Line') return;
 
-  const lines = LyricsObject.Lines;
-  if (!lines.length) return;
-  if (lines.length !== lastCachedLength) {
+  const tLines = getTimedLines();
+  if (!tLines.length) return;
+  if (tLines.length !== lastCachedLength) {
     lastActiveIndex = -1;
-    lastCachedLength = lines.length;
+    lastCachedLength = tLines.length;
   }
-  // SAFETY: renderLineRows fills StartTime/EndTime for every row of a
-  // line-synced document.
-  const tLines = lines as TimedPaintedLine[];
   const activeIndex = findActiveIndex(tLines, CurrentPosition);
   if (activeIndex !== -1 && activeIndex === lastActiveIndex) {
     const al = tLines[activeIndex]!;

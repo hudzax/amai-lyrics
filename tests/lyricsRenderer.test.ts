@@ -47,11 +47,7 @@ import {
   updateLyricTranslations,
   getPaintedLines,
 } from '../src/utils/Lyrics/LyricsRenderer';
-import {
-  LyricsObject,
-  ClearLyricsContentArrays,
-  destroyLyricsRenderLoop,
-} from '../src/utils/Lyrics/lyrics';
+import { clear, getAllRows, stopLoop } from '../src/utils/Lyrics/registry';
 import type { LyricsDocument } from '../src/utils/Lyrics/conversion';
 
 /** A fresh line-synced document per test — the render path mutates line views. */
@@ -78,11 +74,11 @@ function setupDom(): void {
 
 beforeEach(() => {
   setupDom();
-  ClearLyricsContentArrays();
+  clear();
 });
 
 afterAll(() => {
-  destroyLyricsRenderLoop();
+  stopLoop();
 });
 
 describe('LyricsRenderer seam', () => {
@@ -94,7 +90,7 @@ describe('LyricsRenderer seam', () => {
     expect(records[0].StartTime).toBe(1000);
     expect(records[0].EndTime).toBe(3000);
     expect(records[0].element.classList.contains('line')).toBe(true);
-    expect(LyricsObject.Lines).toHaveLength(2);
+    expect(getAllRows()).toHaveLength(2);
     expect(document.querySelectorAll('.main-lyrics-text.line')).toHaveLength(2);
     // The container is stamped from the document's declared type.
     expect(document.querySelector<HTMLElement>('.LyricsContent')?.dataset.lyricsType).toBe('Line');
@@ -110,7 +106,7 @@ describe('LyricsRenderer seam', () => {
     // kinds; the `.static` marker lives on the wrapper div it was built into.
     expect(records[0].element.classList.contains('main-lyrics-text')).toBe(true);
     expect(records[0].element.parentElement?.classList.contains('static')).toBe(true);
-    expect(LyricsObject.Lines).toHaveLength(1);
+    expect(getAllRows()).toHaveLength(1);
   });
 
   it('updates translations in place without replacing elements', () => {

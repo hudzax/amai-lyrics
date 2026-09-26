@@ -184,7 +184,7 @@ export async function loadAndApplyLyrics(
     if (isNoLyricsResult(last)) return last;
     // A request that a newer one superseded must not paint. renderLyrics
     // appends into the container without clearing it, so two pipelines
-    // rendering the same track duplicate every line and leave LyricsObject
+    // rendering the same track duplicate every line and leave the registry
     // bound to the second copy — no visible highlight, and a scroll target
     // that no longer matches what is on screen. This is the startup race
     // between the player poll and PageView.Open, which both load the live track.

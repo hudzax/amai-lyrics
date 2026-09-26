@@ -7,7 +7,7 @@
  *
  * It must stay dependency-free: processing.ts, Applyer/Static.ts and
  * Applyer/Synced/Line.ts all sit inside a pre-existing import cycle (via
- * LyricsObject -> lyrics.ts -> ... -> pageButtons.ts -> Global/Applyer.ts), so
+ * registry -> ... -> pageButtons.ts -> Global/Applyer.ts), so
  * importing anything heavier here — or importing processing.ts from the Applyers —
  * would add a back-edge to that cycle and risk a module-init/TDZ failure on the
  * render path. A leaf with no imports cannot create a cycle.

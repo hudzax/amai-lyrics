@@ -369,7 +369,7 @@ describe('in-flight dedupe', () => {
     await Promise.all([originator, joiner]);
 
     // Regression: both pipelines used to paint. renderLyrics appends without
-    // clearing the container, so every line was duplicated and LyricsObject
+    // clearing the container, so every line was duplicated and the registry
     // ended up bound to the second copy — the visible copy never highlighted
     // and the scroll target sat one full copy below it.
     expect(mockedApply).toHaveBeenCalledTimes(1);

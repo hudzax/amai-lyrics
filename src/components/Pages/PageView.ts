@@ -1,7 +1,7 @@
 import { loadAndApplyLyrics, clearLyricsUiTimeouts } from '../../utils/Lyrics/fetchLyrics';
 import '../../css/Loaders/DotLoader.css';
 import '../../css/Loaders/ProcessingIndicator.css';
-import { ClearLyricsContentArrays, removeLinesEvListener } from '../../utils/Lyrics/lyrics';
+import { clear, detachClickToSeek } from '../../utils/Lyrics/registry';
 import { clearApplyInfoTimeout } from '../../utils/Lyrics/Applyer/Info/ApplyInfo';
 import ApplyDynamicBackground from '../DynamicBG/dynamicBackground';
 import Defaults from '../Global/Defaults';
@@ -122,8 +122,8 @@ async function DestroyPage() {
     }
   }
   Defaults.LyricsContainerExists = false;
-  removeLinesEvListener();
-  ClearLyricsContentArrays();
+  detachClickToSeek();
+  clear();
   clearApplyInfoTimeout();
   Object.values(Tooltips).forEach((a) => a?.destroy());
   Object.keys(Tooltips).forEach((k) => (Tooltips[k] = null));

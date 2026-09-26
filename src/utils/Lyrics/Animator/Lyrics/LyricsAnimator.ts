@@ -1,7 +1,7 @@
 import Defaults from '../../../../components/Global/Defaults';
 import { SpotifyPlayer } from '../../../../components/Global/SpotifyPlayer';
-import { LyricsObject } from '../../lyrics';
-import type { PaintedDot, PaintedLine } from '../../lyrics';
+import { getTimedLines } from '../../registry';
+import type { PaintedDot, PaintedLine } from '../../registry';
 import { BlurMultiplier } from '../Shared';
 import { getActiveLineIndex } from './LyricsSetter';
 
@@ -195,5 +195,5 @@ function animateLineLines(arr: PaintedLine[]) {
 
 export function Animate() {
   if (Defaults.CurrentLyricsType !== 'Line') return;
-  animateLineLines(LyricsObject.Lines);
+  animateLineLines(getTimedLines());
 }

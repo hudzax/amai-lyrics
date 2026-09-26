@@ -69,13 +69,7 @@ vi.mock('../src/utils/API/Lyrics', () => ({
 }));
 
 import { TimeSetter } from '../src/utils/Lyrics/Animator/Lyrics/LyricsSetter';
-import {
-  LyricsObject,
-  lineElementToStartTimeMap,
-  populateElementTimeMaps,
-  ClearLyricsContentArrays,
-  destroyLyricsRenderLoop,
-} from '../src/utils/Lyrics/lyrics';
+import { clear, getAllRows, getTimedLines, stopLoop } from '../src/utils/Lyrics/registry';
 import { RecalculateScrollSimplebar } from '../src/utils/Scrolling/Simplebar/ScrollSimplebar';
 import { processAndEnhanceLyrics } from '../src/utils/Lyrics/processing';
 import {
@@ -120,21 +114,20 @@ function setupDom(): void {
 
 beforeEach(() => {
   setupDom();
-  ClearLyricsContentArrays();
+  clear();
   vi.mocked(RecalculateScrollSimplebar).mockClear();
 });
 
 afterAll(() => {
-  destroyLyricsRenderLoop();
+  stopLoop();
 });
 
 describe('translation update keeps lyrics sync intact', () => {
-  it('preserves line element identity, time maps and DOM structure after update', () => {
+  it('preserves line element identity and DOM structure after update', () => {
     const lyrics = lineLyrics();
     renderLyrics(lyrics);
-    populateElementTimeMaps();
 
-    const lines = LyricsObject.Lines;
+    const lines = getAllRows();
     expect(lines).toHaveLength(3);
     const before = document.querySelectorAll<HTMLElement>('.main-lyrics-text.line');
     expect(before).toHaveLength(3);
@@ -154,10 +147,6 @@ describe('translation update keeps lyrics sync intact', () => {
       expect(after[i]).toBe(before[i]);
       expect(after[i].isConnected).toBe(true);
     }
-    lines.forEach((line) => {
-      expect(lineElementToStartTimeMap.get(line.element)).toBe(line.StartTime);
-    });
-
     // Translations landed on the correct lines
     expect(after[0].querySelector('.translation')?.textContent).toBe('translated first line');
     expect(after[1].querySelector('rt')?.textContent).toBe('かんじ');
@@ -203,7 +192,7 @@ describe('translation update keeps lyrics sync intact', () => {
     updateLyricTranslations();
 
     TimeSetter(4000); // ms — inside line[1] (3500-6000)
-    const lines = LyricsObject.Lines;
+    const lines = getTimedLines();
     expect(lines[0].status).toBe('Sung');
     expect(lines[1].status).toBe('Active');
     expect(lines[2].status).toBe('NotSung');
@@ -273,7 +262,7 @@ describe('AI enhancement reaches the painted page', () => {
     renderLyrics(lyrics);
     // The registry must hold the document's own line objects — if the pipeline
     // hands enhancement a clone, the repaint below paints nothing.
-    expect(LyricsObject.Lines[0]!.view).toBe(lyrics.lines[0]);
+    expect(getTimedLines()[0]!.view).toBe(lyrics.lines[0]);
 
     // The enhancement is fire-and-forget; publication repaints on completion.
     await vi.waitFor(() => {

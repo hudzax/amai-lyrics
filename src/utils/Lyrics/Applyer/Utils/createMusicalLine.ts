@@ -1,5 +1,5 @@
-import { LyricsObject } from '../../lyrics';
-import type { PaintedDot, PaintedLine } from '../../lyrics';
+import { registerRow } from '../../registry';
+import type { PaintedDot, PaintedLine } from '../../registry';
 
 const DOT_GLYPH = '•' as const;
 const INSTRUMENTAL_LABEL = 'Instrumental' as const;
@@ -68,7 +68,7 @@ function registerMusicalLine(startMs: number, endMs: number): PaintedLine {
     dots: [],
   };
 
-  LyricsObject.Lines.push(painted);
+  registerRow(painted);
   return painted;
 }
 

@@ -43,8 +43,8 @@ musical breaks and alignment on one side; the font-size tag on the other).
 applyScrollReanchor is exported only for a test's reach — re-anchoring is a step
 inside the update, and no caller crosses it.
 
-The builders register into the one ordered `LyricsObject.Lines`, so a consumer
-reads one list instead of indexing by lyrics type. The exception is the setter
+The builders register each row through the registry's `registerRow`, so a
+consumer reads one list instead of indexing by lyrics type. The exception is the setter
 and the animator, which still ask `Defaults.CurrentLyricsType` whether the list
 they search every tick is a line-synced one: that is the one answer here this
 seam does not own. Each registered row pairs its `LineView` with the
@@ -55,9 +55,15 @@ needs no payload handed to it. Callers reach all of this through
 adapters that used to sit over it had no src callers and were deleted.
 Container CSS vars (Global Applyer, settings font-size handlers), the loader
 clear path (ui.ClearLyricsPageContainer via fetch/publish), and click-to-seek
-attach (lyrics.ts, reached from the Applyer) touch the same container outside
-row building. The clear this seam owns is the one it performs while rendering;
+attach (the registry's `attachClickToSeek`, reached from the Applyer) touch
+the same container outside row building. The clear this seam owns is the one it performs while rendering;
 closing the page empties the same registry from outside it.
+
+## LyricsRegistry
+
+The single place that owns the painted lyric rows and everything derived from them: the row list, the click-to-seek time map, the position-driven render loop, and the full reset. Lives in src/utils/Lyrics/registry.ts. Callers cross it through registerRow, getAllRows, getPaintedLines, getTimedLines, getActiveLine, clear, startLoop, stopLoop, attachClickToSeek, and detachClickToSeek — never through the row array, the time map, or a PositionConsumer registration of their own.
+
+The three row writers (LyricsRenderer's line-synced and static builders, createMusicalBreak) push a PaintedLine through registerRow. The readers (LyricsSetter, LyricsAnimator, AutoScroll, LyricsRenderer's translation update) cross the read methods. getTimedLines returns a cached view of the rows that carry timing, invalidated on registerRow and clear; getActiveLine returns the row whose status is 'Active' and whose element is connected. The render loop is owned by startLoop/stopLoop: the registry registers with PositionConsumer (surface 'highlight', 50 ms) and the tick calls the setter, the animator, and — at half cadence — AutoScroll.sync. clear() is a full reset: rows, map, loop state, setter cache, animator cache, and AutoScroll.reset. The click-to-seek listener is owned by attachClickToSeek(container)/detachClickToSeek(); the caller passes the container it rendered into, and the registry owns the time map that feeds the lookup. The auto-start on import is gone; app.tsx calls startLoop() explicitly.
 
 ## AutoScroll
 

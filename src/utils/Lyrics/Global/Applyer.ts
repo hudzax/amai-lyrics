@@ -2,7 +2,7 @@ import { setBlurringLastLine } from '../Animator/Lyrics/LyricsAnimator';
 import { renderLyrics } from '../LyricsRenderer';
 import { isNoLyricsResult } from '../fetchLyrics';
 import { showRefreshButton } from '../../../components/Pages/pageButtons';
-import { addLinesEvListener } from '../lyrics';
+import { attachClickToSeek } from '../registry';
 import { liveTrackId } from '../trackId';
 import settingsValues from '../../settingsValues';
 import { NoLyricsResult } from '../ui';
@@ -56,6 +56,10 @@ export default function ApplyLyrics(
   renderLyrics(lyricsDocument);
   // Show refresh button after lyrics are applied
   showRefreshButton();
-  addLinesEvListener(); // Attach event listener after lyrics are rendered
+  // Attach event listener after lyrics are rendered. The caller passes the
+  // container it rendered into; the registry owns the time map.
+  if (lyricsContent) {
+    attachClickToSeek(lyricsContent);
+  }
   return true;
 }

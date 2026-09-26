@@ -106,10 +106,10 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
   };
   lifecycle.trackWindow('online', onOnline as never);
 
-  // Ensure lyric render loop is tracked for teardown (auto-started on import but now explicit)
-  const { ensureLyricsRenderLoop, destroyLyricsRenderLoop } = await import('./utils/Lyrics/lyrics');
-  ensureLyricsRenderLoop();
-  lifecycle.trackCallback(() => destroyLyricsRenderLoop());
+  // Ensure lyric render loop is tracked for teardown (explicit start, no import side-effect)
+  const { startLoop, stopLoop } = await import('./utils/Lyrics/registry');
+  startLoop();
+  lifecycle.trackCallback(() => stopLoop());
 
   // Initialize player state and events
   SpotifyPlayer.IsPlaying = IsPlaying();

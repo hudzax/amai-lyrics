@@ -12,7 +12,7 @@
  * differ for real reasons (timing, musical breaks, alignment on one side; the
  * font-size tag on the other).
  *
- * Registered rows are the render path's unit: `LyricsObject.Lines` pairs each
+ * Registered rows are the render path's unit: the registry's row list pairs each
  * line view with the element the updater writes into, so the update path reads
  * the registry it owns instead of re-selecting rows from the DOM.
  */
@@ -26,8 +26,15 @@ import {
 } from '../Scrolling/Simplebar/ScrollSimplebar';
 import { AutoScroll } from '../Scrolling/AutoScroll';
 import { ConvertTime } from './ConvertTime';
-import { ClearLyricsContentArrays, lyricsBetweenShow, LyricsObject } from './lyrics';
-import type { PaintedLine } from './lyrics';
+import {
+  clear,
+  getActiveLine,
+  getAllRows,
+  getPaintedLines as registryGetPaintedLines,
+  lyricsBetweenShow,
+  registerRow,
+} from './registry';
+import type { PaintedLine } from './registry';
 import { ApplyLyricsCredits } from './Applyer/Credits/ApplyLyricsCredits';
 import { ApplyInfo } from './Applyer/Info/ApplyInfo';
 import { createMusicalLineMs } from './Applyer/Utils/createMusicalLine';
@@ -43,7 +50,7 @@ const STYLING_CONTAINER_SELECTOR =
 
 /** The painted lyric rows, musical-break rows excluded. */
 export function getPaintedLines(): PaintedLine[] {
-  return LyricsObject.Lines.filter((line) => !line.dots);
+  return registryGetPaintedLines();
 }
 
 function resolveContainer(): HTMLElement | null {
@@ -69,7 +76,7 @@ export function renderLyrics(lyrics: LyricsDocument): void {
   container.setAttribute('data-lyrics-type', lyrics.type);
 
   // Clear previous content
-  ClearLyricsContentArrays();
+  clear();
   ClearScrollSimplebar();
   TOP_ApplyLyricsSpacer(container);
 
@@ -105,7 +112,7 @@ function renderLineRows(container: HTMLElement, lyrics: LyricsDocument): void {
 
     // Register the row: the setter, the animator and the click-to-seek map
     // hold it by identity
-    LyricsObject.Lines.push({
+    registerRow({
       view: line,
       element: mainTextContainer,
       rawText: line.raw,
@@ -164,7 +171,7 @@ function renderStaticRows(container: HTMLElement, lyrics: LyricsDocument): void 
 
     // The span is the row, for both payload kinds: it is what the updater
     // writes into and what the click-to-seek hit test looks for.
-    LyricsObject.Lines.push({
+    registerRow({
       view: line,
       element: mainTextContainer,
       rawText: line.raw,
@@ -259,14 +266,14 @@ export function updateLyricTranslations(): void {
     // Capture the currently sung line so the scroll can be re-anchored on it
     // after the update (translation nodes change every line's height).
     const activeLine =
-      LyricsObject.Lines.find((line) => line.status === 'Active' && line.element.isConnected)
-        ?.element ?? lyricsContainer.querySelector<HTMLElement>('.main-lyrics-text.line.Active');
+      getActiveLine()?.element ??
+      lyricsContainer.querySelector<HTMLElement>('.main-lyrics-text.line.Active');
     const activeLineTopBefore = activeLine ? activeLine.getBoundingClientRect().top : null;
 
     // Get romaji setting
     const enableRomaji = settingsValues.get('enableRomaji');
 
-    for (const painted of LyricsObject.Lines) {
+    for (const painted of getAllRows()) {
       // Musical-break rows carry no lyric text to translate.
       if (painted.dots) continue;
       updateLineElement(

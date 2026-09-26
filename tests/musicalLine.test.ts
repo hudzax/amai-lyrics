@@ -47,18 +47,14 @@ vi.mock('../src/utils/Gets/GetProgress', () => ({
 }));
 
 import { createMusicalLineMs } from '../src/utils/Lyrics/Applyer/Utils/createMusicalLine';
-import {
-  LyricsObject,
-  ClearLyricsContentArrays,
-  destroyLyricsRenderLoop,
-} from '../src/utils/Lyrics/lyrics';
+import { clear, getAllRows, stopLoop } from '../src/utils/Lyrics/registry';
 
 beforeEach(() => {
-  ClearLyricsContentArrays();
+  clear();
 });
 
 afterAll(() => {
-  destroyLyricsRenderLoop();
+  stopLoop();
 });
 
 describe('createMusicalLineMs', () => {
@@ -78,7 +74,7 @@ describe('createMusicalLineMs', () => {
     expect(dots[1].textContent).toBe('•');
     expect(dots[2].textContent).toBe('•');
 
-    const lines = LyricsObject.Lines;
+    const lines = getAllRows();
     expect(lines).toHaveLength(1);
     expect(lines[0].StartTime).toBe(1000);
     expect(lines[0].EndTime).toBe(4000);

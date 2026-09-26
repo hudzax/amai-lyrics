@@ -1,7 +1,6 @@
 import Defaults from '../../components/Global/Defaults';
 import { getPositionFor, resolveIsPlaying } from '../Gets/GetProgress';
-import { LyricsObject } from '../Lyrics/lyrics';
-import type { TimedPaintedLine } from '../Lyrics/lyrics';
+import { getTimedLines } from '../Lyrics/registry';
 import { findActiveIndex } from '../Lyrics/findActiveIndex';
 import type { TimedLine } from '../Lyrics/findActiveIndex';
 import { scrollIntoCenterView } from '../ScrollIntoView';
@@ -98,8 +97,7 @@ export function syncAutoScroll(overrides: AutoScrollSyncOverrides = {}): void {
 
     // Rows without timing (Static lyrics) are not scroll targets: the search
     // finds nothing and the tick returns.
-    const lines: readonly AutoScrollLine[] =
-      overrides.lines ?? (LyricsObject.Lines as TimedPaintedLine[]);
+    const lines: readonly AutoScrollLine[] = overrides.lines ?? getTimedLines();
 
     let position: number;
     try {
