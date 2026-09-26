@@ -5,6 +5,8 @@ const COVER_URL = 'https://i.scdn.co/image/test-cover';
 
 function createGlHarness() {
   const drawArrays = vi.fn();
+  const bindFramebuffer = vi.fn();
+  const texImage2D = vi.fn();
   /** Counts layout reads — the loop measuring the canvas every frame is the regression. */
   const sizeReads = { width: 0, height: 0 };
   const gl = {
@@ -25,6 +27,9 @@ function createGlHarness() {
     LINEAR: 0x2601,
     CLAMP_TO_EDGE: 0x812f,
     TRIANGLES: 0x0004,
+    FRAMEBUFFER: 0x8d40,
+    COLOR_ATTACHMENT0: 0x8ce0,
+    FRAMEBUFFER_COMPLETE: 0x8cd5,
     UNPACK_PREMULTIPLY_ALPHA_WEBGL: 0x9241,
     UNPACK_FLIP_Y_WEBGL: 0x9240,
     createShader: vi.fn(() => ({})),
@@ -52,7 +57,12 @@ function createGlHarness() {
     bindTexture: vi.fn(),
     texParameteri: vi.fn(),
     pixelStorei: vi.fn(),
-    texImage2D: vi.fn(),
+    texImage2D,
+    createFramebuffer: vi.fn(() => ({})),
+    bindFramebuffer,
+    framebufferTexture2D: vi.fn(),
+    checkFramebufferStatus: vi.fn(() => 0x8cd5),
+    deleteFramebuffer: vi.fn(),
     drawArrays,
     viewport: vi.fn(),
     getExtension: vi.fn(() => null),
@@ -60,7 +70,7 @@ function createGlHarness() {
     deleteVertexArray: vi.fn(),
   };
 
-  return { drawArrays, gl, sizeReads };
+  return { bindFramebuffer, drawArrays, gl, sizeReads, texImage2D };
 }
 
 describe('GlAppBackground rendering budget', () => {
@@ -159,6 +169,38 @@ describe('GlAppBackground rendering budget', () => {
     expect(canvas.height).toBe(30);
   });
 
+  it('renders the field target below the backing store', async () => {
+    const { gl, texImage2D } = await createBackground();
+
+    // The whole point of the split: the expensive pass rasterises fewer pixels
+    // than the canvas presents, so FIELD_SCALE must stay below BACKING_SCALE.
+    // Budget pin — 0.35 of the 1x-capped device pixels.
+    expect(texImage2D).toHaveBeenCalledWith(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA8,
+      35,
+      18,
+      0,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      null,
+    );
+  });
+
+  it('draws the field offscreen and presents it to the canvas', async () => {
+    const { bindFramebuffer, drawArrays } = await createBackground();
+
+    // create()'s reattach paints one synchronous frame: two passes, the first
+    // into the field framebuffer and the second into the default one. If that
+    // final null target ever goes missing the frame renders offscreen and the
+    // canvas stays black.
+    expect(drawArrays).toHaveBeenCalledTimes(2);
+    const [fieldTarget, presentTarget] = bindFramebuffer.mock.calls.slice(-2);
+    expect(fieldTarget[1]).toEqual(expect.any(Object));
+    expect(presentTarget[1]).toBeNull();
+  });
+
   it('asks for the strong adapter', async () => {
     await createBackground();
 
@@ -178,33 +220,37 @@ describe('GlAppBackground rendering budget', () => {
     observe.mockRestore();
   });
 
-  it('draws again after 50 milliseconds', async () => {
+  it('draws on every display frame at 60 Hz', async () => {
     const { drawArrays } = await createBackground();
-    expect(drawArrays).toHaveBeenCalledTimes(1);
+    expect(drawArrays).toHaveBeenCalledTimes(2); // reattach's single frame
 
-    frameCallbacks.shift()!(10);
-    expect(drawArrays).toHaveBeenCalledTimes(1);
-
-    frameCallbacks.shift()!(50);
-    expect(drawArrays).toHaveBeenCalledTimes(1);
-
-    frameCallbacks.shift()!(60);
+    // The first tick only seeds the clock, so it never draws.
+    frameCallbacks.shift()!(16.7);
     expect(drawArrays).toHaveBeenCalledTimes(2);
 
-    frameCallbacks.shift()!(70);
+    for (const t of [33.4, 50.1, 66.8]) frameCallbacks.shift()!(t);
+    // Three display frames, three draws, two passes each. The 1 ms epsilon on
+    // the cadence gate is what lets a jittering 16.7 ms rAF through every time.
+    expect(drawArrays).toHaveBeenCalledTimes(8);
+  });
+
+  it('caps the cadence below the display rate', async () => {
+    const { drawArrays } = await createBackground();
     expect(drawArrays).toHaveBeenCalledTimes(2);
 
-    frameCallbacks.shift()!(110);
-    expect(drawArrays).toHaveBeenCalledTimes(3);
+    // 240 Hz: four callbacks land inside one 60 fps interval, so none of them
+    // may draw. An uncapped loop would rasterise the field four times over.
+    for (const t of [4.2, 8.4, 12.6, 16.8]) frameCallbacks.shift()!(t);
+    expect(drawArrays).toHaveBeenCalledTimes(2);
   });
 
   it('never measures the canvas while the loop runs', async () => {
     const { drawArrays, sizeReads } = await createBackground();
     const readsAfterMount = { ...sizeReads };
 
-    frameCallbacks.shift()!(10); // skipped
-    frameCallbacks.shift()!(60); // drawn
-    expect(drawArrays).toHaveBeenCalledTimes(2);
+    frameCallbacks.shift()!(16.7); // seeds the clock, skipped
+    frameCallbacks.shift()!(33.4); // both passes drawn
+    expect(drawArrays).toHaveBeenCalledTimes(4);
     expect(sizeReads).toEqual(readsAfterMount);
   });
 
@@ -219,6 +265,6 @@ describe('GlAppBackground rendering budget', () => {
 
     expect(sizeReads.width).toBe(2);
     expect(sizeReads.height).toBe(2);
-    expect(drawArrays).toHaveBeenCalledTimes(2);
+    expect(drawArrays).toHaveBeenCalledTimes(4);
   });
 });

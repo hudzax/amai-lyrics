@@ -32,25 +32,50 @@
  * a D3D12 WebGPU device (dxil.dll load refused) — WebGL goes through
  * ANGLE/D3D11 and works there.
  *
- * `uv` is top-origin (v grows downward): `gl_FragCoord` is flipped once
- * here, matching the artwork upload orientation, so the rest needs no flips.
+ * TWO PROGRAMS, because the frame's two halves have opposite resolution
+ * needs. The field's finest real feature is a ~70 CSS px billow edge (fbm's
+ * fourth octave, at 6% amplitude); the grain's is one pixel. Welding them
+ * into a single pass forced one resolution knob to serve both, which is what
+ * made a 60 fps cadence look unaffordable:
  *
- * Cost note: 8 fBm evaluations per pixel (warp ×4 and density ×2 at four
- * octaves, palette ×2 at two). Everything constant across the frame — the
- * winds, the sways, the global breath, the grain seed — is a uniform computed
- * once per frame by `GlAppBackground`, not per pixel. Still fill-rate bound,
- * so the real budget knobs live next to it: `BACKING_SCALE` and `BG_FPS`.
- * If a low-end GPU ever shows up in profiling, drop a density layer first.
+ * - `FIELD_FRAGMENT_SHADER` renders the warp/density/palette field, the grade
+ *   and the scrims into a small offscreen texture (`FIELD_SCALE` in
+ *   `GlAppBackground`) — about a third of the fragments of a full-res pass.
+ * - `PRESENT_FRAGMENT_SHADER` samples that texture (bilinear upscale is free
+ *   in hardware) and adds the grain at output resolution. One texture tap and
+ *   one hash per pixel, so the expensive half and the frame rate are now
+ *   independent knobs.
+ *
+ * Both passes address pixels through `gl_FragCoord`, which is bottom-origin in
+ * GL. The field pass flips it once to match the artwork upload orientation, so
+ * its `uv` is top-origin; the present pass does not flip, because the field
+ * texture was RENDERED rather than uploaded and so already shares that
+ * orientation — sampling `gl_FragCoord / uResolution` lines up row for row.
+ *
+ * Cost note: the field is 8 fBm evaluations per pixel (warp x4 and density x2
+ * at four octaves, palette x2 at two). Everything constant across the frame —
+ * the winds, the sways, the global breath, the grain seed — is a uniform
+ * computed once per frame by `GlAppBackground`, not per pixel. The pass is
+ * still fill-rate bound, so the budget knobs live next to it: `FIELD_SCALE`
+ * (the field's cost), `BACKING_SCALE` (the present pass's and the compositor's)
+ * and `BG_FPS`. If a low-end GPU ever shows up in profiling, drop a density
+ * layer from the field first — it is now the only expensive thing per frame.
  */
 export const VERTEX_SHADER = `#version 300 es
 // Attribute-less fullscreen triangle: positions from gl_VertexID, no buffers.
+// Shared by both programs, so neither needs a vertex buffer or attributes.
 void main() {
   vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
   gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
 }
 `;
 
-export const FRAGMENT_SHADER = `#version 300 es
+/**
+ * Pass 1 — the ink field, rendered into the low-res framebuffer.
+ * Everything except the film grain lives here. Output is the graded,
+ * scrimmed, vignetted colour, ready for the present pass to add grain to.
+ */
+export const FIELD_FRAGMENT_SHADER = `#version 300 es
 precision highp float;
 
 // Frame-constant flow terms. Each one is identical for every pixel and used to
@@ -58,11 +83,9 @@ precision highp float;
 uniform vec4 uFlowA; // wind1.xy, sway1.xy
 uniform vec4 uFlowB; // wind2.xy, sway2.xy
 uniform float uBreath; // global luminance breath, incl. the base dim
-uniform vec2 uGrainSeed; // per-frame grain offset
 uniform float uMix;
-uniform float uAspect;
-uniform float uWidth;
-uniform float uHeight;
+uniform float uAspect; // LAYOUT aspect, not the field texture's
+uniform vec2 uFieldSize; // field framebuffer, in pixels
 uniform sampler2D uTexOld;
 uniform sampler2D uTexNew;
 
@@ -110,7 +133,7 @@ float fbmLow(vec2 p) {
 }
 
 void main() {
-  vec2 uv = vec2(gl_FragCoord.x, uHeight - gl_FragCoord.y) / vec2(uWidth, uHeight);
+  vec2 uv = vec2(gl_FragCoord.x, uFieldSize.y - gl_FragCoord.y) / uFieldSize;
   vec2 st = (uv - 0.5) * vec2(uAspect, 1.0);
 
   // ---- flow: one mass of ink moving as a whole ------------------------
@@ -160,6 +183,9 @@ void main() {
   // ping-pong swap frame-identical. Thresholds ride the warp field + the
   // outgoing cover's luminance, so the fade travels as coherent veils that
   // follow the flow; per-cell jitter stays tiny (no salt-and-pepper).
+  // The cell is measured in FIELD texels, so its on-screen size scales with
+  // FIELD_SCALE — coarser than the old single-pass grain, still far below the
+  // veil width, and the endpoint contract above does not depend on it.
   float lold = dot(oldC, vec3(0.2126, 0.7152, 0.0722));
   float cell = hash(floor(gl_FragCoord.xy / 3.0) + 7.7);
   float soft = 0.32;
@@ -195,10 +221,45 @@ void main() {
   col *= scrim;
   col *= 1.0 - 0.28 * smoothstep(0.35, 1.15, length(st));
 
-  // ---- film grain, weighted into the shadows where banding lives -------
-  float lum2 = dot(col, vec3(0.2126, 0.7152, 0.0722));
+  // The breath and the scrims keep this well under 1.0, so an RGBA8 target
+  // costs no range the old single-pass output did not already quantise away.
+  outColor = vec4(max(col, 0.0), 1.0);
+}
+`;
+
+/**
+ * Pass 2 — the present. Samples the field texture (hardware bilinear does the
+ * upscale) and adds the film grain at output resolution.
+ *
+ * This is the entire reason the field can run at a ninth of the pixels: the
+ * grain is the frame's anti-banding device and its only 1-px feature, so it
+ * has to be evaluated where it will be seen, not downsampled with everything
+ * else.
+ */
+export const PRESENT_FRAGMENT_SHADER = `#version 300 es
+precision highp float;
+
+uniform sampler2D uField;
+uniform vec2 uGrainSeed; // per-frame grain offset
+uniform vec2 uResolution; // canvas backing store, in pixels
+
+out vec4 outColor;
+
+float hash(vec2 p) {
+  vec2 q = fract(p * vec2(123.34, 456.21));
+  q += dot(q, q + 45.32);
+  return fract(q.x * q.y);
+}
+
+void main() {
+  vec3 col = texture(uField, gl_FragCoord.xy / uResolution).rgb;
+
+  // Grain weighted into the shadows where banding lives. It rides the FIELD's
+  // own luminance — the same value the single-pass shader used — so the two
+  // passes cannot drift apart in how much noise they lay down.
+  float lum = dot(col, vec3(0.2126, 0.7152, 0.0722));
   float g = hash(gl_FragCoord.xy + uGrainSeed) - 0.5;
-  col += g * mix(0.020, 0.006, smoothstep(0.0, 0.45, lum2));
+  col += g * mix(0.020, 0.006, smoothstep(0.0, 0.45, lum));
 
   outColor = vec4(max(col, 0.0), 1.0);
 }
