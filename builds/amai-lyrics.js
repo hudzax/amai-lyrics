@@ -6299,7 +6299,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.6.3";
+      version = "1.6.4";
     }
   });
 
@@ -9455,15 +9455,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-22396-oBMZ1aGiHdhC/1a0d996f7d2e/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-18412-k6xgbf5GCwVT/1a0de61ed76e/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-22396-oBMZ1aGiHdhC/1a0d996f7d2e/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-18412-k6xgbf5GCwVT/1a0de61ed76e/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-22396-oBMZ1aGiHdhC/1a0d996f7dbf/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-18412-k6xgbf5GCwVT/1a0de61ed7cf/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-22396-oBMZ1aGiHdhC/1a0d996f7dbf/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-18412-k6xgbf5GCwVT/1a0de61ed7cf/ProcessingIndicator.css"() {
     }
   });
 
@@ -35127,17 +35127,18 @@ ${JSON.stringify(lyricsOnly)}`
   });
 
   // src/components/DynamicBG/inkShader.ts
-  var VERTEX_SHADER, FRAGMENT_SHADER;
+  var VERTEX_SHADER, FIELD_FRAGMENT_SHADER, PRESENT_FRAGMENT_SHADER;
   var init_inkShader = __esm({
     "src/components/DynamicBG/inkShader.ts"() {
       VERTEX_SHADER = `#version 300 es
 // Attribute-less fullscreen triangle: positions from gl_VertexID, no buffers.
+// Shared by both programs, so neither needs a vertex buffer or attributes.
 void main() {
   vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
   gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
 }
 `;
-      FRAGMENT_SHADER = `#version 300 es
+      FIELD_FRAGMENT_SHADER = `#version 300 es
 precision highp float;
 
 // Frame-constant flow terms. Each one is identical for every pixel and used to
@@ -35145,11 +35146,9 @@ precision highp float;
 uniform vec4 uFlowA; // wind1.xy, sway1.xy
 uniform vec4 uFlowB; // wind2.xy, sway2.xy
 uniform float uBreath; // global luminance breath, incl. the base dim
-uniform vec2 uGrainSeed; // per-frame grain offset
 uniform float uMix;
-uniform float uAspect;
-uniform float uWidth;
-uniform float uHeight;
+uniform float uAspect; // LAYOUT aspect, not the field texture's
+uniform vec2 uFieldSize; // field framebuffer, in pixels
 uniform sampler2D uTexOld;
 uniform sampler2D uTexNew;
 
@@ -35197,7 +35196,7 @@ float fbmLow(vec2 p) {
 }
 
 void main() {
-  vec2 uv = vec2(gl_FragCoord.x, uHeight - gl_FragCoord.y) / vec2(uWidth, uHeight);
+  vec2 uv = vec2(gl_FragCoord.x, uFieldSize.y - gl_FragCoord.y) / uFieldSize;
   vec2 st = (uv - 0.5) * vec2(uAspect, 1.0);
 
   // ---- flow: one mass of ink moving as a whole ------------------------
@@ -35247,6 +35246,9 @@ void main() {
   // ping-pong swap frame-identical. Thresholds ride the warp field + the
   // outgoing cover's luminance, so the fade travels as coherent veils that
   // follow the flow; per-cell jitter stays tiny (no salt-and-pepper).
+  // The cell is measured in FIELD texels, so its on-screen size scales with
+  // FIELD_SCALE \u2014 coarser than the old single-pass grain, still far below the
+  // veil width, and the endpoint contract above does not depend on it.
   float lold = dot(oldC, vec3(0.2126, 0.7152, 0.0722));
   float cell = hash(floor(gl_FragCoord.xy / 3.0) + 7.7);
   float soft = 0.32;
@@ -35282,10 +35284,35 @@ void main() {
   col *= scrim;
   col *= 1.0 - 0.28 * smoothstep(0.35, 1.15, length(st));
 
-  // ---- film grain, weighted into the shadows where banding lives -------
-  float lum2 = dot(col, vec3(0.2126, 0.7152, 0.0722));
+  // The breath and the scrims keep this well under 1.0, so an RGBA8 target
+  // costs no range the old single-pass output did not already quantise away.
+  outColor = vec4(max(col, 0.0), 1.0);
+}
+`;
+      PRESENT_FRAGMENT_SHADER = `#version 300 es
+precision highp float;
+
+uniform sampler2D uField;
+uniform vec2 uGrainSeed; // per-frame grain offset
+uniform vec2 uResolution; // canvas backing store, in pixels
+
+out vec4 outColor;
+
+float hash(vec2 p) {
+  vec2 q = fract(p * vec2(123.34, 456.21));
+  q += dot(q, q + 45.32);
+  return fract(q.x * q.y);
+}
+
+void main() {
+  vec3 col = texture(uField, gl_FragCoord.xy / uResolution).rgb;
+
+  // Grain weighted into the shadows where banding lives. It rides the FIELD's
+  // own luminance \u2014 the same value the single-pass shader used \u2014 so the two
+  // passes cannot drift apart in how much noise they lay down.
+  float lum = dot(col, vec3(0.2126, 0.7152, 0.0722));
   float g = hash(gl_FragCoord.xy + uGrainSeed) - 0.5;
-  col += g * mix(0.020, 0.006, smoothstep(0.0, 0.45, lum2));
+  col += g * mix(0.020, 0.006, smoothstep(0.0, 0.45, lum));
 
   outColor = vec4(max(col, 0.0), 1.0);
 }
@@ -35327,19 +35354,38 @@ void main() {
     }
     return shader;
   }
-  var ART_SIZE, CROSSFADE_SECONDS, BG_FPS, FRAME_INTERVAL_MS, STATIC_TIME, MAX_FRAME_DT_MS, MAX_DPR, BACKING_SCALE, GL_REVEAL_MS, GlAppBackground;
+  function buildProgram(gl, fragmentSource, label) {
+    const vs = compile(gl, gl.VERTEX_SHADER, VERTEX_SHADER, `${label} vertex`);
+    const fs = compile(gl, gl.FRAGMENT_SHADER, fragmentSource, `${label} fragment`);
+    const program = gl.createProgram();
+    if (!program)
+      throw new Error(`WebGL2: could not create the ${label} program`);
+    gl.attachShader(program, vs);
+    gl.attachShader(program, fs);
+    gl.linkProgram(program);
+    gl.deleteShader(vs);
+    gl.deleteShader(fs);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      const log = gl.getProgramInfoLog(program) ?? "no log";
+      gl.deleteProgram(program);
+      throw new Error(`WebGL2 ${label} program failed to link: ${log}`);
+    }
+    return program;
+  }
+  var ART_SIZE, CROSSFADE_SECONDS, BG_FPS, FRAME_INTERVAL_MS, STATIC_TIME, MAX_FRAME_DT_MS, MAX_DPR, BACKING_SCALE, FIELD_SCALE, GL_REVEAL_MS, GlAppBackground;
   var init_GlAppBackground = __esm({
     "src/components/DynamicBG/GlAppBackground.ts"() {
       init_identity();
       init_inkShader();
       ART_SIZE = 32;
       CROSSFADE_SECONDS = 1.6;
-      BG_FPS = 20;
+      BG_FPS = 60;
       FRAME_INTERVAL_MS = 1e3 / BG_FPS;
       STATIC_TIME = 9.5;
       MAX_FRAME_DT_MS = 1e3 / 15;
       MAX_DPR = 1;
       BACKING_SCALE = 0.6;
+      FIELD_SCALE = 0.35;
       GL_REVEAL_MS = 900;
       GlAppBackground = class {
         constructor(opts) {
@@ -35354,6 +35400,8 @@ void main() {
           this.currentUrl = null;
           this.backingW = 0;
           this.backingH = 0;
+          this.fieldW = 0;
+          this.fieldH = 0;
           this.mountedOnce = false;
           this.disposed = false;
           this.handleContextLost = (event) => {
@@ -35436,39 +35484,32 @@ void main() {
           if (!gl)
             throw new Error("WebGL2: context unavailable in this runtime");
           this.gl = gl;
-          const vs = compile(gl, gl.VERTEX_SHADER, VERTEX_SHADER, "vertex");
-          const fs = compile(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER, "fragment");
-          const program = gl.createProgram();
-          if (!program)
-            throw new Error("WebGL2: could not create program");
-          gl.attachShader(program, vs);
-          gl.attachShader(program, fs);
-          gl.linkProgram(program);
-          gl.deleteShader(vs);
-          gl.deleteShader(fs);
-          if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-            const log = gl.getProgramInfoLog(program) ?? "no log";
-            gl.deleteProgram(program);
-            throw new Error(`WebGL2 program failed to link: ${log}`);
-          }
-          this.program = program;
-          gl.useProgram(program);
-          this.uniforms = {
-            uFlowA: gl.getUniformLocation(program, "uFlowA"),
-            uFlowB: gl.getUniformLocation(program, "uFlowB"),
-            uBreath: gl.getUniformLocation(program, "uBreath"),
-            uGrainSeed: gl.getUniformLocation(program, "uGrainSeed"),
-            uMix: gl.getUniformLocation(program, "uMix"),
-            uAspect: gl.getUniformLocation(program, "uAspect"),
-            uWidth: gl.getUniformLocation(program, "uWidth"),
-            uHeight: gl.getUniformLocation(program, "uHeight"),
-            uTexOld: gl.getUniformLocation(program, "uTexOld"),
-            uTexNew: gl.getUniformLocation(program, "uTexNew")
+          this.fieldProgram = buildProgram(gl, FIELD_FRAGMENT_SHADER, "field");
+          this.presentProgram = buildProgram(gl, PRESENT_FRAGMENT_SHADER, "present");
+          gl.useProgram(this.fieldProgram);
+          this.fieldUniforms = {
+            uFlowA: gl.getUniformLocation(this.fieldProgram, "uFlowA"),
+            uFlowB: gl.getUniformLocation(this.fieldProgram, "uFlowB"),
+            uBreath: gl.getUniformLocation(this.fieldProgram, "uBreath"),
+            uMix: gl.getUniformLocation(this.fieldProgram, "uMix"),
+            uAspect: gl.getUniformLocation(this.fieldProgram, "uAspect"),
+            uFieldSize: gl.getUniformLocation(this.fieldProgram, "uFieldSize"),
+            uTexOld: gl.getUniformLocation(this.fieldProgram, "uTexOld"),
+            uTexNew: gl.getUniformLocation(this.fieldProgram, "uTexNew")
           };
-          gl.uniform1i(this.uniforms.uTexOld, 0);
-          gl.uniform1i(this.uniforms.uTexNew, 1);
+          gl.uniform1i(this.fieldUniforms.uTexOld, 0);
+          gl.uniform1i(this.fieldUniforms.uTexNew, 1);
+          gl.useProgram(this.presentProgram);
+          this.presentUniforms = {
+            uField: gl.getUniformLocation(this.presentProgram, "uField"),
+            uGrainSeed: gl.getUniformLocation(this.presentProgram, "uGrainSeed"),
+            uResolution: gl.getUniformLocation(this.presentProgram, "uResolution")
+          };
+          gl.uniform1i(this.presentUniforms.uField, 0);
           this.vao = gl.createVertexArray() ?? {};
           gl.bindVertexArray(this.vao);
+          this.fieldTex = this.createFieldTarget();
+          this.fieldFbo = this.createFieldFramebuffer();
           this.texOld = this.createArtTexture();
           this.texCurrent = this.createArtTexture();
           this.motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -35555,7 +35596,10 @@ void main() {
           this.gl.getExtension("WEBGL_lose_context")?.loseContext();
           this.gl.deleteTexture(this.texOld);
           this.gl.deleteTexture(this.texCurrent);
-          this.gl.deleteProgram(this.program);
+          this.gl.deleteFramebuffer(this.fieldFbo);
+          this.gl.deleteTexture(this.fieldTex);
+          this.gl.deleteProgram(this.fieldProgram);
+          this.gl.deleteProgram(this.presentProgram);
           this.gl.deleteVertexArray(this.vao);
           this.container.remove();
         }
@@ -35570,6 +35614,32 @@ void main() {
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
           return tex;
+        }
+        createFieldTarget() {
+          const gl = this.gl;
+          const tex = gl.createTexture();
+          if (!tex)
+            throw new Error("WebGL2: could not create the field texture");
+          gl.bindTexture(gl.TEXTURE_2D, tex);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+          return tex;
+        }
+        createFieldFramebuffer() {
+          const gl = this.gl;
+          const fbo = gl.createFramebuffer();
+          if (!fbo)
+            throw new Error("WebGL2: could not create the field framebuffer");
+          gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+          gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.fieldTex, 0);
+          const complete = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
+          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+          if (!complete)
+            throw new Error("WebGL2: the field framebuffer is incomplete");
+          return fbo;
         }
         texImage(source) {
           const gl = this.gl;
@@ -35638,50 +35708,75 @@ void main() {
           const h = this.canvas.clientHeight;
           if (!w || !h)
             return;
-          const dpr = Math.min(MAX_DPR, window.devicePixelRatio || 1) * BACKING_SCALE;
-          const bw = Math.max(1, Math.round(w * dpr));
-          const bh = Math.max(1, Math.round(h * dpr));
-          if (bw === this.backingW && bh === this.backingH)
+          const dpr = Math.min(MAX_DPR, window.devicePixelRatio || 1);
+          const bw = Math.max(1, Math.round(w * dpr * BACKING_SCALE));
+          const bh = Math.max(1, Math.round(h * dpr * BACKING_SCALE));
+          const fw = Math.max(1, Math.round(w * dpr * FIELD_SCALE));
+          const fh = Math.max(1, Math.round(h * dpr * FIELD_SCALE));
+          if (bw === this.backingW && bh === this.backingH && fw === this.fieldW && fh === this.fieldH) {
             return;
+          }
           this.backingW = bw;
           this.backingH = bh;
+          this.fieldW = fw;
+          this.fieldH = fh;
           this.canvas.width = bw;
           this.canvas.height = bh;
           const gl = this.gl;
-          gl.viewport(0, 0, bw, bh);
-          gl.uniform1f(this.uniforms.uAspect, w / h);
-          gl.uniform1f(this.uniforms.uWidth, bw);
-          gl.uniform1f(this.uniforms.uHeight, bh);
+          gl.bindTexture(gl.TEXTURE_2D, this.fieldTex);
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, fw, fh, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+          gl.useProgram(this.fieldProgram);
+          gl.uniform2f(this.fieldUniforms.uFieldSize, fw, fh);
+          gl.uniform1f(this.fieldUniforms.uAspect, w / h);
+          gl.useProgram(this.presentProgram);
+          gl.uniform2f(this.presentUniforms.uResolution, bw, bh);
         }
         drawFrame() {
+          this.renderField();
+          this.presentField();
+        }
+        renderField() {
           const gl = this.gl;
+          gl.bindFramebuffer(gl.FRAMEBUFFER, this.fieldFbo);
+          gl.viewport(0, 0, this.fieldW, this.fieldH);
+          gl.useProgram(this.fieldProgram);
           this.computeFlow();
-          gl.uniform1f(this.uniforms.uMix, this.mix);
+          gl.uniform1f(this.fieldUniforms.uMix, this.mix);
           gl.activeTexture(gl.TEXTURE0);
           gl.bindTexture(gl.TEXTURE_2D, this.texOld);
           gl.activeTexture(gl.TEXTURE1);
           gl.bindTexture(gl.TEXTURE_2D, this.texCurrent);
           gl.drawArrays(gl.TRIANGLES, 0, 3);
         }
+        presentField() {
+          const gl = this.gl;
+          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+          gl.viewport(0, 0, this.backingW, this.backingH);
+          gl.useProgram(this.presentProgram);
+          const t = this.motionEnabled ? this.elapsed : STATIC_TIME;
+          gl.uniform2f(this.presentUniforms.uGrainSeed, t * 0.7 % 1 * 43, t * 0.31 % 1 * 17);
+          gl.activeTexture(gl.TEXTURE0);
+          gl.bindTexture(gl.TEXTURE_2D, this.fieldTex);
+          gl.drawArrays(gl.TRIANGLES, 0, 3);
+        }
         computeFlow() {
           const gl = this.gl;
           const t = this.motionEnabled ? this.elapsed : STATIC_TIME;
           gl.uniform4f(
-            this.uniforms.uFlowA,
+            this.fieldUniforms.uFlowA,
             0.02 * t,
             -0.011 * t,
             Math.sin(t * 0.045) * 0.35,
             Math.cos(t * 0.033) * 0.35
           );
           gl.uniform4f(
-            this.uniforms.uFlowB,
+            this.fieldUniforms.uFlowB,
             -0.013 * t,
             8e-3 * t,
             Math.sin(t * 0.028 + 1.9) * 0.3,
             Math.cos(t * 0.051 + 0.6) * 0.3
           );
-          gl.uniform1f(this.uniforms.uBreath, 0.35 * (1 + 0.05 * Math.sin(t * 0.1)));
-          gl.uniform2f(this.uniforms.uGrainSeed, t * 0.7 % 1 * 43, t * 0.31 % 1 * 17);
+          gl.uniform1f(this.fieldUniforms.uBreath, 0.35 * (1 + 0.05 * Math.sin(t * 0.1)));
         }
         finishCrossfade() {
           this.crossfading = false;
@@ -38401,7 +38496,7 @@ void main() {
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22396-oBMZ1aGiHdhC/1a0d996f7d2e/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18412-k6xgbf5GCwVT/1a0de61ed76e/DotLoader.css */
 #DotLoader {
   --dot-color: var(--amai-accent-1);
   --dot-color-dim: color-mix(in srgb, var(--amai-accent-1) 22%, transparent);
@@ -38436,7 +38531,7 @@ void main() {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22396-oBMZ1aGiHdhC/1a0d996f7dbf/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18412-k6xgbf5GCwVT/1a0de61ed7cf/ProcessingIndicator.css */
 #AmaiLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -38518,7 +38613,7 @@ void main() {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22396-oBMZ1aGiHdhC/1a0d996f73e0/tokens.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18412-k6xgbf5GCwVT/1a0de61ecc70/tokens.css */
 :root {
   --amai-accent-1: #1ed760;
   --amai-accent-2: #1db954;
@@ -38597,7 +38692,7 @@ void main() {
   --amai-scrollbar-thumb: rgba(255, 255, 255, 0.6);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22396-oBMZ1aGiHdhC/1a0d996f7661/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18412-k6xgbf5GCwVT/1a0de61ecf41/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -38840,7 +38935,7 @@ button:has(#AmaiLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22396-oBMZ1aGiHdhC/1a0d996f76f2/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18412-k6xgbf5GCwVT/1a0de61ecfd2/Simplebar.css */
 #AmaiLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -39048,7 +39143,7 @@ button:has(#AmaiLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22396-oBMZ1aGiHdhC/1a0d996f7743/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18412-k6xgbf5GCwVT/1a0de61ed033/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -39652,7 +39747,7 @@ button:has(#AmaiLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22396-oBMZ1aGiHdhC/1a0d996f77f4/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18412-k6xgbf5GCwVT/1a0de61ed0e4/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -40016,7 +40111,7 @@ body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingVi
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22396-oBMZ1aGiHdhC/1a0d996f7865/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18412-k6xgbf5GCwVT/1a0de61ed165/main.css */
 #AmaiLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -40267,7 +40362,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22396-oBMZ1aGiHdhC/1a0d996f78c6/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18412-k6xgbf5GCwVT/1a0de61ed1b6/Mixed.css */
 #AmaiLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -40621,7 +40716,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22396-oBMZ1aGiHdhC/1a0d996f7957/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18412-k6xgbf5GCwVT/1a0de61ed227/LoaderContainer.css */
 #AmaiLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -40643,7 +40738,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22396-oBMZ1aGiHdhC/1a0d996f7988/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18412-k6xgbf5GCwVT/1a0de61ed258/FullscreenTransition.css */
 #AmaiLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -40670,7 +40765,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22396-oBMZ1aGiHdhC/1a0d996f79a9/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18412-k6xgbf5GCwVT/1a0de61ed289/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
@@ -40772,7 +40867,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22396-oBMZ1aGiHdhC/1a0d996f79ea/Settings.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18412-k6xgbf5GCwVT/1a0de61ed2ca/Settings.css */
 :is(#amai-settings, #amai-dev-settings, #amai-info) {
   display: grid;
   gap: 8px;
@@ -40999,7 +41094,7 @@ ruby > rt {
   border: 1px solid var(--essential-subdued, #818181);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22396-oBMZ1aGiHdhC/1a0d996f7a2b/SettingsModal.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18412-k6xgbf5GCwVT/1a0de61ed32b/SettingsModal.css */
 .amai-settings-overlay {
   position: fixed;
   inset: 0;
@@ -41077,7 +41172,7 @@ ruby > rt {
   min-width: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22396-oBMZ1aGiHdhC/1a0d996f7a5c/Tooltips.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18412-k6xgbf5GCwVT/1a0de61ed35c/Tooltips.css */
 .tippy-box[data-theme~=amai-lyrics] {
   position: relative;
   background: var(--amai-glass-veil-strong), var(--amai-glass-base-strong) !important;
@@ -41141,7 +41236,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22396-oBMZ1aGiHdhC/1a0d996f7a8d/Glassmorphism.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18412-k6xgbf5GCwVT/1a0de61ed38d/Glassmorphism.css */
 .amai-app-bg-host .Root__nav-bar:not(.amai-lib-grid) {
   isolation: isolate;
   background: var(--amai-glass-veil), var(--amai-glass-base) !important;
