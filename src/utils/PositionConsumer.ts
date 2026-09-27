@@ -23,6 +23,7 @@ import {
   resolveIsPlaying,
   type PlaybackSurface,
 } from './Gets/GetProgress';
+import { isOnPageRoute } from './PagePresence';
 
 export interface PositionTickContext {
   onLyricsPage: boolean;
@@ -62,14 +63,6 @@ interface ConsumerEntry {
 const windowRef = window as unknown as { __amaiPositionConsumers?: Map<string, ConsumerEntry> };
 const consumers = (windowRef.__amaiPositionConsumers ??= new Map<string, ConsumerEntry>());
 
-function resolveOnLyricsPage(): boolean {
-  try {
-    return Spicetify.Platform.History.location.pathname === '/AmaiLyrics';
-  } catch {
-    return false;
-  }
-}
-
 /**
  * Registers a position-driven render loop. Idempotent per surface: registering
  * an already-running surface swaps in fresh options and keeps exactly one loop.
@@ -93,7 +86,7 @@ export function registerPositionConsumer(options: PositionConsumerOptions): () =
     if (SpotifyPlayer.IsPlaying !== livePlaying) SpotifyPlayer.IsPlaying = livePlaying;
 
     const ctx: PositionTickContext = {
-      onLyricsPage: resolveOnLyricsPage(),
+      onLyricsPage: isOnPageRoute(),
       isPlaying: livePlaying,
     };
 

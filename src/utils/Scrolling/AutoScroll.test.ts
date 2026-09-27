@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import Defaults from '../../components/Global/Defaults';
 import { AutoScroll, __getAutoScrollLastLineForTests, syncAutoScroll } from './AutoScroll';
+import { setPageOpen } from '../PagePresence';
 
 function mountPage(): HTMLElement {
   document.body.innerHTML =
@@ -15,14 +15,14 @@ function makeLine(): HTMLElement {
 }
 
 beforeEach(() => {
-  Defaults.LyricsContainerExists = true;
+  setPageOpen(true);
   mountPage();
 });
 
 afterEach(() => {
   AutoScroll.reset();
   document.body.innerHTML = '';
-  Defaults.LyricsContainerExists = false;
+  setPageOpen(false);
   vi.restoreAllMocks();
 });
 

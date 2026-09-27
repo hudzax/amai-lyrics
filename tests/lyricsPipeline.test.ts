@@ -4,7 +4,7 @@ vi.mock('../src/utils/storage', () => ({
   default: { get: vi.fn(() => null), set: vi.fn() },
 }));
 vi.mock('../src/components/Global/Defaults', () => ({
-  default: { CurrentLyricsType: 'None', LyricsContainerExists: false },
+  default: { CurrentLyricsType: 'None' },
 }));
 vi.mock('../src/utils/EventManager', () => ({
   default: { listen: vi.fn(), unListen: vi.fn(), evoke: vi.fn() },

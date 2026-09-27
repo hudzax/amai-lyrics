@@ -1,4 +1,3 @@
-import { UpdateNowBar } from '../NowBar/NowBar';
 import fastdom from 'fastdom';
 import { Maid } from '@hudzax/web-modules/Maid';
 
@@ -57,8 +56,4 @@ export function setupImageLoading(imageElement: ImageElementWithSetup, maid: Mai
       highResImage = null;
     }
   });
-}
-
-export async function UpdatePageContent(isOpened: boolean) {
-  if (isOpened) await UpdateNowBar();
 }

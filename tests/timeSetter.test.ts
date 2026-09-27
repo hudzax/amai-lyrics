@@ -3,7 +3,6 @@ import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 vi.mock('../src/components/Global/Defaults', () => ({
   default: {
     CurrentLyricsType: 'Line',
-    LyricsContainerExists: true,
     Version: '1.0.0',
     lyrics: { api: { url: '', translationUrl: '', phoneticUrl: '' } },
     systemInstruction: '',
@@ -54,6 +53,7 @@ import {
   getActiveLineIndex,
   resetLyricsSetterCache,
 } from '../src/utils/Lyrics/Animator/Lyrics/LyricsSetter';
+import { setPageOpen } from '../src/utils/PagePresence';
 
 function makeLine(startMs: number, endMs: number): PaintedLine {
   return {
@@ -74,6 +74,7 @@ beforeEach(() => {
   clear();
   resetLyricsSetterCache();
   (Defaults as { CurrentLyricsType: string }).CurrentLyricsType = 'Line';
+  setPageOpen(true);
 });
 
 afterAll(() => {

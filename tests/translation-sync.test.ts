@@ -5,7 +5,6 @@ import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 vi.mock('../src/components/Global/Defaults', () => ({
   default: {
     CurrentLyricsType: 'Line',
-    LyricsContainerExists: true,
     Version: '1.0.0',
     lyrics: { api: { url: '', translationUrl: '', phoneticUrl: '' } },
     systemInstruction: '',
@@ -80,6 +79,7 @@ import {
 import { enhanceLyrics } from '../src/utils/Lyrics/ai';
 import { beginLyricsRequest } from '../src/utils/Lyrics/publish';
 import type { LyricsDocument } from '../src/utils/Lyrics/conversion';
+import { setPageOpen } from '../src/utils/PagePresence';
 
 /**
  * A line-synced document in the shape `extractLyrics` leaves behind: seconds
@@ -115,6 +115,7 @@ function setupDom(): void {
 beforeEach(() => {
   setupDom();
   clear();
+  setPageOpen(true);
   vi.mocked(RecalculateScrollSimplebar).mockClear();
 });
 

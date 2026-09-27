@@ -18,7 +18,6 @@
  */
 
 import { BOTTOM_ApplyLyricsSpacer, TOP_ApplyLyricsSpacer } from '../Addons';
-import Defaults from '../../components/Global/Defaults';
 import { applyStyles, removeAllStyles } from '../CSS/Styles';
 import {
   ClearScrollSimplebar,
@@ -43,6 +42,7 @@ import { decorateLineElement, processLinePhonetics } from './Applyer/Utils/decor
 import settingsValues from '../settingsValues';
 import { processPhoneticText } from './phoneticPatterns';
 import type { LyricsDocument } from './conversion';
+import { isPageOpen } from '../PagePresence';
 
 const LYRICS_CONTAINER_SELECTOR = '#AmaiLyricsPage .LyricsContainer .LyricsContent';
 const STYLING_CONTAINER_SELECTOR =
@@ -54,7 +54,7 @@ export function getPaintedLines(): PaintedLine[] {
 }
 
 function resolveContainer(): HTMLElement | null {
-  if (!Defaults.LyricsContainerExists) return null;
+  if (!isPageOpen()) return null;
 
   const container = document.querySelector<HTMLElement>(LYRICS_CONTAINER_SELECTOR);
   if (!container) {
@@ -250,7 +250,7 @@ export function applyScrollReanchor(
  */
 export function updateLyricTranslations(): void {
   try {
-    if (!Defaults.LyricsContainerExists) return;
+    if (!isPageOpen()) return;
 
     const lyricsContainer = document.querySelector<HTMLElement>(LYRICS_CONTAINER_SELECTOR);
 

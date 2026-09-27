@@ -17,7 +17,6 @@ const Defaults = {
     },
   },
   CurrentLyricsType: 'None',
-  LyricsContainerExists: false,
   systemInstruction: SYSTEM_INSTRUCTION,
   translationPrompt: TRANSLATION_PROMPT,
   romajaPrompt: ROMAJA_PROMPT,

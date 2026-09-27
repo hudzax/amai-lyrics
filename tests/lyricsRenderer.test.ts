@@ -6,7 +6,6 @@ import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 vi.mock('../src/components/Global/Defaults', () => ({
   default: {
     CurrentLyricsType: 'Line',
-    LyricsContainerExists: true,
     Version: '1.0.0',
     lyrics: { api: { url: '', translationUrl: '', phoneticUrl: '' } },
     systemInstruction: '',
@@ -49,6 +48,7 @@ import {
 } from '../src/utils/Lyrics/LyricsRenderer';
 import { clear, getAllRows, stopLoop } from '../src/utils/Lyrics/registry';
 import type { LyricsDocument } from '../src/utils/Lyrics/conversion';
+import { setPageOpen } from '../src/utils/PagePresence';
 
 /** A fresh line-synced document per test — the render path mutates line views. */
 function lineDocument(): LyricsDocument {
@@ -75,6 +75,7 @@ function setupDom(): void {
 beforeEach(() => {
   setupDom();
   clear();
+  setPageOpen(true);
 });
 
 afterAll(() => {

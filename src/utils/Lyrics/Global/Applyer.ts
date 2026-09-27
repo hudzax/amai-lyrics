@@ -1,4 +1,5 @@
 import { setBlurringLastLine } from '../Animator/Lyrics/LyricsAnimator';
+import { isPageOpen } from '../../PagePresence';
 import { renderLyrics } from '../LyricsRenderer';
 import { isNoLyricsResult } from '../fetchLyrics';
 import { showRefreshButton } from '../../../components/Pages/pageButtons';
@@ -17,8 +18,7 @@ import { LyricsDocument } from '../conversion';
 export default function ApplyLyrics(
   lyrics: LyricsDocument | NoLyricsResult | null | undefined,
 ): boolean {
-  // Check if lyrics page exists
-  if (!document.querySelector('#AmaiLyricsPage')) return false;
+  if (!isPageOpen()) return false;
 
   // Apply font sizes from settings
   const lyricsContent = document.querySelector<HTMLElement>(

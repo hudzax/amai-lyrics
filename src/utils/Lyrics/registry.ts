@@ -10,9 +10,9 @@
  */
 
 import { Maid } from '@hudzax/web-modules/Maid';
-import Defaults from '../../components/Global/Defaults';
 import { SpotifyPlayer } from '../../components/Global/SpotifyPlayer';
 import { registerPositionConsumer } from '../PositionConsumer';
+import { isPageOpen } from '../PagePresence';
 import { Lyrics } from './Animator/Main';
 import { AutoScroll } from '../Scrolling/AutoScroll';
 import type { TimedLine } from './findActiveIndex';
@@ -146,9 +146,9 @@ export function startLoop(): void {
   renderLoopDisposer = registerPositionConsumer({
     surface: 'highlight',
     intervalSeconds: THROTTLE_TIME,
-    enabled: (ctx) => Defaults.LyricsContainerExists && ctx.onLyricsPage,
+    enabled: (ctx) => isPageOpen() && ctx.onLyricsPage,
     wantsTracking: (ctx) => ctx.onLyricsPage,
-    onPosition: (progress) => {
+    onPosition: (progress, ctx) => {
       // Nothing moved since the last frame -> no re-render needed
       if (hasRenderedInitial && progress === lastRenderedPosition) return;
 
@@ -158,7 +158,8 @@ export function startLoop(): void {
       Lyrics.Animate();
       scrollTickCounter++;
       if (scrollTickCounter % 2 === 0) {
-        AutoScroll.sync();
+        // Hand the tick's settled answers over — AutoScroll must not re-derive them.
+        AutoScroll.sync({ isPlaying: ctx.isPlaying, onLyricsPage: ctx.onLyricsPage });
       }
     },
   });

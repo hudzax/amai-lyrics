@@ -63,7 +63,7 @@ closing the page empties the same registry from outside it.
 
 The single place that owns the painted lyric rows and everything derived from them: the row list, the click-to-seek time map, the position-driven render loop, and the full reset. Lives in src/utils/Lyrics/registry.ts. Callers cross it through registerRow, getAllRows, getPaintedLines, getTimedLines, getActiveLine, clear, startLoop, stopLoop, attachClickToSeek, and detachClickToSeek — never through the row array, the time map, or a PositionConsumer registration of their own.
 
-The three row writers (LyricsRenderer's line-synced and static builders, createMusicalBreak) push a PaintedLine through registerRow. The readers (LyricsSetter, LyricsAnimator, AutoScroll, LyricsRenderer's translation update) cross the read methods. getTimedLines returns a cached view of the rows that carry timing, invalidated on registerRow and clear; getActiveLine returns the row whose status is 'Active' and whose element is connected. The render loop is owned by startLoop/stopLoop: the registry registers with PositionConsumer (surface 'highlight', 50 ms) and the tick calls the setter, the animator, and — at half cadence — AutoScroll.sync. clear() is a full reset: rows, map, loop state, setter cache, animator cache, and AutoScroll.reset. The click-to-seek listener is owned by attachClickToSeek(container)/detachClickToSeek(); the caller passes the container it rendered into, and the registry owns the time map that feeds the lookup. The auto-start on import is gone; app.tsx calls startLoop() explicitly.
+The three row writers (LyricsRenderer's line-synced and static builders, createMusicalBreak) push a PaintedLine through registerRow. The readers (LyricsSetter, LyricsAnimator, AutoScroll, LyricsRenderer's translation update) cross the read methods. getTimedLines returns a cached view of the rows that carry timing, invalidated on registerRow and clear; getActiveLine returns the row whose status is 'Active' and whose element is connected. The render loop is owned by startLoop/stopLoop: the registry registers with PositionConsumer (surface 'highlight', 50 ms), gates the tick on PagePresence and the route answer, and the tick calls the setter and the animator and — at half cadence — hands the settled play state and route answer to AutoScroll.sync. clear() is a full reset: rows, map, loop state, setter cache, animator cache, and AutoScroll.reset. The click-to-seek listener is owned by attachClickToSeek(container)/detachClickToSeek(); the caller passes the container it rendered into, and the registry owns the time map that feeds the lookup. The auto-start on import is gone; app.tsx calls startLoop() explicitly.
 
 ## AutoScroll
 
@@ -89,9 +89,9 @@ lyrics-page animator (surface `highlight`), the playbar overlay (surface
 `playbar`), and the NowBar fullscreen timeline (surface `nowbar`) cross it
 through registerPositionConsumer - never through their own
 IntervalManager, a resolveIsPlaying call, a History pathname check, or
-requestPositionTracking. The one leak is inherited, not theirs: the highlight
-tick hands off to AutoScroll, which re-reads play state and the page path for
-itself instead of taking the answer this loop already settled. A consumer states
+requestPositionTracking. The pathname gate crosses PagePresence (isOnPageRoute),
+and the highlight tick hands the settled play state and route answer to
+AutoScroll.sync — AutoScroll never re-derives what the tick already settled. A consumer states
 its surface, its cadence, its own enable gate, whether the position is worth
 tracking while it runs, what to do with a position, and (optionally) how to
 clear its DOM
@@ -103,6 +103,24 @@ loop: AutoScroll reads getPositionFor('scroll') inside the `highlight` tick.
 
 The NowBar fullscreen timeline is also a PositionConsumer. Unlike lyric
 surfaces, it shows the audio position without a lead time.
+
+## PagePresence
+
+The single place that knows whether the lyrics page is present. Lives in
+src/utils/PagePresence.ts. Callers cross it through isPageOpen (the page node
+is mounted), isOnPageRoute (the History pathname check), and setPageOpen —
+never through a raw `#AmaiLyricsPage` query or a pathname check of their own.
+PageView is the only production writer: it flips presence on after the awaited
+mount and off after the awaited removal, which is what keeps the invariant that
+isPageOpen is never true while the node is absent — in-flight measures never
+see a page the DOM does not have.
+
+PositionConsumer feeds its tick context's `onLyricsPage` from isOnPageRoute, so
+consumers take the settled route answer instead of re-asking. Two questions
+stay deliberately outside this seam: PageView.IsOpened (the page lifecycle,
+which PageManager reads to decide a destroy) and the element-scoping check
+(`element.closest('#AmaiLyricsPage')` in the DynamicBG painters) — "is this
+element inside the page" is not "is the page present".
 
 ## NowBarOverlay
 

@@ -4,8 +4,8 @@ import '../../css/Loaders/ProcessingIndicator.css';
 import { clear, detachClickToSeek } from '../../utils/Lyrics/registry';
 import { clearApplyInfoTimeout } from '../../utils/Lyrics/Applyer/Info/ApplyInfo';
 import ApplyDynamicBackground from '../DynamicBG/dynamicBackground';
-import Defaults from '../Global/Defaults';
 import { AutoScroll } from '../../utils/Scrolling/AutoScroll';
+import { setPageOpen } from '../../utils/PagePresence';
 import { InvalidateNowBar, Session_NowBar_SetSide, Session_OpenNowBar } from '../NowBar/NowBar';
 import Fullscreen from '../Utils/Fullscreen';
 
@@ -13,7 +13,7 @@ import { mutateAsync } from '../../utils/fastdomAsync';
 import { Maid } from '@hudzax/web-modules/Maid';
 import { PageViewSelectors } from '../../constants/PageViewSelectors';
 import { PageHTML, NowBarHTML } from './PageHTML';
-import { setupImageLoading, UpdatePageContent as UpdateContent } from './pageContent';
+import { setupImageLoading } from './pageContent';
 import { AppendViewControls, Tooltips } from './pageControls';
 import { setupActionButtons } from './pageButtons';
 
@@ -23,7 +23,6 @@ const PageView = {
   Open: OpenPage,
   Destroy: DestroyPage,
   AppendViewControls: () => AppendViewControls(maid),
-  UpdatePageContent: () => UpdateContent(PageView.IsOpened),
   IsOpened: false,
 };
 
@@ -48,7 +47,7 @@ async function OpenPage() {
   // is playing.
   clearLyricsUiTimeouts();
 
-  Defaults.LyricsContainerExists = true;
+  setPageOpen(true);
 
   const contentBox = document.querySelector<HTMLElement>(PageViewSelectors.ContentBox);
   if (contentBox) {
@@ -59,8 +58,6 @@ async function OpenPage() {
   if (mediaImage) {
     setupImageLoading(mediaImage, maid);
   }
-
-  await PageView.UpdatePageContent();
 
   const currentUri = Spicetify.Player.data?.item?.uri;
   if (currentUri) {
@@ -110,9 +107,9 @@ async function DestroyPage() {
   if (Fullscreen.isPageFullscreen()) Fullscreen.leave();
   const amaiLyricsPage = document.querySelector<HTMLElement>(PageViewSelectors.AmaiLyricsPage);
   if (amaiLyricsPage) {
-    // Await the removal before flipping LyricsContainerExists: otherwise the
-    // flag reads "gone" for a frame while the node is still mounted, and
-    // in-flight measures in that window read stale DOM.
+    // Await the removal before closing presence: otherwise isPageOpen() reads
+    // "gone" for a frame while the node is still mounted, and in-flight
+    // measures in that window read stale DOM.
     try {
       await mutateAsync(() => {
         amaiLyricsPage.remove();
@@ -121,7 +118,7 @@ async function DestroyPage() {
       console.error('[Amai Lyrics] PageView destroy failed:', error);
     }
   }
-  Defaults.LyricsContainerExists = false;
+  setPageOpen(false);
   detachClickToSeek();
   clear();
   clearApplyInfoTimeout();

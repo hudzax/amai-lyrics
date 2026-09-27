@@ -1,5 +1,5 @@
-import Defaults from '../../components/Global/Defaults';
 import { getPositionFor, resolveIsPlaying } from '../Gets/GetProgress';
+import { isOnPageRoute, isPageOpen } from '../PagePresence';
 import { getTimedLines } from '../Lyrics/registry';
 import { findActiveIndex } from '../Lyrics/findActiveIndex';
 import type { TimedLine } from '../Lyrics/findActiveIndex';
@@ -63,14 +63,6 @@ function setActiveController(value: { cancel: () => void } | null): void {
   sharedScrollState.activeScrollController = value;
 }
 
-function resolveOnLyricsPage(): boolean {
-  try {
-    return Spicetify.Platform.History.location.pathname === '/AmaiLyrics';
-  } catch {
-    return false;
-  }
-}
-
 /** Idempotent mount: recalculates when the container exists, mounts otherwise. */
 export function mountAutoScroll(): void {
   try {
@@ -90,9 +82,9 @@ export function syncAutoScroll(overrides: AutoScrollSyncOverrides = {}): void {
   try {
     const isPlaying = overrides.isPlaying ?? resolveIsPlaying();
     if (!isPlaying) return;
-    if (!Defaults.LyricsContainerExists) return;
+    if (!isPageOpen()) return;
 
-    const onLyricsPage = overrides.onLyricsPage ?? resolveOnLyricsPage();
+    const onLyricsPage = overrides.onLyricsPage ?? isOnPageRoute();
     if (!onLyricsPage) return;
 
     // Rows without timing (Static lyrics) are not scroll targets: the search
