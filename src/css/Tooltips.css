@@ -27,8 +27,9 @@
 .tippy-box[data-theme~='amai-lyrics'] {
   position: relative;
   background: var(--amai-glass-veil-strong), var(--amai-glass-base-strong) !important;
-  backdrop-filter: var(--amai-glass-backdrop-strong);
-  -webkit-backdrop-filter: var(--amai-glass-backdrop-strong);
+  /* No backdrop-filter here: the blur would re-sample the animated app
+     background every frame the bubble is visible, plus a layer spike on
+     show/hide — the tooltip jank. The 78%-opaque fill reads the same. */
   border: 1px solid var(--amai-glass-border) !important;
   border-radius: 10px;
   box-shadow: var(--amai-glass-rim-strong), var(--amai-glass-shadow) !important;
@@ -69,8 +70,7 @@
 
 #context-menu > .main-contextMenu-tippy {
   background: var(--amai-glass-veil-strong), var(--amai-glass-base-strong) !important;
-  backdrop-filter: var(--amai-glass-backdrop-strong);
-  -webkit-backdrop-filter: var(--amai-glass-backdrop-strong);
+  /* Same no-backdrop-filter rule as the themed bubble above. */
   border: 1px solid var(--amai-glass-border) !important;
   border-radius: 10px;
   box-shadow: var(--amai-glass-rim-strong), var(--amai-glass-shadow) !important;

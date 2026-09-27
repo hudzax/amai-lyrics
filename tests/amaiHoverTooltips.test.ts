@@ -15,7 +15,11 @@ import { installHoverTooltips } from '../src/utils/hoverTooltip';
  *     texts for link wrappers (title included: its anchor's parent cell is
  *     the trigger, in rows and on the now-playing bar alike), cell text for
  *     sidebar gridcell cards (leaf-joined, so JSX siblings don't glue),
- *   - at most one instance exists; leave / scroll / disposeAll destroy it,
+ *   - one instance per trigger, created once and REUSED: leave / scroll /
+ *     trigger removal HIDE it (Tippy's own exit path — no popper unmount on
+ *     the input-event path) and the next dwell re-shows the same instance;
+ *     `trigger: 'manual'` keeps Tippy from self-showing past the dwell,
+ *     disposeAll still destroys what is visible,
  *   - flagged re-dispatched clones from the event policy never drive show/hide,
  *     and the event policy's stopPropagation does not starve this listener
  *     (same-node window-capture listeners still fire),
@@ -30,6 +34,7 @@ import { installHoverTooltips } from '../src/utils/hoverTooltip';
 
 interface FakeTippyInstance {
   show: ReturnType<typeof vi.fn>;
+  hide: ReturnType<typeof vi.fn>;
   destroy: ReturnType<typeof vi.fn>;
   setContent: ReturnType<typeof vi.fn>;
   onHide: ReturnType<typeof vi.fn>;
@@ -141,10 +146,17 @@ beforeEach(() => {
     });
     const instance: FakeTippyInstance = {
       show: vi.fn(),
+      // Real Tippy invokes onHide whenever hide() starts.
+      hide: vi.fn(() => {
+        onHide();
+      }),
       destroy: vi.fn(),
       setContent: vi.fn(),
       onHide,
     };
+    // Real Tippy stamps the back-reference onto the trigger element; the
+    // presenter's per-trigger instance reuse keys off it.
+    (element as unknown as { _tippy?: unknown })._tippy = instance;
     created.push({ element, props });
     instances.push(instance);
     return instance;
@@ -184,6 +196,8 @@ describe('native Amai hover tooltips', () => {
       animation: 'amai',
       arrow: false,
       placement: 'top',
+      // Cached instances must never self-show past the dwell timer.
+      trigger: 'manual',
     });
     expect(instances[0].show).toHaveBeenCalledTimes(1);
   });
@@ -259,19 +273,37 @@ describe('native Amai hover tooltips', () => {
     expect(created).toHaveLength(1);
   });
 
-  it('destroys the visible tooltip when the pointer leaves, then recreates on re-entry', () => {
+  it('hides the visible tooltip when the pointer leaves and reuses it on re-entry', () => {
     fire('mouseover', el('addIcon'), el('outside'));
     vi.advanceTimersByTime(200);
     expect(instances).toHaveLength(1);
 
     fire('mouseout', el('addBtn'), el('outside'));
-    expect(instances[0].destroy).toHaveBeenCalledTimes(1);
+    // Hide starts synchronously so the CSS exit transition can play, but the
+    // popper teardown must not run on the input-event path — that forced
+    // layout is the show/hide stutter.
+    expect(instances[0].hide).toHaveBeenCalledTimes(1);
+    expect(instances[0].destroy).not.toHaveBeenCalled();
 
-    // Re-entry starts a fresh create/show cycle — module state reset cleanly.
+    // Re-entry re-shows the SAME instance — no create/destroy churn.
     fire('mouseover', el('addBtn'), el('outside'));
     vi.advanceTimersByTime(200);
+    expect(created).toHaveLength(1);
+    expect(instances[0].show).toHaveBeenCalledTimes(2);
+  });
+
+  it('hides the old bubble instead of destroying it when moving between triggers', () => {
+    fire('mouseover', el('addIcon'), el('outside'));
+    vi.advanceTimersByTime(200);
+    expect(instances).toHaveLength(1);
+
+    fire('mouseout', el('addBtn'), el('moreIcon'));
+    fire('mouseover', el('moreIcon'), el('addBtn'));
+    expect(instances[0].hide).toHaveBeenCalledTimes(1);
+    expect(instances[0].destroy).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(200);
     expect(created).toHaveLength(2);
-    expect(created[1].element).toBe(el('addBtn'));
     expect(instances[1].show).toHaveBeenCalledTimes(1);
   });
 
@@ -324,7 +356,8 @@ describe('native Amai hover tooltips', () => {
     expect(created[0].props).toMatchObject({ content: 'Global action' });
 
     fireFocus('focusout', el('globalButton'), el('outside'));
-    expect(instances[0].destroy).toHaveBeenCalledTimes(1);
+    expect(instances[0].hide).toHaveBeenCalledTimes(1);
+    expect(instances[0].destroy).not.toHaveBeenCalled();
   });
 
   it('shows an Amai tooltip on a bottom-playbar control button (aria-label content)', () => {
@@ -377,17 +410,18 @@ describe('native Amai hover tooltips', () => {
     expect((el('playBtn') as unknown as { _tippy?: unknown })._tippy).toBe(ownInstance);
   });
 
-  it('scroll destroys the visible tooltip instead of stranding it', () => {
+  it('hides the visible tooltip on scroll instead of stranding it', () => {
     fire('mouseover', el('moreIcon'), el('outside'));
     vi.advanceTimersByTime(200);
     expect(instances).toHaveLength(1);
 
     document.dispatchEvent(new Event('scroll'));
 
-    expect(instances[0].destroy).toHaveBeenCalledTimes(1);
+    expect(instances[0].hide).toHaveBeenCalledTimes(1);
+    expect(instances[0].destroy).not.toHaveBeenCalled();
   });
 
-  it('destroys a visible tooltip when its trigger is removed', async () => {
+  it('hides a visible tooltip when its trigger is removed', async () => {
     fire('mouseover', el('moreIcon'), el('outside'));
     vi.advanceTimersByTime(200);
     expect(instances).toHaveLength(1);
@@ -395,7 +429,8 @@ describe('native Amai hover tooltips', () => {
     el('moreBtn').remove();
     await Promise.resolve();
 
-    expect(instances[0].destroy).toHaveBeenCalledTimes(1);
+    expect(instances[0].hide).toHaveBeenCalledTimes(1);
+    expect(instances[0].destroy).not.toHaveBeenCalled();
   });
 
   it('clears the shown cache when Tippy hides itself', () => {
@@ -403,12 +438,16 @@ describe('native Amai hover tooltips', () => {
     vi.advanceTimersByTime(200);
     expect(instances).toHaveLength(1);
 
+    // Tippy's own machinery may report a hide; the presenter must only
+    // forget the instance as "shown" — the cached instance stays reusable
+    // and is never torn down from this hook.
     instances[0].onHide();
-    expect(instances[0].destroy).toHaveBeenCalledTimes(1);
+    expect(instances[0].destroy).not.toHaveBeenCalled();
     fire('mouseover', el('moreIcon'), el('outside'));
     vi.advanceTimersByTime(200);
 
-    expect(created).toHaveLength(2);
+    expect(created).toHaveLength(1);
+    expect(instances[0].show).toHaveBeenCalledTimes(2);
   });
 
   it('skips gracefully while the Tippy adapter is loading, then works on the same hover', () => {

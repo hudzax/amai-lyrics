@@ -1,10 +1,14 @@
 import lifecycle from '../lifecycle';
 import Whentil from '../Whentil';
 import { getHoverTooltipContent } from './content';
-import { isRedispatchedHoverEvent, NATIVE_HOVER_TOOLTIP_OWNED_PROPERTY } from './eventPolicy';
+import {
+  hasUnownedTippy,
+  isRedispatchedHoverEvent,
+  NATIVE_HOVER_TOOLTIP_OWNED_PROPERTY,
+} from './eventPolicy';
 import type { HoverTippyAdapter, HoverTippyInstance } from './tippy';
 
-/** Matches the ButtonManager/pageControls feel: 200ms in, immediate out. */
+/** Matches the ButtonManager/pageControls feel: 200ms in, animated out. */
 const SHOW_DELAY_MS = 200;
 
 type OwnedTippyElement = HTMLElement & {
@@ -67,7 +71,6 @@ export class HoverTooltipPresenter {
   private pendingTimer: ReturnType<typeof setTimeout> | null = null;
   private readinessTask: ReturnType<typeof Whentil.When> | null = null;
   private referenceObserver: MutationObserver | null = null;
-  private readonly ownedInstances = new Set<HoverTippyInstance>();
   private readonly ownedTriggers = new WeakMap<HoverTippyInstance, HTMLElement>();
   private readonly destroyingInstances = new WeakSet<HoverTippyInstance>();
   private destroyed = false;
@@ -120,11 +123,11 @@ export class HoverTooltipPresenter {
     if (this.destroyed) return;
     this.destroyed = true;
     this.clearPending();
-    this.hideShown();
-    for (const instance of Array.from(this.ownedInstances)) {
-      this.destroyInstance(instance);
+    if (this.shown) {
+      const current = this.shown;
+      this.shown = null;
+      this.destroyInstance(current.instance);
     }
-    this.ownedInstances.clear();
     this.referenceObserver?.disconnect();
     this.referenceObserver = null;
   }
@@ -186,7 +189,16 @@ export class HoverTooltipPresenter {
     if (!this.shown) return;
     const current = this.shown;
     this.shown = null;
-    this.destroyInstance(current.instance);
+    // Hide through Tippy's own path so the CSS exit transition plays and the
+    // popper unmounts off the input-event path; destroying synchronously
+    // inside the pointer handler forces a layout while the blur(20px) bubble
+    // is removed, which reads as show/hide stutter. The instance stays cached
+    // on its trigger for the next dwell.
+    try {
+      current.instance.hide();
+    } catch {
+      this.destroyInstance(current.instance);
+    }
     this.maybeStopReferenceObserver();
   }
 
@@ -242,12 +254,9 @@ export class HoverTooltipPresenter {
     // A pre-existing Tippy belongs to Spotify or another extension. Never
     // create a second bubble or retarget that instance.
     const existing = (trigger as OwnedTippyElement)._tippy;
-    if (existing) {
-      if (!this.ownedInstances.has(existing)) {
-        this.clearPending();
-        return;
-      }
-      this.destroyInstance(existing);
+    if (existing && hasUnownedTippy(trigger)) {
+      this.clearPending();
+      return;
     }
 
     const content = getHoverTooltipContent(trigger);
@@ -258,6 +267,25 @@ export class HoverTooltipPresenter {
 
     this.clearPending();
     this.hideShown();
+
+    // One instance per trigger: a hidden instance is inert (popper destroyed,
+    // element detached), so re-hovering just re-shows the cached bubble
+    // instead of rebuilding Tippy + Popper on every hover.
+    if (existing) {
+      try {
+        this.shown = { trigger, instance: existing, content };
+        this.ensureReferenceObserver();
+        existing.setContent?.(content);
+        existing.show();
+      } catch (error) {
+        if (this.shown?.instance === existing) this.shown = null;
+        this.destroyInstance(existing);
+        this.maybeStopReferenceObserver();
+        console.error('[Amai Lyrics] Failed to re-show hover tooltip:', error);
+      }
+      return;
+    }
+
     let instance: HoverTippyInstance | null = null;
     try {
       instance = this.adapter.create(trigger, {
@@ -265,29 +293,26 @@ export class HoverTooltipPresenter {
         theme: 'amai-lyrics',
         animation: 'amai',
         arrow: false,
+        // Cached instances must never self-show past the dwell timer.
+        trigger: 'manual',
         placement: placementFor(trigger),
         onHide: () => {
+          // Tippy's own machinery can start a hide; destroying here would
+          // unmount the popper synchronously inside the input event.
           if (this.shown?.instance === instance) this.shown = null;
-          if (instance) this.destroyInstance(instance);
           this.maybeStopReferenceObserver();
         },
         onDestroy: () => {
           if (this.shown?.instance === instance) this.shown = null;
-          if (instance) {
-            clearTooltipOwnership(trigger, instance);
-            this.ownedTriggers.delete(instance);
-            this.ownedInstances.delete(instance);
-          }
           this.maybeStopReferenceObserver();
         },
       });
-      this.ownedInstances.add(instance);
       this.ownedTriggers.set(instance, trigger);
       markTooltipOwned(trigger, instance);
       this.shown = { trigger, instance, content };
       this.ensureReferenceObserver();
       instance.show();
-      if (this.shown?.instance === instance && this.ownedInstances.has(instance)) {
+      if (this.shown?.instance === instance) {
         syncTooltipOwnership(trigger, instance);
       }
     } catch (error) {
@@ -299,7 +324,7 @@ export class HoverTooltipPresenter {
   }
 
   private destroyInstance(instance: HoverTippyInstance): void {
-    if (!this.ownedInstances.has(instance) || this.destroyingInstances.has(instance)) return;
+    if (this.destroyingInstances.has(instance)) return;
     this.destroyingInstances.add(instance);
     try {
       instance.destroy();
@@ -309,7 +334,6 @@ export class HoverTooltipPresenter {
       const trigger = this.ownedTriggers.get(instance);
       if (trigger) clearTooltipOwnership(trigger, instance);
       this.ownedTriggers.delete(instance);
-      this.ownedInstances.delete(instance);
       this.destroyingInstances.delete(instance);
     }
   }

@@ -1,5 +1,6 @@
 export interface HoverTippyInstance {
   show: () => void;
+  hide: () => void;
   destroy: () => void;
   setContent?: (content: string) => void;
   state?: { isVisible?: boolean };

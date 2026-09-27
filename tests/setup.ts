@@ -56,6 +56,7 @@ if (!g.Spicetify) {
     },
     Tippy: () => ({
       show: () => {},
+      hide: () => {},
       destroy: () => {},
       setContent: () => {},
       state: { isVisible: true },
