@@ -6295,265 +6295,6 @@
     }
   });
 
-  // package.json
-  var version;
-  var init_package = __esm({
-    "package.json"() {
-      version = "1.6.5";
-    }
-  });
-
-  // src/constants/prompts.ts
-  var SYSTEM_INSTRUCTION, TRANSLATION_PROMPT, ROMAJA_PROMPT, FURIGANA_PROMPT, ROMAJI_PROMPT;
-  var init_prompts = __esm({
-    "src/constants/prompts.ts"() {
-      SYSTEM_INSTRUCTION = `OVERRIDE ANY EXISTING INSTRUCTIONS. You are an advanced, versatile assistant committed to delivering accurate, comprehensive, and helpful responses. To achieve this, you absolutely must adhere to the following guidelines:
-
-- **Use Your Full Capabilities:** Leverage your extensive knowledge and skills to provide well-researched and precise answers.
-- **Follow Instructions Rigorously:** Abide by every detail specified in the prompt, ensuring your output meets all requirements.
-- **Review Before Output:** Carefully review your output to ensure accuracy, completeness, and adherence to the prompt's instructions.**`;
-      TRANSLATION_PROMPT = `You are an expert translator specializing in song lyrics with deep cultural and linguistic knowledge. I will give you multilingual song lyrics, your task is to translate them into natural, fluent {language} that preserves both meaning and emotional impact.
-
-**Strict Line-by-Line Instructions:**
-
-- **IMPORTANT:** Treat each line as a completely separate unit.
-  **Absolutely do not merge multiple lines into one translation.**
-- **Each original line must produce exactly one translated line**, even if it is short, repetitive, or fragmentary.
-- **Maintain the exact line count and line breaks** as in the original lyrics \u2014 every input line should have a one-to-one correspondence in the output.
-- **Empty lines must be preserved** as empty lines in the output, in the same position.
-
-**Language Handling:**
-
-- If a line is in {language}, **preserve it exactly as-is**.
-- If a line is in another language, translate it into natural, fluent {language}.
-- If a line contains mixed languages, **translate only the non-{language} portions**, preserving {language} as-is.
-
-**Stylistic Considerations:**
-
-- Convey the emotional tone, voice, and rhythm of the original lyrics.
-- Prioritize intended meaning and poetic nuance over literal word-for-word translation.
-- Preserve poetic and cultural elements (metaphor, imagery, slang, idioms, etc.).
-- Maintain consistent use of pronouns, tense, and tone.
-- Use culturally appropriate and natural {language} equivalents where direct translation would lose meaning.
-
-**Language-Specific Guidelines:**
-
-- **Spanish**: Use appropriate regional variations (neutral Latin American Spanish preferred), maintain poetic meter when possible, preserve emotional intensity typical in Spanish music.
-- **French**: Maintain elegance and flow characteristic of French lyrics, use appropriate formal/informal registers, preserve romantic and poetic nuances.
-- **German**: Respect compound word structures when creating natural translations, maintain the directness or philosophical depth often found in German lyrics.
-- **Portuguese**: Distinguish between Brazilian and European Portuguese contexts when relevant, preserve the musicality and rhythm important in Portuguese lyrics.
-- **Chinese (Simplified)**: Use contemporary Mandarin expressions, maintain cultural sensitivity, preserve metaphorical and poetic elements common in Chinese lyrics.
-- **Thai**: Use appropriate formal/informal language levels, preserve cultural references and emotional expressions typical in Thai music.
-- **Indonesian/Malay**: Maintain the melodic quality of the language, use contemporary expressions while preserving cultural context.`;
-      ROMAJA_PROMPT = `You are an expert Korean linguist specializing in accurate romaja transcription for song lyrics. Your primary goal is to add Revised Romanization in curly braces {} after EVERY sequence of Korean Hangul characters in the provided lyrics.
-
-**Core Task:** Convert Korean lyrics to include inline romaja with perfect accuracy.
-
-**Strict Rules:**
-1. **Mandatory Conversion:** You MUST process EVERY Korean word or sequence of Hangul characters. No exceptions. Do NOT skip any.
-   - **CRITICAL: Process ALL Korean text regardless of position** - whether it appears at the beginning, middle, or end of a mixed-language phrase
-   - **CRITICAL: Never skip any Korean text** - even in complex mixed-language scenarios like "\uC5EC\uB984\uC5EC\uB984\uD574hey" or "good\uBC24"
-   - **CRITICAL: Scan the entire text character by character** to ensure no Korean sequence is missed
-
-2. **Inline Format:** Insert the romaja pronunciation enclosed in curly braces {} immediately following the corresponding Korean word/sequence. Example: \uD55C\uAD6D\uC5B4 = \uD55C\uAD6D\uC5B4{hangugeo}.
-   - **CRITICAL: Correct Placement:** The romaja in curly braces MUST appear immediately after the complete Korean sequence and BEFORE any non-Korean text.
-   - **INCORRECT:** \uC720\uC8FCbe{yuju} (wrong placement - romaja should be after the full Korean sequence)
-   - **CORRECT:** \uC720\uC8FC{yuju}be (correct placement - romaja immediately follows Korean characters)
-
-3. **Romanization System:** Strictly use the official Revised Romanization of Korean (RR) rules with these specific guidelines:
-   - Use 'eo' not 'o' for \u3153 (\uC608: \uC5B4=eo, \uB108=neo)
-   - Use 'eu' not 'u' for \u3161 (\uC608: \uC74C=eum, \uB298=neul)
-   - Use 'ae' not 'ai' for \u3150 (\uC608: \uAC1C=gae, \uBC30=bae)
-   - Follow official RR consonant rules: \u3131=g/k, \u3137=d/t, \u3142=b/p, etc.
-   - Distinguish between \u3145=s and \u3146=ss
-   - Proper handling of \u3139: initial \u3139=r, medial \u3139=l, final \u3139=l
-   - Proper handling of assimilation: \uD569\uB2C8\uB2E4=hamnida (not hapnida)
-
-4. **Linguistic Accuracy:**
-   - Process word by word, not character by character
-   - Correctly handle syllable-final consonants (\uBC1B\uCE68)
-   - Apply proper sound change rules for connected speech
-   - Account for consonant assimilation and liaison between words when needed
-
-5. **Preserve Everything Else:** Keep all non-Korean text (English, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are.
-
-6. **Completeness Check:** Before outputting, methodically verify that every single Korean word/sequence has its romaja pair.
-   - **CRITICAL: Double-check mixed-language phrases** to ensure no Korean text was missed
-   - **CRITICAL: Verify that Korean text at the beginning, middle, or end of phrases** all have romaja
-
-7. **Mixed Text Handling:** For text that mixes Korean with other scripts or characters:
-   - First identify ALL consecutive Korean Hangul characters, regardless of their position in the text
-   - Add romaja ONLY after the complete Korean sequence
-   - Leave all non-Korean characters in their original positions
-   - **CRITICAL: Process Korean text at the end of mixed phrases** (e.g., "good\uBC24" = "good\uBC24{bam}")
-   - **CRITICAL: Process Korean text in the middle of mixed phrases** (e.g., "hello\uC548\uB155hi" = "hello\uC548\uB155{annyeong}hi")
-
-**Examples with Sound Change Rules:**
-* \uC815\uB9D0 = \uC815\uB9D0{jeongmal}
-* \uC88B\uC544\uD574 = \uC88B\uC544\uD574{joahae}
-* \uAC19\uC774 = \uAC19\uC774{gachi} (Note assimilation)
-* \uC77D\uB2E4 = \uC77D\uB2E4{ikda} (Note syllable-final consonant rule)
-* \uBC25 \uBA39\uC5B4 = \uBC25{bap} \uBA39\uC5B4{meogeo} (Note final consonant pronunciation)
-* \uAF43\uC78E = \uAF43\uC78E{kkonip} (Note assimilation at morpheme boundary)
-* \uC5C6\uC5B4 = \uC5C6\uC5B4{eopseo} (Note complex consonant cluster)
-* \uC549\uC544 = \uC549\uC544{anja} (Note complex consonant rules)
-* \uAC14\uB2E4 \uC654\uB2E4 = \uAC14\uB2E4{gatda} \uC654\uB2E4{watda} (Note past tense pronunciation)
-* \uC0AC\uB791\uD574\uC694 = \uC0AC\uB791\uD574\uC694{saranghaeyo} (Note aspirated consonant)
-
-**Special Cases:**
-* Numbers mixed with Korean: 2\uC0B4\uC774\uC5D0\uC694 = 2\uC0B4\uC774\uC5D0\uC694{salieyo}
-* Parentheses: (\uB0B4\uAC00 \uC544\uB2C8\uC796\uC544) = (\uB0B4\uAC00{naega} \uC544\uB2C8\uC796\uC544{anijana})
-* Particles: \uCC45\uC774 = \uCC45\uC774{chaegi}, \uC9D1\uC5D0 = \uC9D1\uC5D0{jibe} (Note sound changes)
-* Long words: \uAC00\uB098\uB2E4\uB77C\uB9C8\uBC14\uC0AC = \uAC00\uB098\uB2E4\uB77C\uB9C8\uBC14\uC0AC{ganadaramabasa}
-* Words with suffixes: \uAF43\uC78E\uCC98\uB7FC = \uAF43\uC78E\uCC98\uB7FC{konnipcheorom}
-* Mixed script: \uC720\uC8FCbeat = \uC720\uC8FC{yuju}beat (romaja only for Korean part)
-* Mixed script: \uC544\uC774love\uB178\uB798 = \uC544\uC774{ai}love\uB178\uB798{norae} (separate Korean sequences)
-* Korean at end: good\uBC24 = good\uBC24{bam} (Korean at end of phrase)
-* Korean in middle: hello\uC548\uB155hi = hello\uC548\uB155{annyeong}hi (Korean in middle)
-* Complex mix: \uC5EC\uB984\uC5EC\uB984\uD574hey = \uC5EC\uB984\uC5EC\uB984\uD574{yeoreumyeoreumhae}hey (Korean followed by English)
-* Multiple Korean segments: \uC548\uB155hello\uC5EC\uBCF4\uC138\uC694 = \uC548\uB155{annyeong}hello\uC5EC\uBCF4\uC138\uC694{yeoboseyo} (Korean-English-Korean)
-
-**Input:** You will receive lines of song lyrics.
-**Output:** Return the lyrics with romaja added inline according to the rules above. Ensure the output maintains the original line structure.`;
-      FURIGANA_PROMPT = `You are an expert Japanese linguist specializing in accurate furigana transcription for song lyrics. Your primary goal is to add Hiragana readings in curly braces {} after EVERY Kanji character or compound Kanji sequence in the provided lyrics.
-
-**Core Task:** Convert Japanese lyrics to include inline furigana for all Kanji.
-
-**Strict Rules:**
-1.  **Mandatory Conversion:** You MUST process EVERY Kanji character and compound Kanji sequence. No exceptions. Do NOT skip any.
-2.  **Inline Format:** Insert the correct Hiragana reading enclosed in curly braces {} immediately following the corresponding Kanji character or sequence. Example: \u6F22\u5B57 = \u6F22\u5B57{\u304B\u3093\u3058}.
-3.  **Contextual Readings:** Use the contextually appropriate reading (kun'yomi or on'yomi). For compound words (jukugo), provide the reading for the entire compound. Example: \u65E5\u672C\u8A9E = \u65E5\u672C\u8A9E{\u306B\u307B\u3093\u3054}. For single Kanji followed by okurigana, provide the reading for the Kanji part only. Example: \u98DF{\u305F}\u3079\u308B.
-4.  **Preserve Everything Else:** Keep all non-Kanji text (Hiragana, Katakana, English, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are.
-5.  **Completeness Check:** Before outputting, double-check that every single Kanji character/sequence has its furigana pair.
-
-**Examples:**
-*   \u9858\u3044 = \u9858{\u306D\u304C}\u3044
-*   \u53EF\u611B\u3044 = \u53EF\u611B{\u304B\u308F\u3044}\u3044
-*   5\u4EBA = 5\u4EBA{\u306B\u3093} (Number preserved, Kanji romanized)
-*   \u660E\u5F8C\u65E5 = \u660E\u5F8C\u65E5{\u3042\u3055\u3063\u3066} (Compound word)
-*   \u795E\u69D8 = \u795E\u69D8{\u304B\u307F\u3055\u307E} (Compound word)
-*   \u805E\u304D = \u805E{\u304D}\u304D (Kanji with okurigana)
-*   \u98DF\u3079\u308B = \u98DF{\u305F}\u3079\u308B
-*   \u7F8E\u3057\u3044 = \u7F8E{\u3046\u3064\u304F}\u3057\u3044
-*   \u6771\u4EAC\u30BF\u30EF\u30FC = \u6771\u4EAC{\u3068\u3046\u304D\u3087\u3046}\u30BF\u30EF\u30FC (Mixed script, Katakana preserved)
-*   (\u5927\u4E08\u592B\u3060\u3088) = (\u5927\u4E08\u592B{\u3060\u3044\u3058\u3087\u3046\u3076}\u3060\u3088) (Parentheses and Hiragana preserved)
-
-**Input:** You will receive lines of song lyrics.
-**Output:** Return the lyrics with furigana added inline according to the rules above. Ensure the output maintains the original line structure.
-`;
-      ROMAJI_PROMPT = `You are an expert Japanese linguist specializing in highly accurate Romaji transcription using the **strict Hepburn system**, specifically for song lyrics. Your primary goal is to add Hepburn Romaji in curly braces '{}' after **every complete Japanese word or meaningful linguistic unit** (Kanji, Hiragana, Katakana, or combinations thereof forming a single grammatical entity) in the provided lyrics. The absolute focus is on **grammatically correct segmentation** and **complete, accurate Romanization** of each segment.
-
-#### Core Task
-Accurately convert Japanese song lyrics to strict Hepburn Romaji, ensuring each word, particle, conjugated form, verb phrase, or katakana term (regardless of length) is treated as a single, indivisible unit for Romanization. The text within the braces '{}' must **always be the Hepburn Romaji conversion**, never the original Japanese script. Do not skip any Japanese text elements, especially long katakana words.
-
-#### Strict Rules
-
-1. **Unit-Level Conversion**
-   - Identify and process each meaningful Japanese linguistic unit. A "unit" is defined as the smallest sequence of characters that functions as a single grammatical entity, including:
-     - Nouns (e.g., \u65E5\u672C\u8A9E{Nihongo})
-     - Verbs (including **all** conjugated forms and combinations with auxiliary verbs\u2014see Rule 2)
-     - Adjectives (including **all** conjugated forms)
-     - Adverbs
-     - Particles (e.g., \u306F{wa}, \u3092{o}, \u304C{ga}, \u306E{no}, \u306B{ni}, \u3078{e}, \u3068{to})
-     - Compound particles (e.g., \u306B\u306F{niwa}, \u3068\u306F{towa}, \u307E\u3067\u3082{mademo})
-     - Katakana words of any length (e.g., \u30B3\u30FC\u30D2\u30FC{k\u014Dh\u012B}, \u30A4\u30F3\u30D5\u30A7\u30EB\u30CE\u30E9\u30D6\u30EC\u30BF\u30FC{inferuno raburet\u0101})
-     - Numbers with counters (e.g., 5\u4EBA{go-nin})
-     - Compound words (e.g., \u6771\u4EAC\u30BF\u30EF\u30FC{T\u014Dky\u014D Taw\u0101})
-     - Interjections and short phrases (e.g., \u305B\u30FC\u306E{s\u0113 no}, \u3088\u30FC\u3044{y\u014D i}, \u3042\u3063{a'}, \u3048\u3063\u3068{etto})
-   - Romanize each identified unit **as a whole**.
-
-2. **CRITICAL: Correct Segmentation & Indivisibility**
-   - **Do not split functional grammatical units:** This is the most critical rule. Any sequence of characters functioning together as a single word, conjugated form, or verb phrase **must** remain indivisible.
-   - **Conjugated Verbs/Adjectives:** Treat the **entire** conjugated form (base + endings, okurigana, auxiliary verbs grammatically attached) as **indivisible**.
-   - **Kanji + Okurigana Integrity:** A unit often includes Kanji followed by Hiragana (okurigana), forming a single word (e.g., \u98DF\u3079\u308B{taberu}, not \u98DF{tabe}\u3079\u308B{ru}).
-   - **Verb (Te-form) + Auxiliary Verb Combinations:** Treat combinations like Verb-\u3066 + \u3044\u308B/\u3042\u308B/\u304A\u304F/\u3057\u307E\u3046/\u3044\u304F/\u304F\u308B and their conjugations or contractions (e.g., -te iru = -teru, -te ita = -teta, -te shimau = -chau) as **single verb phrases** that **must not be split**.
-   - **Correct Examples:**
-     - \u7B11\u3063\u3066{waratte}
-     - \u5C4A\u3044\u3066{todoite}
-     - \u5C45\u308C\u306A\u3044{irenai}
-     - \u75C5\u3093\u3067\u304D\u305F{yandekita}
-     - \u611B\u3057\u304D{itoshiki}
-     - \u4E57\u3063\u304B\u3063\u3066{nokkatte}
-     - \u8D70\u308A\u51FA\u3057\u305F{hashiridashita}
-     - \u98DF\u3079\u3066\u3057\u307E\u3046{tabeteshimau}
-     - \u7F8E\u3057\u3055{utsukushsa}
-     - \u898B\u3066\u305F{miteta}
-     - \u8AAD\u3093\u3067\u308B{yonderu}
-     - \u77E5\u3063\u3066\u3044\u308B{shitteiru}
-     - \u8A00\u3063\u3066\u304A\u304F{itteoku}
-     - \u98DF\u3079\u3061\u3083\u3063\u305F{tabechatta}
-     - \u62B1\u3048{kakae}
-     - \u898B\u3066\u3082{mitemo}
-     - \u30E1\u30ED\u30C7\u30A3\u30FC{merod\u012B}
-     - \u30B5\u30FC\u30AD\u30E5\u30EC\u30FC\u30B7\u30E7\u30F3{s\u0101kyur\u0113shon}
-
-3. **Inline Format & Content**
-   - Insert the **Hepburn Romaji pronunciation** in curly braces '{}' immediately following the **complete** Japanese unit, with **no space** between the unit and the opening brace.
-   - The content inside the braces '{}' must be the **Hepburn Romaji result**, not the original Japanese script (e.g., \u62B1\u3048{kakae}, not \u62B1\u3048{\u62B1\u3048}).
-   - Pay special attention to short, easily overlooked expressions like \u305B\u30FC\u306E{s\u0113 no} or \u306D\u3047{n\u0113} that might be missed despite being meaningful linguistic units.
-
-4. **Romanization System: Strict Hepburn**
-   - Adhere strictly to the Hepburn system:
-     - Basic sounds: \u3057=shi, \u3061=chi, \u3064=tsu, \u3075=fu, \u3058=ji, \u3062=ji, \u3065=zu
-     - **Long vowels:** Use macrons consistently: \u304A\u3046/\u304A\u304A = \u014D, \u3048\u3044/\u3048\u3048 = \u0113, \u3046\u3046 = \u016B, \u3044\u3044 = \u012B, \u3042\u3042 = \u0101 (e.g., \u6771\u4EAC{T\u014Dky\u014D}, \u3042\u308A\u304C\u3068\u3046{arigat\u014D}, \u7F8E\u5473\u3057\u3044{oishii})
-     - **Extended vowels in casual speech**: Properly romanize extended vowels in casual expressions, including those marked with "\u30FC" (e.g., \u305B\u30FC\u306E{s\u0113 no}, \u3088\u30FC\u3044{y\u014D i})
-     - Particles: \u306F = wa, \u3078 = e, \u3092 = o
-     - Sokuon (\u3063): Double the following consonant (e.g., \u3061\u3087\u3063\u3068{chotto}, \u7B11\u3063\u3066{waratte})
-     - N (\u3093): Use n before most consonants, m before b/m/p, and n' before vowels or y (e.g., \u6848\u5185{annai}, \u6563\u6B69{sampo}, \u539F\u56E0{gen'in}, \u672C\u5C4B{hon'ya})
-
-5. **Completeness & Accuracy of Romanization**
-   - Ensure **every** Japanese linguistic unit has its corresponding Hepburn Romaji in braces.
-   - The Romaji must be **accurate and complete**, reflecting the pronunciation of the **entire** unit, with attention to long vowels, double consonants, and particle usage.
-   - **Pay special attention to long katakana words**: Never skip romanization for long katakana sequences like "\u30A4\u30F3\u30D5\u30A7\u30EB\u30CE\u30E9\u30D6\u30EC\u30BF\u30FC{inferuno raburet\u0101}" or "\u30B5\u30FC\u30AD\u30E5\u30EC\u30FC\u30B7\u30E7\u30F3{s\u0101kyur\u0113shon}", even if they appear complex. These should be fully romanized as single units.
-   - **Do not overlook short expressions**: Be particularly vigilant about romanizing short expressions that might be overlooked, such as \u305B\u30FC\u306E{s\u0113 no}, \u3088\u3057{yoshi}, \u307B\u3089{hora}, etc. Even single kana or short utterances like \u3042\u3063{a'} or \u3048\u3063{e'} must be romanized.
-
-6. **Preserve Non-Japanese Text and Punctuation**
-   - Keep all non-Japanese text (English words, numbers, symbols) unchanged, with no Romaji added for these elements.
-   - **Do not add Romaji transcription for any punctuation marks, including commas (,), periods (.), question marks (?), exclamation points (!), etc.**
-   - Maintain original spaces and line breaks as they appear in the lyrics.
-
-7. **Punctuation Handling**
-   - Treat punctuation marks separately from Japanese text. For example:
-     - "\u4ECA\u65E5\u306F{ky\u014D wa}, \u6674\u308C{hare}" (correct)
-     - "\u4ECA\u65E5\u306F{ky\u014D wa}\u3001\u6674\u308C{hare}" (correct)
-     - "\u4ECA\u65E5\u306F\u3001{ky\u014D wa,}\u6674\u308C{hare}" (incorrect - comma included in Romaji)
-   - **Special Delimiters (\u300C\u300D, \uFF08\uFF09):** For Japanese text enclosed within full-width quotation marks (\u300C\u300D) or full-width parentheses \uFF08\uFF09, the Romaji should be inserted *inside* these delimiters. Example: \u300C\u904B\u547D\u300D = \u300C\u904B\u547D{unmei}\u300D.
-
-#### Input
-Song lyrics containing Japanese text.
-
-#### Output
-The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to every complete Japanese word, particle, conjugated form, or verb phrase, respecting the strict segmentation and indivisibility rules, ensuring **only Romaji appears within the braces**, and excluding all punctuation marks from Romanization. Respond in JSON.`;
-    }
-  });
-
-  // src/components/Global/Defaults.ts
-  var Defaults, Defaults_default;
-  var init_Defaults = __esm({
-    "src/components/Global/Defaults.ts"() {
-      init_package();
-      init_prompts();
-      Defaults = {
-        Version: version,
-        lyrics: {
-          api: {
-            url: "https://amai-worker-production.nandemo.workers.dev/lyrics",
-            translationUrl: "https://amai-worker-production.nandemo.workers.dev/translations",
-            phoneticUrl: "https://amai-worker-production.nandemo.workers.dev/phonetic"
-          }
-        },
-        CurrentLyricsType: "None",
-        LyricsContainerExists: false,
-        systemInstruction: SYSTEM_INSTRUCTION,
-        translationPrompt: TRANSLATION_PROMPT,
-        romajaPrompt: ROMAJA_PROMPT,
-        furiganaPrompt: FURIGANA_PROMPT,
-        romajiPrompt: ROMAJI_PROMPT
-      };
-      Defaults_default = Defaults;
-    }
-  });
-
   // node_modules/@hudzax/web-modules/UniqueId.js
   function GetUniqueId() {
     while (true) {
@@ -6917,6 +6658,27 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
+  // src/utils/PagePresence.ts
+  function setPageOpen(open) {
+    pageOpen = open;
+  }
+  function isPageOpen() {
+    return pageOpen;
+  }
+  function isOnPageRoute() {
+    try {
+      return Spicetify.Platform.History.location.pathname === "/AmaiLyrics";
+    } catch {
+      return false;
+    }
+  }
+  var pageOpen;
+  var init_PagePresence = __esm({
+    "src/utils/PagePresence.ts"() {
+      pageOpen = false;
+    }
+  });
+
   // src/utils/IntervalManager.ts
   function globalVisibilityHandler() {
     const hidden = document.hidden;
@@ -7036,13 +6798,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   });
 
   // src/utils/PositionConsumer.ts
-  function resolveOnLyricsPage() {
-    try {
-      return Spicetify.Platform.History.location.pathname === "/AmaiLyrics";
-    } catch {
-      return false;
-    }
-  }
   function registerPositionConsumer(options) {
     const key = options.surface;
     consumers.get(key)?.disposer();
@@ -7055,7 +6810,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       if (SpotifyPlayer.IsPlaying !== livePlaying)
         SpotifyPlayer.IsPlaying = livePlaying;
       const ctx = {
-        onLyricsPage: resolveOnLyricsPage(),
+        onLyricsPage: isOnPageRoute(),
         isPlaying: livePlaying
       };
       const active = options.enabled(ctx);
@@ -7105,17 +6860,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_IntervalManager();
       init_SpotifyPlayer();
       init_GetProgress();
+      init_PagePresence();
       windowRef3 = window;
       consumers = windowRef3.__amaiPositionConsumers ?? (windowRef3.__amaiPositionConsumers = /* @__PURE__ */ new Map());
-    }
-  });
-
-  // src/utils/Lyrics/Animator/Shared.ts
-  var timeOffset, BlurMultiplier;
-  var init_Shared = __esm({
-    "src/utils/Lyrics/Animator/Shared.ts"() {
-      timeOffset = 0;
-      BlurMultiplier = 1;
     }
   });
 
@@ -7140,34 +6887,37 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // src/utils/Lyrics/Animator/Lyrics/LyricsSetter.ts
-  function getStatus(start, end, current) {
-    if (start <= current && current <= end) {
+  // src/utils/Lyrics/LineHighlight.ts
+  function setStyleIfChanged(element, property, value) {
+    let props = styleWriteCache.get(element);
+    if (!props) {
+      props = /* @__PURE__ */ new Map();
+      styleWriteCache.set(element, props);
+    }
+    if (props.get(property) !== value) {
+      props.set(property, value);
+      element.style.setProperty(property, value);
+    }
+  }
+  function statusAt(start, end, current) {
+    if (start <= current && current <= end)
       return "Active";
-    } else if (start >= current) {
-      return "NotSung";
-    } else {
-      return "Sung";
+    return start >= current ? "NotSung" : "Sung";
+  }
+  function updateDotStatuses(dots, current) {
+    for (const dot of dots) {
+      dot.status = statusAt(dot.StartTime, dot.EndTime, current);
     }
   }
-  function updateCollectionStatus(collection, current) {
-    for (const item of collection) {
-      item.status = getStatus(item.StartTime, item.EndTime, current);
-    }
-  }
-  function resetLyricsSetterCache() {
-    lastActiveIndex = -1;
-    lastCachedLength = -1;
-  }
-  function applyNoActive(tLines, pos) {
+  function applyNoActive(tLines, position) {
     for (const line of tLines) {
-      const next = line.StartTime <= pos && pos <= line.EndTime ? "Active" : line.StartTime >= pos ? "NotSung" : "Sung";
+      const next = statusAt(line.StartTime, line.EndTime, position);
       if (line.status !== next)
         line.status = next;
     }
     lastActiveIndex = -1;
   }
-  function applyDelta(tLines, activeIndex, pos) {
+  function applyDelta(tLines, activeIndex, position) {
     if (lastActiveIndex === -1) {
       for (let i = 0; i < tLines.length; i++) {
         const line = tLines[i];
@@ -7193,7 +6943,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         prev.status = "NotSung";
       for (let i = activeIndex + 1; i <= lastActiveIndex - 1; i++) {
         const line = tLines[i];
-        const next = tLines[i].StartTime >= pos ? "NotSung" : "Sung";
+        const next = line.StartTime >= position ? "NotSung" : "Sung";
         if (line.status !== next)
           line.status = next;
       }
@@ -7203,94 +6953,66 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     const activeLine = tLines[activeIndex];
     if (activeLine.dots)
-      updateCollectionStatus(activeLine.dots, pos);
+      updateDotStatuses(activeLine.dots, position);
     lastActiveIndex = activeIndex;
   }
-  function TimeSetter(PreCurrentPosition) {
-    const CurrentPosition = PreCurrentPosition + timeOffset;
-    if (Defaults_default.CurrentLyricsType !== "Line")
+  function applyBlur(arr, activeIndex, isPlaying) {
+    const playStateChanged = isPlaying !== lastBlurIsPlaying;
+    lastBlurIsPlaying = isPlaying;
+    const windows = [];
+    const pushWindow = (center) => {
+      if (center == null || center < 0)
+        return;
+      windows.push({
+        lo: Math.max(0, center - MAX_BLUR_DISTANCE),
+        hi: Math.min(arr.length - 1, center + MAX_BLUR_DISTANCE)
+      });
+    };
+    pushWindow(activeIndex);
+    pushWindow(lastBlurActiveIndex);
+    const fullPass = lastBlurActiveIndex == null || playStateChanged;
+    lastBlurActiveIndex = activeIndex;
+    const blurFor = (distance) => isPlaying ? `${Math.min(distance, MAX_BLUR_PX)}px` : "0px";
+    const paintRow = (i) => {
+      const row = arr[i];
+      const value = row.status !== "Active" ? blurFor(Math.abs(i - activeIndex)) : "0px";
+      setStyleIfChanged(row.element, "--BlurAmount", value);
+    };
+    if (fullPass) {
+      for (let i = 0; i < arr.length; i++)
+        paintRow(i);
       return;
-    const tLines = getTimedLines();
-    if (!tLines.length)
-      return;
-    if (tLines.length !== lastCachedLength) {
-      lastActiveIndex = -1;
-      lastCachedLength = tLines.length;
     }
-    const activeIndex = findActiveIndex(tLines, CurrentPosition);
-    if (activeIndex !== -1 && activeIndex === lastActiveIndex) {
-      const al = tLines[activeIndex];
-      if (al.dots)
-        updateCollectionStatus(al.dots, CurrentPosition);
-      return;
-    }
-    if (activeIndex === -1) {
-      applyNoActive(tLines, CurrentPosition);
-      return;
-    }
-    applyDelta(tLines, activeIndex, CurrentPosition);
-  }
-  function getActiveLineIndex() {
-    return lastActiveIndex;
-  }
-  var lastActiveIndex, lastCachedLength;
-  var init_LyricsSetter = __esm({
-    "src/utils/Lyrics/Animator/Lyrics/LyricsSetter.ts"() {
-      init_Defaults();
-      init_registry();
-      init_Shared();
-      init_findActiveIndex();
-      lastActiveIndex = -1;
-      lastCachedLength = -1;
-    }
-  });
-
-  // src/utils/Lyrics/Animator/Lyrics/LyricsAnimator.ts
-  function setBlurringLastLine(c) {
-    Blurring_LastLine = c;
-  }
-  function resetAnimatorCache() {
-    lastBlurActiveIndex = null;
-  }
-  function clearDotInlineStyles(word) {
-    setStyleIfChanged(word.element, "transform", "");
-    setStyleIfChanged(word.element, "scale", "");
-    setStyleIfChanged(word.element, "opacity", "");
-    setStyleIfChanged(word.element, "--text-shadow-blur-radius", "");
-    setStyleIfChanged(word.element, "--text-shadow-opacity", "");
-    setStyleIfChanged(word.element, "--dot-duration", "");
-  }
-  function activateDot(word) {
-    if (!word.element.classList.contains("dot-active")) {
-      void word.element.offsetWidth;
-      word.element.classList.add("dot-active");
-    }
-    clearDotInlineStyles(word);
-  }
-  function resetDotNotSung(word) {
-    word.element.classList.remove("dot-active");
-    clearDotInlineStyles(word);
-  }
-  function resetDotSung(word) {
-    word.element.classList.remove("dot-active");
-    clearDotInlineStyles(word);
-  }
-  function animateLineLines(arr) {
-    const cachedActive = getActiveLineIndex();
-    const activeIndex = cachedActive !== -1 ? cachedActive : arr.findIndex((l) => l.status === "Active");
-    if (activeIndex !== -1) {
-      if (SpotifyPlayer.IsPlaying !== lastIsPlaying) {
-        Blurring_LastLine = null;
-        lastIsPlaying = SpotifyPlayer.IsPlaying;
+    const visited = /* @__PURE__ */ new Set();
+    for (const { lo, hi } of windows) {
+      for (let i = lo; i <= hi; i++) {
+        if (visited.has(i))
+          continue;
+        visited.add(i);
+        paintRow(i);
       }
-      if (Blurring_LastLine !== activeIndex) {
-        applyBlur(arr, activeIndex, BlurMultiplier);
-        Blurring_LastLine = activeIndex;
-      }
-    } else if (Blurring_LastLine !== null) {
-      lastBlurActiveIndex = null;
-      Blurring_LastLine = null;
     }
+  }
+  function clearDotInlineStyles(dot) {
+    setStyleIfChanged(dot.element, "transform", "");
+    setStyleIfChanged(dot.element, "scale", "");
+    setStyleIfChanged(dot.element, "opacity", "");
+    setStyleIfChanged(dot.element, "--text-shadow-blur-radius", "");
+    setStyleIfChanged(dot.element, "--text-shadow-opacity", "");
+    setStyleIfChanged(dot.element, "--dot-duration", "");
+  }
+  function activateDot(dot) {
+    if (!dot.element.classList.contains("dot-active")) {
+      void dot.element.offsetWidth;
+      dot.element.classList.add("dot-active");
+    }
+    clearDotInlineStyles(dot);
+  }
+  function deactivateDot(dot) {
+    dot.element.classList.remove("dot-active");
+    clearDotInlineStyles(dot);
+  }
+  function paintStatuses(arr) {
     for (let index = 0; index < arr.length; index++) {
       const line = arr[index];
       const prevStatus = line.lastStatus;
@@ -7303,115 +7025,90 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
           for (const dot of line.dots) {
             if (dot.status === "Active")
               activateDot(dot);
-            else if (dot.status === "NotSung")
-              resetDotNotSung(dot);
-            else if (dot.status === "Sung")
-              resetDotSung(dot);
+            else if (dot.status === "NotSung" || dot.status === "Sung")
+              deactivateDot(dot);
           }
         } else {
-          setStyleIfChanged(line.element, "--gradient-position", `100%`);
+          setStyleIfChanged(line.element, "--gradient-position", "100%");
         }
       } else if (line.status === "NotSung") {
         if (prevStatus !== "NotSung") {
           line.element.classList.add("NotSung");
           line.element.classList.remove("Sung");
-          if (line.element.classList.contains("Active") && !line.element.classList.contains("OverridenByScroller"))
+          if (line.element.classList.contains("Active") && !line.element.classList.contains("OverridenByScroller")) {
             line.element.classList.remove("Active");
-          setStyleIfChanged(line.element, "--gradient-position", `0%`);
+          }
+          setStyleIfChanged(line.element, "--gradient-position", "0%");
         }
       } else if (line.status === "Sung") {
         if (prevStatus !== "Sung") {
           line.element.classList.add("Sung");
           line.element.classList.remove("Active", "NotSung");
-          setStyleIfChanged(line.element, "--gradient-position", `100%`);
+          setStyleIfChanged(line.element, "--gradient-position", "100%");
         }
       }
       line.lastStatus = line.status;
     }
   }
-  function Animate() {
-    if (Defaults_default.CurrentLyricsType !== "Line")
+  function sync(position, ctx) {
+    const tLines = getTimedLines();
+    if (!tLines.length)
       return;
-    animateLineLines(getTimedLines());
-  }
-  var Blurring_LastLine, lastIsPlaying, styleWriteCache, setStyleIfChanged, MAX_BLUR_DISTANCE, lastBlurActiveIndex, lastBlurIsPlaying, applyBlur;
-  var init_LyricsAnimator = __esm({
-    "src/utils/Lyrics/Animator/Lyrics/LyricsAnimator.ts"() {
-      init_Defaults();
-      init_SpotifyPlayer();
-      init_registry();
-      init_Shared();
-      init_LyricsSetter();
-      Blurring_LastLine = null;
-      lastIsPlaying = null;
-      styleWriteCache = /* @__PURE__ */ new WeakMap();
-      setStyleIfChanged = (element, property, value) => {
-        let props = styleWriteCache.get(element);
-        if (!props) {
-          props = /* @__PURE__ */ new Map();
-          styleWriteCache.set(element, props);
-        }
-        if (props.get(property) !== value) {
-          props.set(property, value);
-          element.style.setProperty(property, value);
-        }
-      };
-      MAX_BLUR_DISTANCE = 6;
-      lastBlurActiveIndex = null;
-      lastBlurIsPlaying = null;
-      applyBlur = (arr, activeIndex, BlurMultiplier2) => {
-        const isPlaying = SpotifyPlayer.IsPlaying;
-        const playStateChanged = isPlaying !== lastBlurIsPlaying;
-        lastBlurIsPlaying = isPlaying;
-        const windows = [];
-        const pushWindow = (center) => {
-          if (center == null || center < 0)
-            return;
-          const lo = Math.max(0, center - MAX_BLUR_DISTANCE);
-          const hi = Math.min(arr.length - 1, center + MAX_BLUR_DISTANCE);
-          windows.push({ lo, hi });
-        };
-        pushWindow(activeIndex);
-        pushWindow(lastBlurActiveIndex);
-        const isFirstBlur = lastBlurActiveIndex == null || playStateChanged;
-        lastBlurActiveIndex = activeIndex;
-        if (isFirstBlur) {
-          for (let i = 0; i < arr.length; i++) {
-            const distance = Math.abs(i - activeIndex);
-            const blurAmountRaw = BlurMultiplier2 * distance;
-            const blurAmount = blurAmountRaw >= 5 ? 5 : blurAmountRaw;
-            const blurValue = isPlaying && arr[i].status !== "Active" ? `${blurAmount}px` : `0px`;
-            setStyleIfChanged(arr[i].element, "--BlurAmount", blurValue);
-          }
-          return;
-        }
-        const visited = /* @__PURE__ */ new Set();
-        for (const { lo, hi } of windows) {
-          for (let i = lo; i <= hi; i++) {
-            if (visited.has(i))
-              continue;
-            visited.add(i);
-            const distance = Math.abs(i - activeIndex);
-            const blurAmountRaw = BlurMultiplier2 * distance;
-            const blurAmount = blurAmountRaw >= 5 ? 5 : blurAmountRaw;
-            const blurValue = isPlaying && arr[i].status !== "Active" ? `${blurAmount}px` : `0px`;
-            setStyleIfChanged(arr[i].element, "--BlurAmount", blurValue);
-          }
-        }
-      };
+    if (tLines.length !== lastCachedLength) {
+      lastActiveIndex = -1;
+      lastCachedLength = tLines.length;
     }
-  });
-
-  // src/utils/Lyrics/Animator/Main.ts
-  var Lyrics;
-  var init_Main = __esm({
-    "src/utils/Lyrics/Animator/Main.ts"() {
-      init_LyricsAnimator();
-      init_LyricsSetter();
-      Lyrics = {
-        Animate,
-        TimeSetter
-      };
+    const searched = findActiveIndex(tLines, position);
+    if (searched === -1) {
+      applyNoActive(tLines, position);
+    } else if (searched !== lastActiveIndex) {
+      applyDelta(tLines, searched, position);
+    } else {
+      const active = tLines[searched];
+      if (active.dots)
+        updateDotStatuses(active.dots, position);
+    }
+    const activeIndex = searched !== -1 ? searched : tLines.findIndex((l) => l.status === "Active");
+    if (activeIndex !== -1) {
+      if (ctx.isPlaying !== lastIsPlaying) {
+        blurredActiveIndex = null;
+        lastIsPlaying = ctx.isPlaying;
+      }
+      if (blurredActiveIndex !== activeIndex) {
+        applyBlur(tLines, activeIndex, ctx.isPlaying);
+        blurredActiveIndex = activeIndex;
+      }
+    } else if (blurredActiveIndex !== null) {
+      lastBlurActiveIndex = null;
+      blurredActiveIndex = null;
+    }
+    paintStatuses(tLines);
+  }
+  function getActiveLine() {
+    return getAllRows().find((line) => line.status === "Active" && line.element.isConnected);
+  }
+  function reset() {
+    lastActiveIndex = -1;
+    lastCachedLength = -1;
+    blurredActiveIndex = null;
+    lastBlurActiveIndex = null;
+    lastIsPlaying = null;
+    lastBlurIsPlaying = null;
+  }
+  var lastActiveIndex, lastCachedLength, blurredActiveIndex, lastBlurActiveIndex, lastIsPlaying, lastBlurIsPlaying, styleWriteCache, MAX_BLUR_DISTANCE, MAX_BLUR_PX;
+  var init_LineHighlight = __esm({
+    "src/utils/Lyrics/LineHighlight.ts"() {
+      init_registry();
+      init_findActiveIndex();
+      lastActiveIndex = -1;
+      lastCachedLength = -1;
+      blurredActiveIndex = null;
+      lastBlurActiveIndex = null;
+      lastIsPlaying = null;
+      lastBlurIsPlaying = null;
+      styleWriteCache = /* @__PURE__ */ new WeakMap();
+      MAX_BLUR_DISTANCE = 6;
+      MAX_BLUR_PX = 5;
     }
   });
 
@@ -7421,7 +7118,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     attachClickToSeek: () => attachClickToSeek,
     clear: () => clear,
     detachClickToSeek: () => detachClickToSeek,
-    getActiveLine: () => getActiveLine,
     getAllRows: () => getAllRows,
     getPaintedLines: () => getPaintedLines,
     getTimedLines: () => getTimedLines,
@@ -7451,17 +7147,13 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
     return timedLinesCache;
   }
-  function getActiveLine() {
-    return rows.find((line) => line.status === "Active" && line.element.isConnected);
-  }
   function clear() {
     rows.length = 0;
     lineElementToStartTimeMap.clear();
     invalidateTimedLinesCache();
     lastRenderedPosition = -1;
     hasRenderedInitial = false;
-    resetLyricsSetterCache();
-    resetAnimatorCache();
+    reset();
     AutoScroll.reset();
   }
   function startLoop() {
@@ -7470,18 +7162,17 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     renderLoopDisposer = registerPositionConsumer({
       surface: "highlight",
       intervalSeconds: THROTTLE_TIME,
-      enabled: (ctx) => Defaults_default.LyricsContainerExists && ctx.onLyricsPage,
+      enabled: (ctx) => isPageOpen() && ctx.onLyricsPage,
       wantsTracking: (ctx) => ctx.onLyricsPage,
-      onPosition: (progress) => {
+      onPosition: (progress, ctx) => {
         if (hasRenderedInitial && progress === lastRenderedPosition)
           return;
         lastRenderedPosition = progress;
         hasRenderedInitial = true;
-        Lyrics.TimeSetter(progress);
-        Lyrics.Animate();
+        sync(progress, { isPlaying: ctx.isPlaying });
         scrollTickCounter++;
         if (scrollTickCounter % 2 === 0) {
-          AutoScroll.sync();
+          AutoScroll.sync({ isPlaying: ctx.isPlaying, onLyricsPage: ctx.onLyricsPage });
         }
       }
     });
@@ -7547,13 +7238,11 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var init_registry = __esm({
     "src/utils/Lyrics/registry.ts"() {
       init_Maid();
-      init_Defaults();
       init_SpotifyPlayer();
       init_PositionConsumer();
-      init_Main();
+      init_PagePresence();
       init_AutoScroll();
-      init_LyricsSetter();
-      init_LyricsAnimator();
+      init_LineHighlight();
       lyricsBetweenShow = 3;
       rows = [];
       lineElementToStartTimeMap = /* @__PURE__ */ new Map();
@@ -9156,13 +8845,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     activeScrollController = value;
     sharedScrollState.activeScrollController = value;
   }
-  function resolveOnLyricsPage2() {
-    try {
-      return Spicetify.Platform.History.location.pathname === "/AmaiLyrics";
-    } catch {
-      return false;
-    }
-  }
   function mountAutoScroll() {
     try {
       if (ScrollSimplebar)
@@ -9177,9 +8859,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       const isPlaying = overrides.isPlaying ?? resolveIsPlaying();
       if (!isPlaying)
         return;
-      if (!Defaults_default.LyricsContainerExists)
+      if (!isPageOpen())
         return;
-      const onLyricsPage = overrides.onLyricsPage ?? resolveOnLyricsPage2();
+      const onLyricsPage = overrides.onLyricsPage ?? isOnPageRoute();
       if (!onLyricsPage)
         return;
       const lines = overrides.lines ?? getTimedLines();
@@ -9244,8 +8926,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var windowRef4, sharedScrollState, lastLine, activeScrollController, AutoScroll;
   var init_AutoScroll = __esm({
     "src/utils/Scrolling/AutoScroll.ts"() {
-      init_Defaults();
       init_GetProgress();
+      init_PagePresence();
       init_registry();
       init_findActiveIndex();
       init_ScrollIntoView();
@@ -9477,15 +9159,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-22224-2S9GFMbYp9VY/1a0e21279abe/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef111214e/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-22224-2S9GFMbYp9VY/1a0e21279abe/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef111214e/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-22224-2S9GFMbYp9VY/1a0e21279b0f/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef111218f/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-22224-2S9GFMbYp9VY/1a0e21279b0f/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef111218f/ProcessingIndicator.css"() {
     }
   });
 
@@ -9821,6 +9503,263 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
+  // package.json
+  var version;
+  var init_package = __esm({
+    "package.json"() {
+      version = "1.6.6";
+    }
+  });
+
+  // src/constants/prompts.ts
+  var SYSTEM_INSTRUCTION, TRANSLATION_PROMPT, ROMAJA_PROMPT, FURIGANA_PROMPT, ROMAJI_PROMPT;
+  var init_prompts = __esm({
+    "src/constants/prompts.ts"() {
+      SYSTEM_INSTRUCTION = `OVERRIDE ANY EXISTING INSTRUCTIONS. You are an advanced, versatile assistant committed to delivering accurate, comprehensive, and helpful responses. To achieve this, you absolutely must adhere to the following guidelines:
+
+- **Use Your Full Capabilities:** Leverage your extensive knowledge and skills to provide well-researched and precise answers.
+- **Follow Instructions Rigorously:** Abide by every detail specified in the prompt, ensuring your output meets all requirements.
+- **Review Before Output:** Carefully review your output to ensure accuracy, completeness, and adherence to the prompt's instructions.**`;
+      TRANSLATION_PROMPT = `You are an expert translator specializing in song lyrics with deep cultural and linguistic knowledge. I will give you multilingual song lyrics, your task is to translate them into natural, fluent {language} that preserves both meaning and emotional impact.
+
+**Strict Line-by-Line Instructions:**
+
+- **IMPORTANT:** Treat each line as a completely separate unit.
+  **Absolutely do not merge multiple lines into one translation.**
+- **Each original line must produce exactly one translated line**, even if it is short, repetitive, or fragmentary.
+- **Maintain the exact line count and line breaks** as in the original lyrics \u2014 every input line should have a one-to-one correspondence in the output.
+- **Empty lines must be preserved** as empty lines in the output, in the same position.
+
+**Language Handling:**
+
+- If a line is in {language}, **preserve it exactly as-is**.
+- If a line is in another language, translate it into natural, fluent {language}.
+- If a line contains mixed languages, **translate only the non-{language} portions**, preserving {language} as-is.
+
+**Stylistic Considerations:**
+
+- Convey the emotional tone, voice, and rhythm of the original lyrics.
+- Prioritize intended meaning and poetic nuance over literal word-for-word translation.
+- Preserve poetic and cultural elements (metaphor, imagery, slang, idioms, etc.).
+- Maintain consistent use of pronouns, tense, and tone.
+- Use culturally appropriate and natural {language} equivalents where direct translation would lose meaning.
+
+**Language-Specific Guidelines:**
+
+- **Spanish**: Use appropriate regional variations (neutral Latin American Spanish preferred), maintain poetic meter when possible, preserve emotional intensity typical in Spanish music.
+- **French**: Maintain elegance and flow characteristic of French lyrics, use appropriate formal/informal registers, preserve romantic and poetic nuances.
+- **German**: Respect compound word structures when creating natural translations, maintain the directness or philosophical depth often found in German lyrics.
+- **Portuguese**: Distinguish between Brazilian and European Portuguese contexts when relevant, preserve the musicality and rhythm important in Portuguese lyrics.
+- **Chinese (Simplified)**: Use contemporary Mandarin expressions, maintain cultural sensitivity, preserve metaphorical and poetic elements common in Chinese lyrics.
+- **Thai**: Use appropriate formal/informal language levels, preserve cultural references and emotional expressions typical in Thai music.
+- **Indonesian/Malay**: Maintain the melodic quality of the language, use contemporary expressions while preserving cultural context.`;
+      ROMAJA_PROMPT = `You are an expert Korean linguist specializing in accurate romaja transcription for song lyrics. Your primary goal is to add Revised Romanization in curly braces {} after EVERY sequence of Korean Hangul characters in the provided lyrics.
+
+**Core Task:** Convert Korean lyrics to include inline romaja with perfect accuracy.
+
+**Strict Rules:**
+1. **Mandatory Conversion:** You MUST process EVERY Korean word or sequence of Hangul characters. No exceptions. Do NOT skip any.
+   - **CRITICAL: Process ALL Korean text regardless of position** - whether it appears at the beginning, middle, or end of a mixed-language phrase
+   - **CRITICAL: Never skip any Korean text** - even in complex mixed-language scenarios like "\uC5EC\uB984\uC5EC\uB984\uD574hey" or "good\uBC24"
+   - **CRITICAL: Scan the entire text character by character** to ensure no Korean sequence is missed
+
+2. **Inline Format:** Insert the romaja pronunciation enclosed in curly braces {} immediately following the corresponding Korean word/sequence. Example: \uD55C\uAD6D\uC5B4 = \uD55C\uAD6D\uC5B4{hangugeo}.
+   - **CRITICAL: Correct Placement:** The romaja in curly braces MUST appear immediately after the complete Korean sequence and BEFORE any non-Korean text.
+   - **INCORRECT:** \uC720\uC8FCbe{yuju} (wrong placement - romaja should be after the full Korean sequence)
+   - **CORRECT:** \uC720\uC8FC{yuju}be (correct placement - romaja immediately follows Korean characters)
+
+3. **Romanization System:** Strictly use the official Revised Romanization of Korean (RR) rules with these specific guidelines:
+   - Use 'eo' not 'o' for \u3153 (\uC608: \uC5B4=eo, \uB108=neo)
+   - Use 'eu' not 'u' for \u3161 (\uC608: \uC74C=eum, \uB298=neul)
+   - Use 'ae' not 'ai' for \u3150 (\uC608: \uAC1C=gae, \uBC30=bae)
+   - Follow official RR consonant rules: \u3131=g/k, \u3137=d/t, \u3142=b/p, etc.
+   - Distinguish between \u3145=s and \u3146=ss
+   - Proper handling of \u3139: initial \u3139=r, medial \u3139=l, final \u3139=l
+   - Proper handling of assimilation: \uD569\uB2C8\uB2E4=hamnida (not hapnida)
+
+4. **Linguistic Accuracy:**
+   - Process word by word, not character by character
+   - Correctly handle syllable-final consonants (\uBC1B\uCE68)
+   - Apply proper sound change rules for connected speech
+   - Account for consonant assimilation and liaison between words when needed
+
+5. **Preserve Everything Else:** Keep all non-Korean text (English, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are.
+
+6. **Completeness Check:** Before outputting, methodically verify that every single Korean word/sequence has its romaja pair.
+   - **CRITICAL: Double-check mixed-language phrases** to ensure no Korean text was missed
+   - **CRITICAL: Verify that Korean text at the beginning, middle, or end of phrases** all have romaja
+
+7. **Mixed Text Handling:** For text that mixes Korean with other scripts or characters:
+   - First identify ALL consecutive Korean Hangul characters, regardless of their position in the text
+   - Add romaja ONLY after the complete Korean sequence
+   - Leave all non-Korean characters in their original positions
+   - **CRITICAL: Process Korean text at the end of mixed phrases** (e.g., "good\uBC24" = "good\uBC24{bam}")
+   - **CRITICAL: Process Korean text in the middle of mixed phrases** (e.g., "hello\uC548\uB155hi" = "hello\uC548\uB155{annyeong}hi")
+
+**Examples with Sound Change Rules:**
+* \uC815\uB9D0 = \uC815\uB9D0{jeongmal}
+* \uC88B\uC544\uD574 = \uC88B\uC544\uD574{joahae}
+* \uAC19\uC774 = \uAC19\uC774{gachi} (Note assimilation)
+* \uC77D\uB2E4 = \uC77D\uB2E4{ikda} (Note syllable-final consonant rule)
+* \uBC25 \uBA39\uC5B4 = \uBC25{bap} \uBA39\uC5B4{meogeo} (Note final consonant pronunciation)
+* \uAF43\uC78E = \uAF43\uC78E{kkonip} (Note assimilation at morpheme boundary)
+* \uC5C6\uC5B4 = \uC5C6\uC5B4{eopseo} (Note complex consonant cluster)
+* \uC549\uC544 = \uC549\uC544{anja} (Note complex consonant rules)
+* \uAC14\uB2E4 \uC654\uB2E4 = \uAC14\uB2E4{gatda} \uC654\uB2E4{watda} (Note past tense pronunciation)
+* \uC0AC\uB791\uD574\uC694 = \uC0AC\uB791\uD574\uC694{saranghaeyo} (Note aspirated consonant)
+
+**Special Cases:**
+* Numbers mixed with Korean: 2\uC0B4\uC774\uC5D0\uC694 = 2\uC0B4\uC774\uC5D0\uC694{salieyo}
+* Parentheses: (\uB0B4\uAC00 \uC544\uB2C8\uC796\uC544) = (\uB0B4\uAC00{naega} \uC544\uB2C8\uC796\uC544{anijana})
+* Particles: \uCC45\uC774 = \uCC45\uC774{chaegi}, \uC9D1\uC5D0 = \uC9D1\uC5D0{jibe} (Note sound changes)
+* Long words: \uAC00\uB098\uB2E4\uB77C\uB9C8\uBC14\uC0AC = \uAC00\uB098\uB2E4\uB77C\uB9C8\uBC14\uC0AC{ganadaramabasa}
+* Words with suffixes: \uAF43\uC78E\uCC98\uB7FC = \uAF43\uC78E\uCC98\uB7FC{konnipcheorom}
+* Mixed script: \uC720\uC8FCbeat = \uC720\uC8FC{yuju}beat (romaja only for Korean part)
+* Mixed script: \uC544\uC774love\uB178\uB798 = \uC544\uC774{ai}love\uB178\uB798{norae} (separate Korean sequences)
+* Korean at end: good\uBC24 = good\uBC24{bam} (Korean at end of phrase)
+* Korean in middle: hello\uC548\uB155hi = hello\uC548\uB155{annyeong}hi (Korean in middle)
+* Complex mix: \uC5EC\uB984\uC5EC\uB984\uD574hey = \uC5EC\uB984\uC5EC\uB984\uD574{yeoreumyeoreumhae}hey (Korean followed by English)
+* Multiple Korean segments: \uC548\uB155hello\uC5EC\uBCF4\uC138\uC694 = \uC548\uB155{annyeong}hello\uC5EC\uBCF4\uC138\uC694{yeoboseyo} (Korean-English-Korean)
+
+**Input:** You will receive lines of song lyrics.
+**Output:** Return the lyrics with romaja added inline according to the rules above. Ensure the output maintains the original line structure.`;
+      FURIGANA_PROMPT = `You are an expert Japanese linguist specializing in accurate furigana transcription for song lyrics. Your primary goal is to add Hiragana readings in curly braces {} after EVERY Kanji character or compound Kanji sequence in the provided lyrics.
+
+**Core Task:** Convert Japanese lyrics to include inline furigana for all Kanji.
+
+**Strict Rules:**
+1.  **Mandatory Conversion:** You MUST process EVERY Kanji character and compound Kanji sequence. No exceptions. Do NOT skip any.
+2.  **Inline Format:** Insert the correct Hiragana reading enclosed in curly braces {} immediately following the corresponding Kanji character or sequence. Example: \u6F22\u5B57 = \u6F22\u5B57{\u304B\u3093\u3058}.
+3.  **Contextual Readings:** Use the contextually appropriate reading (kun'yomi or on'yomi). For compound words (jukugo), provide the reading for the entire compound. Example: \u65E5\u672C\u8A9E = \u65E5\u672C\u8A9E{\u306B\u307B\u3093\u3054}. For single Kanji followed by okurigana, provide the reading for the Kanji part only. Example: \u98DF{\u305F}\u3079\u308B.
+4.  **Preserve Everything Else:** Keep all non-Kanji text (Hiragana, Katakana, English, numbers, symbols, punctuation) and original spacing/line breaks exactly as they are.
+5.  **Completeness Check:** Before outputting, double-check that every single Kanji character/sequence has its furigana pair.
+
+**Examples:**
+*   \u9858\u3044 = \u9858{\u306D\u304C}\u3044
+*   \u53EF\u611B\u3044 = \u53EF\u611B{\u304B\u308F\u3044}\u3044
+*   5\u4EBA = 5\u4EBA{\u306B\u3093} (Number preserved, Kanji romanized)
+*   \u660E\u5F8C\u65E5 = \u660E\u5F8C\u65E5{\u3042\u3055\u3063\u3066} (Compound word)
+*   \u795E\u69D8 = \u795E\u69D8{\u304B\u307F\u3055\u307E} (Compound word)
+*   \u805E\u304D = \u805E{\u304D}\u304D (Kanji with okurigana)
+*   \u98DF\u3079\u308B = \u98DF{\u305F}\u3079\u308B
+*   \u7F8E\u3057\u3044 = \u7F8E{\u3046\u3064\u304F}\u3057\u3044
+*   \u6771\u4EAC\u30BF\u30EF\u30FC = \u6771\u4EAC{\u3068\u3046\u304D\u3087\u3046}\u30BF\u30EF\u30FC (Mixed script, Katakana preserved)
+*   (\u5927\u4E08\u592B\u3060\u3088) = (\u5927\u4E08\u592B{\u3060\u3044\u3058\u3087\u3046\u3076}\u3060\u3088) (Parentheses and Hiragana preserved)
+
+**Input:** You will receive lines of song lyrics.
+**Output:** Return the lyrics with furigana added inline according to the rules above. Ensure the output maintains the original line structure.
+`;
+      ROMAJI_PROMPT = `You are an expert Japanese linguist specializing in highly accurate Romaji transcription using the **strict Hepburn system**, specifically for song lyrics. Your primary goal is to add Hepburn Romaji in curly braces '{}' after **every complete Japanese word or meaningful linguistic unit** (Kanji, Hiragana, Katakana, or combinations thereof forming a single grammatical entity) in the provided lyrics. The absolute focus is on **grammatically correct segmentation** and **complete, accurate Romanization** of each segment.
+
+#### Core Task
+Accurately convert Japanese song lyrics to strict Hepburn Romaji, ensuring each word, particle, conjugated form, verb phrase, or katakana term (regardless of length) is treated as a single, indivisible unit for Romanization. The text within the braces '{}' must **always be the Hepburn Romaji conversion**, never the original Japanese script. Do not skip any Japanese text elements, especially long katakana words.
+
+#### Strict Rules
+
+1. **Unit-Level Conversion**
+   - Identify and process each meaningful Japanese linguistic unit. A "unit" is defined as the smallest sequence of characters that functions as a single grammatical entity, including:
+     - Nouns (e.g., \u65E5\u672C\u8A9E{Nihongo})
+     - Verbs (including **all** conjugated forms and combinations with auxiliary verbs\u2014see Rule 2)
+     - Adjectives (including **all** conjugated forms)
+     - Adverbs
+     - Particles (e.g., \u306F{wa}, \u3092{o}, \u304C{ga}, \u306E{no}, \u306B{ni}, \u3078{e}, \u3068{to})
+     - Compound particles (e.g., \u306B\u306F{niwa}, \u3068\u306F{towa}, \u307E\u3067\u3082{mademo})
+     - Katakana words of any length (e.g., \u30B3\u30FC\u30D2\u30FC{k\u014Dh\u012B}, \u30A4\u30F3\u30D5\u30A7\u30EB\u30CE\u30E9\u30D6\u30EC\u30BF\u30FC{inferuno raburet\u0101})
+     - Numbers with counters (e.g., 5\u4EBA{go-nin})
+     - Compound words (e.g., \u6771\u4EAC\u30BF\u30EF\u30FC{T\u014Dky\u014D Taw\u0101})
+     - Interjections and short phrases (e.g., \u305B\u30FC\u306E{s\u0113 no}, \u3088\u30FC\u3044{y\u014D i}, \u3042\u3063{a'}, \u3048\u3063\u3068{etto})
+   - Romanize each identified unit **as a whole**.
+
+2. **CRITICAL: Correct Segmentation & Indivisibility**
+   - **Do not split functional grammatical units:** This is the most critical rule. Any sequence of characters functioning together as a single word, conjugated form, or verb phrase **must** remain indivisible.
+   - **Conjugated Verbs/Adjectives:** Treat the **entire** conjugated form (base + endings, okurigana, auxiliary verbs grammatically attached) as **indivisible**.
+   - **Kanji + Okurigana Integrity:** A unit often includes Kanji followed by Hiragana (okurigana), forming a single word (e.g., \u98DF\u3079\u308B{taberu}, not \u98DF{tabe}\u3079\u308B{ru}).
+   - **Verb (Te-form) + Auxiliary Verb Combinations:** Treat combinations like Verb-\u3066 + \u3044\u308B/\u3042\u308B/\u304A\u304F/\u3057\u307E\u3046/\u3044\u304F/\u304F\u308B and their conjugations or contractions (e.g., -te iru = -teru, -te ita = -teta, -te shimau = -chau) as **single verb phrases** that **must not be split**.
+   - **Correct Examples:**
+     - \u7B11\u3063\u3066{waratte}
+     - \u5C4A\u3044\u3066{todoite}
+     - \u5C45\u308C\u306A\u3044{irenai}
+     - \u75C5\u3093\u3067\u304D\u305F{yandekita}
+     - \u611B\u3057\u304D{itoshiki}
+     - \u4E57\u3063\u304B\u3063\u3066{nokkatte}
+     - \u8D70\u308A\u51FA\u3057\u305F{hashiridashita}
+     - \u98DF\u3079\u3066\u3057\u307E\u3046{tabeteshimau}
+     - \u7F8E\u3057\u3055{utsukushsa}
+     - \u898B\u3066\u305F{miteta}
+     - \u8AAD\u3093\u3067\u308B{yonderu}
+     - \u77E5\u3063\u3066\u3044\u308B{shitteiru}
+     - \u8A00\u3063\u3066\u304A\u304F{itteoku}
+     - \u98DF\u3079\u3061\u3083\u3063\u305F{tabechatta}
+     - \u62B1\u3048{kakae}
+     - \u898B\u3066\u3082{mitemo}
+     - \u30E1\u30ED\u30C7\u30A3\u30FC{merod\u012B}
+     - \u30B5\u30FC\u30AD\u30E5\u30EC\u30FC\u30B7\u30E7\u30F3{s\u0101kyur\u0113shon}
+
+3. **Inline Format & Content**
+   - Insert the **Hepburn Romaji pronunciation** in curly braces '{}' immediately following the **complete** Japanese unit, with **no space** between the unit and the opening brace.
+   - The content inside the braces '{}' must be the **Hepburn Romaji result**, not the original Japanese script (e.g., \u62B1\u3048{kakae}, not \u62B1\u3048{\u62B1\u3048}).
+   - Pay special attention to short, easily overlooked expressions like \u305B\u30FC\u306E{s\u0113 no} or \u306D\u3047{n\u0113} that might be missed despite being meaningful linguistic units.
+
+4. **Romanization System: Strict Hepburn**
+   - Adhere strictly to the Hepburn system:
+     - Basic sounds: \u3057=shi, \u3061=chi, \u3064=tsu, \u3075=fu, \u3058=ji, \u3062=ji, \u3065=zu
+     - **Long vowels:** Use macrons consistently: \u304A\u3046/\u304A\u304A = \u014D, \u3048\u3044/\u3048\u3048 = \u0113, \u3046\u3046 = \u016B, \u3044\u3044 = \u012B, \u3042\u3042 = \u0101 (e.g., \u6771\u4EAC{T\u014Dky\u014D}, \u3042\u308A\u304C\u3068\u3046{arigat\u014D}, \u7F8E\u5473\u3057\u3044{oishii})
+     - **Extended vowels in casual speech**: Properly romanize extended vowels in casual expressions, including those marked with "\u30FC" (e.g., \u305B\u30FC\u306E{s\u0113 no}, \u3088\u30FC\u3044{y\u014D i})
+     - Particles: \u306F = wa, \u3078 = e, \u3092 = o
+     - Sokuon (\u3063): Double the following consonant (e.g., \u3061\u3087\u3063\u3068{chotto}, \u7B11\u3063\u3066{waratte})
+     - N (\u3093): Use n before most consonants, m before b/m/p, and n' before vowels or y (e.g., \u6848\u5185{annai}, \u6563\u6B69{sampo}, \u539F\u56E0{gen'in}, \u672C\u5C4B{hon'ya})
+
+5. **Completeness & Accuracy of Romanization**
+   - Ensure **every** Japanese linguistic unit has its corresponding Hepburn Romaji in braces.
+   - The Romaji must be **accurate and complete**, reflecting the pronunciation of the **entire** unit, with attention to long vowels, double consonants, and particle usage.
+   - **Pay special attention to long katakana words**: Never skip romanization for long katakana sequences like "\u30A4\u30F3\u30D5\u30A7\u30EB\u30CE\u30E9\u30D6\u30EC\u30BF\u30FC{inferuno raburet\u0101}" or "\u30B5\u30FC\u30AD\u30E5\u30EC\u30FC\u30B7\u30E7\u30F3{s\u0101kyur\u0113shon}", even if they appear complex. These should be fully romanized as single units.
+   - **Do not overlook short expressions**: Be particularly vigilant about romanizing short expressions that might be overlooked, such as \u305B\u30FC\u306E{s\u0113 no}, \u3088\u3057{yoshi}, \u307B\u3089{hora}, etc. Even single kana or short utterances like \u3042\u3063{a'} or \u3048\u3063{e'} must be romanized.
+
+6. **Preserve Non-Japanese Text and Punctuation**
+   - Keep all non-Japanese text (English words, numbers, symbols) unchanged, with no Romaji added for these elements.
+   - **Do not add Romaji transcription for any punctuation marks, including commas (,), periods (.), question marks (?), exclamation points (!), etc.**
+   - Maintain original spaces and line breaks as they appear in the lyrics.
+
+7. **Punctuation Handling**
+   - Treat punctuation marks separately from Japanese text. For example:
+     - "\u4ECA\u65E5\u306F{ky\u014D wa}, \u6674\u308C{hare}" (correct)
+     - "\u4ECA\u65E5\u306F{ky\u014D wa}\u3001\u6674\u308C{hare}" (correct)
+     - "\u4ECA\u65E5\u306F\u3001{ky\u014D wa,}\u6674\u308C{hare}" (incorrect - comma included in Romaji)
+   - **Special Delimiters (\u300C\u300D, \uFF08\uFF09):** For Japanese text enclosed within full-width quotation marks (\u300C\u300D) or full-width parentheses \uFF08\uFF09, the Romaji should be inserted *inside* these delimiters. Example: \u300C\u904B\u547D\u300D = \u300C\u904B\u547D{unmei}\u300D.
+
+#### Input
+Song lyrics containing Japanese text.
+
+#### Output
+The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to every complete Japanese word, particle, conjugated form, or verb phrase, respecting the strict segmentation and indivisibility rules, ensuring **only Romaji appears within the braces**, and excluding all punctuation marks from Romanization. Respond in JSON.`;
+    }
+  });
+
+  // src/components/Global/Defaults.ts
+  var Defaults, Defaults_default;
+  var init_Defaults = __esm({
+    "src/components/Global/Defaults.ts"() {
+      init_package();
+      init_prompts();
+      Defaults = {
+        Version: version,
+        lyrics: {
+          api: {
+            url: "https://amai-worker-production.nandemo.workers.dev/lyrics",
+            translationUrl: "https://amai-worker-production.nandemo.workers.dev/translations",
+            phoneticUrl: "https://amai-worker-production.nandemo.workers.dev/phonetic"
+          }
+        },
+        systemInstruction: SYSTEM_INSTRUCTION,
+        translationPrompt: TRANSLATION_PROMPT,
+        romajaPrompt: ROMAJA_PROMPT,
+        furiganaPrompt: FURIGANA_PROMPT,
+        romajiPrompt: ROMAJI_PROMPT
+      };
+      Defaults_default = Defaults;
+    }
+  });
+
   // src/components/Pages/PageHTML.ts
   var PageHTML, NowBarHTML;
   var init_PageHTML = __esm({
@@ -9939,14 +9878,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       }
     });
   }
-  async function UpdatePageContent(isOpened) {
-    if (isOpened)
-      await UpdateNowBar();
-  }
   var import_fastdom3;
   var init_pageContent = __esm({
     "src/components/Pages/pageContent.ts"() {
-      init_NowBar();
       import_fastdom3 = __toESM(require_fastdom());
     }
   });
@@ -10492,7 +10426,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     initializePageRoot();
     await createPageElement();
     clearLyricsUiTimeouts();
-    Defaults_default.LyricsContainerExists = true;
+    setPageOpen(true);
     const contentBox = document.querySelector(PageViewSelectors.ContentBox);
     if (contentBox) {
       await ApplyDynamicBackground(contentBox);
@@ -10501,7 +10435,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (mediaImage) {
       setupImageLoading(mediaImage, maid);
     }
-    await PageView.UpdatePageContent();
     const currentUri = Spicetify.Player.data?.item?.uri;
     if (currentUri) {
       loadAndApplyLyrics(currentUri).catch(
@@ -10547,7 +10480,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         console.error("[Amai Lyrics] PageView destroy failed:", error);
       }
     }
-    Defaults_default.LyricsContainerExists = false;
+    setPageOpen(false);
     detachClickToSeek();
     clear();
     clearApplyInfoTimeout();
@@ -10572,8 +10505,8 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_registry();
       init_ApplyInfo();
       init_dynamicBackground();
-      init_Defaults();
       init_AutoScroll();
+      init_PagePresence();
       init_NowBar();
       init_Fullscreen();
       init_fastdomAsync();
@@ -10588,7 +10521,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         Open: OpenPage,
         Destroy: DestroyPage,
         AppendViewControls: () => AppendViewControls(maid),
-        UpdatePageContent: () => UpdatePageContent(PageView.IsOpened),
         IsOpened: false
       };
       PageRoot = null;
@@ -11379,7 +11311,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       const isForCurrentTrack = !trackId || currentId === trackId;
       if (isForCurrentTrack) {
         HideLoaderContainer();
-        Defaults_default.CurrentLyricsType = "None";
+        clear();
         document.querySelector("#AmaiLyricsPage .ContentBox .LyricsContainer")?.classList.add("Hidden");
         document.querySelector("#AmaiLyricsPage .ContentBox")?.classList.add("LyricsHidden");
         OpenNowBar();
@@ -11465,12 +11397,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var windowRef7, uiState, ContainerShowLoaderTimeout;
   var init_ui = __esm({
     "src/utils/Lyrics/ui.ts"() {
-      init_Defaults();
       init_NowBar();
       init_PageView();
       init_Fullscreen();
       init_pageButtons();
       init_trackId();
+      init_registry();
       windowRef7 = window;
       uiState = windowRef7.__amaiLyricsUiState ?? (windowRef7.__amaiLyricsUiState = { containerShowLoaderTimeout: null });
       ContainerShowLoaderTimeout = uiState.containerShowLoaderTimeout;
@@ -11902,7 +11834,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
 
   // src/utils/Lyrics/LyricsRenderer.ts
   function resolveContainer() {
-    if (!Defaults_default.LyricsContainerExists)
+    if (!isPageOpen())
       return null;
     const container = document.querySelector(LYRICS_CONTAINER_SELECTOR);
     if (!container) {
@@ -12019,7 +11951,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   function updateLyricTranslations() {
     try {
-      if (!Defaults_default.LyricsContainerExists)
+      if (!isPageOpen())
         return;
       const lyricsContainer = document.querySelector(LYRICS_CONTAINER_SELECTOR);
       if (!lyricsContainer)
@@ -12088,12 +12020,12 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var init_LyricsRenderer = __esm({
     "src/utils/Lyrics/LyricsRenderer.ts"() {
       init_Addons();
-      init_Defaults();
       init_Styles();
       init_ScrollSimplebar();
       init_AutoScroll();
       init_ConvertTime();
       init_registry();
+      init_LineHighlight();
       init_ApplyLyricsCredits();
       init_ApplyInfo();
       init_createMusicalLine();
@@ -12101,6 +12033,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_decorateLine();
       init_settingsValues();
       init_phoneticPatterns();
+      init_PagePresence();
       LYRICS_CONTAINER_SELECTOR = "#AmaiLyricsPage .LyricsContainer .LyricsContent";
       STYLING_CONTAINER_SELECTOR = "#AmaiLyricsPage .LyricsContainer .LyricsContent .simplebar-content";
       appliedLineState = /* @__PURE__ */ new WeakMap();
@@ -12140,7 +12073,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   function publishInitialLyrics(token, document2) {
     if (!isCurrentLyricsRequest(token))
       return false;
-    Defaults_default.CurrentLyricsType = document2.type;
     const serialized = writeSnapshot(document2);
     EventManager_default.evoke("lyrics:data-updated", serialized);
     HideLoaderContainer();
@@ -12160,7 +12092,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var windowRef8, sharedRequest;
   var init_publish = __esm({
     "src/utils/Lyrics/publish.ts"() {
-      init_Defaults();
       init_EventManager();
       init_ui();
       init_LyricsRenderer();
@@ -34989,7 +34920,7 @@ ${JSON.stringify(lyricsOnly)}`
 
   // src/utils/Lyrics/Global/Applyer.ts
   function ApplyLyrics(lyrics) {
-    if (!document.querySelector("#AmaiLyricsPage"))
+    if (!isPageOpen())
       return false;
     const lyricsContent = document.querySelector(
       "#AmaiLyricsPage .LyricsContainer .LyricsContent"
@@ -35004,7 +34935,6 @@ ${JSON.stringify(lyricsOnly)}`
         lyricsContent.style.setProperty("--DefaultLyricsSize", defaultLyricsSize + "rem");
       }
     }
-    setBlurringLastLine(null);
     if (!lyrics || isNoLyricsResult(lyrics))
       return false;
     const lyricsDocument = lyrics;
@@ -35022,7 +34952,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
   var init_Applyer = __esm({
     "src/utils/Lyrics/Global/Applyer.ts"() {
-      init_LyricsAnimator();
+      init_PagePresence();
       init_LyricsRenderer();
       init_fetchLyrics();
       init_pageButtons();
@@ -38527,7 +38457,7 @@ void main() {
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22224-2S9GFMbYp9VY/1a0e21279abe/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef111214e/DotLoader.css */
 #DotLoader {
   --dot-color: var(--amai-accent-1);
   --dot-color-dim: color-mix(in srgb, var(--amai-accent-1) 22%, transparent);
@@ -38562,7 +38492,7 @@ void main() {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22224-2S9GFMbYp9VY/1a0e21279b0f/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef111218f/ProcessingIndicator.css */
 #AmaiLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -38644,7 +38574,7 @@ void main() {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22224-2S9GFMbYp9VY/1a0e21278fe0/tokens.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef1111510/tokens.css */
 :root {
   --amai-accent-1: #1ed760;
   --amai-accent-2: #1db954;
@@ -38723,7 +38653,7 @@ void main() {
   --amai-scrollbar-thumb: rgba(255, 255, 255, 0.6);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22224-2S9GFMbYp9VY/1a0e21279261/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef1111791/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -38966,7 +38896,7 @@ button:has(#AmaiLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22224-2S9GFMbYp9VY/1a0e212792f2/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef1111842/Simplebar.css */
 #AmaiLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -39174,7 +39104,7 @@ button:has(#AmaiLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22224-2S9GFMbYp9VY/1a0e21279353/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef11118a3/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -39778,7 +39708,7 @@ button:has(#AmaiLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22224-2S9GFMbYp9VY/1a0e212793f4/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef1111964/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: 2.2;
@@ -40142,7 +40072,7 @@ body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingVi
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22224-2S9GFMbYp9VY/1a0e21279465/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef11119c5/main.css */
 #AmaiLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -40393,7 +40323,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22224-2S9GFMbYp9VY/1a0e212794c6/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef1111a26/Mixed.css */
 #AmaiLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -40747,7 +40677,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22224-2S9GFMbYp9VY/1a0e21279517/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef1111a97/LoaderContainer.css */
 #AmaiLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -40769,7 +40699,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22224-2S9GFMbYp9VY/1a0e21279548/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef1111ac8/FullscreenTransition.css */
 #AmaiLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -40796,7 +40726,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22224-2S9GFMbYp9VY/1a0e21279579/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef1111ae9/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
@@ -40898,7 +40828,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22224-2S9GFMbYp9VY/1a0e212795aa/Settings.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef1111b2a/Settings.css */
 :is(#amai-settings, #amai-dev-settings, #amai-info) {
   display: grid;
   gap: 8px;
@@ -41125,7 +41055,7 @@ ruby > rt {
   border: 1px solid var(--essential-subdued, #818181);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22224-2S9GFMbYp9VY/1a0e212795eb/SettingsModal.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef1111b7b/SettingsModal.css */
 .amai-settings-overlay {
   position: fixed;
   inset: 0;
@@ -41203,7 +41133,7 @@ ruby > rt {
   min-width: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22224-2S9GFMbYp9VY/1a0e2127961c/Tooltips.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef1111bac/Tooltips.css */
 .tippy-box[data-theme~=amai-lyrics] {
   position: relative;
   background: var(--amai-glass-veil-strong), var(--amai-glass-base-strong) !important;
@@ -41263,7 +41193,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-22224-2S9GFMbYp9VY/1a0e2127964d/Glassmorphism.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef1111bdd/Glassmorphism.css */
 .amai-app-bg-host .Root__nav-bar:not(.amai-lib-grid) {
   isolation: isolate;
   background: var(--amai-glass-veil), var(--amai-glass-base) !important;
