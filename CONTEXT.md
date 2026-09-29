@@ -77,8 +77,10 @@ One question stays outside this seam. AutoScroll pre-highlights the row it is sc
 
 ## AutoScroll
 
-The single place that keeps the active lyric line centered: container mount,
-active-line decision, eased motion, and cancel. Lives in
+The single place that keeps the lyric line centered on the page: container
+mount, the scroll-target decision, eased motion, and cancel. The target is its
+own answer, taken at the scroll lead time, and is not LineHighlight's active
+row. Lives in
 src/utils/Scrolling/AutoScroll.ts. Production callers cross it through mount,
 sync, reset, and destroy (the AutoScroll facade over
 mountAutoScroll/syncAutoScroll/resetAutoScroll/destroyAutoScroll) - never
