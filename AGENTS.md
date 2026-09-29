@@ -1,6 +1,6 @@
 # AGENTS.md — Amai Lyrics
 
-> Spicetify extension (not a CustomApp). Single package at repo root. Entrypoint `src/app.tsx` → `main()` → bundled by `spicetify-creator` to `dist/` / `builds/amai-lyrics-main.js`.
+> Spicetify extension (not a CustomApp). Single package at repo root. Entrypoint `src/app.tsx` → `main()` → bundled by `spicetify-creator` to `dist/amai-lyrics.js`, then copied to `builds/amai-lyrics.js`. Users load the separate `builds/amai-lyrics-main.js` auto-update loader (see Build & Deploy).
 
 ## Commands
 
@@ -36,9 +36,13 @@ Verify before commit: `npm run lint && npm run typecheck && npm test` — no CI 
 
 ## Build & Deploy
 
-- Tool: `spicetify-creator@^1.0.17` (esbuild wrapper, no Vite). Config is convention-based; `manifest.json` declares `main: ./builds/amai-lyrics-main.js`.
+- Tool: `spicetify-creator@^1.0.17` (esbuild wrapper, no Vite). Config is convention-based.
+- `builds/` holds two different things, and the split is deliberate:
+  - `builds/amai-lyrics.js` — the real, built extension bundle. Produced by `build-local`; `release-flow.sh` copies `dist/amai-lyrics.js` over it and commits it. This is the code.
+  - `builds/amai-lyrics-main.js` — a ~1.2 KB auto-update **loader**, hand-written, not generated. It queries the GitHub API for the latest release tag and `import()`s `builds/amai-lyrics.min.js` from jsDelivr. `manifest.json`'s `main` points here, and it's the only file `gh release upload` sends. It has not changed since March 2026 and doesn't need to per release.
+- jsDelivr's `.min.js` is **not a repo file** — no `amai-lyrics.min.js` is tracked, and none ever has been. jsDelivr synthesizes it on demand by running Terser over `builds/amai-lyrics.js` at the requested tag. That's why the loader's URL resolves even though the path is absent from the tree. Don't "fix" the loader's filename or add a `.min.js`; a 200 on that URL is expected and is not evidence the tag contains the file.
 - `npm run build` writes to Spicetify's config-dir extension folder; `build-local` writes to `dist/` for inspection.
-- `release-flow.sh` is the release procedure: edit `VERSION`/`RELEASE_NOTES` at the top, then it runs `npm version → npm run build-local → cp dist/* builds/ → git commit/tag → gh release create + upload builds/amai-lyrics-main.js`. Don't edit `builds/` by hand.
+- `release-flow.sh` is the release procedure: edit `VERSION`/`RELEASE_NOTES` at the top, then it runs `npm version → npm run build-local → cp dist/amai-lyrics.js builds/ → git commit/tag → gh release create + upload builds/amai-lyrics-main.js`. Don't edit `builds/` by hand.
 - Registry: `.npmrc` maps `@jsr:registry=https://npm.jsr.io` for `@hudzax/web-modules`. Don't change without updating that.
 
 ## Architecture
@@ -86,5 +90,5 @@ src/css/ + src/types/ (global.d.ts, spicetify.d.ts)
 
 - `npm run build` vs `build-local` — wrong output dir is the most common mistake. Use `build-local` for local inspection, `build` only when Spicetify is installed.
 - No GitHub Actions workflows; `.github/` has only `ISSUE_TEMPLATE`. Don't expect CI to catch errors.
-- `spicetify-watch.sh` and `amai.sh` both do the `spicetify config extensions "" && spicetify apply && spicetify config extensions <file> && spicetify apply` double-reset — the reset itself is required, not redundant. But note the filenames disagree: `amai.sh` enables `amai-lyrics-main.js` (correct per manifest/README) while `spicetify-watch.sh` still enables `amai-lyrics.js` (stale) — fix that line before relying on `npm run spicetify-watch`.
-- `dist/` and `builds/` are build artifacts and partially ignored; the release artifact is `builds/amai-lyrics-main.js` (manifest `main`, `gh release upload` target). Note `release-flow.sh`'s `cp dist/amai-lyrics.js builds/amai-lyrics.js` line still references the old name — sync it before cutting a release.
+- `spicetify-watch.sh` and `amai.sh` both do the `spicetify config extensions "" && spicetify apply && spicetify config extensions <file> && spicetify apply` double-reset — the reset itself is required, not redundant. They enable different files on purpose: `amai.sh` enables `amai-lyrics-main.js` (the loader, matching the manifest) for normal use, while `spicetify-watch.sh` enables `builds/amai-lyrics.js` so live reload picks up local builds instead of re-fetching the published release. The divergence is intentional; don't "sync" them.
+- `dist/` and `builds/` are build artifacts and partially ignored. The uploaded release asset is the loader `builds/amai-lyrics-main.js` — deliberately, so the auto-updater can resolve `latest`. The bundle users actually execute comes from the tag via jsDelivr, not from the release asset. `release-flow.sh`'s `cp dist/amai-lyrics.js builds/amai-lyrics.js` line is correct as written; leave it alone.
