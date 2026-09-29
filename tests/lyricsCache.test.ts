@@ -8,16 +8,12 @@ vi.mock('@hudzax/web-modules/SpikyCache', () => ({
     destroy = vi.fn(async () => {});
   },
 }));
-vi.mock('../src/components/Global/Defaults', () => ({
-  default: { CurrentLyricsType: 'None' },
-}));
 vi.mock('../src/utils/Lyrics/ui', () => ({
   HideLoaderContainer: vi.fn(),
   ClearLyricsPageContainer: vi.fn(),
   noLyricsMessage: vi.fn(async (id?: string) => ({ status: 'NO_LYRICS', id })),
 }));
 
-import Defaults from '../src/components/Global/Defaults';
 import { noLyricsMessage } from '../src/utils/Lyrics/ui';
 import { getLyricsFromCache, lyricsCache } from '../src/utils/Lyrics/cache';
 
@@ -25,7 +21,6 @@ const mockedNoLyrics = vi.mocked(noLyricsMessage);
 
 beforeEach(() => {
   vi.clearAllMocks();
-  (Defaults as { CurrentLyricsType: string }).CurrentLyricsType = 'None';
 });
 
 describe('getLyricsFromCache (pure read)', () => {

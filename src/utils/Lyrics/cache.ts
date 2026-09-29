@@ -3,9 +3,9 @@
  *
  * Pure storage layer: these functions read and write the per-track disk cache
  * but never touch the DOM or app-wide UI state. The caller (fetchLyrics) owns
- * turning a cache hit/miss into loader + page-container + CurrentLyricsType
- * transitions. The persisted snapshot of the *current* track is not this
- * module's business — it lives behind the `snapshot` leaf (LyricsSnapshot).
+ * turning a cache hit/miss into loader and page-container transitions. The
+ * persisted snapshot of the *current* track is not this module's business — it
+ * lives behind the `snapshot` leaf (LyricsSnapshot).
  */
 
 import { SpikyCache } from '@hudzax/web-modules/SpikyCache';

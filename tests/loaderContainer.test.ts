@@ -3,8 +3,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // ui.ts is mocked wholesale by every other suite, so the loader's delayed-show
 // timer — the mechanism behind the stuck-overlay regressions — is exercised
 // against the real DOM only here.
-vi.mock('../src/components/Global/Defaults', () => ({
-  default: { CurrentLyricsType: 'None' },
+vi.mock('../src/utils/Lyrics/registry', () => ({
+  clear: vi.fn(),
 }));
 vi.mock('../src/components/NowBar/NowBar', () => ({
   OpenNowBar: vi.fn(),

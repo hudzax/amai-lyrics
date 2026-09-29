@@ -44,11 +44,11 @@ applyScrollReanchor is exported only for a test's reach — re-anchoring is a st
 inside the update, and no caller crosses it.
 
 The builders register each row through the registry's `registerRow`, so a
-consumer reads one list instead of indexing by lyrics type. The exception is the setter
-and the animator, which still ask `Defaults.CurrentLyricsType` whether the list
-they search every tick is a line-synced one: that is the one answer here this
-seam does not own. Each registered row pairs its `LineView` with the
-`.main-lyrics-text` element the updater writes into — for both kinds.
+consumer reads one list instead of indexing by lyrics type: the setter and the
+animator search the registry's timed view, which is empty for a Static
+document, so nothing has to ask what kind was painted. Each registered row
+pairs its `LineView` with the `.main-lyrics-text` element the updater writes
+into — for both kinds.
 Enhancement mutates those same line views in place, which is why the updater
 needs no payload handed to it. Callers reach all of this through
 `LyricsRenderer` alone: the `translationUpdater` and Static/Line Applyer
@@ -197,8 +197,10 @@ buttons and the page's track metadata.
   fires the same `lyrics:data-updated` notification as the positive path;
   the playbar overlay re-reads through LyricsSnapshot, so it clears instead
   of freezing on the previous track's line. ui.noLyricsMessage owns the
-  page-visible transitions — and with them the `Defaults.CurrentLyricsType`
-  reset, so publish is not that flag's only writer.
+  page-visible transitions, and with them the registry reset: every negative
+  path empties the container first, which detaches the painted rows without
+  telling the registry, so the highlight tick must not be left writing
+  statuses into elements that are no longer in the page.
 
 ## LyricsSnapshot
 

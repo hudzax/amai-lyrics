@@ -2,12 +2,12 @@
  * UI-related functions for Amai Lyrics
  */
 
-import Defaults from '../../components/Global/Defaults';
 import { OpenNowBar, DeregisterNowBarBtn } from '../../components/NowBar/NowBar';
 import PageView from '../../components/Pages/PageView';
 import Fullscreen from '../../components/Utils/Fullscreen';
 import { showRefreshButton } from '../../components/Pages/pageButtons';
 import { liveTrackId } from './trackId';
+import { clear } from './registry';
 
 // Window-persisted so hot-reload doesn't orphan timeout holding detached DOM.
 const windowRef = window as unknown as {
@@ -73,7 +73,11 @@ export async function noLyricsMessage(trackId?: string): Promise<NoLyricsResult>
     const isForCurrentTrack = !trackId || currentId === trackId;
     if (isForCurrentTrack) {
       HideLoaderContainer();
-      Defaults.CurrentLyricsType = 'None';
+      // Every negative path empties the lyrics container before reaching here,
+      // which detaches the painted rows without telling the registry. Reset it
+      // so the highlight tick stops writing statuses into elements that are no
+      // longer in the page, and so a scroll in flight towards one is cancelled.
+      clear();
       document
         .querySelector<HTMLElement>('#AmaiLyricsPage .ContentBox .LyricsContainer')
         ?.classList.add('Hidden');
@@ -86,7 +90,8 @@ export async function noLyricsMessage(trackId?: string): Promise<NoLyricsResult>
       showRefreshButton();
       // NOTE: the NO_LYRICS sentinel is persisted by the publication seam
       // (publishNoLyrics) so the negative result fires the same bus event as
-      // the positive one. This function owns only page-visible transitions.
+      // the positive one. This function owns the page-visible transitions and
+      // the registry reset that goes with them.
     }
   } catch (error) {
     console.error('Amai Lyrics: Error showing no lyrics message', error);

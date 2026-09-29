@@ -1,14 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 
-vi.mock('../src/components/Global/Defaults', () => ({
-  default: {
-    CurrentLyricsType: 'Line',
-    Version: '1.0.0',
-    lyrics: { api: { url: '', translationUrl: '', phoneticUrl: '' } },
-    systemInstruction: '',
-    translationPrompt: '',
-  },
-}));
 vi.mock('../src/utils/Lyrics/ui', () => ({
   HideLoaderContainer: vi.fn(),
   ClearLyricsPageContainer: vi.fn(),
@@ -45,7 +36,6 @@ vi.mock('../src/utils/Gets/GetProgress', () => ({
   syncPlaybackPosition: vi.fn(),
 }));
 
-import Defaults from '../src/components/Global/Defaults';
 import { clear, getTimedLines, registerRow, stopLoop } from '../src/utils/Lyrics/registry';
 import type { PaintedDot, PaintedLine } from '../src/utils/Lyrics/registry';
 import {
@@ -73,7 +63,6 @@ function seedLines(): void {
 beforeEach(() => {
   clear();
   resetLyricsSetterCache();
-  (Defaults as { CurrentLyricsType: string }).CurrentLyricsType = 'Line';
   setPageOpen(true);
 });
 
@@ -112,14 +101,6 @@ describe('TimeSetter', () => {
     expect(lines[1].status).toBe('NotSung');
     expect(lines[2].status).toBe('NotSung');
     expect(getActiveLineIndex()).toBe(0);
-  });
-
-  it('does nothing when lyrics type is None', () => {
-    seedLines();
-    (Defaults as { CurrentLyricsType: string }).CurrentLyricsType = 'None';
-    TimeSetter(4000);
-    expect(getTimedLines()[0]).not.toHaveProperty('status');
-    expect(getActiveLineIndex()).toBe(-1);
   });
 
   it('updates musical-break dot statuses for the active line', () => {

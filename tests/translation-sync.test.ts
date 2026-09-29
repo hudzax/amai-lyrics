@@ -4,7 +4,6 @@ import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 
 vi.mock('../src/components/Global/Defaults', () => ({
   default: {
-    CurrentLyricsType: 'Line',
     Version: '1.0.0',
     lyrics: { api: { url: '', translationUrl: '', phoneticUrl: '' } },
     systemInstruction: '',

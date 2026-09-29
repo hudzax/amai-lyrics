@@ -23,7 +23,6 @@
  * this module owns currency, the bus notification, and the UI epilogue.
  */
 
-import Defaults from '../../components/Global/Defaults';
 import Event from '../EventManager';
 import { HideLoaderContainer, ClearLyricsPageContainer } from './ui';
 import { updateLyricTranslations } from './LyricsRenderer';
@@ -105,7 +104,6 @@ export function publishNoLyrics(token: LyricsRequestToken, trackId: string): boo
  */
 export function publishInitialLyrics(token: LyricsRequestToken, document: LyricsDocument): boolean {
   if (!isCurrentLyricsRequest(token)) return false;
-  Defaults.CurrentLyricsType = document.type;
   const serialized = writeSnapshot(document);
   Event.evoke('lyrics:data-updated', serialized);
   HideLoaderContainer();

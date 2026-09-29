@@ -3,9 +3,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 vi.mock('../src/utils/storage', () => ({
   default: { get: vi.fn(() => null), set: vi.fn() },
 }));
-vi.mock('../src/components/Global/Defaults', () => ({
-  default: { CurrentLyricsType: 'None' },
-}));
 vi.mock('../src/utils/EventManager', () => ({
   default: { listen: vi.fn(), unListen: vi.fn(), evoke: vi.fn() },
 }));
@@ -42,7 +39,6 @@ vi.mock('../src/components/Pages/pageButtons', () => ({
 }));
 
 import storage from '../src/utils/storage';
-import Defaults from '../src/components/Global/Defaults';
 import Event from '../src/utils/EventManager';
 import {
   HideLoaderContainer,
@@ -81,7 +77,6 @@ function staticPayload(id: string) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  (Defaults as { CurrentLyricsType: string }).CurrentLyricsType = 'None';
   liveItem().uri = '';
 });
 
@@ -119,7 +114,6 @@ describe('publishInitialLyrics', () => {
     beginLyricsRequest(URI_B);
 
     expect(publishInitialLyrics(stale, staticPayload('trackA') as never)).toBe(false);
-    expect(Defaults.CurrentLyricsType).toBe('None');
     expect(mockedStorage.set).not.toHaveBeenCalled();
     expect(mockedEvent.evoke).not.toHaveBeenCalled();
     expect(HideLoaderContainer).not.toHaveBeenCalled();
@@ -131,10 +125,9 @@ describe('publishInitialLyrics', () => {
     const token = beginLyricsRequest(URI_A);
 
     expect(publishInitialLyrics(token, staticPayload('trackA') as never)).toBe(true);
-    expect(Defaults.CurrentLyricsType).toBe('Static');
     expect(mockedStorage.set).toHaveBeenCalledWith(
       'currentLyricsData',
-      expect.stringContaining('trackA'),
+      expect.stringContaining('"type":"Static"'),
     );
     expect(mockedEvent.evoke).toHaveBeenCalledWith(
       'lyrics:data-updated',
@@ -269,7 +262,10 @@ describe('loadAndApplyLyrics', () => {
 
     expect(result).toMatchObject({ id: 'trackA' });
     expect(mockedApi).not.toHaveBeenCalled();
-    expect(Defaults.CurrentLyricsType).toBe('Static');
+    expect(mockedStorage.set).toHaveBeenCalledWith(
+      'currentLyricsData',
+      expect.stringContaining('"type":"Static"'),
+    );
     expect(mockedEvent.evoke).toHaveBeenCalledWith(
       'lyrics:data-updated',
       expect.stringContaining('trackA'),
@@ -335,7 +331,10 @@ describe('in-flight dedupe', () => {
     // Regression: the originator publishes under a token the joiner superseded,
     // so without the joiner re-publishing nothing ever hides the loader.
     expect(HideLoaderContainer).toHaveBeenCalledTimes(1);
-    expect(Defaults.CurrentLyricsType).toBe('Static');
+    expect(mockedStorage.set).toHaveBeenCalledWith(
+      'currentLyricsData',
+      expect.stringContaining('"type":"Static"'),
+    );
   });
 
   it('hands the enhancement to the joining request', async () => {

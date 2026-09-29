@@ -16,7 +16,6 @@ const Defaults = {
       phoneticUrl: 'https://amai-worker-production.nandemo.workers.dev/phonetic',
     },
   },
-  CurrentLyricsType: 'None',
   systemInstruction: SYSTEM_INSTRUCTION,
   translationPrompt: TRANSLATION_PROMPT,
   romajaPrompt: ROMAJA_PROMPT,

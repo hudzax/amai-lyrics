@@ -1,4 +1,3 @@
-import Defaults from '../../../../components/Global/Defaults';
 import { getTimedLines } from '../../registry';
 import type { PaintedDot, TimedPaintedLine } from '../../registry';
 import { timeOffset } from '../Shared';
@@ -77,9 +76,7 @@ function applyDelta(tLines: TimedPaintedLine[], activeIndex: number, pos: number
 export function TimeSetter(PreCurrentPosition: number) {
   const CurrentPosition = PreCurrentPosition + timeOffset;
   // The registry holds rows of both payload kinds; only line-synced ones carry
-  // timing, and only they can be searched.
-  if (Defaults.CurrentLyricsType !== 'Line') return;
-
+  // timing, so a Static document searches an empty list and returns.
   const tLines = getTimedLines();
   if (!tLines.length) return;
   if (tLines.length !== lastCachedLength) {
