@@ -27,13 +27,13 @@ import { AutoScroll } from '../Scrolling/AutoScroll';
 import { ConvertTime } from './ConvertTime';
 import {
   clear,
-  getActiveLine,
   getAllRows,
   getPaintedLines as registryGetPaintedLines,
   lyricsBetweenShow,
   registerRow,
 } from './registry';
 import type { PaintedLine } from './registry';
+import { getActiveLine } from './LineHighlight';
 import { ApplyLyricsCredits } from './Applyer/Credits/ApplyLyricsCredits';
 import { ApplyInfo } from './Applyer/Info/ApplyInfo';
 import { createMusicalLineMs } from './Applyer/Utils/createMusicalLine';

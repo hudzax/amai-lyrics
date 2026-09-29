@@ -4,21 +4,20 @@
  * position-driven render loop, and the full reset.
  *
  * Callers cross it through registerRow, getAllRows, getPaintedLines,
- * getTimedLines, getActiveLine, clear, startLoop, stopLoop, attachClickToSeek,
- * and detachClickToSeek — never through the row array, the time map, or a
- * PositionConsumer registration of their own.
+ * getTimedLines, clear, startLoop, stopLoop, attachClickToSeek, and
+ * detachClickToSeek — never through the row array, the time map, or a
+ * PositionConsumer registration of their own. "Which row is active" is not
+ * this module's answer: the tick crosses LineHighlight for that.
  */
 
 import { Maid } from '@hudzax/web-modules/Maid';
 import { SpotifyPlayer } from '../../components/Global/SpotifyPlayer';
 import { registerPositionConsumer } from '../PositionConsumer';
 import { isPageOpen } from '../PagePresence';
-import { Lyrics } from './Animator/Main';
 import { AutoScroll } from '../Scrolling/AutoScroll';
+import { sync as syncLineHighlight, reset as resetLineHighlight } from './LineHighlight';
 import type { TimedLine } from './findActiveIndex';
 import type { LineView } from './conversion';
-import { resetLyricsSetterCache } from './Animator/Lyrics/LyricsSetter';
-import { resetAnimatorCache } from './Animator/Lyrics/LyricsAnimator';
 
 export const lyricsBetweenShow = 3;
 
@@ -100,7 +99,7 @@ export function getPaintedLines(): PaintedLine[] {
 
 /**
  * A cached view of the rows that carry timing, invalidated on registerRow and
- * clear. The setter and AutoScroll binary-search this list on every tick.
+ * clear. LineHighlight and AutoScroll binary-search this list on every tick.
  */
 export function getTimedLines(): TimedPaintedLine[] {
   if (!timedLinesCache) {
@@ -111,15 +110,10 @@ export function getTimedLines(): TimedPaintedLine[] {
   return timedLinesCache;
 }
 
-/** The row whose status is 'Active' and whose element is connected. */
-export function getActiveLine(): PaintedLine | undefined {
-  return rows.find((line) => line.status === 'Active' && line.element.isConnected);
-}
-
 // ── Clear / reset ───────────────────────────────────────────────────────────
 
 /**
- * Full reset: rows, map, loop state, setter cache, animator cache, and
+ * Full reset: rows, map, loop state, the highlight's caches, and
  * AutoScroll.reset. Called before a new render and on page destroy.
  */
 export function clear(): void {
@@ -128,18 +122,17 @@ export function clear(): void {
   invalidateTimedLinesCache();
   lastRenderedPosition = -1;
   hasRenderedInitial = false;
-  resetLyricsSetterCache();
-  resetAnimatorCache();
+  resetLineHighlight();
   AutoScroll.reset();
 }
 
 // ── Render loop ─────────────────────────────────────────────────────────────
 
 /**
- * Registers with PositionConsumer (surface 'highlight', 50 ms). The tick calls
- * the setter, the animator, and — at half cadence — AutoScroll.sync. The
- * cadence exists because scroll is expensive; the loop is the only place that
- * knows the tick rate.
+ * Registers with PositionConsumer (surface 'highlight', 50 ms). The tick hands
+ * the settled position and play state to LineHighlight and — at half cadence —
+ * to AutoScroll. The cadence exists because scroll is expensive; the loop is the
+ * only place that knows the tick rate.
  */
 export function startLoop(): void {
   if (renderLoopDisposer) return;
@@ -154,8 +147,7 @@ export function startLoop(): void {
 
       lastRenderedPosition = progress;
       hasRenderedInitial = true;
-      Lyrics.TimeSetter(progress);
-      Lyrics.Animate();
+      syncLineHighlight(progress, { isPlaying: ctx.isPlaying });
       scrollTickCounter++;
       if (scrollTickCounter % 2 === 0) {
         // Hand the tick's settled answers over — AutoScroll must not re-derive them.

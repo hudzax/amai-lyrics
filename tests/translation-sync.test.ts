@@ -66,7 +66,7 @@ vi.mock('../src/utils/API/Lyrics', () => ({
   getLyrics: vi.fn(),
 }));
 
-import { TimeSetter } from '../src/utils/Lyrics/Animator/Lyrics/LyricsSetter';
+import { sync } from '../src/utils/Lyrics/LineHighlight';
 import { clear, getAllRows, getTimedLines, stopLoop } from '../src/utils/Lyrics/registry';
 import { RecalculateScrollSimplebar } from '../src/utils/Scrolling/Simplebar/ScrollSimplebar';
 import { processAndEnhanceLyrics } from '../src/utils/Lyrics/processing';
@@ -182,7 +182,7 @@ describe('translation update keeps lyrics sync intact', () => {
     expect(elems2[0].querySelector('.translation')?.textContent).toBe('translated first line');
   });
 
-  it('keeps TimeSetter line statuses (highlight sync) after translation update', () => {
+  it('keeps the highlight statuses after a translation update', () => {
     const lyrics = lineLyrics();
     renderLyrics(lyrics);
 
@@ -191,11 +191,11 @@ describe('translation update keeps lyrics sync intact', () => {
     });
     updateLyricTranslations();
 
-    TimeSetter(4000); // ms — inside line[1] (3500-6000)
+    sync(4000, { isPlaying: true }); // ms — inside line[1] (3500-6000)
     const lines = getTimedLines();
-    expect(lines[0].status).toBe('Sung');
-    expect(lines[1].status).toBe('Active');
-    expect(lines[2].status).toBe('NotSung');
+    expect(lines[0].element.classList.contains('Sung')).toBe(true);
+    expect(lines[1].element.classList.contains('Active')).toBe(true);
+    expect(lines[2].element.classList.contains('NotSung')).toBe(true);
   });
 
   it('falls back to raw scrollTop preservation for static lyrics', () => {

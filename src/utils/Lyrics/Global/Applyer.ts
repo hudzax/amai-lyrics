@@ -1,4 +1,3 @@
-import { setBlurringLastLine } from '../Animator/Lyrics/LyricsAnimator';
 import { isPageOpen } from '../../PagePresence';
 import { renderLyrics } from '../LyricsRenderer';
 import { isNoLyricsResult } from '../fetchLyrics';
@@ -35,9 +34,6 @@ export default function ApplyLyrics(
       lyricsContent.style.setProperty('--DefaultLyricsSize', defaultLyricsSize + 'rem');
     }
   }
-
-  // Reset blurring effect
-  setBlurringLastLine(null);
 
   // Typed sentinel check — don't attempt to render NO_LYRICS payload
   if (!lyrics || isNoLyricsResult(lyrics)) return false;

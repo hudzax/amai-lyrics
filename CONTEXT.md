@@ -44,9 +44,9 @@ applyScrollReanchor is exported only for a test's reach — re-anchoring is a st
 inside the update, and no caller crosses it.
 
 The builders register each row through the registry's `registerRow`, so a
-consumer reads one list instead of indexing by lyrics type: the setter and the
-animator search the registry's timed view, which is empty for a Static
-document, so nothing has to ask what kind was painted. Each registered row
+consumer reads one list instead of indexing by lyrics type: LineHighlight
+searches the registry's timed view, which is empty for a Static document, so
+nothing has to ask what kind was painted. Each registered row
 pairs its `LineView` with the `.main-lyrics-text` element the updater writes
 into — for both kinds.
 Enhancement mutates those same line views in place, which is why the updater
@@ -61,9 +61,19 @@ closing the page empties the same registry from outside it.
 
 ## LyricsRegistry
 
-The single place that owns the painted lyric rows and everything derived from them: the row list, the click-to-seek time map, the position-driven render loop, and the full reset. Lives in src/utils/Lyrics/registry.ts. Callers cross it through registerRow, getAllRows, getPaintedLines, getTimedLines, getActiveLine, clear, startLoop, stopLoop, attachClickToSeek, and detachClickToSeek — never through the row array, the time map, or a PositionConsumer registration of their own.
+The single place that owns the painted lyric rows and everything derived from them: the row list, the click-to-seek time map, the position-driven render loop, and the full reset. Lives in src/utils/Lyrics/registry.ts. Callers cross it through registerRow, getAllRows, getPaintedLines, getTimedLines, clear, startLoop, stopLoop, attachClickToSeek, and detachClickToSeek — never through the row array, the time map, or a PositionConsumer registration of their own. "Which row is active" is not this module's answer: that belongs to LineHighlight.
 
-The three row writers (LyricsRenderer's line-synced and static builders, createMusicalBreak) push a PaintedLine through registerRow. The readers (LyricsSetter, LyricsAnimator, AutoScroll, LyricsRenderer's translation update) cross the read methods. getTimedLines returns a cached view of the rows that carry timing, invalidated on registerRow and clear; getActiveLine returns the row whose status is 'Active' and whose element is connected. The render loop is owned by startLoop/stopLoop: the registry registers with PositionConsumer (surface 'highlight', 50 ms), gates the tick on PagePresence and the route answer, and the tick calls the setter and the animator and — at half cadence — hands the settled play state and route answer to AutoScroll.sync. clear() is a full reset: rows, map, loop state, setter cache, animator cache, and AutoScroll.reset. The click-to-seek listener is owned by attachClickToSeek(container)/detachClickToSeek(); the caller passes the container it rendered into, and the registry owns the time map that feeds the lookup. The auto-start on import is gone; app.tsx calls startLoop() explicitly.
+The three row writers (LyricsRenderer's line-synced and static builders, createMusicalBreak) push a PaintedLine through registerRow. The readers (LineHighlight, AutoScroll, LyricsRenderer's translation update) cross the read methods. getTimedLines returns a cached view of the rows that carry timing, invalidated on registerRow and clear. The render loop is owned by startLoop/stopLoop: the registry registers with PositionConsumer (surface 'highlight', 50 ms), gates the tick on PagePresence and the route answer, and the tick hands the settled position and play state to LineHighlight and — at half cadence — the settled play state and route answer to AutoScroll.sync. clear() is a full reset: rows, map, loop state, the highlight's caches, and AutoScroll.reset. The click-to-seek listener is owned by attachClickToSeek(container)/detachClickToSeek(); the caller passes the container it rendered into, and the registry owns the time map that feeds the lookup. The auto-start on import is gone; app.tsx calls startLoop() explicitly.
+
+## LineHighlight
+
+The single owner of which painted row is active and how it looks: the row statuses, the blur window around the active row, the gradient fill, the musical-break dots, and every class write that follows from them. Lives in src/utils/Lyrics/LineHighlight.ts. Callers cross it through sync, getActiveLine, and reset — never through a row's `status`/`lastStatus`, an active index of their own, or a blur pointer.
+
+Only the registry's tick calls `sync(position, { isPlaying })`, handing over the position and the play state it already settled, so this module never asks the player or a mutable global for either. getActiveLine returns the row the highlight marks active while its element is still in the page. reset is called by the registry's full reset alone: it drops every cached answer so a new song is painted from its first tick, and the style-write cache is deliberately left alone because it is keyed per element and dies with the rows.
+
+The status phase and the paint phase are one call, in that order, and the paint runs every tick whatever the statuses did — a play-state flip has to repaint rows whose status did not change. Two play-state memories survive on purpose: one gates whether the blur is repainted at all, the other forces a full blur pass. They update at different points, so merging them would change the interlude and post-seek edges.
+
+One question stays outside this seam. AutoScroll pre-highlights the row it is scrolling towards and marks it `OverridenByScroller`; the paint refuses to take `Active` off a row carrying that mark. The mark is AutoScroll's — written and removed by it alone — and this module only reads it. AutoScroll also searches at its own lead time (`getPositionFor('scroll')`, ahead of the highlight surface), so its target row is deliberately not this module's active row.
 
 ## AutoScroll
 
@@ -85,7 +95,7 @@ scrollIntoCenterView shape (container, element, duration, offset, axis).
 The single place that owns a position-driven render tick: the IntervalManager,
 play-state self-heal, the lyrics-page gate, the position-tracking refcount, and
 the finite-guarded position read. Lives in src/utils/PositionConsumer.ts. The
-lyrics-page animator (surface `highlight`), the playbar overlay (surface
+registry's lyrics-page loop (surface `highlight`), the playbar overlay (surface
 `playbar`), and the NowBar fullscreen timeline (surface `nowbar`) cross it
 through registerPositionConsumer - never through their own
 IntervalManager, a resolveIsPlaying call, a History pathname check, or
