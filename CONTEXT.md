@@ -315,3 +315,26 @@ stored value is neither `'true'` nor `'false'`, so a corrupted entry cannot
 invent an encoding — but the default is per setting, and playbar lyrics
 defaults to on, so a corrupted entry there reads as on. A text setting has no
 such rule: whatever is stored is what the reader gets.
+
+## ThemeSettings
+
+The owner of what the Amai Theme appearance settings mean on screen: the
+background intensity and background motion presets, their scale factors, and
+the DOM they publish. Lives in src/utils/ThemeSettings.ts. Callers cross it
+through `applyThemeSettings` (idempotent — startup and every settings handler
+re-run it) and, for the WebGL2 canvas, `getGlIntensity` and `getGlMotionSpeed`.
+
+It deliberately knows no per-surface numbers: sweet-dynamic-bg.css keeps its
+hand-tuned values and wraps each in `calc(value * var(--amai-bg-*-scale, 1))`,
+so one preset reaches the sidebar, lyrics-page and app-frame canvases at once.
+The CSS animation freeze for motion Off rides the `amai-bg-motion-off` class
+(constant in identity.ts, like the other background markers); the GL canvas
+ignores that class and freezes through `AppBackground`'s forwarders
+(`applyIntensitySetting` / `applyMotionSetting` on the shared singleton)
+instead. The "Amai - Theme" settings section leads the settings UI and hosts
+the "Enable Amai Theme" toggle itself; its four option rows render only while
+that toggle is on (per-field visibility in the vendored renderer, seeded from
+the stored value and flipped live by the toggle handler in settings.ts).
+Accent pinning is not part of this seam — ArtworkColors owns publishing and
+checks the `accentColorMode` / `customAccentColor` settings inside
+`publishArtworkAccents` before its per-artwork dedup guard.

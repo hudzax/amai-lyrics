@@ -1,4 +1,5 @@
 import settingsValues from '../../utils/settingsValues';
+import { getGlIntensity, getGlMotionSpeed } from '../../utils/ThemeSettings';
 import { normalizeImageUrl, setRandomCSSVariables, createBackgroundImage } from './utils';
 import {
   APP_BG_CLASS,
@@ -294,6 +295,21 @@ export class AppBackground {
     return !!host && !!findAppBg(host);
   }
 
+  /**
+   * Push the current Amai Theme intensity preset to the live GL canvas.
+   * The DOM fallback needs no forward: its grade comes from the root-level
+   * `--amai-bg-*-scale` vars ThemeSettings publishes, which the stylesheet
+   * picks up immediately.
+   */
+  public applyIntensitySetting(): void {
+    this.glBg?.setIntensity(getGlIntensity());
+  }
+
+  /** Push the current Amai Theme motion speed to the live GL canvas (same DOM-path reasoning). */
+  public applyMotionSetting(): void {
+    this.glBg?.setMotionSpeed(getGlMotionSpeed());
+  }
+
   /** Clear cached state and remove the DOM node (hot-reload safe). */
   public destroy(): void {
     this.remove();
@@ -335,6 +351,9 @@ export class AppBackground {
         const seedUrl = this.lastCoverUrl ?? coverUrl;
         const gl = await mod.GlAppBackground.create(host, seedUrl, {
           onFail: () => this.handleGlFail(),
+          // Boot with the user's current Amai Theme intensity/motion presets.
+          intensity: getGlIntensity(),
+          motionSpeed: getGlMotionSpeed(),
         });
         if (!gl) {
           abandon(false);

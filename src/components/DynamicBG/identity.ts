@@ -33,6 +33,10 @@ export const APP_BG_LIB_GRID_CLASS = 'amai-lib-grid';
 /** Container class for the WebGL2 shader canvas. CSS layers/scrims/filters
  * must be neutralized while it is present — the shader paints everything. */
 export const APP_BG_GPU_CLASS = 'amai-bg-gpu';
+/** Marker on `<html>` while the background-motion setting is Off. Pauses the
+ * CSS background animations via the `.amai-bg-motion-off` rules; the GL canvas
+ * reads the setting directly instead of this class. */
+export const BG_MOTION_OFF_CLASS = 'amai-bg-motion-off';
 
 /** Build the shared background container node (DOM fallback or GPU canvas). */
 export function createAppBgContainer(gpuMode = false): HTMLDivElement {

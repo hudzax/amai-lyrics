@@ -20,6 +20,10 @@ export interface SettingValues {
   defaultLyricsSize: string;
   enablePlaybarLyrics: boolean;
   enableAppBackground: boolean;
+  backgroundIntensity: string;
+  backgroundMotion: string;
+  accentColorMode: string;
+  customAccentColor: string;
 }
 
 interface Codec<T> {
@@ -57,6 +61,10 @@ const CODECS: { [K in keyof SettingValues]: Codec<SettingValues[K]> } = {
   defaultLyricsSize: textCodec(StorageKeys.DEFAULT_LYRICS_SIZE),
   enablePlaybarLyrics: booleanCodec(StorageKeys.ENABLE_PLAYBAR_LYRICS, true),
   enableAppBackground: booleanCodec(StorageKeys.ENABLE_APP_BACKGROUND, false),
+  backgroundIntensity: textCodec(StorageKeys.BG_INTENSITY, 'normal'),
+  backgroundMotion: textCodec(StorageKeys.BG_MOTION, 'normal'),
+  accentColorMode: textCodec(StorageKeys.ACCENT_COLOR_MODE, 'auto'),
+  customAccentColor: textCodec(StorageKeys.CUSTOM_ACCENT_COLOR, ''),
 };
 
 function get<K extends keyof SettingValues>(name: K): SettingValues[K] {

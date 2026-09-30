@@ -1,6 +1,8 @@
 export interface ISettingsFieldHidden {
   type: 'hidden';
   defaultValue: unknown;
+  /** Fork addition: false hides the row (value still registers and persists). */
+  visible?: boolean;
 }
 
 export interface ISettingsFieldInput {
@@ -9,6 +11,8 @@ export interface ISettingsFieldInput {
   defaultValue: string;
   inputType?: string;
   events?: Partial<React.InputHTMLAttributes<HTMLInputElement>>;
+  /** Fork addition: false hides the row (value still registers and persists). */
+  visible?: boolean;
 }
 
 export interface ISettingsFieldDropdown {
@@ -17,6 +21,8 @@ export interface ISettingsFieldDropdown {
   defaultValue: string;
   options: string[];
   events?: Partial<React.SelectHTMLAttributes<HTMLSelectElement>>;
+  /** Fork addition: false hides the row (value still registers and persists). */
+  visible?: boolean;
 }
 
 export interface ISettingsFieldButton {
@@ -24,6 +30,8 @@ export interface ISettingsFieldButton {
   description?: string;
   value: string;
   events?: Partial<React.ButtonHTMLAttributes<HTMLButtonElement>>;
+  /** Fork addition: false hides the row (value still registers and persists). */
+  visible?: boolean;
 }
 
 export interface ISettingsFieldToggle {
@@ -31,6 +39,8 @@ export interface ISettingsFieldToggle {
   description?: string;
   defaultValue: boolean;
   events?: Partial<React.InputHTMLAttributes<HTMLInputElement>>;
+  /** Fork addition: false hides the row (value still registers and persists). */
+  visible?: boolean;
 }
 
 export type ISettingsField =

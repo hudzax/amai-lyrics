@@ -14,6 +14,10 @@ export const StorageKeys = {
   DEFAULT_LYRICS_SIZE: 'default_lyrics_size',
   ENABLE_PLAYBAR_LYRICS: 'enable_playbar_lyrics',
   ENABLE_APP_BACKGROUND: 'enable_app_background',
+  BG_INTENSITY: 'background_intensity',
+  BG_MOTION: 'background_motion',
+  ACCENT_COLOR_MODE: 'accent_color_mode',
+  CUSTOM_ACCENT_COLOR: 'custom_accent_color',
   CURRENT_LYRICS_DATA: 'currentLyricsData',
 } as const;
 

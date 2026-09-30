@@ -98,6 +98,10 @@ async function loadArtworkBitmap(url: string): Promise<ImageBitmap | null> {
 export interface GlAppBackgroundOptions {
   /** Fired when the GL context is lost irrecoverably. The owner falls back to the DOM canvas. */
   onFail(): void;
+  /** Initial Amai Theme intensity (see `ThemeSettings.getGlIntensity`). Neutral when omitted. */
+  intensity?: { vibrance: number; dim: number };
+  /** Initial Amai Theme motion speed; 0 freezes the field (see `ThemeSettings.getGlMotionSpeed`). */
+  motionSpeed?: number;
 }
 
 function compile(
@@ -164,11 +168,23 @@ export class GlAppBackground {
   /** Reports the canvas's layout size so the loop never has to measure it. */
   private readonly sizeObserver: ResizeObserver;
   private motionEnabled: boolean;
+  /**
+   * Amai Theme motion speed (user setting); multiplies the field-time advance.
+   * 0 freezes the field at STATIC_TIME like reduced-motion does, but stays a
+   * distinct knob so un-freezing restores the accumulated drift.
+   */
+  private motionSpeed: number;
+  /** motionEnabled && motionSpeed > 0 — the single gate the loop and both passes read. */
+  private motionActive: boolean;
+  /** Present-pass grade from the Amai Theme intensity setting. */
+  private intensity: { vibrance: number; dim: number };
   private rafId: number | null = null;
   /** Coalesces resize redraws to at most one per frame. */
   private resizeRafQueued = false;
   private lastTickMs = 0;
   private elapsed = 0;
+  /** Field-motion clock: wall time × motion speed. STATIC_TIME freezes it. */
+  private fieldTime = 0;
   private mix = 0;
   private mixStart = 0;
   private crossfading = false;
@@ -183,6 +199,8 @@ export class GlAppBackground {
 
   private constructor(opts: GlAppBackgroundOptions) {
     this.onFail = opts.onFail;
+    this.intensity = opts.intensity ? { ...opts.intensity } : { vibrance: 1, dim: 1 };
+    this.motionSpeed = opts.motionSpeed ?? 1;
     this.container = createAppBgContainer(true);
     this.canvas = document.createElement('canvas');
     this.canvas.className = 'amai-bg-canvas';
@@ -228,6 +246,8 @@ export class GlAppBackground {
       uField: gl.getUniformLocation(this.presentProgram, 'uField'),
       uGrainSeed: gl.getUniformLocation(this.presentProgram, 'uGrainSeed'),
       uResolution: gl.getUniformLocation(this.presentProgram, 'uResolution'),
+      uVibrance: gl.getUniformLocation(this.presentProgram, 'uVibrance'),
+      uDim: gl.getUniformLocation(this.presentProgram, 'uDim'),
     };
     gl.uniform1i(this.presentUniforms.uField, 0);
 
@@ -245,6 +265,9 @@ export class GlAppBackground {
 
     this.motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     this.motionEnabled = !this.motionQuery.matches;
+    // Gate computed inline — updateMotionActive() would ensureLoop() before the
+    // seed/mount, starting the loop earlier than the create() contract.
+    this.motionActive = this.motionEnabled && this.motionSpeed > 0;
 
     this.canvas.addEventListener('webglcontextlost', this.handleContextLost);
     document.addEventListener('visibilitychange', this.handleVisibility);
@@ -501,8 +524,34 @@ export class GlAppBackground {
   private readonly handleMotionChange = (): void => {
     if (this.disposed) return;
     this.motionEnabled = !this.motionQuery.matches;
-    this.ensureLoop();
+    this.updateMotionActive();
   };
+
+  /** Recompute the effective motion gate and wake the loop if motion returned. */
+  private updateMotionActive(): void {
+    this.motionActive = this.motionEnabled && this.motionSpeed > 0;
+    this.ensureLoop();
+  }
+
+  /**
+   * Amai Theme intensity change. Applies on the next present; draws one frame
+   * immediately when the loop is parked (reduced motion / motion off), which
+   * is also what un-parked states get for free since they redraw at 60 Hz.
+   */
+  public setIntensity(intensity: { vibrance: number; dim: number }): void {
+    if (this.disposed) return;
+    this.intensity = { ...intensity };
+    if (this.rafId === null) this.drawFrame();
+  }
+
+  /** Amai Theme motion-speed change; 0 freezes the field, >0 restores drift. */
+  public setMotionSpeed(speed: number): void {
+    if (this.disposed) return;
+    this.motionSpeed = speed;
+    this.updateMotionActive();
+    // Speed 0 leaves the loop parked after one settled frame with the new gate.
+    if (this.rafId === null) this.drawFrame();
+  }
 
   /**
    * Anything that changes the canvas's layout size (the observer for layout,
@@ -603,9 +652,11 @@ export class GlAppBackground {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, this.backingW, this.backingH);
     gl.useProgram(this.presentProgram);
-    const t = this.motionEnabled ? this.elapsed : STATIC_TIME;
+    const t = this.motionActive ? this.fieldTime : STATIC_TIME;
     // GLSL fract() of a non-negative operand is JS's remainder operator.
     gl.uniform2f(this.presentUniforms.uGrainSeed, ((t * 0.7) % 1) * 43, ((t * 0.31) % 1) * 17);
+    gl.uniform1f(this.presentUniforms.uVibrance, this.intensity.vibrance);
+    gl.uniform1f(this.presentUniforms.uDim, this.intensity.dim);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.fieldTex);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
@@ -613,13 +664,13 @@ export class GlAppBackground {
 
   /**
    * The field shader's frame-constant terms — wind, sway, luminance breath.
-   * Each used to be evaluated once per pixel. Under `prefers-reduced-motion`
-   * the field freezes because these are evaluated at the fixed `STATIC_TIME`
-   * position instead of the accumulated drift.
+   * Each used to be evaluated once per pixel. When motion is inactive (user
+   * setting Off, or `prefers-reduced-motion`) the field freezes because these
+   * are evaluated at the fixed `STATIC_TIME` position instead of the drift.
    */
   private computeFlow(): void {
     const gl = this.gl;
-    const t = this.motionEnabled ? this.elapsed : STATIC_TIME;
+    const t = this.motionActive ? this.fieldTime : STATIC_TIME;
     gl.uniform4f(
       this.fieldUniforms.uFlowA,
       0.02 * t,
@@ -646,7 +697,13 @@ export class GlAppBackground {
       return;
     }
     this.lastTickMs = now;
+    // Wall clock (drives the crossfade, so it must never scale with motion
+    // speed — at speed 0 a song change still has to fade in) ...
     this.elapsed += Math.min(delta, MAX_FRAME_DT_MS) / 1000;
+    // ... and the field clock, which the motion-speed setting scales. Kept as
+    // its own accumulator (not a multiplier on elapsed) so a speed change can
+    // never re-position the drift — it only advances slower or faster onward.
+    this.fieldTime += (Math.min(delta, MAX_FRAME_DT_MS) / 1000) * this.motionSpeed;
 
     if (this.crossfading) {
       const p = Math.min(1, (this.elapsed - this.mixStart) / CROSSFADE_SECONDS);
@@ -656,9 +713,9 @@ export class GlAppBackground {
 
     this.drawFrame();
 
-    // Reduced motion: one settled frame is enough — idle the loop until the
-    // next artwork or motion change.
-    if (!this.motionEnabled && !this.crossfading) {
+    // No motion: one settled frame is enough — idle the loop until the next
+    // artwork or motion change. (Crossfade keeps running: it is its own clock.)
+    if (!this.motionActive && !this.crossfading) {
       this.rafId = null;
       return;
     }

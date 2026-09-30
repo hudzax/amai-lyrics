@@ -78,8 +78,9 @@ describe('Settings.css', () => {
 
   it('highlights the Enable Amai Theme row through its toggle id', () => {
     // Rows carry no per-field class; the feature styling hooks the toggle's
-    // element id (amai-settings.enableAppBackground).
+    // element id (amai-theme-settings.enableAppBackground — the toggle lives
+    // in the theme section, which the settings UI puts first).
     expect(css).toContain('enableAppBackground');
-    expect(css).toContain(':has(#amai-settings\\.enableAppBackground)');
+    expect(css).toContain(':has(#amai-theme-settings\\.enableAppBackground)');
   });
 });

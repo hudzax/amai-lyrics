@@ -2,6 +2,7 @@ import { setSettingsMenu } from '../utils/settings';
 import Platform from '../components/Global/Platform';
 import { invalidateLyrics } from '../utils/Lyrics/fetchLyrics';
 import lifecycle from '../utils/lifecycle';
+import { applyThemeSettings } from '../utils/ThemeSettings';
 import { APP_BG_CONTAINER_CLASS, APP_BG_LOADED_CLASS } from '../components/DynamicBG/identity';
 
 export class AppInitializer {
@@ -42,6 +43,9 @@ export class AppInitializer {
   private static async initializePlatformAndSettings() {
     await Platform.OnSpotifyReady;
     setSettingsMenu();
+    // Publish the Amai Theme intensity/motion presets before any canvas can
+    // paint (idempotent inline root vars + motion-off class — see ThemeSettings).
+    applyThemeSettings();
   }
 
   public static setupPostLoadOptimizations() {

@@ -7,12 +7,15 @@
  */
 
 .sweet-dynamic-bg {
-  /* Base variables */
+  /* Base variables. The user-facing Amai Theme intensity/motion settings
+     (src/utils/ThemeSettings.ts) publish root-level --amai-bg-*-scale
+     factors; every hardcoded value below is multiplied by its scale so one
+     preset reaches all surfaces. Fallback 1 keeps the hand-tuned defaults. */
   --bg-hue-shift: 0deg;
-  --bg-saturation: 2.2; /* Increased for richer colors */
-  --bg-brightness: 0.5; /* Slightly dimmer for better contrast */
-  --bg-blur-primary: 35px; /* Increased blur for primary layer */
-  --bg-blur-secondary: 55px; /* Increased blur for secondary layer */
+  --bg-saturation: calc(2.2 * var(--amai-bg-saturation-scale, 1)); /* Increased for richer colors */
+  --bg-brightness: calc(0.5 * var(--amai-bg-brightness-scale, 1)); /* Slightly dimmer for better contrast */
+  --bg-blur-primary: calc(35px * var(--amai-bg-blur-scale, 1)); /* Increased blur for primary layer */
+  --bg-blur-secondary: calc(55px * var(--amai-bg-blur-scale, 1)); /* Increased blur for secondary layer */
 
   /* Rotation variables for different elements */
   --bg-rotation-primary: 0deg;
@@ -58,7 +61,7 @@
   /* Opacity-only pulse. The previous keyframe also animated background-position,
      which forces a repaint every frame; opacity is compositor-only (and the
      position half was a no-op anyway since the gradient fills its box). */
-  animation: gradientShift 30s linear infinite; /* Slow gradient movement */
+  animation: gradientShift calc(30s * var(--amai-bg-motion-scale, 1)) linear infinite; /* Slow gradient movement */
 }
 
 /* Enhanced placeholder with color hint from current theme */
@@ -103,7 +106,7 @@
   z-index: 3;
   transform: rotate(var(--bg-rotation-primary, 0deg)) scale(var(--bg-scale-primary, 1));
   filter: blur(var(--bg-blur-primary)) hue-rotate(var(--bg-hue-shift)) brightness(1.1);
-  animation: bgAnimPrimary 60s linear infinite;
+  animation: bgAnimPrimary calc(60s * var(--amai-bg-motion-scale, 1)) linear infinite;
   mix-blend-mode: overlay; /* Enhanced blending with background */
 }
 
@@ -119,7 +122,7 @@
   transform: rotate(var(--bg-rotation-secondary, 0deg)) scale(var(--bg-scale-secondary, 1));
   filter: blur(var(--bg-blur-secondary)) hue-rotate(calc(var(--bg-hue-shift) + 30deg))
     brightness(1.2);
-  animation: bgAnimSecondary 75s linear infinite reverse;
+  animation: bgAnimSecondary calc(75s * var(--amai-bg-motion-scale, 1)) linear infinite reverse;
   mix-blend-mode: soft-light; /* Softer blending for secondary layer */
 }
 
@@ -146,8 +149,8 @@
 }
 /* Specific styling for sidebar */
 .sweet-dynamic-bg-in-this:is(aside) .sweet-dynamic-bg {
-  --bg-saturation: 2;
-  --bg-brightness: 0.45;
+  --bg-saturation: calc(2 * var(--amai-bg-saturation-scale, 1));
+  --bg-brightness: calc(0.45 * var(--amai-bg-brightness-scale, 1));
   max-height: 100%;
   max-width: 100%;
 }
@@ -170,8 +173,8 @@
 /* Lyrics page specific styling — again the page's own backdrop only; the app
    canvas keeps its host positioning/sizing wherever it is parented. */
 #AmaiLyricsPage .sweet-dynamic-bg:not(.amai-app-bg) {
-  --bg-saturation: 2.5;
-  --bg-brightness: 0.45;
+  --bg-saturation: calc(2.5 * var(--amai-bg-saturation-scale, 1));
+  --bg-brightness: calc(0.45 * var(--amai-bg-brightness-scale, 1));
   max-height: 55%;
   max-width: 35%;
   scale: 290% 185%;
@@ -234,13 +237,15 @@ body:has(#AmaiLyricsPage.Fullscreen)
 
   /* Adjust animation/filter directly on the image elements */
   .sweet-dynamic-bg > img.primary {
-    animation-duration: 120s; /* Slower animation */
-    filter: blur(20px) hue-rotate(var(--bg-hue-shift)); /* Adjusted blur */
+    animation-duration: calc(120s * var(--amai-bg-motion-scale, 1)); /* Slower animation */
+    filter: blur(calc(20px * var(--amai-bg-blur-scale, 1)))
+      hue-rotate(var(--bg-hue-shift)); /* Adjusted blur */
   }
 
   .sweet-dynamic-bg > img.secondary {
-    animation-duration: 120s; /* Slower animation */
-    filter: blur(20px) hue-rotate(calc(var(--bg-hue-shift) + 30deg)); /* Adjusted blur */
+    animation-duration: calc(120s * var(--amai-bg-motion-scale, 1)); /* Slower animation */
+    filter: blur(calc(20px * var(--amai-bg-blur-scale, 1)))
+      hue-rotate(calc(var(--bg-hue-shift) + 30deg)); /* Adjusted blur */
   }
 
   /* No need to disable canvas as it's removed */
@@ -262,10 +267,10 @@ body:has(#AmaiLyricsPage.Fullscreen)
   background-image: none !important;
 }
 :is(.Root, .Root__top-container).amai-app-bg-host > .sweet-dynamic-bg.amai-app-bg {
-  --bg-saturation: 1.8;
-  --bg-brightness: 0.35;
-  --bg-blur-primary: 45px;
-  --bg-blur-secondary: 65px;
+  --bg-saturation: calc(1.8 * var(--amai-bg-saturation-scale, 1));
+  --bg-brightness: calc(0.35 * var(--amai-bg-brightness-scale, 1));
+  --bg-blur-primary: calc(45px * var(--amai-bg-blur-scale, 1));
+  --bg-blur-secondary: calc(65px * var(--amai-bg-blur-scale, 1));
 }
 /* PERF: the base canvas uses 200%x200% layers for the rotating-orb look, but
    at full-window size that is ~4x viewport raster re-filtered every frame.
@@ -283,12 +288,12 @@ body:has(#AmaiLyricsPage.Fullscreen)
 :is(.Root, .Root__top-container).amai-app-bg-host
   > .sweet-dynamic-bg.amai-app-bg
   > img.bg-image.primary {
-  animation: amaiAppDriftA 42s ease-in-out infinite alternate;
+  animation: amaiAppDriftA calc(42s * var(--amai-bg-motion-scale, 1)) ease-in-out infinite alternate;
 }
 :is(.Root, .Root__top-container).amai-app-bg-host
   > .sweet-dynamic-bg.amai-app-bg
   > img.bg-image.secondary {
-  animation: amaiAppDriftB 56s ease-in-out infinite alternate-reverse;
+  animation: amaiAppDriftB calc(56s * var(--amai-bg-motion-scale, 1)) ease-in-out infinite alternate-reverse;
 }
 /* Subtle Ken Burns drift — transform only, so the compositor handles every
    frame with no repaint. Opacity is left alone so the song-change crossfade
@@ -318,7 +323,7 @@ body:has(#AmaiLyricsPage.Fullscreen)
   :is(.Root, .Root__top-container).amai-app-bg-host
     > .sweet-dynamic-bg.amai-app-bg
     > img.bg-image.secondary {
-    animation-duration: 120s;
+    animation-duration: calc(120s * var(--amai-bg-motion-scale, 1));
   }
 }
 /* Reduced motion: freeze the app-canvas drift entirely (accessibility). */
@@ -551,5 +556,16 @@ body:has(#AmaiLyricsPage.Fullscreen)
 .amai-hidden .sweet-dynamic-bg::after,
 .amai-hidden .sweet-dynamic-bg > img.bg-image,
 .amai-hidden .sweet-dynamic-bg .placeholder {
+  animation-play-state: paused !important;
+}
+
+/* Background-motion setting Off (class toggled on <html> by ThemeSettings).
+   Pausing — not `animation: none` — keeps each layer at its current rotation
+   instead of snapping back to its keyframe start. The GL canvas ignores this
+   class and freezes through its own motion-speed path instead. */
+.amai-bg-motion-off .sweet-dynamic-bg,
+.amai-bg-motion-off .sweet-dynamic-bg::after,
+.amai-bg-motion-off .sweet-dynamic-bg > img.bg-image,
+.amai-bg-motion-off .sweet-dynamic-bg .placeholder {
   animation-play-state: paused !important;
 }

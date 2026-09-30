@@ -20,6 +20,24 @@ class SettingsSection {
     public initialSettingsFields: { [key: string]: ISettingsField } = {},
   ) {}
 
+  /**
+   * Show/hide whole rows (fork addition — the Amai - Theme option rows follow
+   * its toggle). Hidden fields stay registered: their values keep seeding and
+   * persisting, they just render no row. The wrapper div's `key={rerender}`
+   * remounts the subtree, so rows reinitialize from storage on reveal.
+   */
+  setFieldsVisible = (nameIds: string[], visible: boolean): void => {
+    let changed = false;
+    for (const nameId of nameIds) {
+      const field = this.settingsFields[nameId];
+      if (field && field.visible !== visible) {
+        field.visible = visible;
+        changed = true;
+      }
+    }
+    if (changed) this.rerender();
+  };
+
   pushSettings = async () => {
     Object.entries(this.settingsFields).forEach(([nameId, field]) => {
       if (field.type !== 'button' && this.getFieldValue(nameId) === undefined) {
@@ -191,7 +209,11 @@ class SettingsSection {
       <div className="x-settings-section" key={rerender}>
         <h2 className="amai-settings-header">{this.name}</h2>
         {Object.entries(this.settingsFields).map(([nameId, field]) => {
-          return <this.Field nameId={nameId} field={field} />;
+          // Fork addition: hidden fields render no row but keep their state.
+          // Keys are the field ids, so rows keep their identity across
+          // visibility flips instead of reconciling by index.
+          if (field.visible === false) return null;
+          return <this.Field key={nameId} nameId={nameId} field={field} />;
         })}
       </div>
     );

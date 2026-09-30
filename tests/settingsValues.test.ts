@@ -19,6 +19,10 @@ describe('settingsValues', () => {
     expect(settingsValues.get('translationLanguage')).toBe('English');
     expect(settingsValues.get('translationFontSize')).toBe('0.575');
     expect(settingsValues.get('defaultLyricsSize')).toBe('');
+    expect(settingsValues.get('backgroundIntensity')).toBe('normal');
+    expect(settingsValues.get('backgroundMotion')).toBe('normal');
+    expect(settingsValues.get('accentColorMode')).toBe('auto');
+    expect(settingsValues.get('customAccentColor')).toBe('');
   });
 
   it('writes booleans as the strings the settings UI writes', () => {
@@ -51,6 +55,29 @@ describe('settingsValues', () => {
     expect(settingsValues.get('defaultLyricsSize')).toBe('');
     expect(spicetify.Spicetify.LocalStorage._store.has('AmaiLyrics-default_lyrics_size')).toBe(
       true,
+    );
+  });
+
+  it('round-trips the theme settings', () => {
+    settingsValues.set('backgroundIntensity', 'subtle');
+    settingsValues.set('backgroundMotion', 'off');
+    settingsValues.set('accentColorMode', 'custom');
+    settingsValues.set('customAccentColor', '#ff8800');
+
+    expect(settingsValues.get('backgroundIntensity')).toBe('subtle');
+    expect(settingsValues.get('backgroundMotion')).toBe('off');
+    expect(settingsValues.get('accentColorMode')).toBe('custom');
+    expect(settingsValues.get('customAccentColor')).toBe('#ff8800');
+
+    expect(spicetify.Spicetify.LocalStorage._store.get('AmaiLyrics-background_intensity')).toBe(
+      'subtle',
+    );
+    expect(spicetify.Spicetify.LocalStorage._store.get('AmaiLyrics-background_motion')).toBe('off');
+    expect(spicetify.Spicetify.LocalStorage._store.get('AmaiLyrics-accent_color_mode')).toBe(
+      'custom',
+    );
+    expect(spicetify.Spicetify.LocalStorage._store.get('AmaiLyrics-custom_accent_color')).toBe(
+      '#ff8800',
     );
   });
 

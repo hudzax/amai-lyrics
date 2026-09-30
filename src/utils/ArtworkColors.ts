@@ -7,6 +7,8 @@
  * Spotify's image CDN.
  */
 
+import settingsValues from './settingsValues';
+
 const BITMAP_SIZE = 40; // tiny decode size — way faster and still accurate
 const QUANTIZE_BITS = 5; // 2^5 = 32 levels per channel → ~32K buckets
 const RESULT_COUNT = 5; // how many dominant colors to return
@@ -306,6 +308,71 @@ const ACCENT_COUNT = 5;
 
 let lastAccentArtworkUrl: string | null = null;
 
+// ---------------------------------------------------------------------------
+// Accent color override (settings)
+//
+// `accentColorMode` lets the user pin the accents instead of following the
+// artwork: 'preset' restores the Spotify-green defaults declared in
+// tokens.css (the inline vars are removed so they stop overriding it), and
+// 'custom' derives the 5-slot palette from one picked colour. Both branches
+// run before the per-artwork dedup guard in `publishArtworkAccents` — they
+// are allocation-free and must beat whatever palette is currently published,
+// regardless of track.
+// ---------------------------------------------------------------------------
+
+const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/;
+const WHITE: RGB = { r: 255, g: 255, b: 255 };
+const BLACK: RGB = { r: 0, g: 0, b: 0 };
+
+/** Whether `hex` is a usable #rrggbb colour (trimmed, case-insensitive). */
+export function isHexColor(hex: string): boolean {
+  return HEX_COLOR_PATTERN.test(hex.trim().toLowerCase());
+}
+
+/** Channel-wise linear mix of a hex colour toward `target` by factor `t` (0-1). */
+function mixHex(hex: string, target: RGB, t: number): string {
+  const clean = hex.replace('#', '');
+  const r = parseInt(clean.substring(0, 2), 16);
+  const g = parseInt(clean.substring(2, 4), 16);
+  const b = parseInt(clean.substring(4, 6), 16);
+  const toHex = (c: number) => Math.round(c).toString(16).padStart(2, '0');
+  // SAFETY: callers validate with isHexColor, so the substrings are hex.
+  return `#${toHex(r + (target.r - r) * t)}${toHex(g + (target.g - g) * t)}${toHex(b + (target.b - b) * t)}`;
+}
+
+/**
+ * Builds the 5-slot accent palette from one user-picked colour: the picked
+ * colour leads (accent-1 and --amai-accent-rgb), flanked by lighter and
+ * deeper variants so gradients keep the range artwork extraction produces.
+ * `applyArtworkAccents` lifts every slot to the readability floor afterwards,
+ * exactly as it does for extracted colours.
+ */
+export function deriveAccentPalette(hex: string): string[] {
+  const base = hex.trim().toLowerCase();
+  return [
+    base,
+    mixHex(base, WHITE, 0.25),
+    mixHex(base, BLACK, 0.3),
+    mixHex(base, WHITE, 0.5),
+    mixHex(base, BLACK, 0.5),
+  ];
+}
+
+/**
+ * Republishes the accents after an accent-mode or colour change. Clears the
+ * per-artwork dedup guard first — the same cover must re-run the publish so
+ * the override (or the return to extraction) actually lands.
+ */
+export function refreshAccents(url?: string | null): void {
+  lastAccentArtworkUrl = null;
+  const coverUrl =
+    url ??
+    // SAFETY: metadata is untyped in the Spicetify ambient surface.
+    (Spicetify.Player.data?.item?.metadata?.image_url as string | undefined) ??
+    null;
+  void publishArtworkAccents(coverUrl);
+}
+
 /**
  * Extracts colours for the given artwork URL and publishes them as
  * `--amai-accent-*` custom properties on `document.documentElement`.
@@ -313,6 +380,24 @@ let lastAccentArtworkUrl: string | null = null;
  * Spotify-green defaults declared in `tokens.css`.
  */
 export async function publishArtworkAccents(imageUrl: string | null | undefined): Promise<void> {
+  // Accent override first — see the block comment above: a pinned mode wins
+  // over any artwork palette and must survive the dedup guard below.
+  const accentMode = settingsValues.get('accentColorMode');
+  if (accentMode === 'preset') {
+    lastAccentArtworkUrl = null;
+    applyArtworkAccents([]);
+    return;
+  }
+  if (accentMode === 'custom') {
+    const hex = settingsValues.get('customAccentColor').trim().toLowerCase();
+    if (isHexColor(hex)) {
+      lastAccentArtworkUrl = null;
+      applyArtworkAccents(deriveAccentPalette(hex));
+      return;
+    }
+    // Invalid/missing colour: fall through and behave like 'auto'.
+  }
+
   if (!imageUrl) {
     lastAccentArtworkUrl = null;
     applyArtworkAccents([]);

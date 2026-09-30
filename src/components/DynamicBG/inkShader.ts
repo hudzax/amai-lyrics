@@ -242,6 +242,11 @@ precision highp float;
 uniform sampler2D uField;
 uniform vec2 uGrainSeed; // per-frame grain offset
 uniform vec2 uResolution; // canvas backing store, in pixels
+// Amai Theme intensity (ThemeSettings presets): vibrance scales the colour's
+// distance from grey, dim scales brightness. Applied BEFORE the grain so the
+// grain's luminance weighting stays calibrated to the delivered output.
+uniform float uVibrance;
+uniform float uDim;
 
 out vec4 outColor;
 
@@ -253,6 +258,9 @@ float hash(vec2 p) {
 
 void main() {
   vec3 col = texture(uField, gl_FragCoord.xy / uResolution).rgb;
+
+  float baseLum = dot(col, vec3(0.2126, 0.7152, 0.0722));
+  col = mix(vec3(baseLum), col, uVibrance) * uDim;
 
   // Grain weighted into the shadows where banding lives. It rides the FIELD's
   // own luminance — the same value the single-pass shader used — so the two

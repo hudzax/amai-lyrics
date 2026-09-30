@@ -3,8 +3,10 @@
    ------------------------------------------------------------
    Custom modal shell owned by the extension (no Spicetify.PopupModal
    dependency). The overlay mounts the same section ids as the preferences
-   page (amai-settings, amai-dev-settings, amai-info), so row / toggle /
-   dropdown / input styling comes from Settings.css unchanged.
+   page (amai-theme-settings first, then amai-settings, amai-dev-settings,
+   amai-info), so row / toggle / dropdown / input styling comes from
+   Settings.css unchanged. The theme section's option rows stay hidden while
+   its toggle is off (per-field visibility in the vendored renderer).
    This file only lays out the overlay, dialog, header and close button.
    ============================================================ */
 

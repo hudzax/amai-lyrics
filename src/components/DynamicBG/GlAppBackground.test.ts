@@ -267,4 +267,31 @@ describe('GlAppBackground rendering budget', () => {
     expect(sizeReads.height).toBe(2);
     expect(drawArrays).toHaveBeenCalledTimes(4);
   });
+
+  it('applies Amai Theme intensity and motion-speed changes', async () => {
+    const { background, gl, drawArrays } = await createBackground();
+    const lastNamed = (name: string) =>
+      gl.uniform1f.mock.calls.filter(([loc]) => (loc as { name?: string }).name === name).pop();
+
+    // The initial frame presents the neutral grade.
+    expect(lastNamed('uVibrance')?.[1]).toBe(1);
+    expect(lastNamed('uDim')?.[1]).toBe(1);
+
+    // Speed 0 parks the loop after one settled frame with the new gate.
+    background.setMotionSpeed(0);
+    background.setIntensity({ vibrance: 0.8, dim: 0.8 });
+    frameCallbacks.shift()!(16.7); // seeds the clock, skipped
+    frameCallbacks.shift()!(33.4); // draws, then parks (no motion)
+    expect(lastNamed('uVibrance')?.[1]).toBe(0.8);
+    expect(lastNamed('uDim')?.[1]).toBe(0.8);
+    const drawsWhenParked = drawArrays.mock.calls.length;
+
+    // With the loop parked (no motion), a setting change still repaints one
+    // frame — otherwise the canvas would keep the old grade until the next
+    // track change.
+    background.setIntensity({ vibrance: 1.15, dim: 1.1 });
+    expect(drawArrays.mock.calls.length).toBe(drawsWhenParked + 2);
+    expect(lastNamed('uVibrance')?.[1]).toBe(1.15);
+    expect(lastNamed('uDim')?.[1]).toBe(1.1);
+  });
 });
