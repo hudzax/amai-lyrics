@@ -24,12 +24,12 @@
  */
 
 import Event from '../EventManager';
-import { HideLoaderContainer, ClearLyricsPageContainer } from './ui';
+import { HideLoaderContainer } from './ui';
 import { updateLyricTranslations } from './LyricsRenderer';
 import { writeSnapshot } from './snapshot';
 import { liveTrackId } from './trackId';
 import type { LyricsDocument } from './conversion';
-import type { NoLyricsResult } from './ui';
+import type { NoLyricsResult } from './conversion';
 
 /** Opaque handle for one lyrics request (fetch or refresh). */
 export type LyricsRequestToken = number;
@@ -100,14 +100,15 @@ export function publishNoLyrics(token: LyricsRequestToken, trackId: string): boo
 /**
  * Publishes freshly loaded lyrics (cache, storage, or first API paint):
  * domain state, persisted snapshot, bus notification, and loader teardown.
- * Returns false without touching anything when the request went stale.
+ * The paint's container clear is not publication's business — renderLyrics
+ * empties the container as its own first act. Returns false without touching
+ * anything when the request went stale.
  */
 export function publishInitialLyrics(token: LyricsRequestToken, document: LyricsDocument): boolean {
   if (!isCurrentLyricsRequest(token)) return false;
   const serialized = writeSnapshot(document);
   Event.evoke('lyrics:data-updated', serialized);
   HideLoaderContainer();
-  ClearLyricsPageContainer();
   return true;
 }
 

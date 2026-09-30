@@ -11,7 +11,7 @@
 import { SpikyCache } from '@hudzax/web-modules/SpikyCache';
 import { stampDocument, toDocument } from './conversion';
 import type { LyricsDocument } from './conversion';
-import type { NoLyricsResult } from './ui';
+import type { NoLyricsResult } from './conversion';
 
 type CachedLyricsData = LyricsDocument & {
   expiresAt: number;

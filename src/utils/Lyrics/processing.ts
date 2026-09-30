@@ -15,12 +15,7 @@ import {
   toLineView,
 } from './conversion';
 import { LyricsResult } from '../API/Lyrics';
-import {
-  isCurrentLyricsRequest,
-  publishInitialLyrics,
-  publishEnhancedLyrics,
-  type LyricsRequestToken,
-} from './publish';
+import { isCurrentLyricsRequest, publishEnhancedLyrics, type LyricsRequestToken } from './publish';
 
 // Regular expressions for language detection
 const JAPANESE_REGEX = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
@@ -68,9 +63,10 @@ function buildDocument(id: string, lyricsJson: LyricsResult): LyricsDocument {
  *
  * @param trackId - Spotify track ID
  * @param lyricsJson - Raw lyrics data from API
- * @param token - Pipeline request token: initial paint, enhancement work,
- *   and enhancement publication all check it, so a superseded request
- *   resolves its data but never touches UI, storage, or the event bus.
+ * @param token - Pipeline request token: enhancement work and enhancement
+ *   publication check it, so a superseded request resolves its data but never
+ *   touches storage or the event bus. Initial publication is the apply step's
+ *   (`applyLoadedLyrics`), not this module's.
  * @returns The document built from the response, enhanced when enhancement runs
  */
 export async function processAndEnhanceLyrics(
@@ -85,12 +81,12 @@ export async function processAndEnhanceLyrics(
 
   const { hasKanji, hasKorean } = detectLanguages(prepared);
 
-  // STEP 1: Display lyrics immediately (without translations). The document is
-  // freshly built and not shared, and enhancement mutates its line objects in
-  // place — which is what the renderer's registry holds, so the update path
-  // sees the enhancement without anything being handed across.
+  // STEP 1: Cache the lyrics immediately (without translations) so a re-seek
+  // is fast. The document is freshly built and not shared, and enhancement
+  // mutates its line objects in place — which is what the renderer's registry
+  // holds, so the update path sees the enhancement without anything being
+  // handed across. Publication happens once, in the pipeline's apply step.
   await cacheLyrics(trackId, prepared);
-  publishInitialLyrics(token, prepared);
 
   // STEP 2: Process phonetic and translations asynchronously. Skip the
   // (potentially slow, network-bound) enhancement when this request is no

@@ -203,6 +203,21 @@ export interface LyricsDocument {
 }
 
 /**
+ * The pipeline's other outcome: the track has no lyrics. Lives beside
+ * LyricsDocument because the two travel the same roads (cache, snapshot,
+ * publish, apply) as the pipeline's result type. `id` present means a
+ * publishable negative — an API verdict on a known track, persisted through
+ * the snapshot so re-visits don't re-fetch. `id` absent means an ephemeral
+ * failure (network error, HTTP status): the page transitions run but nothing
+ * is persisted, so a transient outage never reads as "this track has no
+ * lyrics".
+ */
+export interface NoLyricsResult {
+  status: 'NO_LYRICS';
+  id?: string;
+}
+
+/**
  * Version of the *stored* document format. Bumped when the serialized shape
  * changes, so an older cache or snapshot entry reads as a miss and re-fetches
  * instead of decoding into something that renders blank.

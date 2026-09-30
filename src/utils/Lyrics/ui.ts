@@ -56,27 +56,27 @@ export function resetLyricsUI(): void {
   if (!Fullscreen.isPageFullscreen()) PageView.AppendViewControls();
 }
 
-export interface NoLyricsResult {
-  status: 'NO_LYRICS';
-  id?: string;
-}
-
 /**
- * Shows a message when no lyrics are available
+ * Runs the negative result's page-visible transitions: empty the container,
+ * reset the registry, hide the lyrics area, hand the page to NowBar, and show
+ * the refresh button. Builds nothing and returns nothing — the sentinel is the
+ * producer's (api, cache, snapshot, the fetch entry), and whether it persists
+ * is the publication seam's decision.
  *
- * @param trackId - Spotify track ID (optional)
- * @returns Typed sentinel instead of magic string
+ * @param trackId - Spotify track ID (optional). The transitions run only when
+ *   the negative is for the track the player is on.
  */
-export async function noLyricsMessage(trackId?: string): Promise<NoLyricsResult> {
+export async function noLyricsMessage(trackId?: string): Promise<void> {
   try {
     const currentId = liveTrackId();
     const isForCurrentTrack = !trackId || currentId === trackId;
     if (isForCurrentTrack) {
       HideLoaderContainer();
-      // Every negative path empties the lyrics container before reaching here,
-      // which detaches the painted rows without telling the registry. Reset it
-      // so the highlight tick stops writing statuses into elements that are no
-      // longer in the page, and so a scroll in flight towards one is cancelled.
+      // Empty the container first: it detaches the painted rows without
+      // telling the registry. The reset below is what stops the highlight
+      // tick from writing statuses into elements no longer in the page, and
+      // cancels a scroll in flight towards one.
+      ClearLyricsPageContainer();
       clear();
       document
         .querySelector<HTMLElement>('#AmaiLyricsPage .ContentBox .LyricsContainer')
@@ -88,16 +88,10 @@ export async function noLyricsMessage(trackId?: string): Promise<NoLyricsResult>
       DeregisterNowBarBtn();
       // Show refresh button so user can try again
       showRefreshButton();
-      // NOTE: the NO_LYRICS sentinel is persisted by the publication seam
-      // (publishNoLyrics) so the negative result fires the same bus event as
-      // the positive one. This function owns the page-visible transitions and
-      // the registry reset that goes with them.
     }
   } catch (error) {
     console.error('Amai Lyrics: Error showing no lyrics message', error);
   }
-
-  return { status: 'NO_LYRICS', id: trackId };
 }
 
 /**

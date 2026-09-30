@@ -109,6 +109,18 @@ describe('LyricsRenderer seam', () => {
     expect(getAllRows()).toHaveLength(1);
   });
 
+  it('empties the container itself, so a re-render without a pre-clear never duplicates rows', () => {
+    renderLyrics(lineDocument());
+    renderLyrics(lineDocument());
+
+    // Regression: renderLyrics used to append without clearing, relying on a
+    // caller-side pre-clear — two renders duplicated every line and left the
+    // registry bound to the second copy.
+    expect(document.querySelectorAll('.main-lyrics-text.line')).toHaveLength(2);
+    expect(getAllRows()).toHaveLength(2);
+    expect(getPaintedLines()).toHaveLength(2);
+  });
+
   it('updates translations in place without replacing elements', () => {
     const doc = lineDocument();
     renderLyrics(doc);

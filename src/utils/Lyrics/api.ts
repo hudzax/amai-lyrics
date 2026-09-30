@@ -4,15 +4,22 @@
 
 import Platform from '../../components/Global/Platform';
 import { getLyrics, LyricsResult } from '../API/Lyrics';
-import { ClearLyricsPageContainer, noLyricsMessage, NoLyricsResult } from './ui';
+import { LyricsDocument, NoLyricsResult } from './conversion';
 import { processAndEnhanceLyrics } from './processing';
 import { LyricsRequestToken } from './publish';
-import { LyricsDocument } from './conversion';
 
 /**
- * Fetches lyrics from Spotify API and processes them
+ * Fetches lyrics from Spotify API and validates them.
+ *
+ * Owns ingest only: it returns the typed result and never touches the page —
+ * the pipeline's apply step owns publication and the page-visible transitions.
+ * A negative for a known track carries its `id` (a publishable verdict the
+ * pipeline persists); an error carries none (transitions only, nothing
+ * persisted).
  *
  * @param trackId - Spotify track ID
+ * @param flush - Force a fresh fetch, bypassing upstream caching
+ * @param token - Pipeline request token, forwarded to processing untouched
  * @returns Processed lyrics document or typed NO_LYRICS sentinel
  */
 export async function fetchLyricsFromAPI(
@@ -34,12 +41,12 @@ export async function fetchLyricsFromAPI(
 
     // Handle non-200 status codes
     if (status !== 200) {
-      return await handleErrorStatus(status);
+      return handleErrorStatus(status);
     }
 
     // Validate lyrics content
     if (!isValidLyricsResponse(lyricsJson)) {
-      return await noLyricsMessage(trackId);
+      return { status: 'NO_LYRICS', id: trackId };
     }
 
     // Currency lives with the pipeline token now: the skip decision is made
@@ -53,8 +60,9 @@ export async function fetchLyricsFromAPI(
       error instanceof Error ? { message: error.message, stack: error.stack } : error,
     );
 
-    ClearLyricsPageContainer();
-    return await noLyricsMessage();
+    // No `id`: an error is not an API verdict, so the sentinel must not be
+    // persisted — the next visit re-fetches instead of reading "no lyrics".
+    return { status: 'NO_LYRICS' };
   }
 }
 
@@ -62,16 +70,14 @@ export async function fetchLyricsFromAPI(
  * Handles API error status codes with improved status code handling
  *
  * @param status - HTTP status code
- * @returns Typed NO_LYRICS sentinel
+ * @returns Typed NO_LYRICS sentinel without an id — a failed request is not a
+ *   verdict on the track, so nothing is persisted
  */
-export async function handleErrorStatus(status: number): Promise<NoLyricsResult> {
-  // Clear any loading state
-  ClearLyricsPageContainer();
-
+export function handleErrorStatus(status: number): NoLyricsResult {
   // Log the error for diagnostics
   console.warn(`Lyrics API error: HTTP status ${status}`);
 
-  return await noLyricsMessage();
+  return { status: 'NO_LYRICS' };
 }
 
 /**

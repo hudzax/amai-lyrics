@@ -75,7 +75,11 @@ export function renderLyrics(lyrics: LyricsDocument): void {
 
   container.setAttribute('data-lyrics-type', lyrics.type);
 
-  // Clear previous content
+  // The paint is self-sufficient: empty the container first (callers never
+  // pre-clear), then reset the registry whose rows the empty just detached —
+  // otherwise the highlight tick keeps writing into elements no longer in the
+  // page.
+  container.replaceChildren();
   clear();
   ClearScrollSimplebar();
   TOP_ApplyLyricsSpacer(container);

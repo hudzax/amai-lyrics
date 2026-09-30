@@ -28,8 +28,7 @@ import {
 } from './publish';
 import { parseTrackId } from './trackId';
 
-import { LyricsDocument } from './conversion';
-import { NoLyricsResult } from './ui';
+import { LyricsDocument, NoLyricsResult } from './conversion';
 
 export type LyricsFetchResult = LyricsDocument | NoLyricsResult;
 
@@ -59,10 +58,12 @@ const inFlight = new Map<string, Promise<LyricsFetchResult>>();
 // ==============================
 
 /**
- * Turns a freshly loaded lyrics payload (from cache, localStorage, or an
- * explicit NO_LYRICS sentinel) into the app's UI + state transitions, then
- * returns it. Centralizes what the cache reads used to do inline so the cache
- * layer stays a pure read.
+ * The pipeline's single outcome step: every result — snapshot hit, cache hit,
+ * joined fetch, fresh fetch — crosses this once. Publishes the positive
+ * document or the negative sentinel (an id-less sentinel is an ephemeral
+ * failure and persists nothing), then runs the page-visible transitions, and
+ * returns the result. Producers stay pure: api, cache, and snapshot return
+ * typed outcomes and never touch the page.
  */
 async function applyLoadedLyrics(
   result: LyricsFetchResult,
@@ -71,9 +72,14 @@ async function applyLoadedLyrics(
   if (isNoLyricsResult(result)) {
     // The negative result crosses the same publication seam as the positive
     // one: sentinel + bus event first (the playbar overlay syncs off the bus
-    // event, not the snapshot), then the page-visible transitions.
+    // event, not the snapshot; publishNoLyrics gates on currency itself). The
+    // page-visible transitions then run only for the request that still owns
+    // the render — the same newer-request-wins rule the positive render guard
+    // applies at the composition — so a joined fetch runs them once, not once
+    // per waiter.
     if (result.id) publishNoLyrics(token, result.id);
-    return await noLyricsMessage(result.id);
+    if (isLatestLyricsRequest(token)) await noLyricsMessage(result.id);
+    return result;
   }
 
   // Single publication seam: currency check, domain state, snapshot,
@@ -101,7 +107,10 @@ export default async function fetchLyrics(
   requestRef: LyricsRequestRef = { token: null },
 ): Promise<LyricsFetchResult> {
   if (!uri || typeof uri !== 'string' || !uri.includes(':')) {
-    return await noLyricsMessage();
+    // Pre-request defensive exit: no token exists yet, so the transitions run
+    // ungated — nothing newer can have claimed the render.
+    await noLyricsMessage();
+    return { status: 'NO_LYRICS' };
   }
   // Stamp the request before the first await: any earlier request is stale
   // from here on, no matter where its continuations land.
@@ -119,7 +128,8 @@ export default async function fetchLyrics(
 
   const trackId = parseTrackId(uri);
   if (!trackId) {
-    return await noLyricsMessage();
+    await noLyricsMessage();
+    return { status: 'NO_LYRICS' };
   }
 
   const localLyrics = readSnapshot(trackId);
@@ -159,7 +169,10 @@ export default async function fetchLyrics(
     if (inFlight.get(trackId) === promise) inFlight.delete(trackId);
   });
   inFlight.set(trackId, promise);
-  return promise;
+  // The in-flight map holds the raw fetch so joiners can share it; this
+  // request still applies its own outcome — the fresh path gets no exemption
+  // from the one publication point.
+  return applyLoadedLyrics(await promise, token);
 }
 
 /**
@@ -176,7 +189,7 @@ export async function loadAndApplyLyrics(
 ): Promise<LyricsFetchResult> {
   let target = uri;
   let flush = opts.flush ?? false;
-  let last: LyricsFetchResult = await noLyricsMessage();
+  let last: LyricsFetchResult = { status: 'NO_LYRICS' };
   for (let attempt = 0; attempt < 2; attempt++) {
     const requestRef: LyricsRequestRef = { token: null };
     last = await fetchLyrics(target, flush, requestRef);

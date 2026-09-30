@@ -30,8 +30,7 @@
 import storage from '../storage';
 import Event from '../EventManager';
 import { stampDocument, toDocument } from './conversion';
-import type { LyricsDocument } from './conversion';
-import type { NoLyricsResult } from './ui';
+import type { LyricsDocument, NoLyricsResult } from './conversion';
 import type { TimedLine } from './findActiveIndex';
 
 const SNAPSHOT_KEY = 'currentLyricsData';

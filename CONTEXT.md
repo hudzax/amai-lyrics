@@ -53,11 +53,13 @@ Enhancement mutates those same line views in place, which is why the updater
 needs no payload handed to it. Callers reach all of this through
 `LyricsRenderer` alone: the `translationUpdater` and Static/Line Applyer
 adapters that used to sit over it had no src callers and were deleted.
-Container CSS vars (Global Applyer, settings font-size handlers), the loader
-clear path (ui.ClearLyricsPageContainer via fetch/publish), and click-to-seek
-attach (the registry's `attachClickToSeek`, reached from the Applyer) touch
-the same container outside row building. The clear this seam owns is the one it performs while rendering;
-closing the page empties the same registry from outside it.
+Container CSS vars (Global Applyer, settings font-size handlers), the
+request-open clear (ui.ClearLyricsPageContainer, crossed by the fetch entry),
+and click-to-seek attach (the registry's `attachClickToSeek`, reached from the
+Applyer) touch the same container outside row building. The clear this seam
+owns is the one renderLyrics performs while rendering — it empties the
+container itself, so callers never pre-clear; closing the page empties the
+same registry from outside it.
 
 ## LyricsRegistry
 
@@ -184,6 +186,13 @@ way to enhancement.
 decodes to null, so a stale cache or snapshot entry reads as a miss and
 re-fetches instead of rendering blank.
 
+The pipeline's other outcome — the typed `NO_LYRICS` sentinel — lives in the
+same module and travels the same roads. `id` presence is the persistence rule:
+a sentinel carrying the track id is the API's verdict, and `publishNoLyrics`
+keeps it in the snapshot so re-visits don't re-fetch; an id-less sentinel is an
+ephemeral failure — the page transitions run, nothing is persisted, and a
+transient outage never reads as "this track has no lyrics".
+
 ## LyricsPipeline
 
 The single place that turns a track change into painted lyrics: request
@@ -195,6 +204,15 @@ api, processing, publish, ui, or the Global Applyer directly.
 SongChangeManager is a thin caller that fans out to this seam plus artwork,
 buttons and the page's track metadata.
 
+- Every result — snapshot hit, cache hit, joined fetch, fresh fetch — crosses
+  `applyLoadedLyrics` once (fetchLyrics.ts): it publishes and runs the
+  page-visible transitions, then returns the outcome. The producers stay pure:
+  api, cache, and snapshot return typed outcomes and never touch the page —
+  api.ts validates the wire response and hands back a document or the typed
+  sentinel, importing neither `ui` nor any DOM path. A negative's transitions
+  run only for the request that still owns the render (isLatestLyricsRequest),
+  the same newer-request-wins rule the composition's render guard applies, so
+  a joined fetch runs them once, not once per waiter.
 - `invalidateLyrics({ all | trackId }, { reload })` is the invalidation entry:
   config changes (translation language, romaji, translations off, API key) and
   first startup say what is stale and whether to reload; eviction and
@@ -209,9 +227,9 @@ buttons and the page's track metadata.
   fires the same `lyrics:data-updated` notification as the positive path;
   the playbar overlay re-reads through LyricsSnapshot, so it clears instead
   of freezing on the previous track's line. ui.noLyricsMessage owns the
-  page-visible transitions, and with them the registry reset: every negative
-  path empties the container first, which detaches the painted rows without
-  telling the registry, so the highlight tick must not be left writing
+  page-visible transitions, and with them the registry reset: it empties the
+  container first, which detaches the painted rows without telling the
+  registry, then resets it, so the highlight tick is never left writing
   statuses into elements that are no longer in the page.
 
 ## LyricsSnapshot

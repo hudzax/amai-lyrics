@@ -13,7 +13,7 @@ vi.mock('../src/utils/Lyrics/ui', () => ({
   ShowLoaderContainer: vi.fn(),
   ShowProcessingIndicator: vi.fn(),
   EnsureProcessingIndicatorHidden: vi.fn(),
-  noLyricsMessage: vi.fn(async (id?: string) => ({ status: 'NO_LYRICS', id })),
+  noLyricsMessage: vi.fn(async () => undefined),
 }));
 vi.mock('../src/utils/Lyrics/LyricsRenderer', () => ({
   renderLyrics: vi.fn(),
@@ -134,7 +134,9 @@ describe('publishInitialLyrics', () => {
       expect.stringContaining('trackA'),
     );
     expect(HideLoaderContainer).toHaveBeenCalledTimes(1);
-    expect(ClearLyricsPageContainer).toHaveBeenCalledTimes(1);
+    // The container clear is not publication's business: the paint empties it
+    // as its own first act, and the negative transition does the same.
+    expect(ClearLyricsPageContainer).not.toHaveBeenCalled();
   });
 });
 
@@ -236,6 +238,36 @@ describe('loadAndApplyLyrics', () => {
 
     expect(result).toMatchObject({ status: 'NO_LYRICS' });
     expect(mockedApply).not.toHaveBeenCalled();
+  });
+
+  it('publishes a fresh API negative — sentinel and bus event fire without a joiner', async () => {
+    liveItem().uri = URI_A;
+    mockedApi.mockResolvedValue({ status: 'NO_LYRICS', id: 'trackA' } as never);
+
+    await loadAndApplyLyrics(URI_A);
+
+    // Regression: the fresh-fetch path used to return the raw API promise past
+    // the apply step, so a track the API rejects published nothing unless a
+    // second fetch happened to race and join it — the playbar overlay froze on
+    // the previous track's line.
+    const sentinel = JSON.stringify({ status: 'NO_LYRICS', id: 'trackA' });
+    expect(mockedStorage.set).toHaveBeenCalledWith('currentLyricsData', sentinel);
+    expect(mockedEvent.evoke).toHaveBeenCalledWith('lyrics:data-updated', sentinel);
+    expect(noLyricsMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it('persists nothing for an id-less sentinel — an error is not a verdict', async () => {
+    liveItem().uri = URI_A;
+    mockedApi.mockResolvedValue({ status: 'NO_LYRICS' } as never);
+
+    const result = await loadAndApplyLyrics(URI_A);
+
+    expect(result).toMatchObject({ status: 'NO_LYRICS' });
+    // The page-visible transitions still run; the snapshot does not record a
+    // transient failure as "this track has no lyrics".
+    expect(noLyricsMessage).toHaveBeenCalled();
+    expect(mockedStorage.set).not.toHaveBeenCalled();
+    expect(mockedEvent.evoke).not.toHaveBeenCalled();
   });
 
   it('retries once for the live track when the applyer declines a stale payload', async () => {
@@ -390,5 +422,9 @@ describe('in-flight dedupe', () => {
     expect(mockedStorage.set).toHaveBeenCalledWith('currentLyricsData', sentinel);
     expect(mockedEvent.evoke).toHaveBeenCalledWith('lyrics:data-updated', sentinel);
     expect(mockedEnhance).not.toHaveBeenCalled();
+    // The superseded originator's publication and transitions no-op; exactly
+    // one request owns the page and the snapshot write.
+    expect(mockedStorage.set).toHaveBeenCalledTimes(1);
+    expect(noLyricsMessage).toHaveBeenCalledTimes(1);
   });
 });

@@ -5,8 +5,7 @@ import { showRefreshButton } from '../../../components/Pages/pageButtons';
 import { attachClickToSeek } from '../registry';
 import { liveTrackId } from '../trackId';
 import settingsValues from '../../settingsValues';
-import { NoLyricsResult } from '../ui';
-import { LyricsDocument } from '../conversion';
+import { LyricsDocument, NoLyricsResult } from '../conversion';
 
 /**
  * Applies lyrics to the UI.

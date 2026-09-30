@@ -8,7 +8,7 @@ vi.mock('../src/utils/API/Lyrics', () => ({
 }));
 vi.mock('../src/utils/Lyrics/ui', () => ({
   ClearLyricsPageContainer: vi.fn(),
-  noLyricsMessage: vi.fn(async (id?: string) => ({ status: 'NO_LYRICS', id })),
+  noLyricsMessage: vi.fn(async () => undefined),
 }));
 vi.mock('../src/utils/Lyrics/processing', () => ({
   processAndEnhanceLyrics: vi.fn(async (_trackId: string, json: unknown) => ({
@@ -39,11 +39,13 @@ beforeEach(() => {
 });
 
 describe('handleErrorStatus', () => {
-  it('clears the container and returns the NO_LYRICS sentinel', async () => {
-    const result = await handleErrorStatus(500);
-    expect(result).toEqual({ status: 'NO_LYRICS', id: undefined });
-    expect(ClearLyricsPageContainer).toHaveBeenCalled();
-    expect(mockedNoLyrics).toHaveBeenCalled();
+  it('returns the id-less NO_LYRICS sentinel without touching the page', () => {
+    const result = handleErrorStatus(500);
+    expect(result).toEqual({ status: 'NO_LYRICS' });
+    // An error is not a verdict on the track: nothing to persist, nothing to
+    // clear — the pipeline's apply step owns both decisions.
+    expect(ClearLyricsPageContainer).not.toHaveBeenCalled();
+    expect(mockedNoLyrics).not.toHaveBeenCalled();
   });
 });
 
@@ -79,21 +81,22 @@ describe('fetchLyricsFromAPI', () => {
     expect(mockedEnhance).toHaveBeenCalled();
   });
 
-  it('returns no-lyrics for non-200 statuses', async () => {
+  it('returns no-lyrics for non-200 statuses without touching the page', async () => {
     mockedGetLyrics.mockResolvedValue({ response: {} as never, status: 404 });
     const result = await fetchLyricsFromAPI('track1', false, TOKEN);
-    expect(result).toEqual({ status: 'NO_LYRICS', id: undefined });
+    expect(result).toEqual({ status: 'NO_LYRICS' });
     expect(mockedEnhance).not.toHaveBeenCalled();
+    expect(ClearLyricsPageContainer).not.toHaveBeenCalled();
   });
 
-  it('returns no-lyrics when the response has no track id', async () => {
+  it('returns a publishable negative — id attached — when the response is invalid', async () => {
     mockedGetLyrics.mockResolvedValue({
       response: { Type: 'Line', Content: [] } as never,
       status: 200,
     });
-    await fetchLyricsFromAPI('track1', false, TOKEN);
+    const result = await fetchLyricsFromAPI('track1', false, TOKEN);
+    expect(result).toEqual({ status: 'NO_LYRICS', id: 'track1' });
     expect(mockedEnhance).not.toHaveBeenCalled();
-    expect(mockedNoLyrics).toHaveBeenCalledWith('track1');
   });
 
   it('returns no-lyrics for empty line content and empty static lines', async () => {
@@ -115,10 +118,11 @@ describe('fetchLyricsFromAPI', () => {
     expect(mockedEnhance).not.toHaveBeenCalled();
   });
 
-  it('returns no-lyrics and clears the container when the request throws', async () => {
+  it('returns an id-less sentinel without touching the page when the request throws', async () => {
     mockedGetLyrics.mockRejectedValue(new Error('network down'));
     const result = await fetchLyricsFromAPI('track1', false, TOKEN);
-    expect(result).toMatchObject({ status: 'NO_LYRICS' });
-    expect(ClearLyricsPageContainer).toHaveBeenCalled();
+    expect(result).toEqual({ status: 'NO_LYRICS' });
+    expect(ClearLyricsPageContainer).not.toHaveBeenCalled();
+    expect(mockedNoLyrics).not.toHaveBeenCalled();
   });
 });
