@@ -3,6 +3,7 @@ import { spotifyHex } from '../../utils/Hasher';
 import GetProgress, { syncPlaybackPosition } from '../../utils/Gets/GetProgress';
 
 type ArtworkSize = 's' | 'l' | 'xl' | 'd';
+type CoverImage = { size: string; file_id: string };
 
 /**
  * Bounded LRU cache for track metadata. Prevents unbounded growth during
@@ -68,7 +69,7 @@ export const SpotifyPlayer = {
       const spotifyHexString = spotifyHex(songId);
       return getOrFetchTrackData(spotifyHexString);
     },
-    SortImages: (images: { size: string; file_id: string }[]) => {
+    SortImages: (images: CoverImage[]) => {
       // Define size thresholds
       const sizeMap = {
         s: 'SMALL',
@@ -77,7 +78,7 @@ export const SpotifyPlayer = {
       };
 
       // Sort the images into categories based on their size
-      return images.reduce(
+      return images.reduce<Record<'s' | 'l' | 'xl', CoverImage[]>>(
         (acc, image) => {
           const { size } = image;
 
@@ -156,7 +157,7 @@ export const SpotifyPlayer = {
       // Split the artist string by commas and trim whitespace
       return Spicetify.Player.data.item.metadata.artist_name
         .split(',')
-        .map((artist) => artist.trim());
+        .map((artist: string) => artist.trim());
     }
     // Fall back to API call if metadata is not available
     const data = await SpotifyPlayer.Track.GetTrackInfo();

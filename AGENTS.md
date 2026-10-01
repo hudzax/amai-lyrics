@@ -16,9 +16,8 @@ npm run test:watch       # vitest (watch mode)
 npm run test:coverage    # vitest run --coverage (v8, → coverage/)
 npm run lint             # eslint .  (ignores dist/, builds/, previews/, coverage/)
 npm run lint:fix         # eslint . --fix
-npm run typecheck        # tsc --noEmit
-npm run typecheck:strict # tsc --noEmit -p tsconfig.strict.json (stricter, currently advisory)
-npm run postinstall      # patches Scheduler.ts DOM types (auto on install/prepare)
+npm run typecheck        # tsc --noEmit (strict — must stay at zero errors)
+npm run postinstall      # patches @hudzax/web-modules .ts sources (auto on install/prepare)
 ```
 
 Single test / focused run:
@@ -29,7 +28,7 @@ npx vitest run src/components/PlaybarLyrics/PlaybarLyrics.test.ts  # colocated e
 npx vitest run -t "name substring"                                     # by test name
 ```
 
-Verify before commit: `npm run lint && npm run typecheck && npm test` — no CI workflow exists; these scripts are the only checks. `typecheck:strict` is **not** part of the gate (it currently reports ~33 errors); don't fail your own work on it, and don't "fix" it opportunistically.
+Verify before commit: `npm run lint && npm run typecheck && npm test` — no CI workflow exists; these scripts are the only checks. `typecheck` runs with `strict: true` and must stay at zero errors — fix new errors properly instead of silencing them with `any`/`as any`.
 
 ## Definition of Done
 
@@ -82,16 +81,17 @@ src/css/ + src/types/ (global.d.ts, spicetify.d.ts)
 ## Testing
 
 - Runner: Vitest with `jsdom`, `globals: true`, `include: src/**/*.{test,spec}.{ts,tsx} + tests/**/*.{test,spec}.{ts,tsx}`, `setupFiles: tests/setup.ts` (`vitest.config.mjs`).
+- The root `tests/` directory is inside `tsconfig.json`'s include, so tests are strict-typechecked by `npm run typecheck` too. Import vitest APIs explicitly (`import { describe, it, expect, vi } from 'vitest'`) — bare globals are fine at runtime (`globals: true`) but won't typecheck.
 - Coverage provider `v8`, includes `src/utils/**` + `src/components/**` + `src/managers/**` + `src/constants/**` (excludes `**/*.d.ts`, `src/types/**`, `src/edited_packages/**`).
-- Naming: `tests/*.test.ts` (52 files: conversion, hasher, isRtl, processingUtils, sanitize, lifecycle, intervalManager, lyricsPipeline, translation-sync, lineHighlight, pagePresence, … — note there is no plain `processing.test.ts`). Colocated `src/**/*.{test,spec}.*` are picked up too (9 today: `PlaybarLyrics`, `NowBar`, `Fullscreen`, `AutoScroll`, and five under `DynamicBG/` — `AppBackground`, `AppBackgroundGl`, `GlAppBackground`, `ArtworkSurfaces`, `identity`). 61 files / 496 tests as of the last green run.
+- Naming: `tests/*.test.ts` (55 files: conversion, hasher, isRtl, processingUtils, sanitize, lifecycle, intervalManager, lyricsPipeline, translation-sync, lineHighlight, pagePresence, … — note there is no plain `processing.test.ts`). Colocated `src/**/*.{test,spec}.*` are picked up too (9 today: `PlaybarLyrics`, `NowBar`, `Fullscreen`, `AutoScroll`, and five under `DynamicBG/` — `AppBackground`, `AppBackgroundGl`, `GlAppBackground`, `ArtworkSurfaces`, `identity`). 64 files / 520 tests as of the last green run.
 
 ## TypeScript / Lint / Format
 
-- `tsconfig.json`: `target ES2020`, `jsx: react`, `module: commonjs`, `strict: false`, `skipLibCheck: true`, `ignoreDeprecations: "6.0"`. Don't enable `strict` — `tsconfig.strict.json` is advisory and has ~33 real errors waiting.
+- `tsconfig.json`: `target ES2020`, `jsx: react`, `module: commonjs`, `strict: true` (plus `noImplicitReturns`, `noFallthroughCasesInSwitch`; `strictPropertyInitialization` deliberately `false`), `skipLibCheck: true`, `ignoreDeprecations: "6.0"`. Don't downgrade `strict` or loosen the config to make an error go away.
 - `eslint.config.mjs`: `typescript-eslint` recommended + `eslint-plugin-prettier/recommended`; `**/*.d.ts` disables `no-explicit-any`/`no-duplicate-enum-values` (intentional for Spicetify ambient types).
-- **`// SAFETY:` comments are a required convention**, not noise. Because `strict: false` forces `as` casts and non-null assertions throughout, every intentional type/unsafe-HTML suppression is justified with a `// SAFETY: <reason>` line (~18 across 10 files). Match it when you add a cast; don't strip existing ones.
+- **`// SAFETY:` comments are a required convention**, not noise. Legacy casts and non-null assertions remain throughout (and Spicetify's ambient types include `any`), so every intentional type/unsafe-HTML suppression is justified with a `// SAFETY: <reason>` line. Match it when you add a cast; don't strip existing ones.
 - Prettier: `tabWidth 2, singleQuote, semi, trailingComma all, printWidth 100, arrowParens always, endOfLine lf`. Prettier runs as an ESLint rule, so `npm run lint:fix` is the formatter.
-- `postinstall` patches `node_modules/@hudzax/web-modules/Scheduler.ts` (`setTimeout`/`setInterval` → `window.setTimeout`/`window.setInterval`) for DOM lib mismatch. If types break after `npm install`, re-run `npm run postinstall`; don't patch upstream source by hand.
+- `postinstall` patches `node_modules/@hudzax/web-modules` in place: `Scheduler.ts` (`setTimeout`/`setInterval` → `window.setTimeout`/`window.setInterval`) for DOM lib mismatch, and `FreeArray.ts` (adds an explicit `return undefined;` in `Remove`) for `noImplicitReturns`. The package ships `.ts` sources, so both files are part of the typecheck program. If types break after `npm install`, re-run `npm run postinstall`; don't patch upstream source by hand.
 
 ## Gotchas
 

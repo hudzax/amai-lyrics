@@ -56,7 +56,7 @@ export class AppInitializer {
           bg.classList.add(APP_BG_LOADED_CLASS);
         });
       };
-      if (window.requestIdleCallback) {
+      if (typeof window.requestIdleCallback === 'function') {
         requestIdleCallback(markLoaded, { timeout: 2000 });
       } else {
         setTimeout(markLoaded, 1000);

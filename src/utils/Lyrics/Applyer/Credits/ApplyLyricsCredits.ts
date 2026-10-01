@@ -1,6 +1,7 @@
 export function ApplyLyricsCredits(data: { songWriters?: string[] }) {
   const LyricsContainer = document.querySelector('#AmaiLyricsPage .LyricsContainer .LyricsContent');
-  if (!data?.songWriters) return;
+  // Missing page container means nothing to append into — skip rather than crash.
+  if (!data?.songWriters || !LyricsContainer) return;
   const CreditsElement = document.createElement('div');
   CreditsElement.classList.add('Credits');
 

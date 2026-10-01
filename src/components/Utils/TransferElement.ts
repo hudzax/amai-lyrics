@@ -1,4 +1,8 @@
-export default function TransferElement(element, targetContainer, index = -1) {
+export default function TransferElement(
+  element: HTMLElement | null,
+  targetContainer: HTMLElement | null,
+  index = -1,
+) {
   if (!element || !targetContainer) {
     console.error('Both element and target container must be provided.');
     return;

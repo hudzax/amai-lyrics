@@ -53,7 +53,9 @@ export function decorateLineElement(
   if (hasDistinctTranslation) {
     const translationElem = document.createElement('div');
     translationElem.classList.add('translation');
-    translationElem.textContent = line.translation;
+    // Unreachable with an undefined translation (the distinctness check above
+    // requires one); nullish-coalesce satisfies the `string | null` DOM type.
+    translationElem.textContent = line.translation ?? null;
     mainTextContainer.appendChild(translationElem);
   }
 

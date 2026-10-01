@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { Mock } from 'vitest';
 import lifecycle from '../src/utils/lifecycle';
 import { installHoverTooltips } from '../src/utils/hoverTooltip';
 
@@ -32,12 +33,16 @@ import { installHoverTooltips } from '../src/utils/hoverTooltip';
  * wiring, so suppression and replacement are exercised through one interface.
  */
 
+// Mock<() => void> (not the broad ReturnType<typeof vi.fn>) so the fake is
+// assignable to HoverTippyInstance and its mocks are directly callable.
+type VoidMock = Mock<() => void>;
+
 interface FakeTippyInstance {
-  show: ReturnType<typeof vi.fn>;
-  hide: ReturnType<typeof vi.fn>;
-  destroy: ReturnType<typeof vi.fn>;
-  setContent: ReturnType<typeof vi.fn>;
-  onHide: ReturnType<typeof vi.fn>;
+  show: VoidMock;
+  hide: VoidMock;
+  destroy: VoidMock;
+  setContent: VoidMock;
+  onHide: VoidMock;
 }
 
 const el = (id: string): HTMLElement => document.getElementById(id) as HTMLElement;
@@ -145,13 +150,13 @@ beforeEach(() => {
       if (typeof callback === 'function') (callback as () => void)();
     });
     const instance: FakeTippyInstance = {
-      show: vi.fn(),
+      show: vi.fn(() => {}),
       // Real Tippy invokes onHide whenever hide() starts.
       hide: vi.fn(() => {
         onHide();
       }),
-      destroy: vi.fn(),
-      setContent: vi.fn(),
+      destroy: vi.fn(() => {}),
+      setContent: vi.fn(() => {}),
       onHide,
     };
     // Real Tippy stamps the back-reference onto the trigger element; the

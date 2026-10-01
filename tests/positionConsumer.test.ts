@@ -14,7 +14,7 @@ vi.mock('../src/utils/IntervalManager', () => ({
   },
 }));
 
-const mockGetPositionFor = vi.fn((surface: string) => (surface === 'playbar' ? 1000 : 500));
+const mockGetPositionFor = vi.fn((surface: string): number => (surface === 'playbar' ? 1000 : 500));
 const mockRequestTracking = vi.fn(() => vi.fn());
 const mockResolveIsPlaying = vi.fn(() => true);
 
@@ -125,7 +125,10 @@ describe('registerPositionConsumer', () => {
     tick();
 
     expect(seen).not.toBeNull();
-    expect((seen as { onLyricsPage: boolean }).onLyricsPage).toBe(true);
+    // TS can't see the callback assignment above, so `seen` stays narrowed to
+    // null here; the cast restores the declared type for the optional chain.
+    const tickCtx = seen as { onLyricsPage: boolean } | null;
+    expect(tickCtx?.onLyricsPage).toBe(true);
   });
 
   it('acquires tracking only while enabled and wanted, and releases otherwise', () => {

@@ -2,7 +2,7 @@
 declare global {
   interface Window {
     _spicy_lyrics_metadata?: unknown;
-    _spicy_lyrics?: unknown;
+    _spicy_lyrics?: Record<string, unknown>;
     _spicy_lyrics_session?: unknown;
     ProcessingIndicatorTimeout?: NodeJS.Timeout | null;
   }

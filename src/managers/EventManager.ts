@@ -65,7 +65,9 @@ export class EventManager {
   }
 
   // Stored handler references so they can be removed on teardown.
-  private static onPlayPause = (e: { data?: { isPaused?: boolean } }) => {
+  // The payload shape is parsed defensively in resolveIsPaused (see below),
+  // so the listener itself takes `unknown` to match the tracking seam.
+  private static onPlayPause = (e: unknown) => {
     const isPaused = EventManager.resolveIsPaused(e);
     SpotifyPlayer.IsPlaying = !isPaused;
     // Resuming after a pause: the position anchor was frozen during the pause, so

@@ -159,10 +159,11 @@ function enter(): void {
   page.classList.add('Fullscreen');
   publish();
 
-  // Request fullscreen first, then set up UI elements after transition
+  // Request fullscreen first, then set up UI elements after transition.
+  // `page` was located and moved to document.body above — it is the same node
+  // the old re-query used to find.
   if (!document.fullscreenElement) {
-    document
-      .querySelector<HTMLElement>(PAGE_SELECTOR)
+    page
       .requestFullscreen()
       .then(() => {
         setupFullscreenUI();
@@ -180,7 +181,7 @@ function enter(): void {
 
   // Function to set up UI elements after fullscreen transition
   function setupFullscreenUI() {
-    if (!isPageFullscreen() || !page.isConnected) return;
+    if (!isPageFullscreen() || !page?.isConnected) return;
     // Ensure controls are properly added
     PageView.AppendViewControls();
 

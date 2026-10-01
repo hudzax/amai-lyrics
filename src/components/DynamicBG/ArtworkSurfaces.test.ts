@@ -28,7 +28,7 @@ interface SurfaceCalls {
 
 function setupFakes(firstUrl: string | undefined = 'live-cover') {
   const calls: SurfaceCalls = { sidebar: [], appFrame: [], page: 0, accents: [] };
-  let currentUrl = firstUrl;
+  let currentUrl: string | undefined = firstUrl;
   const adapters: ArtworkSurfaceAdapters = {
     applySidebar: vi.fn((coverUrl: string | undefined) => {
       calls.sidebar.push(coverUrl);

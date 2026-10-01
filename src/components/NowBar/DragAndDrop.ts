@@ -13,7 +13,9 @@ export function setupDragAndDrop(root: HTMLElement, fullscreen: boolean): () => 
   let dragStartTimer: number | null = null;
   let destroyed = false;
 
-  function clearDragState(): void {
+  // Arrow (not a hoisted function declaration) so the `page`/`dragBox` null
+  // guards above flow into this closure; every call site is after this point.
+  const clearDragState = (): void => {
     if (dragStartTimer !== null) {
       window.clearTimeout(dragStartTimer);
       dragStartTimer = null;
@@ -21,7 +23,7 @@ export function setupDragAndDrop(root: HTMLElement, fullscreen: boolean): () => 
     page.classList.remove('SomethingDragging');
     dragBox.classList.remove('Dragging');
     dropZones.forEach((zone) => zone.classList.remove('Hidden', 'DraggingOver'));
-  }
+  };
 
   function listen(target: Element, type: string, handler: EventListener): void {
     target.addEventListener(type, handler);

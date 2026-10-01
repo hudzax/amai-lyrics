@@ -56,7 +56,7 @@ class SettingsSection {
         this.render();
       }
     });
-    lifecycle.trackHistory(this.stopHistoryListener);
+    lifecycle.trackHistory(this.stopHistoryListener ?? undefined);
 
     if (Spicetify.Platform.History.location.pathname === '/preferences') {
       await this.render();
@@ -277,7 +277,8 @@ class SettingsSection {
                 }}
                 type="button"
               >
-                {value}
+                {/* SAFETY: button fields render the static label string from addButton. */}
+                {value as string}
               </button>
             </span>
           ) : props.field.type === 'toggle' ? (

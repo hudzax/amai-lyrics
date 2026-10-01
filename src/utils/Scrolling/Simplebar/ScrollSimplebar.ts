@@ -7,7 +7,7 @@ import {
   SetIsMouseInLyricsPage,
 } from '../Page/IsHovering';
 
-export let ScrollSimplebar: SimpleBar;
+export let ScrollSimplebar: SimpleBar | null = null;
 let isDragging = false;
 
 const ElementEventQuery = '#AmaiLyricsPage .ContentBox .LyricsContainer';

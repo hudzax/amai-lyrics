@@ -109,7 +109,7 @@ export async function fetchGeminiTranslations(
     });
 
     try {
-      const translations = JSON.parse(response.text.replace(/\\n/g, ''));
+      const translations = JSON.parse((response.text ?? '').replace(/\\n/g, ''));
       return translations.lines || lyricsOnly.map(() => '');
     } catch (parseError) {
       console.error('Amai Lyrics: Error parsing translation response', parseError);
@@ -149,7 +149,9 @@ export async function fetchGeminiPhonetic(
       model: AI_MODELS.PHONETIC,
       contents: `${prompt} Here are the lyrics:\n${JSON.stringify(lyricsOnly)}`,
     });
-    return response.text;
+    // An absent text is parse-invalid downstream (JSON.parse('') throws into
+    // the same retry/catch path a thrown TypeError used to take).
+    return response.text ?? '';
   };
 
   let retries = 2;

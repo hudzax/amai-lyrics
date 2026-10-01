@@ -9,7 +9,7 @@ const Global = {
   NonLocalTimeOffset: 340,
   SetScope: (key: string, value: unknown) => {
     const keys = key.split('.'); // Split the key into individual parts
-    let current = SCOPE_ROOT; // Start at the root object
+    let current: Record<string, unknown> = SCOPE_ROOT; // Start at the root object
 
     for (let i = 0; i < keys.length; i++) {
       const part = keys[i];
@@ -31,7 +31,8 @@ const Global = {
         }
 
         // Traverse deeper into the object
-        current = current[part];
+        // SAFETY: the checks above guarantee current[part] is a non-null, non-array object
+        current = current[part] as Record<string, unknown>;
       }
     }
   },

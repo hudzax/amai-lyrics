@@ -310,11 +310,12 @@ if (typeof document !== 'undefined') ensureVisibilityHandler();
 const syncedPosition = state.syncedPosition;
 
 async function getLocalPosition(startedAt: number, SpotifyPlatform: SpotifyPlatformType) {
-  const getPositionState = SpotifyPlatform.PlayerAPI?._contextPlayer?.getPositionState;
+  const contextPlayer = SpotifyPlatform.PlayerAPI?._contextPlayer;
+  const getPositionState = contextPlayer?.getPositionState;
   if (typeof getPositionState !== 'function') {
     throw new Error('getPositionState unavailable');
   }
-  const { position } = await getPositionState.call(SpotifyPlatform.PlayerAPI._contextPlayer, {});
+  const { position } = await getPositionState.call(contextPlayer, {});
   const n = Number(position);
   if (!Number.isFinite(n)) throw new Error('invalid position from getPositionState');
   return {
