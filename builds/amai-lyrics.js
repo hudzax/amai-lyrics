@@ -5984,6 +5984,18 @@
           this.settingsFields = this.initialSettingsFields;
           this.stopHistoryListener = null;
           this.setRerender = null;
+          this.setFieldsVisible = (nameIds, visible) => {
+            let changed = false;
+            for (const nameId of nameIds) {
+              const field = this.settingsFields[nameId];
+              if (field && field.visible !== visible) {
+                field.visible = visible;
+                changed = true;
+              }
+            }
+            if (changed)
+              this.rerender();
+          };
           this.pushSettings = async () => {
             Object.entries(this.settingsFields).forEach(([nameId, field]) => {
               if (field.type !== "button" && this.getFieldValue(nameId) === void 0) {
@@ -6107,7 +6119,10 @@
             }, /* @__PURE__ */ import_react.default.createElement("h2", {
               className: "amai-settings-header"
             }, this.name), Object.entries(this.settingsFields).map(([nameId, field]) => {
+              if (field.visible === false)
+                return null;
               return /* @__PURE__ */ import_react.default.createElement(this.Field, {
+                key: nameId,
                 nameId,
                 field
               });
@@ -6238,6 +6253,10 @@
         DEFAULT_LYRICS_SIZE: "default_lyrics_size",
         ENABLE_PLAYBAR_LYRICS: "enable_playbar_lyrics",
         ENABLE_APP_BACKGROUND: "enable_app_background",
+        BG_INTENSITY: "background_intensity",
+        BG_MOTION: "background_motion",
+        ACCENT_COLOR_MODE: "accent_color_mode",
+        CUSTOM_ACCENT_COLOR: "custom_accent_color",
         CURRENT_LYRICS_DATA: "currentLyricsData"
       };
       storage_default = {
@@ -6289,7 +6308,11 @@
         translationFontSize: textCodec(StorageKeys.TRANSLATION_FONT_SIZE, "0.575"),
         defaultLyricsSize: textCodec(StorageKeys.DEFAULT_LYRICS_SIZE),
         enablePlaybarLyrics: booleanCodec(StorageKeys.ENABLE_PLAYBAR_LYRICS, true),
-        enableAppBackground: booleanCodec(StorageKeys.ENABLE_APP_BACKGROUND, false)
+        enableAppBackground: booleanCodec(StorageKeys.ENABLE_APP_BACKGROUND, false),
+        backgroundIntensity: textCodec(StorageKeys.BG_INTENSITY, "normal"),
+        backgroundMotion: textCodec(StorageKeys.BG_MOTION, "normal"),
+        accentColorMode: textCodec(StorageKeys.ACCENT_COLOR_MODE, "auto"),
+        customAccentColor: textCodec(StorageKeys.CUSTOM_ACCENT_COLOR, "")
       };
       settingsValues_default = { get: get2, set: set2 };
     }
@@ -9159,15 +9182,15 @@
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef111214e/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d580d8e/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef111214e/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d580d8e/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef111218f/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d580def/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef111218f/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d580def/ProcessingIndicator.css"() {
     }
   });
 
@@ -9304,6 +9327,7 @@
     APP_BG_LIB_GRID_CLASS: () => APP_BG_LIB_GRID_CLASS,
     APP_BG_LOADED_CLASS: () => APP_BG_LOADED_CLASS,
     APP_BG_ON_CLASS: () => APP_BG_ON_CLASS,
+    BG_MOTION_OFF_CLASS: () => BG_MOTION_OFF_CLASS,
     NESTED_BG_IMG_A_ID: () => NESTED_BG_IMG_A_ID,
     NESTED_BG_IMG_B_ID: () => NESTED_BG_IMG_B_ID,
     createAppBgContainer: () => createAppBgContainer,
@@ -9325,7 +9349,7 @@
       return;
     navBar.classList.toggle(APP_BG_LIB_GRID_CLASS, !!navBar.querySelector("[data-encore-id='card']"));
   }
-  var APP_BG_ON_CLASS, APP_BG_HOST_CLASS, APP_BG_CLASS, APP_BG_CONTAINER_CLASS, APP_BG_HOST_HELPER_CLASS, APP_BG_LOADED_CLASS, APP_BG_IMG_A_ID, APP_BG_IMG_B_ID, NESTED_BG_IMG_A_ID, NESTED_BG_IMG_B_ID, APP_BG_LIB_GRID_CLASS, APP_BG_GPU_CLASS;
+  var APP_BG_ON_CLASS, APP_BG_HOST_CLASS, APP_BG_CLASS, APP_BG_CONTAINER_CLASS, APP_BG_HOST_HELPER_CLASS, APP_BG_LOADED_CLASS, APP_BG_IMG_A_ID, APP_BG_IMG_B_ID, NESTED_BG_IMG_A_ID, NESTED_BG_IMG_B_ID, APP_BG_LIB_GRID_CLASS, APP_BG_GPU_CLASS, BG_MOTION_OFF_CLASS;
   var init_identity = __esm({
     "src/components/DynamicBG/identity.ts"() {
       APP_BG_ON_CLASS = "amai-app-bg-on";
@@ -9340,6 +9364,7 @@
       NESTED_BG_IMG_B_ID = "bg-img-b";
       APP_BG_LIB_GRID_CLASS = "amai-lib-grid";
       APP_BG_GPU_CLASS = "amai-bg-gpu";
+      BG_MOTION_OFF_CLASS = "amai-bg-motion-off";
     }
   });
 
@@ -9507,7 +9532,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.6.6";
+      version = "1.6.7";
     }
   });
 
@@ -11311,6 +11336,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       const isForCurrentTrack = !trackId || currentId === trackId;
       if (isForCurrentTrack) {
         HideLoaderContainer();
+        ClearLyricsPageContainer();
         clear();
         document.querySelector("#AmaiLyricsPage .ContentBox .LyricsContainer")?.classList.add("Hidden");
         document.querySelector("#AmaiLyricsPage .ContentBox")?.classList.add("LyricsHidden");
@@ -11321,7 +11347,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     } catch (error) {
       console.error("Amai Lyrics: Error showing no lyrics message", error);
     }
-    return { status: "NO_LYRICS", id: trackId };
   }
   function ShowLoaderContainer() {
     const loaderContainer = document.querySelector(
@@ -11848,6 +11873,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (!container)
       return;
     container.setAttribute("data-lyrics-type", lyrics.type);
+    container.replaceChildren();
     clear();
     ClearScrollSimplebar();
     TOP_ApplyLyricsSpacer(container);
@@ -12076,7 +12102,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const serialized = writeSnapshot(document2);
     EventManager_default.evoke("lyrics:data-updated", serialized);
     HideLoaderContainer();
-    ClearLyricsPageContainer();
     return true;
   }
   function publishEnhancedLyrics(token, trackId, document2) {
@@ -34778,7 +34803,6 @@ ${JSON.stringify(lyricsOnly)}`
     const { document: prepared, lyricsOnly } = prepareLyricsForGemini(document2);
     const { hasKanji, hasKorean } = detectLanguages(prepared);
     await cacheLyrics(trackId, prepared);
-    publishInitialLyrics(token, prepared);
     if (isCurrentLyricsRequest(token)) {
       void processLyricsEnhancementsAsync(token, trackId, prepared, hasKanji, hasKorean, lyricsOnly);
     }
@@ -34865,10 +34889,10 @@ ${JSON.stringify(lyricsOnly)}`
         flush
       );
       if (status !== 200) {
-        return await handleErrorStatus(status);
+        return handleErrorStatus(status);
       }
       if (!isValidLyricsResponse(lyricsJson)) {
-        return await noLyricsMessage(trackId);
+        return { status: "NO_LYRICS", id: trackId };
       }
       return await processAndEnhanceLyrics(trackId, lyricsJson, token);
     } catch (error) {
@@ -34876,14 +34900,12 @@ ${JSON.stringify(lyricsOnly)}`
         "Error fetching lyrics:",
         error instanceof Error ? { message: error.message, stack: error.stack } : error
       );
-      ClearLyricsPageContainer();
-      return await noLyricsMessage();
+      return { status: "NO_LYRICS" };
     }
   }
-  async function handleErrorStatus(status) {
-    ClearLyricsPageContainer();
+  function handleErrorStatus(status) {
     console.warn(`Lyrics API error: HTTP status ${status}`);
-    return await noLyricsMessage();
+    return { status: "NO_LYRICS" };
   }
   function isValidLyricsResponse(lyricsJson) {
     if (lyricsJson === null || lyricsJson === void 0) {
@@ -34913,7 +34935,6 @@ ${JSON.stringify(lyricsOnly)}`
     "src/utils/Lyrics/api.ts"() {
       init_Platform();
       init_Lyrics();
-      init_ui();
       init_processing();
     }
   });
@@ -34979,14 +35000,17 @@ ${JSON.stringify(lyricsOnly)}`
     if (isNoLyricsResult(result)) {
       if (result.id)
         publishNoLyrics(token, result.id);
-      return await noLyricsMessage(result.id);
+      if (isLatestLyricsRequest(token))
+        await noLyricsMessage(result.id);
+      return result;
     }
     publishInitialLyrics(token, result);
     return result;
   }
   async function fetchLyrics(uri, flush = false, requestRef = { token: null }) {
     if (!uri || typeof uri !== "string" || !uri.includes(":")) {
-      return await noLyricsMessage();
+      await noLyricsMessage();
+      return { status: "NO_LYRICS" };
     }
     const token = beginLyricsRequest(uri);
     requestRef.token = token;
@@ -34996,7 +35020,8 @@ ${JSON.stringify(lyricsOnly)}`
     document.querySelector("#AmaiLyricsPage .ContentBox")?.classList.remove("LyricsHidden");
     const trackId = parseTrackId(uri);
     if (!trackId) {
-      return await noLyricsMessage();
+      await noLyricsMessage();
+      return { status: "NO_LYRICS" };
     }
     const localLyrics = readSnapshot(trackId);
     if (localLyrics)
@@ -35020,12 +35045,12 @@ ${JSON.stringify(lyricsOnly)}`
         inFlight.delete(trackId);
     });
     inFlight.set(trackId, promise);
-    return promise;
+    return applyLoadedLyrics(await promise, token);
   }
   async function loadAndApplyLyrics(uri, opts = {}) {
     let target = uri;
     let flush = opts.flush ?? false;
-    let last = await noLyricsMessage();
+    let last = { status: "NO_LYRICS" };
     for (let attempt = 0; attempt < 2; attempt++) {
       const requestRef = { token: null };
       last = await fetchLyrics(target, flush, requestRef);
@@ -35077,6 +35102,345 @@ ${JSON.stringify(lyricsOnly)}`
       init_publish();
       init_trackId();
       inFlight = /* @__PURE__ */ new Map();
+    }
+  });
+
+  // src/utils/ThemeSettings.ts
+  function readIntensity() {
+    const raw = settingsValues_default.get("backgroundIntensity");
+    return raw === "subtle" || raw === "intense" ? raw : "normal";
+  }
+  function readMotion() {
+    const raw = settingsValues_default.get("backgroundMotion");
+    return raw === "off" || raw === "slow" || raw === "fast" ? raw : "normal";
+  }
+  function applyThemeSettings() {
+    const intensity = INTENSITY_PRESETS[readIntensity()];
+    const motion = readMotion();
+    const root2 = document.documentElement.style;
+    root2.setProperty("--amai-bg-blur-scale", String(intensity.blur));
+    root2.setProperty("--amai-bg-saturation-scale", String(intensity.saturation));
+    root2.setProperty("--amai-bg-brightness-scale", String(intensity.brightness));
+    root2.setProperty(
+      "--amai-bg-motion-scale",
+      String(motion === "off" ? 1 : MOTION_DURATION_SCALES[motion])
+    );
+    document.documentElement.classList.toggle(BG_MOTION_OFF_CLASS, motion === "off");
+  }
+  function getGlIntensity() {
+    return GL_INTENSITY_PRESETS[readIntensity()];
+  }
+  function getGlMotionSpeed() {
+    return GL_MOTION_SPEEDS[readMotion()];
+  }
+  var INTENSITY_PRESETS, GL_INTENSITY_PRESETS, MOTION_DURATION_SCALES, GL_MOTION_SPEEDS;
+  var init_ThemeSettings = __esm({
+    "src/utils/ThemeSettings.ts"() {
+      init_settingsValues();
+      init_identity();
+      INTENSITY_PRESETS = {
+        subtle: { blur: 1.35, saturation: 0.55, brightness: 0.75 },
+        normal: { blur: 1, saturation: 1, brightness: 1 },
+        intense: { blur: 0.7, saturation: 1.3, brightness: 1.35 }
+      };
+      GL_INTENSITY_PRESETS = {
+        subtle: { vibrance: 0.8, dim: 0.8 },
+        normal: { vibrance: 1, dim: 1 },
+        intense: { vibrance: 1.15, dim: 1.1 }
+      };
+      MOTION_DURATION_SCALES = {
+        slow: 1.75,
+        normal: 1,
+        fast: 0.5
+      };
+      GL_MOTION_SPEEDS = {
+        off: 0,
+        slow: 0.55,
+        normal: 1,
+        fast: 2
+      };
+    }
+  });
+
+  // src/utils/ArtworkColors.ts
+  var ArtworkColors_exports = {};
+  __export(ArtworkColors_exports, {
+    applyArtworkAccents: () => applyArtworkAccents,
+    default: () => ArtworkColors_default,
+    deriveAccentPalette: () => deriveAccentPalette,
+    extractArtworkColors: () => extractArtworkColors,
+    hexLuminance: () => hexLuminance,
+    hexToRgb: () => hexToRgb,
+    isHexColor: () => isHexColor,
+    liftToLuminance: () => liftToLuminance,
+    publishArtworkAccents: () => publishArtworkAccents,
+    refreshAccents: () => refreshAccents
+  });
+  function rgbToHex({ r, g, b }) {
+    const toHex = (c) => Math.round(c).toString(16).padStart(2, "0");
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  }
+  function quantize(value, bits) {
+    return value >> 8 - bits << 8 - bits;
+  }
+  function luminance({ r, g, b }) {
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+  function saturation({ r, g, b }) {
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    if (max === 0)
+      return 0;
+    return (max - min) / max * 255;
+  }
+  function bucketKey({ r, g, b }) {
+    return `${r},${g},${b}`;
+  }
+  function quantizePixels(data, width, height, loose) {
+    const bucketMap = /* @__PURE__ */ new Map();
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const idx = (y * width + x) * 4;
+        const r = data[idx];
+        const g = data[idx + 1];
+        const b = data[idx + 2];
+        const a = data[idx + 3];
+        if (a < 128)
+          continue;
+        const rgb = { r, g, b };
+        const lum = luminance(rgb);
+        if (loose) {
+          if (lum < 15 || lum > 245)
+            continue;
+        } else {
+          const sat = saturation(rgb);
+          if (lum < MIN_LIGHTNESS || lum > MAX_LIGHTNESS || sat < MIN_SATURATION) {
+            continue;
+          }
+        }
+        const q = {
+          r: quantize(r, QUANTIZE_BITS),
+          g: quantize(g, QUANTIZE_BITS),
+          b: quantize(b, QUANTIZE_BITS)
+        };
+        const key = bucketKey(q);
+        const entry = bucketMap.get(key);
+        if (entry) {
+          entry.count++;
+        } else {
+          bucketMap.set(key, { rgb: q, count: 1 });
+        }
+      }
+    }
+    return [...bucketMap.entries()].sort((a, b) => b[1].count - a[1].count).slice(0, RESULT_COUNT).map(([, entry]) => rgbToHex(entry.rgb));
+  }
+  function readBitmapPixels(bitmap) {
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx)
+      return null;
+    ctx.drawImage(bitmap, 0, 0);
+    try {
+      const imageData = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
+      return { data: imageData.data, width: bitmap.width, height: bitmap.height };
+    } catch {
+      return null;
+    }
+  }
+  async function extractArtworkColors(imageUrl) {
+    const cached = artworkColorCache.get(imageUrl);
+    if (cached) {
+      artworkColorCache.delete(imageUrl);
+      artworkColorCache.set(imageUrl, cached);
+      return cached;
+    }
+    const pending = artworkColorPromiseCache.get(imageUrl);
+    if (pending)
+      return pending;
+    const promise = (async () => {
+      let blob;
+      try {
+        const response = await fetch(imageUrl, {
+          mode: "cors",
+          credentials: "omit",
+          referrerPolicy: "no-referrer"
+        });
+        if (!response.ok)
+          return [];
+        blob = await response.blob();
+      } catch {
+        return [];
+      }
+      let bitmap;
+      try {
+        bitmap = await createImageBitmap(blob, {
+          resizeWidth: BITMAP_SIZE,
+          resizeHeight: BITMAP_SIZE,
+          resizeQuality: "pixelated"
+        });
+      } catch {
+        return [];
+      }
+      const result = readBitmapPixels(bitmap);
+      bitmap.close();
+      if (!result)
+        return [];
+      const { data, width, height } = result;
+      let colors = quantizePixels(data, width, height, false);
+      if (colors.length < 2) {
+        colors = quantizePixels(data, width, height, true);
+      }
+      artworkColorCache.set(imageUrl, colors);
+      if (artworkColorCache.size > ARTWORK_COLOR_CACHE_MAX) {
+        const oldest = artworkColorCache.keys().next().value;
+        if (oldest !== void 0)
+          artworkColorCache.delete(oldest);
+      }
+      return colors;
+    })();
+    artworkColorPromiseCache.set(imageUrl, promise);
+    promise.then(
+      () => artworkColorPromiseCache.delete(imageUrl),
+      () => artworkColorPromiseCache.delete(imageUrl)
+    );
+    return promise;
+  }
+  function hexToRgb(hex) {
+    const clean2 = hex.replace("#", "");
+    const r = parseInt(clean2.substring(0, 2), 16);
+    const g = parseInt(clean2.substring(2, 4), 16);
+    const b = parseInt(clean2.substring(4, 6), 16);
+    return `${r}, ${g}, ${b}`;
+  }
+  function hexLuminance(hex) {
+    const clean2 = hex.replace("#", "");
+    const r = parseInt(clean2.substring(0, 2), 16);
+    const g = parseInt(clean2.substring(2, 4), 16);
+    const b = parseInt(clean2.substring(4, 6), 16);
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+  function liftToLuminance(hex, minLum) {
+    if (hexLuminance(hex) >= minLum)
+      return hex;
+    const clean2 = hex.replace("#", "");
+    let r = parseInt(clean2.substring(0, 2), 16);
+    let g = parseInt(clean2.substring(2, 4), 16);
+    let b = parseInt(clean2.substring(4, 6), 16);
+    const steps = 8;
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps;
+      const nr = Math.round(r + (255 - r) * t);
+      const ng = Math.round(g + (255 - g) * t);
+      const nb = Math.round(b + (255 - b) * t);
+      if (hexLuminance(
+        `#${nr.toString(16).padStart(2, "0")}${ng.toString(16).padStart(2, "0")}${nb.toString(16).padStart(2, "0")}`
+      ) >= minLum) {
+        r = nr;
+        g = ng;
+        b = nb;
+        break;
+      }
+    }
+    const toHex = (c) => Math.round(c).toString(16).padStart(2, "0");
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  }
+  function isHexColor(hex) {
+    return HEX_COLOR_PATTERN.test(hex.trim().toLowerCase());
+  }
+  function mixHex(hex, target, t) {
+    const clean2 = hex.replace("#", "");
+    const r = parseInt(clean2.substring(0, 2), 16);
+    const g = parseInt(clean2.substring(2, 4), 16);
+    const b = parseInt(clean2.substring(4, 6), 16);
+    const toHex = (c) => Math.round(c).toString(16).padStart(2, "0");
+    return `#${toHex(r + (target.r - r) * t)}${toHex(g + (target.g - g) * t)}${toHex(b + (target.b - b) * t)}`;
+  }
+  function deriveAccentPalette(hex) {
+    const base = hex.trim().toLowerCase();
+    return [
+      base,
+      mixHex(base, WHITE, 0.25),
+      mixHex(base, BLACK, 0.3),
+      mixHex(base, WHITE, 0.5),
+      mixHex(base, BLACK, 0.5)
+    ];
+  }
+  function refreshAccents(url) {
+    lastAccentArtworkUrl = null;
+    const coverUrl = url ?? Spicetify.Player.data?.item?.metadata?.image_url ?? null;
+    void publishArtworkAccents(coverUrl);
+  }
+  async function publishArtworkAccents(imageUrl) {
+    const accentMode = settingsValues_default.get("accentColorMode");
+    if (accentMode === "preset") {
+      lastAccentArtworkUrl = null;
+      applyArtworkAccents([]);
+      return;
+    }
+    if (accentMode === "custom") {
+      const hex = settingsValues_default.get("customAccentColor").trim().toLowerCase();
+      if (isHexColor(hex)) {
+        lastAccentArtworkUrl = null;
+        applyArtworkAccents(deriveAccentPalette(hex));
+        return;
+      }
+    }
+    if (!imageUrl) {
+      lastAccentArtworkUrl = null;
+      applyArtworkAccents([]);
+      return;
+    }
+    let url = imageUrl;
+    if (url.startsWith("spotify:image:")) {
+      url = `https://i.scdn.co/image/${url.replace("spotify:image:", "")}`;
+    }
+    if (url === lastAccentArtworkUrl)
+      return;
+    lastAccentArtworkUrl = url;
+    const colors = await extractArtworkColors(url);
+    applyArtworkAccents(colors);
+  }
+  function applyArtworkAccents(colors) {
+    const rootStyle = document.documentElement.style;
+    if (!colors.length) {
+      for (let i = 1; i <= ACCENT_COUNT; i++) {
+        rootStyle.removeProperty(`--amai-accent-${i}`);
+      }
+      rootStyle.removeProperty("--amai-accent-rgb");
+      return;
+    }
+    const lifted = colors.map((c) => liftToLuminance(c, ACCENT_LIFT_MIN_LUMINANCE));
+    const padded = [...lifted];
+    while (padded.length < ACCENT_COUNT) {
+      padded.push(padded[padded.length % padded.length]);
+    }
+    for (let i = 0; i < ACCENT_COUNT; i++) {
+      rootStyle.setProperty(`--amai-accent-${i + 1}`, padded[i]);
+    }
+    rootStyle.setProperty("--amai-accent-rgb", hexToRgb(padded[0]));
+  }
+  var BITMAP_SIZE, QUANTIZE_BITS, RESULT_COUNT, MIN_SATURATION, MIN_LIGHTNESS, MAX_LIGHTNESS, ARTWORK_COLOR_CACHE_MAX, artworkColorCache, artworkColorPromiseCache, ACCENT_LIFT_MIN_LUMINANCE, ACCENT_COUNT, lastAccentArtworkUrl, HEX_COLOR_PATTERN, WHITE, BLACK, ArtworkColors_default;
+  var init_ArtworkColors = __esm({
+    "src/utils/ArtworkColors.ts"() {
+      init_settingsValues();
+      BITMAP_SIZE = 40;
+      QUANTIZE_BITS = 5;
+      RESULT_COUNT = 5;
+      MIN_SATURATION = 30;
+      MIN_LIGHTNESS = 35;
+      MAX_LIGHTNESS = 235;
+      ARTWORK_COLOR_CACHE_MAX = 30;
+      artworkColorCache = /* @__PURE__ */ new Map();
+      artworkColorPromiseCache = /* @__PURE__ */ new Map();
+      ACCENT_LIFT_MIN_LUMINANCE = 140;
+      ACCENT_COUNT = 5;
+      lastAccentArtworkUrl = null;
+      HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/;
+      WHITE = { r: 255, g: 255, b: 255 };
+      BLACK = { r: 0, g: 0, b: 0 };
+      ArtworkColors_default = extractArtworkColors;
     }
   });
 
@@ -35249,6 +35613,11 @@ precision highp float;
 uniform sampler2D uField;
 uniform vec2 uGrainSeed; // per-frame grain offset
 uniform vec2 uResolution; // canvas backing store, in pixels
+// Amai Theme intensity (ThemeSettings presets): vibrance scales the colour's
+// distance from grey, dim scales brightness. Applied BEFORE the grain so the
+// grain's luminance weighting stays calibrated to the delivered output.
+uniform float uVibrance;
+uniform float uDim;
 
 out vec4 outColor;
 
@@ -35260,6 +35629,9 @@ float hash(vec2 p) {
 
 void main() {
   vec3 col = texture(uField, gl_FragCoord.xy / uResolution).rgb;
+
+  float baseLum = dot(col, vec3(0.2126, 0.7152, 0.0722));
+  col = mix(vec3(baseLum), col, uVibrance) * uDim;
 
   // Grain weighted into the shadows where banding lives. It rides the FIELD's
   // own luminance \u2014 the same value the single-pass shader used \u2014 so the two
@@ -35347,6 +35719,7 @@ void main() {
           this.resizeRafQueued = false;
           this.lastTickMs = 0;
           this.elapsed = 0;
+          this.fieldTime = 0;
           this.mix = 0;
           this.mixStart = 0;
           this.crossfading = false;
@@ -35383,7 +35756,7 @@ void main() {
             if (this.disposed)
               return;
             this.motionEnabled = !this.motionQuery.matches;
-            this.ensureLoop();
+            this.updateMotionActive();
           };
           this.handleResize = () => {
             if (this.disposed || this.resizeRafQueued)
@@ -35409,6 +35782,7 @@ void main() {
             }
             this.lastTickMs = now2;
             this.elapsed += Math.min(delta, MAX_FRAME_DT_MS) / 1e3;
+            this.fieldTime += Math.min(delta, MAX_FRAME_DT_MS) / 1e3 * this.motionSpeed;
             if (this.crossfading) {
               const p = Math.min(1, (this.elapsed - this.mixStart) / CROSSFADE_SECONDS);
               this.mix = p * p * (3 - 2 * p);
@@ -35416,13 +35790,15 @@ void main() {
                 this.finishCrossfade();
             }
             this.drawFrame();
-            if (!this.motionEnabled && !this.crossfading) {
+            if (!this.motionActive && !this.crossfading) {
               this.rafId = null;
               return;
             }
             this.rafId = requestAnimationFrame(this.tick);
           };
           this.onFail = opts.onFail;
+          this.intensity = opts.intensity ? { ...opts.intensity } : { vibrance: 1, dim: 1 };
+          this.motionSpeed = opts.motionSpeed ?? 1;
           this.container = createAppBgContainer(true);
           this.canvas = document.createElement("canvas");
           this.canvas.className = "amai-bg-canvas";
@@ -35457,7 +35833,9 @@ void main() {
           this.presentUniforms = {
             uField: gl.getUniformLocation(this.presentProgram, "uField"),
             uGrainSeed: gl.getUniformLocation(this.presentProgram, "uGrainSeed"),
-            uResolution: gl.getUniformLocation(this.presentProgram, "uResolution")
+            uResolution: gl.getUniformLocation(this.presentProgram, "uResolution"),
+            uVibrance: gl.getUniformLocation(this.presentProgram, "uVibrance"),
+            uDim: gl.getUniformLocation(this.presentProgram, "uDim")
           };
           gl.uniform1i(this.presentUniforms.uField, 0);
           this.vao = gl.createVertexArray() ?? {};
@@ -35468,6 +35846,7 @@ void main() {
           this.texCurrent = this.createArtTexture();
           this.motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
           this.motionEnabled = !this.motionQuery.matches;
+          this.motionActive = this.motionEnabled && this.motionSpeed > 0;
           this.canvas.addEventListener("webglcontextlost", this.handleContextLost);
           document.addEventListener("visibilitychange", this.handleVisibility);
           this.sizeObserver = new ResizeObserver(this.handleResize);
@@ -35645,6 +36024,25 @@ void main() {
           gl.bindTexture(gl.TEXTURE_2D, target);
           this.texImage(bitmap);
         }
+        updateMotionActive() {
+          this.motionActive = this.motionEnabled && this.motionSpeed > 0;
+          this.ensureLoop();
+        }
+        setIntensity(intensity) {
+          if (this.disposed)
+            return;
+          this.intensity = { ...intensity };
+          if (this.rafId === null)
+            this.drawFrame();
+        }
+        setMotionSpeed(speed) {
+          if (this.disposed)
+            return;
+          this.motionSpeed = speed;
+          this.updateMotionActive();
+          if (this.rafId === null)
+            this.drawFrame();
+        }
         ensureLoop() {
           if (this.disposed || this.rafId !== null || document.hidden)
             return;
@@ -35707,15 +36105,17 @@ void main() {
           gl.bindFramebuffer(gl.FRAMEBUFFER, null);
           gl.viewport(0, 0, this.backingW, this.backingH);
           gl.useProgram(this.presentProgram);
-          const t = this.motionEnabled ? this.elapsed : STATIC_TIME;
+          const t = this.motionActive ? this.fieldTime : STATIC_TIME;
           gl.uniform2f(this.presentUniforms.uGrainSeed, t * 0.7 % 1 * 43, t * 0.31 % 1 * 17);
+          gl.uniform1f(this.presentUniforms.uVibrance, this.intensity.vibrance);
+          gl.uniform1f(this.presentUniforms.uDim, this.intensity.dim);
           gl.activeTexture(gl.TEXTURE0);
           gl.bindTexture(gl.TEXTURE_2D, this.fieldTex);
           gl.drawArrays(gl.TRIANGLES, 0, 3);
         }
         computeFlow() {
           const gl = this.gl;
-          const t = this.motionEnabled ? this.elapsed : STATIC_TIME;
+          const t = this.motionActive ? this.fieldTime : STATIC_TIME;
           gl.uniform4f(
             this.fieldUniforms.uFlowA,
             0.02 * t,
@@ -35805,6 +36205,7 @@ void main() {
   var init_AppBackground = __esm({
     "src/components/DynamicBG/AppBackground.ts"() {
       init_settingsValues();
+      init_ThemeSettings();
       init_utils();
       init_identity();
       APP_BG_HOST_SELECTOR = ".Root";
@@ -35937,6 +36338,12 @@ void main() {
           const host = this.cached.host?.isConnected ? this.cached.host : resolveAppBgHost();
           return !!host && !!findAppBg(host);
         }
+        applyIntensitySetting() {
+          this.glBg?.setIntensity(getGlIntensity());
+        }
+        applyMotionSetting() {
+          this.glBg?.setMotionSpeed(getGlMotionSpeed());
+        }
         destroy() {
           this.remove();
         }
@@ -35966,7 +36373,9 @@ void main() {
               }
               const seedUrl = this.lastCoverUrl ?? coverUrl;
               const gl = await mod.GlAppBackground.create(host, seedUrl, {
-                onFail: () => this.handleGlFail()
+                onFail: () => this.handleGlFail(),
+                intensity: getGlIntensity(),
+                motionSpeed: getGlMotionSpeed()
               });
               if (!gl) {
                 abandon(false);
@@ -36091,6 +36500,7 @@ void main() {
   // src/utils/settings.ts
   function setSettingsMenu() {
     amaiSettingsSections.length = 0;
+    themeSettings();
     generalSettings();
     devSettings();
     infos();
@@ -36117,32 +36527,6 @@ void main() {
   }
   function generalSettings() {
     const settings = new SettingsSection("Amai - Settings", "amai-settings");
-    settings.addToggle(
-      "enableAppBackground",
-      "Enable Amai Theme (dynamic album-art background)",
-      settingsValues_default.get("enableAppBackground"),
-      () => {
-        const enabled = settings.getFieldValue("enableAppBackground");
-        settingsValues_default.set("enableAppBackground", enabled);
-        if (enabled) {
-          const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
-          void Promise.all([
-            Promise.resolve().then(() => (init_AppBackground(), AppBackground_exports)),
-            Promise.resolve().then(() => (init_identity(), identity_exports))
-          ]).then(([{ appBackgroundSingleton: appBackgroundSingleton2, syncAppBgMarker: syncAppBgMarker2 }, { syncLibraryGridState: syncLibraryGridState2 }]) => {
-            syncAppBgMarker2(true);
-            appBackgroundSingleton2.apply(coverUrl);
-            syncLibraryGridState2();
-            window.dispatchEvent(new Event("amai:appbg-changed"));
-          });
-        } else {
-          void Promise.resolve().then(() => (init_AppBackground(), AppBackground_exports)).then(({ appBackgroundSingleton: appBackgroundSingleton2 }) => {
-            appBackgroundSingleton2.remove();
-            window.dispatchEvent(new Event("amai:appbg-changed"));
-          });
-        }
-      }
-    );
     settings.addInput("gemini-api-key", "Gemini API Key (required for translations)", "", () => {
       settingsValues_default.set("geminiApiKey", settings.getFieldValue("gemini-api-key"));
       invalidateLyrics({ all: true }, { reload: true }).catch(
@@ -36281,6 +36665,106 @@ void main() {
     settings.pushSettings();
     amaiSettingsSections.push(settings);
   }
+  function themeSettings() {
+    const settings = new SettingsSection("Amai - Theme", "amai-theme-settings");
+    settings.addToggle(
+      "enableAppBackground",
+      "Enable Amai Theme (dynamic album-art background)",
+      settingsValues_default.get("enableAppBackground"),
+      () => {
+        const enabled = settings.getFieldValue("enableAppBackground");
+        settingsValues_default.set("enableAppBackground", enabled);
+        settings.setFieldsVisible(themeOptionFieldIds, enabled);
+        if (enabled) {
+          const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
+          void Promise.all([
+            Promise.resolve().then(() => (init_AppBackground(), AppBackground_exports)),
+            Promise.resolve().then(() => (init_identity(), identity_exports))
+          ]).then(([{ appBackgroundSingleton: appBackgroundSingleton2, syncAppBgMarker: syncAppBgMarker2 }, { syncLibraryGridState: syncLibraryGridState2 }]) => {
+            syncAppBgMarker2(true);
+            appBackgroundSingleton2.apply(coverUrl);
+            syncLibraryGridState2();
+            window.dispatchEvent(new Event("amai:appbg-changed"));
+          });
+        } else {
+          void Promise.resolve().then(() => (init_AppBackground(), AppBackground_exports)).then(({ appBackgroundSingleton: appBackgroundSingleton2 }) => {
+            appBackgroundSingleton2.remove();
+            window.dispatchEvent(new Event("amai:appbg-changed"));
+          });
+        }
+      }
+    );
+    const bgIntensityOptions = ["Subtle", "Normal", "Intense"];
+    const bgIntensityValues = ["subtle", "normal", "intense"];
+    const currentIntensity = settingsValues_default.get("backgroundIntensity");
+    const bgIntensityIndex = bgIntensityValues.indexOf(currentIntensity) !== -1 ? bgIntensityValues.indexOf(currentIntensity) : 1;
+    settings.addDropDown(
+      "theme-bg-intensity",
+      "Amai Theme intensity (background blur, color and brightness)",
+      bgIntensityOptions,
+      bgIntensityIndex,
+      () => {
+        const selected = settings.getFieldValue("theme-bg-intensity");
+        const index = bgIntensityOptions.indexOf(selected);
+        settingsValues_default.set("backgroundIntensity", bgIntensityValues[index >= 0 ? index : 1]);
+        applyThemeSettings();
+        void Promise.resolve().then(() => (init_AppBackground(), AppBackground_exports)).then(({ appBackgroundSingleton: appBackgroundSingleton2 }) => {
+          appBackgroundSingleton2.applyIntensitySetting();
+        });
+      }
+    );
+    const bgMotionOptions = ["Off", "Slow", "Normal", "Fast"];
+    const bgMotionValues = ["off", "slow", "normal", "fast"];
+    const currentMotion = settingsValues_default.get("backgroundMotion");
+    const bgMotionIndex = bgMotionValues.indexOf(currentMotion) !== -1 ? bgMotionValues.indexOf(currentMotion) : 2;
+    settings.addDropDown(
+      "theme-bg-motion",
+      "Background motion (rotation, drift and pulse speed)",
+      bgMotionOptions,
+      bgMotionIndex,
+      () => {
+        const selected = settings.getFieldValue("theme-bg-motion");
+        const index = bgMotionOptions.indexOf(selected);
+        settingsValues_default.set("backgroundMotion", bgMotionValues[index >= 0 ? index : 2]);
+        applyThemeSettings();
+        void Promise.resolve().then(() => (init_AppBackground(), AppBackground_exports)).then(({ appBackgroundSingleton: appBackgroundSingleton2 }) => {
+          appBackgroundSingleton2.applyMotionSetting();
+        });
+      }
+    );
+    const accentModeOptions = ["From album art", "Spotify green", "Custom color"];
+    const accentModeValues = ["auto", "preset", "custom"];
+    const currentAccentMode = settingsValues_default.get("accentColorMode");
+    const accentModeIndex = accentModeValues.indexOf(currentAccentMode) !== -1 ? accentModeValues.indexOf(currentAccentMode) : 0;
+    settings.addDropDown(
+      "accent-color-mode",
+      "Accent colors (highlights, gradients and glow)",
+      accentModeOptions,
+      accentModeIndex,
+      () => {
+        const selected = settings.getFieldValue("accent-color-mode");
+        const index = accentModeOptions.indexOf(selected);
+        settingsValues_default.set("accentColorMode", accentModeValues[index >= 0 ? index : 0]);
+        refreshAccents();
+      }
+    );
+    settings.addInput(
+      "custom-accent-color",
+      "Custom accent color (used while Accent colors is Custom)",
+      settingsValues_default.get("customAccentColor") || "#1db954",
+      () => {
+        const hex = settings.getFieldValue("custom-accent-color").trim().toLowerCase();
+        if (!isHexColor(hex))
+          return;
+        settingsValues_default.set("customAccentColor", hex);
+        refreshAccents();
+      },
+      "color"
+    );
+    settings.setFieldsVisible(themeOptionFieldIds, settingsValues_default.get("enableAppBackground"));
+    settings.pushSettings();
+    amaiSettingsSections.push(settings);
+  }
   function infos() {
     const settings = new SettingsSection("Amai - Info", "amai-info");
     settings.addButton(
@@ -36302,7 +36786,7 @@ void main() {
     settings.pushSettings();
     amaiSettingsSections.push(settings);
   }
-  var amaiSettingsSections;
+  var amaiSettingsSections, themeOptionFieldIds;
   var init_settings = __esm({
     "src/utils/settings.ts"() {
       init_settingsSection();
@@ -36310,242 +36794,15 @@ void main() {
       init_fetchLyrics();
       init_Defaults();
       init_externalNavigation();
+      init_ThemeSettings();
+      init_ArtworkColors();
       amaiSettingsSections = [];
-    }
-  });
-
-  // src/utils/ArtworkColors.ts
-  var ArtworkColors_exports = {};
-  __export(ArtworkColors_exports, {
-    applyArtworkAccents: () => applyArtworkAccents,
-    default: () => ArtworkColors_default,
-    extractArtworkColors: () => extractArtworkColors,
-    hexLuminance: () => hexLuminance,
-    hexToRgb: () => hexToRgb,
-    liftToLuminance: () => liftToLuminance,
-    publishArtworkAccents: () => publishArtworkAccents
-  });
-  function rgbToHex({ r, g, b }) {
-    const toHex = (c) => Math.round(c).toString(16).padStart(2, "0");
-    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-  }
-  function quantize(value, bits) {
-    return value >> 8 - bits << 8 - bits;
-  }
-  function luminance({ r, g, b }) {
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-  }
-  function saturation({ r, g, b }) {
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    if (max === 0)
-      return 0;
-    return (max - min) / max * 255;
-  }
-  function bucketKey({ r, g, b }) {
-    return `${r},${g},${b}`;
-  }
-  function quantizePixels(data, width, height, loose) {
-    const bucketMap = /* @__PURE__ */ new Map();
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const idx = (y * width + x) * 4;
-        const r = data[idx];
-        const g = data[idx + 1];
-        const b = data[idx + 2];
-        const a = data[idx + 3];
-        if (a < 128)
-          continue;
-        const rgb = { r, g, b };
-        const lum = luminance(rgb);
-        if (loose) {
-          if (lum < 15 || lum > 245)
-            continue;
-        } else {
-          const sat = saturation(rgb);
-          if (lum < MIN_LIGHTNESS || lum > MAX_LIGHTNESS || sat < MIN_SATURATION) {
-            continue;
-          }
-        }
-        const q = {
-          r: quantize(r, QUANTIZE_BITS),
-          g: quantize(g, QUANTIZE_BITS),
-          b: quantize(b, QUANTIZE_BITS)
-        };
-        const key = bucketKey(q);
-        const entry = bucketMap.get(key);
-        if (entry) {
-          entry.count++;
-        } else {
-          bucketMap.set(key, { rgb: q, count: 1 });
-        }
-      }
-    }
-    return [...bucketMap.entries()].sort((a, b) => b[1].count - a[1].count).slice(0, RESULT_COUNT).map(([, entry]) => rgbToHex(entry.rgb));
-  }
-  function readBitmapPixels(bitmap) {
-    const canvas = document.createElement("canvas");
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    if (!ctx)
-      return null;
-    ctx.drawImage(bitmap, 0, 0);
-    try {
-      const imageData = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
-      return { data: imageData.data, width: bitmap.width, height: bitmap.height };
-    } catch {
-      return null;
-    }
-  }
-  async function extractArtworkColors(imageUrl) {
-    const cached = artworkColorCache.get(imageUrl);
-    if (cached) {
-      artworkColorCache.delete(imageUrl);
-      artworkColorCache.set(imageUrl, cached);
-      return cached;
-    }
-    const pending = artworkColorPromiseCache.get(imageUrl);
-    if (pending)
-      return pending;
-    const promise = (async () => {
-      let blob;
-      try {
-        const response = await fetch(imageUrl, {
-          mode: "cors",
-          credentials: "omit",
-          referrerPolicy: "no-referrer"
-        });
-        if (!response.ok)
-          return [];
-        blob = await response.blob();
-      } catch {
-        return [];
-      }
-      let bitmap;
-      try {
-        bitmap = await createImageBitmap(blob, {
-          resizeWidth: BITMAP_SIZE,
-          resizeHeight: BITMAP_SIZE,
-          resizeQuality: "pixelated"
-        });
-      } catch {
-        return [];
-      }
-      const result = readBitmapPixels(bitmap);
-      bitmap.close();
-      if (!result)
-        return [];
-      const { data, width, height } = result;
-      let colors = quantizePixels(data, width, height, false);
-      if (colors.length < 2) {
-        colors = quantizePixels(data, width, height, true);
-      }
-      artworkColorCache.set(imageUrl, colors);
-      if (artworkColorCache.size > ARTWORK_COLOR_CACHE_MAX) {
-        const oldest = artworkColorCache.keys().next().value;
-        if (oldest !== void 0)
-          artworkColorCache.delete(oldest);
-      }
-      return colors;
-    })();
-    artworkColorPromiseCache.set(imageUrl, promise);
-    promise.then(
-      () => artworkColorPromiseCache.delete(imageUrl),
-      () => artworkColorPromiseCache.delete(imageUrl)
-    );
-    return promise;
-  }
-  function hexToRgb(hex) {
-    const clean2 = hex.replace("#", "");
-    const r = parseInt(clean2.substring(0, 2), 16);
-    const g = parseInt(clean2.substring(2, 4), 16);
-    const b = parseInt(clean2.substring(4, 6), 16);
-    return `${r}, ${g}, ${b}`;
-  }
-  function hexLuminance(hex) {
-    const clean2 = hex.replace("#", "");
-    const r = parseInt(clean2.substring(0, 2), 16);
-    const g = parseInt(clean2.substring(2, 4), 16);
-    const b = parseInt(clean2.substring(4, 6), 16);
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-  }
-  function liftToLuminance(hex, minLum) {
-    if (hexLuminance(hex) >= minLum)
-      return hex;
-    const clean2 = hex.replace("#", "");
-    let r = parseInt(clean2.substring(0, 2), 16);
-    let g = parseInt(clean2.substring(2, 4), 16);
-    let b = parseInt(clean2.substring(4, 6), 16);
-    const steps = 8;
-    for (let i = 1; i <= steps; i++) {
-      const t = i / steps;
-      const nr = Math.round(r + (255 - r) * t);
-      const ng = Math.round(g + (255 - g) * t);
-      const nb = Math.round(b + (255 - b) * t);
-      if (hexLuminance(
-        `#${nr.toString(16).padStart(2, "0")}${ng.toString(16).padStart(2, "0")}${nb.toString(16).padStart(2, "0")}`
-      ) >= minLum) {
-        r = nr;
-        g = ng;
-        b = nb;
-        break;
-      }
-    }
-    const toHex = (c) => Math.round(c).toString(16).padStart(2, "0");
-    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-  }
-  async function publishArtworkAccents(imageUrl) {
-    if (!imageUrl) {
-      lastAccentArtworkUrl = null;
-      applyArtworkAccents([]);
-      return;
-    }
-    let url = imageUrl;
-    if (url.startsWith("spotify:image:")) {
-      url = `https://i.scdn.co/image/${url.replace("spotify:image:", "")}`;
-    }
-    if (url === lastAccentArtworkUrl)
-      return;
-    lastAccentArtworkUrl = url;
-    const colors = await extractArtworkColors(url);
-    applyArtworkAccents(colors);
-  }
-  function applyArtworkAccents(colors) {
-    const rootStyle = document.documentElement.style;
-    if (!colors.length) {
-      for (let i = 1; i <= ACCENT_COUNT; i++) {
-        rootStyle.removeProperty(`--amai-accent-${i}`);
-      }
-      rootStyle.removeProperty("--amai-accent-rgb");
-      return;
-    }
-    const lifted = colors.map((c) => liftToLuminance(c, ACCENT_LIFT_MIN_LUMINANCE));
-    const padded = [...lifted];
-    while (padded.length < ACCENT_COUNT) {
-      padded.push(padded[padded.length % padded.length]);
-    }
-    for (let i = 0; i < ACCENT_COUNT; i++) {
-      rootStyle.setProperty(`--amai-accent-${i + 1}`, padded[i]);
-    }
-    rootStyle.setProperty("--amai-accent-rgb", hexToRgb(padded[0]));
-  }
-  var BITMAP_SIZE, QUANTIZE_BITS, RESULT_COUNT, MIN_SATURATION, MIN_LIGHTNESS, MAX_LIGHTNESS, ARTWORK_COLOR_CACHE_MAX, artworkColorCache, artworkColorPromiseCache, ACCENT_LIFT_MIN_LUMINANCE, ACCENT_COUNT, lastAccentArtworkUrl, ArtworkColors_default;
-  var init_ArtworkColors = __esm({
-    "src/utils/ArtworkColors.ts"() {
-      BITMAP_SIZE = 40;
-      QUANTIZE_BITS = 5;
-      RESULT_COUNT = 5;
-      MIN_SATURATION = 30;
-      MIN_LIGHTNESS = 35;
-      MAX_LIGHTNESS = 235;
-      ARTWORK_COLOR_CACHE_MAX = 30;
-      artworkColorCache = /* @__PURE__ */ new Map();
-      artworkColorPromiseCache = /* @__PURE__ */ new Map();
-      ACCENT_LIFT_MIN_LUMINANCE = 140;
-      ACCENT_COUNT = 5;
-      lastAccentArtworkUrl = null;
-      ArtworkColors_default = extractArtworkColors;
+      themeOptionFieldIds = [
+        "theme-bg-intensity",
+        "theme-bg-motion",
+        "accent-color-mode",
+        "custom-accent-color"
+      ];
     }
   });
 
@@ -36768,6 +37025,7 @@ void main() {
   init_Platform();
   init_fetchLyrics();
   init_lifecycle();
+  init_ThemeSettings();
   init_identity();
   var AppInitializer = class {
     static async initializeCore() {
@@ -36797,6 +37055,7 @@ void main() {
     static async initializePlatformAndSettings() {
       await Platform_default.OnSpotifyReady;
       setSettingsMenu();
+      applyThemeSettings();
     }
     static setupPostLoadOptimizations() {
       const onLoad = () => {
@@ -38457,7 +38716,7 @@ void main() {
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef111214e/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d580d8e/DotLoader.css */
 #DotLoader {
   --dot-color: var(--amai-accent-1);
   --dot-color-dim: color-mix(in srgb, var(--amai-accent-1) 22%, transparent);
@@ -38492,7 +38751,7 @@ void main() {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef111218f/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d580def/ProcessingIndicator.css */
 #AmaiLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -38574,7 +38833,7 @@ void main() {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef1111510/tokens.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d580260/tokens.css */
 :root {
   --amai-accent-1: #1ed760;
   --amai-accent-2: #1db954;
@@ -38653,7 +38912,7 @@ void main() {
   --amai-scrollbar-thumb: rgba(255, 255, 255, 0.6);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef1111791/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d5804e1/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -38896,7 +39155,7 @@ button:has(#AmaiLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef1111842/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d580582/Simplebar.css */
 #AmaiLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -39104,7 +39363,7 @@ button:has(#AmaiLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef11118a3/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d5805f3/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -39708,13 +39967,13 @@ button:has(#AmaiLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef1111964/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d5806a4/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
-  --bg-saturation: 2.2;
-  --bg-brightness: 0.5;
-  --bg-blur-primary: 35px;
-  --bg-blur-secondary: 55px;
+  --bg-saturation: calc(2.2 * var(--amai-bg-saturation-scale, 1));
+  --bg-brightness: calc(0.5 * var(--amai-bg-brightness-scale, 1));
+  --bg-blur-primary: calc(35px * var(--amai-bg-blur-scale, 1));
+  --bg-blur-secondary: calc(55px * var(--amai-bg-blur-scale, 1));
   --bg-rotation-primary: 0deg;
   --bg-rotation-secondary: 15deg;
   --bg-scale-primary: 1.1;
@@ -39741,7 +40000,7 @@ button:has(#AmaiLyricsPageSvg):after {
   background: linear-gradient(135deg, rgba(15, 15, 35, 0.4) 0%, rgba(30, 10, 70, 0.3) 50%, rgba(10, 20, 50, 0.4) 100%);
   z-index: 10;
   pointer-events: none;
-  animation: gradientShift 30s linear infinite;
+  animation: gradientShift calc(30s * var(--amai-bg-motion-scale, 1)) linear infinite;
 }
 .sweet-dynamic-bg .placeholder {
   position: absolute;
@@ -39775,7 +40034,7 @@ button:has(#AmaiLyricsPageSvg):after {
   z-index: 3;
   transform: rotate(var(--bg-rotation-primary, 0deg)) scale(var(--bg-scale-primary, 1));
   filter: blur(var(--bg-blur-primary)) hue-rotate(var(--bg-hue-shift)) brightness(1.1);
-  animation: bgAnimPrimary 60s linear infinite;
+  animation: bgAnimPrimary calc(60s * var(--amai-bg-motion-scale, 1)) linear infinite;
   mix-blend-mode: overlay;
 }
 .sweet-dynamic-bg > img.secondary {
@@ -39788,7 +40047,7 @@ button:has(#AmaiLyricsPageSvg):after {
   z-index: 2;
   transform: rotate(var(--bg-rotation-secondary, 0deg)) scale(var(--bg-scale-secondary, 1));
   filter: blur(var(--bg-blur-secondary)) hue-rotate(calc(var(--bg-hue-shift) + 30deg)) brightness(1.2);
-  animation: bgAnimSecondary 75s linear infinite reverse;
+  animation: bgAnimSecondary calc(75s * var(--amai-bg-motion-scale, 1)) linear infinite reverse;
   mix-blend-mode: soft-light;
 }
 .sweet-dynamic-bg > img.primary.active {
@@ -39807,8 +40066,8 @@ button:has(#AmaiLyricsPageSvg):after {
   position: relative;
 }
 .sweet-dynamic-bg-in-this:is(aside) .sweet-dynamic-bg {
-  --bg-saturation: 2;
-  --bg-brightness: 0.45;
+  --bg-saturation: calc(2 * var(--amai-bg-saturation-scale, 1));
+  --bg-brightness: calc(0.45 * var(--amai-bg-brightness-scale, 1));
   max-height: 100%;
   max-width: 100%;
 }
@@ -39826,8 +40085,8 @@ button:has(#AmaiLyricsPageSvg):after {
   position: relative;
 }
 #AmaiLyricsPage .sweet-dynamic-bg:not(.amai-app-bg) {
-  --bg-saturation: 2.5;
-  --bg-brightness: 0.45;
+  --bg-saturation: calc(2.5 * var(--amai-bg-saturation-scale, 1));
+  --bg-brightness: calc(0.45 * var(--amai-bg-brightness-scale, 1));
   max-height: 55%;
   max-width: 35%;
   scale: 290% 185%;
@@ -39872,12 +40131,12 @@ body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingVi
     --bg-brightness: 0.5;
   }
   .sweet-dynamic-bg > img.primary {
-    animation-duration: 120s;
-    filter: blur(20px) hue-rotate(var(--bg-hue-shift));
+    animation-duration: calc(120s * var(--amai-bg-motion-scale, 1));
+    filter: blur(calc(20px * var(--amai-bg-blur-scale, 1))) hue-rotate(var(--bg-hue-shift));
   }
   .sweet-dynamic-bg > img.secondary {
-    animation-duration: 120s;
-    filter: blur(20px) hue-rotate(calc(var(--bg-hue-shift) + 30deg));
+    animation-duration: calc(120s * var(--amai-bg-motion-scale, 1));
+    filter: blur(calc(20px * var(--amai-bg-blur-scale, 1))) hue-rotate(calc(var(--bg-hue-shift) + 30deg));
   }
 }
 :is(.Root, .Root__top-container).amai-app-bg-host {
@@ -39888,10 +40147,10 @@ body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingVi
   background-image: none !important;
 }
 :is(.Root, .Root__top-container).amai-app-bg-host > .sweet-dynamic-bg.amai-app-bg {
-  --bg-saturation: 1.8;
-  --bg-brightness: 0.35;
-  --bg-blur-primary: 45px;
-  --bg-blur-secondary: 65px;
+  --bg-saturation: calc(1.8 * var(--amai-bg-saturation-scale, 1));
+  --bg-brightness: calc(0.35 * var(--amai-bg-brightness-scale, 1));
+  --bg-blur-primary: calc(45px * var(--amai-bg-blur-scale, 1));
+  --bg-blur-secondary: calc(65px * var(--amai-bg-blur-scale, 1));
 }
 :is(.Root, .Root__top-container).amai-app-bg-host > .sweet-dynamic-bg.amai-app-bg > img.bg-image {
   width: 100%;
@@ -39902,10 +40161,10 @@ body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingVi
   mix-blend-mode: normal;
 }
 :is(.Root, .Root__top-container).amai-app-bg-host > .sweet-dynamic-bg.amai-app-bg > img.bg-image.primary {
-  animation: amaiAppDriftA 42s ease-in-out infinite alternate;
+  animation: amaiAppDriftA calc(42s * var(--amai-bg-motion-scale, 1)) ease-in-out infinite alternate;
 }
 :is(.Root, .Root__top-container).amai-app-bg-host > .sweet-dynamic-bg.amai-app-bg > img.bg-image.secondary {
-  animation: amaiAppDriftB 56s ease-in-out infinite alternate-reverse;
+  animation: amaiAppDriftB calc(56s * var(--amai-bg-motion-scale, 1)) ease-in-out infinite alternate-reverse;
 }
 @keyframes amaiAppDriftA {
   from {
@@ -39926,7 +40185,7 @@ body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingVi
 @media (max-width: 768px) {
   :is(.Root, .Root__top-container).amai-app-bg-host > .sweet-dynamic-bg.amai-app-bg > img.bg-image.primary,
   :is(.Root, .Root__top-container).amai-app-bg-host > .sweet-dynamic-bg.amai-app-bg > img.bg-image.secondary {
-    animation-duration: 120s;
+    animation-duration: calc(120s * var(--amai-bg-motion-scale, 1));
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -40071,8 +40330,14 @@ body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingVi
 .amai-hidden .sweet-dynamic-bg .placeholder {
   animation-play-state: paused !important;
 }
+.amai-bg-motion-off .sweet-dynamic-bg,
+.amai-bg-motion-off .sweet-dynamic-bg::after,
+.amai-bg-motion-off .sweet-dynamic-bg > img.bg-image,
+.amai-bg-motion-off .sweet-dynamic-bg .placeholder {
+  animation-play-state: paused !important;
+}
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef11119c5/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d580715/main.css */
 #AmaiLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -40323,7 +40588,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef1111a26/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d580776/Mixed.css */
 #AmaiLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -40677,7 +40942,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef1111a97/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d5807e7/LoaderContainer.css */
 #AmaiLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -40699,7 +40964,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef1111ac8/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d580818/FullscreenTransition.css */
 #AmaiLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -40726,7 +40991,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef1111ae9/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d580839/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
@@ -40828,25 +41093,25 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef1111b2a/Settings.css */
-:is(#amai-settings, #amai-dev-settings, #amai-info) {
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d58086a/Settings.css */
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) {
   display: grid;
   gap: 8px;
   min-width: 0;
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-section {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-settings-section {
   display: grid;
   gap: 8px;
   min-width: 0;
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .amai-settings-header {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .amai-settings-header {
   margin: 0;
   color: var(--text-base, #ffffff);
   font-size: 1rem;
   font-weight: 700;
   line-height: 1.3;
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-settings-row {
   display: grid;
   grid-template-columns: 2fr 1fr;
   align-items: center;
@@ -40856,49 +41121,49 @@ ruby > rt {
   border-radius: var(--encore-corner-radius-base, 4px);
   transition: background-color 0.15s;
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row > .x-settings-firstColumn {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-settings-row > .x-settings-firstColumn {
   display: flex;
   align-items: center;
   min-width: 0;
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row > .x-settings-secondColumn {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-settings-row > .x-settings-secondColumn {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
   min-width: 0;
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row label {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-settings-row label {
   color: var(--text-subdued, #b3b3b3);
   font-size: 0.875rem;
   font-weight: 400;
   line-height: 1.4;
   transition: color 0.15s;
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row:hover {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-settings-row:hover {
   background-color: var(--background-tinted-base, rgba(255, 255, 255, 0.1));
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row:hover > .x-settings-firstColumn label {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-settings-row:hover > .x-settings-firstColumn label {
   color: var(--text-base, #ffffff);
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row:has(#amai-settings\.enableAppBackground) {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-settings-row:has(#amai-theme-settings\.enableAppBackground) {
   background-color: rgba(29, 185, 84, 0.12);
   box-shadow: inset 3px 0 0 0 var(--essential-bright-accent, #1ed760), inset 0 0 0 1px rgba(30, 215, 96, 0.35);
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row:has(#amai-settings\.enableAppBackground) > .x-settings-firstColumn label {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-settings-row:has(#amai-theme-settings\.enableAppBackground) > .x-settings-firstColumn label {
   color: var(--text-base, #ffffff);
   font-weight: 600;
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row:has(#amai-settings\.enableAppBackground):hover {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-settings-row:has(#amai-theme-settings\.enableAppBackground):hover {
   background-color: rgba(29, 185, 84, 0.2);
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-toggle-wrapper {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-toggle-wrapper {
   display: inline-flex;
   position: relative;
   align-items: center;
   cursor: pointer;
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-toggle-input {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-toggle-input {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -40908,7 +41173,7 @@ ruby > rt {
   opacity: 0;
   pointer-events: none;
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-toggle-indicatorWrapper {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-toggle-indicatorWrapper {
   display: block;
   position: relative;
   flex: 0 0 auto;
@@ -40918,7 +41183,7 @@ ruby > rt {
   background-color: #535353;
   transition: background-color 0.1s;
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-toggle-indicator {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-toggle-indicator {
   position: absolute;
   top: 2px;
   left: 2px;
@@ -40932,27 +41197,27 @@ ruby > rt {
     right 0.1s,
     width 0.1s;
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-toggle-input:hover:not(:disabled):not(:active) ~ .x-toggle-indicatorWrapper {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-toggle-input:hover:not(:disabled):not(:active) ~ .x-toggle-indicatorWrapper {
   background-color: #b3b3b3;
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-toggle-input:checked ~ .x-toggle-indicatorWrapper {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-toggle-input:checked ~ .x-toggle-indicatorWrapper {
   background-color: #1db954;
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-toggle-input:checked:hover:not(:disabled):not(:active) ~ .x-toggle-indicatorWrapper {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-toggle-input:checked:hover:not(:disabled):not(:active) ~ .x-toggle-indicatorWrapper {
   background-color: #1ed760;
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-toggle-input:checked ~ .x-toggle-indicatorWrapper .x-toggle-indicator {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-toggle-input:checked ~ .x-toggle-indicatorWrapper .x-toggle-indicator {
   left: auto;
   right: 2px;
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-toggle-input:disabled ~ .x-toggle-indicatorWrapper {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-toggle-input:disabled ~ .x-toggle-indicatorWrapper {
   opacity: 0.4;
   cursor: not-allowed;
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-toggle-wrapper:focus-within {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-toggle-wrapper:focus-within {
   outline: 5px auto -webkit-focus-ring-color;
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row select {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-settings-row select {
   box-sizing: border-box;
   width: 100%;
   height: 32px;
@@ -40971,15 +41236,15 @@ ruby > rt {
   cursor: pointer;
   transition: background-color 0.1s, color 0.1s;
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row select:hover {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-settings-row select:hover {
   background-color: var(--background-elevated-highlight, #2a2a2a);
   color: var(--text-base, #ffffff);
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row select:focus-visible {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-settings-row select:focus-visible {
   outline: 2px solid var(--essential-bright-accent, #1ed760);
   outline-offset: 2px;
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-input {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-settings-input {
   box-sizing: border-box;
   width: 100%;
   min-height: 32px;
@@ -40997,18 +41262,18 @@ ruby > rt {
     border-color 0.1s,
     outline-color 0.1s;
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-input:hover {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-settings-input:hover {
   background-color: var(--background-tinted-highlight, rgba(255, 255, 255, 0.14));
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-input:focus-visible {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-settings-input:focus-visible {
   outline: 2px solid var(--essential-bright-accent, #1ed760);
   outline-offset: 1px;
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) .x-settings-row > .x-settings-secondColumn > span {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) .x-settings-row > .x-settings-secondColumn > span {
   display: inline-flex;
   align-items: center;
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) button {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) button {
   --encore-control-size-smaller: 32px;
   --encore-spacing-tighter-4: 4px;
   --encore-spacing-base: 16px;
@@ -41044,18 +41309,18 @@ ruby > rt {
   padding-block: var(--encore-spacing-tighter-4);
   padding-inline: var(--encore-spacing-base);
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) button:hover {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) button:hover {
   transform: scale(1.04);
   border: 1px solid var(--essential-base, #ffffff);
 }
-:is(#amai-settings, #amai-dev-settings, #amai-info) button:active {
+:is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) button:active {
   opacity: 0.7;
   outline: none;
   transform: scale(1);
   border: 1px solid var(--essential-subdued, #818181);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef1111b7b/SettingsModal.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d5808bb/SettingsModal.css */
 .amai-settings-overlay {
   position: fixed;
   inset: 0;
@@ -41133,7 +41398,7 @@ ruby > rt {
   min-width: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef1111bac/Tooltips.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d5808ec/Tooltips.css */
 .tippy-box[data-theme~=amai-lyrics] {
   position: relative;
   background: var(--amai-glass-veil-strong), var(--amai-glass-base-strong) !important;
@@ -41193,7 +41458,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-6988-3nfsH6I8RH05/1a0ef1111bdd/Glassmorphism.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d58091d/Glassmorphism.css */
 .amai-app-bg-host .Root__nav-bar:not(.amai-lib-grid) {
   isolation: isolate;
   background: var(--amai-glass-veil), var(--amai-glass-base) !important;
