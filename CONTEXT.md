@@ -75,7 +75,7 @@ Only the registry's tick calls `sync(position, { isPlaying })`, handing over the
 
 The status phase and the paint phase are one call, in that order, and the paint runs every tick whatever the statuses did — a play-state flip has to repaint rows whose status did not change. Two play-state memories survive on purpose: one gates whether the blur is repainted at all, the other forces a full blur pass. They update at different points, so merging them would change the interlude and post-seek edges.
 
-One question stays outside this seam. AutoScroll pre-highlights the row it is scrolling towards and marks it `OverridenByScroller`; the paint refuses to take `Active` off a row carrying that mark. The mark is AutoScroll's — written and removed by it alone — and this module only reads it. AutoScroll also searches at its own lead time (`getPositionFor('scroll')`, ahead of the highlight surface), so its target row is deliberately not this module's active row.
+One question stays outside this seam. AutoScroll pre-highlights the row it is scrolling towards and marks it `OverridenByScroller`; the paint refuses to take `Active` off a row carrying that mark. AutoScroll is the mark's only adder but not its only writer: this module clears it when a row becomes Active, so a mark never survives onto the row the playback position has actually reached. `Active` has two writers for the same reason. Both classes are therefore read live from the element on every paint rather than from a cache, and neither is a candidate for the style-write cache's treatment. AutoScroll also searches at its own lead time (`getPositionFor('scroll')`, ahead of the highlight surface), so its target row is deliberately not this module's active row.
 
 ## AutoScroll
 
