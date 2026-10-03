@@ -179,6 +179,7 @@
   var Spotify, SpotifyPlatform, SpotifyInternalFetch, OnSpotifyReady, tokenProviderResponse, accessTokenPromise, GetSpotifyAccessToken, Platform, Platform_default;
   var init_Platform = __esm({
     "src/components/Global/Platform.ts"() {
+      "use strict";
       init_Scheduler();
       Spotify = globalThis.Spicetify;
       OnSpotifyReady = new Promise((resolve) => {
@@ -700,6 +701,7 @@
   var import_spark_md5, BASE62_CHARS, BASE62_MAP;
   var init_Hasher = __esm({
     "src/utils/Hasher.ts"() {
+      "use strict";
       import_spark_md5 = __toESM(require_spark_md5());
       BASE62_CHARS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
       BASE62_MAP = new Map([...BASE62_CHARS].map((c, i) => [c, i]));
@@ -5003,6 +5005,7 @@
   var pakoPromise, SpicyFetchCache, MAX_SPICY_FETCH_ENTRIES, spicyWindowRef, spicyFetchKeyOrder, MAX_DECOMPRESSED_BYTES;
   var init_SpicyFetch = __esm({
     "src/utils/API/SpicyFetch.ts"() {
+      "use strict";
       init_SpikyCache();
       init_Platform();
       init_Hasher();
@@ -5022,6 +5025,7 @@
   var windowRef, eventRegistry, nextId, listen, unListen, evoke, Event2, EventManager_default;
   var init_EventManager = __esm({
     "src/utils/EventManager.ts"() {
+      "use strict";
       windowRef = window;
       eventRegistry = windowRef.__amaiEventRegistry ?? /* @__PURE__ */ new Map();
       windowRef.__amaiEventRegistry = eventRegistry;
@@ -5068,6 +5072,7 @@
   var SCOPE_ROOT, Global, Global_default;
   var init_Global = __esm({
     "src/components/Global/Global.ts"() {
+      "use strict";
       init_EventManager();
       window._spicy_lyrics = {};
       SCOPE_ROOT = window._spicy_lyrics;
@@ -5115,6 +5120,7 @@
   var Lifecycle, lifecycle, lifecycle_default;
   var init_lifecycle = __esm({
     "src/utils/lifecycle.ts"() {
+      "use strict";
       init_EventManager();
       Lifecycle = class {
         constructor() {
@@ -5181,6 +5187,7 @@
   }
   var init_extrapolatePosition = __esm({
     "src/utils/Gets/extrapolatePosition.ts"() {
+      "use strict";
     }
   });
 
@@ -5373,11 +5380,12 @@
     });
   }
   async function getLocalPosition(startedAt, SpotifyPlatform2) {
-    const getPositionState = SpotifyPlatform2.PlayerAPI?._contextPlayer?.getPositionState;
+    const contextPlayer = SpotifyPlatform2.PlayerAPI?._contextPlayer;
+    const getPositionState = contextPlayer?.getPositionState;
     if (typeof getPositionState !== "function") {
       throw new Error("getPositionState unavailable");
     }
-    const { position } = await getPositionState.call(SpotifyPlatform2.PlayerAPI._contextPlayer, {});
+    const { position } = await getPositionState.call(contextPlayer, {});
     const n = Number(position);
     if (!Number.isFinite(n))
       throw new Error("invalid position from getPositionState");
@@ -5626,6 +5634,7 @@
   var windowRef2, syncTimings, state, syncedPosition, PAUSED_POLL_MS, ACTIVE_SYNC_MS, IDLE_HEARTBEAT_MS, PlaybackSurfaceOffset, POSITION_CACHE_TTL;
   var init_GetProgress = __esm({
     "src/utils/Gets/GetProgress.ts"() {
+      "use strict";
       init_Global();
       init_lifecycle();
       init_extrapolatePosition();
@@ -5712,6 +5721,7 @@
   var TRACK_CACHE_MAX, TrackData_Map, SpotifyPlayer;
   var init_SpotifyPlayer = __esm({
     "src/components/Global/SpotifyPlayer.ts"() {
+      "use strict";
       init_SpicyFetch();
       init_Hasher();
       init_GetProgress();
@@ -5842,6 +5852,7 @@
   var ArabicPersianRegex;
   var init_Addons = __esm({
     "src/utils/Addons.ts"() {
+      "use strict";
       init_GetProgress();
       ArabicPersianRegex = /[\u0600-\u06FF]/;
     }
@@ -5945,6 +5956,7 @@
   var INITIAL_DELAY_MS, MAX_DELAY_MS, Whentil, Whentil_default;
   var init_Whentil = __esm({
     "src/utils/Whentil.ts"() {
+      "use strict";
       INITIAL_DELAY_MS = 10;
       MAX_DELAY_MS = 250;
       Whentil = {
@@ -5973,6 +5985,7 @@
   var import_react, import_react_dom, SettingsSection;
   var init_settingsSection = __esm({
     "src/edited_packages/spcr-settings/settingsSection.tsx"() {
+      "use strict";
       import_react = __toESM(require_react());
       import_react_dom = __toESM(require_react_dom());
       init_lifecycle();
@@ -6012,7 +6025,7 @@
                 this.render();
               }
             });
-            lifecycle_default.trackHistory(this.stopHistoryListener);
+            lifecycle_default.trackHistory(this.stopHistoryListener ?? void 0);
             if (Spicetify.Platform.History.location.pathname === "/preferences") {
               await this.render();
             }
@@ -6241,6 +6254,7 @@
   var PREFIX, LEGACY_PREFIX, StorageKeys, storage_default;
   var init_storage = __esm({
     "src/utils/storage.ts"() {
+      "use strict";
       PREFIX = "AmaiLyrics-";
       LEGACY_PREFIX = "SpicyLyrics-";
       StorageKeys = {
@@ -6295,6 +6309,7 @@
   var CODECS, settingsValues_default;
   var init_settingsValues = __esm({
     "src/utils/settingsValues.ts"() {
+      "use strict";
       init_storage();
       CODECS = {
         geminiApiKey: textCodec(StorageKeys.GEMINI_API_KEY),
@@ -6579,6 +6594,7 @@
   var Animator;
   var init_Animator = __esm({
     "src/utils/Animator.ts"() {
+      "use strict";
       init_Maid();
       Animator = class {
         constructor(from, to, duration) {
@@ -6698,6 +6714,7 @@
   var pageOpen;
   var init_PagePresence = __esm({
     "src/utils/PagePresence.ts"() {
+      "use strict";
       pageOpen = false;
     }
   });
@@ -6726,17 +6743,22 @@
     }
   }
   function ensureGlobalVisibilityListener() {
-    if (visibilityListenerAttached)
+    if (intervalState.listenerAttached)
       return;
-    visibilityListenerAttached = true;
+    intervalState.listenerAttached = true;
     document.addEventListener("visibilitychange", globalVisibilityHandler);
   }
-  var liveInstances, visibilityListenerAttached, IntervalManager;
+  var windowRef3, intervalState, liveInstances, IntervalManager;
   var init_IntervalManager = __esm({
     "src/utils/IntervalManager.ts"() {
+      "use strict";
       init_Maid();
-      liveInstances = /* @__PURE__ */ new Set();
-      visibilityListenerAttached = false;
+      windowRef3 = window;
+      intervalState = windowRef3.__amaiIntervalState ?? (windowRef3.__amaiIntervalState = {
+        instances: /* @__PURE__ */ new Set(),
+        listenerAttached: false
+      });
+      liveInstances = intervalState.instances;
       IntervalManager = class {
         constructor(duration, callback) {
           this.timerId = null;
@@ -6877,15 +6899,16 @@
     interval.Start();
     return disposer;
   }
-  var windowRef3, consumers;
+  var windowRef4, consumers;
   var init_PositionConsumer = __esm({
     "src/utils/PositionConsumer.ts"() {
+      "use strict";
       init_IntervalManager();
       init_SpotifyPlayer();
       init_GetProgress();
       init_PagePresence();
-      windowRef3 = window;
-      consumers = windowRef3.__amaiPositionConsumers ?? (windowRef3.__amaiPositionConsumers = /* @__PURE__ */ new Map());
+      windowRef4 = window;
+      consumers = windowRef4.__amaiPositionConsumers ?? (windowRef4.__amaiPositionConsumers = /* @__PURE__ */ new Map());
     }
   });
 
@@ -6907,6 +6930,7 @@
   }
   var init_findActiveIndex = __esm({
     "src/utils/Lyrics/findActiveIndex.ts"() {
+      "use strict";
     }
   });
 
@@ -7121,6 +7145,7 @@
   var lastActiveIndex, lastCachedLength, blurredActiveIndex, lastBlurActiveIndex, lastIsPlaying, lastBlurIsPlaying, styleWriteCache, MAX_BLUR_DISTANCE, MAX_BLUR_PX;
   var init_LineHighlight = __esm({
     "src/utils/Lyrics/LineHighlight.ts"() {
+      "use strict";
       init_registry();
       init_findActiveIndex();
       lastActiveIndex = -1;
@@ -7260,6 +7285,7 @@
   var lyricsBetweenShow, rows, lineElementToStartTimeMap, timedLinesCache, THROTTLE_TIME, lastRenderedPosition, hasRenderedInitial, scrollTickCounter, renderLoopDisposer, LinesEvListenerMaid, LinesEvListenerExists;
   var init_registry = __esm({
     "src/utils/Lyrics/registry.ts"() {
+      "use strict";
       init_Maid();
       init_SpotifyPlayer();
       init_PositionConsumer();
@@ -7485,6 +7511,7 @@
   var import_fastdom, INERT_CONTROLLER;
   var init_ScrollIntoView = __esm({
     "src/utils/ScrollIntoView/index.ts"() {
+      "use strict";
       import_fastdom = __toESM(require_fastdom());
       INERT_CONTROLLER = {
         cancel: () => {
@@ -8753,6 +8780,7 @@
   }
   var init_GetElementHeight = __esm({
     "src/utils/Gets/GetElementHeight.ts"() {
+      "use strict";
     }
   });
 
@@ -8769,6 +8797,7 @@
   var IsMouseInLyricsPage;
   var init_IsHovering = __esm({
     "src/utils/Scrolling/Page/IsHovering.ts"() {
+      "use strict";
       IsMouseInLyricsPage = false;
     }
   });
@@ -8845,9 +8874,11 @@
   var ScrollSimplebar, isDragging, ElementEventQuery, onMouseEnter, onMouseLeave, onDragStart, onDragEnd, boundContainer, boundLyricsContainer;
   var init_ScrollSimplebar = __esm({
     "src/utils/Scrolling/Simplebar/ScrollSimplebar.ts"() {
+      "use strict";
       init_dist2();
       init_GetElementHeight();
       init_IsHovering();
+      ScrollSimplebar = null;
       isDragging = false;
       ElementEventQuery = "#AmaiLyricsPage .ContentBox .LyricsContainer";
       onMouseEnter = null;
@@ -8946,17 +8977,18 @@
     } catch {
     }
   }
-  var windowRef4, sharedScrollState, lastLine, activeScrollController, AutoScroll;
+  var windowRef5, sharedScrollState, lastLine, activeScrollController, AutoScroll;
   var init_AutoScroll = __esm({
     "src/utils/Scrolling/AutoScroll.ts"() {
+      "use strict";
       init_GetProgress();
       init_PagePresence();
       init_registry();
       init_findActiveIndex();
       init_ScrollIntoView();
       init_ScrollSimplebar();
-      windowRef4 = window;
-      sharedScrollState = windowRef4.__amaiScrollState ?? (windowRef4.__amaiScrollState = {
+      windowRef5 = window;
+      sharedScrollState = windowRef5.__amaiScrollState ?? (windowRef5.__amaiScrollState = {
         lastLine: null,
         activeScrollController: null
       });
@@ -9078,6 +9110,7 @@
   var JAPANESE_REGEX, LYRICS_DOCUMENT_VERSION;
   var init_conversion = __esm({
     "src/utils/Lyrics/conversion.ts"() {
+      "use strict";
       JAPANESE_REGEX = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
       LYRICS_DOCUMENT_VERSION = 2;
     }
@@ -9123,6 +9156,9 @@
   }
   function invalidateSnapshotCache() {
     memoValid = false;
+    memoLinesFor = null;
+    memoLinesTrackId = null;
+    memoLines = null;
   }
   function writeSnapshot(value) {
     const serialized = JSON.stringify(isNoLyricsSentinel(value) ? value : stampDocument(value));
@@ -9154,6 +9190,8 @@
     const snapshot = readSnapshot(trackId);
     if (!snapshot || isNoLyricsSentinel(snapshot))
       return null;
+    if (snapshot === memoLinesFor && trackId === memoLinesTrackId)
+      return memoLines;
     const lines = [];
     for (const line of snapshot.lines) {
       if (typeof line.start !== "number" || typeof line.end !== "number")
@@ -9167,11 +9205,15 @@
         EndTime: line.end * 1e3
       });
     }
-    return lines.length ? lines : null;
+    memoLines = lines.length ? lines : null;
+    memoLinesFor = snapshot;
+    memoLinesTrackId = trackId;
+    return memoLines;
   }
-  var SNAPSHOT_KEY, memoRaw, memoParsed, memoValid;
+  var SNAPSHOT_KEY, memoRaw, memoParsed, memoValid, memoLinesFor, memoLinesTrackId, memoLines;
   var init_snapshot = __esm({
     "src/utils/Lyrics/snapshot.ts"() {
+      "use strict";
       init_storage();
       init_EventManager();
       init_conversion();
@@ -9179,18 +9221,21 @@
       memoRaw = null;
       memoParsed = null;
       memoValid = false;
+      memoLinesFor = null;
+      memoLinesTrackId = null;
+      memoLines = null;
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d580d8e/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e79106e/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d580d8e/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e79106e/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d580def/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e7910cf/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d580def/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e7910cf/ProcessingIndicator.css"() {
     }
   });
 
@@ -9199,7 +9244,7 @@
     if (infoTimeout !== null) {
       clearTimeout(infoTimeout);
       infoTimeout = null;
-      windowRef5.__amaiInfoTimeout = null;
+      windowRef6.__amaiInfoTimeout = null;
     }
   }
   function ApplyInfo(data) {
@@ -9211,7 +9256,7 @@
     if (infoTimeout !== null) {
       clearTimeout(infoTimeout);
       infoTimeout = null;
-      windowRef5.__amaiInfoTimeout = null;
+      windowRef6.__amaiInfoTimeout = null;
     }
     TopBarContainer.querySelectorAll(".amai-info").forEach((el) => el.remove());
     const infoElement = document.createElement("a");
@@ -9235,19 +9280,20 @@
     }
     infoTimeout = window.setTimeout(() => {
       infoTimeout = null;
-      windowRef5.__amaiInfoTimeout = null;
+      windowRef6.__amaiInfoTimeout = null;
       if (TopBarContainer.contains(infoElement)) {
         TopBarContainer.removeChild(infoElement);
       }
     }, duration);
-    windowRef5.__amaiInfoTimeout = infoTimeout;
+    windowRef6.__amaiInfoTimeout = infoTimeout;
   }
-  var windowRef5, infoTimeout;
+  var windowRef6, infoTimeout;
   var init_ApplyInfo = __esm({
     "src/utils/Lyrics/Applyer/Info/ApplyInfo.ts"() {
+      "use strict";
       init_lifecycle();
-      windowRef5 = window;
-      infoTimeout = windowRef5.__amaiInfoTimeout ?? null;
+      windowRef6 = window;
+      infoTimeout = windowRef6.__amaiInfoTimeout ?? null;
       lifecycle_default.trackCallback(clearApplyInfoTimeout);
     }
   });
@@ -9273,6 +9319,7 @@
   }
   var init_debounce2 = __esm({
     "src/utils/debounce.ts"() {
+      "use strict";
     }
   });
 
@@ -9311,6 +9358,7 @@
   }
   var init_utils = __esm({
     "src/components/DynamicBG/utils.ts"() {
+      "use strict";
     }
   });
 
@@ -9352,6 +9400,7 @@
   var APP_BG_ON_CLASS, APP_BG_HOST_CLASS, APP_BG_CLASS, APP_BG_CONTAINER_CLASS, APP_BG_HOST_HELPER_CLASS, APP_BG_LOADED_CLASS, APP_BG_IMG_A_ID, APP_BG_IMG_B_ID, NESTED_BG_IMG_A_ID, NESTED_BG_IMG_B_ID, APP_BG_LIB_GRID_CLASS, APP_BG_GPU_CLASS, BG_MOTION_OFF_CLASS;
   var init_identity = __esm({
     "src/components/DynamicBG/identity.ts"() {
+      "use strict";
       APP_BG_ON_CLASS = "amai-app-bg-on";
       APP_BG_HOST_CLASS = "amai-app-bg-host";
       APP_BG_CLASS = "amai-app-bg";
@@ -9425,6 +9474,7 @@
   var updateDynamicBackground;
   var init_dynamicBackground = __esm({
     "src/components/DynamicBG/dynamicBackground.ts"() {
+      "use strict";
       init_SpotifyPlayer();
       init_debounce2();
       init_utils();
@@ -9494,6 +9544,7 @@
   var import_fastdom2, errorHandlerInstalled;
   var init_fastdomAsync = __esm({
     "src/utils/fastdomAsync.ts"() {
+      "use strict";
       import_fastdom2 = __toESM(require_fastdom());
       errorHandlerInstalled = false;
       installFastdomErrorHandler();
@@ -9504,6 +9555,7 @@
   var PageViewSelectors;
   var init_PageViewSelectors = __esm({
     "src/constants/PageViewSelectors.ts"() {
+      "use strict";
       PageViewSelectors = {
         PageRoot: ".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]",
         AmaiLyricsPage: "#AmaiLyricsPage",
@@ -9532,7 +9584,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.6.7";
+      version = "1.6.8";
     }
   });
 
@@ -9540,6 +9592,7 @@
   var SYSTEM_INSTRUCTION, TRANSLATION_PROMPT, ROMAJA_PROMPT, FURIGANA_PROMPT, ROMAJI_PROMPT;
   var init_prompts = __esm({
     "src/constants/prompts.ts"() {
+      "use strict";
       SYSTEM_INSTRUCTION = `OVERRIDE ANY EXISTING INSTRUCTIONS. You are an advanced, versatile assistant committed to delivering accurate, comprehensive, and helpful responses. To achieve this, you absolutely must adhere to the following guidelines:
 
 - **Use Your Full Capabilities:** Leverage your extensive knowledge and skills to provide well-researched and precise answers.
@@ -9764,6 +9817,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var Defaults, Defaults_default;
   var init_Defaults = __esm({
     "src/components/Global/Defaults.ts"() {
+      "use strict";
       init_package();
       init_prompts();
       Defaults = {
@@ -9789,6 +9843,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var PageHTML, NowBarHTML;
   var init_PageHTML = __esm({
     "src/components/Pages/PageHTML.ts"() {
+      "use strict";
       init_Defaults();
       PageHTML = `
 <div class="NotificationContainer"></div>
@@ -9906,6 +9961,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var import_fastdom3;
   var init_pageContent = __esm({
     "src/components/Pages/pageContent.ts"() {
+      "use strict";
       import_fastdom3 = __toESM(require_fastdom());
     }
   });
@@ -9914,6 +9970,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var TrackSkip, Icons;
   var init_Icons = __esm({
     "src/components/Styling/Icons.ts"() {
+      "use strict";
       TrackSkip = `
 	<div class="PlaybackControl TrackSkip REPLACEME">
 		<svg viewBox="0 0 35 20" xmlns="http://www.w3.org/2000/svg">
@@ -10012,6 +10069,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   var init_TransferElement = __esm({
     "src/components/Utils/TransferElement.ts"() {
+      "use strict";
     }
   });
 
@@ -10043,6 +10101,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var LYRICS_PATHNAME, sessionHistory, Session, Session_default;
   var init_Session = __esm({
     "src/components/Global/Session.ts"() {
+      "use strict";
       init_Global();
       LYRICS_PATHNAME = "/AmaiLyrics";
       sessionHistory = [];
@@ -10186,6 +10245,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var Tooltips;
   var init_pageControls = __esm({
     "src/components/Pages/pageControls.ts"() {
+      "use strict";
       init_PageViewSelectors();
       init_Icons();
       init_Fullscreen();
@@ -10248,6 +10308,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var TRUSTED_EXTERNAL_HOSTS;
   var init_externalNavigation = __esm({
     "src/utils/externalNavigation.ts"() {
+      "use strict";
       TRUSTED_EXTERNAL_HOSTS = /* @__PURE__ */ new Set(["aistudio.google.com", "github.com", "www.youtube.com"]);
     }
   });
@@ -10335,6 +10396,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var overlay, lastFocusedElement;
   var init_SettingsModal = __esm({
     "src/components/Pages/SettingsModal.ts"() {
+      "use strict";
       init_settings();
       overlay = null;
       lastFocusedElement = null;
@@ -10426,6 +10488,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var import_fastdom4;
   var init_pageButtons = __esm({
     "src/components/Pages/pageButtons.ts"() {
+      "use strict";
       init_PageViewSelectors();
       import_fastdom4 = __toESM(require_fastdom());
       init_fetchLyrics();
@@ -10524,6 +10587,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var maid, PageView, PageRoot, PageView_default;
   var init_PageView = __esm({
     "src/components/Pages/PageView.ts"() {
+      "use strict";
       init_fetchLyrics();
       init_();
       init_2();
@@ -10572,7 +10636,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     };
   }
   function ensureGlobalFullscreenListeners() {
-    const existing = windowRef6.__amaiFullscreenHandlers;
+    const existing = windowRef7.__amaiFullscreenHandlers;
     if (existing) {
       document.removeEventListener("fullscreenchange", existing.onFullscreenChange);
       document.removeEventListener("keydown", existing.onKeyDown);
@@ -10587,15 +10651,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     };
     document.addEventListener("fullscreenchange", onFullscreenChange);
     document.addEventListener("keydown", onKeyDown);
-    windowRef6.__amaiFullscreenHandlers = { onFullscreenChange, onKeyDown };
+    windowRef7.__amaiFullscreenHandlers = { onFullscreenChange, onKeyDown };
   }
   function destroyFullscreenGlobalListeners() {
-    const h = windowRef6.__amaiFullscreenHandlers;
+    const h = windowRef7.__amaiFullscreenHandlers;
     if (!h)
       return;
     document.removeEventListener("fullscreenchange", h.onFullscreenChange);
     document.removeEventListener("keydown", h.onKeyDown);
-    delete windowRef6.__amaiFullscreenHandlers;
+    delete windowRef7.__amaiFullscreenHandlers;
     try {
       MediaBox_Data.Animators.brightness.Destroy();
       MediaBox_Data.Animators.blur.Destroy();
@@ -10620,7 +10684,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     page.classList.add("Fullscreen");
     publish();
     if (!document.fullscreenElement) {
-      document.querySelector(PAGE_SELECTOR).requestFullscreen().then(() => {
+      page.requestFullscreen().then(() => {
         setupFullscreenUI();
       }).catch((err2) => {
         setupFullscreenUI();
@@ -10631,7 +10695,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       setupFullscreenUI();
     }
     function setupFullscreenUI() {
-      if (!isPageFullscreen() || !page.isConnected)
+      if (!isPageFullscreen() || !page?.isConnected)
         return;
       PageView_default.AppendViewControls();
       void OpenNowBar();
@@ -10707,9 +10771,10 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       }, 1e3);
     }
   }
-  var PAGE_SELECTOR, subscribers, leaving, windowRef6, MediaBox_Data, Fullscreen_default;
+  var PAGE_SELECTOR, subscribers, leaving, windowRef7, MediaBox_Data, Fullscreen_default;
   var init_Fullscreen = __esm({
     "src/components/Utils/Fullscreen.ts"() {
+      "use strict";
       init_Animator();
       init_AutoScroll();
       init_snapshot();
@@ -10720,7 +10785,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       PAGE_SELECTOR = "#AmaiLyricsPage";
       subscribers = /* @__PURE__ */ new Set();
       leaving = false;
-      windowRef6 = window;
+      windowRef7 = window;
       ensureGlobalFullscreenListeners();
       lifecycle_default.trackCallback(destroyFullscreenGlobalListeners);
       MediaBox_Data = {
@@ -10769,6 +10834,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var INTERVALS;
   var init_intervals = __esm({
     "src/constants/intervals.ts"() {
+      "use strict";
       INTERVALS = {
         PROGRESS_BAR_UPDATE: 0.1
       };
@@ -10788,7 +10854,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     const disposers = [];
     let dragStartTimer = null;
     let destroyed2 = false;
-    function clearDragState() {
+    const clearDragState = () => {
       if (dragStartTimer !== null) {
         window.clearTimeout(dragStartTimer);
         dragStartTimer = null;
@@ -10796,7 +10862,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       page.classList.remove("SomethingDragging");
       dragBox.classList.remove("Dragging");
       dropZones.forEach((zone) => zone.classList.remove("Hidden", "DraggingOver"));
-    }
+    };
     function listen2(target, type, handler) {
       target.addEventListener(type, handler);
       disposers.push(() => target.removeEventListener(type, handler));
@@ -10844,6 +10910,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   var init_DragAndDrop = __esm({
     "src/components/NowBar/DragAndDrop.ts"() {
+      "use strict";
       init_storage();
     }
   });
@@ -10937,6 +11004,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   var init_PlaybackControls = __esm({
     "src/components/NowBar/PlaybackControls.ts"() {
+      "use strict";
       init_Icons();
       init_SpotifyPlayer();
     }
@@ -10946,6 +11014,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var SongProgressBar;
   var init_SongProgressBar = __esm({
     "src/utils/Lyrics/SongProgressBar.ts"() {
+      "use strict";
       SongProgressBar = class {
         constructor() {
           this.destroyed = false;
@@ -11014,6 +11083,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     durationText.className = "Time Duration";
     element.append(positionText, slider, durationText);
     let destroyed2 = false;
+    let lastProgress = null;
+    let lastPositionText = null;
+    let lastDurationText = null;
     const render = (position) => {
       if (destroyed2 || !Number.isFinite(position))
         return;
@@ -11021,9 +11093,21 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         duration: SpotifyPlayer.GetTrackDuration() ?? 0,
         position: Math.max(0, position)
       });
-      slider.style.setProperty("--SliderProgress", String(model.GetProgressPercentage()));
-      positionText.textContent = model.GetFormattedPosition();
-      durationText.textContent = model.GetFormattedDuration();
+      const progress = model.GetProgressPercentage();
+      if (progress !== lastProgress) {
+        lastProgress = progress;
+        slider.style.setProperty("--SliderProgress", String(progress));
+      }
+      const positionLabel = model.GetFormattedPosition();
+      if (positionLabel !== lastPositionText) {
+        lastPositionText = positionLabel;
+        positionText.textContent = positionLabel;
+      }
+      const durationLabel = model.GetFormattedDuration();
+      if (durationLabel !== lastDurationText) {
+        lastDurationText = durationLabel;
+        durationText.textContent = durationLabel;
+      }
     };
     const seek = (event) => {
       if (destroyed2 || !element.isConnected || slider.getBoundingClientRect().width <= 0)
@@ -11050,6 +11134,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   var init_ProgressBar = __esm({
     "src/components/NowBar/ProgressBar.ts"() {
+      "use strict";
       init_SongProgressBar();
       init_SpotifyPlayer();
     }
@@ -11264,6 +11349,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var mounted, destroyed, pageDestroyed;
   var init_NowBar = __esm({
     "src/components/NowBar/NowBar.ts"() {
+      "use strict";
       init_storage();
       init_SpotifyPlayer();
       init_Fullscreen();
@@ -11302,6 +11388,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   var init_trackId = __esm({
     "src/utils/Lyrics/trackId.ts"() {
+      "use strict";
     }
   });
 
@@ -11419,17 +11506,18 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       window.ProcessingIndicatorTimeout = null;
     }, 5e3);
   }
-  var windowRef7, uiState, ContainerShowLoaderTimeout;
+  var windowRef8, uiState, ContainerShowLoaderTimeout;
   var init_ui = __esm({
     "src/utils/Lyrics/ui.ts"() {
+      "use strict";
       init_NowBar();
       init_PageView();
       init_Fullscreen();
       init_pageButtons();
       init_trackId();
       init_registry();
-      windowRef7 = window;
-      uiState = windowRef7.__amaiLyricsUiState ?? (windowRef7.__amaiLyricsUiState = { containerShowLoaderTimeout: null });
+      windowRef8 = window;
+      uiState = windowRef8.__amaiLyricsUiState ?? (windowRef8.__amaiLyricsUiState = { containerShowLoaderTimeout: null });
       ContainerShowLoaderTimeout = uiState.containerShowLoaderTimeout;
     }
   });
@@ -11499,6 +11587,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var CACHE_EXPIRATION_TIME, lyricsCache, MAX_LYRICS_CACHE_ENTRIES, windowCacheRef, lyricsCacheKeyOrder;
   var init_cache = __esm({
     "src/utils/Lyrics/cache.ts"() {
+      "use strict";
       init_SpikyCache();
       init_conversion();
       CACHE_EXPIRATION_TIME = 1e3 * 60 * 60 * 24 * 7;
@@ -11599,6 +11688,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var API_URL;
   var init_Lyrics = __esm({
     "src/utils/API/Lyrics.ts"() {
+      "use strict";
       init_Defaults();
       init_SpotifyPlayer();
       API_URL = Defaults_default.lyrics.api.url;
@@ -11638,6 +11728,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   var init_Styles = __esm({
     "src/utils/CSS/Styles.ts"() {
+      "use strict";
     }
   });
 
@@ -11647,13 +11738,14 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   var init_ConvertTime = __esm({
     "src/utils/Lyrics/ConvertTime.ts"() {
+      "use strict";
     }
   });
 
   // src/utils/Lyrics/Applyer/Credits/ApplyLyricsCredits.ts
   function ApplyLyricsCredits(data) {
     const LyricsContainer = document.querySelector("#AmaiLyricsPage .LyricsContainer .LyricsContent");
-    if (!data?.songWriters)
+    if (!data?.songWriters || !LyricsContainer)
       return;
     const CreditsElement = document.createElement("div");
     CreditsElement.classList.add("Credits");
@@ -11663,6 +11755,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   var init_ApplyLyricsCredits = __esm({
     "src/utils/Lyrics/Applyer/Credits/ApplyLyricsCredits.ts"() {
+      "use strict";
     }
   });
 
@@ -11721,6 +11814,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var DOT_GLYPH, INSTRUMENTAL_LABEL;
   var init_createMusicalLine = __esm({
     "src/utils/Lyrics/Applyer/Utils/createMusicalLine.ts"() {
+      "use strict";
       init_registry();
       DOT_GLYPH = "\u2022";
       INSTRUMENTAL_LABEL = "Instrumental";
@@ -11744,6 +11838,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var RUBY_OPEN, RUBY_CLOSE, RUBY_ROMAJA_OPEN, RT_OPEN, RT_CLOSE;
   var init_sanitize = __esm({
     "src/utils/sanitize.ts"() {
+      "use strict";
       RUBY_OPEN = "&lt;ruby&gt;";
       RUBY_CLOSE = "&lt;/ruby&gt;";
       RUBY_ROMAJA_OPEN = "&lt;ruby class=&quot;romaja&quot;&gt;";
@@ -11769,6 +11864,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var isRtl_default;
   var init_isRtl = __esm({
     "src/utils/Lyrics/isRtl.ts"() {
+      "use strict";
       isRtl_default = isRtl;
     }
   });
@@ -11813,6 +11909,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var JAPANESE_CHAR_REGEX, JAPANESE_ROMAJI_REGEX, JAPANESE_FURIGANA_REGEX, KOREAN_ROMAJA_REGEX, phoneticTextCache, PHONETIC_CACHE_MAX;
   var init_phoneticPatterns = __esm({
     "src/utils/Lyrics/phoneticPatterns.ts"() {
+      "use strict";
       JAPANESE_CHAR_REGEX = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々]/;
       JAPANESE_ROMAJI_REGEX = /(([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)|[(\uFF08]([\u4E00-\u9FFF々\u3040-\u309F\u30A0-\u30FF0-9]+)[)\uFF09])(?:{|\uFF5B)([^}\uFF5D]+)(?:}|\uFF5D)/g;
       JAPANESE_FURIGANA_REGEX = /([\u4E00-\u9FFF々]+[\u3040-\u30FF]*){([^}]+)}/g;
@@ -11838,7 +11935,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     if (hasDistinctTranslation) {
       const translationElem = document.createElement("div");
       translationElem.classList.add("translation");
-      translationElem.textContent = line.translation;
+      translationElem.textContent = line.translation ?? null;
       mainTextContainer.appendChild(translationElem);
     }
     if (isRtl_default(line.text) && !lineElem.classList.contains("rtl")) {
@@ -11850,6 +11947,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   var init_decorateLine = __esm({
     "src/utils/Lyrics/Applyer/Utils/decorateLine.ts"() {
+      "use strict";
       init_Addons();
       init_isRtl();
       init_settingsValues();
@@ -12045,6 +12143,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   var LYRICS_CONTAINER_SELECTOR, STYLING_CONTAINER_SELECTOR, appliedLineState;
   var init_LyricsRenderer = __esm({
     "src/utils/Lyrics/LyricsRenderer.ts"() {
+      "use strict";
       init_Addons();
       init_Styles();
       init_ScrollSimplebar();
@@ -12114,16 +12213,17 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     EventManager_default.evoke("lyrics:data-updated", serialized);
     return true;
   }
-  var windowRef8, sharedRequest;
+  var windowRef9, sharedRequest;
   var init_publish = __esm({
     "src/utils/Lyrics/publish.ts"() {
+      "use strict";
       init_EventManager();
       init_ui();
       init_LyricsRenderer();
       init_snapshot();
       init_trackId();
-      windowRef8 = window;
-      sharedRequest = windowRef8.__amaiLyricsRequest ?? (windowRef8.__amaiLyricsRequest = { token: 0, uri: "" });
+      windowRef9 = window;
+      sharedRequest = windowRef9.__amaiLyricsRequest ?? (windowRef9.__amaiLyricsRequest = { token: 0, uri: "" });
     }
   });
 
@@ -12161,6 +12261,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   }
   var init_amai = __esm({
     "src/utils/Lyrics/ai/amai.ts"() {
+      "use strict";
       init_Defaults();
     }
   });
@@ -34590,7 +34691,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         contents: `${prompt}${JSON.stringify(lyricsOnly)}`
       });
       try {
-        const translations = JSON.parse(response.text.replace(/\\n/g, ""));
+        const translations = JSON.parse((response.text ?? "").replace(/\\n/g, ""));
         return translations.lines || lyricsOnly.map(() => "");
       } catch (parseError) {
         console.error("Amai Lyrics: Error parsing translation response", parseError);
@@ -34614,7 +34715,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
         contents: `${prompt} Here are the lyrics:
 ${JSON.stringify(lyricsOnly)}`
       });
-      return response.text;
+      return response.text ?? "";
     };
     let retries = 2;
     let lines;
@@ -34642,6 +34743,7 @@ ${JSON.stringify(lyricsOnly)}`
   var genAIModulePromise, AI_MODELS;
   var init_gemini = __esm({
     "src/utils/Lyrics/ai/gemini.ts"() {
+      "use strict";
       genAIModulePromise = null;
       AI_MODELS = {
         TRANSLATION: "gemini-flash-lite-latest",
@@ -34763,6 +34865,7 @@ ${JSON.stringify(lyricsOnly)}`
   var FETCH_ERROR_INFO, MISSING_KEY_INFO;
   var init_ai = __esm({
     "src/utils/Lyrics/ai/index.ts"() {
+      "use strict";
       init_settingsValues();
       init_Defaults();
       init_conversion();
@@ -34866,6 +34969,7 @@ ${JSON.stringify(lyricsOnly)}`
   var JAPANESE_REGEX2, KOREAN_REGEX, LYRICS_TIMING_OFFSET;
   var init_processing = __esm({
     "src/utils/Lyrics/processing.ts"() {
+      "use strict";
       init_ui();
       init_cache();
       init_ai();
@@ -34933,6 +35037,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
   var init_api = __esm({
     "src/utils/Lyrics/api.ts"() {
+      "use strict";
       init_Platform();
       init_Lyrics();
       init_processing();
@@ -34973,6 +35078,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
   var init_Applyer = __esm({
     "src/utils/Lyrics/Global/Applyer.ts"() {
+      "use strict";
       init_PagePresence();
       init_LyricsRenderer();
       init_fetchLyrics();
@@ -35092,6 +35198,7 @@ ${JSON.stringify(lyricsOnly)}`
   var inFlight;
   var init_fetchLyrics = __esm({
     "src/utils/Lyrics/fetchLyrics.ts"() {
+      "use strict";
       init_ui();
       init_cache();
       init_snapshot();
@@ -35136,6 +35243,7 @@ ${JSON.stringify(lyricsOnly)}`
   var INTENSITY_PRESETS, GL_INTENSITY_PRESETS, MOTION_DURATION_SCALES, GL_MOTION_SPEEDS;
   var init_ThemeSettings = __esm({
     "src/utils/ThemeSettings.ts"() {
+      "use strict";
       init_settingsValues();
       init_identity();
       INTENSITY_PRESETS = {
@@ -35424,6 +35532,7 @@ ${JSON.stringify(lyricsOnly)}`
   var BITMAP_SIZE, QUANTIZE_BITS, RESULT_COUNT, MIN_SATURATION, MIN_LIGHTNESS, MAX_LIGHTNESS, ARTWORK_COLOR_CACHE_MAX, artworkColorCache, artworkColorPromiseCache, ACCENT_LIFT_MIN_LUMINANCE, ACCENT_COUNT, lastAccentArtworkUrl, HEX_COLOR_PATTERN, WHITE, BLACK, ArtworkColors_default;
   var init_ArtworkColors = __esm({
     "src/utils/ArtworkColors.ts"() {
+      "use strict";
       init_settingsValues();
       BITMAP_SIZE = 40;
       QUANTIZE_BITS = 5;
@@ -35448,6 +35557,7 @@ ${JSON.stringify(lyricsOnly)}`
   var VERTEX_SHADER, FIELD_FRAGMENT_SHADER, PRESENT_FRAGMENT_SHADER;
   var init_inkShader = __esm({
     "src/components/DynamicBG/inkShader.ts"() {
+      "use strict";
       VERTEX_SHADER = `#version 300 es
 // Attribute-less fullscreen triangle: positions from gl_VertexID, no buffers.
 // Shared by both programs, so neither needs a vertex buffer or attributes.
@@ -35701,6 +35811,7 @@ void main() {
   var ART_SIZE, CROSSFADE_SECONDS, BG_FPS, FRAME_INTERVAL_MS, STATIC_TIME, MAX_FRAME_DT_MS, MAX_DPR, BACKING_SCALE, FIELD_SCALE, GL_REVEAL_MS, GlAppBackground;
   var init_GlAppBackground = __esm({
     "src/components/DynamicBG/GlAppBackground.ts"() {
+      "use strict";
       init_identity();
       init_inkShader();
       ART_SIZE = 32;
@@ -36204,6 +36315,7 @@ void main() {
   var APP_BG_HOST_SELECTOR, APP_BG_HOST_FALLBACK_SELECTOR, AppBackground, appBackgroundSingleton;
   var init_AppBackground = __esm({
     "src/components/DynamicBG/AppBackground.ts"() {
+      "use strict";
       init_settingsValues();
       init_ThemeSettings();
       init_utils();
@@ -36789,6 +36901,7 @@ void main() {
   var amaiSettingsSections, themeOptionFieldIds;
   var init_settings = __esm({
     "src/utils/settings.ts"() {
+      "use strict";
       init_settingsSection();
       init_settingsValues();
       init_fetchLyrics();
@@ -36990,6 +37103,7 @@ void main() {
   var UPDATE_INTERVAL, lyricsElement, centerWrapper, positionConsumerDisposer, resizeObserver, lastText, initWhen, lyricsDataListenerId, cachedPlaybarEnabled, cachedPlaybarEnabledAt, PLAYBAR_ENABLED_TTL_MS, PlaybarLyrics_default;
   var init_PlaybarLyrics = __esm({
     "src/components/PlaybarLyrics/PlaybarLyrics.ts"() {
+      "use strict";
       init_settingsValues();
       init_PositionConsumer();
       init_phoneticPatterns();
@@ -37029,10 +37143,10 @@ void main() {
   init_identity();
   var AppInitializer = class {
     static async initializeCore() {
-      const windowRef9 = window;
-      if (!windowRef9.__amaiCoreInitialized) {
+      const windowRef10 = window;
+      if (!windowRef10.__amaiCoreInitialized) {
         void invalidateLyrics({ all: true });
-        windowRef9.__amaiCoreInitialized = true;
+        windowRef10.__amaiCoreInitialized = true;
       }
       await this.injectGoogleFonts();
       await this.initializePlatformAndSettings();
@@ -37064,7 +37178,7 @@ void main() {
             bg.classList.add(APP_BG_LOADED_CLASS);
           });
         };
-        if (window.requestIdleCallback) {
+        if (typeof window.requestIdleCallback === "function") {
           requestIdleCallback(markLoaded, { timeout: 2e3 });
         } else {
           setTimeout(markLoaded, 1e3);
@@ -37880,9 +37994,9 @@ void main() {
     lifecycle_default.track(() => clearInterval(timer));
   }
   function installBlankToastSuppressor() {
-    const windowRef9 = window;
-    if (!windowRef9.__amaiToastInstalled) {
-      windowRef9.__amaiToastInstalled = true;
+    const windowRef10 = window;
+    if (!windowRef10.__amaiToastInstalled) {
+      windowRef10.__amaiToastInstalled = true;
       overrideShowNotification();
       if (!overrideSnackbar()) {
         let tries = 0;
@@ -38716,7 +38830,7 @@ void main() {
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d580d8e/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e79106e/DotLoader.css */
 #DotLoader {
   --dot-color: var(--amai-accent-1);
   --dot-color-dim: color-mix(in srgb, var(--amai-accent-1) 22%, transparent);
@@ -38751,7 +38865,7 @@ void main() {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d580def/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e7910cf/ProcessingIndicator.css */
 #AmaiLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -38833,7 +38947,7 @@ void main() {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d580260/tokens.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e7902d0/tokens.css */
 :root {
   --amai-accent-1: #1ed760;
   --amai-accent-2: #1db954;
@@ -38912,7 +39026,7 @@ void main() {
   --amai-scrollbar-thumb: rgba(255, 255, 255, 0.6);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d5804e1/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e790601/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -39155,7 +39269,7 @@ button:has(#AmaiLyricsPageSvg):after {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d580582/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e7906f2/Simplebar.css */
 #AmaiLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -39363,7 +39477,7 @@ button:has(#AmaiLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d5805f3/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e790763/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -39967,7 +40081,7 @@ button:has(#AmaiLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d5806a4/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e790864/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: calc(2.2 * var(--amai-bg-saturation-scale, 1));
@@ -40337,7 +40451,7 @@ body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingVi
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d580715/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e790925/main.css */
 #AmaiLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -40588,7 +40702,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d580776/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e7909b6/Mixed.css */
 #AmaiLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -40942,7 +41056,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d5807e7/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e790a47/LoaderContainer.css */
 #AmaiLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -40964,7 +41078,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d580818/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e790a88/FullscreenTransition.css */
 #AmaiLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -40991,7 +41105,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d580839/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e790ab9/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
@@ -41093,7 +41207,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d58086a/Settings.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e790b1a/Settings.css */
 :is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) {
   display: grid;
   gap: 8px;
@@ -41320,7 +41434,7 @@ ruby > rt {
   border: 1px solid var(--essential-subdued, #818181);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d5808bb/SettingsModal.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e790b9b/SettingsModal.css */
 .amai-settings-overlay {
   position: fixed;
   inset: 0;
@@ -41398,7 +41512,7 @@ ruby > rt {
   min-width: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d5808ec/Tooltips.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e790bdc/Tooltips.css */
 .tippy-box[data-theme~=amai-lyrics] {
   position: relative;
   background: var(--amai-glass-veil-strong), var(--amai-glass-base-strong) !important;
@@ -41458,7 +41572,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16692-zFJUqMCc5v4K/1a0f4d58091d/Glassmorphism.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e790c1d/Glassmorphism.css */
 .amai-app-bg-host .Root__nav-bar:not(.amai-lib-grid) {
   isolation: isolate;
   background: var(--amai-glass-veil), var(--amai-glass-base) !important;
