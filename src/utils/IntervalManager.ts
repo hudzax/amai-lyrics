@@ -1,7 +1,28 @@
 import { Maid, Giveable } from '@hudzax/web-modules/Maid';
 
-const liveInstances = new Set<IntervalManager>();
-let visibilityListenerAttached = false;
+// Window-persisted so a Spicetify hot re-injection reuses the one listener and
+// the one instance set instead of stacking a second `visibilitychange` handler
+// on `document` per reload. Both halves have to move together: persisting only
+// the flag would stop the listener count growing but leave the surviving
+// handler closing over the previous injection's — by then empty — set, so the
+// new injection's intervals would never auto-pause on hide.
+//
+// The set therefore holds instances of more than one IntervalManager class
+// across re-injections. That is safe because globalVisibilityHandler reaches
+// every member through a structural cast rather than a nominal check; do not
+// add an `instanceof` here, it would break exactly that.
+// SAFETY: window augmentation for hot-reload persistence; __amaiIntervalState is our isolated namespace
+const windowRef = window as unknown as {
+  __amaiIntervalState?: {
+    instances: Set<IntervalManager>;
+    listenerAttached: boolean;
+  };
+};
+const intervalState = (windowRef.__amaiIntervalState ??= {
+  instances: new Set<IntervalManager>(),
+  listenerAttached: false,
+});
+const liveInstances = intervalState.instances;
 
 function globalVisibilityHandler(): void {
   const hidden = document.hidden;
@@ -29,8 +50,8 @@ function globalVisibilityHandler(): void {
 }
 
 function ensureGlobalVisibilityListener(): void {
-  if (visibilityListenerAttached) return;
-  visibilityListenerAttached = true;
+  if (intervalState.listenerAttached) return;
+  intervalState.listenerAttached = true;
   document.addEventListener('visibilitychange', globalVisibilityHandler);
 }
 
