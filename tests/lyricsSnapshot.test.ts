@@ -250,3 +250,58 @@ describe('parse memo', () => {
     expect(readSnapshot('other')).toMatchObject({ id: 'other' });
   });
 });
+
+describe('derived timed-lines memo', () => {
+  const timedDoc = (id: string, text: string) =>
+    JSON.stringify({ v: 2, id, type: 'Line', lines: [{ text, start: 1, end: 2 }] });
+
+  it('returns the identical array across ticks while the snapshot is unchanged', () => {
+    setStored(timedDoc('track1', 'hello'));
+
+    const first = publishedTimedLines('track1');
+    const second = publishedTimedLines('track1');
+    const third = publishedTimedLines('track1');
+
+    expect(first).toEqual([{ text: 'hello', StartTime: 1000, EndTime: 2000 }]);
+    expect(second).toBe(first);
+    expect(third).toBe(first);
+  });
+
+  it('rebuilds after explicit invalidation', () => {
+    setStored(timedDoc('track1', 'hello'));
+    const first = publishedTimedLines('track1');
+
+    invalidateSnapshotCache();
+    const second = publishedTimedLines('track1');
+
+    expect(second).not.toBe(first);
+    expect(second).toEqual(first);
+  });
+
+  it("does not hand one track the other track's lines", () => {
+    setStored(timedDoc('track1', 'hello'));
+    expect(publishedTimedLines('track1')).toEqual([
+      { text: 'hello', StartTime: 1000, EndTime: 2000 },
+    ]);
+
+    mockedStorage.get.mockReturnValue(timedDoc('track2', 'world'));
+    expect(publishedTimedLines('track2')).toEqual([
+      { text: 'world', StartTime: 1000, EndTime: 2000 },
+    ]);
+    expect(publishedTimedLines('track1')).toBeNull();
+  });
+
+  it('rebuilds on an unseen store change without any notification', () => {
+    // The derived memo keys on the decoded document's identity, and a re-parse
+    // allocates a fresh document — so the content compare in readParsed is on
+    // its own enough to keep this from going stale.
+    setStored(timedDoc('track1', 'hello'));
+    const first = publishedTimedLines('track1');
+
+    mockedStorage.get.mockReturnValue(timedDoc('track1', 'goodbye'));
+    const second = publishedTimedLines('track1');
+
+    expect(second).not.toBe(first);
+    expect(second).toEqual([{ text: 'goodbye', StartTime: 1000, EndTime: 2000 }]);
+  });
+});

@@ -83,6 +83,16 @@ let memoRaw: string | null = null;
 let memoParsed: ParsedSnapshot = null;
 let memoValid = false;
 
+// The ms-scaled view is memoized separately from the parse. The playbar tick
+// asks for it every 300 ms and uses exactly one element of the result, so
+// rebuilding every line into a fresh object each time was pure garbage. Keyed
+// on the decoded document's identity — which holds for as long as the parse
+// memo does, since a re-parse allocates a new document — plus the trackId the
+// caller gated on.
+let memoLinesFor: LyricsDocument | null = null;
+let memoLinesTrackId: string | null = null;
+let memoLines: SnapshotTimedLine[] | null = null;
+
 function readRaw(): string | null {
   try {
     return storage.get(SNAPSHOT_KEY)?.toString() ?? null;
@@ -103,6 +113,9 @@ function readParsed(): ParsedSnapshot {
 /** Drops the parse memo so the next read decodes storage again. */
 export function invalidateSnapshotCache(): void {
   memoValid = false;
+  memoLinesFor = null;
+  memoLinesTrackId = null;
+  memoLines = null;
 }
 
 // ==============================
@@ -169,10 +182,15 @@ export function isPublishedNoLyrics(): boolean {
  * Timed lines for `trackId` in render-path units (ms). Null for a
  * missing/stale/sentinel snapshot, for a document whose lines carry no timing
  * (Static lyrics), and for documents with no usable lines.
+ *
+ * The array is shared across calls for as long as the stored snapshot is
+ * unchanged, so callers must treat it as read-only.
  */
 export function publishedTimedLines(trackId: string): SnapshotTimedLine[] | null {
   const snapshot = readSnapshot(trackId);
   if (!snapshot || isNoLyricsSentinel(snapshot)) return null;
+
+  if (snapshot === memoLinesFor && trackId === memoLinesTrackId) return memoLines;
 
   const lines: SnapshotTimedLine[] = [];
   for (const line of snapshot.lines) {
@@ -185,5 +203,9 @@ export function publishedTimedLines(trackId: string): SnapshotTimedLine[] | null
       EndTime: line.end * 1000,
     });
   }
-  return lines.length ? lines : null;
+
+  memoLines = lines.length ? lines : null;
+  memoLinesFor = snapshot;
+  memoLinesTrackId = trackId;
+  return memoLines;
 }
