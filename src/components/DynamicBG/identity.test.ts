@@ -51,7 +51,7 @@ describe('dynamic background identity', () => {
   it('tags a host with both positioning classes and syncs the grid marker', () => {
     const host = document.createElement('div');
     const navBar = document.createElement('div');
-    navBar.className = 'Root__nav-bar';
+    navBar.id = 'Desktop_LeftSidebar_Id';
     navBar.innerHTML = "<div data-encore-id='card'></div>";
     host.appendChild(navBar);
 
@@ -64,7 +64,7 @@ describe('dynamic background identity', () => {
 
   it('drops the grid marker when the library shows no cards', () => {
     const navBar = document.createElement('div');
-    navBar.className = 'Root__nav-bar';
+    navBar.id = 'Desktop_LeftSidebar_Id';
     navBar.classList.add(APP_BG_LIB_GRID_CLASS);
     document.body.appendChild(navBar);
 

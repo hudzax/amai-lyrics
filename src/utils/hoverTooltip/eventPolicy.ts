@@ -198,8 +198,8 @@ type RedispatchedHover = Event & { __amaiRedispatchedHover?: boolean };
  */
 const TRACK_ROW_SCOPE =
   '.main-trackList-trackListRow, .main-trackList-row, [data-testid="tracklist-row"]';
-const PLAYBAR_SCOPE = '.Root__now-playing-bar';
-const SIDEBAR_SCOPE = '.Root__nav-bar';
+const PLAYBAR_SCOPE = ':is([data-testid="now-playing-bar"], .Root__now-playing-bar)';
+const SIDEBAR_SCOPE = ':is(#Desktop_LeftSidebar_Id, .Root__nav-bar)';
 
 /** Link-shaped controls that are interaction surfaces, not native tooltip cells. */
 const FUNCTIONAL_LINK_WRAPPER_SELECTOR = [
@@ -243,7 +243,7 @@ const TRACK_TOOLTIP_BUTTON_SELECTOR = [
 const SIDEBAR_TOOLTIP_BUTTON_SELECTOR = [
   '.main-yourLibraryX-iconOnly',
   '.main-yourLibraryX-collapseButtonWrapper',
-  '.main-yourLibraryX-headerContent button',
+  '.main-yourLibraryX-header button',
   '.main-yourLibraryX-filterArea button',
   '.main-yourLibraryX-libraryFilter button',
   'button[data-testid="create-playlist"]',

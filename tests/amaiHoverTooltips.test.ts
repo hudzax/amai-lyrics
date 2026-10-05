@@ -104,15 +104,15 @@ beforeEach(() => {
     <div id="globalSurface">
       <button id="globalButton" type="button">Global action</button>
     </div>
-    <div class="Root__now-playing-bar" id="npBar">
+    <aside data-testid="now-playing-bar" id="npBar">
       <div id="npControls">
         <button id="playBtn" data-testid="control-button-playpause" type="button" aria-label="Play"><span id="playIcon">▶</span></button>
         <button id="muteBtn" data-testid="volume-bar-toggle-mute-button" type="button" aria-label="Mute"><span id="muteIcon">🔇</span></button>
         <button id="extBtn" type="button" aria-label="Queue"><span id="extIcon">≡</span></button>
       </div>
       <div id="npTitleCell"><a id="npLink" href="#">Now Playing Song</a></div>
-    </div>
-    <div class="Root__nav-bar" id="navBar">
+    </aside>
+    <div id="Desktop_LeftSidebar_Id">
       <div role="row" id="sbRow">
         <div role="gridcell" id="sbCell">
           <div id="sbCard"><span id="sbCardName">Liked Songs</span><span id="sbCardMeta">Playlist · Someone</span></div>

@@ -266,7 +266,9 @@ export class AppBackground {
           host.classList.remove(APP_BG_HOST_HELPER_CLASS);
         }
         host.classList.remove(APP_BG_HOST_CLASS);
-        host.querySelector('.Root__nav-bar')?.classList.remove(APP_BG_LIB_GRID_CLASS);
+        host
+          .querySelector(':is(#Desktop_LeftSidebar_Id, .Root__nav-bar)')
+          ?.classList.remove(APP_BG_LIB_GRID_CLASS);
       }
       // Toggling off while fullscreen: `host` is the lyrics page, while the
       // app-frame host behind it may still hold the reveal-window placeholder
@@ -530,7 +532,7 @@ export const appBackgroundSingleton = new AppBackground();
  * can track it in `lifecycle`; returns null when the nav bar isn't mounted yet.
  */
 export function watchLibraryGridState(): MutationObserver | null {
-  const navBar = document.querySelector('.Root__nav-bar');
+  const navBar = document.querySelector(':is(#Desktop_LeftSidebar_Id, .Root__nav-bar)');
   if (!navBar) return null;
   syncLibraryGridState();
   const obs = new MutationObserver(() => syncLibraryGridState());

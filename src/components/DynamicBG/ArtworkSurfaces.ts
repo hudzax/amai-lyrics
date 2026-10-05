@@ -23,6 +23,21 @@ export const APP_BG_CHANGED_EVENT = 'amai:appbg-changed';
 /** Coalescing window for song-change fan-out: only the settled track paints. */
 const FAN_OUT_DELAY_MS = 500;
 
+/**
+ * The Now Playing View panel. `.Root__right-sidebar` is not usable as its
+ * ancestor: Spotify 1.3.3 hashes every layout class and only Spicetify's
+ * css-map can restore the semantic name, whereas `NowPlayingView` is emitted by
+ * Spotify itself.
+ */
+const NOW_PLAYING_PANEL = 'aside.NowPlayingView';
+
+/** The sidebar region that outlives the panel — the panel's parent once
+ * mounted, or the always-present region on pre-1.3.3 builds. */
+function sidebarRegion(): HTMLElement | null {
+  const panel = document.querySelector<HTMLElement>(NOW_PLAYING_PANEL);
+  return panel?.parentElement ?? document.querySelector<HTMLElement>('.Root__right-sidebar');
+}
+
 /** Cover art for the live track, if the player has one. */
 function readLiveCoverUrl(): string | undefined {
   try {
@@ -50,7 +65,7 @@ export interface ArtworkSurfaceAdapters {
 export function createDefaultAdapters(sidebarBg: NowPlayingBarBackground): ArtworkSurfaceAdapters {
   return {
     applySidebar: (coverUrl) => {
-      if (!document.querySelector('.Root__right-sidebar aside.NowPlayingView')) return;
+      if (!document.querySelector(NOW_PLAYING_PANEL)) return;
       sidebarBg.apply(coverUrl);
     },
     applyAppFrame: (coverUrl) => {
@@ -229,19 +244,19 @@ export class ArtworkSurfaces {
   /** Observe sidebar mount so opening the Now Playing View paints at once. */
   private watchSidebar(): void {
     const apply = () => {
-      if (document.querySelector('.Root__right-sidebar aside.NowPlayingView')) {
+      if (document.querySelector(NOW_PLAYING_PANEL)) {
         this.adapters.applySidebar(this.adapters.readCoverUrl());
       }
     };
     const observer = new MutationObserver(apply);
-    const root = document.querySelector('.Root__right-sidebar') ?? document.body;
+    const root = sidebarRegion() ?? document.body;
     observer.observe(root, { childList: true, subtree: true });
     this.sidebarObserver = observer;
     lifecycle.trackObserver(observer);
     // Late-mounted right sidebar container itself.
-    if (!document.querySelector('.Root__right-sidebar')) {
+    if (!sidebarRegion()) {
       const late = new MutationObserver((_muts, obs) => {
-        const sb = document.querySelector('.Root__right-sidebar');
+        const sb = sidebarRegion();
         if (sb) {
           obs.disconnect();
           this.sidebarObserver?.disconnect();

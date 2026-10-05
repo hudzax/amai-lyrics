@@ -16,7 +16,7 @@ const COVER_B = 'https://i.scdn.co/image/bbb';
 
 function setupHarness(): HTMLElement {
   document.body.innerHTML =
-    '<div class="Root"><div id="global-nav-bar"></div><div class="Root__top-container"><div class="Root__main-view"><div class="main-view-container"></div></div></div><div class="Root__now-playing-bar"></div></div>';
+    '<div class="Root"><div id="global-nav-bar"></div><div class="Root__top-container"><div><div class="main-view-container"></div></div></div><aside data-testid="now-playing-bar"></aside></div>';
   // The boot gate only checks the interface exists; the renderer module is
   // mocked, so no real WebGL2 context is ever created here.
   Object.defineProperty(window, 'WebGL2RenderingContext', {

@@ -162,7 +162,9 @@
 }
 /* Remove default styling from video containers (Keep as is) */
 .main-nowPlayingView-coverArtContainer div:has(video)::before,
-.main-nowPlayingView-coverArtContainer div:has(video)::after {
+.main-nowPlayingView-coverArtContainer div:has(video)::after,
+[data-testid='cover-drop-target'] div:has(video)::before,
+[data-testid='cover-drop-target'] div:has(video)::after {
   display: none;
 }
 /* Ensure content stays above background (Keep as is) */
@@ -216,11 +218,9 @@
 }
 /* Performance optimization for fullscreen mode (Keep as is) */
 body:has(#AmaiLyricsPage.Fullscreen)
-  .Root__right-sidebar
   aside:is(.NowPlayingView, .sweet-dynamic-bg-in-this)
   .sweet-dynamic-bg,
 body:has(#AmaiLyricsPage.Fullscreen)
-  .Root__right-sidebar
   aside:is(.NowPlayingView, .sweet-dynamic-bg-in-this)
   .sweet-dynamic-bg
   * {
@@ -379,10 +379,18 @@ body:has(#AmaiLyricsPage.Fullscreen)
    the scroll child. Scoped to frame/main-view classes only: the nav and
    sidebar columns keep their own backgrounds.
    Gated on the host class, which only exists while the toggle is on — the
-   canvas stays live even behind the open lyrics page. */
+   canvas stays live even behind the open lyrics page.
+   The playbar is wrapped in a region div (the old `.Root__now-playing-bar`,
+   hashed in 1.3.3) that is itself what paints the bar's background; the
+   testid sits on the inner element, so the wrapper is matched structurally.
+   Pre-1.3.3 `Root__*` names stay beside the new anchors as aliases: inert
+   once Spotify hashes the layout, active again on older builds. */
 .amai-app-bg-host .Root__top-container,
 .amai-app-bg-host #global-nav-bar,
+.amai-app-bg-host div:has(> [data-testid='now-playing-bar']),
 .amai-app-bg-host .Root__now-playing-bar,
+.amai-app-bg-host [data-testid='now-playing-bar'],
+.amai-app-bg-host #main-view,
 .amai-app-bg-host .Root__main-view,
 .amai-app-bg-host .main-view-container,
 .amai-app-bg-host .main-content-view,
@@ -396,11 +404,26 @@ body:has(#AmaiLyricsPage.Fullscreen)
   background-color: transparent !important;
   background-image: none !important;
 }
+/* Route-page content surface (playlist pages and the track list inside them):
+   in 1.3.3 the opaque base-color layer and its gradient scrim sit on a hashed
+   wrapper — the old `.playlist-playlist-playlistContent` hook no longer exists.
+   Addressed structurally, never by hash: the wrapper is the section child that
+   is not the entity header, and the scrim is its first child. Pinned by the
+   playlist fixture in tests/spotifyDomContract.test.ts. */
+.amai-app-bg-host [data-testid='playlist-page'] > div:not([data-testid='entity-header']):not(:has([data-testid='entity-header'])),
+.amai-app-bg-host [data-testid='playlist-page'] > div:not([data-testid='entity-header']):not(:has([data-testid='entity-header'])) > :first-child {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
 /* Library header buttons (collapse/create/expand): transparent fills, hover
    feedback kept. Structural hook so localized aria-labels don't matter. */
 .amai-app-bg-host .Root__nav-bar .main-yourLibraryX-headerContent button,
 .amai-app-bg-host .Root__nav-bar .main-yourLibraryX-headerContent button::before,
-.amai-app-bg-host .Root__nav-bar .main-yourLibraryX-headerContent button::after {
+.amai-app-bg-host .Root__nav-bar .main-yourLibraryX-headerContent button::after,
+.amai-app-bg-host #Desktop_LeftSidebar_Id .main-yourLibraryX-header button,
+.amai-app-bg-host #Desktop_LeftSidebar_Id .main-yourLibraryX-header button::before,
+.amai-app-bg-host #Desktop_LeftSidebar_Id .main-yourLibraryX-header button::after {
   background-color: transparent !important;
   background-image: none !important;
 }
@@ -411,15 +434,24 @@ body:has(#AmaiLyricsPage.Fullscreen)
 .amai-app-bg-host .Root__nav-bar [role='listitem']:hover,
 .amai-app-bg-host .Root__nav-bar [data-encore-id='listRow']:hover,
 .amai-app-bg-host .Root__nav-bar [data-encore-id='listRow']:hover::before,
-.amai-app-bg-host .Root__nav-bar [data-encore-id='listRow']:hover::after {
+.amai-app-bg-host .Root__nav-bar [data-encore-id='listRow']:hover::after,
+.amai-app-bg-host #Desktop_LeftSidebar_Id li:hover,
+.amai-app-bg-host #Desktop_LeftSidebar_Id [role='row']:hover,
+.amai-app-bg-host #Desktop_LeftSidebar_Id [role='listitem']:hover,
+.amai-app-bg-host #Desktop_LeftSidebar_Id [data-encore-id='listRow']:hover,
+.amai-app-bg-host #Desktop_LeftSidebar_Id [data-encore-id='listRow']:hover::before,
+.amai-app-bg-host #Desktop_LeftSidebar_Id [data-encore-id='listRow']:hover::after {
   background-color: rgba(0, 0, 0, 0.15) !important;
   background-image: none !important;
 }
-/* Tracklist column header: force it to scroll away with content (Spotify
-   makes it sticky natively; the inline top:64px alone isn't what sticks it),
-   and suppress its scrolled-state fill/border/shadow — backgrounds only,
-   targeted by stable class, never the hashed one. */
-.amai-app-bg-host .main-trackList-trackListHeader {
+/* Tracklist column header: in 1.3.3 the sticky wrapper and its
+   scrolled-state fill live on hashed classes (no css-map entry for them), so
+   it is addressed structurally — the grid child that holds the column-header
+   row. Force it to scroll away with the content, exactly as before, and
+   suppress the fill/border/shadow it gains while stuck. Its offset arrives
+   as an inline `top`, so both position and top need the reset. */
+.amai-app-bg-host .main-trackList-trackListHeader,
+.amai-app-bg-host #main-view [role='grid'] > div:has([role='columnheader']) {
   position: static !important;
   top: auto !important;
   background: transparent !important;
@@ -437,9 +469,16 @@ body:has(#AmaiLyricsPage.Fullscreen)
 /* Main container stays transparent so the bare canvas shows through
    (a glass panel here was tried and removed — it framed every page). */
 /* Playlist header + sticky action bar paint their own fills over the glass —
-   neutralize backgrounds only (stable classes, layout/sticky untouched). */
+   neutralize backgrounds only (layout/sticky untouched). 1.3.3 hashes the old
+   `main-entityHeader-backgroundColor` / `playlist-playlist-actionBarBackground`
+   hooks: the header's base-color layer is the entity header's first child
+   (absolute, full size), and the compact-state fill lands on the header
+   element itself. */
 .amai-app-bg-host .main-entityHeader-backgroundColor,
-.amai-app-bg-host .playlist-playlist-actionBarBackground-background {
+.amai-app-bg-host .playlist-playlist-actionBarBackground-background,
+.amai-app-bg-host [data-testid='entity-header'],
+.amai-app-bg-host [data-testid='entity-header'] > div:first-child,
+.amai-app-bg-host [data-testid='action-bar'] {
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
@@ -447,7 +486,8 @@ body:has(#AmaiLyricsPage.Fullscreen)
 /* Left sidebar base glass over the canvas. The final Glassmorphism layer adds
    bounded backdrop frosting to this navigation shell; large scrolling regions
    remain unfiltered above the continuously animated background. */
-.amai-app-bg-host .Root__nav-bar {
+.amai-app-bg-host .Root__nav-bar,
+.amai-app-bg-host #Desktop_LeftSidebar_Id {
   background-color: var(--amai-fill-glass) !important;
   background-image: none !important;
   border: 1px solid var(--amai-stroke-2) !important;
@@ -457,13 +497,18 @@ body:has(#AmaiLyricsPage.Fullscreen)
    toggled from JS (watchLibraryGridState, nav column only) — the previous
    `:has([data-encore-id='card'])` selector re-evaluated on every descendant
    mutation of the whole sidebar. */
-.amai-app-bg-host .Root__nav-bar.amai-lib-grid {
+.amai-app-bg-host .Root__nav-bar.amai-lib-grid,
+.amai-app-bg-host #Desktop_LeftSidebar_Id.amai-lib-grid {
   background-color: var(--background-base) !important;
 }
 /* Library column paints its own base fill over the glass — transparent so the
-   panel shows through (layout props untouched). */
+   panel shows through (layout props untouched). `.YourLibraryX` and
+   `.main-yourLibraryX-libraryRootlist` are the live names; the old
+   `-libraryContainer` / `-entryPoints` are gone in Spotify 1.3.3. */
 .amai-app-bg-host .Root__nav-bar .main-yourLibraryX-libraryContainer,
-.amai-app-bg-host .Root__nav-bar .main-yourLibraryX-entryPoints {
+.amai-app-bg-host .Root__nav-bar .main-yourLibraryX-entryPoints,
+.amai-app-bg-host #Desktop_LeftSidebar_Id .YourLibraryX,
+.amai-app-bg-host #Desktop_LeftSidebar_Id .main-yourLibraryX-libraryRootlist {
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
@@ -492,7 +537,7 @@ body:has(#AmaiLyricsPage.Fullscreen)
    NOTE: the marker lives on <html>, so it must LEAD these selectors — anything
    written as `body ... .amai-app-bg-on ...` can never match. */
 .amai-app-bg-on .Root__right-sidebar,
-.amai-app-bg-on .Root__right-sidebar aside.NowPlayingView,
+.amai-app-bg-on aside.NowPlayingView,
 .amai-app-bg-on .Root__right-sidebar-peek,
 .amai-app-bg-on .Root__right-sidebar .main-nowPlayingView-content {
   background: transparent !important;
@@ -527,8 +572,8 @@ body:has(#AmaiLyricsPage.Fullscreen)
    canvas, not two stacked blurs. Its manager skips work while hidden (see
    NowPlayingBarBackground.apply), and the toggle-off refresh in app.tsx
    repaints current artwork through the live instance. */
-.amai-app-bg-on .Root__right-sidebar aside.NowPlayingView > .sweet-dynamic-bg,
-.amai-app-bg-on .Root__right-sidebar aside.NowPlayingView > .sweet-dynamic-bg * {
+.amai-app-bg-on aside.NowPlayingView > .sweet-dynamic-bg,
+.amai-app-bg-on aside.NowPlayingView > .sweet-dynamic-bg * {
   display: none !important;
   animation: none !important;
   filter: none !important;

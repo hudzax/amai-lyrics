@@ -56,7 +56,7 @@ function mutationTouchesTrigger(mutation: MutationRecord, trigger: HTMLElement):
 }
 
 function placementFor(trigger: HTMLElement): 'top' | 'right' {
-  return trigger.closest('.Root__nav-bar') ? 'right' : 'top';
+  return trigger.closest(':is(#Desktop_LeftSidebar_Id, .Root__nav-bar)') ? 'right' : 'top';
 }
 
 /**

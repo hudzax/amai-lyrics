@@ -48,7 +48,7 @@ export class NowPlayingBarBackground {
     void (async () => {
       try {
         const { nowPlayingBar, hasDynamicBg, images } = await measureAsync(() => {
-          const bar = document.querySelector('.Root__right-sidebar aside.NowPlayingView');
+          const bar = document.querySelector('aside.NowPlayingView');
           const hasBg = !!this.cached.dynamicBg;
           const imgs = this.cached.dynamicBg
             ? {

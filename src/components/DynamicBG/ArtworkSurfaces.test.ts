@@ -57,7 +57,7 @@ beforeEach(() => {
   vi.useFakeTimers();
   // The mode module moves this page between hosts; the surfaces only react to
   // the notification, so the fixture needs no page content.
-  document.body.innerHTML = '<div class="Root__main-view"><div id="AmaiLyricsPage"></div></div>';
+  document.body.innerHTML = '<div><div id="AmaiLyricsPage"></div></div>';
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
@@ -110,7 +110,7 @@ describe('ArtworkSurfaces seam', () => {
 
     surfaces.destroy();
     surfaces = null;
-    document.body.innerHTML = '<div class="Root__main-view"><div id="AmaiLyricsPage"></div></div>';
+    document.body.innerHTML = '<div><div id="AmaiLyricsPage"></div></div>';
     Fullscreen.enter();
     expect(calls.appFrame.length).toBe(atMount + 2);
   });

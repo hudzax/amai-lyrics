@@ -26,7 +26,8 @@ export const APP_BG_IMG_B_ID = 'amai-app-bg-img-b';
 /** Two-layer ids for the sidebar and lyrics-page painters. */
 export const NESTED_BG_IMG_A_ID = 'bg-img-a';
 export const NESTED_BG_IMG_B_ID = 'bg-img-b';
-/** Toggled on `.Root__nav-bar` when the library shows cards (expanded grid).
+/** Toggled on the nav column (`#Desktop_LeftSidebar_Id`, or `.Root__nav-bar`
+ * on pre-1.3.3 builds) when the library shows cards (expanded grid).
  * Replaces the `:has([data-encore-id='card'])` selector, which forces the
  * style engine to re-evaluate on every descendant mutation. */
 export const APP_BG_LIB_GRID_CLASS = 'amai-lib-grid';
@@ -55,7 +56,9 @@ export function ensureAppBgHostClasses(host: Element): void {
  * Exported so the toggle handler and observers can refresh it without a
  * full `apply()` — cheap single `querySelector` inside the nav column. */
 export function syncLibraryGridState(scope?: ParentNode): void {
-  const navBar = (scope ?? document).querySelector?.('.Root__nav-bar');
+  const navBar = (scope ?? document).querySelector?.(
+    ':is(#Desktop_LeftSidebar_Id, .Root__nav-bar)',
+  );
   if (!navBar) return;
   navBar.classList.toggle(APP_BG_LIB_GRID_CLASS, !!navBar.querySelector("[data-encore-id='card']"));
 }

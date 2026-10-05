@@ -1,4 +1,5 @@
 import { SpotifyPlayer } from '../components/Global/SpotifyPlayer';
+import { PageViewSelectors } from '../constants/PageViewSelectors';
 import { resolveIsPlaying, syncPlaybackPosition } from '../utils/Gets/GetProgress';
 import { deriveLoopType, deriveShuffleType } from '../utils/playerState';
 import Global from '../components/Global/Global';
@@ -145,16 +146,11 @@ export class EventManager {
 
   private static setupNavigationEvents() {
     const pageContainerWhen = Whentil.When(
-      () =>
-        document.querySelector(
-          '.Root__main-view .main-view-container div[data-overlayscrollbars-viewport]',
-        ),
+      () => document.querySelector(PageViewSelectors.PageRoot),
       () => {
         Global.Event.evoke(
           'pagecontainer:available',
-          document.querySelector(
-            '.Root__main-view .main-view-container div[data-overlayscrollbars-viewport]',
-          ),
+          document.querySelector(PageViewSelectors.PageRoot),
         );
       },
     );

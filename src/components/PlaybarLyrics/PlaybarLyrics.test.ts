@@ -16,11 +16,11 @@ describe('PlaybarLyrics — artwork palette comes from the ArtworkSurfaces seam'
   beforeEach(() => {
     vi.useFakeTimers();
     document.body.innerHTML = `
-      <div class="Root__now-playing-bar">
+      <aside data-testid="now-playing-bar">
         <div class="player-controls-wrapper">
-          <div class="player-controls"></div>
+          <div data-testid="player-controls"></div>
         </div>
-      </div>
+      </aside>
     `;
     // A real track with valid timed lyrics so the update loop actually resolves
     // and renders an active line — the exact path that used to imperatively

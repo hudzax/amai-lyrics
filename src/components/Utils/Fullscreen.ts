@@ -152,7 +152,7 @@ function mediaBoxParts(): { mediaBox: HTMLElement | null; mediaImage: HTMLElemen
 }
 
 function enter(): void {
-  const page = document.querySelector<HTMLElement>(`.Root__main-view ${PAGE_SELECTOR}`);
+  const page = pageElement();
   if (!page) return;
 
   TransferElement(page, document.body);

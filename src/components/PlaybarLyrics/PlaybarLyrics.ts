@@ -20,6 +20,18 @@ import Event from '../../utils/EventManager';
 // construction instead of by matching comments.
 const UPDATE_INTERVAL = 0.3; // seconds
 
+// Spotify 1.3.3 ships its layout classes hashed, so the playbar is reached by
+// the `data-testid` Spotify emits itself; pre-1.3.3 builds only answer to
+// `.Root__now-playing-bar`. Both live in one `:is()` selector so string
+// composition (`${PLAYBAR_SELECTOR} ${PLAYER_CONTROLS_SELECTOR}`) stays valid.
+const PLAYBAR_SELECTOR = ':is([data-testid="now-playing-bar"], .Root__now-playing-bar)';
+
+// Spotify 1.3.3 dropped the bare `.player-controls` class: the wrapper now
+// carries a hashed class and only its BEM children (`player-controls__buttons`,
+// `__left`, `__right`) survive. The testid is what the live DOM exposes;
+// older builds still answer to the class.
+const PLAYER_CONTROLS_SELECTOR = ':is([data-testid="player-controls"], .player-controls)';
+
 let lyricsElement: HTMLElement | null = null;
 let centerWrapper: HTMLElement | null = null;
 let positionConsumerDisposer: (() => void) | null = null;
@@ -51,7 +63,7 @@ function isEnabled(): boolean {
  */
 function positionLyrics(): void {
   if (!lyricsElement || !centerWrapper) return;
-  const controls = centerWrapper.querySelector<HTMLElement>('.player-controls');
+  const controls = centerWrapper.querySelector<HTMLElement>(PLAYER_CONTROLS_SELECTOR);
   if (!controls) return;
 
   const cRect = controls.getBoundingClientRect();
@@ -146,7 +158,9 @@ function renderPlaybarLine(position: number): void {
     !centerWrapper ||
     !centerWrapper.isConnected
   ) {
-    const controls = document.querySelector<HTMLElement>('.Root__now-playing-bar .player-controls');
+    const controls = document.querySelector<HTMLElement>(
+      `${PLAYBAR_SELECTOR} ${PLAYER_CONTROLS_SELECTOR}`,
+    );
     if (controls?.parentElement) {
       inject();
     } else {
@@ -185,10 +199,10 @@ function renderPlaybarLine(position: number): void {
 }
 
 function inject(): void {
-  const bar = document.querySelector<HTMLElement>('.Root__now-playing-bar');
+  const bar = document.querySelector<HTMLElement>(PLAYBAR_SELECTOR);
   if (!bar) return;
 
-  const controls = bar.querySelector<HTMLElement>('.player-controls');
+  const controls = bar.querySelector<HTMLElement>(PLAYER_CONTROLS_SELECTOR);
   const wrapper = controls?.parentElement ?? null;
   if (!wrapper) return;
 
@@ -240,7 +254,7 @@ function cleanup(): void {
  */
 export function InitializePlaybarLyrics(): void {
   initWhen = Whentil.When(
-    () => document.querySelector('.Root__now-playing-bar .player-controls'),
+    () => document.querySelector(`${PLAYBAR_SELECTOR} ${PLAYER_CONTROLS_SELECTOR}`),
     () => {
       window.addEventListener('resize', positionLyrics);
       Spicetify.Player.addEventListener('songchange', onSongChange);

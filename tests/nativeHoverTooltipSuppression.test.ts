@@ -104,20 +104,20 @@ beforeEach(() => {
         <span id="deepTrigger"><em><a id="deepLink" href="#">Deep</a></em></span>
       </div>
     </div>
-    <div class="Root__now-playing-bar" id="npBar">
+    <aside data-testid="now-playing-bar" id="npBar">
       <div id="npControls">
         <button id="playBtn" data-testid="control-button-playpause" type="button" aria-label="Play"><span id="playIcon">▶</span></button>
         <button id="muteBtn" data-testid="volume-bar-toggle-mute-button" type="button"><span id="muteIcon">Mute</span></button>
         <div id="volSlider"><span id="volSliderKnob"></span></div>
       </div>
       <div id="npTitleCell"><a id="npLink" href="#">Now Playing Song</a></div>
-    </div>
+    </aside>
     <div id="mainView"><button id="viewBtn" type="button">Main view</button></div>
     <div id="globalSurface">
       <button id="globalButton" type="button">Global action</button>
       <div id="globalWrapper"><a id="globalLink" href="#">Global link</a></div>
     </div>
-    <div class="Root__nav-bar" id="navBar">
+    <div id="Desktop_LeftSidebar_Id">
       <div role="row" id="sbRow">
         <div role="gridcell" id="sbCell">
           <div id="sbCard"><span id="sbCardTitle">Liked Songs</span></div>
@@ -620,7 +620,7 @@ describe('native hover tooltip suppression', () => {
     expect(pageSpies).toHaveBeenCalledTimes(1);
   });
 
-  it('covers bottom-playbar control buttons (same 56285 chain, scoped by .Root__now-playing-bar)', () => {
+  it('covers bottom-playbar control buttons (same 56285 chain, scoped by [data-testid="now-playing-bar"])', () => {
     // Play/pause, seek ±15, shuffle, repeat, queue, devices, mute: the tooltip
     // clones onMouseEnter onto the <button>, so hovering its icon must be
     // blocked and the clone must start one level above the button.
@@ -641,7 +641,7 @@ describe('native hover tooltip suppression', () => {
 
   it('covers the now-playing-bar title/artist links through their parent cell', () => {
     // Same trigger shape as a row title cell: DIV with a direct <a> child,
-    // bounded by .Root__now-playing-bar instead of a row.
+    // bounded by the playbar's data-testid instead of a row.
     fire('mouseover', el('npLink'), el('outside'));
 
     expect(seen).toHaveLength(1);
@@ -678,7 +678,7 @@ describe('native hover tooltip suppression', () => {
   it('covers the sidebar library card cell (role="gridcell" clone target, sidebar-only shape)', () => {
     // Sidebar cards clone their name tooltip onto the cell itself (module
     // 15620 lz.T) and navigate via click — no <a> exists for the wrapper
-    // shape, so the gridcell role carries detection, gated on .Root__nav-bar.
+    // shape, so the gridcell role carries detection, gated on the sidebar id.
     const cellSpies = vi.fn();
     for (const type of DOC_TYPES) el('sbCell').addEventListener(type, cellSpies);
     const titleSpies = vi.fn();
@@ -697,7 +697,7 @@ describe('native hover tooltip suppression', () => {
     expect(titleSpies).not.toHaveBeenCalled();
   });
 
-  it('retargets a sidebar cell sitting directly on the surface to .Root__nav-bar', () => {
+  it('retargets a sidebar cell sitting directly on the surface to #Desktop_LeftSidebar_Id', () => {
     const cellSpies = vi.fn();
     for (const type of DOC_TYPES) el('sbLooseCell').addEventListener(type, cellSpies);
 
@@ -706,7 +706,7 @@ describe('native hover tooltip suppression', () => {
     expect(seen).toHaveLength(1);
     expect(seen[0]).toEqual({
       type: 'mouseover',
-      target: el('navBar'), // no row in between: the sidebar surface is the boundary
+      target: el('Desktop_LeftSidebar_Id'), // no row in between: the sidebar surface is the boundary
       related: el('outside'),
       flagged: true,
     });
@@ -738,7 +738,7 @@ describe('native hover tooltip suppression', () => {
   });
 
   it('passes non-sidebar gridcells and sidebar non-trigger surfaces through untouched', () => {
-    // The gridcell shape is gated on .Root__nav-bar: the recents route's
+    // The gridcell shape is gated on the sidebar id: the recents route's
     // cards (role="row" > gridcell in the main view) and calendar dialogs
     // keep byte-for-byte delivery, as does a plain sidebar input.
     const recSpies = vi.fn();

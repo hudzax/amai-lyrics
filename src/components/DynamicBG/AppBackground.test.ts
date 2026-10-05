@@ -12,7 +12,7 @@ import { APP_BG_IMG_A_ID, APP_BG_IMG_B_ID, APP_BG_ON_CLASS } from './identity';
 
 function setupMainView(): HTMLElement {
   document.body.innerHTML =
-    '<div class="Root"><div id="global-nav-bar"></div><div class="Root__top-container"><div class="Root__main-view"><div class="main-view-container"></div></div></div><div class="Root__now-playing-bar"></div></div>';
+    '<div class="Root"><div id="global-nav-bar"></div><div class="Root__top-container"><div><div class="main-view-container"></div></div></div><aside data-testid="now-playing-bar"></aside></div>';
   return document.querySelector<HTMLElement>(APP_BG_HOST_SELECTOR)!;
 }
 
@@ -107,7 +107,7 @@ describe('AppBackground', () => {
 
   it('falls back to the top container when .Root is absent', () => {
     document.body.innerHTML =
-      '<div class="Root__top-container"><div class="Root__main-view"></div></div>';
+      '<div class="Root__top-container"><div class="main-view-container"></div></div>';
     expect(resolveAppBgHost()?.classList.contains('Root__top-container')).toBe(true);
 
     const bg = new AppBackground();

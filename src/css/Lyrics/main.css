@@ -224,7 +224,11 @@ header.main-topBar-container .amai-info {
   box-shadow: var(--amai-shadow-panel); /* Optional shadow */
 }
 
-.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section {
+/* Sections are reached through the panel's `data-testid` hooks because Spotify
+   1.3.3 hashes `.main-nowPlayingView-section`; see the note in
+   Glassmorphism.css. */
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section,
+aside.NowPlayingView:has([data-testid='NPV_Panel_OpenDiv'], canvas) [data-testid='NPV_Panel_OpenDiv'] > div:not(:has([data-testid='cover-drop-target'])) {
   background-color: var(--amai-fill-glass); /* Lowered opacity for stronger acrylic effect */
   border-radius: 1cqh;
   /* Bounded sidebar cards receive selective frosting in Glassmorphism.css;
@@ -235,6 +239,11 @@ header.main-topBar-container .amai-info {
 
 .Root__right-sidebar:has(.main-nowPlayingView-section, canvas)
   .main-nowPlayingView-section
+  > button
+  > div
+  > div,
+aside.NowPlayingView:has([data-testid='NPV_Panel_OpenDiv'], canvas)
+  [data-testid='NPV_Panel_OpenDiv'] > div:not(:has([data-testid='cover-drop-target']))
   > button
   > div
   > div {
@@ -319,6 +328,8 @@ ruby > rt {
   word-break: break-word;
 }
 
+#main-view [role='row']:not(.main-trackList-trackListRow):not(:has([role='columnheader'])):focus-within > div,
+#main-view [role='row']:not(.main-trackList-trackListRow):not(:has([role='columnheader'])):hover > div,
 .main-trackList-trackListRow:focus-within,
 .main-trackList-trackListRow:hover,
 .BoxComponent-group-card-naked-isInteractive-draggable:hover::after {

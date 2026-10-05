@@ -15,7 +15,8 @@
    App frame — navigation, search and library
    ============================================================ */
 
-.amai-app-bg-host .Root__nav-bar:not(.amai-lib-grid) {
+.amai-app-bg-host .Root__nav-bar:not(.amai-lib-grid),
+.amai-app-bg-host #Desktop_LeftSidebar_Id:not(.amai-lib-grid) {
   isolation: isolate;
   background: var(--amai-glass-veil), var(--amai-glass-base) !important;
   border: 1px solid var(--amai-glass-border) !important;
@@ -31,7 +32,8 @@
 
 /* Expanded card grids keep the same material, but denser and darker so
    cover tiles and labels retain contrast over a moving background. */
-.amai-app-bg-host .Root__nav-bar.amai-lib-grid {
+.amai-app-bg-host .Root__nav-bar.amai-lib-grid,
+.amai-app-bg-host #Desktop_LeftSidebar_Id.amai-lib-grid {
   background: var(--amai-glass-veil-subtle), var(--amai-glass-base-strong) !important;
   -webkit-backdrop-filter: var(--amai-glass-backdrop-soft);
   backdrop-filter: var(--amai-glass-backdrop-soft);
@@ -41,12 +43,18 @@
 .amai-app-bg-host .Root__nav-bar [role='listitem']:hover,
 .amai-app-bg-host .Root__nav-bar [data-encore-id='listRow']:hover,
 .amai-app-bg-host .Root__nav-bar [data-encore-id='listRow']:hover::before,
-.amai-app-bg-host .Root__nav-bar [data-encore-id='listRow']:hover::after {
+.amai-app-bg-host .Root__nav-bar [data-encore-id='listRow']:hover::after,
+.amai-app-bg-host #Desktop_LeftSidebar_Id [role='row']:hover,
+.amai-app-bg-host #Desktop_LeftSidebar_Id [role='listitem']:hover,
+.amai-app-bg-host #Desktop_LeftSidebar_Id [data-encore-id='listRow']:hover,
+.amai-app-bg-host #Desktop_LeftSidebar_Id [data-encore-id='listRow']:hover::before,
+.amai-app-bg-host #Desktop_LeftSidebar_Id [data-encore-id='listRow']:hover::after {
   background: var(--amai-glass-veil-subtle), rgba(255, 255, 255, 0.035) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07) !important;
 }
 
-.amai-app-bg-host .Root__nav-bar [aria-selected='true'] {
+.amai-app-bg-host .Root__nav-bar [aria-selected='true'],
+.amai-app-bg-host #Desktop_LeftSidebar_Id [aria-selected='true'] {
   background:
     linear-gradient(90deg, rgba(var(--amai-accent-rgb), 0.11), rgba(var(--amai-accent-rgb), 0.025)),
     rgba(8, 10, 16, 0.58) !important;
@@ -91,7 +99,21 @@
    ============================================================ */
 
 /* One hovered row at a time is a bounded region, so a lighter frost is safe.
-   The large track-list scroller itself remains unfiltered. */
+   The large track-list scroller itself remains unfiltered.
+   Spotify 1.3.3 hashes the trackList classes and paints the native hover fill
+   on the row's inner wrapper, so rows are addressed structurally — the
+   `role=row` elements inside `#main-view` that carry no column headers — and
+   the veil lands on the same inner wrapper the fill uses. Pre-1.3.3 rows keep
+   their old class: it re-arms the legacy selector and gates the structural
+   one, so the veil cannot stack twice on older builds. */
+.amai-app-bg-host
+  #main-view
+  [role='row']:not(.main-trackList-trackListRow):not(:has([role='columnheader'])):hover
+  > div,
+.amai-app-bg-host
+  #main-view
+  [role='row']:not(.main-trackList-trackListRow):not(:has([role='columnheader'])):focus-within
+  > div,
 .amai-app-bg-host .main-trackList-trackListRow:hover,
 .amai-app-bg-host .main-trackList-trackListRow:focus-within {
   background: var(--amai-glass-veil-subtle), rgba(8, 10, 16, 0.54) !important;
@@ -105,7 +127,14 @@
   backdrop-filter: var(--amai-glass-backdrop-soft);
 }
 
-.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section {
+/* Now Playing View cards. Spotify 1.3.3 hashes `.main-nowPlayingView-section`
+   and Spicetify's css-map has no entry for it, so the panel's `data-testid`
+   hooks stand in: a section is any direct child of the open-panel div that is
+   not the cover-art block. Read structurally on purpose — the rule stated in
+   sweet-dynamic-bg.css is never to key on a hashed class, because those rotate
+   on every Spotify build. */
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section,
+aside.NowPlayingView:has([data-testid='NPV_Panel_OpenDiv'], canvas) [data-testid='NPV_Panel_OpenDiv'] > div:not(:has([data-testid='cover-drop-target'])) {
   isolation: isolate;
   background: var(--amai-glass-veil), var(--amai-glass-base) !important;
   border: 1px solid var(--amai-glass-border) !important;
@@ -118,6 +147,11 @@
 
 .Root__right-sidebar:has(.main-nowPlayingView-section, canvas)
   .main-nowPlayingView-section
+  button[type='button']:not(
+    :where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)
+  ),
+aside.NowPlayingView:has([data-testid='NPV_Panel_OpenDiv'], canvas)
+  [data-testid='NPV_Panel_OpenDiv'] > div:not(:has([data-testid='cover-drop-target']))
   button[type='button']:not(
     :where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)
   ) {
@@ -137,6 +171,11 @@
   .main-nowPlayingView-section
   button[type='button']:not(
     :where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)
+  ):hover,
+aside.NowPlayingView:has([data-testid='NPV_Panel_OpenDiv'], canvas)
+  [data-testid='NPV_Panel_OpenDiv'] > div:not(:has([data-testid='cover-drop-target']))
+  button[type='button']:not(
+    :where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)
   ):hover {
   background: var(--amai-glass-veil-strong), rgba(var(--amai-accent-rgb), 0.07) !important;
   border-color: rgba(var(--amai-accent-rgb), 0.28) !important;
@@ -146,6 +185,11 @@
 
 .Root__right-sidebar:has(.main-nowPlayingView-section, canvas)
   .main-nowPlayingView-section
+  button[type='button']:not(
+    :where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)
+  ):active,
+aside.NowPlayingView:has([data-testid='NPV_Panel_OpenDiv'], canvas)
+  [data-testid='NPV_Panel_OpenDiv'] > div:not(:has([data-testid='cover-drop-target']))
   button[type='button']:not(
     :where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)
   ):active {
@@ -393,8 +437,10 @@
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .amai-app-bg-host .Root__nav-bar,
+  .amai-app-bg-host #Desktop_LeftSidebar_Id,
   .amai-app-bg-host #global-nav-bar input,
   .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section,
+  aside.NowPlayingView:has([data-testid='NPV_Panel_OpenDiv'], canvas) [data-testid='NPV_Panel_OpenDiv'] > div:not(:has([data-testid='cover-drop-target'])),
   #AmaiLyricsPage .ViewControls .ViewControl,
   #AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill,
   .BoxComponent-box-elevated,
@@ -415,6 +461,14 @@
     --amai-glass-shadow: 0 12px 32px rgba(2, 3, 8, 0.18), 0 2px 8px rgba(2, 3, 8, 0.1);
   }
 
+  .amai-app-bg-host
+    #main-view
+    [role='row']:not(.main-trackList-trackListRow):not(:has([role='columnheader'])):hover
+    > div,
+  .amai-app-bg-host
+    #main-view
+    [role='row']:not(.main-trackList-trackListRow):not(:has([role='columnheader'])):focus-within
+    > div,
   .amai-app-bg-host .main-trackList-trackListRow:hover,
   .amai-app-bg-host .main-trackList-trackListRow:focus-within {
     -webkit-backdrop-filter: none;
@@ -425,17 +479,23 @@
     padding: 8px !important;
   }
 
-  .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section {
+  .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section,
+  aside.NowPlayingView:has([data-testid='NPV_Panel_OpenDiv'], canvas) [data-testid='NPV_Panel_OpenDiv'] > div:not(:has([data-testid='cover-drop-target'])) {
     border-radius: 14px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .amai-app-bg-host .Root__nav-bar,
+  .amai-app-bg-host #Desktop_LeftSidebar_Id,
   .amai-app-bg-host #global-nav-bar input,
   .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section,
   .Root__right-sidebar:has(.main-nowPlayingView-section, canvas)
     .main-nowPlayingView-section
+    button:not(:where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)),
+  aside.NowPlayingView:has([data-testid='NPV_Panel_OpenDiv'], canvas) [data-testid='NPV_Panel_OpenDiv'] > div:not(:has([data-testid='cover-drop-target'])),
+  aside.NowPlayingView:has([data-testid='NPV_Panel_OpenDiv'], canvas)
+    [data-testid='NPV_Panel_OpenDiv'] > div:not(:has([data-testid='cover-drop-target']))
     button:not(:where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)),
   #AmaiLyricsPage .AmaiPageButton,
   #AmaiLyricsPage .ViewControls .ViewControl,

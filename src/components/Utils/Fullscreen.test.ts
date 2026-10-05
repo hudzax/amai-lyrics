@@ -18,7 +18,7 @@ const doc = document as any;
 
 function mountPage(): HTMLElement {
   document.body.innerHTML =
-    '<div class="Root__main-view"><div id="AmaiLyricsPage"><div class="ContentBox"></div></div></div>';
+    '<div><div id="AmaiLyricsPage"><div class="ContentBox"></div></div></div>';
   return document.querySelector<HTMLElement>('#AmaiLyricsPage')!;
 }
 
