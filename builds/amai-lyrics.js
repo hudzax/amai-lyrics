@@ -9227,15 +9227,15 @@
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e79106e/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-18516-5urbOqLKYYpP/1a10c528daae/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e79106e/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-18516-5urbOqLKYYpP/1a10c528daae/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e7910cf/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-18516-5urbOqLKYYpP/1a10c528db2f/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e7910cf/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-18516-5urbOqLKYYpP/1a10c528db2f/ProcessingIndicator.css"() {
     }
   });
 
@@ -9392,7 +9392,9 @@
     syncLibraryGridState(host);
   }
   function syncLibraryGridState(scope) {
-    const navBar = (scope ?? document).querySelector?.(".Root__nav-bar");
+    const navBar = (scope ?? document).querySelector?.(
+      ":is(#Desktop_LeftSidebar_Id, .Root__nav-bar)"
+    );
     if (!navBar)
       return;
     navBar.classList.toggle(APP_BG_LIB_GRID_CLASS, !!navBar.querySelector("[data-encore-id='card']"));
@@ -9557,7 +9559,7 @@
     "src/constants/PageViewSelectors.ts"() {
       "use strict";
       PageViewSelectors = {
-        PageRoot: ".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]",
+        PageRoot: ".main-view-container div[data-overlayscrollbars-viewport]",
         AmaiLyricsPage: "#AmaiLyricsPage",
         ContentBox: "#AmaiLyricsPage .ContentBox",
         MediaImage: "#AmaiLyricsPage .MediaImage",
@@ -9584,7 +9586,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.6.8";
+      version = "1.6.9";
     }
   });
 
@@ -10677,7 +10679,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     };
   }
   function enter() {
-    const page = document.querySelector(`.Root__main-view ${PAGE_SELECTOR}`);
+    const page = pageElement();
     if (!page)
       return;
     TransferElement(page, document.body);
@@ -36304,7 +36306,7 @@ void main() {
     return null;
   }
   function watchLibraryGridState() {
-    const navBar = document.querySelector(".Root__nav-bar");
+    const navBar = document.querySelector(":is(#Desktop_LeftSidebar_Id, .Root__nav-bar)");
     if (!navBar)
       return null;
     syncLibraryGridState();
@@ -36428,7 +36430,7 @@ void main() {
                 host.classList.remove(APP_BG_HOST_HELPER_CLASS);
               }
               host.classList.remove(APP_BG_HOST_CLASS);
-              host.querySelector(".Root__nav-bar")?.classList.remove(APP_BG_LIB_GRID_CLASS);
+              host.querySelector(":is(#Desktop_LeftSidebar_Id, .Root__nav-bar)")?.classList.remove(APP_BG_LIB_GRID_CLASS);
             }
             const backHost = document.querySelector(
               `${APP_BG_HOST_SELECTOR}, ${APP_BG_HOST_FALLBACK_SELECTOR}`
@@ -36937,7 +36939,7 @@ void main() {
   function positionLyrics() {
     if (!lyricsElement || !centerWrapper)
       return;
-    const controls = centerWrapper.querySelector(".player-controls");
+    const controls = centerWrapper.querySelector(PLAYER_CONTROLS_SELECTOR);
     if (!controls)
       return;
     const cRect = controls.getBoundingClientRect();
@@ -37004,7 +37006,9 @@ void main() {
   }
   function renderPlaybarLine(position) {
     if (!lyricsElement || !lyricsElement.isConnected || !centerWrapper || !centerWrapper.isConnected) {
-      const controls = document.querySelector(".Root__now-playing-bar .player-controls");
+      const controls = document.querySelector(
+        `${PLAYBAR_SELECTOR} ${PLAYER_CONTROLS_SELECTOR}`
+      );
       if (controls?.parentElement) {
         inject();
       } else {
@@ -37032,10 +37036,10 @@ void main() {
     }
   }
   function inject() {
-    const bar = document.querySelector(".Root__now-playing-bar");
+    const bar = document.querySelector(PLAYBAR_SELECTOR);
     if (!bar)
       return;
-    const controls = bar.querySelector(".player-controls");
+    const controls = bar.querySelector(PLAYER_CONTROLS_SELECTOR);
     const wrapper = controls?.parentElement ?? null;
     if (!wrapper)
       return;
@@ -37079,7 +37083,7 @@ void main() {
   }
   function InitializePlaybarLyrics() {
     initWhen = Whentil_default.When(
-      () => document.querySelector(".Root__now-playing-bar .player-controls"),
+      () => document.querySelector(`${PLAYBAR_SELECTOR} ${PLAYER_CONTROLS_SELECTOR}`),
       () => {
         window.addEventListener("resize", positionLyrics);
         Spicetify.Player.addEventListener("songchange", onSongChange);
@@ -37100,7 +37104,7 @@ void main() {
     lifecycle_default.trackCallback(cleanup);
     lifecycle_default.trackWhentil(initWhen);
   }
-  var UPDATE_INTERVAL, lyricsElement, centerWrapper, positionConsumerDisposer, resizeObserver, lastText, initWhen, lyricsDataListenerId, cachedPlaybarEnabled, cachedPlaybarEnabledAt, PLAYBAR_ENABLED_TTL_MS, PlaybarLyrics_default;
+  var UPDATE_INTERVAL, PLAYBAR_SELECTOR, PLAYER_CONTROLS_SELECTOR, lyricsElement, centerWrapper, positionConsumerDisposer, resizeObserver, lastText, initWhen, lyricsDataListenerId, cachedPlaybarEnabled, cachedPlaybarEnabledAt, PLAYBAR_ENABLED_TTL_MS, PlaybarLyrics_default;
   var init_PlaybarLyrics = __esm({
     "src/components/PlaybarLyrics/PlaybarLyrics.ts"() {
       "use strict";
@@ -37115,6 +37119,8 @@ void main() {
       init_lifecycle();
       init_EventManager();
       UPDATE_INTERVAL = 0.3;
+      PLAYBAR_SELECTOR = ':is([data-testid="now-playing-bar"], .Root__now-playing-bar)';
+      PLAYER_CONTROLS_SELECTOR = ':is([data-testid="player-controls"], .player-controls)';
       lyricsElement = null;
       centerWrapper = null;
       positionConsumerDisposer = null;
@@ -37287,6 +37293,7 @@ void main() {
 
   // src/managers/EventManager.ts
   init_SpotifyPlayer();
+  init_PageViewSelectors();
   init_GetProgress();
 
   // src/utils/playerState.ts
@@ -37386,15 +37393,11 @@ void main() {
     }
     static setupNavigationEvents() {
       const pageContainerWhen = Whentil_default.When(
-        () => document.querySelector(
-          ".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]"
-        ),
+        () => document.querySelector(PageViewSelectors.PageRoot),
         () => {
           Global_default.Event.evoke(
             "pagecontainer:available",
-            document.querySelector(
-              ".Root__main-view .main-view-container div[data-overlayscrollbars-viewport]"
-            )
+            document.querySelector(PageViewSelectors.PageRoot)
           );
         }
       );
@@ -37548,7 +37551,7 @@ void main() {
       void (async () => {
         try {
           const { nowPlayingBar, hasDynamicBg, images } = await measureAsync(() => {
-            const bar = document.querySelector(".Root__right-sidebar aside.NowPlayingView");
+            const bar = document.querySelector("aside.NowPlayingView");
             const hasBg = !!this.cached.dynamicBg;
             const imgs = this.cached.dynamicBg ? {
               imgA: this.cached.dynamicBg.querySelector(
@@ -37654,6 +37657,11 @@ void main() {
   // src/components/DynamicBG/ArtworkSurfaces.ts
   var APP_BG_CHANGED_EVENT = "amai:appbg-changed";
   var FAN_OUT_DELAY_MS = 500;
+  var NOW_PLAYING_PANEL = "aside.NowPlayingView";
+  function sidebarRegion() {
+    const panel = document.querySelector(NOW_PLAYING_PANEL);
+    return panel?.parentElement ?? document.querySelector(".Root__right-sidebar");
+  }
   function readLiveCoverUrl() {
     try {
       const url = Spicetify.Player.data?.item?.metadata?.image_url;
@@ -37665,7 +37673,7 @@ void main() {
   function createDefaultAdapters(sidebarBg) {
     return {
       applySidebar: (coverUrl) => {
-        if (!document.querySelector(".Root__right-sidebar aside.NowPlayingView"))
+        if (!document.querySelector(NOW_PLAYING_PANEL))
           return;
         sidebarBg.apply(coverUrl);
       },
@@ -37799,18 +37807,18 @@ void main() {
     }
     watchSidebar() {
       const apply = () => {
-        if (document.querySelector(".Root__right-sidebar aside.NowPlayingView")) {
+        if (document.querySelector(NOW_PLAYING_PANEL)) {
           this.adapters.applySidebar(this.adapters.readCoverUrl());
         }
       };
       const observer = new MutationObserver(apply);
-      const root2 = document.querySelector(".Root__right-sidebar") ?? document.body;
+      const root2 = sidebarRegion() ?? document.body;
       observer.observe(root2, { childList: true, subtree: true });
       this.sidebarObserver = observer;
       lifecycle_default.trackObserver(observer);
-      if (!document.querySelector(".Root__right-sidebar")) {
+      if (!sidebarRegion()) {
         const late = new MutationObserver((_muts, obs) => {
-          const sb = document.querySelector(".Root__right-sidebar");
+          const sb = sidebarRegion();
           if (sb) {
             obs.disconnect();
             this.sidebarObserver?.disconnect();
@@ -38134,8 +38142,8 @@ void main() {
     return hasExplicitTooltipLabel(element) || hasReactTooltipHandlers(getReactTooltipProps(element));
   }
   var TRACK_ROW_SCOPE = '.main-trackList-trackListRow, .main-trackList-row, [data-testid="tracklist-row"]';
-  var PLAYBAR_SCOPE = ".Root__now-playing-bar";
-  var SIDEBAR_SCOPE = ".Root__nav-bar";
+  var PLAYBAR_SCOPE = ':is([data-testid="now-playing-bar"], .Root__now-playing-bar)';
+  var SIDEBAR_SCOPE = ":is(#Desktop_LeftSidebar_Id, .Root__nav-bar)";
   var FUNCTIONAL_LINK_WRAPPER_SELECTOR = [
     '[role="button"]',
     '[data-testid*="action"]',
@@ -38169,7 +38177,7 @@ void main() {
   var SIDEBAR_TOOLTIP_BUTTON_SELECTOR = [
     ".main-yourLibraryX-iconOnly",
     ".main-yourLibraryX-collapseButtonWrapper",
-    ".main-yourLibraryX-headerContent button",
+    ".main-yourLibraryX-header button",
     ".main-yourLibraryX-filterArea button",
     ".main-yourLibraryX-libraryFilter button",
     'button[data-testid="create-playlist"]',
@@ -38408,7 +38416,7 @@ void main() {
     return false;
   }
   function placementFor(trigger) {
-    return trigger.closest(".Root__nav-bar") ? "right" : "top";
+    return trigger.closest(":is(#Desktop_LeftSidebar_Id, .Root__nav-bar)") ? "right" : "top";
   }
   var HoverTooltipPresenter = class {
     constructor(adapter) {
@@ -38830,7 +38838,7 @@ void main() {
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e79106e/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18516-5urbOqLKYYpP/1a10c528daae/DotLoader.css */
 #DotLoader {
   --dot-color: var(--amai-accent-1);
   --dot-color-dim: color-mix(in srgb, var(--amai-accent-1) 22%, transparent);
@@ -38865,7 +38873,7 @@ void main() {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e7910cf/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18516-5urbOqLKYYpP/1a10c528db2f/ProcessingIndicator.css */
 #AmaiLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -38947,7 +38955,7 @@ void main() {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e7902d0/tokens.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18516-5urbOqLKYYpP/1a10c528c7e0/tokens.css */
 :root {
   --amai-accent-1: #1ed760;
   --amai-accent-2: #1db954;
@@ -39026,7 +39034,7 @@ void main() {
   --amai-scrollbar-thumb: rgba(255, 255, 255, 0.6);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e790601/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18516-5urbOqLKYYpP/1a10c528cb61/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -39166,42 +39174,55 @@ body:has(#AmaiLyricsPage) .main-view-container__scroll-node-child-spacer {
 #AmaiLyricsPage .ViewControls button {
   cursor: pointer;
 }
-.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) {
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas),
+aside.NowPlayingView:has([data-testid="NPV_Panel_OpenDiv"], canvas) {
   --background-tint: color-mix(in srgb, rgb(var(--spice-rgb-selected-row)) 7%, transparent);
   --spice-card: var(--background-tint);
   --background-tinted-base: var(--background-tint);
 }
-.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-content {
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-content,
+aside.NowPlayingView:has([data-testid="NPV_Panel_OpenDiv"], canvas) .main-nowPlayingView-content {
   background: transparent;
 }
-.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-contextItemInfo:before {
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-contextItemInfo:before,
+aside.NowPlayingView:has([data-testid="NPV_Panel_OpenDiv"], canvas) .main-nowPlayingView-contextItemInfo:before {
   display: none;
 }
 .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .sweet-dynamic-bg div[data-overlayscrollbars-viewport],
-.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .sweet-dynamic-bg div[data-overlayscrollbars-viewport] > div {
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .sweet-dynamic-bg div[data-overlayscrollbars-viewport] > div,
+aside.NowPlayingView:has([data-testid="NPV_Panel_OpenDiv"], canvas) .sweet-dynamic-bg div[data-overlayscrollbars-viewport],
+aside.NowPlayingView:has([data-testid="NPV_Panel_OpenDiv"], canvas) .sweet-dynamic-bg div[data-overlayscrollbars-viewport] > div {
   background: transparent;
 }
 .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .sweet-dynamic-bg .main-nowPlayingView-coverArtContainer div:has(video):after,
-.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .sweet-dynamic-bg .main-nowPlayingView-coverArtContainer div:has(video):before {
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .sweet-dynamic-bg .main-nowPlayingView-coverArtContainer div:has(video):before,
+aside.NowPlayingView:has([data-testid="NPV_Panel_OpenDiv"], canvas) .sweet-dynamic-bg [data-testid=cover-drop-target] div:has(video):after,
+aside.NowPlayingView:has([data-testid="NPV_Panel_OpenDiv"], canvas) .sweet-dynamic-bg [data-testid=cover-drop-target] div:has(video):before {
   display: none;
 }
-.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .sweet-dynamic-bg .main-trackInfo-artists {
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .sweet-dynamic-bg .main-trackInfo-artists,
+aside.NowPlayingView:has([data-testid="NPV_Panel_OpenDiv"], canvas) .sweet-dynamic-bg .main-trackInfo-artists {
   filter: brightness(1.15);
   opacity: 0.75;
 }
-.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-coverArt {
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-coverArt,
+aside.NowPlayingView:has([data-testid="NPV_Panel_OpenDiv"], canvas) [data-testid=cover-drop-target] img {
   box-shadow: 0 9px 20px 0 rgba(0, 0, 0, 0.271);
   opacity: 0.95;
 }
-.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section {
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section,
+aside.NowPlayingView:has([data-testid="NPV_Panel_OpenDiv"], canvas) [data-testid=NPV_Panel_OpenDiv] > div:not(:has([data-testid="cover-drop-target"])) {
   background-color: var(--background-tinted-base);
 }
-.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) button[type=button] {
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) button[type=button],
+aside.NowPlayingView:has([data-testid="NPV_Panel_OpenDiv"], canvas) button[type=button] {
   background-color: var(--background-tinted-base);
   color: hsla(0, 0%, 100%, 0.8);
 }
 .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) button[type=button] .Button-sm-buttonSecondary-isUsingKeyboard-useBrowserDefaultFocusStyle,
-.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) button[type=button] .Button-sm-buttonSecondary-useBrowserDefaultFocusStyle {
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) button[type=button] .Button-sm-buttonSecondary-useBrowserDefaultFocusStyle,
+aside.NowPlayingView:has([data-testid="NPV_Panel_OpenDiv"], canvas) button[type=button] .Button-sm-buttonSecondary-isUsingKeyboard-useBrowserDefaultFocusStyle,
+aside.NowPlayingView:has([data-testid="NPV_Panel_OpenDiv"], canvas) button[type=button] .Button-sm-buttonSecondary-useBrowserDefaultFocusStyle {
   border: 1px solid hsla(0, 0%, 100%, 0.5);
 }
 #AmaiLyricsPageSvg {
@@ -39260,16 +39281,13 @@ button:has(#AmaiLyricsPageSvg):focus-visible {
 button:has(#AmaiLyricsPageSvg):after {
   transform: translateX(-370%) translateY(-40%) !important;
 }
-.Root__main-view:has(#AmaiLyricsPage),
-.Root__main-view:has(#AmaiLyricsPage) .KL8t9WB65UfUEPuTFAhO,
-.Root__main-view:has(#AmaiLyricsPage) .main-content-view,
-.Root__main-view:has(#AmaiLyricsPage) .main-view-container,
-.Root__main-view:has(#AmaiLyricsPage) .main-view-container__scroll-node,
-.Root__main-view:has(#AmaiLyricsPage) .main-view-container .div[data-overlayscrollbars-viewport] {
+body:has(#AmaiLyricsPage) .main-view-container,
+body:has(#AmaiLyricsPage) .main-view-container__scroll-node,
+body:has(#AmaiLyricsPage) .main-view-container div[data-overlayscrollbars-viewport] {
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e7906f2/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18516-5urbOqLKYYpP/1a10c528cd02/Simplebar.css */
 #AmaiLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -39477,7 +39495,7 @@ button:has(#AmaiLyricsPageSvg):after {
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e790763/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18516-5urbOqLKYYpP/1a10c528d033/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -40081,7 +40099,7 @@ button:has(#AmaiLyricsPageSvg):after {
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e790864/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18516-5urbOqLKYYpP/1a10c528d284/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: calc(2.2 * var(--amai-bg-saturation-scale, 1));
@@ -40191,7 +40209,9 @@ button:has(#AmaiLyricsPageSvg):after {
   mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 35%, rgba(0, 0, 0, 0) 90%);
 }
 .main-nowPlayingView-coverArtContainer div:has(video)::before,
-.main-nowPlayingView-coverArtContainer div:has(video)::after {
+.main-nowPlayingView-coverArtContainer div:has(video)::after,
+[data-testid=cover-drop-target] div:has(video)::before,
+[data-testid=cover-drop-target] div:has(video)::after {
   display: none;
 }
 .sweet-dynamic-bg-in-this:is(aside) .AAdBM1nhG73supMfnYX7 {
@@ -40233,8 +40253,8 @@ button:has(#AmaiLyricsPageSvg):after {
     transform: rotate(calc(var(--bg-rotation-secondary, 0deg) + 1turn)) scale(var(--bg-scale-secondary, 1));
   }
 }
-body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .sweet-dynamic-bg-in-this) .sweet-dynamic-bg,
-body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingView, .sweet-dynamic-bg-in-this) .sweet-dynamic-bg * {
+body:has(#AmaiLyricsPage.Fullscreen) aside:is(.NowPlayingView, .sweet-dynamic-bg-in-this) .sweet-dynamic-bg,
+body:has(#AmaiLyricsPage.Fullscreen) aside:is(.NowPlayingView, .sweet-dynamic-bg-in-this) .sweet-dynamic-bg * {
   display: none !important;
   animation: none !important;
   filter: none !important;
@@ -40329,7 +40349,10 @@ body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingVi
 }
 .amai-app-bg-host .Root__top-container,
 .amai-app-bg-host #global-nav-bar,
+.amai-app-bg-host div:has(> [data-testid="now-playing-bar"]),
 .amai-app-bg-host .Root__now-playing-bar,
+.amai-app-bg-host [data-testid=now-playing-bar],
+.amai-app-bg-host #main-view,
 .amai-app-bg-host .Root__main-view,
 .amai-app-bg-host .main-view-container,
 .amai-app-bg-host .main-content-view,
@@ -40343,9 +40366,18 @@ body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingVi
   background-color: transparent !important;
   background-image: none !important;
 }
+.amai-app-bg-host [data-testid=playlist-page] > div:not([data-testid="entity-header"]):not(:has([data-testid="entity-header"])),
+.amai-app-bg-host [data-testid=playlist-page] > div:not([data-testid="entity-header"]):not(:has([data-testid="entity-header"])) > :first-child {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
 .amai-app-bg-host .Root__nav-bar .main-yourLibraryX-headerContent button,
 .amai-app-bg-host .Root__nav-bar .main-yourLibraryX-headerContent button::before,
-.amai-app-bg-host .Root__nav-bar .main-yourLibraryX-headerContent button::after {
+.amai-app-bg-host .Root__nav-bar .main-yourLibraryX-headerContent button::after,
+.amai-app-bg-host #Desktop_LeftSidebar_Id .main-yourLibraryX-header button,
+.amai-app-bg-host #Desktop_LeftSidebar_Id .main-yourLibraryX-header button::before,
+.amai-app-bg-host #Desktop_LeftSidebar_Id .main-yourLibraryX-header button::after {
   background-color: transparent !important;
   background-image: none !important;
 }
@@ -40354,11 +40386,18 @@ body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingVi
 .amai-app-bg-host .Root__nav-bar [role=listitem]:hover,
 .amai-app-bg-host .Root__nav-bar [data-encore-id=listRow]:hover,
 .amai-app-bg-host .Root__nav-bar [data-encore-id=listRow]:hover::before,
-.amai-app-bg-host .Root__nav-bar [data-encore-id=listRow]:hover::after {
+.amai-app-bg-host .Root__nav-bar [data-encore-id=listRow]:hover::after,
+.amai-app-bg-host #Desktop_LeftSidebar_Id li:hover,
+.amai-app-bg-host #Desktop_LeftSidebar_Id [role=row]:hover,
+.amai-app-bg-host #Desktop_LeftSidebar_Id [role=listitem]:hover,
+.amai-app-bg-host #Desktop_LeftSidebar_Id [data-encore-id=listRow]:hover,
+.amai-app-bg-host #Desktop_LeftSidebar_Id [data-encore-id=listRow]:hover::before,
+.amai-app-bg-host #Desktop_LeftSidebar_Id [data-encore-id=listRow]:hover::after {
   background-color: rgba(0, 0, 0, 0.15) !important;
   background-image: none !important;
 }
-.amai-app-bg-host .main-trackList-trackListHeader {
+.amai-app-bg-host .main-trackList-trackListHeader,
+.amai-app-bg-host #main-view [role=grid] > div:has([role="columnheader"]) {
   position: static !important;
   top: auto !important;
   background: transparent !important;
@@ -40371,22 +40410,29 @@ body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingVi
   display: none !important;
 }
 .amai-app-bg-host .main-entityHeader-backgroundColor,
-.amai-app-bg-host .playlist-playlist-actionBarBackground-background {
+.amai-app-bg-host .playlist-playlist-actionBarBackground-background,
+.amai-app-bg-host [data-testid=entity-header],
+.amai-app-bg-host [data-testid=entity-header] > div:first-child,
+.amai-app-bg-host [data-testid=action-bar] {
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
 }
-.amai-app-bg-host .Root__nav-bar {
+.amai-app-bg-host .Root__nav-bar,
+.amai-app-bg-host #Desktop_LeftSidebar_Id {
   background-color: var(--amai-fill-glass) !important;
   background-image: none !important;
   border: 1px solid var(--amai-stroke-2) !important;
   box-shadow: var(--amai-shadow-panel) !important;
 }
-.amai-app-bg-host .Root__nav-bar.amai-lib-grid {
+.amai-app-bg-host .Root__nav-bar.amai-lib-grid,
+.amai-app-bg-host #Desktop_LeftSidebar_Id.amai-lib-grid {
   background-color: var(--background-base) !important;
 }
 .amai-app-bg-host .Root__nav-bar .main-yourLibraryX-libraryContainer,
-.amai-app-bg-host .Root__nav-bar .main-yourLibraryX-entryPoints {
+.amai-app-bg-host .Root__nav-bar .main-yourLibraryX-entryPoints,
+.amai-app-bg-host #Desktop_LeftSidebar_Id .YourLibraryX,
+.amai-app-bg-host #Desktop_LeftSidebar_Id .main-yourLibraryX-libraryRootlist {
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
@@ -40405,7 +40451,7 @@ body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingVi
   border-color: rgba(255, 255, 255, 0.65) !important;
 }
 .amai-app-bg-on .Root__right-sidebar,
-.amai-app-bg-on .Root__right-sidebar aside.NowPlayingView,
+.amai-app-bg-on aside.NowPlayingView,
 .amai-app-bg-on .Root__right-sidebar-peek,
 .amai-app-bg-on .Root__right-sidebar .main-nowPlayingView-content {
   background: transparent !important;
@@ -40426,8 +40472,8 @@ body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingVi
   background-color: transparent !important;
   background-image: none !important;
 }
-.amai-app-bg-on .Root__right-sidebar aside.NowPlayingView > .sweet-dynamic-bg,
-.amai-app-bg-on .Root__right-sidebar aside.NowPlayingView > .sweet-dynamic-bg * {
+.amai-app-bg-on aside.NowPlayingView > .sweet-dynamic-bg,
+.amai-app-bg-on aside.NowPlayingView > .sweet-dynamic-bg * {
   display: none !important;
   animation: none !important;
   filter: none !important;
@@ -40451,7 +40497,7 @@ body:has(#AmaiLyricsPage.Fullscreen) .Root__right-sidebar aside:is(.NowPlayingVi
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e790925/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18516-5urbOqLKYYpP/1a10c528d2f5/main.css */
 #AmaiLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -40609,13 +40655,15 @@ header.main-topBar-container .amai-info {
   border: 1px solid var(--amai-stroke-2);
   box-shadow: var(--amai-shadow-panel);
 }
-.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section {
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section,
+aside.NowPlayingView:has([data-testid="NPV_Panel_OpenDiv"], canvas) [data-testid=NPV_Panel_OpenDiv] > div:not(:has([data-testid="cover-drop-target"])) {
   background-color: var(--amai-fill-glass);
   border-radius: 1cqh;
   border: 1px solid var(--amai-stroke-2);
   box-shadow: var(--amai-shadow-panel);
 }
-.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section > button > div > div {
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section > button > div > div,
+aside.NowPlayingView:has([data-testid="NPV_Panel_OpenDiv"], canvas) [data-testid=NPV_Panel_OpenDiv] > div:not(:has([data-testid="cover-drop-target"])) > button > div > div {
   background-color: transparent;
 }
 #AmaiLyricsPage .ContentBox .NowBar .Header .Metadata {
@@ -40678,6 +40726,8 @@ ruby > rt {
   overflow-wrap: anywhere;
   word-break: break-word;
 }
+#main-view [role=row]:not(.main-trackList-trackListRow):not(:has([role="columnheader"])):focus-within > div,
+#main-view [role=row]:not(.main-trackList-trackListRow):not(:has([role="columnheader"])):hover > div,
 .main-trackList-trackListRow:focus-within,
 .main-trackList-trackListRow:hover,
 .BoxComponent-group-card-naked-isInteractive-draggable:hover::after {
@@ -40702,7 +40752,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e7909b6/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18516-5urbOqLKYYpP/1a10c528d356/Mixed.css */
 #AmaiLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -41056,7 +41106,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e790a47/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18516-5urbOqLKYYpP/1a10c528d4c7/LoaderContainer.css */
 #AmaiLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -41078,7 +41128,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e790a88/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18516-5urbOqLKYYpP/1a10c528d4f8/FullscreenTransition.css */
 #AmaiLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -41105,7 +41155,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e790ab9/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18516-5urbOqLKYYpP/1a10c528d529/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
@@ -41184,7 +41234,8 @@ ruby > rt {
   font-size: 85%;
   line-height: 1.2;
 }
-.amai-hide-controls .player-controls {
+.amai-hide-controls .player-controls,
+.amai-hide-controls [data-testid=player-controls] {
   opacity: 0;
   transition: opacity 0.2s ease;
 }
@@ -41193,12 +41244,17 @@ ruby > rt {
 }
 .amai-hide-controls .player-controls:hover,
 .amai-hide-controls:hover .player-controls,
-.now-playing-bar__center:hover .player-controls {
+.now-playing-bar__center:hover .player-controls,
+.amai-hide-controls [data-testid=player-controls]:hover,
+.amai-hide-controls:hover [data-testid=player-controls],
+.main-nowPlayingBar-center:hover [data-testid=player-controls] {
   opacity: 1 !important;
 }
 .amai-hide-controls .player-controls:hover ~ .amai-playbar-lyrics,
+.now-playing-bar__center:hover .amai-playbar-lyrics,
+.amai-hide-controls [data-testid=player-controls]:hover ~ .amai-playbar-lyrics,
 .amai-hide-controls:hover .amai-playbar-lyrics,
-.now-playing-bar__center:hover .amai-playbar-lyrics {
+.main-nowPlayingBar-center:hover .amai-playbar-lyrics {
   opacity: 0 !important;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -41207,7 +41263,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e790b1a/Settings.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18516-5urbOqLKYYpP/1a10c528d56a/Settings.css */
 :is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) {
   display: grid;
   gap: 8px;
@@ -41434,7 +41490,7 @@ ruby > rt {
   border: 1px solid var(--essential-subdued, #818181);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e790b9b/SettingsModal.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18516-5urbOqLKYYpP/1a10c528d6ab/SettingsModal.css */
 .amai-settings-overlay {
   position: fixed;
   inset: 0;
@@ -41512,7 +41568,7 @@ ruby > rt {
   min-width: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e790bdc/Tooltips.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18516-5urbOqLKYYpP/1a10c528d6dc/Tooltips.css */
 .tippy-box[data-theme~=amai-lyrics] {
   position: relative;
   background: var(--amai-glass-veil-strong), var(--amai-glass-base-strong) !important;
@@ -41572,8 +41628,9 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16768-mGJt9JR6BPHu/1a103e790c1d/Glassmorphism.css */
-.amai-app-bg-host .Root__nav-bar:not(.amai-lib-grid) {
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-18516-5urbOqLKYYpP/1a10c528d71d/Glassmorphism.css */
+.amai-app-bg-host .Root__nav-bar:not(.amai-lib-grid),
+.amai-app-bg-host #Desktop_LeftSidebar_Id:not(.amai-lib-grid) {
   isolation: isolate;
   background: var(--amai-glass-veil), var(--amai-glass-base) !important;
   border: 1px solid var(--amai-glass-border) !important;
@@ -41585,7 +41642,8 @@ ruby > rt {
     border-color var(--amai-glass-dur) var(--amai-glass-ease),
     box-shadow var(--amai-glass-dur) var(--amai-glass-ease);
 }
-.amai-app-bg-host .Root__nav-bar.amai-lib-grid {
+.amai-app-bg-host .Root__nav-bar.amai-lib-grid,
+.amai-app-bg-host #Desktop_LeftSidebar_Id.amai-lib-grid {
   background: var(--amai-glass-veil-subtle), var(--amai-glass-base-strong) !important;
   backdrop-filter: var(--amai-glass-backdrop-soft);
 }
@@ -41593,11 +41651,17 @@ ruby > rt {
 .amai-app-bg-host .Root__nav-bar [role=listitem]:hover,
 .amai-app-bg-host .Root__nav-bar [data-encore-id=listRow]:hover,
 .amai-app-bg-host .Root__nav-bar [data-encore-id=listRow]:hover::before,
-.amai-app-bg-host .Root__nav-bar [data-encore-id=listRow]:hover::after {
+.amai-app-bg-host .Root__nav-bar [data-encore-id=listRow]:hover::after,
+.amai-app-bg-host #Desktop_LeftSidebar_Id [role=row]:hover,
+.amai-app-bg-host #Desktop_LeftSidebar_Id [role=listitem]:hover,
+.amai-app-bg-host #Desktop_LeftSidebar_Id [data-encore-id=listRow]:hover,
+.amai-app-bg-host #Desktop_LeftSidebar_Id [data-encore-id=listRow]:hover::before,
+.amai-app-bg-host #Desktop_LeftSidebar_Id [data-encore-id=listRow]:hover::after {
   background: var(--amai-glass-veil-subtle), rgba(255, 255, 255, 0.035) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07) !important;
 }
-.amai-app-bg-host .Root__nav-bar [aria-selected=true] {
+.amai-app-bg-host .Root__nav-bar [aria-selected=true],
+.amai-app-bg-host #Desktop_LeftSidebar_Id [aria-selected=true] {
   background: linear-gradient(90deg, rgba(var(--amai-accent-rgb), 0.11), rgba(var(--amai-accent-rgb), 0.025)), rgba(8, 10, 16, 0.58) !important;
   box-shadow: inset 2px 0 0 rgba(var(--amai-accent-rgb), 0.58), inset 0 1px 0 rgba(255, 255, 255, 0.065) !important;
 }
@@ -41629,6 +41693,8 @@ ruby > rt {
   box-shadow: var(--amai-glass-rim-strong), var(--amai-glass-accent-shadow) !important;
   color: #fff;
 }
+.amai-app-bg-host #main-view [role=row]:not(.main-trackList-trackListRow):not(:has([role="columnheader"])):hover > div,
+.amai-app-bg-host #main-view [role=row]:not(.main-trackList-trackListRow):not(:has([role="columnheader"])):focus-within > div,
 .amai-app-bg-host .main-trackList-trackListRow:hover,
 .amai-app-bg-host .main-trackList-trackListRow:focus-within {
   background: var(--amai-glass-veil-subtle), rgba(8, 10, 16, 0.54) !important;
@@ -41638,7 +41704,8 @@ ruby > rt {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.075), 0 8px 22px rgba(2, 3, 8, 0.11) !important;
   backdrop-filter: var(--amai-glass-backdrop-soft);
 }
-.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section {
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section,
+aside.NowPlayingView:has([data-testid="NPV_Panel_OpenDiv"], canvas) [data-testid=NPV_Panel_OpenDiv] > div:not(:has([data-testid="cover-drop-target"])) {
   isolation: isolate;
   background: var(--amai-glass-veil), var(--amai-glass-base) !important;
   border: 1px solid var(--amai-glass-border) !important;
@@ -41647,7 +41714,8 @@ ruby > rt {
   backdrop-filter: var(--amai-glass-backdrop);
   animation: amai-glass-settle 520ms var(--amai-glass-ease) backwards;
 }
-.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section button[type=button]:not(:where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)) {
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section button[type=button]:not(:where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)),
+aside.NowPlayingView:has([data-testid="NPV_Panel_OpenDiv"], canvas) [data-testid=NPV_Panel_OpenDiv] > div:not(:has([data-testid="cover-drop-target"])) button[type=button]:not(:where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)) {
   background: var(--amai-glass-veil), var(--amai-glass-base-soft) !important;
   border: 1px solid var(--amai-glass-border) !important;
   border-radius: 999px;
@@ -41659,13 +41727,15 @@ ruby > rt {
     border-color var(--amai-glass-dur) var(--amai-glass-ease),
     box-shadow var(--amai-glass-dur) var(--amai-glass-ease);
 }
-.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section button[type=button]:not(:where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)):hover {
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section button[type=button]:not(:where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)):hover,
+aside.NowPlayingView:has([data-testid="NPV_Panel_OpenDiv"], canvas) [data-testid=NPV_Panel_OpenDiv] > div:not(:has([data-testid="cover-drop-target"])) button[type=button]:not(:where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)):hover {
   background: var(--amai-glass-veil-strong), rgba(var(--amai-accent-rgb), 0.07) !important;
   border-color: rgba(var(--amai-accent-rgb), 0.28) !important;
   box-shadow: var(--amai-glass-rim-strong), var(--amai-glass-accent-shadow) !important;
   transform: translateY(-1px);
 }
-.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section button[type=button]:not(:where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)):active {
+.Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section button[type=button]:not(:where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)):active,
+aside.NowPlayingView:has([data-testid="NPV_Panel_OpenDiv"], canvas) [data-testid=NPV_Panel_OpenDiv] > div:not(:has([data-testid="cover-drop-target"])) button[type=button]:not(:where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)):active {
   transform: translateY(0) scale(0.96);
 }
 #AmaiLyricsPage .AmaiPageButtonContainer {
@@ -41843,8 +41913,10 @@ ruby > rt {
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .amai-app-bg-host .Root__nav-bar,
+  .amai-app-bg-host #Desktop_LeftSidebar_Id,
   .amai-app-bg-host #global-nav-bar input,
   .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section,
+  aside.NowPlayingView:has([data-testid="NPV_Panel_OpenDiv"], canvas) [data-testid=NPV_Panel_OpenDiv] > div:not(:has([data-testid="cover-drop-target"])),
   #AmaiLyricsPage .ViewControls .ViewControl,
   #AmaiLyricsPage .LyricsContainer .LyricsContent .line.musical-line .instrumental-pill,
   .BoxComponent-box-elevated,
@@ -41862,6 +41934,8 @@ ruby > rt {
     --amai-glass-backdrop-strong: blur(15px) saturate(118%) brightness(0.9);
     --amai-glass-shadow: 0 12px 32px rgba(2, 3, 8, 0.18), 0 2px 8px rgba(2, 3, 8, 0.1);
   }
+  .amai-app-bg-host #main-view [role=row]:not(.main-trackList-trackListRow):not(:has([role="columnheader"])):hover > div,
+  .amai-app-bg-host #main-view [role=row]:not(.main-trackList-trackListRow):not(:has([role="columnheader"])):focus-within > div,
   .amai-app-bg-host .main-trackList-trackListRow:hover,
   .amai-app-bg-host .main-trackList-trackListRow:focus-within {
     backdrop-filter: none;
@@ -41869,15 +41943,19 @@ ruby > rt {
   #AmaiLyricsPage .AmaiPageButtonContainer {
     padding: 8px !important;
   }
-  .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section {
+  .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section,
+  aside.NowPlayingView:has([data-testid="NPV_Panel_OpenDiv"], canvas) [data-testid=NPV_Panel_OpenDiv] > div:not(:has([data-testid="cover-drop-target"])) {
     border-radius: 14px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .amai-app-bg-host .Root__nav-bar,
+  .amai-app-bg-host #Desktop_LeftSidebar_Id,
   .amai-app-bg-host #global-nav-bar input,
   .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section,
   .Root__right-sidebar:has(.main-nowPlayingView-section, canvas) .main-nowPlayingView-section button:not(:where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)),
+  aside.NowPlayingView:has([data-testid="NPV_Panel_OpenDiv"], canvas) [data-testid=NPV_Panel_OpenDiv] > div:not(:has([data-testid="cover-drop-target"])),
+  aside.NowPlayingView:has([data-testid="NPV_Panel_OpenDiv"], canvas) [data-testid=NPV_Panel_OpenDiv] > div:not(:has([data-testid="cover-drop-target"])) button:not(:where(.main-nowPlayingView-aboutArtist, .main-nowPlayingView-aboutArtist *)),
   #AmaiLyricsPage .AmaiPageButton,
   #AmaiLyricsPage .ViewControls .ViewControl,
   #AmaiLyricsPage .NotificationContainer,
