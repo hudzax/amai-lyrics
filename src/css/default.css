@@ -365,11 +365,16 @@ button:has(#AmaiLyricsPageSvg):after {
   transform: translateX(-370%) translateY(-40%) !important;
 }
 
-/* "Page Not Visible" fix. Anchored on `.main-view-container`, which Spotify
-   emits itself, rather than `.Root__main-view` — that class is hashed in
-   Spotify 1.3.3 and missing from Spicetify's css-map, so it never matches and
-   the page mounts with no height. The last selector used to read `.div[...]`, a
-   class named "div", which matched nothing at all. */
+/* "Page Not Visible" fix. The height chain must run from the main-view root
+   down to the page's scroll viewport: `#main-view` on 1.3.3 (Spicetify injects
+   the id during preprocessing; `.Root__main-view` is hashed and never
+   materializes there), `.Root__main-view` on older builds, plus the legacy
+   `.main-content-view` wrapper. The root was dropped from this rule once,
+   which left the page mounted with no height. The last selector used to read
+   `.div[...]`, a class named "div", which matched nothing at all. */
+body:has(#AmaiLyricsPage) #main-view,
+body:has(#AmaiLyricsPage) .Root__main-view,
+body:has(#AmaiLyricsPage) .main-content-view,
 body:has(#AmaiLyricsPage) .main-view-container,
 body:has(#AmaiLyricsPage) .main-view-container__scroll-node,
 body:has(#AmaiLyricsPage) .main-view-container div[data-overlayscrollbars-viewport] {
