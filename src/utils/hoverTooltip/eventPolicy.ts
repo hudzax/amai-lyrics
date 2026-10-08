@@ -244,6 +244,8 @@ const SIDEBAR_TOOLTIP_BUTTON_SELECTOR = [
   '.main-yourLibraryX-iconOnly',
   '.main-yourLibraryX-collapseButtonWrapper',
   '.main-yourLibraryX-header button',
+  // Pre-1.3.3 alias: the header wrapper was renamed in 1.3.3 — keep both.
+  '.main-yourLibraryX-headerContent button',
   '.main-yourLibraryX-filterArea button',
   '.main-yourLibraryX-libraryFilter button',
   'button[data-testid="create-playlist"]',

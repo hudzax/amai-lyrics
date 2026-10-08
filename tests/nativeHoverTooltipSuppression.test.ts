@@ -70,8 +70,9 @@ beforeEach(() => {
   // wrapping the links), album cell (DIV trigger wrapping its link). Plus a
   // portaled-menu-like div OUTSIDE any row, a row whose link is nested deeper
   // than the trigger shape (both must never be intercepted), a left-sidebar
-  // fixture (role=gridcell cards + an icon button), and a main-view grid row
-  // whose gridcell sits OUTSIDE the sidebar.
+  // fixture (role=gridcell cards + an icon button + an unlabeled header
+  // button), a pre-1.3.3 nav bar for the legacy header-button alias, and a
+  // main-view grid row whose gridcell sits OUTSIDE the sidebar.
   document.body.innerHTML = `
     <span id="outside"></span>
     <div role="row" class="main-trackList-trackListRow" id="row1">
@@ -132,6 +133,14 @@ beforeEach(() => {
         <input id="sbSearchInput" />
       </div>
       <div id="navLink"><a id="navLinkAnchor" href="/">Home</a></div>
+      <div class="main-yourLibraryX-header" id="sbHeaderBar">
+        <button id="sbHeaderBtn" type="button"><span id="sbHeaderIcon">≡</span></button>
+      </div>
+    </div>
+    <div class="Root__nav-bar" id="legacyNavBar">
+      <div class="main-yourLibraryX-headerContent" id="legacyHeaderContent">
+        <button id="legacyHeaderBtn" type="button"><span id="legacyHeaderIcon">«</span></button>
+      </div>
     </div>
     <div role="row" id="recRow">
       <div role="gridcell" id="recCell"><span id="recText">Recent card</span></div>
@@ -723,6 +732,40 @@ describe('native hover tooltip suppression', () => {
     expect(seen[0]).toEqual({
       type: 'mouseover',
       target: el('sbHeader'), // button's parent: the whole button subtree is dropped
+      related: el('outside'),
+      flagged: true,
+    });
+    expect(buttonSpies).not.toHaveBeenCalled();
+  });
+
+  it('covers 1.3.3 sidebar header buttons (unlabeled shape, .main-yourLibraryX-header)', () => {
+    // Header controls without reconstructible label attributes ride the
+    // structural selector list, not the label path.
+    const buttonSpies = vi.fn();
+    for (const type of DOC_TYPES) el('sbHeaderBtn').addEventListener(type, buttonSpies);
+
+    fire('mouseover', el('sbHeaderIcon'), el('outside'));
+
+    expect(seen).toHaveLength(1);
+    expect(seen[0]).toEqual({
+      type: 'mouseover',
+      target: el('sbHeaderBar'), // button's parent: the whole button subtree is dropped
+      related: el('outside'),
+      flagged: true,
+    });
+    expect(buttonSpies).not.toHaveBeenCalled();
+  });
+
+  it('still covers pre-1.3.3 sidebar header buttons (.Root__nav-bar + -headerContent alias)', () => {
+    const buttonSpies = vi.fn();
+    for (const type of DOC_TYPES) el('legacyHeaderBtn').addEventListener(type, buttonSpies);
+
+    fire('mouseover', el('legacyHeaderIcon'), el('outside'));
+
+    expect(seen).toHaveLength(1);
+    expect(seen[0]).toEqual({
+      type: 'mouseover',
+      target: el('legacyHeaderContent'), // button's parent: the whole button subtree is dropped
       related: el('outside'),
       flagged: true,
     });
