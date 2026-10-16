@@ -1,10 +1,13 @@
+import { primarySurface } from './SpotifyDom';
+
 export const PageViewSelectors = {
-  // Scoped to `.main-view-container` alone, not `.Root__main-view
-  // .main-view-container`: Spotify 1.3.3 ships every layout class hashed, and
-  // `Root__main-view` only exists when Spicetify's css-map happens to cover the
-  // running build. `.main-view-container` and the OverlayScrollbars viewport
-  // attribute are emitted by Spotify itself, so this resolves either way.
-  PageRoot: '.main-view-container div[data-overlayscrollbars-viewport]',
+  // Owned by the SpotifyDomContract (SpotifyDom.ts → `mainViewScrollViewport`):
+  // Spotify 1.3.3 ships every layout class hashed, and `Root__main-view` only
+  // exists when Spicetify's css-map happens to cover the running build.
+  // `.main-view-container` and the OverlayScrollbars viewport attribute are
+  // emitted by Spotify itself, so this resolves either way. Referenced here
+  // rather than spelled twice so a Spotify rename is one edit, not two.
+  PageRoot: primarySurface('mainViewScrollViewport'),
   AmaiLyricsPage: '#AmaiLyricsPage',
   ContentBox: '#AmaiLyricsPage .ContentBox',
   MediaImage: '#AmaiLyricsPage .MediaImage',

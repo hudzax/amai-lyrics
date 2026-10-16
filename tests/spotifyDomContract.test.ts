@@ -88,6 +88,14 @@ describe('Spotify 1.3.3 DOM contract', () => {
     expect(root?.closest('#main-view')).not.toBeNull();
   });
 
+  it('sources PageRoot from the contract rather than spelling it twice', () => {
+    // PageViewSelectors used to carry its own literal. It now derives from
+    // `mainViewScrollViewport`, so a Spotify rename is one edit, not two. If
+    // the literal ever comes back, this fails rather than letting the copy
+    // drift out of sync with the seam that owns the surface.
+    expect(PageViewSelectors.PageRoot).toBe(primarySurface('mainViewScrollViewport'));
+  });
+
   it('resolves the playbar and its controls wrapper', () => {
     expect(document.querySelector('[data-testid="now-playing-bar"]')).not.toBeNull();
     const controls = document.querySelector(
@@ -502,6 +510,9 @@ describe('SpotifyDomContract seam', () => {
     'globalNav',
   ];
 
+  // SAFETY: `Object.keys` widens to `string[]`, so the key type is narrowed
+  // back to `SpotifySurface` by hand — no `Object.entries` shape keeps the
+  // keys and the alias tuples both narrowed at once.
   const surfaceNames = Object.keys(SPOTIFY_SURFACES) as SpotifySurface[];
 
   /**
@@ -617,6 +628,30 @@ describe('SpotifyDomContract seam', () => {
       expect(arm).toMatch(/ button$/);
     }
     expect(document.querySelectorAll(chain).length).toBeGreaterThan(0);
+  });
+
+  it('treats a literal fragment named after an Object member as a literal', () => {
+    // The lookup must be hasOwnProperty, not `in`: `in` walks the prototype
+    // chain, so 'toString' resolved to Object.prototype.toString and `.map` on
+    // a function threw instead of emitting a selector. No live caller passes a
+    // fragment by one of these names today, so this was latent rather than a
+    // regression — but the same branch takes every hand-written fragment
+    // (`.main-yourLibraryX-filterArea button`), so it pins the lookup itself.
+    expect(surfaceChain('toString', 'button')).toBe('toString button');
+    expect(surfaceChain('constructor', 'button')).toBe('constructor button');
+    expect(surfaceChain('hasOwnProperty', 'button')).toBe('hasOwnProperty button');
+  });
+
+  it('passes a bare literal through without treating it as a surface name', () => {
+    // The literal branch is what a fragment takes; it must not be widened or
+    // fanned out. A mistyped surface name lands here too and emits a dead
+    // selector rather than throwing — the signature is `string`, not
+    // `SpotifySurface | string`, because that union collapses to `string` and
+    // would document a check the compiler does not perform.
+    expect(surfaceChain('button')).toBe('button');
+    expect(surfaceChain('.main-yourLibraryX-filterArea', 'button')).toBe(
+      '.main-yourLibraryX-filterArea button',
+    );
   });
 
   it('keeps the composed playbar + controls selector valid', () => {

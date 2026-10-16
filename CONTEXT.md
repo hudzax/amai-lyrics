@@ -15,11 +15,14 @@ class with no css-map entry. Lives in src/constants/SpotifyDom.ts. Callers cross
 it through `primarySurface` (the newest spelling alone), `legacySurface` (the
 oldest spelling alone, for a caller that falls back to the pre-1.3.3 node as its
 own lookup step), `anySurface` (one `:is()` selector, for
-querySelector/matches/closest), `allSurface` (a comma list, for stylesheets), and
-`surfaceChain` (a descendant chain distributed across every generation of each
-surface) — never through a Spotify class name of their own, and never by indexing
-`SPOTIFY_SURFACES[name][i]` (that export exists only for the contract tests to
-walk; the alias order is the module's private invariant).
+querySelector/matches/closest), `allSurface` (the comma-list form — no
+stylesheet can call it, since CSS is bundled as text; it exists to pin
+`:is()`/comma-list equivalence in the contract test and to state the form a
+hand-written rule must spell), and `surfaceChain` (a descendant chain
+distributed across every generation of each surface) — never through a Spotify
+class name of their own, and never by indexing `SPOTIFY_SURFACES[name][i]`
+(that export exists only for the contract tests to walk; the alias order is the
+module's private invariant).
 
 `anySurface` and `allSurface` are deliberately not interchangeable. `:is()`
 takes the specificity of its most specific argument, so

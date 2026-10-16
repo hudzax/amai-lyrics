@@ -194,9 +194,11 @@ describe('stylesheets keep the SpotifyDomContract aliases', () => {
 
 describe('the contract module and the stylesheets agree on quoting', () => {
   it('spells every alias so a normalised CSS lookup can find it', () => {
-    // Iterate the typed name list and index the record, matching
-    // spotifyDomContract.test.ts — `Object.entries` would need a cast to
-    // narrow its keys.
+    // Index the record from the typed name list, matching
+    // spotifyDomContract.test.ts.
+    // SAFETY: `Object.keys` widens to `string[]`, so the key type is narrowed
+    // back to `SpotifySurface` by hand — there is no `Object.entries` shape
+    // that keeps the keys and the alias tuples both narrowed at once.
     const surfaceNames = Object.keys(SPOTIFY_SURFACES) as SpotifySurface[];
     for (const surface of surfaceNames) {
       for (const alias of SPOTIFY_SURFACES[surface]) {

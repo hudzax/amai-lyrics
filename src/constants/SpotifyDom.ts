@@ -18,7 +18,10 @@
  *
  *   - `anySurface()`   → `:is(a, b)`. For `querySelector` / `matches` / `closest`.
  *     Matching is identical to the comma list.
- *   - `allSurface()`   → `a, b`. For stylesheets.
+ *   - `allSurface()`   → `a, b`. The comma-list form. No caller can use it to
+ *     *write* a stylesheet — CSS is bundled as text and never sees this module —
+ *     so it exists to pin `:is()`/comma-list equivalence in the contract test,
+ *     and to state the form a hand-written stylesheet rule must spell.
  *   - `primarySurface()` → the newest spelling alone, for the cases that need
  *     exactly one (composing a descendant, keying a map).
  *   - `legacySurface()` → the oldest spelling alone, for a caller that falls
@@ -237,11 +240,27 @@ export function allSurface(surface: SpotifySurface): string {
  * would produce one selector whose comma arms re-associate — so the cross-product
  * has to be spelled out. Parts are joined with a descendant combinator; each is
  * either a surface name or a literal selector fragment.
+ *
+ * The parameter is `string`, not `SpotifySurface | string`: that union collapses
+ * to `string` because `SpotifySurface` is a subtype of it, so it would document a
+ * check the compiler does not perform. A mistyped surface name is therefore not
+ * caught here — it falls through to the literal branch and emits a dead selector,
+ * which resolves to nothing rather than throwing. Every call site passes a
+ * literal or a real name, and the contract test covers both shapes; a stricter
+ * signature needs the surface names and the fragments as separate arguments.
  */
-export function surfaceChain(...parts: readonly (SpotifySurface | string)[]): string {
+export function surfaceChain(...parts: readonly string[]): string {
   let chains: string[] = [''];
   for (const part of parts) {
-    const aliases: readonly string[] = part in SURFACES ? SURFACES[part as SpotifySurface] : [part];
+    // SAFETY: SURFACES is `as const`, so its keys are a closed literal union
+    // that disallows an arbitrary string index. hasOwnProperty has just proved
+    // the key exists, so widening the key type to `string` cannot miss. The
+    // check is deliberately not `in`: `in` walks the prototype chain, so a
+    // fragment named after any Object member ('toString', 'constructor')
+    // resolves to that function and `.map` on it throws.
+    const aliases = Object.prototype.hasOwnProperty.call(SURFACES, part)
+      ? (SURFACES as Record<string, SurfaceAliases>)[part]
+      : [part];
     chains = chains.flatMap((prefix) => aliases.map((alias) => `${prefix} ${alias}`.trim()));
   }
   return chains.join(', ');
