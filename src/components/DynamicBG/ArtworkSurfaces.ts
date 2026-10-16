@@ -9,6 +9,7 @@ import {
   watchLibraryGridState,
 } from './AppBackground';
 import { syncLibraryGridState } from './identity';
+import { anySurface } from '../../constants/SpotifyDom';
 import Fullscreen from '../Utils/Fullscreen';
 import { NowPlayingBarBackground } from './NowPlayingBarBackground';
 
@@ -29,13 +30,15 @@ const FAN_OUT_DELAY_MS = 500;
  * css-map can restore the semantic name, whereas `NowPlayingView` is emitted by
  * Spotify itself.
  */
-const NOW_PLAYING_PANEL = 'aside.NowPlayingView';
+const NOW_PLAYING_PANEL = anySurface('nowPlayingPanel');
 
 /** The sidebar region that outlives the panel — the panel's parent once
  * mounted, or the always-present region on pre-1.3.3 builds. */
 function sidebarRegion(): HTMLElement | null {
   const panel = document.querySelector<HTMLElement>(NOW_PLAYING_PANEL);
-  return panel?.parentElement ?? document.querySelector<HTMLElement>('.Root__right-sidebar');
+  return (
+    panel?.parentElement ?? document.querySelector<HTMLElement>(anySurface('nowPlayingRegion'))
+  );
 }
 
 /** Cover art for the live track, if the player has one. */
@@ -287,8 +290,8 @@ export class ArtworkSurfaces {
         for (const node of mut.addedNodes) {
           if (!(node instanceof Element)) continue;
           if (
-            node.matches?.('.Root, .Root__top-container') ||
-            node.querySelector?.('.Root, .Root__top-container')
+            node.matches?.(anySurface('appFrameHost')) ||
+            node.querySelector?.(anySurface('appFrameHost'))
           ) {
             hostAdded = true;
             break;

@@ -7,6 +7,7 @@ import {
   NATIVE_HOVER_TOOLTIP_OWNED_PROPERTY,
 } from './eventPolicy';
 import type { HoverTippyAdapter, HoverTippyInstance } from './tippy';
+import { anySurface } from '../../constants/SpotifyDom';
 
 /** Matches the ButtonManager/pageControls feel: 200ms in, animated out. */
 const SHOW_DELAY_MS = 200;
@@ -56,7 +57,7 @@ function mutationTouchesTrigger(mutation: MutationRecord, trigger: HTMLElement):
 }
 
 function placementFor(trigger: HTMLElement): 'top' | 'right' {
-  return trigger.closest(':is(#Desktop_LeftSidebar_Id, .Root__nav-bar)') ? 'right' : 'top';
+  return trigger.closest(anySurface('sidebar')) ? 'right' : 'top';
 }
 
 /**

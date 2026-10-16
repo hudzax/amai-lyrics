@@ -3,6 +3,53 @@
 Names for the seams architecture reviews design against. Use these terms when
 naming or describing the modules behind them.
 
+## SpotifyDomContract
+
+The single place that knows Spotify's DOM: which surfaces this extension
+depends on, and every selector spelling each one answers to across the three
+generations Spotify has shipped — the pre-1.3.3 `Root__*` names Spicetify's
+css-map restores when it covers the build, the `data-testid` attributes and ids
+Spotify emits itself, and the structural `role` /
+`data-overlayscrollbars-*` hooks that are all that remains once 1.3.3 hashes a
+class with no css-map entry. Lives in src/constants/SpotifyDom.ts. Callers cross
+it through `primarySurface` (the newest spelling alone), `legacySurface` (the
+oldest spelling alone, for a caller that falls back to the pre-1.3.3 node as its
+own lookup step), `anySurface` (one `:is()` selector, for
+querySelector/matches/closest), `allSurface` (a comma list, for stylesheets), and
+`surfaceChain` (a descendant chain distributed across every generation of each
+surface) — never through a Spotify class name of their own, and never by indexing
+`SPOTIFY_SURFACES[name][i]` (that export exists only for the contract tests to
+walk; the alias order is the module's private invariant).
+
+`anySurface` and `allSurface` are deliberately not interchangeable. `:is()`
+takes the specificity of its most specific argument, so
+`:is(#Desktop_LeftSidebar_Id, .Root__nav-bar)` scores (1,0,0) for _both_ arms and
+would promote the legacy `.Root__nav-bar` arm from (0,1,0) — changing the
+cascade on exactly the older builds the alias exists to serve. Stylesheets
+therefore take the comma list. The two forms match identically, which
+tests/spotifyDomContract.test.ts pins against transcribed DOM fixtures for both
+generations.
+
+Only aliased or multi-file surfaces live here. A literal used once, in one form,
+in one place stays inline (`'.playback-bar'` in PlaybarLyrics,
+`'header.main-topBar-container'` in ApplyInfo) — indirection with one call site
+is interface surface without leverage. The module-private lists of _which_
+controls carry a native label stay in HoverTooltip's eventPolicy, which owns
+that question; the seam owns only the surface each one lives on.
+
+The stylesheets are a second half this seam does not own yet: they are bundled
+as text and injected as one `<style>`, so a selector there is never evaluated by
+a test. tests/spotifyDomCss.test.ts declares, per file, which spellings each
+stylesheet is expected to carry — the guard for the regressions that shipped in
+11408a7 (hashed layout classes), bd5479c (a replaced header alias) and 633c2e5
+(a dropped height-chain root). Its reader collapses whitespace before matching,
+because stylesheets wrap long selectors across lines: a raw substring check
+reads a present multi-line rule as deleted, which is why the structural row arm
+(`trackRowStructural`) went unpinned until the reader was fixed. One deliberate
+exception to the no-hashed-class rule is documented in place:
+`.AAdBM1nhG73supMfnYX7` in sweet-dynamic-bg.css, which is inert on 1.3.3 and
+still load-bearing on older builds.
+
 ## PlaybackTime
 
 The single place that knows where in the track we are: raw position, live play

@@ -9,6 +9,7 @@ import {
   NESTED_BG_IMG_A_ID,
   NESTED_BG_IMG_B_ID,
 } from './identity';
+import { anySurface } from '../../constants/SpotifyDom';
 
 interface BackgroundCache {
   nowPlayingBar: Element | null;
@@ -48,7 +49,7 @@ export class NowPlayingBarBackground {
     void (async () => {
       try {
         const { nowPlayingBar, hasDynamicBg, images } = await measureAsync(() => {
-          const bar = document.querySelector('aside.NowPlayingView');
+          const bar = document.querySelector(anySurface('nowPlayingPanel'));
           const hasBg = !!this.cached.dynamicBg;
           const imgs = this.cached.dynamicBg
             ? {

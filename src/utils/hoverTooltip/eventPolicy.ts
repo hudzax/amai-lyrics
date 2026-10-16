@@ -1,4 +1,5 @@
 import { getHoverTooltipContent } from './content';
+import { anySurface, primarySurface, surfaceChain } from '../../constants/SpotifyDom';
 
 /**
  * HoverEventPolicy owns Spotify tooltip trigger recognition and native
@@ -195,11 +196,14 @@ type RedispatchedHover = Event & { __amaiRedispatchedHover?: boolean };
  * React's private props are the strongest global signal; structural
  * selectors and accessible labels are fallbacks for virtualized/test DOM
  * where those props are not observable.
+ *
+ * The surface selectors come from the SpotifyDomContract seam; the button and
+ * cell lists below are this module's own knowledge of which controls carry a
+ * native label, so they stay local.
  */
-const TRACK_ROW_SCOPE =
-  '.main-trackList-trackListRow, .main-trackList-row, [data-testid="tracklist-row"]';
-const PLAYBAR_SCOPE = ':is([data-testid="now-playing-bar"], .Root__now-playing-bar)';
-const SIDEBAR_SCOPE = ':is(#Desktop_LeftSidebar_Id, .Root__nav-bar)';
+const TRACK_ROW_SCOPE = anySurface('trackRow');
+const PLAYBAR_SCOPE = anySurface('playbar');
+const SIDEBAR_SCOPE = anySurface('sidebar');
 
 /** Link-shaped controls that are interaction surfaces, not native tooltip cells. */
 const FUNCTIONAL_LINK_WRAPPER_SELECTOR = [
@@ -215,15 +219,10 @@ const FUNCTIONAL_LINK_WRAPPER_SELECTOR = [
 ].join(', ');
 
 /** The title's inner div is also a native trigger when it is not linked. */
-const TRACK_TITLE_TRIGGER_SELECTOR = '.main-trackList-rowTitle.standalone-ellipsis-one-line';
+const TRACK_TITLE_TRIGGER_SELECTOR = primarySurface('trackTitleTrigger');
 
 /** Known sidebar name/card cells, including cells without a row wrapper. */
-const SIDEBAR_LIBRARY_CELL_SELECTOR = [
-  '.main-yourLibraryX-libraryCard',
-  '.main-yourLibraryX-libraryItem',
-  '[data-testid="side-bar-library-card"]',
-  '[data-testid="your-library-item"]',
-].join(', ');
+const SIDEBAR_LIBRARY_CELL_SELECTOR = anySurface('libraryCell');
 
 /** Spotify's known tooltip-bearing track-row buttons. */
 const TRACK_TOOLTIP_BUTTON_SELECTOR = [
@@ -243,9 +242,10 @@ const TRACK_TOOLTIP_BUTTON_SELECTOR = [
 const SIDEBAR_TOOLTIP_BUTTON_SELECTOR = [
   '.main-yourLibraryX-iconOnly',
   '.main-yourLibraryX-collapseButtonWrapper',
-  '.main-yourLibraryX-header button',
-  // Pre-1.3.3 alias: the header wrapper was renamed in 1.3.3 — keep both.
-  '.main-yourLibraryX-headerContent button',
+  // The header wrapper was renamed in 1.3.3; surfaceChain fans the button
+  // descendant out across both the header's names and the sidebar's, which is
+  // the same pairing the stylesheets spell by hand.
+  surfaceChain('sidebar', 'libraryHeaderButton', 'button'),
   '.main-yourLibraryX-filterArea button',
   '.main-yourLibraryX-libraryFilter button',
   'button[data-testid="create-playlist"]',

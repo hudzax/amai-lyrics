@@ -16,11 +16,14 @@ import {
   ensureAppBgHostClasses,
   syncLibraryGridState,
 } from './identity';
+import { anySurface, legacySurface, primarySurface } from '../../constants/SpotifyDom';
 
 type GlAppBackgroundInstance = import('./GlAppBackground').GlAppBackground;
 
-export const APP_BG_HOST_SELECTOR = '.Root';
-export const APP_BG_HOST_FALLBACK_SELECTOR = '.Root__top-container';
+/** The app frame the canvas is appended to. `resolveAppBgHost` falls back to
+ * the second spelling; the `:is()` form is what the removal sweep queries. */
+export const APP_BG_HOST_SELECTOR = primarySurface('appFrameHost');
+export const APP_BG_HOST_FALLBACK_SELECTOR = legacySurface('appFrameHost');
 
 interface AppBackgroundCache {
   host: Element | null;
@@ -266,18 +269,14 @@ export class AppBackground {
           host.classList.remove(APP_BG_HOST_HELPER_CLASS);
         }
         host.classList.remove(APP_BG_HOST_CLASS);
-        host
-          .querySelector(':is(#Desktop_LeftSidebar_Id, .Root__nav-bar)')
-          ?.classList.remove(APP_BG_LIB_GRID_CLASS);
+        host.querySelector(anySurface('sidebar'))?.classList.remove(APP_BG_LIB_GRID_CLASS);
       }
       // Toggling off while fullscreen: `host` is the lyrics page, while the
       // app-frame host behind it may still hold the reveal-window placeholder
       // or its classes (remove() cancelled its detach timer above) — clear
       // both, or the node and Spotify's transparent-UI state strand over the
       // real frame with no way back.
-      const backHost = document.querySelector(
-        `${APP_BG_HOST_SELECTOR}, ${APP_BG_HOST_FALLBACK_SELECTOR}`,
-      );
+      const backHost = document.querySelector(anySurface('appFrameHost'));
       if (backHost && backHost !== host) {
         findAppBg(backHost)?.remove();
         releaseAppBgHostIfEmpty(backHost);
@@ -532,7 +531,7 @@ export const appBackgroundSingleton = new AppBackground();
  * can track it in `lifecycle`; returns null when the nav bar isn't mounted yet.
  */
 export function watchLibraryGridState(): MutationObserver | null {
-  const navBar = document.querySelector(':is(#Desktop_LeftSidebar_Id, .Root__nav-bar)');
+  const navBar = document.querySelector(anySurface('sidebar'));
   if (!navBar) return null;
   syncLibraryGridState();
   const obs = new MutationObserver(() => syncLibraryGridState());

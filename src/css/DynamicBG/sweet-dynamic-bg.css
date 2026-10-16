@@ -167,7 +167,13 @@
 [data-testid='cover-drop-target'] div:has(video)::after {
   display: none;
 }
-/* Ensure content stays above background (Keep as is) */
+/* Ensure content stays above background (Keep as is).
+   Legacy hash: `.AAdBM1nhG73supMfnYX7` is the pre-1.3.3 Now Playing View
+   content wrapper. Spotify 1.3.3 hashes it, so this rule is inert there and
+   still load-bearing on older builds, where it keeps the content above the
+   canvas. It is the one deliberate exception to this file's rule against
+   keying on hashed classes — do not copy the pattern, and do not delete the
+   rule without a live pre-1.3.3 check. Pinned by tests/spotifyDomCss.test.ts. */
 .sweet-dynamic-bg-in-this:is(aside) .AAdBM1nhG73supMfnYX7 {
   z-index: 10;
   position: relative;

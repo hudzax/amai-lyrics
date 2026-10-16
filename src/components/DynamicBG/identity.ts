@@ -8,6 +8,8 @@
  * it in one document.
  */
 
+import { anySurface } from '../../constants/SpotifyDom';
+
 /** Marker on `<html>` while the app-frame background feature is enabled.
  * Contract: CSS selectors using it must LEAD with it
  * (`.amai-app-bg-on body ...`) — it is an ancestor of <body>, never a
@@ -56,9 +58,7 @@ export function ensureAppBgHostClasses(host: Element): void {
  * Exported so the toggle handler and observers can refresh it without a
  * full `apply()` — cheap single `querySelector` inside the nav column. */
 export function syncLibraryGridState(scope?: ParentNode): void {
-  const navBar = (scope ?? document).querySelector?.(
-    ':is(#Desktop_LeftSidebar_Id, .Root__nav-bar)',
-  );
+  const navBar = (scope ?? document).querySelector?.(anySurface('sidebar'));
   if (!navBar) return;
   navBar.classList.toggle(APP_BG_LIB_GRID_CLASS, !!navBar.querySelector("[data-encore-id='card']"));
 }

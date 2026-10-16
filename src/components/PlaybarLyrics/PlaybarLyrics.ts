@@ -8,6 +8,7 @@ import { createRubyFragment } from '../../utils/sanitize';
 import Whentil from '../../utils/Whentil';
 import lifecycle from '../../utils/lifecycle';
 import Event from '../../utils/EventManager';
+import { anySurface } from '../../constants/SpotifyDom';
 
 /**
  * Shows the currently active lyric line inside Spotify's native bottom playbar,
@@ -22,15 +23,16 @@ const UPDATE_INTERVAL = 0.3; // seconds
 
 // Spotify 1.3.3 ships its layout classes hashed, so the playbar is reached by
 // the `data-testid` Spotify emits itself; pre-1.3.3 builds only answer to
-// `.Root__now-playing-bar`. Both live in one `:is()` selector so string
-// composition (`${PLAYBAR_SELECTOR} ${PLAYER_CONTROLS_SELECTOR}`) stays valid.
-const PLAYBAR_SELECTOR = ':is([data-testid="now-playing-bar"], .Root__now-playing-bar)';
+// `.Root__now-playing-bar`. Both spellings live behind the SpotifyDomContract
+// seam, which returns one `:is()` selector so string composition
+// (`${PLAYBAR_SELECTOR} ${PLAYER_CONTROLS_SELECTOR}`) stays valid.
+const PLAYBAR_SELECTOR = anySurface('playbar');
 
 // Spotify 1.3.3 dropped the bare `.player-controls` class: the wrapper now
 // carries a hashed class and only its BEM children (`player-controls__buttons`,
 // `__left`, `__right`) survive. The testid is what the live DOM exposes;
 // older builds still answer to the class.
-const PLAYER_CONTROLS_SELECTOR = ':is([data-testid="player-controls"], .player-controls)';
+const PLAYER_CONTROLS_SELECTOR = anySurface('playerControls');
 
 let lyricsElement: HTMLElement | null = null;
 let centerWrapper: HTMLElement | null = null;

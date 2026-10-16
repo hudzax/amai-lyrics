@@ -1,5 +1,14 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { PageViewSelectors } from '../src/constants/PageViewSelectors';
+import {
+  SPOTIFY_SURFACES,
+  allSurface,
+  anySurface,
+  legacySurface,
+  primarySurface,
+  surfaceChain,
+  type SpotifySurface,
+} from '../src/constants/SpotifyDom';
 
 /**
  * Spotify 1.3.3 layout skeleton, transcribed from a live DOM dump.
@@ -429,5 +438,192 @@ describe('Previous Spotify version contract', () => {
         `${alias} must exist on the previous layout`,
       ).not.toBeNull();
     }
+  });
+});
+
+/**
+ * The track-list row and sidebar-cell shapes, transcribed from the same dumps
+ * the hover-tooltip suites use. They are kept apart from the two layout
+ * fixtures above because those are whole-shell dumps: these two surfaces are
+ * reached from the tooltip policy, not from the layout walk.
+ */
+const SPOTIFY_TRACKLIST_AND_CELLS = `
+  <div id="main-view">
+    <div class="main-view-container">
+      <div data-overlayscrollbars-viewport="scrollbarHidden overflowXHidden overflowYScroll">
+        <div class="main-trackList-trackListRow">
+          <div role="presentation">
+            <a data-testid="internal-track-link">
+              <div class="main-trackList-rowTitle standalone-ellipsis-one-line">Song Name</div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="Desktop_LeftSidebar_Id">
+    <div class="main-yourLibraryX-libraryCard"></div>
+  </div>
+`;
+
+/**
+ * The SpotifyDomContract seam owns every aliased surface. These tests walk the
+ * whole contract rather than naming surfaces one at a time, so a surface added
+ * without an alias that resolves — or with an alias that breaks the `:is()`
+ * form — fails here instead of in the app.
+ */
+describe('SpotifyDomContract seam', () => {
+  /** Whole-shell dumps: every core surface is present on both. */
+  const FULL_LAYOUTS = {
+    '1.3.3': SPOTIFY_1_3_3_LAYOUT,
+    'pre-1.3.3': SPOTIFY_PREVIOUS_LAYOUT,
+  };
+
+  /** Every fixture, including the partial ones that cover one region each. */
+  const ALL_FIXTURES = {
+    ...FULL_LAYOUTS,
+    'now playing view': NPV_PANEL,
+    'playlist page': PLAYLIST_PAGE,
+    'track list + sidebar cells': SPOTIFY_TRACKLIST_AND_CELLS,
+  };
+
+  /** Surfaces both whole-shell generations provide. */
+  const CORE_SURFACES: SpotifySurface[] = [
+    'appFrameHost',
+    'sidebar',
+    'playbar',
+    'playerControls',
+    'playbarCenter',
+    'nowPlayingPanel',
+    'mainView',
+    'mainViewContainer',
+    'mainViewScrollViewport',
+    'mainViewScrollChild',
+    'globalNav',
+  ];
+
+  const surfaceNames = Object.keys(SPOTIFY_SURFACES) as SpotifySurface[];
+
+  /**
+   * True when `selector` has a comma at nesting depth 0. A comma inside
+   * `:has(a, b)` or `[attr='x,y']` is a balanced argument and stays safe when
+   * wrapped in `:is()`; a top-level comma is what would re-associate.
+   */
+  function hasTopLevelComma(selector: string): boolean {
+    let depth = 0;
+    let quote: string | null = null;
+    for (const char of selector) {
+      if (quote) {
+        if (char === quote) quote = null;
+      } else if (char === '"' || char === "'") {
+        quote = char;
+      } else if (char === '(' || char === '[') {
+        depth++;
+      } else if (char === ')' || char === ']') {
+        depth--;
+      } else if (char === ',' && depth === 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  it('names every surface exactly once, newest spelling first', () => {
+    for (const name of surfaceNames) {
+      const aliases = SPOTIFY_SURFACES[name];
+      expect(aliases.length, `${name} needs at least one alias`).toBeGreaterThan(0);
+      expect(primarySurface(name)).toBe(aliases[0]);
+      for (const alias of aliases) {
+        expect(hasTopLevelComma(alias), `${name} alias must not carry a top-level comma`).toBe(
+          false,
+        );
+      }
+    }
+  });
+
+  it('returns a bare selector for single-alias surfaces, :is() otherwise', () => {
+    for (const name of surfaceNames) {
+      const aliases = SPOTIFY_SURFACES[name];
+      const emitted = anySurface(name);
+      if (aliases.length === 1) {
+        expect(emitted, `${name} should not wrap a single alias`).toBe(aliases[0]);
+      } else {
+        expect(emitted).toBe(`:is(${aliases.join(', ')})`);
+      }
+      expect(allSurface(name)).toBe(aliases.join(', '));
+      expect(primarySurface(name)).toBe(aliases[0]);
+      expect(legacySurface(name)).toBe(aliases[aliases.length - 1]);
+    }
+  });
+
+  it('keeps primarySurface and legacySurface at opposite ends of the list', () => {
+    // The two accessors exist so callers never index SPOTIFY_SURFACES by
+    // position. appFrameHost is the surface with a live caller for both: the
+    // primary spelling is the host to append to, the legacy one is the fallback
+    // the removal sweep reaches for. If the list order ever flips, these two
+    // swap meaning silently.
+    expect(primarySurface('appFrameHost')).toBe('.Root');
+    expect(legacySurface('appFrameHost')).toBe('.Root__top-container');
+    // A single-alias surface answers to both with the same string.
+    expect(legacySurface('nowPlayingPanel')).toBe(primarySurface('nowPlayingPanel'));
+  });
+
+  for (const [label, layout] of Object.entries(FULL_LAYOUTS)) {
+    it(`resolves every core surface on the ${label} layout`, () => {
+      document.body.innerHTML = layout;
+      const unresolved = CORE_SURFACES.filter(
+        (name) => document.querySelector(anySurface(name)) === null,
+      );
+      expect(unresolved).toEqual([]);
+    });
+  }
+
+  for (const [label, layout] of Object.entries(ALL_FIXTURES)) {
+    it(`matches identically through :is() and the comma list — ${label}`, () => {
+      // The two forms are interchangeable for matching. That equivalence is
+      // what lets callers pick :is() for querySelector and the comma list for
+      // stylesheets without changing behaviour.
+      document.body.innerHTML = layout;
+      for (const name of surfaceNames) {
+        const viaIs = [...document.querySelectorAll(anySurface(name))];
+        const viaComma = [...document.querySelectorAll(allSurface(name))];
+        expect(viaIs, `${name} must match identically in both forms`).toEqual(viaComma);
+      }
+    });
+  }
+
+  it('resolves every surface on at least one fixture', () => {
+    // A surface whose aliases are all stale would otherwise pass unnoticed:
+    // it matches nothing anywhere, and every caller silently no-ops.
+    const resolvedAnywhere = new Set<string>();
+    for (const layout of Object.values(ALL_FIXTURES)) {
+      document.body.innerHTML = layout;
+      for (const name of surfaceNames) {
+        if (document.querySelector(anySurface(name))) resolvedAnywhere.add(name);
+      }
+    }
+    const stale = surfaceNames.filter((name) => !resolvedAnywhere.has(name));
+    expect(stale, 'these surfaces match nothing on any known fixture').toEqual([]);
+  });
+
+  it('distributes a descendant chain across every generation of each surface', () => {
+    document.body.innerHTML = SPOTIFY_PREVIOUS_LAYOUT;
+    const chain = surfaceChain('sidebar', 'libraryHeaderButton', 'button');
+    // 2 sidebar spellings x 2 header spellings = 4 arms, each carrying its own
+    // ancestor rather than re-associating the way a bare comma list would.
+    expect(chain.split(', ')).toHaveLength(4);
+    for (const arm of chain.split(', ')) {
+      expect(arm).toMatch(/^(#Desktop_LeftSidebar_Id|\.Root__nav-bar) /);
+      expect(arm).toMatch(/ button$/);
+    }
+    expect(document.querySelectorAll(chain).length).toBeGreaterThan(0);
+  });
+
+  it('keeps the composed playbar + controls selector valid', () => {
+    // PlaybarLyrics composes these two strings; the :is() wrappers must not
+    // break when concatenated.
+    document.body.innerHTML = SPOTIFY_PREVIOUS_LAYOUT;
+    const composed = `${anySurface('playbar')} ${anySurface('playerControls')}`;
+    expect(document.querySelector(composed)).not.toBeNull();
   });
 });
