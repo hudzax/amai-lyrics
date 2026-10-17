@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { SPOTIFY_SURFACES, primarySurface, type SpotifySurface } from '../src/constants/SpotifyDom';
+import { SPOTIFY_SURFACES, primarySurface } from '../src/constants/SpotifyDom';
 
 /**
  * The stylesheets half of the SpotifyDomContract.
@@ -100,7 +100,7 @@ const EXPECTATIONS: Record<string, FileExpectation> = {
       // older builds. Neither `.Root__main-view` nor the other two row
       // spellings belong here.
       primarySurface('mainView'),
-      primarySurface('trackRow'),
+      '.main-trackList-trackListRow',
       // The structural arm is the load-bearing half on 1.3.3, where the
       // trackList classes are hashed and `.main-trackList-trackListRow` no
       // longer matches. It was left unpinned once already; it is the exact
@@ -123,7 +123,7 @@ const EXPECTATIONS: Record<string, FileExpectation> = {
       // Same deliberate single-arm pairing as Glassmorphism.css, and the same
       // structural arm carrying the load on 1.3.3.
       primarySurface('mainView'),
-      primarySurface('trackRow'),
+      '.main-trackList-trackListRow',
       ...SPOTIFY_SURFACES.trackRowStructural,
     ],
   },
@@ -194,14 +194,8 @@ describe('stylesheets keep the SpotifyDomContract aliases', () => {
 
 describe('the contract module and the stylesheets agree on quoting', () => {
   it('spells every alias so a normalised CSS lookup can find it', () => {
-    // Index the record from the typed name list, matching
-    // spotifyDomContract.test.ts.
-    // SAFETY: `Object.keys` widens to `string[]`, so the key type is narrowed
-    // back to `SpotifySurface` by hand — there is no `Object.entries` shape
-    // that keeps the keys and the alias tuples both narrowed at once.
-    const surfaceNames = Object.keys(SPOTIFY_SURFACES) as SpotifySurface[];
-    for (const surface of surfaceNames) {
-      for (const alias of SPOTIFY_SURFACES[surface]) {
+    for (const [surface, aliases] of Object.entries(SPOTIFY_SURFACES)) {
+      for (const alias of aliases) {
         // A double quote inside a selector is the only thing normalise() has to
         // rewrite; anything else (a trailing comma, stray whitespace) would
         // make the alias unmatchable in a stylesheet.

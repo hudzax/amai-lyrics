@@ -2,9 +2,10 @@
  * SpotifyDomContract — the single owner of this extension's knowledge of
  * Spotify's DOM.
  *
- * Every surface below answers to more than one spelling, because Spotify has
+ * Most surfaces below answer to more than one spelling, because Spotify has
  * shipped three generations of this layout and Spicetify's `css-map.json` only
- * restores the semantic `Root__*` names on the builds it happens to cover:
+ * restores the semantic `Root__*` names on the builds it happens to cover. A
+ * surface whose spelling has never changed stays a single-entry list:
  *
  *   1. `Root__*`            — pre-1.3.3. Restored by Spicetify when covered.
  *   2. `data-testid` / ids  — emitted by Spotify itself, so always present.
@@ -16,8 +17,9 @@
  * is the whole hazard, so the choice is stated here rather than at 300 call
  * sites:
  *
- *   - `anySurface()`   → `:is(a, b)`. For `querySelector` / `matches` / `closest`.
- *     Matching is identical to the comma list.
+ *   - `anySurface()`   → `:is(a, b)` (`a` alone when the surface has one
+ *     spelling). For `querySelector` / `matches` / `closest`; matching is
+ *     identical to the comma list.
  *   - `allSurface()`   → `a, b`. The comma-list form. No caller can use it to
  *     *write* a stylesheet — CSS is bundled as text and never sees this module —
  *     so it exists to pin `:is()`/comma-list equivalence in the contract test,
@@ -120,9 +122,9 @@ const SURFACES = {
 
   /** A track-list data row. */
   trackRow: [
+    '[data-testid="tracklist-row"]',
     '.main-trackList-trackListRow',
     '.main-trackList-row',
-    '[data-testid="tracklist-row"]',
   ],
 
   /** A track-list row reached structurally, excluding the column-header row. */
@@ -132,8 +134,8 @@ const SURFACES = {
 
   /** The track-list column-header row's wrapper. */
   trackHeader: [
-    '.main-trackList-trackListHeader',
     "#main-view [role='grid'] > div:has([role='columnheader'])",
+    '.main-trackList-trackListHeader',
   ],
 
   /** The linked title cell that carries Spotify's hover-tooltip trigger. */

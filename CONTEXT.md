@@ -14,8 +14,9 @@ Spotify emits itself, and the structural `role` /
 class with no css-map entry. Lives in src/constants/SpotifyDom.ts. Callers cross
 it through `primarySurface` (the newest spelling alone), `legacySurface` (the
 oldest spelling alone, for a caller that falls back to the pre-1.3.3 node as its
-own lookup step), `anySurface` (one `:is()` selector, for
-querySelector/matches/closest), `allSurface` (the comma-list form — no
+own lookup step), `anySurface` (`:is()` for a multi-spelling surface, the bare
+selector for a single-spelling one, for querySelector/matches/closest),
+`allSurface` (the comma-list form — no
 stylesheet can call it, since CSS is bundled as text; it exists to pin
 `:is()`/comma-list equivalence in the contract test and to state the form a
 hand-written rule must spell), and `surfaceChain` (a descendant chain

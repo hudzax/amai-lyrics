@@ -242,10 +242,9 @@ const TRACK_TOOLTIP_BUTTON_SELECTOR = [
 const SIDEBAR_TOOLTIP_BUTTON_SELECTOR = [
   '.main-yourLibraryX-iconOnly',
   '.main-yourLibraryX-collapseButtonWrapper',
-  // The header wrapper was renamed in 1.3.3; surfaceChain fans the button
-  // descendant out across both the header's names and the sidebar's, which is
-  // the same pairing the stylesheets spell by hand.
-  surfaceChain('sidebar', 'libraryHeaderButton', 'button'),
+  // The header wrapper was renamed in 1.3.3; the sidebar ancestor is already
+  // established by the closest() gate below, so only the header name varies.
+  surfaceChain('libraryHeaderButton', 'button'),
   '.main-yourLibraryX-filterArea button',
   '.main-yourLibraryX-libraryFilter button',
   'button[data-testid="create-playlist"]',

@@ -71,9 +71,9 @@ src/css/, src/types/               # global.d.ts, spicetify.d.ts
 
 Spotify DOM knowledge has exactly one owner: `src/constants/SpotifyDom.ts` (see `CONTEXT.md`).
 
-- New selector literals for an aliased or multi-file surface belong there, never inline. `querySelector`/`matches`/`closest` take the `:is()` form (`anySurface`).
+- New selector literals for an aliased or multi-file surface belong there, never inline. `querySelector`/`matches`/`closest` take the `anySurface` form (`:is(…)` when the surface has several spellings, the bare selector when it has one).
 - Callers never index `SPOTIFY_SURFACES[name][i]` — use `primarySurface` / `legacySurface`.
-- `tests/spotifyDomContract.test.ts` resolves every surface against transcribed fixtures for both DOM generations. `tests/spotifyDomCss.test.ts` pins the per-file spellings the stylesheets must keep, matching on whitespace-collapsed CSS so a selector wrapped across lines is still seen.
+- `tests/spotifyDomContract.test.ts` resolves every core surface on both transcribed DOM generations and every surface on at least one fixture. `tests/spotifyDomCss.test.ts` pins the per-file spellings the stylesheets must keep, matching on whitespace-collapsed CSS so a selector wrapped across lines is still seen.
 - Stylesheets are the half the seam does *not* own: they're bundled as text and injected as one `<style>`, so no TS helper reaches them and no test ever evaluates a selector there. Spell each rule's selector by hand in the comma-list form and add that spelling to its file's entry in `spotifyDomCss.test.ts`. `allSurface()` exists only to pin `:is()`/comma-list equivalence inside the contract test — never as a way to generate CSS.
 
 ## Testing

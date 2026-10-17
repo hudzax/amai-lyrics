@@ -539,7 +539,7 @@ describe('SpotifyDomContract seam', () => {
     return false;
   }
 
-  it('names every surface exactly once, newest spelling first', () => {
+  it('names every surface with a non-empty, comma-safe alias list', () => {
     for (const name of surfaceNames) {
       const aliases = SPOTIFY_SURFACES[name];
       expect(aliases.length, `${name} needs at least one alias`).toBeGreaterThan(0);
@@ -575,6 +575,14 @@ describe('SpotifyDomContract seam', () => {
     // swap meaning silently.
     expect(primarySurface('appFrameHost')).toBe('.Root');
     expect(legacySurface('appFrameHost')).toBe('.Root__top-container');
+    // These two surfaces were once listed legacy-first, which silently swapped
+    // the accessors' meaning. Pin the generation order a future caller relies on.
+    expect(primarySurface('trackRow')).toBe('[data-testid="tracklist-row"]');
+    expect(legacySurface('trackRow')).toBe('.main-trackList-row');
+    expect(primarySurface('trackHeader')).toBe(
+      "#main-view [role='grid'] > div:has([role='columnheader'])",
+    );
+    expect(legacySurface('trackHeader')).toBe('.main-trackList-trackListHeader');
     // A single-alias surface answers to both with the same string.
     expect(legacySurface('nowPlayingPanel')).toBe(primarySurface('nowPlayingPanel'));
   });

@@ -39,17 +39,6 @@ describe('createAmaiBubble', () => {
     });
   });
 
-  it('lets the caller choose the placement', () => {
-    const { adapter } = fakeAdapter();
-    const element = document.createElement('button');
-
-    createAmaiBubble(adapter, element, 'Library', 'right');
-    expect(adapter.create).toHaveBeenCalledWith(
-      element,
-      expect.objectContaining({ placement: 'right' }),
-    );
-  });
-
   it('pins the values the stylesheet theme depends on', () => {
     expect(AMAI_BUBBLE_PROPS).toEqual({
       theme: 'amai-lyrics',

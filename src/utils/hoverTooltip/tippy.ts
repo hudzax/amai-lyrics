@@ -36,12 +36,11 @@ export function createAmaiBubble(
   adapter: HoverTippyAdapter,
   element: Element,
   content: string,
-  placement: 'top' | 'right' = 'top',
 ): HoverTippyInstance {
   return adapter.create(element, {
     ...AMAI_BUBBLE_PROPS,
     content,
-    placement,
+    placement: 'top',
     delay: [AMAI_BUBBLE_SHOW_DELAY_MS, 0],
   });
 }
