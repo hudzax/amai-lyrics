@@ -2,11 +2,26 @@
  * PagePresence — the single place that knows whether the lyrics page is
  * present.
  *
- * Callers cross it through isPageOpen (the page node is mounted) and
- * isOnPageRoute (the History pathname check); PageView is the only production
- * writer, through setPageOpen. Never through a raw `#AmaiLyricsPage` query or
- * a pathname check of their own.
+ * Callers cross it through isPageOpen (the page node is mounted), isOnPageRoute
+ * (the History pathname check), isLyricsRoute (a pathname the caller already
+ * holds), and setPageOpen; PageView is the only production writer, through
+ * setPageOpen. Never through a raw `#AmaiLyricsPage` query or a pathname check
+ * of their own.
  */
+
+/**
+ * The lyrics page's pathname. Lives with the route question so the address and
+ * its recognition cannot drift apart.
+ */
+export const LYRICS_PATHNAME = '/AmaiLyrics';
+
+/**
+ * The pure half of isOnPageRoute: for callers that already hold a pathname,
+ * and for tests that need no History seam.
+ */
+export function isLyricsRoute(pathname: string): boolean {
+  return pathname === LYRICS_PATHNAME;
+}
 
 /**
  * Invariant: isPageOpen() is never true while the page node is absent. The
@@ -29,7 +44,7 @@ export function isPageOpen(): boolean {
  */
 export function isOnPageRoute(): boolean {
   try {
-    return Spicetify.Platform.History.location.pathname === '/AmaiLyrics';
+    return isLyricsRoute(Spicetify.Platform.History.location.pathname);
   } catch {
     return false;
   }

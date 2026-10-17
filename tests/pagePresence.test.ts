@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { isPageOpen, isOnPageRoute, setPageOpen } from '../src/utils/PagePresence';
+import {
+  isLyricsRoute,
+  isPageOpen,
+  isOnPageRoute,
+  LYRICS_PATHNAME,
+  setPageOpen,
+} from '../src/utils/PagePresence';
 
 interface HistoryStub {
   Spicetify: { Platform: { History: { location: { pathname: string } } } };
@@ -22,6 +28,19 @@ describe('PagePresence seam', () => {
     expect(isPageOpen()).toBe(true);
     setPageOpen(false);
     expect(isPageOpen()).toBe(false);
+  });
+
+  it('owns the canonical lyrics pathname', () => {
+    expect(LYRICS_PATHNAME).toBe('/AmaiLyrics');
+  });
+
+  it('recognises only the exact lyrics pathname', () => {
+    expect(isLyricsRoute('/AmaiLyrics')).toBe(true);
+    expect(isLyricsRoute('/AmaiLyrics/')).toBe(false);
+    expect(isLyricsRoute('/AmaiLyricsExtra')).toBe(false);
+    expect(isLyricsRoute('/amailyrics')).toBe(false);
+    expect(isLyricsRoute('/')).toBe(false);
+    expect(isLyricsRoute('')).toBe(false);
   });
 
   it('answers the route question from the History seam', () => {

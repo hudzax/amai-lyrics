@@ -2,6 +2,8 @@ import { Icons } from '../components/Styling/Icons';
 import Session from '../components/Global/Session';
 import Whentil from '../utils/Whentil';
 import lifecycle from '../utils/lifecycle';
+import { LYRICS_PATHNAME } from '../utils/PagePresence';
+import { createAmaiBubble, spicetifyTippyAdapter } from '../utils/hoverTooltip/tippy';
 
 export class ButtonManager {
   private button: Spicetify.Playbar.Button;
@@ -20,7 +22,7 @@ export class ButtonManager {
       Icons.LyricsPage,
       (self) => {
         if (!self.active) {
-          Session.Navigate({ pathname: '/AmaiLyrics' });
+          Session.Navigate({ pathname: LYRICS_PATHNAME });
         } else {
           Session.GoBack();
         }
@@ -47,14 +49,7 @@ export class ButtonManager {
           /* internal tooltip already gone — nothing to clean up */
         }
         button.element.removeAttribute('title');
-        this.playbarTippy = Spicetify.Tippy(button.element, {
-          content: 'Amai Lyrics',
-          theme: 'amai-lyrics',
-          animation: 'amai',
-          arrow: false,
-          delay: [200, 0],
-          placement: 'top',
-        });
+        this.playbarTippy = createAmaiBubble(spicetifyTippyAdapter, button.element, 'Amai Lyrics');
         button.tippy = this.playbarTippy;
       },
     );

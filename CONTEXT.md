@@ -172,12 +172,16 @@ surfaces, it shows the audio position without a lead time.
 
 The single place that knows whether the lyrics page is present. Lives in
 src/utils/PagePresence.ts. Callers cross it through isPageOpen (the page node
-is mounted), isOnPageRoute (the History pathname check), and setPageOpen —
-never through a raw `#AmaiLyricsPage` query or a pathname check of their own.
-PageView is the only production writer: it flips presence on after the awaited
-mount and off after the awaited removal, which is what keeps the invariant that
-isPageOpen is never true while the node is absent — in-flight measures never
-see a page the DOM does not have.
+is mounted), isOnPageRoute (the History pathname check), isLyricsRoute (a
+pathname the caller already holds), LYRICS_PATHNAME (the navigation
+destination), and setPageOpen — never through a raw `#AmaiLyricsPage` query or
+a pathname check of their own. `isLyricsRoute` is the pure half of
+isOnPageRoute and matches the pathname exactly; PageManager's open/destroy
+decisions, Session's history walk, and ButtonManager's navigation all cross
+this seam. PageView is the only production writer: it flips presence on after
+the awaited mount and off after the awaited removal, which is what keeps the
+invariant that isPageOpen is never true while the node is absent — in-flight
+measures never see a page the DOM does not have.
 
 PositionConsumer feeds its tick context's `onLyricsPage` from isOnPageRoute, so
 consumers take the settled route answer instead of re-asking. Two questions
@@ -331,6 +335,14 @@ decision, not two coordinated ones — no caller suppresses or replaces on its
 own. "Third-party" means a bubble someone registered directly rather than
 through this seam, including this extension's own plainly-labeled buttons: those
 are left standing, and the seam recognizes them instead of taking them over.
+
+The Tippy adapter module behind it (src/utils/hoverTooltip/tippy.ts) also owns
+the shared recipe for those plainly-labeled bubbles: `AMAI_BUBBLE_PROPS` (the
+theme, animation, and arrow every Amai bubble uses), `AMAI_BUBBLE_SHOW_DELAY_MS`
+(the dwell the presenter matches), and `createAmaiBubble(adapter, element,
+content, placement)`. The page controls, the playbar button, and the presenter
+take the appearance from there; HoverTooltip's trigger policy stays behind
+`installHoverTooltips`, and tests inject a fake adapter into the factory.
 
 ## FullscreenMode
 

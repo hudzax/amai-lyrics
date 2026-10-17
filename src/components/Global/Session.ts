@@ -1,4 +1,5 @@
 import Global from './Global';
+import { isLyricsRoute } from '../../utils/PagePresence';
 
 interface Location {
   pathname: string;
@@ -6,8 +7,6 @@ interface Location {
   hash?: string;
   state?: Record<string, unknown>;
 }
-
-const LYRICS_PATHNAME = '/AmaiLyrics';
 
 let sessionHistory: Location[] = [];
 
@@ -47,7 +46,7 @@ function previousFromPlatformHistory(): string | null {
       : entries.length - 1;
   for (let i = cursor - 1; i >= 0; i--) {
     const pathname = entries[i]?.pathname;
-    if (pathname && pathname !== LYRICS_PATHNAME) return pathname;
+    if (pathname && !isLyricsRoute(pathname)) return pathname;
   }
   return null;
 }
@@ -69,7 +68,7 @@ const Session = {
     // Mirror fallback: walk back past the lyrics page itself instead of
     // blindly taking length - 2 (same no-op hazard as above).
     for (let i = sessionHistory.length - 2; i >= 0; i--) {
-      if (sessionHistory[i].pathname !== LYRICS_PATHNAME) {
+      if (!isLyricsRoute(sessionHistory[i].pathname)) {
         Session.Navigate(sessionHistory[i]);
         return;
       }

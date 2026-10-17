@@ -6,11 +6,13 @@ import {
   isRedispatchedHoverEvent,
   NATIVE_HOVER_TOOLTIP_OWNED_PROPERTY,
 } from './eventPolicy';
-import type { HoverTippyAdapter, HoverTippyInstance } from './tippy';
+import {
+  AMAI_BUBBLE_PROPS,
+  AMAI_BUBBLE_SHOW_DELAY_MS,
+  type HoverTippyAdapter,
+  type HoverTippyInstance,
+} from './tippy';
 import { anySurface } from '../../constants/SpotifyDom';
-
-/** Matches the ButtonManager/pageControls feel: 200ms in, animated out. */
-const SHOW_DELAY_MS = 200;
 
 type OwnedTippyElement = HTMLElement & {
   _tippy?: HoverTippyInstance;
@@ -109,7 +111,7 @@ export class HoverTooltipPresenter {
     this.hideShown();
     this.pendingTrigger = trigger;
     this.ensureReferenceObserver();
-    this.pendingTimer = setTimeout(() => this.showFor(trigger), SHOW_DELAY_MS);
+    this.pendingTimer = setTimeout(() => this.showFor(trigger), AMAI_BUBBLE_SHOW_DELAY_MS);
   }
 
   /** Cancel a pending or visible label before an activation/scroll gesture. */
@@ -290,10 +292,8 @@ export class HoverTooltipPresenter {
     let instance: HoverTippyInstance | null = null;
     try {
       instance = this.adapter.create(trigger, {
+        ...AMAI_BUBBLE_PROPS,
         content,
-        theme: 'amai-lyrics',
-        animation: 'amai',
-        arrow: false,
         // Cached instances must never self-show past the dwell timer.
         trigger: 'manual',
         placement: placementFor(trigger),

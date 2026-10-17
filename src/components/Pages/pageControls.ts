@@ -5,12 +5,11 @@ import Fullscreen from '../Utils/Fullscreen';
 import TransferElement from '../Utils/TransferElement';
 import Session from '../Global/Session';
 import { mutateAsync } from '../../utils/fastdomAsync';
+import { createAmaiBubble, spicetifyTippyAdapter } from '../../utils/hoverTooltip/tippy';
 
 export const Tooltips: Record<string, { destroy: () => void } | null> = {
   Close: null,
-  Kofi: null,
   FullscreenToggle: null,
-  LyricsToggle: null,
 };
 
 export async function AppendViewControls(maid: Maid | null) {
@@ -79,17 +78,9 @@ function SetupTippy(elem: HTMLElement | null, maid: Maid | null) {
   if (closeButton) {
     // NOTE: intentionally NOT spreading Spicetify.TippyProps — its custom
     // render outputs `.main-contextMenu-tippy`, which Spotify leaves
-    // completely unstyled (no background). Without it, tippy's default
-    // render creates `.tippy-box[data-theme='amai-lyrics']`, styled in
-    // src/css/Tooltips.css.
-    Tooltips.Close = Spicetify.Tippy(closeButton, {
-      content: `Exit Lyrics Page`,
-      theme: 'amai-lyrics',
-      animation: 'amai',
-      arrow: false,
-      delay: [200, 0],
-      placement: 'top',
-    });
+    // completely unstyled (no background). The shared factory keeps tippy's
+    // default render, styled in src/css/Tooltips.css.
+    Tooltips.Close = createAmaiBubble(spicetifyTippyAdapter, closeButton, 'Exit Lyrics Page');
 
     const closeClickHandler = () => Session.GoBack();
     closeButton.addEventListener('click', closeClickHandler);
@@ -102,14 +93,11 @@ function SetupTippy(elem: HTMLElement | null, maid: Maid | null) {
 
   if (fullscreenBtn) {
     // Same as above: default render + our theme, not TippyProps.
-    Tooltips.FullscreenToggle = Spicetify.Tippy(fullscreenBtn, {
-      content: `Toggle Fullscreen View`,
-      theme: 'amai-lyrics',
-      animation: 'amai',
-      arrow: false,
-      delay: [200, 0],
-      placement: 'top',
-    });
+    Tooltips.FullscreenToggle = createAmaiBubble(
+      spicetifyTippyAdapter,
+      fullscreenBtn,
+      'Toggle Fullscreen View',
+    );
 
     const fullscreenClickHandler = () => Fullscreen.toggle();
     fullscreenBtn.addEventListener('click', fullscreenClickHandler);

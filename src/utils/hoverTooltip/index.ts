@@ -5,7 +5,7 @@ import {
   HOVER_TOOLTIP_ACTIVE_CLASS,
 } from './eventPolicy';
 import { HoverTooltipPresenter } from './presenter';
-import { createSpicetifyTippyAdapter, type HoverTippyAdapter } from './tippy';
+import { spicetifyTippyAdapter, type HoverTippyAdapter } from './tippy';
 
 export type { HoverTippyAdapter, HoverTippyInstance } from './tippy';
 
@@ -40,7 +40,7 @@ export function installHoverTooltips(options: HoverTooltipInstallOptions = {}): 
   if (activeInstallation) return activeInstallation.destroy;
 
   const policy = new HoverEventPolicy();
-  const presenter = new HoverTooltipPresenter(options.tippy ?? createSpicetifyTippyAdapter());
+  const presenter = new HoverTooltipPresenter(options.tippy ?? spicetifyTippyAdapter);
   const removeListeners: (() => void)[] = [];
   let destroyed = false;
 
