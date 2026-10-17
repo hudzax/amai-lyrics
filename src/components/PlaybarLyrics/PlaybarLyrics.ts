@@ -2,7 +2,11 @@ import settingsValues from '../../utils/settingsValues';
 import { registerPositionConsumer } from '../../utils/PositionConsumer';
 import { processPhoneticText } from '../../utils/Lyrics/phoneticPatterns';
 import { findActiveIndex } from '../../utils/Lyrics/findActiveIndex';
-import { publishedTimedLines, invalidateSnapshotCache } from '../../utils/Lyrics/snapshot';
+import {
+  publishedTimedLines,
+  invalidateSnapshotCache,
+  SNAPSHOT_UPDATED_EVENT,
+} from '../../utils/Lyrics/snapshot';
 import { liveTrackId } from '../../utils/Lyrics/trackId';
 import { createRubyFragment } from '../../utils/sanitize';
 import Whentil from '../../utils/Whentil';
@@ -265,7 +269,7 @@ export function InitializePlaybarLyrics(): void {
       // it): invalidate the LyricsSnapshot memo so the next tick re-reads.
       // A missed notification self-heals — the memo compares the stored
       // string's content, so an unseen change is picked up on the next read.
-      lyricsDataListenerId = Event.listen('lyrics:data-updated', () => {
+      lyricsDataListenerId = Event.listen(SNAPSHOT_UPDATED_EVENT, () => {
         invalidateSnapshotCache();
       });
 

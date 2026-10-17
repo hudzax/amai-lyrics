@@ -1,4 +1,12 @@
-import storage, { StorageKeys } from './storage';
+import storage from './storage';
+import { StorageKeys } from './storageKeys';
+import {
+  DEFAULT_BACKGROUND_INTENSITY,
+  DEFAULT_BACKGROUND_MOTION,
+  isBackgroundIntensity,
+  isBackgroundMotion,
+} from './themeOptions';
+import type { BackgroundIntensity, BackgroundMotion } from './themeOptions';
 
 /**
  * The settings-values seam: one owner per storage-backed setting, so a caller
@@ -20,8 +28,8 @@ export interface SettingValues {
   defaultLyricsSize: string;
   enablePlaybarLyrics: boolean;
   enableAppBackground: boolean;
-  backgroundIntensity: string;
-  backgroundMotion: string;
+  backgroundIntensity: BackgroundIntensity;
+  backgroundMotion: BackgroundMotion;
   accentColorMode: string;
   customAccentColor: string;
 }
@@ -48,6 +56,18 @@ function textCodec(key: string, fallback = ''): Codec<string> {
   };
 }
 
+function enumCodec<T extends string>(
+  key: string,
+  isValue: (value: unknown) => value is T,
+  fallback: T,
+): Codec<T> {
+  return {
+    key,
+    decode: (raw) => (isValue(raw) ? raw : fallback),
+    encode: (value) => value,
+  };
+}
+
 const CODECS: { [K in keyof SettingValues]: Codec<SettingValues[K]> } = {
   geminiApiKey: textCodec(StorageKeys.GEMINI_API_KEY),
   enableRomaji: booleanCodec(StorageKeys.ENABLE_ROMAJI, false),
@@ -61,8 +81,12 @@ const CODECS: { [K in keyof SettingValues]: Codec<SettingValues[K]> } = {
   defaultLyricsSize: textCodec(StorageKeys.DEFAULT_LYRICS_SIZE),
   enablePlaybarLyrics: booleanCodec(StorageKeys.ENABLE_PLAYBAR_LYRICS, true),
   enableAppBackground: booleanCodec(StorageKeys.ENABLE_APP_BACKGROUND, false),
-  backgroundIntensity: textCodec(StorageKeys.BG_INTENSITY, 'normal'),
-  backgroundMotion: textCodec(StorageKeys.BG_MOTION, 'normal'),
+  backgroundIntensity: enumCodec(
+    StorageKeys.BG_INTENSITY,
+    isBackgroundIntensity,
+    DEFAULT_BACKGROUND_INTENSITY,
+  ),
+  backgroundMotion: enumCodec(StorageKeys.BG_MOTION, isBackgroundMotion, DEFAULT_BACKGROUND_MOTION),
   accentColorMode: textCodec(StorageKeys.ACCENT_COLOR_MODE, 'auto'),
   customAccentColor: textCodec(StorageKeys.CUSTOM_ACCENT_COLOR, ''),
 };

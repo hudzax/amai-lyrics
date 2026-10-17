@@ -88,8 +88,10 @@ registry population, scroll mount, and the in-place translation update with
 scroll re-anchor. Lives in src/utils/Lyrics/LyricsRenderer.ts. Callers cross it
 through renderLyrics (which takes a `LyricsDocument`), updateLyricTranslations
 (which takes nothing — it reads the rows it registered), and getPaintedLines
-(the registered lyric rows, musical-break rows excluded). The Static/Line row
-builders stay private: the two row shapes differ for real reasons (timing,
+(the registered lyric rows, musical-break rows excluded). renderLyrics also
+crosses LyricsFontSizes before painting, so the two font-size variables are
+applied whenever a document is mounted; ApplyLyrics no longer carries that
+side effect. The Static/Line row builders stay private: the two row shapes differ for real reasons (timing,
 musical breaks and alignment on one side; the font-size tag on the other).
 applyScrollReanchor is exported only for a test's reach — re-anchoring is a step
 inside the update, and no caller crosses it.
@@ -111,6 +113,17 @@ Applyer) touch the same container outside row building. The clear this seam
 owns is the one renderLyrics performs while rendering — it empties the
 container itself, so callers never pre-clear; closing the page empties the
 same registry from outside it.
+
+## LyricsFontSizes
+
+The single place that turns the two font-size settings into the lyrics
+container's CSS variables: `--TranslationFontSize` from the multiplier and
+`--DefaultLyricsSize` from the rem value, each set when present and removed
+when empty. Lives in src/utils/Lyrics/LyricsFontSizes.ts. Callers cross it
+through `applyLyricsFontSizes`: `renderLyrics` applies it whenever a document
+is painted, and the settings handlers re-apply it live. The container lookup
+and the set-or-remove rule are implementation; callers never query the
+container for font sizes. The no-lyrics path deliberately does not apply them.
 
 ## LyricsRegistry
 
@@ -279,9 +292,9 @@ buttons and the page's track metadata.
   `{ trackId }` branch currently has no callers (all use `{ all: true }`).
 - `publishNoLyrics(token, id)` in publish.ts is the negative result's
   publication: it persists the typed sentinel through LyricsSnapshot and
-  fires the same `lyrics:data-updated` notification as the positive path;
-  the playbar overlay re-reads through LyricsSnapshot, so it clears instead
-  of freezing on the previous track's line. ui.noLyricsMessage owns the
+  fires the same snapshot-updated notification (`SNAPSHOT_UPDATED_EVENT`) as
+  the positive path; the playbar overlay re-reads through LyricsSnapshot, so
+  it clears instead of freezing on the previous track's line. ui.noLyricsMessage owns the
   page-visible transitions, and with them the registry reset: it empties the
   container first, which detaches the painted rows without telling the
   registry, then resets it, so the highlight tick is never left writing
@@ -289,13 +302,13 @@ buttons and the page's track metadata.
 
 ## LyricsSnapshot
 
-The single owner of the published-lyrics snapshot (the `currentLyricsData`
-storage key): its serialized format, the document version stamp, the legacy
-plain-string `NO_LYRICS:<id>` form, the sentinel rule, the track gate, and the
-seconds→ms scaling. Lives in src/utils/Lyrics/snapshot.ts. Callers cross it
-through writeSnapshot (the only writer of a payload, used behind publish's
-currency check; returns the serialized payload for the publisher to carry on the
-bus),
+The single owner of the published-lyrics snapshot (the
+`StorageKeys.CURRENT_LYRICS_DATA` key): its serialized format, the document
+version stamp, the legacy plain-string `NO_LYRICS:<id>` form, the sentinel
+rule, the track gate, and the seconds→ms scaling. Lives in
+src/utils/Lyrics/snapshot.ts. Callers cross it through writeSnapshot (the only
+writer of a payload, used behind publish's currency check; returns the
+serialized payload for the publisher to carry on the bus),
 clearSnapshot (the refresh/invalidate clear — it notifies on its own, because
 its callers are not publishers), readSnapshot (the track-gated typed view the
 pipeline reads), publishedTimedLines (the ms-scaled view the playbar overlay
@@ -307,8 +320,9 @@ key. The stored payload is the `LyricsDocument` stamped with
 `toDocument`'s job alone; an entry from an older version is a miss rather than
 a decode. The parse memo reads storage on every read and skips re-parsing only
 while the stored string is unchanged, so an unseen write self-heals on the
-next read. `lyrics:data-updated` is a pure "the snapshot changed"
-notification.
+next read. `SNAPSHOT_UPDATED_EVENT` is a pure "the snapshot changed"
+notification; snapshot exports the constant, and publish and the playbar
+listener cross it instead of spelling the wire name.
 
 ## EnhancementPolicy
 
@@ -360,10 +374,22 @@ document listeners that notice the browser leaving fullscreen behind it, and
 `leave()` clears the mode and notifies even when the page node is already gone,
 so no reader can be left seeing a mode that is no longer presented.
 
+## StorageKeys
+
+The single registry of the storage key suffixes the product writes: settings,
+the published lyrics snapshot, and the NowBar's open/side state. Lives in
+src/utils/storageKeys.ts. The storage adapter (src/utils/storage.ts) owns the
+`AmaiLyrics-` prefix and the legacy `SpicyLyrics-` fallback; the registry owns
+the suffix vocabulary. SettingsValues maps each setting to its key,
+LyricsSnapshot uses `CURRENT_LYRICS_DATA`, and NowBarOverlay uses
+`IS_NOW_BAR_OPEN` / `NOW_BAR_SIDE`. Those two keep their original casing
+because a rename would orphan stored user state. New keys join the table here,
+never as call-site literals.
+
 ## SettingsValues
 
 The single place that knows how a user setting is stored and what it means when
-unset: the storage key, the encoding, and the default. Lives in
+unset: which StorageKeys entry it uses, the encoding, and the default. Lives in
 src/utils/settingsValues.ts. Callers cross it through `get` and `set` with the
 setting's name — never through `storage.get` plus a comparison, which let two
 readers of one key disagree about what unset means.
@@ -376,16 +402,30 @@ spcr-settings is that UI's own persistence and stays behind the wiring; this
 seam owns only what the product reads. A boolean decodes to its default when the
 stored value is neither `'true'` nor `'false'`, so a corrupted entry cannot
 invent an encoding — but the default is per setting, and playbar lyrics
-defaults to on, so a corrupted entry there reads as on. A text setting has no
-such rule: whatever is stored is what the reader gets.
+defaults to on, so a corrupted entry there reads as on. The two theme presets
+decode through ThemeOptions, so an unrecognised stored value reads as
+`normal` and ThemeSettings never re-validates. A text setting has no such
+rule: whatever is stored is what the reader gets.
+
+## ThemeOptions
+
+The vocabulary of the Amai Theme presets: the intensity and motion values,
+their user-facing labels, their defaults, and the guards that recognise each
+value. Lives in src/utils/themeOptions.ts. SettingsValues decodes both stored
+presets through it, ThemeSettings keys its numeric preset tables by its types,
+and the settings UI builds its dropdowns from its tables. The numeric presets
+stay in ThemeSettings; this module owns only the vocabulary.
 
 ## ThemeSettings
 
 The owner of what the Amai Theme appearance settings mean on screen: the
 background intensity and background motion presets, their scale factors, and
-the DOM they publish. Lives in src/utils/ThemeSettings.ts. Callers cross it
-through `applyThemeSettings` (idempotent — startup and every settings handler
-re-run it) and, for the WebGL2 canvas, `getGlIntensity` and `getGlMotionSpeed`.
+the DOM they publish. Lives in src/utils/ThemeSettings.ts. The option
+vocabulary and types live in ThemeOptions; this module keys its preset tables
+off them and reads already-validated values. Callers cross it through
+`applyThemeSettings` (idempotent — startup and every settings handler
+re-runs it) and, for the WebGL2 canvas, `getGlIntensity` and
+`getGlMotionSpeed`.
 
 It deliberately knows no per-surface numbers: sweet-dynamic-bg.css keeps its
 hand-tuned values and wraps each in `calc(value * var(--amai-bg-*-scale, 1))`,

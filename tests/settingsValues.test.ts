@@ -47,6 +47,14 @@ describe('settingsValues', () => {
     expect(settingsValues.get('enablePlaybarLyrics')).toBe(true);
   });
 
+  it('falls back to the default for an unrecognised theme preset', () => {
+    spicetify.Spicetify.LocalStorage.set('AmaiLyrics-background_intensity', 'banana');
+    spicetify.Spicetify.LocalStorage.set('AmaiLyrics-background_motion', 'banana');
+
+    expect(settingsValues.get('backgroundIntensity')).toBe('normal');
+    expect(settingsValues.get('backgroundMotion')).toBe('normal');
+  });
+
   it('round-trips the text settings, empty string included', () => {
     settingsValues.set('translationLanguage', 'Japanese');
     expect(settingsValues.get('translationLanguage')).toBe('Japanese');

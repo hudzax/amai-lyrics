@@ -25,6 +25,7 @@ import {
 } from '../Scrolling/Simplebar/ScrollSimplebar';
 import { AutoScroll } from '../Scrolling/AutoScroll';
 import { ConvertTime } from './ConvertTime';
+import { applyLyricsFontSizes } from './LyricsFontSizes';
 import {
   clear,
   getAllRows,
@@ -73,6 +74,7 @@ export function renderLyrics(lyrics: LyricsDocument): void {
   const container = resolveContainer();
   if (!container) return;
 
+  applyLyricsFontSizes();
   container.setAttribute('data-lyrics-type', lyrics.type);
 
   // The paint is self-sufficient: empty the container first (callers never

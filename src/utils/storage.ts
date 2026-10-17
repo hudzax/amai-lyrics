@@ -1,27 +1,9 @@
+import type { StorageKey } from './storageKeys';
+
 const PREFIX = 'AmaiLyrics-';
 const LEGACY_PREFIX = 'SpicyLyrics-';
 
 export type StorageValue = string | null;
-
-/** Central registry of known storage keys — add new keys here for autocomplete & typo safety. */
-export const StorageKeys = {
-  GEMINI_API_KEY: 'GEMINI_API_KEY',
-  ENABLE_ROMAJI: 'enable_romaji',
-  DISABLE_ROMAJI_TOGGLE_NOTIFICATION: 'disable_romaji_toggle_notification',
-  DISABLE_TRANSLATION: 'disable_translation',
-  TRANSLATION_LANGUAGE: 'translation_language',
-  TRANSLATION_FONT_SIZE: 'translation_font_size',
-  DEFAULT_LYRICS_SIZE: 'default_lyrics_size',
-  ENABLE_PLAYBAR_LYRICS: 'enable_playbar_lyrics',
-  ENABLE_APP_BACKGROUND: 'enable_app_background',
-  BG_INTENSITY: 'background_intensity',
-  BG_MOTION: 'background_motion',
-  ACCENT_COLOR_MODE: 'accent_color_mode',
-  CUSTOM_ACCENT_COLOR: 'custom_accent_color',
-  CURRENT_LYRICS_DATA: 'currentLyricsData',
-} as const;
-
-export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys] | (string & {});
 
 function set(key: StorageKey, value: StorageValue): void {
   const fullKey = `${PREFIX}${key}`;
@@ -45,7 +27,4 @@ function get(key: StorageKey): StorageValue {
 export default {
   set,
   get,
-  PREFIX,
-  LEGACY_PREFIX,
-  Keys: StorageKeys,
 };

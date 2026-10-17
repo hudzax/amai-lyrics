@@ -1,5 +1,6 @@
 import settingsValues from './settingsValues';
 import { BG_MOTION_OFF_CLASS } from '../components/DynamicBG/identity';
+import type { BackgroundIntensity, BackgroundMotion } from './themeOptions';
 
 /**
  * ThemeSettings — applies the Amai Theme appearance settings to the document.
@@ -16,9 +17,6 @@ import { BG_MOTION_OFF_CLASS } from '../components/DynamicBG/identity';
  * (`AppInitializer`) and from every settings handler, so the inline root
  * vars can never go stale across hot-reloads.
  */
-
-export type BackgroundIntensity = 'subtle' | 'normal' | 'intense';
-export type BackgroundMotion = 'off' | 'slow' | 'normal' | 'fast';
 
 /** Multipliers for the blur/saturation/brightness values in sweet-dynamic-bg.css. */
 const INTENSITY_PRESETS: Record<
@@ -57,21 +55,10 @@ const GL_MOTION_SPEEDS: Record<BackgroundMotion, number> = {
   fast: 2,
 };
 
-/** Stored values are free-form strings; unknown ones fall back to Normal. */
-function readIntensity(): BackgroundIntensity {
-  const raw = settingsValues.get('backgroundIntensity');
-  return raw === 'subtle' || raw === 'intense' ? raw : 'normal';
-}
-
-function readMotion(): BackgroundMotion {
-  const raw = settingsValues.get('backgroundMotion');
-  return raw === 'off' || raw === 'slow' || raw === 'fast' ? raw : 'normal';
-}
-
 /** Publish the intensity/motion presets as root custom properties + class. */
 export function applyThemeSettings(): void {
-  const intensity = INTENSITY_PRESETS[readIntensity()];
-  const motion = readMotion();
+  const intensity = INTENSITY_PRESETS[settingsValues.get('backgroundIntensity')];
+  const motion = settingsValues.get('backgroundMotion');
   const root = document.documentElement.style;
 
   root.setProperty('--amai-bg-blur-scale', String(intensity.blur));
@@ -87,10 +74,10 @@ export function applyThemeSettings(): void {
 
 /** Present-pass uniforms for the WebGL2 canvas (see `GL_INTENSITY_PRESETS`). */
 export function getGlIntensity(): { vibrance: number; dim: number } {
-  return GL_INTENSITY_PRESETS[readIntensity()];
+  return GL_INTENSITY_PRESETS[settingsValues.get('backgroundIntensity')];
 }
 
 /** Field-warp speed factor for the WebGL2 canvas (0 = frozen). */
 export function getGlMotionSpeed(): number {
-  return GL_MOTION_SPEEDS[readMotion()];
+  return GL_MOTION_SPEEDS[settingsValues.get('backgroundMotion')];
 }

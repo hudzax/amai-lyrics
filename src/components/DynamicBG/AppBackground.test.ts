@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import storage from '../../utils/storage';
+import { StorageKeys } from '../../utils/storageKeys';
 import {
   AppBackground,
   isAppBackgroundEnabled,
@@ -18,26 +19,26 @@ function setupMainView(): HTMLElement {
 
 beforeEach(() => {
   setupMainView();
-  storage.set('enable_app_background', 'true');
+  storage.set(StorageKeys.ENABLE_APP_BACKGROUND, 'true');
   document.documentElement.classList.remove(APP_BG_ON_CLASS);
 });
 
 afterEach(() => {
   document.body.innerHTML = '';
-  storage.set('enable_app_background', null);
+  storage.set(StorageKeys.ENABLE_APP_BACKGROUND, null);
   document.documentElement.classList.remove(APP_BG_ON_CLASS);
 });
 
 describe('isAppBackgroundEnabled', () => {
   it('defaults off', () => {
-    storage.set('enable_app_background', null);
+    storage.set(StorageKeys.ENABLE_APP_BACKGROUND, null);
     expect(isAppBackgroundEnabled()).toBe(false);
   });
 
   it('respects explicit off/on', () => {
-    storage.set('enable_app_background', 'false');
+    storage.set(StorageKeys.ENABLE_APP_BACKGROUND, 'false');
     expect(isAppBackgroundEnabled()).toBe(false);
-    storage.set('enable_app_background', 'true');
+    storage.set(StorageKeys.ENABLE_APP_BACKGROUND, 'true');
     expect(isAppBackgroundEnabled()).toBe(true);
   });
 });
@@ -57,7 +58,7 @@ describe('AppBackground', () => {
   });
 
   it('does nothing when disabled', () => {
-    storage.set('enable_app_background', 'false');
+    storage.set(StorageKeys.ENABLE_APP_BACKGROUND, 'false');
     const bg = new AppBackground();
     bg.apply('https://i.scdn.co/image/abc123');
 
@@ -136,7 +137,7 @@ describe('AppBackground', () => {
   });
 
   it('does not set the marker when disabled', () => {
-    storage.set('enable_app_background', 'false');
+    storage.set(StorageKeys.ENABLE_APP_BACKGROUND, 'false');
     new AppBackground().apply('https://i.scdn.co/image/abc123');
     expect(document.documentElement.classList.contains(APP_BG_ON_CLASS)).toBe(false);
   });
@@ -144,7 +145,7 @@ describe('AppBackground', () => {
   it('syncAppBgMarker follows the toggle', () => {
     syncAppBgMarker();
     expect(document.documentElement.classList.contains(APP_BG_ON_CLASS)).toBe(true);
-    storage.set('enable_app_background', 'false');
+    storage.set(StorageKeys.ENABLE_APP_BACKGROUND, 'false');
     syncAppBgMarker();
     expect(document.documentElement.classList.contains(APP_BG_ON_CLASS)).toBe(false);
   });

@@ -26,7 +26,7 @@
 import Event from '../EventManager';
 import { HideLoaderContainer } from './ui';
 import { updateLyricTranslations } from './LyricsRenderer';
-import { writeSnapshot } from './snapshot';
+import { writeSnapshot, SNAPSHOT_UPDATED_EVENT } from './snapshot';
 import { liveTrackId } from './trackId';
 import type { LyricsDocument } from './conversion';
 import type { NoLyricsResult } from './conversion';
@@ -93,7 +93,7 @@ export function publishNoLyrics(token: LyricsRequestToken, trackId: string): boo
   if (!isCurrentLyricsRequest(token)) return false;
   const sentinel: NoLyricsResult = { status: 'NO_LYRICS', id: trackId };
   const serialized = writeSnapshot(sentinel);
-  Event.evoke('lyrics:data-updated', serialized);
+  Event.evoke(SNAPSHOT_UPDATED_EVENT, serialized);
   return true;
 }
 
@@ -107,7 +107,7 @@ export function publishNoLyrics(token: LyricsRequestToken, trackId: string): boo
 export function publishInitialLyrics(token: LyricsRequestToken, document: LyricsDocument): boolean {
   if (!isCurrentLyricsRequest(token)) return false;
   const serialized = writeSnapshot(document);
-  Event.evoke('lyrics:data-updated', serialized);
+  Event.evoke(SNAPSHOT_UPDATED_EVENT, serialized);
   HideLoaderContainer();
   return true;
 }
@@ -128,6 +128,6 @@ export function publishEnhancedLyrics(
   if (liveTrackId() !== trackId) return false;
   updateLyricTranslations();
   const serialized = writeSnapshot(document);
-  Event.evoke('lyrics:data-updated', serialized);
+  Event.evoke(SNAPSHOT_UPDATED_EVENT, serialized);
   return true;
 }

@@ -40,6 +40,8 @@ vi.mock('../src/components/Pages/pageButtons', () => ({
 
 import storage from '../src/utils/storage';
 import Event from '../src/utils/EventManager';
+import { StorageKeys } from '../src/utils/storageKeys';
+import { SNAPSHOT_UPDATED_EVENT } from '../src/utils/Lyrics/snapshot';
 import {
   HideLoaderContainer,
   ClearLyricsPageContainer,
@@ -126,11 +128,11 @@ describe('publishInitialLyrics', () => {
 
     expect(publishInitialLyrics(token, staticPayload('trackA') as never)).toBe(true);
     expect(mockedStorage.set).toHaveBeenCalledWith(
-      'currentLyricsData',
+      StorageKeys.CURRENT_LYRICS_DATA,
       expect.stringContaining('"type":"Static"'),
     );
     expect(mockedEvent.evoke).toHaveBeenCalledWith(
-      'lyrics:data-updated',
+      SNAPSHOT_UPDATED_EVENT,
       expect.stringContaining('trackA'),
     );
     expect(HideLoaderContainer).toHaveBeenCalledTimes(1);
@@ -148,7 +150,7 @@ describe('publishEnhancedLyrics', () => {
     expect(publishEnhancedLyrics(token, 'trackA', staticPayload('trackA') as never)).toBe(true);
     expect(updateLyricTranslations).toHaveBeenCalledTimes(1);
     expect(mockedEvent.evoke).toHaveBeenCalledWith(
-      'lyrics:data-updated',
+      SNAPSHOT_UPDATED_EVENT,
       expect.stringContaining('trackA'),
     );
   });
@@ -172,10 +174,10 @@ describe('publishNoLyrics', () => {
     const sentinel = JSON.stringify({ status: 'NO_LYRICS', id: 'trackA' });
 
     expect(publishNoLyrics(token, 'trackA')).toBe(true);
-    expect(mockedStorage.set).toHaveBeenCalledWith('currentLyricsData', sentinel);
+    expect(mockedStorage.set).toHaveBeenCalledWith(StorageKeys.CURRENT_LYRICS_DATA, sentinel);
     // Regression: without the bus event the playbar overlay kept rendering the
     // previous track's line after a track with no lyrics.
-    expect(mockedEvent.evoke).toHaveBeenCalledWith('lyrics:data-updated', sentinel);
+    expect(mockedEvent.evoke).toHaveBeenCalledWith(SNAPSHOT_UPDATED_EVENT, sentinel);
   });
 
   it('publishes nothing for a stale token', () => {
@@ -197,7 +199,7 @@ describe('invalidateLyrics', () => {
     await invalidateLyrics({ all: true });
 
     expect(lyricsCache.destroy).toHaveBeenCalledTimes(1);
-    expect(mockedStorage.set).toHaveBeenCalledWith('currentLyricsData', null);
+    expect(mockedStorage.set).toHaveBeenCalledWith(StorageKeys.CURRENT_LYRICS_DATA, null);
     expect(mockedApi).not.toHaveBeenCalled();
   });
 
@@ -251,8 +253,8 @@ describe('loadAndApplyLyrics', () => {
     // second fetch happened to race and join it — the playbar overlay froze on
     // the previous track's line.
     const sentinel = JSON.stringify({ status: 'NO_LYRICS', id: 'trackA' });
-    expect(mockedStorage.set).toHaveBeenCalledWith('currentLyricsData', sentinel);
-    expect(mockedEvent.evoke).toHaveBeenCalledWith('lyrics:data-updated', sentinel);
+    expect(mockedStorage.set).toHaveBeenCalledWith(StorageKeys.CURRENT_LYRICS_DATA, sentinel);
+    expect(mockedEvent.evoke).toHaveBeenCalledWith(SNAPSHOT_UPDATED_EVENT, sentinel);
     expect(noLyricsMessage).toHaveBeenCalledTimes(1);
   });
 
@@ -295,11 +297,11 @@ describe('loadAndApplyLyrics', () => {
     expect(result).toMatchObject({ id: 'trackA' });
     expect(mockedApi).not.toHaveBeenCalled();
     expect(mockedStorage.set).toHaveBeenCalledWith(
-      'currentLyricsData',
+      StorageKeys.CURRENT_LYRICS_DATA,
       expect.stringContaining('"type":"Static"'),
     );
     expect(mockedEvent.evoke).toHaveBeenCalledWith(
-      'lyrics:data-updated',
+      SNAPSHOT_UPDATED_EVENT,
       expect.stringContaining('trackA'),
     );
   });
@@ -364,7 +366,7 @@ describe('in-flight dedupe', () => {
     // so without the joiner re-publishing nothing ever hides the loader.
     expect(HideLoaderContainer).toHaveBeenCalledTimes(1);
     expect(mockedStorage.set).toHaveBeenCalledWith(
-      'currentLyricsData',
+      StorageKeys.CURRENT_LYRICS_DATA,
       expect.stringContaining('"type":"Static"'),
     );
   });
@@ -419,8 +421,8 @@ describe('in-flight dedupe', () => {
     expect(joined).toMatchObject({ status: 'NO_LYRICS', id: 'trackA' });
     // Regression: the playbar overlay syncs off the bus event, not the snapshot.
     const sentinel = JSON.stringify({ status: 'NO_LYRICS', id: 'trackA' });
-    expect(mockedStorage.set).toHaveBeenCalledWith('currentLyricsData', sentinel);
-    expect(mockedEvent.evoke).toHaveBeenCalledWith('lyrics:data-updated', sentinel);
+    expect(mockedStorage.set).toHaveBeenCalledWith(StorageKeys.CURRENT_LYRICS_DATA, sentinel);
+    expect(mockedEvent.evoke).toHaveBeenCalledWith(SNAPSHOT_UPDATED_EVENT, sentinel);
     expect(mockedEnhance).not.toHaveBeenCalled();
     // The superseded originator's publication and transitions no-op; exactly
     // one request owns the page and the snapshot write.

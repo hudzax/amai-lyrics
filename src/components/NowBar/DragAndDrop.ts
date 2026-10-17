@@ -1,4 +1,5 @@
 import storage from '../../utils/storage';
+import { StorageKeys } from '../../utils/storageKeys';
 
 /** Binds one NowBar's drag lifetime. Dispose before rebinding after a layout change. */
 export function setupDragAndDrop(root: HTMLElement, fullscreen: boolean): () => void {
@@ -64,7 +65,7 @@ export function setupDragAndDrop(root: HTMLElement, fullscreen: boolean): () => 
       if (currentSide !== newSide) {
         root.classList.toggle('LeftSide', newSide === 'left');
         root.classList.toggle('RightSide', newSide === 'right');
-        storage.set('NowBarSide', newSide);
+        storage.set(StorageKeys.NOW_BAR_SIDE, newSide);
       }
     });
   });

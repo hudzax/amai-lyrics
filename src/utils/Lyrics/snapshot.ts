@@ -19,7 +19,7 @@
  * the fetch pipeline, the publish seam, and UI consumers all import it
  * directly without a cycle.
  *
- * Notification contract: `lyrics:data-updated` is a pure "the snapshot
+ * Notification contract: `SNAPSHOT_UPDATED_EVENT` is a pure "the snapshot
  * changed" event. Publishers evoke it themselves with the serialized payload
  * returned by `writeSnapshot` (currency and side effects stay in publish);
  * `clearSnapshot` notifies on its own because its callers — refresh and
@@ -28,12 +28,13 @@
  */
 
 import storage from '../storage';
+import { StorageKeys } from '../storageKeys';
 import Event from '../EventManager';
 import { stampDocument, toDocument } from './conversion';
 import type { LyricsDocument, NoLyricsResult } from './conversion';
 import type { TimedLine } from './findActiveIndex';
 
-const SNAPSHOT_KEY = 'currentLyricsData';
+export const SNAPSHOT_UPDATED_EVENT = 'lyrics:data-updated';
 
 /** A timed lyric line in render-path units: ms, display text. */
 export interface SnapshotTimedLine extends TimedLine {
@@ -95,7 +96,7 @@ let memoLines: SnapshotTimedLine[] | null = null;
 
 function readRaw(): string | null {
   try {
-    return storage.get(SNAPSHOT_KEY)?.toString() ?? null;
+    return storage.get(StorageKeys.CURRENT_LYRICS_DATA)?.toString() ?? null;
   } catch {
     return null;
   }
@@ -129,7 +130,7 @@ export function invalidateSnapshotCache(): void {
  */
 export function writeSnapshot(value: LyricsDocument | NoLyricsResult): string {
   const serialized = JSON.stringify(isNoLyricsSentinel(value) ? value : stampDocument(value));
-  storage.set(SNAPSHOT_KEY, serialized);
+  storage.set(StorageKeys.CURRENT_LYRICS_DATA, serialized);
   invalidateSnapshotCache();
   return serialized;
 }
@@ -141,9 +142,9 @@ export function writeSnapshot(value: LyricsDocument | NoLyricsResult): string {
  * itself (its callers are not publishers).
  */
 export function clearSnapshot(): void {
-  storage.set(SNAPSHOT_KEY, null);
+  storage.set(StorageKeys.CURRENT_LYRICS_DATA, null);
   invalidateSnapshotCache();
-  Event.evoke('lyrics:data-updated', null);
+  Event.evoke(SNAPSHOT_UPDATED_EVENT, null);
 }
 
 // ==============================

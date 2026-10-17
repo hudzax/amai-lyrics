@@ -5,6 +5,8 @@ import Defaults from '../components/Global/Defaults';
 import { openTrustedExternalUrl } from './externalNavigation';
 import { applyThemeSettings } from './ThemeSettings';
 import { refreshAccents, isHexColor } from './ArtworkColors';
+import { applyLyricsFontSizes } from './Lyrics/LyricsFontSizes';
+import { BACKGROUND_INTENSITY_OPTIONS, BACKGROUND_MOTION_OPTIONS } from './themeOptions';
 
 export function setSettingsMenu() {
   amaiSettingsSections.length = 0;
@@ -186,13 +188,7 @@ function generalSettings() {
       const index = translationFontSizeOptions.indexOf(selected);
       const value = fontSizeValues[index >= 0 ? index : 2];
       settingsValues.set('translationFontSize', value);
-
-      const container = document.querySelector<HTMLElement>(
-        '#AmaiLyricsPage .LyricsContainer .LyricsContent',
-      );
-      if (container) {
-        container.style.setProperty('--TranslationFontSize', value);
-      }
+      applyLyricsFontSizes();
     },
   );
 
@@ -213,17 +209,7 @@ function generalSettings() {
       const index = lyricsSizeOptions.indexOf(selected);
       const value = lyricsSizeValues[index >= 0 ? index : 2];
       settingsValues.set('defaultLyricsSize', value);
-
-      const container = document.querySelector<HTMLElement>(
-        '#AmaiLyricsPage .LyricsContainer .LyricsContent',
-      );
-      if (container) {
-        if (value) {
-          container.style.setProperty('--DefaultLyricsSize', value + 'rem');
-        } else {
-          container.style.removeProperty('--DefaultLyricsSize');
-        }
-      }
+      applyLyricsFontSizes();
     },
   );
 
@@ -276,23 +262,24 @@ function themeSettings() {
   // the shared AppBackground singleton, the accents through refreshAccents.
   // Nothing here touches cached lyrics, so no invalidateLyrics anywhere.
 
-  const bgIntensityOptions = ['Subtle', 'Normal', 'Intense'];
-  const bgIntensityValues = ['subtle', 'normal', 'intense'];
-  const currentIntensity = settingsValues.get('backgroundIntensity');
-  const bgIntensityIndex =
-    bgIntensityValues.indexOf(currentIntensity) !== -1
-      ? bgIntensityValues.indexOf(currentIntensity)
-      : 1;
+  const bgIntensityLabels = BACKGROUND_INTENSITY_OPTIONS.map((option) => option.label);
+  const bgIntensityIndex = Math.max(
+    0,
+    BACKGROUND_INTENSITY_OPTIONS.findIndex(
+      (option) => option.value === settingsValues.get('backgroundIntensity'),
+    ),
+  );
 
   settings.addDropDown(
     'theme-bg-intensity',
     'Amai Theme intensity (background blur, color and brightness)',
-    bgIntensityOptions,
+    bgIntensityLabels,
     bgIntensityIndex,
     () => {
       const selected = settings.getFieldValue('theme-bg-intensity') as string;
-      const index = bgIntensityOptions.indexOf(selected);
-      settingsValues.set('backgroundIntensity', bgIntensityValues[index >= 0 ? index : 1]);
+      const index = bgIntensityLabels.indexOf(selected);
+      const option = BACKGROUND_INTENSITY_OPTIONS[index >= 0 ? index : bgIntensityIndex];
+      settingsValues.set('backgroundIntensity', option.value);
       applyThemeSettings();
       // GL-only forward (the CSS layers follow the root vars immediately);
       // dynamic import keeps the AppBackground chunk out of settings.ts.
@@ -302,21 +289,24 @@ function themeSettings() {
     },
   );
 
-  const bgMotionOptions = ['Off', 'Slow', 'Normal', 'Fast'];
-  const bgMotionValues = ['off', 'slow', 'normal', 'fast'];
-  const currentMotion = settingsValues.get('backgroundMotion');
-  const bgMotionIndex =
-    bgMotionValues.indexOf(currentMotion) !== -1 ? bgMotionValues.indexOf(currentMotion) : 2;
+  const bgMotionLabels = BACKGROUND_MOTION_OPTIONS.map((option) => option.label);
+  const bgMotionIndex = Math.max(
+    0,
+    BACKGROUND_MOTION_OPTIONS.findIndex(
+      (option) => option.value === settingsValues.get('backgroundMotion'),
+    ),
+  );
 
   settings.addDropDown(
     'theme-bg-motion',
     'Background motion (rotation, drift and pulse speed)',
-    bgMotionOptions,
+    bgMotionLabels,
     bgMotionIndex,
     () => {
       const selected = settings.getFieldValue('theme-bg-motion') as string;
-      const index = bgMotionOptions.indexOf(selected);
-      settingsValues.set('backgroundMotion', bgMotionValues[index >= 0 ? index : 2]);
+      const index = bgMotionLabels.indexOf(selected);
+      const option = BACKGROUND_MOTION_OPTIONS[index >= 0 ? index : bgMotionIndex];
+      settingsValues.set('backgroundMotion', option.value);
       applyThemeSettings();
       void import('../components/DynamicBG/AppBackground').then(({ appBackgroundSingleton }) => {
         appBackgroundSingleton.applyMotionSetting();

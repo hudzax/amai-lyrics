@@ -4,7 +4,6 @@ import { isNoLyricsResult } from '../fetchLyrics';
 import { showRefreshButton } from '../../../components/Pages/pageButtons';
 import { attachClickToSeek } from '../registry';
 import { liveTrackId } from '../trackId';
-import settingsValues from '../../settingsValues';
 import { LyricsDocument, NoLyricsResult } from '../conversion';
 
 /**
@@ -17,22 +16,6 @@ export default function ApplyLyrics(
   lyrics: LyricsDocument | NoLyricsResult | null | undefined,
 ): boolean {
   if (!isPageOpen()) return false;
-
-  // Apply font sizes from settings
-  const lyricsContent = document.querySelector<HTMLElement>(
-    '#AmaiLyricsPage .LyricsContainer .LyricsContent',
-  );
-  if (lyricsContent) {
-    lyricsContent.style.setProperty(
-      '--TranslationFontSize',
-      settingsValues.get('translationFontSize'),
-    );
-
-    const defaultLyricsSize = settingsValues.get('defaultLyricsSize');
-    if (defaultLyricsSize) {
-      lyricsContent.style.setProperty('--DefaultLyricsSize', defaultLyricsSize + 'rem');
-    }
-  }
 
   // Typed sentinel check — don't attempt to render NO_LYRICS payload
   if (!lyrics || isNoLyricsResult(lyrics)) return false;
@@ -53,6 +36,9 @@ export default function ApplyLyrics(
   showRefreshButton();
   // Attach event listener after lyrics are rendered. The caller passes the
   // container it rendered into; the registry owns the time map.
+  const lyricsContent = document.querySelector<HTMLElement>(
+    '#AmaiLyricsPage .LyricsContainer .LyricsContent',
+  );
   if (lyricsContent) {
     attachClickToSeek(lyricsContent);
   }

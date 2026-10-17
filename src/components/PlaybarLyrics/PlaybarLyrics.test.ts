@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import lifecycle from '../../utils/lifecycle';
 import storage from '../../utils/storage';
+import { StorageKeys } from '../../utils/storageKeys';
 import { SpotifyPlayer } from '../Global/SpotifyPlayer';
 import { InitializePlaybarLyrics } from './PlaybarLyrics';
 
@@ -27,7 +28,7 @@ describe('PlaybarLyrics — artwork palette comes from the ArtworkSurfaces seam'
     // write --color-* onto the element once colours were extracted.
     Spicetify.Player.data.item.uri = 'spotify:track:abc123';
     storage.set(
-      'currentLyricsData',
+      StorageKeys.CURRENT_LYRICS_DATA,
       JSON.stringify({
         v: 2,
         id: 'abc123',

@@ -9,6 +9,7 @@ vi.mock('../src/utils/EventManager', () => ({
 
 import storage from '../src/utils/storage';
 import Event from '../src/utils/EventManager';
+import { StorageKeys } from '../src/utils/storageKeys';
 import {
   readSnapshot,
   isPublishedNoLyrics,
@@ -16,6 +17,7 @@ import {
   writeSnapshot,
   clearSnapshot,
   invalidateSnapshotCache,
+  SNAPSHOT_UPDATED_EVENT,
 } from '../src/utils/Lyrics/snapshot';
 
 const mockedStorage = vi.mocked(storage);
@@ -46,7 +48,7 @@ describe('writeSnapshot / clearSnapshot (sole writers of the key)', () => {
   it('serializes, persists, and returns the payload for the publisher to evoke', () => {
     const serialized = writeSnapshot({ status: 'NO_LYRICS', id: 'track1' });
     expect(serialized).toBe(JSON.stringify({ status: 'NO_LYRICS', id: 'track1' }));
-    expect(mockedStorage.set).toHaveBeenCalledWith('currentLyricsData', serialized);
+    expect(mockedStorage.set).toHaveBeenCalledWith(StorageKeys.CURRENT_LYRICS_DATA, serialized);
   });
 
   it('readSnapshot sees a written snapshot without an explicit invalidation', () => {
@@ -63,8 +65,8 @@ describe('writeSnapshot / clearSnapshot (sole writers of the key)', () => {
 
     clearSnapshot();
 
-    expect(mockedStorage.set).toHaveBeenCalledWith('currentLyricsData', null);
-    expect(mockedEvent.evoke).toHaveBeenCalledWith('lyrics:data-updated', null);
+    expect(mockedStorage.set).toHaveBeenCalledWith(StorageKeys.CURRENT_LYRICS_DATA, null);
+    expect(mockedEvent.evoke).toHaveBeenCalledWith(SNAPSHOT_UPDATED_EVENT, null);
     expect(readSnapshot('track1')).toBeNull();
   });
 });

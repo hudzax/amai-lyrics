@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import storage from '../../utils/storage';
+import { StorageKeys } from '../../utils/storageKeys';
 
 const { createGl } = vi.hoisted(() => ({ createGl: vi.fn() }));
 
@@ -76,14 +77,14 @@ function deferCreate(gl: ReturnType<typeof makeFakeGl>): () => void {
 
 beforeEach(() => {
   setupHarness();
-  storage.set('enable_app_background', 'true');
+  storage.set(StorageKeys.ENABLE_APP_BACKGROUND, 'true');
   document.documentElement.classList.remove(APP_BG_ON_CLASS);
   createGl.mockReset();
 });
 
 afterEach(() => {
   document.body.innerHTML = '';
-  storage.set('enable_app_background', null);
+  storage.set(StorageKeys.ENABLE_APP_BACKGROUND, null);
   document.documentElement.classList.remove(APP_BG_ON_CLASS);
   delete (window as unknown as { WebGL2RenderingContext?: unknown }).WebGL2RenderingContext;
 });

@@ -1,4 +1,5 @@
 import storage from '../../utils/storage';
+import { StorageKeys } from '../../utils/storageKeys';
 import { SpotifyPlayer } from '../Global/SpotifyPlayer';
 import Fullscreen from '../Utils/Fullscreen';
 import Global from '../Global/Global';
@@ -199,7 +200,7 @@ async function OpenNowBar(): Promise<void> {
     mounted = mount(root);
   }
   root.classList.add('Active');
-  storage.set('IsNowBarOpen', 'true');
+  storage.set(StorageKeys.IS_NOW_BAR_OPEN, 'true');
   await mounted.refresh();
 }
 
@@ -209,11 +210,11 @@ function CloseNowBar(): void {
   mounted = null;
   previous?.destroy();
   previous?.root.classList.remove('Active');
-  storage.set('IsNowBarOpen', 'false');
+  storage.set(StorageKeys.IS_NOW_BAR_OPEN, 'false');
 }
 
 async function UpdateNowBar(force = false): Promise<void> {
-  if (!mounted || (!force && storage.get('IsNowBarOpen') === 'false')) return;
+  if (!mounted || (!force && storage.get(StorageKeys.IS_NOW_BAR_OPEN) === 'false')) return;
   await mounted.refresh();
 }
 
@@ -226,15 +227,18 @@ function Session_OpenNowBar() {
 function NowBar_SwapSides() {
   const root = mounted?.root;
   if (!root) return;
-  storage.set('NowBarSide', storage.get('NowBarSide') === 'left' ? 'right' : 'left');
+  storage.set(
+    StorageKeys.NOW_BAR_SIDE,
+    storage.get(StorageKeys.NOW_BAR_SIDE) === 'left' ? 'right' : 'left',
+  );
   Session_NowBar_SetSide();
 }
 
 function Session_NowBar_SetSide() {
   const root = document.querySelector('#AmaiLyricsPage .ContentBox .NowBar');
   if (!root) return;
-  const side = storage.get('NowBarSide') === 'right' ? 'right' : 'left';
-  storage.set('NowBarSide', side);
+  const side = storage.get(StorageKeys.NOW_BAR_SIDE) === 'right' ? 'right' : 'left';
+  storage.set(StorageKeys.NOW_BAR_SIDE, side);
   root.classList.toggle('RightSide', side === 'right');
   root.classList.toggle('LeftSide', side === 'left');
 }
