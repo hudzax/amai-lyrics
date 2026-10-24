@@ -5,8 +5,9 @@ import PageView, { PageRoot } from '../Pages/PageView';
 import { DeregisterNowBarBtn, OpenNowBar, UpdateNowBar } from '../NowBar/NowBar';
 import TransferElement from './TransferElement';
 import lifecycle from '../../utils/lifecycle';
+import { PageViewSelectors } from '../../constants/PageViewSelectors';
 
-const PAGE_SELECTOR = '#AmaiLyricsPage';
+const PAGE_SELECTOR = PageViewSelectors.AmaiLyricsPage;
 
 /**
  * FullscreenMode: whether the lyrics page is presented fullscreen.
@@ -33,7 +34,7 @@ function pageElement(): HTMLElement | null {
 }
 
 export function isPageFullscreen(): boolean {
-  return !!document.querySelector(`${PAGE_SELECTOR}.Fullscreen`);
+  return !!document.querySelector(PageViewSelectors.FullscreenPage);
 }
 
 function publish(): void {
@@ -142,12 +143,8 @@ const MediaBox_Data = {
 
 function mediaBoxParts(): { mediaBox: HTMLElement | null; mediaImage: HTMLElement | null } {
   return {
-    mediaBox: document.querySelector<HTMLElement>(
-      '#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox',
-    ),
-    mediaImage: document.querySelector<HTMLElement>(
-      '#AmaiLyricsPage .ContentBox .NowBar .Header .MediaBox .MediaImage',
-    ),
+    mediaBox: document.querySelector<HTMLElement>(PageViewSelectors.HeaderMediaBox),
+    mediaImage: document.querySelector<HTMLElement>(PageViewSelectors.HeaderMediaBoxImage),
   };
 }
 
@@ -248,9 +245,7 @@ function leave(): void {
     if (isPublishedNoLyrics()) {
       // Refresh an existing lifetime; never resurrect a destroyed page's NowBar.
       void UpdateNowBar();
-      const lyricsContainer = document.querySelector(
-        '#AmaiLyricsPage .ContentBox .LyricsContainer',
-      );
+      const lyricsContainer = document.querySelector(PageViewSelectors.ContentBoxLyricsContainer);
       if (lyricsContainer) {
         lyricsContainer.classList.add('Hidden');
       }

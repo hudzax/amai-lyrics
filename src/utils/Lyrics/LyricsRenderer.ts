@@ -44,10 +44,10 @@ import settingsValues from '../settingsValues';
 import { processPhoneticText } from './phoneticPatterns';
 import type { LyricsDocument } from './conversion';
 import { isPageOpen } from '../PagePresence';
+import { PageViewSelectors } from '../../constants/PageViewSelectors';
 
-const LYRICS_CONTAINER_SELECTOR = '#AmaiLyricsPage .LyricsContainer .LyricsContent';
-const STYLING_CONTAINER_SELECTOR =
-  '#AmaiLyricsPage .LyricsContainer .LyricsContent .simplebar-content';
+const LYRICS_CONTAINER_SELECTOR = PageViewSelectors.LyricsContentInContainer;
+const STYLING_CONTAINER_SELECTOR = PageViewSelectors.SimplebarContent;
 
 /** The painted lyric rows, musical-break rows excluded. */
 export function getPaintedLines(): PaintedLine[] {

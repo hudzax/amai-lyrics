@@ -5,6 +5,7 @@ import { showRefreshButton } from '../../../components/Pages/pageButtons';
 import { attachClickToSeek } from '../registry';
 import { liveTrackId } from '../trackId';
 import { LyricsDocument, NoLyricsResult } from '../conversion';
+import { PageViewSelectors } from '../../../constants/PageViewSelectors';
 
 /**
  * Applies lyrics to the UI.
@@ -37,7 +38,7 @@ export default function ApplyLyrics(
   // Attach event listener after lyrics are rendered. The caller passes the
   // container it rendered into; the registry owns the time map.
   const lyricsContent = document.querySelector<HTMLElement>(
-    '#AmaiLyricsPage .LyricsContainer .LyricsContent',
+    PageViewSelectors.LyricsContentInContainer,
   );
   if (lyricsContent) {
     attachClickToSeek(lyricsContent);

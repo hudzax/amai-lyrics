@@ -4,6 +4,7 @@ import { getTimedLines } from '../Lyrics/registry';
 import { findActiveIndex } from '../Lyrics/findActiveIndex';
 import type { TimedLine } from '../Lyrics/findActiveIndex';
 import { scrollIntoCenterView } from '../ScrollIntoView';
+import { PageViewSelectors } from '../../constants/PageViewSelectors';
 import {
   ClearScrollSimplebar,
   MountScrollSimplebar,
@@ -108,7 +109,7 @@ export function syncAutoScroll(overrides: AutoScrollSyncOverrides = {}): void {
     if (!lineElem) return;
     if (lastLine === lineElem) return;
     if (!lineElem.isConnected) return;
-    if (!document.querySelector('#AmaiLyricsPage')) return;
+    if (!document.querySelector(PageViewSelectors.AmaiLyricsPage)) return;
 
     const container =
       overrides.container !== undefined

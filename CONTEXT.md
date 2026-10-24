@@ -54,6 +54,29 @@ exception to the no-hashed-class rule is documented in place:
 `.AAdBM1nhG73supMfnYX7` in sweet-dynamic-bg.css, which is inert on 1.3.3 and
 still load-bearing on older builds.
 
+## PageViewSelectors
+
+The single place that knows the extension's own page DOM: every selector that
+reaches into the `#AmaiLyricsPage` subtree — the page node itself, its
+fullscreen presentation (`#AmaiLyricsPage.Fullscreen`, whose `.Fullscreen`
+class FullscreenMode alone writes), the content box, the NowBar panel and its
+controls, the scroller's lyric content with its SimpleBar viewport, and the
+loader and processing indicator. Lives in src/constants/PageViewSelectors.ts.
+Callers cross it through the `PageViewSelectors` entries — never through a
+hand-spelled `#AmaiLyricsPage` chain of their own;
+tests/pageViewSelectors.test.ts pins that the literal appears in no other
+non-test src file. The same exclusions the SpotifyDomContract makes apply
+here: stylesheets are bundled as text and never see a TypeScript constant, and
+vendored `src/edited_packages/` is not ours to reroute. PageView, the page's
+creator, still names the id when it creates the node
+(`document.getElementById('AmaiLyricsPage')`) — that is the element's birth
+certificate, not a lookup. `PageRoot` is referenced from the SpotifyDomContract
+rather than spelled twice, so a Spotify rename stays one edit. The DynamicBG
+painters' element-scoping check
+(`element.closest(PageViewSelectors.AmaiLyricsPage)`) crosses this seam for
+its spelling only — the question "is this element inside the page" stays
+deliberately outside PagePresence (see that section).
+
 ## PlaybackTime
 
 The single place that knows where in the track we are: raw position, live play
@@ -63,9 +86,9 @@ getPositionFor (by naming its surface), requestPositionTracking,
 requestPositionSync, and syncPlaybackPosition - never through its defensive
 Spicetify readers, and never through the lead-time table itself: a caller asks
 for a surface and never learns what that surface leads by. The default
-GetProgress export is crossed only by SpotifyPlayer's track-position alias,
-which has no caller left. IsPlaying in src/utils/Addons.ts is a legacy alias
-that delegates to resolveIsPlaying.
+GetProgress export has no production importer — only its own test crosses it.
+IsPlaying in src/utils/Addons.ts is a legacy alias that delegates to
+resolveIsPlaying.
 
 ## ArtworkSurfaces
 

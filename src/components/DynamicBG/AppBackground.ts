@@ -17,6 +17,7 @@ import {
   syncLibraryGridState,
 } from './identity';
 import { anySurface, legacySurface, primarySurface } from '../../constants/SpotifyDom';
+import { PageViewSelectors } from '../../constants/PageViewSelectors';
 
 type GlAppBackgroundInstance = import('./GlAppBackground').GlAppBackground;
 
@@ -91,7 +92,7 @@ export function isAppBackgroundEnabled(): boolean {
  * presentation.
  */
 export function resolveAppBgHost(): Element | null {
-  const fullscreenPage = document.querySelector('#AmaiLyricsPage.Fullscreen');
+  const fullscreenPage = document.querySelector(PageViewSelectors.FullscreenPage);
   if (fullscreenPage) return fullscreenPage;
   return (
     document.querySelector(APP_BG_HOST_SELECTOR) ??

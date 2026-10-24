@@ -1,9 +1,10 @@
 import storage from '../../utils/storage';
 import { StorageKeys } from '../../utils/storageKeys';
+import { PageViewSelectors } from '../../constants/PageViewSelectors';
 
 /** Binds one NowBar's drag lifetime. Dispose before rebinding after a layout change. */
 export function setupDragAndDrop(root: HTMLElement, fullscreen: boolean): () => void {
-  const page = root.closest<HTMLElement>('#AmaiLyricsPage');
+  const page = root.closest<HTMLElement>(PageViewSelectors.AmaiLyricsPage);
   const dragBox = root.querySelector<HTMLElement>(
     fullscreen ? '.Header .MediaBox .MediaContent' : '.Header .MediaBox .MediaImage',
   );

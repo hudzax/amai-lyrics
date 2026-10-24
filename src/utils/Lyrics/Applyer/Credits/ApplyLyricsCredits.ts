@@ -1,5 +1,7 @@
+import { PageViewSelectors } from '../../../../constants/PageViewSelectors';
+
 export function ApplyLyricsCredits(data: { songWriters?: string[] }) {
-  const LyricsContainer = document.querySelector('#AmaiLyricsPage .LyricsContainer .LyricsContent');
+  const LyricsContainer = document.querySelector(PageViewSelectors.LyricsContentInContainer);
   // Missing page container means nothing to append into — skip rather than crash.
   if (!data?.songWriters || !LyricsContainer) return;
   const CreditsElement = document.createElement('div');

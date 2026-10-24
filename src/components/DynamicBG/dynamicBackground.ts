@@ -7,6 +7,7 @@ import {
   NESTED_BG_IMG_A_ID,
   NESTED_BG_IMG_B_ID,
 } from './identity';
+import { PageViewSelectors } from '../../constants/PageViewSelectors';
 
 /**
  * True while `element`'s background is hidden behind the app-frame canvas and
@@ -18,7 +19,7 @@ import {
  */
 function isHiddenByAppCanvas(element: HTMLElement): boolean {
   if (!document.documentElement.classList.contains(APP_BG_ON_CLASS)) return false;
-  return !!element.closest?.('#AmaiLyricsPage');
+  return !!element.closest?.(PageViewSelectors.AmaiLyricsPage);
 }
 
 /**

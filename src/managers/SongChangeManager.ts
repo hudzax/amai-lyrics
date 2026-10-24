@@ -1,6 +1,7 @@
 import sleep from '../utils/sleep';
 import { ButtonManager } from './ButtonManager';
 import type { ArtworkSurfaces } from '../components/DynamicBG/ArtworkSurfaces';
+import { PageViewSelectors } from '../constants/PageViewSelectors';
 
 export class SongChangeManager {
   private buttonManager: ButtonManager;
@@ -50,7 +51,7 @@ export class SongChangeManager {
 
     // Update UI elements directly without waiting for track info
     if (Spicetify.Player.data.item?.type === 'track') {
-      if (document.querySelector('#AmaiLyricsPage .ContentBox .NowBar')) {
+      if (document.querySelector(PageViewSelectors.ContentBoxNowBar)) {
         const { UpdateNowBar } = await import('../components/NowBar/NowBar');
         UpdateNowBar();
       }

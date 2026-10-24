@@ -10,6 +10,7 @@ import {
 } from './AppBackground';
 import { syncLibraryGridState } from './identity';
 import { anySurface } from '../../constants/SpotifyDom';
+import { PageViewSelectors } from '../../constants/PageViewSelectors';
 import Fullscreen from '../Utils/Fullscreen';
 import { NowPlayingBarBackground } from './NowPlayingBarBackground';
 
@@ -79,9 +80,9 @@ export function createDefaultAdapters(sidebarBg: NowPlayingBarBackground): Artwo
       appBackgroundSingleton.apply(coverUrl);
     },
     applyLyricsPage: () => {
-      if (!document.querySelector('#AmaiLyricsPage .LyricsContainer')) return;
+      if (!document.querySelector(PageViewSelectors.LyricsContainer)) return;
       void import('./dynamicBackground').then(({ default: ApplyDynamicBackground }) => {
-        const el = document.querySelector<HTMLElement>('#AmaiLyricsPage .ContentBox');
+        const el = document.querySelector<HTMLElement>(PageViewSelectors.ContentBox);
         if (el) ApplyDynamicBackground(el);
       });
     },

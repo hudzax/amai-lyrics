@@ -75,6 +75,7 @@ Spotify DOM knowledge has exactly one owner: `src/constants/SpotifyDom.ts` (see 
 - Callers never index `SPOTIFY_SURFACES[name][i]` — use `primarySurface` / `legacySurface`.
 - `tests/spotifyDomContract.test.ts` resolves every core surface on both transcribed DOM generations and every surface on at least one fixture. `tests/spotifyDomCss.test.ts` pins the per-file spellings the stylesheets must keep, matching on whitespace-collapsed CSS so a selector wrapped across lines is still seen.
 - Stylesheets are the half the seam does *not* own: they're bundled as text and injected as one `<style>`, so no TS helper reaches them and no test ever evaluates a selector there. Spell each rule's selector by hand in the comma-list form and add that spelling to its file's entry in `spotifyDomCss.test.ts`. `allSurface()` exists only to pin `:is()`/comma-list equivalence inside the contract test — never as a way to generate CSS.
+- The extension's **own** page DOM has its own one-owner rule: every selector reaching into the `#AmaiLyricsPage` subtree lives in `src/constants/PageViewSelectors.ts` (see `CONTEXT.md` → PageViewSelectors). Never hand-spell an `#AmaiLyricsPage` chain at a call site — `tests/pageViewSelectors.test.ts` fails the build on any new one.
 
 ## Testing
 

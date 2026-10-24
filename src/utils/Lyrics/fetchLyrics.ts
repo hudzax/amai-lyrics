@@ -27,6 +27,7 @@ import {
   type LyricsRequestToken,
 } from './publish';
 import { parseTrackId } from './trackId';
+import { PageViewSelectors } from '../../constants/PageViewSelectors';
 
 import { LyricsDocument, NoLyricsResult } from './conversion';
 
@@ -123,7 +124,7 @@ export default async function fetchLyrics(
   // callers don't cross the ui seam directly.
   EnsureProcessingIndicatorHidden();
   document
-    .querySelector<HTMLElement>('#AmaiLyricsPage .ContentBox')
+    .querySelector<HTMLElement>(PageViewSelectors.ContentBox)
     ?.classList.remove('LyricsHidden');
 
   const trackId = parseTrackId(uri);

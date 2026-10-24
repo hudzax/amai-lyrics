@@ -1,5 +1,6 @@
 import SimpleBar from 'simplebar';
 import { GetElementHeight } from '../../Gets/GetElementHeight';
+import { PageViewSelectors } from '../../../constants/PageViewSelectors';
 import {
   IsMouseInLyricsPage,
   LyricsPageMouseEnter,
@@ -10,7 +11,7 @@ import {
 export let ScrollSimplebar: SimpleBar | null = null;
 let isDragging = false;
 
-const ElementEventQuery = '#AmaiLyricsPage .ContentBox .LyricsContainer';
+const ElementEventQuery = PageViewSelectors.ContentBoxLyricsContainer;
 
 // Stored handler refs so removeEventListener actually matches addEventListener.
 let onMouseEnter: (() => void) | null = null;
@@ -22,7 +23,7 @@ let boundLyricsContainer: HTMLElement | null = null;
 
 export function MountScrollSimplebar() {
   const LyricsContainer = document.querySelector<HTMLElement>(
-    '#AmaiLyricsPage .LyricsContainer .LyricsContent',
+    PageViewSelectors.LyricsContentInContainer,
   );
   if (!LyricsContainer) return;
 
@@ -67,7 +68,7 @@ export function ClearScrollSimplebar() {
   // nodes).
   const LyricsContainer =
     boundLyricsContainer ??
-    document.querySelector<HTMLElement>('#AmaiLyricsPage .LyricsContainer .LyricsContent');
+    document.querySelector<HTMLElement>(PageViewSelectors.LyricsContentInContainer);
   const container = boundContainer ?? document.querySelector<HTMLElement>(ElementEventQuery);
 
   ScrollSimplebar?.unMount();
@@ -95,7 +96,7 @@ export function RecalculateScrollSimplebar() {
 
 function updateScrollbarVisibility() {
   const LyricsContainer = document.querySelector<HTMLElement>(
-    '#AmaiLyricsPage .LyricsContainer .LyricsContent',
+    PageViewSelectors.LyricsContentInContainer,
   );
   if (!LyricsContainer) return;
 

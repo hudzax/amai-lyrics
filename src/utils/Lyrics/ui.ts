@@ -6,6 +6,7 @@ import { OpenNowBar, DeregisterNowBarBtn } from '../../components/NowBar/NowBar'
 import PageView from '../../components/Pages/PageView';
 import Fullscreen from '../../components/Utils/Fullscreen';
 import { showRefreshButton } from '../../components/Pages/pageButtons';
+import { PageViewSelectors } from '../../constants/PageViewSelectors';
 import { liveTrackId } from './trackId';
 import { clear } from './registry';
 
@@ -44,14 +45,12 @@ export function clearLyricsUiTimeouts(): void {
  * Resets the lyrics UI
  */
 export function resetLyricsUI(): void {
-  const lyricsContent = document.querySelector('#AmaiLyricsPage .LyricsContainer .LyricsContent');
+  const lyricsContent = document.querySelector(PageViewSelectors.LyricsContentInContainer);
   if (lyricsContent?.classList.contains('offline')) {
     lyricsContent.classList.remove('offline');
   }
 
-  document
-    .querySelector('#AmaiLyricsPage .ContentBox .LyricsContainer')
-    ?.classList.remove('Hidden');
+  document.querySelector(PageViewSelectors.ContentBoxLyricsContainer)?.classList.remove('Hidden');
 
   if (!Fullscreen.isPageFullscreen()) PageView.AppendViewControls();
 }
@@ -79,10 +78,10 @@ export async function noLyricsMessage(trackId?: string): Promise<void> {
       ClearLyricsPageContainer();
       clear();
       document
-        .querySelector<HTMLElement>('#AmaiLyricsPage .ContentBox .LyricsContainer')
+        .querySelector<HTMLElement>(PageViewSelectors.ContentBoxLyricsContainer)
         ?.classList.add('Hidden');
       document
-        .querySelector<HTMLElement>('#AmaiLyricsPage .ContentBox')
+        .querySelector<HTMLElement>(PageViewSelectors.ContentBox)
         ?.classList.add('LyricsHidden');
       OpenNowBar();
       DeregisterNowBarBtn();
@@ -98,9 +97,7 @@ export async function noLyricsMessage(trackId?: string): Promise<void> {
  * Shows the loader container
  */
 export function ShowLoaderContainer(): void {
-  const loaderContainer = document.querySelector(
-    '#AmaiLyricsPage .LyricsContainer .loaderContainer',
-  );
+  const loaderContainer = document.querySelector(PageViewSelectors.LoaderContainer);
   if (!loaderContainer) return;
   // A superseded request may have left a pending delayed-show behind. Clear
   // it first: otherwise its callback fires after the current request's Hide
@@ -115,9 +112,7 @@ export function ShowLoaderContainer(): void {
     syncLoaderTimeout(null);
     // Re-query instead of closing over the element found above: the page is
     // recreated on open, so a captured node may be detached by fire time.
-    document
-      .querySelector('#AmaiLyricsPage .LyricsContainer .loaderContainer')
-      ?.classList.add('active');
+    document.querySelector(PageViewSelectors.LoaderContainer)?.classList.add('active');
   }, 1000);
   syncLoaderTimeout(id as unknown as number);
 }
@@ -134,16 +129,14 @@ export function HideLoaderContainer(): void {
     clearTimeout(pending);
     syncLoaderTimeout(null);
   }
-  document
-    .querySelector('#AmaiLyricsPage .LyricsContainer .loaderContainer')
-    ?.classList.remove('active');
+  document.querySelector(PageViewSelectors.LoaderContainer)?.classList.remove('active');
 }
 
 /**
  * Clears the lyrics container content
  */
 export function ClearLyricsPageContainer(): void {
-  const lyricsContent = document.querySelector('#AmaiLyricsPage .LyricsContainer .LyricsContent');
+  const lyricsContent = document.querySelector(PageViewSelectors.LyricsContentInContainer);
   if (lyricsContent) {
     lyricsContent.innerHTML = '';
   }
@@ -154,9 +147,7 @@ export function ClearLyricsPageContainer(): void {
  */
 export function ShowProcessingIndicator(): void {
   try {
-    const indicator = document.querySelector(
-      '#AmaiLyricsPage .LyricsContainer .processingIndicator',
-    );
+    const indicator = document.querySelector(PageViewSelectors.ProcessingIndicator);
     if (indicator) {
       // Clear any existing timeout to prevent flickering
       if (window.ProcessingIndicatorTimeout) {
@@ -175,9 +166,7 @@ export function ShowProcessingIndicator(): void {
  */
 export function HideProcessingIndicator(): void {
   try {
-    const indicator = document.querySelector(
-      '#AmaiLyricsPage .LyricsContainer .processingIndicator',
-    );
+    const indicator = document.querySelector(PageViewSelectors.ProcessingIndicator);
     if (indicator) {
       indicator.classList.remove('active');
     }

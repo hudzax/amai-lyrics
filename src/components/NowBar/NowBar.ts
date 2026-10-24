@@ -7,6 +7,7 @@ import lifecycle from '../../utils/lifecycle';
 import { getPositionFor } from '../../utils/Gets/GetProgress';
 import { registerPositionConsumer } from '../../utils/PositionConsumer';
 import { INTERVALS } from '../../constants/intervals';
+import { PageViewSelectors } from '../../constants/PageViewSelectors';
 import { setupDragAndDrop } from './DragAndDrop';
 import { createPlaybackControls } from './PlaybackControls';
 import { createProgressBar } from './ProgressBar';
@@ -190,7 +191,7 @@ function mount(root: HTMLElement): MountedNowBar {
 /** Repeated opens reuse the mounted lifetime; metadata never delays resource ownership. */
 async function OpenNowBar(): Promise<void> {
   if (destroyed || pageDestroyed) return;
-  const root = document.querySelector<HTMLElement>('#AmaiLyricsPage .ContentBox .NowBar');
+  const root = document.querySelector<HTMLElement>(PageViewSelectors.ContentBoxNowBar);
   if (!root || !root.isConnected) {
     CloseNowBar();
     return;
@@ -235,7 +236,7 @@ function NowBar_SwapSides() {
 }
 
 function Session_NowBar_SetSide() {
-  const root = document.querySelector('#AmaiLyricsPage .ContentBox .NowBar');
+  const root = document.querySelector(PageViewSelectors.ContentBoxNowBar);
   if (!root) return;
   const side = storage.get(StorageKeys.NOW_BAR_SIDE) === 'right' ? 'right' : 'left';
   storage.set(StorageKeys.NOW_BAR_SIDE, side);
@@ -244,7 +245,7 @@ function Session_NowBar_SetSide() {
 }
 
 function DeregisterNowBarBtn() {
-  document.querySelector('#AmaiLyricsPage .ContentBox .ViewControls #NowBarToggle')?.remove();
+  document.querySelector(PageViewSelectors.NowBarToggle)?.remove();
 }
 
 export {
