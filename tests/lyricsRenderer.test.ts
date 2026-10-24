@@ -25,7 +25,6 @@ vi.mock('../src/utils/Scrolling/Simplebar/ScrollSimplebar', () => ({
 vi.mock('../src/components/Global/SpotifyPlayer', () => ({
   SpotifyPlayer: {
     IsPlaying: true,
-    GetTrackPosition: vi.fn(() => 0),
     GetSongId: vi.fn(() => 'track1'),
     Seek: vi.fn(),
   },

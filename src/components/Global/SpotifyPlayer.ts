@@ -1,6 +1,7 @@
 import SpicyFetch from '../../utils/API/SpicyFetch';
 import { spotifyHex } from '../../utils/Hasher';
-import GetProgress, { syncPlaybackPosition } from '../../utils/Gets/GetProgress';
+import { syncPlaybackPosition } from '../../utils/Gets/GetProgress';
+import { parseTrackId } from '../../utils/Lyrics/trackId';
 
 type ArtworkSize = 's' | 'l' | 'xl' | 'd';
 type CoverImage = { size: string; file_id: string };
@@ -53,9 +54,35 @@ async function getOrFetchTrackData(trackId: string): Promise<unknown> {
   }
 }
 
+function sortImages(images: CoverImage[]): Record<'s' | 'l' | 'xl', CoverImage[]> {
+  // Define size thresholds
+  const sizeMap = {
+    s: 'SMALL',
+    l: 'DEFAULT',
+    xl: 'LARGE',
+  };
+
+  // Sort the images into categories based on their size
+  return images.reduce<Record<'s' | 'l' | 'xl', CoverImage[]>>(
+    (acc, image) => {
+      const { size } = image;
+
+      if (size === sizeMap.s) {
+        acc.s.push(image);
+      } else if (size === sizeMap.l) {
+        acc.l.push(image);
+      } else if (size === sizeMap.xl) {
+        acc.xl.push(image);
+      }
+
+      return acc;
+    },
+    { s: [], l: [], xl: [] },
+  );
+}
+
 export const SpotifyPlayer = {
   IsPlaying: false,
-  GetTrackPosition: GetProgress,
   GetTrackDuration: (): number => {
     if (Spicetify.Player.data.item.duration?.milliseconds) {
       return Spicetify.Player.data.item.duration.milliseconds;
@@ -68,32 +95,6 @@ export const SpotifyPlayer = {
       if (!songId) return null;
       const spotifyHexString = spotifyHex(songId);
       return getOrFetchTrackData(spotifyHexString);
-    },
-    SortImages: (images: CoverImage[]) => {
-      // Define size thresholds
-      const sizeMap = {
-        s: 'SMALL',
-        l: 'DEFAULT',
-        xl: 'LARGE',
-      };
-
-      // Sort the images into categories based on their size
-      return images.reduce<Record<'s' | 'l' | 'xl', CoverImage[]>>(
-        (acc, image) => {
-          const { size } = image;
-
-          if (size === sizeMap.s) {
-            acc.s.push(image);
-          } else if (size === sizeMap.l) {
-            acc.l.push(image);
-          } else if (size === sizeMap.xl) {
-            acc.xl.push(image);
-          }
-
-          return acc;
-        },
-        { s: [], l: [], xl: [] },
-      );
     },
   },
   Seek: (position: number) => {
@@ -119,7 +120,7 @@ export const SpotifyPlayer = {
         };
       };
       if (!trackData || !trackData.album?.cover_group?.image) return '';
-      const Images = SpotifyPlayer.Track.SortImages(trackData.album.cover_group.image);
+      const Images = sortImages(trackData.album.cover_group.image);
       switch (psize) {
         case 's':
           return Images.s[0] ? `spotify:image:${Images.s[0].file_id}` : '';
@@ -146,10 +147,9 @@ export const SpotifyPlayer = {
     return Spicetify.Player.data?.item?.metadata?.album_title ?? '';
   },
   GetSongId: (): string | null => {
-    const uri = Spicetify.Player.data?.item?.uri;
-    if (!uri || typeof uri !== 'string') return null;
-    const parts = uri.split(':');
-    return parts.length === 3 ? (parts[2] ?? null) : null;
+    // URI parsing has one owner (the trackId leaf); '' never escapes this
+    // interface.
+    return parseTrackId(Spicetify.Player.data?.item?.uri) || null;
   },
   GetArtists: async (): Promise<string[]> => {
     // Use metadata directly if available, avoiding the API call
@@ -167,7 +167,6 @@ export const SpotifyPlayer = {
   JoinArtists: (artists: string[]): string => {
     return artists?.join(', ') ?? '';
   },
-  IsPodcast: false,
   Pause: Spicetify.Player.pause,
   Play: Spicetify.Player.play,
   Skip: {
