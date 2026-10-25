@@ -117,7 +117,11 @@ async function fetchLyricsData(
   try {
     const res = await fetch(`${API_URL}/${id}${flush ? '?flush=true' : ''}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...headers },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Amai-Version': Defaults.Version,
+        ...headers,
+      },
       body: JSON.stringify({
         id,
         user_id: userData?.id,

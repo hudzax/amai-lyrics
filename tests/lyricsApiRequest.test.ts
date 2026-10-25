@@ -30,6 +30,11 @@ function sentBody() {
   return JSON.parse(init.body as string);
 }
 
+function sentHeaders() {
+  const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+  return init.headers as Record<string, string>;
+}
+
 beforeEach(() => {
   fetchMock.mockReset();
   fetchMock.mockResolvedValue({
@@ -43,6 +48,14 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals();
   stubUser(null);
+});
+
+describe('getLyrics request headers', () => {
+  it('sends the Amai version header', async () => {
+    await getLyrics('track1');
+
+    expect(sentHeaders()['X-Amai-Version']).toBe(Defaults.Version);
+  });
 });
 
 describe('getLyrics request body', () => {
