@@ -9414,15 +9414,15 @@
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-2684-ipHxNZzLrJMq/1a16c8a8680e/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-17120-OtXmhaxXFZY6/1a173ceb6b1e/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-2684-ipHxNZzLrJMq/1a16c8a8680e/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-17120-OtXmhaxXFZY6/1a173ceb6b1e/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-2684-ipHxNZzLrJMq/1a16c8a8685f/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-17120-OtXmhaxXFZY6/1a173ceb6bbf/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-2684-ipHxNZzLrJMq/1a16c8a8685f/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-17120-OtXmhaxXFZY6/1a173ceb6bbf/ProcessingIndicator.css"() {
     }
   });
 
@@ -9744,7 +9744,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.6.13";
+      version = "1.6.14";
     }
   });
 
@@ -11801,8 +11801,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     return `${displayName ?? ""} (v${Defaults_default.Version})`.trim();
   }
   async function fetchLyricsData(id, userData, trackDetails, headers, flush = false) {
+    const timeoutMs = flush ? FLUSH_REQUEST_TIMEOUT_MS : CACHED_REQUEST_TIMEOUT_MS;
     const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), 1e4);
+    const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
     try {
       const res = await fetch(`${API_URL}/${id}${flush ? "?flush=true" : ""}`, {
         method: "POST",
@@ -11837,7 +11838,7 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       return { data, status };
     } catch (error) {
       if (error?.name === "AbortError") {
-        console.error("Error fetching lyrics: request timed out after 10s", id);
+        console.error(`Error fetching lyrics: request timed out after ${timeoutMs / 1e3}s`, id);
       } else {
         console.error("Error fetching lyrics:", error);
       }
@@ -11846,13 +11847,15 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       window.clearTimeout(timeoutId);
     }
   }
-  var API_URL;
+  var API_URL, CACHED_REQUEST_TIMEOUT_MS, FLUSH_REQUEST_TIMEOUT_MS;
   var init_Lyrics = __esm({
     "src/utils/API/Lyrics.ts"() {
       "use strict";
       init_Defaults();
       init_SpotifyPlayer();
       API_URL = Defaults_default.lyrics.api.url;
+      CACHED_REQUEST_TIMEOUT_MS = 1e4;
+      FLUSH_REQUEST_TIMEOUT_MS = 3e4;
     }
   });
 
@@ -38986,7 +38989,7 @@ void main() {
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2684-ipHxNZzLrJMq/1a16c8a8680e/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17120-OtXmhaxXFZY6/1a173ceb6b1e/DotLoader.css */
 #DotLoader {
   --dot-color: var(--amai-accent-1);
   --dot-color-dim: color-mix(in srgb, var(--amai-accent-1) 22%, transparent);
@@ -39021,7 +39024,7 @@ void main() {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2684-ipHxNZzLrJMq/1a16c8a8685f/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17120-OtXmhaxXFZY6/1a173ceb6bbf/ProcessingIndicator.css */
 #AmaiLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -39103,7 +39106,7 @@ void main() {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2684-ipHxNZzLrJMq/1a16c8a85d40/tokens.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17120-OtXmhaxXFZY6/1a173ceb6070/tokens.css */
 :root {
   --amai-accent-1: #1ed760;
   --amai-accent-2: #1db954;
@@ -39182,7 +39185,7 @@ void main() {
   --amai-scrollbar-thumb: rgba(255, 255, 255, 0.6);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2684-ipHxNZzLrJMq/1a16c8a85ff1/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17120-OtXmhaxXFZY6/1a173ceb62f1/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -39438,7 +39441,7 @@ body:has(#AmaiLyricsPage) .main-view-container div[data-overlayscrollbars-viewpo
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2684-ipHxNZzLrJMq/1a16c8a86092/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17120-OtXmhaxXFZY6/1a173ceb6392/Simplebar.css */
 #AmaiLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -39646,7 +39649,7 @@ body:has(#AmaiLyricsPage) .main-view-container div[data-overlayscrollbars-viewpo
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2684-ipHxNZzLrJMq/1a16c8a86103/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17120-OtXmhaxXFZY6/1a173ceb63f3/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -40250,7 +40253,7 @@ body:has(#AmaiLyricsPage) .main-view-container div[data-overlayscrollbars-viewpo
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2684-ipHxNZzLrJMq/1a16c8a861c4/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17120-OtXmhaxXFZY6/1a173ceb64a4/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: calc(2.2 * var(--amai-bg-saturation-scale, 1));
@@ -40648,7 +40651,7 @@ body:has(#AmaiLyricsPage.Fullscreen) aside:is(.NowPlayingView, .sweet-dynamic-bg
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2684-ipHxNZzLrJMq/1a16c8a86245/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17120-OtXmhaxXFZY6/1a173ceb6525/main.css */
 #AmaiLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -40903,7 +40906,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2684-ipHxNZzLrJMq/1a16c8a862b6/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17120-OtXmhaxXFZY6/1a173ceb6586/Mixed.css */
 #AmaiLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -41257,7 +41260,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2684-ipHxNZzLrJMq/1a16c8a86327/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17120-OtXmhaxXFZY6/1a173ceb65f7/LoaderContainer.css */
 #AmaiLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -41279,7 +41282,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2684-ipHxNZzLrJMq/1a16c8a86358/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17120-OtXmhaxXFZY6/1a173ceb6628/FullscreenTransition.css */
 #AmaiLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -41306,7 +41309,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2684-ipHxNZzLrJMq/1a16c8a86389/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17120-OtXmhaxXFZY6/1a173ceb6659/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
@@ -41414,7 +41417,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2684-ipHxNZzLrJMq/1a16c8a863ca/Settings.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17120-OtXmhaxXFZY6/1a173ceb669a/Settings.css */
 :is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) {
   display: grid;
   gap: 8px;
@@ -41641,7 +41644,7 @@ ruby > rt {
   border: 1px solid var(--essential-subdued, #818181);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2684-ipHxNZzLrJMq/1a16c8a8641b/SettingsModal.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17120-OtXmhaxXFZY6/1a173ceb66fb/SettingsModal.css */
 .amai-settings-overlay {
   position: fixed;
   inset: 0;
@@ -41719,7 +41722,7 @@ ruby > rt {
   min-width: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2684-ipHxNZzLrJMq/1a16c8a8646c/Tooltips.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17120-OtXmhaxXFZY6/1a173ceb672c/Tooltips.css */
 .tippy-box[data-theme~=amai-lyrics] {
   position: relative;
   background: var(--amai-glass-veil-strong), var(--amai-glass-base-strong) !important;
@@ -41779,7 +41782,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-2684-ipHxNZzLrJMq/1a16c8a8649d/Glassmorphism.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-17120-OtXmhaxXFZY6/1a173ceb675d/Glassmorphism.css */
 .amai-app-bg-host .Root__nav-bar:not(.amai-lib-grid),
 .amai-app-bg-host #Desktop_LeftSidebar_Id:not(.amai-lib-grid) {
   isolation: isolate;
