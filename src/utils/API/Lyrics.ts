@@ -94,6 +94,13 @@ function displayNameWithVersion(displayName?: string): string {
   return `${displayName ?? ''} (v${Defaults.Version})`.trim();
 }
 
+// A cache-backed request answers in seconds, so 10s is the anti-hang guard for
+// the in-flight map. A flush request deliberately bypasses the worker's cache
+// and can do a full upstream lookup, so the reload and invalidation paths get a
+// wider budget instead of aborting a request that is still working.
+const CACHED_REQUEST_TIMEOUT_MS = 10_000;
+const FLUSH_REQUEST_TIMEOUT_MS = 30_000;
+
 /**
  * Fetches lyrics data from the lyrics API
  */
@@ -104,8 +111,9 @@ async function fetchLyricsData(
   headers: Record<string, string>,
   flush = false,
 ): Promise<{ data: LyricsResult; status: number }> {
+  const timeoutMs = flush ? FLUSH_REQUEST_TIMEOUT_MS : CACHED_REQUEST_TIMEOUT_MS;
   const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), 10_000);
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(`${API_URL}/${id}${flush ? '?flush=true' : ''}`, {
       method: 'POST',
@@ -146,7 +154,7 @@ async function fetchLyricsData(
     return { data, status };
   } catch (error) {
     if ((error as DOMException)?.name === 'AbortError') {
-      console.error('Error fetching lyrics: request timed out after 10s', id);
+      console.error(`Error fetching lyrics: request timed out after ${timeoutMs / 1000}s`, id);
     } else {
       console.error('Error fetching lyrics:', error);
     }
