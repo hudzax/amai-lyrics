@@ -2,9 +2,9 @@
 
 ![Amai Theme Preview](./previews/amai_theme_3.jpg)
 
-**Amai Lyrics** is a [Spicetify](https://spicetify.app/) extension that makes Japanese and Korean music on Spotify easier to follow and understand.
+**Amai Lyrics** is a [Spicetify](https://spicetify.app/) extension that rebuilds Spotify's lyrics into a full, synced experience: a reimagined lyrics page with active-line highlighting and auto-scroll, the current line in the playbar, a fullscreen mode with playback controls, and an optional **Amai Theme** dynamic background generated from the current album artwork.
 
-It adds **Furigana** readings to Kanji, shows **Romaji** for Japanese and **Romanization** for Korean, and delivers **line-by-line translations** — all powered by Google's Gemini, using your own API key.
+For language learners, it adds **Furigana** readings above Kanji, **Romaji** for Japanese and **Romanization** for Korean, plus **line-by-line translations** into 11 languages. Readings and translations work out of the box through Amai's free hosted backend — add your own Gemini API key and Google's Gemini takes over as the primary AI, with automatic fallback if a request fails.
 
 ---
 
@@ -90,23 +90,23 @@ Then **restart Spotify** (quit it fully and reopen). That's it — you only do t
 
 ---
 
-## 🔑 Set Up Your Gemini API Key
+## 🔑 Optional: Use Your Own Gemini API Key
 
-Translations need a Gemini key. It's free and takes about a minute.
+Amai Lyrics works out of the box — Furigana, Romaji, Romanization and translations are served by Amai's free hosted backend, so **no API key is required**. If you'd rather have Google's Gemini power them, add your own free key: it becomes the primary AI, and the hosted backend takes over automatically if a request fails.
 
 1. **Create a key** — visit [Google AI Studio](https://aistudio.google.com/app/apikey), sign in, and generate an API key.
-2. **Open Spotify settings** — click your profile picture → **Settings**.
-3. **Paste the key** — scroll to the bottom of the Amai section and drop it into the **Gemini API Key** field.
+2. **Open the settings** — click your profile picture → **Settings**, or hit the settings button on the lyrics page.
+3. **Paste the key** — find the **Amai - Settings** section and drop it into the **Gemini API Key** field.
 
    ![Settings Screenshot](./previews/settings.jpg)
 
    Your key is stored locally on your machine and used only by this extension — it never leaves your computer except to talk directly to Google's API.
 
-4. **Play a song** — hit the lyrics icon at the bottom of Spotify and wait a few seconds. Furigana, Romaji, Romanization, and translations appear as the song plays.
+4. **Play a song** — hit the lyrics icon at the bottom of Spotify and wait a few seconds. The synced lyrics, readings and translations appear as the song plays.
 
-   ![Lyrics Toggle Screenshot](./previews/toggle-lyrics-page.png)
+   ![Lyrics Toggle Screenshot](./previews/toggle-lyrics-page.jpg)
 
-> **Tip:** No key yet? There's a **Get Free API Key** button right in the settings section that takes you straight to Google AI Studio.
+> **Tip:** The **Get Free API Key** button in the settings section takes you straight to Google AI Studio.
 
 ---
 
