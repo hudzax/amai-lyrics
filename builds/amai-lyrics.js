@@ -62,7 +62,7 @@
             contentType = "text/plain";
           }
           try {
-            const cache = await caches.open(this.cacheName);
+            const cache2 = await caches.open(this.cacheName);
             let headers = {};
             if (contentType) {
               headers["Content-Type"] = contentType;
@@ -73,7 +73,7 @@
             if (expirationTTL) {
               response.headers.append("Cache-Control", `max-age=${expirationTTL}`);
             }
-            await cache.put(normalizedKey, response);
+            await cache2.put(normalizedKey, response);
           } catch (error) {
             console.error("Error setting cache:", error);
             throw error;
@@ -82,8 +82,8 @@
         async get(key) {
           const normalizedKey = this.normalizeKey(key);
           try {
-            const cache = await caches.open(this.cacheName);
-            const response = await cache.match(normalizedKey);
+            const cache2 = await caches.open(this.cacheName);
+            const response = await cache2.match(normalizedKey);
             if (response) {
               const contentType = response.headers.get("Content-Type");
               if (contentType === "application/json") {
@@ -112,8 +112,8 @@
         async remove(key) {
           const normalizedKey = this.normalizeKey(key);
           try {
-            const cache = await caches.open(this.cacheName);
-            await cache.delete(normalizedKey);
+            const cache2 = await caches.open(this.cacheName);
+            await cache2.delete(normalizedKey);
           } catch (error) {
             console.error("Error removing cache:", error);
             throw error;
@@ -128,6 +128,77 @@
           }
         }
       };
+    }
+  });
+
+  // src/utils/BoundedCache.ts
+  function isEnvelope(raw) {
+    if (!raw || typeof raw !== "object")
+      return false;
+    const candidate = raw;
+    return candidate.__amaiBoundedCache === ENVELOPE_MARKER && typeof candidate.expiresAt === "number" && "value" in candidate;
+  }
+  function createBoundedCache(options) {
+    const store = new SpikyCache({ name: options.name });
+    const windowRef10 = window;
+    const keyOrder = windowRef10[options.windowKey] ?? [];
+    windowRef10[options.windowKey] = keyOrder;
+    function noteWrite(key) {
+      forget(key);
+      keyOrder.push(key);
+      while (keyOrder.length > options.maxEntries) {
+        const oldest = keyOrder.shift();
+        if (oldest)
+          store.remove(oldest).catch(() => {
+          });
+      }
+    }
+    function forget(key) {
+      const idx = keyOrder.indexOf(key);
+      if (idx !== -1)
+        keyOrder.splice(idx, 1);
+    }
+    return {
+      async get(key) {
+        try {
+          const raw = await store.get(key);
+          if (raw === null || raw === void 0)
+            return null;
+          if (!isEnvelope(raw) || raw.expiresAt < Date.now()) {
+            forget(key);
+            await store.remove(key);
+            return null;
+          }
+          return raw.value;
+        } catch {
+          return null;
+        }
+      },
+      async set(key, value) {
+        const envelope = {
+          __amaiBoundedCache: ENVELOPE_MARKER,
+          expiresAt: Date.now() + options.ttlMs,
+          value
+        };
+        await store.set(key, envelope);
+        noteWrite(key);
+      },
+      async remove(key) {
+        forget(key);
+        await store.remove(key);
+      },
+      async destroy() {
+        await store.destroy();
+        keyOrder.length = 0;
+      }
+    };
+  }
+  var ENVELOPE_MARKER;
+  var init_BoundedCache = __esm({
+    "src/utils/BoundedCache.ts"() {
+      "use strict";
+      init_SpikyCache();
+      ENVELOPE_MARKER = 1;
     }
   });
 
@@ -4858,28 +4929,13 @@
   function resolvePako(mod) {
     return mod.default ?? mod;
   }
-  function trackSpicyFetchKey(processedKey) {
-    const idx = spicyFetchKeyOrder.indexOf(processedKey);
-    if (idx !== -1)
-      spicyFetchKeyOrder.splice(idx, 1);
-    spicyFetchKeyOrder.push(processedKey);
-    if (spicyFetchKeyOrder.length > MAX_SPICY_FETCH_ENTRIES) {
-      const oldest = spicyFetchKeyOrder.shift();
-      if (oldest)
-        SpicyFetchCache.remove(oldest).catch(() => {
-        });
-    }
-  }
-  async function SpicyFetch(path, IsExternal = false, cache = false, cosmos = false) {
+  async function SpicyFetch(path, IsExternal = false, cache2 = false, cosmos = false) {
     const url = path;
     try {
       const CachedContent = await GetCachedContent(url);
       if (CachedContent) {
-        if (Array.isArray(CachedContent)) {
-          const content = typeof CachedContent[0] === "string" ? JSON.parse(CachedContent[0]) : CachedContent[0];
-          return [content, CachedContent[1]];
-        }
-        return [CachedContent, 200];
+        const content = typeof CachedContent[0] === "string" ? JSON.parse(CachedContent[0]) : CachedContent[0];
+        return [content, CachedContent[1]];
       }
       const SpotifyAccessToken = await Platform_default.GetSpotifyAccessToken();
       if (cosmos) {
@@ -4891,8 +4947,8 @@
           data = {};
         }
         const sentData = [data, res.status];
-        if (cache) {
-          await CacheContent(url, sentData, 6048e5);
+        if (cache2) {
+          await CacheContent(url, sentData);
         }
         return sentData;
       } else {
@@ -4922,8 +4978,8 @@
           data = {};
         }
         const sentData = [data, res.status];
-        if (cache) {
-          await CacheContent(url, sentData, 6048e5);
+        if (cache2) {
+          await CacheContent(url, sentData);
         }
         return sentData;
       }
@@ -4946,9 +5002,8 @@
       out[i] = str.charCodeAt(i) & 255;
     return out;
   }
-  async function CacheContent(key, data, expirationTtl = 6048e5) {
+  async function CacheContent(key, data) {
     try {
-      const expiresIn = Date.now() + expirationTtl;
       const processedKey = md5(key);
       const processedData = typeof data === "object" ? JSON.stringify(data) : data;
       const pakoMod = resolvePako(await loadPako());
@@ -4956,15 +5011,11 @@
         level: 1
       });
       const compressedString = uint8ToString(compressedData);
-      await SpicyFetchCache.set(processedKey, {
-        Content: compressedString,
-        expiresIn
-      });
-      trackSpicyFetchKey(processedKey);
+      await fetchCache.set(processedKey, compressedString);
     } catch (error) {
       console.error("ERR CC", error);
       try {
-        await SpicyFetchCache.remove(md5(key));
+        await fetchCache.remove(md5(key));
       } catch {
       }
     }
@@ -4972,51 +5023,46 @@
   async function GetCachedContent(key) {
     try {
       const processedKey = md5(key);
-      const content = await SpicyFetchCache.get(processedKey);
-      if (content) {
-        if (content.expiresIn > Date.now()) {
-          if (typeof content.Content !== "string") {
-            await SpicyFetchCache.remove(processedKey);
-            return content.Content;
-          }
-          if (content.Content.length > MAX_DECOMPRESSED_BYTES) {
-            await SpicyFetchCache.remove(processedKey);
-            return null;
-          }
-          const compressedData = stringToUint8(content.Content);
-          const pakoMod = resolvePako(await loadPako());
-          const decompressedData = pakoMod.inflate(compressedData, { to: "string" });
-          if (decompressedData.length > MAX_DECOMPRESSED_BYTES) {
-            await SpicyFetchCache.remove(processedKey);
-            return null;
-          }
-          return JSON.parse(decompressedData);
-        } else {
-          await SpicyFetchCache.remove(processedKey);
-          return null;
-        }
+      const compressedString = await fetchCache.get(processedKey);
+      if (!compressedString)
+        return null;
+      if (compressedString.length > MAX_DECOMPRESSED_BYTES) {
+        await fetchCache.remove(processedKey);
+        return null;
       }
-      return null;
+      const compressedData = stringToUint8(compressedString);
+      const pakoMod = resolvePako(await loadPako());
+      const decompressedData = pakoMod.inflate(compressedData, { to: "string" });
+      if (decompressedData.length > MAX_DECOMPRESSED_BYTES) {
+        await fetchCache.remove(processedKey);
+        return null;
+      }
+      const parsed = JSON.parse(decompressedData);
+      if (!Array.isArray(parsed) || parsed.length !== 2) {
+        await fetchCache.remove(processedKey);
+        return null;
+      }
+      return parsed;
     } catch (error) {
       console.error("ERR CC", error);
       return null;
     }
   }
-  var pakoPromise, SpicyFetchCache, MAX_SPICY_FETCH_ENTRIES, spicyWindowRef, spicyFetchKeyOrder, MAX_DECOMPRESSED_BYTES;
+  var pakoPromise, SPICY_FETCH_CACHE_OPTIONS, fetchCache, MAX_DECOMPRESSED_BYTES;
   var init_SpicyFetch = __esm({
     "src/utils/API/SpicyFetch.ts"() {
       "use strict";
-      init_SpikyCache();
+      init_BoundedCache();
       init_Platform();
       init_Hasher();
       pakoPromise = null;
-      SpicyFetchCache = new SpikyCache({
-        name: "SpicyFetch__Cache"
-      });
-      MAX_SPICY_FETCH_ENTRIES = 150;
-      spicyWindowRef = window;
-      spicyFetchKeyOrder = spicyWindowRef.__amaiSpicyFetchKeys ?? [];
-      spicyWindowRef.__amaiSpicyFetchKeys = spicyFetchKeyOrder;
+      SPICY_FETCH_CACHE_OPTIONS = {
+        name: "SpicyFetch__Cache",
+        maxEntries: 150,
+        ttlMs: 6048e5,
+        windowKey: "__amaiSpicyFetchKeys"
+      };
+      fetchCache = createBoundedCache(SPICY_FETCH_CACHE_OPTIONS);
       MAX_DECOMPRESSED_BYTES = 2 * 1024 * 1024;
     }
   });
@@ -9269,7 +9315,9 @@
       return null;
     if (!Array.isArray(candidate.lines))
       return null;
-    return candidate;
+    const document2 = { ...candidate };
+    delete document2.v;
+    return document2;
   }
   function toLineView(item) {
     const view = { text: item.Text ?? "" };
@@ -9414,15 +9462,15 @@
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-16780-E6KkhYROzyAQ/1a1752f4e50e/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c16086d2e/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-16780-E6KkhYROzyAQ/1a1752f4e50e/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c16086d2e/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-16780-E6KkhYROzyAQ/1a1752f4e59f/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c16086d9f/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-16780-E6KkhYROzyAQ/1a1752f4e59f/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c16086d9f/ProcessingIndicator.css"() {
     }
   });
 
@@ -9744,7 +9792,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.6.15";
+      version = "1.6.16";
     }
   });
 
@@ -11684,81 +11732,55 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
   });
 
   // src/utils/Lyrics/cache.ts
-  function trackLyricsCacheKey(trackId) {
-    const idx = lyricsCacheKeyOrder.indexOf(trackId);
-    if (idx !== -1)
-      lyricsCacheKeyOrder.splice(idx, 1);
-    lyricsCacheKeyOrder.push(trackId);
-    if (lyricsCacheKeyOrder.length > MAX_LYRICS_CACHE_ENTRIES) {
-      const oldest = lyricsCacheKeyOrder.shift();
-      if (oldest) {
-        lyricsCache.remove(oldest).catch(() => {
-        });
-      }
-    }
-  }
   async function cacheLyrics(trackId, document2) {
-    if (!lyricsCache)
-      return;
-    const expiresAt = new Date().getTime() + CACHE_EXPIRATION_TIME;
     try {
-      await lyricsCache.set(trackId, {
-        ...stampDocument(document2),
-        expiresAt
-      });
-      trackLyricsCacheKey(trackId);
+      await cache.set(trackId, stampDocument(document2));
     } catch (error) {
       console.error("Error saving lyrics to cache:", error);
     }
   }
   async function getLyricsFromCache(trackId) {
-    if (!lyricsCache)
-      return null;
     try {
-      const lyricsFromCache = await lyricsCache.get(trackId);
-      if (!lyricsFromCache)
+      const stored = await cache.get(trackId);
+      if (!stored)
         return null;
-      if (lyricsFromCache.expiresAt < new Date().getTime()) {
-        await lyricsCache.remove(trackId);
-        return null;
-      }
-      if (lyricsFromCache.status === "NO_LYRICS") {
+      if ("status" in stored && stored.status === "NO_LYRICS") {
         return { status: "NO_LYRICS", id: trackId };
       }
-      const document2 = toDocument(lyricsFromCache);
+      const document2 = toDocument(stored);
       if (!document2) {
-        await lyricsCache.remove(trackId);
+        await cache.remove(trackId);
         return null;
       }
-      return { ...document2, expiresAt: lyricsFromCache.expiresAt, fromCache: true };
+      return document2;
     } catch (error) {
       console.log("[Amai Lyrics] Error parsing saved lyrics data:", error);
       return null;
     }
   }
   async function removeLyricsFromCache(trackId) {
-    if (!lyricsCache)
-      return;
     try {
-      await lyricsCache.remove(trackId);
+      await cache.remove(trackId);
     } catch (error) {
       console.error("Error removing lyrics from cache:", error);
     }
   }
-  var CACHE_EXPIRATION_TIME, lyricsCache, MAX_LYRICS_CACHE_ENTRIES, windowCacheRef, lyricsCacheKeyOrder;
+  async function destroyLyricsCache() {
+    await cache.destroy();
+  }
+  var LYRICS_CACHE_OPTIONS, cache;
   var init_cache = __esm({
     "src/utils/Lyrics/cache.ts"() {
       "use strict";
-      init_SpikyCache();
+      init_BoundedCache();
       init_conversion();
-      CACHE_EXPIRATION_TIME = 1e3 * 60 * 60 * 24 * 7;
-      lyricsCache = new SpikyCache({
-        name: "Cache_Lyrics"
-      });
-      MAX_LYRICS_CACHE_ENTRIES = 200;
-      windowCacheRef = window;
-      lyricsCacheKeyOrder = windowCacheRef.__amaiLyricsCacheKeys ?? [];
-      windowCacheRef.__amaiLyricsCacheKeys = lyricsCacheKeyOrder;
+      LYRICS_CACHE_OPTIONS = {
+        name: "Cache_Lyrics",
+        maxEntries: 200,
+        ttlMs: 1e3 * 60 * 60 * 24 * 7,
+        windowKey: "__amaiLyricsCacheKeys"
+      };
+      cache = createBoundedCache(LYRICS_CACHE_OPTIONS);
     }
   });
 
@@ -35373,7 +35395,7 @@ ${JSON.stringify(lyricsOnly)}`
   }
   async function invalidateLyrics(target, opts = {}) {
     if ("all" in target) {
-      await lyricsCache.destroy();
+      await destroyLyricsCache();
     } else {
       await removeLyricsFromCache(target.trackId);
     }
@@ -37126,6 +37148,7 @@ void main() {
   }
   function onSongChange() {
     lastText = "";
+    lastActiveIdx = -1;
     cachedPlaybarEnabled = null;
     if (lyricsElement) {
       lyricsElement.innerHTML = "";
@@ -37146,6 +37169,9 @@ void main() {
       textLayer.className = "amai-playbar-lyrics-text";
       inner.appendChild(textLayer);
     }
+    textLayer.classList.remove("amai-marquee");
+    textLayer.style.removeProperty("--scroll-dist");
+    textLayer.style.removeProperty("--scroll-dur");
     textLayer.textContent = "";
     textLayer.appendChild(createRubyFragment(html));
     requestAnimationFrame(() => {
@@ -37177,6 +37203,7 @@ void main() {
       if (lyricsElement.innerHTML !== "") {
         lyricsElement.innerHTML = "";
         lastText = "";
+        lastActiveIdx = -1;
       }
     }
   }
@@ -37205,7 +37232,8 @@ void main() {
       return;
     }
     centerWrapper.classList.add("amai-hide-controls");
-    if (active.text !== lastText) {
+    if (activeIdx !== lastActiveIdx || active.text !== lastText) {
+      lastActiveIdx = activeIdx;
       lastText = active.text;
       const enableRomaji = settingsValues_default.get("enableRomaji");
       setLyricsText(processPhoneticText(active.text, enableRomaji));
@@ -37222,6 +37250,7 @@ void main() {
     centerWrapper = wrapper;
     wrapper.classList.add("amai-playbar-host");
     lastText = "";
+    lastActiveIdx = -1;
     lyricsElement = document.createElement("div");
     lyricsElement.className = "amai-playbar-lyrics";
     lyricsElement.setAttribute("aria-hidden", "true");
@@ -37256,6 +37285,7 @@ void main() {
     lyricsElement = null;
     centerWrapper = null;
     lastText = "";
+    lastActiveIdx = -1;
   }
   function InitializePlaybarLyrics() {
     initWhen = Whentil_default.When(
@@ -37280,7 +37310,7 @@ void main() {
     lifecycle_default.trackCallback(cleanup);
     lifecycle_default.trackWhentil(initWhen);
   }
-  var UPDATE_INTERVAL, PLAYBAR_SELECTOR, PLAYER_CONTROLS_SELECTOR, lyricsElement, centerWrapper, positionConsumerDisposer, resizeObserver, lastText, initWhen, lyricsDataListenerId, cachedPlaybarEnabled, cachedPlaybarEnabledAt, PLAYBAR_ENABLED_TTL_MS, PlaybarLyrics_default;
+  var UPDATE_INTERVAL, PLAYBAR_SELECTOR, PLAYER_CONTROLS_SELECTOR, lyricsElement, centerWrapper, positionConsumerDisposer, resizeObserver, lastText, lastActiveIdx, initWhen, lyricsDataListenerId, cachedPlaybarEnabled, cachedPlaybarEnabledAt, PLAYBAR_ENABLED_TTL_MS, PlaybarLyrics_default;
   var init_PlaybarLyrics = __esm({
     "src/components/PlaybarLyrics/PlaybarLyrics.ts"() {
       "use strict";
@@ -37303,6 +37333,7 @@ void main() {
       positionConsumerDisposer = null;
       resizeObserver = null;
       lastText = "";
+      lastActiveIdx = -1;
       initWhen = null;
       lyricsDataListenerId = null;
       cachedPlaybarEnabled = null;
@@ -38996,7 +39027,7 @@ void main() {
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16780-E6KkhYROzyAQ/1a1752f4e50e/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c16086d2e/DotLoader.css */
 #DotLoader {
   --dot-color: var(--amai-accent-1);
   --dot-color-dim: color-mix(in srgb, var(--amai-accent-1) 22%, transparent);
@@ -39031,7 +39062,7 @@ void main() {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16780-E6KkhYROzyAQ/1a1752f4e59f/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c16086d9f/ProcessingIndicator.css */
 #AmaiLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -39113,7 +39144,7 @@ void main() {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16780-E6KkhYROzyAQ/1a1752f4d750/tokens.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c16085eb0/tokens.css */
 :root {
   --amai-accent-1: #1ed760;
   --amai-accent-2: #1db954;
@@ -39192,7 +39223,7 @@ void main() {
   --amai-scrollbar-thumb: rgba(255, 255, 255, 0.6);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16780-E6KkhYROzyAQ/1a1752f4da41/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c160861d1/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -39448,7 +39479,7 @@ body:has(#AmaiLyricsPage) .main-view-container div[data-overlayscrollbars-viewpo
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16780-E6KkhYROzyAQ/1a1752f4db02/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c160862b2/Simplebar.css */
 #AmaiLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -39656,7 +39687,7 @@ body:has(#AmaiLyricsPage) .main-view-container div[data-overlayscrollbars-viewpo
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16780-E6KkhYROzyAQ/1a1752f4db83/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c16086353/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -40260,7 +40291,7 @@ body:has(#AmaiLyricsPage) .main-view-container div[data-overlayscrollbars-viewpo
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16780-E6KkhYROzyAQ/1a1752f4dc84/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c16086494/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: calc(2.2 * var(--amai-bg-saturation-scale, 1));
@@ -40658,7 +40689,7 @@ body:has(#AmaiLyricsPage.Fullscreen) aside:is(.NowPlayingView, .sweet-dynamic-bg
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16780-E6KkhYROzyAQ/1a1752f4dd25/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c16086535/main.css */
 #AmaiLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -40913,7 +40944,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16780-E6KkhYROzyAQ/1a1752f4dda6/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c160865b6/Mixed.css */
 #AmaiLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -41267,7 +41298,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16780-E6KkhYROzyAQ/1a1752f4de17/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c16086657/LoaderContainer.css */
 #AmaiLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -41289,7 +41320,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16780-E6KkhYROzyAQ/1a1752f4de58/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c160866a8/FullscreenTransition.css */
 #AmaiLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -41316,7 +41347,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16780-E6KkhYROzyAQ/1a1752f4de99/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c160866d9/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
@@ -41424,7 +41455,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16780-E6KkhYROzyAQ/1a1752f4deda/Settings.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c1608674a/Settings.css */
 :is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) {
   display: grid;
   gap: 8px;
@@ -41651,7 +41682,7 @@ ruby > rt {
   border: 1px solid var(--essential-subdued, #818181);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16780-E6KkhYROzyAQ/1a1752f4df2b/SettingsModal.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c160867bb/SettingsModal.css */
 .amai-settings-overlay {
   position: fixed;
   inset: 0;
@@ -41729,7 +41760,7 @@ ruby > rt {
   min-width: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16780-E6KkhYROzyAQ/1a1752f4df6c/Tooltips.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c160867fc/Tooltips.css */
 .tippy-box[data-theme~=amai-lyrics] {
   position: relative;
   background: var(--amai-glass-veil-strong), var(--amai-glass-base-strong) !important;
@@ -41789,7 +41820,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-16780-E6KkhYROzyAQ/1a1752f4dfad/Glassmorphism.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c1608682d/Glassmorphism.css */
 .amai-app-bg-host .Root__nav-bar:not(.amai-lib-grid),
 .amai-app-bg-host #Desktop_LeftSidebar_Id:not(.amai-lib-grid) {
   isolation: isolate;
