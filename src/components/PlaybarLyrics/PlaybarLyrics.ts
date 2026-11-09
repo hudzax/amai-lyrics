@@ -43,6 +43,7 @@ let centerWrapper: HTMLElement | null = null;
 let positionConsumerDisposer: (() => void) | null = null;
 let resizeObserver: ResizeObserver | null = null;
 let lastText = '';
+let lastActiveIdx = -1;
 
 // Handle for the pending "wait for playbar" poll so it can be cancelled on teardown.
 let initWhen: ReturnType<typeof Whentil.When> | null = null;
@@ -82,6 +83,7 @@ function positionLyrics(): void {
 
 function onSongChange(): void {
   lastText = '';
+  lastActiveIdx = -1;
   cachedPlaybarEnabled = null;
   if (lyricsElement) {
     lyricsElement.innerHTML = '';
@@ -108,6 +110,16 @@ function setLyricsText(html: string): void {
     textLayer.className = 'amai-playbar-lyrics-text';
     inner.appendChild(textLayer);
   }
+
+  // A finished marquee keeps the text translated to its end
+  // (`animation-fill-mode: forwards`). Reset it before the new line is
+  // measured: the layout read in the rAF below flushes style while the class
+  // is absent, so re-adding it starts a fresh animation at translateX(0).
+  // Without this, a long line following another long line is stuck showing
+  // only its tail and never reveals its beginning.
+  textLayer.classList.remove('amai-marquee');
+  textLayer.style.removeProperty('--scroll-dist');
+  textLayer.style.removeProperty('--scroll-dur');
 
   textLayer.textContent = '';
   textLayer.appendChild(createRubyFragment(html));
@@ -147,6 +159,7 @@ function clearPlaybarOverlay(): void {
     if (lyricsElement.innerHTML !== '') {
       lyricsElement.innerHTML = '';
       lastText = '';
+      lastActiveIdx = -1;
     }
   }
 }
@@ -196,7 +209,11 @@ function renderPlaybarLine(position: number): void {
   // Active line found -> hide native controls, show lyrics
   centerWrapper.classList.add('amai-hide-controls');
 
-  if (active.text !== lastText) {
+  // Re-render when the active line changes even if its text repeats: a
+  // repeated chorus line is still a new line, and its marquee must restart
+  // instead of holding the previous line's end position.
+  if (activeIdx !== lastActiveIdx || active.text !== lastText) {
+    lastActiveIdx = activeIdx;
     lastText = active.text;
     // enable_romaji changes only via settings UI; reading here is per-lyric (every few seconds), not per-tick, so direct read is fine.
     const enableRomaji = settingsValues.get('enableRomaji');
@@ -216,6 +233,7 @@ function inject(): void {
   wrapper.classList.add('amai-playbar-host');
 
   lastText = '';
+  lastActiveIdx = -1;
   lyricsElement = document.createElement('div');
   lyricsElement.className = 'amai-playbar-lyrics';
   lyricsElement.setAttribute('aria-hidden', 'true');
@@ -253,6 +271,7 @@ function cleanup(): void {
   lyricsElement = null;
   centerWrapper = null;
   lastText = '';
+  lastActiveIdx = -1;
 }
 
 /**
