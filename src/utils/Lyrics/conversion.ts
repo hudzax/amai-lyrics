@@ -147,8 +147,6 @@ export interface LyricsDataLine {
   Raw?: string[];
   Info?: string;
   status?: string;
-  expiresAt?: number;
-  fromCache?: boolean;
 }
 
 export interface LyricsDataStatic {
@@ -158,8 +156,6 @@ export interface LyricsDataStatic {
   Raw?: string[];
   Info?: string;
   status?: string;
-  expiresAt?: number;
-  fromCache?: boolean;
 }
 
 // Syllable-based lyrics are normalized to Line on ingest — the word-by-word
@@ -242,7 +238,11 @@ export function toDocument(stored: unknown): LyricsDocument | null {
   if (candidate.v !== LYRICS_DOCUMENT_VERSION) return null;
   if (candidate.type !== 'Line' && candidate.type !== 'Static') return null;
   if (!Array.isArray(candidate.lines)) return null;
-  return candidate as LyricsDocument;
+  // The version stamp is storage metadata; it never rides the decoded document.
+  const document = { ...candidate };
+  delete document.v;
+  // SAFETY: validated above — v matches, type is Line/Static, lines is an array.
+  return document as LyricsDocument;
 }
 
 /** Maps either payload line shape onto the one line view. */

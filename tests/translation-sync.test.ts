@@ -26,7 +26,7 @@ vi.mock('../src/utils/Lyrics/ui', () => ({
 
 vi.mock('../src/utils/Lyrics/cache', () => ({
   cacheLyrics: vi.fn(),
-  lyricsCache: { get: vi.fn(), set: vi.fn(), remove: vi.fn(), destroy: vi.fn() },
+  destroyLyricsCache: vi.fn(),
 }));
 
 vi.mock('../src/utils/EventManager', () => ({

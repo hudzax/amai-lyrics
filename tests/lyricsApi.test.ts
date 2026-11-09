@@ -13,7 +13,6 @@ vi.mock('../src/utils/Lyrics/ui', () => ({
 vi.mock('../src/utils/Lyrics/processing', () => ({
   processAndEnhanceLyrics: vi.fn(async (_trackId: string, json: unknown) => ({
     ...(json as object),
-    fromCache: false,
   })),
 }));
 
@@ -63,7 +62,7 @@ describe('fetchLyricsFromAPI', () => {
       false,
     );
     expect(mockedEnhance).toHaveBeenCalledWith('track1', response, TOKEN);
-    expect(result).toMatchObject({ id: 'track1', fromCache: false });
+    expect(result).toMatchObject({ id: 'track1' });
   });
 
   it('forwards stale tokens untouched (currency is decided downstream)', async () => {

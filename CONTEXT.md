@@ -397,6 +397,27 @@ document listeners that notice the browser leaving fullscreen behind it, and
 `leave()` clears the mode and notifies even when the page node is already gone,
 so no reader can be left seeing a mode that is no longer presented.
 
+## BoundedCache
+
+The single place that knows how a disk cache stays bounded: expiry stamping
+on write and TTL-on-read, recency-of-write key order with cap eviction,
+hot-reload persistence of that order on window, corrupt-entry-as-miss, and
+destroy.
+Lives in src/utils/BoundedCache.ts. Callers cross it through
+`createBoundedCache` (cache name, max entries, TTL, window namespace) and the
+returned `get`/`set`/`remove`/`destroy` — never through a SpikyCache instance,
+a key-order array, or an expiry field of their own. Each value is wrapped in
+the module's own envelope; a value written in any other shape reads as a miss
+and is evicted, so a format change never needs a dual-read branch. TTL-on-read
+lives here because the Cache API `match` path does not honor SpikyCache's
+`max-age` header.
+
+Two adapters sit at the seam, and value encoding stays with them: the lyrics
+disk cache (src/utils/Lyrics/cache.ts) keeps the document version stamp and
+the NO_LYRICS sentinel rule; SpicyFetch (src/utils/API/SpicyFetch.ts) keeps
+md5 keys, pako compression, and the inflate size guards. Bounding and expiry
+never leave this module.
+
 ## StorageKeys
 
 The single registry of the storage key suffixes the product writes: settings,

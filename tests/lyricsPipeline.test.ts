@@ -22,7 +22,7 @@ vi.mock('../src/utils/Lyrics/LyricsRenderer', () => ({
 vi.mock('../src/utils/Lyrics/cache', () => ({
   getLyricsFromCache: vi.fn(async () => null),
   removeLyricsFromCache: vi.fn(async () => undefined),
-  lyricsCache: { get: vi.fn(), set: vi.fn(), remove: vi.fn(), destroy: vi.fn() },
+  destroyLyricsCache: vi.fn(async () => undefined),
 }));
 vi.mock('../src/utils/Lyrics/api', () => ({
   fetchLyricsFromAPI: vi.fn(),
@@ -59,6 +59,7 @@ import {
   publishEnhancedLyrics,
   publishNoLyrics,
 } from '../src/utils/Lyrics/publish';
+import type { LyricsDocument } from '../src/utils/Lyrics/conversion';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const spicetify = globalThis as any;
@@ -73,7 +74,7 @@ const mockedEnhance = vi.mocked(enhancePreparedLyrics);
 const URI_A = 'spotify:track:trackA';
 const URI_B = 'spotify:track:trackB';
 
-function staticPayload(id: string) {
+function staticPayload(id: string): LyricsDocument {
   return { id, type: 'Static', lines: [{ text: 'hi' }] };
 }
 
@@ -115,7 +116,7 @@ describe('publishInitialLyrics', () => {
     liveItem().uri = URI_B;
     beginLyricsRequest(URI_B);
 
-    expect(publishInitialLyrics(stale, staticPayload('trackA') as never)).toBe(false);
+    expect(publishInitialLyrics(stale, staticPayload('trackA'))).toBe(false);
     expect(mockedStorage.set).not.toHaveBeenCalled();
     expect(mockedEvent.evoke).not.toHaveBeenCalled();
     expect(HideLoaderContainer).not.toHaveBeenCalled();
@@ -126,7 +127,7 @@ describe('publishInitialLyrics', () => {
     liveItem().uri = URI_A;
     const token = beginLyricsRequest(URI_A);
 
-    expect(publishInitialLyrics(token, staticPayload('trackA') as never)).toBe(true);
+    expect(publishInitialLyrics(token, staticPayload('trackA'))).toBe(true);
     expect(mockedStorage.set).toHaveBeenCalledWith(
       StorageKeys.CURRENT_LYRICS_DATA,
       expect.stringContaining('"type":"Static"'),
@@ -147,7 +148,7 @@ describe('publishEnhancedLyrics', () => {
     liveItem().uri = URI_A;
     const token = beginLyricsRequest(URI_A);
 
-    expect(publishEnhancedLyrics(token, 'trackA', staticPayload('trackA') as never)).toBe(true);
+    expect(publishEnhancedLyrics(token, 'trackA', staticPayload('trackA'))).toBe(true);
     expect(updateLyricTranslations).toHaveBeenCalledTimes(1);
     expect(mockedEvent.evoke).toHaveBeenCalledWith(
       SNAPSHOT_UPDATED_EVENT,
@@ -161,7 +162,7 @@ describe('publishEnhancedLyrics', () => {
     liveItem().uri = URI_B;
     beginLyricsRequest(URI_B);
 
-    expect(publishEnhancedLyrics(stale, 'trackA', staticPayload('trackA') as never)).toBe(false);
+    expect(publishEnhancedLyrics(stale, 'trackA', staticPayload('trackA'))).toBe(false);
     expect(updateLyricTranslations).not.toHaveBeenCalled();
     expect(mockedEvent.evoke).not.toHaveBeenCalled();
   });
@@ -194,27 +195,27 @@ describe('publishNoLyrics', () => {
 
 describe('invalidateLyrics', () => {
   it('destroys the whole cache and clears the snapshot without reloading', async () => {
-    const { lyricsCache } = await import('../src/utils/Lyrics/cache');
+    const { destroyLyricsCache } = await import('../src/utils/Lyrics/cache');
 
     await invalidateLyrics({ all: true });
 
-    expect(lyricsCache.destroy).toHaveBeenCalledTimes(1);
+    expect(destroyLyricsCache).toHaveBeenCalledTimes(1);
     expect(mockedStorage.set).toHaveBeenCalledWith(StorageKeys.CURRENT_LYRICS_DATA, null);
     expect(mockedApi).not.toHaveBeenCalled();
   });
 
   it('evicts a single track instead of destroying the cache', async () => {
-    const { lyricsCache, removeLyricsFromCache } = await import('../src/utils/Lyrics/cache');
+    const { destroyLyricsCache, removeLyricsFromCache } = await import('../src/utils/Lyrics/cache');
 
     await invalidateLyrics({ trackId: 'trackA' });
 
     expect(removeLyricsFromCache).toHaveBeenCalledWith('trackA');
-    expect(lyricsCache.destroy).not.toHaveBeenCalled();
+    expect(destroyLyricsCache).not.toHaveBeenCalled();
   });
 
   it('reloads the live track when asked', async () => {
     liveItem().uri = URI_A;
-    mockedApi.mockResolvedValue(staticPayload('trackA') as never);
+    mockedApi.mockResolvedValue(staticPayload('trackA'));
     mockedApply.mockImplementation(() => true);
 
     await invalidateLyrics({ all: true }, { reload: true });
@@ -274,7 +275,7 @@ describe('loadAndApplyLyrics', () => {
 
   it('retries once for the live track when the applyer declines a stale payload', async () => {
     liveItem().uri = URI_B;
-    mockedApi.mockImplementation(async (trackId: string) => staticPayload(trackId) as never);
+    mockedApi.mockImplementation(async (trackId: string) => staticPayload(trackId));
     mockedApply.mockImplementation((lyrics) => (lyrics as { id: string }).id === 'trackB');
 
     const result = await loadAndApplyLyrics(URI_A);
@@ -287,10 +288,7 @@ describe('loadAndApplyLyrics', () => {
   it('applies cache hits through the default fetch entry', async () => {
     liveItem().uri = URI_A;
     const { getLyricsFromCache } = await import('../src/utils/Lyrics/cache');
-    vi.mocked(getLyricsFromCache).mockResolvedValue({
-      ...staticPayload('trackA'),
-      fromCache: true,
-    } as never);
+    vi.mocked(getLyricsFromCache).mockResolvedValue(staticPayload('trackA'));
 
     const result = await fetchLyrics(URI_A);
 

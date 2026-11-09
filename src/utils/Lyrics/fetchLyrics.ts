@@ -12,7 +12,7 @@ import {
   EnsureProcessingIndicatorHidden,
   clearLyricsUiTimeouts,
 } from './ui';
-import { getLyricsFromCache, removeLyricsFromCache, lyricsCache } from './cache';
+import { getLyricsFromCache, removeLyricsFromCache, destroyLyricsCache } from './cache';
 import { readSnapshot, clearSnapshot } from './snapshot';
 import { fetchLyricsFromAPI } from './api';
 import { enhancePreparedLyrics } from './processing';
@@ -241,7 +241,7 @@ export async function invalidateLyrics(
   opts: { reload?: boolean } = {},
 ): Promise<void> {
   if ('all' in target) {
-    await lyricsCache.destroy();
+    await destroyLyricsCache();
   } else {
     await removeLyricsFromCache(target.trackId);
   }
