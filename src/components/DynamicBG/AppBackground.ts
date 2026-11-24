@@ -1,6 +1,6 @@
 import settingsValues from '../../utils/settingsValues';
 import { getGlIntensity, getGlMotionSpeed } from '../../utils/ThemeSettings';
-import { normalizeImageUrl, setRandomCSSVariables, createBackgroundImage } from './utils';
+import { applyCrossfade, normalizeCoverUrl, type CrossfadeSurface } from './CrossfadeCanvas';
 import {
   APP_BG_CLASS,
   APP_BG_CONTAINER_CLASS,
@@ -126,6 +126,26 @@ function findAppBg(host: Element): HTMLElement | null {
 }
 
 /**
+ * The DOM-fallback half of this painter. Host carry, the settings marker and
+ * the WebGL2 takeover stay in AppBackground; everything about the two layers
+ * crosses CrossfadeCanvas through this adapter.
+ */
+const domCrossfadeSurface: CrossfadeSurface = {
+  layerIds: { a: APP_BG_IMG_A_ID, b: APP_BG_IMG_B_ID },
+  findContainer: (host) => {
+    const found = findAppBg(host);
+    // The GPU container shares the classes but has no crossfade layers.
+    return found && !found.classList.contains(APP_BG_GPU_CLASS) ? found : null;
+  },
+  createContainer: () => createAppBgContainer(false),
+  prepareHost: ensureAppBgHostClasses,
+  schedule: (cb) => requestAnimationFrame(cb),
+  onFirstPaint: (container) => {
+    requestAnimationFrame(() => container.classList.add(APP_BG_LOADED_CLASS));
+  },
+};
+
+/**
  * Always-on artwork background for Spotify's app frame.
  * Same dual-image crossfade approach as the lyrics/sidebar backgrounds, but
  * scoped to a direct child of `.Root` (fallback `.Root__top-container`) so one
@@ -155,7 +175,7 @@ export class AppBackground {
     const enabled = isAppBackgroundEnabled();
     if (!enabled) return;
     syncAppBgMarker(true);
-    const normalized = normalizeImageUrl(coverUrl);
+    const normalized = normalizeCoverUrl(coverUrl);
     if (!normalized) return;
     coverUrl = normalized;
 
@@ -222,22 +242,7 @@ export class AppBackground {
 
       if (coverUrl === this.cached.lastImgUrl && this.cached.dynamicBg) return;
 
-      if (!this.cached.dynamicBg) {
-        this.createNewBackground(host, coverUrl);
-      } else {
-        const imgA = this.cached.dynamicBg.querySelector(
-          `#${APP_BG_IMG_A_ID}`,
-        ) as HTMLImageElement | null;
-        const imgB = this.cached.dynamicBg.querySelector(
-          `#${APP_BG_IMG_B_ID}`,
-        ) as HTMLImageElement | null;
-        if (!imgA || !imgB) {
-          this.createNewBackground(host, coverUrl);
-        } else {
-          this.updateExistingBackground({ imgA, imgB }, coverUrl);
-        }
-      }
-
+      this.cached.dynamicBg = applyCrossfade(host, coverUrl, domCrossfadeSurface);
       this.cached.lastImgUrl = coverUrl;
     } catch (error) {
       console.error('Error Applying the Dynamic BG to the App:', error);
@@ -442,78 +447,6 @@ export class AppBackground {
     this.cached.dynamicBg = null;
     this.cached.lastImgUrl = null;
     if (isAppBackgroundEnabled()) this.apply(this.lastCoverUrl ?? undefined);
-  }
-
-  private createNewBackground(host: Element, coverUrl: string): void {
-    // Scoped to the canvas element: vars inherit to the <img> children without
-    // invalidating every other var() consumer document-wide.
-    const dynamicBackground = createAppBgContainer(false);
-    dynamicBackground.setAttribute('current-img', coverUrl);
-    setRandomCSSVariables(dynamicBackground);
-
-    // A remount can leave a stale node behind while cache was cleared.
-    findAppBg(host)?.remove();
-
-    const placeholder = document.createElement('div');
-    placeholder.className = 'placeholder';
-    dynamicBackground.appendChild(placeholder);
-
-    const imgA = createBackgroundImage(
-      APP_BG_IMG_A_ID,
-      'bg-image primary active',
-      coverUrl,
-      'eager',
-    );
-    dynamicBackground.appendChild(imgA);
-
-    const imgB = createBackgroundImage(APP_BG_IMG_B_ID, 'bg-image secondary', '', 'lazy');
-    dynamicBackground.appendChild(imgB);
-
-    ensureAppBgHostClasses(host);
-    host.appendChild(dynamicBackground);
-
-    imgA.onload = () => {
-      requestAnimationFrame(() => {
-        dynamicBackground.classList.add(APP_BG_LOADED_CLASS);
-      });
-      // Drop the blurred placeholder layer once real pixels exist — otherwise
-      // it paints (radial-gradient + blur) behind every frame forever.
-      placeholder.remove();
-    };
-
-    this.cached.dynamicBg = dynamicBackground;
-  }
-
-  private updateExistingBackground(
-    images: { imgA: HTMLImageElement; imgB: HTMLImageElement },
-    coverUrl: string,
-  ): void {
-    const { imgA, imgB } = images;
-    // Already showing (or already loading) this URL on either layer — skip the
-    // redundant fetch/decode. `src` is absolute; coverUrl is normalized absolute.
-    if (imgA.src === coverUrl || imgB.src === coverUrl) {
-      this.cached.dynamicBg?.setAttribute('current-img', coverUrl);
-      return;
-    }
-    const activeImg = imgA.classList.contains('active') ? imgA : imgB;
-    const inactiveImg = activeImg === imgA ? imgB : imgA;
-
-    // Clear previous handlers so fast skips don't fire stale onloads.
-    // Assign handlers BEFORE setting src — cached images may fire load synchronously.
-    inactiveImg.onload = null;
-    inactiveImg.onerror = null;
-    inactiveImg.onload = () => {
-      if (inactiveImg.src !== coverUrl) return;
-      requestAnimationFrame(() => {
-        activeImg.classList.remove('active');
-        inactiveImg.classList.add('active');
-        this.cached.dynamicBg?.setAttribute('current-img', coverUrl);
-      });
-    };
-    inactiveImg.onerror = () => {
-      console.error('Error loading new background image:', coverUrl);
-    };
-    inactiveImg.src = coverUrl;
   }
 }
 

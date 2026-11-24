@@ -1,6 +1,6 @@
 import fastdom from 'fastdom';
 import { measureAsync, mutateAsync } from '../../utils/fastdomAsync';
-import { normalizeImageUrl, setRandomCSSVariables, createBackgroundImage } from './utils';
+import { applyCrossfade, normalizeCoverUrl, type CrossfadeSurface } from './CrossfadeCanvas';
 import {
   APP_BG_CONTAINER_CLASS,
   APP_BG_HOST_HELPER_CLASS,
@@ -16,6 +16,24 @@ interface BackgroundCache {
   dynamicBg: HTMLElement | null;
   lastImgUrl: string | null;
 }
+
+/** The sidebar's slot on the crossfade seam: nested layer ids, a plain
+ * container, the helper host class and FastDOM mutation scheduling. */
+const sidebarCrossfadeSurface: CrossfadeSurface = {
+  layerIds: { a: NESTED_BG_IMG_A_ID, b: NESTED_BG_IMG_B_ID },
+  findContainer: (host) => host.querySelector<HTMLDivElement>(`.${APP_BG_CONTAINER_CLASS}`),
+  createContainer: () => {
+    const container = document.createElement('div');
+    container.className = APP_BG_CONTAINER_CLASS;
+    return container;
+  },
+  prepareHost: (host) => host.classList.add(APP_BG_HOST_HELPER_CLASS),
+  schedule: (cb) => fastdom.mutate(cb),
+  onFirstPaint: (container) => {
+    if (!container.isConnected) return;
+    container.classList.add(APP_BG_LOADED_CLASS);
+  },
+};
 
 export class NowPlayingBarBackground {
   private cached: BackgroundCache = {
@@ -38,7 +56,7 @@ export class NowPlayingBarBackground {
     // recording lastImgUrl so the toggle-off refresh (see app.tsx
     // 'amai:appbg-changed' handler) actually repaints instead of dedup-hitting.
     if (document.documentElement.classList.contains(APP_BG_ON_CLASS)) return;
-    const targetUrl = normalizeImageUrl(coverUrl);
+    const targetUrl = normalizeCoverUrl(coverUrl ?? '');
     if (!targetUrl) return;
 
     // Quick check for cached values to avoid unnecessary work
@@ -48,21 +66,9 @@ export class NowPlayingBarBackground {
 
     void (async () => {
       try {
-        const { nowPlayingBar, hasDynamicBg, images } = await measureAsync(() => {
-          const bar = document.querySelector(anySurface('nowPlayingPanel'));
-          const hasBg = !!this.cached.dynamicBg;
-          const imgs = this.cached.dynamicBg
-            ? {
-                imgA: this.cached.dynamicBg.querySelector(
-                  `#${NESTED_BG_IMG_A_ID}`,
-                ) as HTMLImageElement,
-                imgB: this.cached.dynamicBg.querySelector(
-                  `#${NESTED_BG_IMG_B_ID}`,
-                ) as HTMLImageElement,
-              }
-            : null;
-          return { nowPlayingBar: bar, hasDynamicBg: hasBg, images: imgs };
-        });
+        const nowPlayingBar = await measureAsync(() =>
+          document.querySelector(anySurface('nowPlayingPanel')),
+        );
 
         if (!nowPlayingBar || !nowPlayingBar.isConnected) {
           this.clearCache();
@@ -77,16 +83,8 @@ export class NowPlayingBarBackground {
             return;
           }
 
-          if (this.cached.nowPlayingBar !== nowPlayingBar) {
-            this.cached.nowPlayingBar = nowPlayingBar;
-          }
-
-          if (!hasDynamicBg) {
-            this.createNewBackground(nowPlayingBar, targetUrl);
-          } else if (images) {
-            this.updateExistingBackground(images, targetUrl);
-          }
-
+          this.cached.nowPlayingBar = nowPlayingBar;
+          this.cached.dynamicBg = applyCrossfade(nowPlayingBar, targetUrl, sidebarCrossfadeSurface);
           this.cached.lastImgUrl = targetUrl;
         });
       } catch (error) {
@@ -102,77 +100,6 @@ export class NowPlayingBarBackground {
     this.cached.dynamicBg = null;
     this.cached.nowPlayingBar = null;
     this.pendingUrl = null;
-  }
-
-  private createNewBackground(nowPlayingBar: Element, coverUrl: string) {
-    const dynamicBackground = document.createElement('div');
-    dynamicBackground.className = APP_BG_CONTAINER_CLASS;
-    dynamicBackground.setAttribute('current-img', coverUrl);
-    // Scoped vars: inherit to the <img> children without a document-wide recalc.
-    setRandomCSSVariables(dynamicBackground);
-
-    const placeholder = document.createElement('div');
-    placeholder.className = 'placeholder';
-    dynamicBackground.appendChild(placeholder);
-
-    const imgA = createBackgroundImage(
-      NESTED_BG_IMG_A_ID,
-      'bg-image primary active',
-      coverUrl,
-      'eager',
-    );
-    dynamicBackground.appendChild(imgA);
-
-    const imgB = createBackgroundImage(NESTED_BG_IMG_B_ID, 'bg-image secondary', '', 'lazy');
-    dynamicBackground.appendChild(imgB);
-
-    // Add container to DOM
-    nowPlayingBar.classList.add(APP_BG_HOST_HELPER_CLASS);
-    nowPlayingBar.appendChild(dynamicBackground);
-
-    // Mark as loaded after image loads
-    imgA.onload = () => {
-      if (!dynamicBackground.isConnected) return;
-      fastdom.mutate(() => {
-        if (!dynamicBackground.isConnected) return;
-        dynamicBackground.classList.add(APP_BG_LOADED_CLASS);
-        // Drop the blurred placeholder layer once real pixels exist.
-        placeholder.remove();
-      });
-    };
-
-    this.cached.dynamicBg = dynamicBackground;
-  }
-
-  private updateExistingBackground(
-    images: { imgA: HTMLImageElement; imgB: HTMLImageElement },
-    coverUrl: string,
-  ) {
-    const { imgA, imgB } = images;
-    const activeImg = imgA.classList.contains('active') ? imgA : imgB;
-    const inactiveImg = activeImg === imgA ? imgB : imgA;
-
-    // Clear previous handlers so fast skips don't fire stale onloads.
-    // Assign handlers BEFORE setting src — cached images may fire load synchronously.
-    inactiveImg.onload = null;
-    inactiveImg.onerror = null;
-    inactiveImg.onload = () => {
-      if (inactiveImg.src !== coverUrl) return;
-      fastdom.mutate(() => {
-        if (inactiveImg.src !== coverUrl) return;
-        // Swap active classes
-        activeImg.classList.remove('active');
-        inactiveImg.classList.add('active');
-
-        // Update container attribute
-        this.cached.dynamicBg?.setAttribute('current-img', coverUrl);
-      });
-    };
-    inactiveImg.onerror = () => {
-      console.error('Error loading new background image:', coverUrl);
-    };
-    // Update the inactive image source after handlers are in place
-    inactiveImg.src = coverUrl;
   }
 
   /** Clear cached state when the NowPlayingView is no longer mounted. */

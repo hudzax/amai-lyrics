@@ -103,6 +103,43 @@ app-frame apply/remove (src/utils/settings.ts, which re-notifies the seam via
 `amai:appbg-changed`). refreshStaticSurfaces is the internal static repaint
 used by mount and the launch waiter; it currently has no external callers.
 
+## CrossfadeCanvas
+
+The single owner of the two-layer artwork canvas behind all three artwork
+surfaces: container find-or-create, the placeholder, the two `<img>` layers,
+URL normalization, dedup, stale-handler cancellation, the load guard, the
+class swap, `current-img` and the placeholder's lifetime. Lives in
+src/components/DynamicBG/CrossfadeCanvas.ts. Callers cross it through one
+stateless `applyCrossfade(host, url, surface)` — never through a layer id, a
+class write, a `current-img` attribute or a normalized URL of their own. The
+callers' caches (`lastImgUrl`, `pendingUrl`, `cached.dynamicBg`) and host
+resolution stay outside it; so does the app-frame painter's WebGL2 branch,
+which writes `current-img` on its own GPU container. `normalizeCoverUrl` is
+exported for the app-frame painter's GL branch, which still needs a normalized
+URL before handing it to the renderer. Per-canvas load state (paint
+generation plus each layer's last loaded and failed URL) lives in a WeakMap
+keyed by the container; callers' caches stay outside. There is no instance to
+construct, track or tear down.
+
+Three surfaces cross the seam as `CrossfadeSurface` adapters: the app frame
+(GL-aware `findAppBg`, `createAppBgContainer`, `ensureAppBgHostClasses`,
+`requestAnimationFrame`, loaded marker), the sidebar (nested ids, plain
+container, helper host class, `fastdom.mutate`, loaded marker), and the lyrics
+page (nested ids, plain container, no host class, `requestAnimationFrame`,
+re-randomized vars on swap). Two optional hooks (`onFirstPaint`, `onSwap`) are
+where those paint habits live; they do not widen the callable interface.
+
+Dedup is deliberately active-layer-only: a URL parked on the inactive layer
+from an earlier crossfade must still be swapped back, or a fast back-skip
+leaves the previous cover showing. The inactive layer is committed directly
+only when it actually loaded that URL, because assigning the same `src` need
+not fire a load event; a failed `src` is cleared and reloaded instead. Every
+paint carries a generation token, so a commit queued behind a frame or FastDOM
+callback is dropped once a newer cover has been requested. First-paint handlers
+are bound before `src` is assigned, so a cached image that loads synchronously
+still removes the placeholder and fires `onFirstPaint`. Coalescing is the
+lyrics page's own concern and is per element (WeakMap), not module-wide.
+
 ## LyricsRenderer
 
 The single place that paints lyrics onto the page: container lookup, clear,

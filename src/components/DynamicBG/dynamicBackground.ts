@@ -1,6 +1,6 @@
 import { SpotifyPlayer } from '../Global/SpotifyPlayer';
 import { debounce } from '../../utils/debounce';
-import { normalizeImageUrl, setRandomCSSVariables, createBackgroundImage } from './utils';
+import { applyCrossfade, randomizeBackgroundVars, type CrossfadeSurface } from './CrossfadeCanvas';
 import {
   APP_BG_CONTAINER_CLASS,
   APP_BG_ON_CLASS,
@@ -23,121 +23,60 @@ function isHiddenByAppCanvas(element: HTMLElement): boolean {
 }
 
 /**
- * Creates or updates the dynamic background elements.
- * Uses two image elements for cross-fading.
- * Relies on CSS for blur, transitions, and animations.
+ * The lyrics page's slot on the crossfade seam: nested layer ids, a plain
+ * container, no host class, frame scheduling and a re-randomization on every
+ * swap (the page's artwork is intentionally more restless than the other two).
  */
-async function setupDynamicBackground(
-  element: HTMLElement,
-  imageUrl: string,
-): Promise<HTMLDivElement> {
-  let bgContainer = element.querySelector(`.${APP_BG_CONTAINER_CLASS}`) as HTMLDivElement | null;
+const lyricsPageCrossfadeSurface: CrossfadeSurface = {
+  layerIds: { a: NESTED_BG_IMG_A_ID, b: NESTED_BG_IMG_B_ID },
+  findContainer: (host) => host.querySelector<HTMLDivElement>(`.${APP_BG_CONTAINER_CLASS}`),
+  createContainer: () => {
+    const container = document.createElement('div');
+    container.className = APP_BG_CONTAINER_CLASS;
+    return container;
+  },
+  prepareHost: () => {},
+  schedule: (cb) => requestAnimationFrame(cb),
+  onSwap: (container) => randomizeBackgroundVars(container),
+};
 
-  if (!bgContainer) {
-    bgContainer = document.createElement('div');
-    bgContainer.className = APP_BG_CONTAINER_CLASS;
-    bgContainer.setAttribute('current-img', imageUrl);
+type DebouncedApply = ((host: HTMLElement, url: string) => void) & { cancel: () => void };
 
-    const placeholder = document.createElement('div');
-    placeholder.className = 'placeholder';
-    bgContainer.appendChild(placeholder);
+/**
+ * Coalescing is per element, not module-wide: a module-level debounce let one
+ * container's pending update cancel another's. WeakMap entries die with the
+ * element, so there is no second lifetime to tear down.
+ */
+const pendingByElement = new WeakMap<HTMLElement, DebouncedApply>();
 
-    const imgA = createBackgroundImage(
-      NESTED_BG_IMG_A_ID,
-      'bg-image primary active',
-      imageUrl,
-      'eager',
-    );
-    imgA.addEventListener(
-      'load',
-      () => {
-        if (placeholder.parentNode) placeholder.parentNode.removeChild(placeholder);
-      },
-      { once: true, passive: true },
-    );
-    bgContainer.appendChild(imgA);
-
-    const imgB = createBackgroundImage(NESTED_BG_IMG_B_ID, 'bg-image secondary', '', 'lazy');
-    bgContainer.appendChild(imgB);
-
-    element.appendChild(bgContainer);
-    setRandomCSSVariables(bgContainer);
+function debouncedApply(element: HTMLElement, url: string): void {
+  let apply = pendingByElement.get(element);
+  if (!apply) {
+    apply = debounce((host: HTMLElement, cover: string) => {
+      applyCrossfade(host, cover, lyricsPageCrossfadeSurface);
+    }, 100);
+    pendingByElement.set(element, apply);
   }
-
-  return bgContainer;
+  apply(element, url);
 }
 
 /**
- * Updates the dynamic background with a new image using crossfade.
- */
-const updateDynamicBackground = debounce((bgContainer: HTMLDivElement, newImageUrl: string) => {
-  const imgA = bgContainer.querySelector(`#${NESTED_BG_IMG_A_ID}`) as HTMLImageElement;
-  const imgB = bgContainer.querySelector(`#${NESTED_BG_IMG_B_ID}`) as HTMLImageElement;
-
-  if (!imgA || !imgB) {
-    console.error('Dynamic background image elements not found!');
-    return;
-  }
-
-  const activeImg = imgA.classList.contains('active') ? imgA : imgB;
-  const inactiveImg = activeImg === imgA ? imgB : imgA;
-
-  if (inactiveImg.src === newImageUrl) return;
-
-  // Null out previous handlers so a rapid skip doesn't fire stale onload for the wrong URL.
-  // Assign handlers BEFORE setting src — if image is cached, load may fire synchronously
-  // in some engines and would be missed if src is set first.
-  inactiveImg.onload = null;
-  inactiveImg.onerror = null;
-  inactiveImg.onload = () => {
-    // Ignore if src changed since this load was initiated (race from fast skip).
-    if (inactiveImg.src !== newImageUrl) return;
-    requestAnimationFrame(() => {
-      activeImg.classList.remove('active');
-      inactiveImg.classList.add('active');
-      bgContainer.setAttribute('current-img', newImageUrl);
-      setRandomCSSVariables(bgContainer);
-    });
-  };
-  inactiveImg.onerror = () => {
-    console.error('Error loading new background image:', newImageUrl);
-  };
-  inactiveImg.src = newImageUrl;
-}, 100);
-
-/**
- * Main function to apply the dynamic background to a given element.
- * Fetches the current artwork and calls setup/update functions.
+ * Paint the live track's cover onto the lyrics page's backdrop. The first
+ * paint is immediate; subsequent crossfades are coalesced per element.
  */
 export default async function ApplyDynamicBackground(element: HTMLElement) {
   if (!element) return;
-  // Hidden behind the app-frame canvas (see isHiddenByAppCanvas) — skip the
-  // artwork fetch + decode. Deliberately returns before touching
-  // `current-img` so the toggle-off refresh repaints instead of dedup-hitting.
+  // Hidden behind the app-frame canvas — skip the artwork fetch + decode.
+  // Deliberately returns before touching the container so the toggle-off
+  // refresh repaints instead of dedup-hitting.
   if (isHiddenByAppCanvas(element)) return;
 
   const rawCover = await SpotifyPlayer.Artwork.Get('d');
-  const currentImgCover = normalizeImageUrl(rawCover) ?? rawCover;
+  if (!rawCover) return;
 
-  // Ensure the container and images are set up
-  const bgContainer = await setupDynamicBackground(element, currentImgCover);
-
-  // Check if the image needs updating
-  const displayedImg = bgContainer.getAttribute('current-img');
-  if (displayedImg !== currentImgCover) {
-    updateDynamicBackground(bgContainer, currentImgCover);
+  if (!lyricsPageCrossfadeSurface.findContainer(element)) {
+    applyCrossfade(element, rawCover, lyricsPageCrossfadeSurface);
+    return;
   }
-
-  /*
-  // --- Original logic for setting CSS variables ---
-  // Kept here for reference, now integrated into setup/update
-  // Set random rotation degrees for variety
-  const rotationPrimary = Math.floor(Math.random() * 360);
-  const rotationSecondary = Math.floor(Math.random() * 360);
-  document.documentElement.style.setProperty(
-    '--bg-rotation-primary',
-    `${rotationPrimary}deg`, // Example: Keep setting variables if needed
-  );
-  // ... rest of variable setting ...
-  */
+  debouncedApply(element, rawCover);
 }
