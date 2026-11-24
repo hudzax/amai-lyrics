@@ -8,19 +8,11 @@ import {
   syncAppBgMarker,
   watchLibraryGridState,
 } from './AppBackground';
-import { syncLibraryGridState } from './identity';
+import { APP_BG_LIB_GRID_CLASS, syncLibraryGridState } from './identity';
 import { anySurface } from '../../constants/SpotifyDom';
 import { PageViewSelectors } from '../../constants/PageViewSelectors';
 import Fullscreen from '../Utils/Fullscreen';
 import { NowPlayingBarBackground } from './NowPlayingBarBackground';
-
-/**
- * Re-dispatched by the settings toggle after the app-frame flag changes so the
- * live surfaces (which own their instances and caches) can repaint canvases
- * that skipped their work while hidden. settings.ts dispatches the literal
- * event name; this constant is the single seam for listeners.
- */
-export const APP_BG_CHANGED_EVENT = 'amai:appbg-changed';
 
 /** Coalescing window for song-change fan-out: only the settled track paints. */
 const FAN_OUT_DELAY_MS = 500;
@@ -59,7 +51,8 @@ function readLiveCoverUrl(): string | undefined {
 export interface ArtworkSurfaceAdapters {
   applySidebar(coverUrl: string | undefined): void;
   applyAppFrame(coverUrl: string | undefined): void;
-  applyLyricsPage(): void;
+  removeAppFrame(): void;
+  applyLyricsPage(shouldPaint: () => boolean): Promise<void>;
   publishAccents(coverUrl: string | undefined): void;
   readCoverUrl(): string | undefined;
   isAppFrameApplied(): boolean;
@@ -73,18 +66,16 @@ export function createDefaultAdapters(sidebarBg: NowPlayingBarBackground): Artwo
       sidebarBg.apply(coverUrl);
     },
     applyAppFrame: (coverUrl) => {
-      // Enabled-check first: the toggle defaults off, so the disabled path
-      // costs one storage read and zero DOM queries.
-      if (!isAppBackgroundEnabled()) return;
       if (!resolveAppBgHost()) return;
       appBackgroundSingleton.apply(coverUrl);
     },
-    applyLyricsPage: () => {
-      if (!document.querySelector(PageViewSelectors.LyricsContainer)) return;
-      void import('./dynamicBackground').then(({ default: ApplyDynamicBackground }) => {
-        const el = document.querySelector<HTMLElement>(PageViewSelectors.ContentBox);
-        if (el) ApplyDynamicBackground(el);
-      });
+    removeAppFrame: () => appBackgroundSingleton.remove(),
+    applyLyricsPage: async (shouldPaint) => {
+      if (!document.querySelector(PageViewSelectors.LyricsContainer) || !shouldPaint()) return;
+      const { default: ApplyDynamicBackground } = await import('./dynamicBackground');
+      if (!shouldPaint()) return;
+      const el = document.querySelector<HTMLElement>(PageViewSelectors.ContentBox);
+      if (el) await ApplyDynamicBackground(el, shouldPaint);
     },
     publishAccents: (coverUrl) => {
       void import('../../utils/ArtworkColors').then(({ publishArtworkAccents }) => {
@@ -99,11 +90,9 @@ export function createDefaultAdapters(sidebarBg: NowPlayingBarBackground): Artwo
 /**
  * ArtworkSurfaces: one deep module behind every artwork-derived surface.
  *
- * Interface: mount plus applyArtwork plus refreshStaticSurfaces plus
- * cancelPending plus destroy. Everything else (debounce ownership, host
- * resolution, remount observers, toggle refresh, accent seeding) sits behind
- * the seam, so client-update and toggle fixes land in one module and tests
- * cross the same small interface through injected adapters.
+ * Mode reconciliation, page-open painting, debounce ownership, remount
+ * observers and accent seeding stay behind one interface. Tests inject surface
+ * adapters and cross the same seam as settings, startup and PageView.
  */
 export class ArtworkSurfaces {
   private readonly adapters: ArtworkSurfaceAdapters;
@@ -111,11 +100,11 @@ export class ArtworkSurfaces {
   private readonly debouncedFanOut: ((coverUrl: string | undefined) => void) & {
     cancel: () => void;
   };
-  private readonly toggleHandler: () => void;
   private sidebarObserver: MutationObserver | null = null;
   private sidebarLateObserver: MutationObserver | null = null;
   private appFrameObserver: MutationObserver | null = null;
   private gridObserver: MutationObserver | null = null;
+  private gridObserverTracked = false;
   private appFrameRafQueued = false;
   private firstPaintWaiter: ReturnType<typeof Whentil.When> | null = null;
   private unsubscribeFullscreen: (() => void) | null = null;
@@ -130,12 +119,14 @@ export class ArtworkSurfaces {
       // waiter's paint, nor cancel the waiter while there is still nothing.
       const effective = coverUrl ?? this.adapters.readCoverUrl();
       if (effective) this.clearFirstPaintWaiter();
-      this.adapters.applySidebar(effective);
-      this.adapters.applyAppFrame(effective);
-      this.adapters.applyLyricsPage();
+      if (isAppBackgroundEnabled()) {
+        this.adapters.applyAppFrame(effective);
+      } else {
+        this.adapters.applySidebar(effective);
+        void this.paintLyricsPageIfVisible();
+      }
       this.adapters.publishAccents(effective);
     }, FAN_OUT_DELAY_MS);
-    this.toggleHandler = () => this.refreshAfterToggle();
   }
 
   /** Debounced fan-out for song changes: rapid skips repaint once. */
@@ -143,11 +134,64 @@ export class ArtworkSurfaces {
     this.debouncedFanOut(coverUrl ?? this.adapters.readCoverUrl());
   }
 
-  /** Immediate repaint of the static canvases (init, remount, toggle). */
-  public refreshStaticSurfaces(): void {
+  private refreshStaticSurfaces(): void {
     const coverUrl = this.adapters.readCoverUrl();
+    if (isAppBackgroundEnabled()) {
+      this.adapters.applyAppFrame(coverUrl);
+    } else {
+      this.adapters.applySidebar(coverUrl);
+    }
+  }
+
+  private applySidebarIfVisible(): void {
+    if (!isAppBackgroundEnabled()) this.adapters.applySidebar(this.adapters.readCoverUrl());
+  }
+
+  public async setThemeEnabled(enabled: boolean): Promise<void> {
+    syncAppBgMarker(enabled);
+    const coverUrl = this.adapters.readCoverUrl();
+    if (enabled) {
+      this.adapters.applyAppFrame(coverUrl);
+      syncLibraryGridState();
+      this.ensureGridObserver();
+      return;
+    }
+
+    this.adapters.removeAppFrame();
+    this.stopGridObserver();
+    this.clearGridMarker();
     this.adapters.applySidebar(coverUrl);
-    this.adapters.applyAppFrame(coverUrl);
+    await this.paintLyricsPageIfVisible();
+  }
+
+  public refreshLyricsPage(): Promise<void> {
+    return this.paintLyricsPageIfVisible();
+  }
+
+  private async paintLyricsPageIfVisible(): Promise<void> {
+    const shouldPaint = () => !isAppBackgroundEnabled();
+    if (!shouldPaint()) return;
+    await this.adapters.applyLyricsPage(shouldPaint);
+  }
+
+  private ensureGridObserver(): void {
+    if (this.gridObserver) return;
+    const observer = watchLibraryGridState();
+    if (!observer) return;
+    this.gridObserver = observer;
+    if (!this.gridObserverTracked) {
+      this.gridObserverTracked = true;
+      lifecycle.trackCallback(() => this.stopGridObserver());
+    }
+  }
+
+  private stopGridObserver(): void {
+    this.gridObserver?.disconnect();
+    this.gridObserver = null;
+  }
+
+  private clearGridMarker(): void {
+    document.querySelector(anySurface('sidebar'))?.classList.remove(APP_BG_LIB_GRID_CLASS);
   }
 
   /** Cancel pending debounced work: call on teardown to avoid leaks. */
@@ -155,30 +199,31 @@ export class ArtworkSurfaces {
     this.debouncedFanOut.cancel();
   }
 
-  /** Wire observers and the toggle refresh, then paint the initial surfaces. */
+  /** Reconcile stored mode, wire observers, then paint the initial surfaces. */
   public mount(): void {
-    syncAppBgMarker();
-    syncLibraryGridState();
+    const enabled = isAppBackgroundEnabled();
+    syncAppBgMarker(enabled);
+    if (enabled) {
+      syncLibraryGridState();
+      this.ensureGridObserver();
+    } else {
+      this.clearGridMarker();
+    }
     this.paintInitialSurfaces();
     this.waitForFirstArtwork();
     this.watchSidebar();
     this.watchAppFrameHost();
-    this.gridObserver = watchLibraryGridState();
-    if (this.gridObserver) lifecycle.trackObserver(this.gridObserver);
-    window.addEventListener(APP_BG_CHANGED_EVENT, this.toggleHandler);
-    lifecycle.trackCallback(() =>
-      window.removeEventListener(APP_BG_CHANGED_EVENT, this.toggleHandler),
-    );
     // Fullscreen moves the lyrics page out of `.Root` (TransferElement) and
     // into the UA top layer, where a `.Root`-child canvas would be buried behind
     // Spotify's own UI — `resolveAppBgHost` follows the page, so re-applying the
     // app frame pulls the canvas in with it on entry and back out on exit. The
-    // page's own backdrop stays hidden while the app canvas is live (see
-    // `dynamicBackground.isHiddenByAppCanvas`); applyLyricsPage still covers the
-    // app-bg-off case where the backdrop node may be missing.
+    // page backdrop is painted only when app-frame mode is off.
     this.unsubscribeFullscreen = Fullscreen.subscribe((fullscreen) => {
-      this.adapters.applyAppFrame(this.adapters.readCoverUrl());
-      if (fullscreen) this.adapters.applyLyricsPage();
+      if (isAppBackgroundEnabled()) {
+        this.adapters.applyAppFrame(this.adapters.readCoverUrl());
+      } else if (fullscreen) {
+        void this.paintLyricsPageIfVisible();
+      }
     });
     lifecycle.trackCallback(() => this.unsubscribeFullscreen?.());
   }
@@ -187,17 +232,15 @@ export class ArtworkSurfaces {
   public destroy(): void {
     this.cancelPending();
     this.clearFirstPaintWaiter();
-    window.removeEventListener(APP_BG_CHANGED_EVENT, this.toggleHandler);
     this.sidebarObserver?.disconnect();
     this.sidebarLateObserver?.disconnect();
     this.appFrameObserver?.disconnect();
-    this.gridObserver?.disconnect();
+    this.stopGridObserver();
     this.unsubscribeFullscreen?.();
     this.unsubscribeFullscreen = null;
     this.sidebarObserver = null;
     this.sidebarLateObserver = null;
     this.appFrameObserver = null;
-    this.gridObserver = null;
     this.sidebarBg.destroy();
     appBackgroundSingleton.destroy();
   }
@@ -233,24 +276,10 @@ export class ArtworkSurfaces {
     this.firstPaintWaiter = null;
   }
 
-  /**
-   * Toggle refresh: hidden canvases skip their work while the app canvas is
-   * live, so toggling off must repaint them through the live adapters.
-   */
-  private refreshAfterToggle(): void {
-    if (isAppBackgroundEnabled()) return;
-    const lateGrid = watchLibraryGridState();
-    if (lateGrid) lifecycle.trackObserver(lateGrid);
-    this.adapters.applySidebar(this.adapters.readCoverUrl());
-    this.adapters.applyLyricsPage();
-  }
-
   /** Observe sidebar mount so opening the Now Playing View paints at once. */
   private watchSidebar(): void {
     const apply = () => {
-      if (document.querySelector(NOW_PLAYING_PANEL)) {
-        this.adapters.applySidebar(this.adapters.readCoverUrl());
-      }
+      if (document.querySelector(NOW_PLAYING_PANEL)) this.applySidebarIfVisible();
     };
     const observer = new MutationObserver(apply);
     const root = sidebarRegion() ?? document.body;
@@ -317,3 +346,5 @@ export class ArtworkSurfaces {
     lifecycle.trackObserver(observer);
   }
 }
+
+export const artworkSurfacesSingleton = new ArtworkSurfaces();

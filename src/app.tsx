@@ -9,8 +9,7 @@ import { ButtonManager } from './managers/ButtonManager';
 import { EventManager } from './managers/EventManager';
 import { PageManager } from './managers/PageManager';
 import { SongChangeManager } from './managers/SongChangeManager';
-import { ArtworkSurfaces } from './components/DynamicBG/ArtworkSurfaces';
-export { APP_BG_CHANGED_EVENT } from './components/DynamicBG/ArtworkSurfaces';
+import { artworkSurfacesSingleton } from './components/DynamicBG/ArtworkSurfaces';
 import PageView from './components/Pages/PageView';
 import { installBlankToastSuppressor } from './utils/suppressBlankToasts';
 import { installHoverTooltips } from './utils/hoverTooltip';
@@ -52,7 +51,7 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
 
   // Set up managers: one artwork seam owns every background canvas plus the
   // accent publish, so song changes and remounts fan out from a single module.
-  const surfaces = new ArtworkSurfaces();
+  const surfaces = artworkSurfacesSingleton;
   surfaces.mount();
   lifecycle.trackCallback(() => surfaces.destroy());
   const songChangeManager = new SongChangeManager(buttonManager, surfaces);

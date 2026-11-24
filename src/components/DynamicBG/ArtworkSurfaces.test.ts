@@ -13,30 +13,40 @@ vi.mock('../NowBar/NowBar', () => ({
 vi.mock('../../utils/Scrolling/AutoScroll', () => ({ AutoScroll: { reset: vi.fn() } }));
 
 import Fullscreen from '../Utils/Fullscreen';
-import {
-  APP_BG_CHANGED_EVENT,
-  ArtworkSurfaces,
-  type ArtworkSurfaceAdapters,
-} from './ArtworkSurfaces';
+import storage from '../../utils/storage';
+import { StorageKeys } from '../../utils/storageKeys';
+import lifecycle from '../../utils/lifecycle';
+import { APP_BG_LIB_GRID_CLASS, APP_BG_ON_CLASS } from './identity';
+import { ArtworkSurfaces } from './ArtworkSurfaces';
 
 interface SurfaceCalls {
   sidebar: (string | undefined)[];
   appFrame: (string | undefined)[];
+  appFrameRemoved: number;
   page: number;
   accents: (string | undefined)[];
 }
 
 function setupFakes(firstUrl: string | undefined = 'live-cover') {
-  const calls: SurfaceCalls = { sidebar: [], appFrame: [], page: 0, accents: [] };
+  const calls: SurfaceCalls = {
+    sidebar: [],
+    appFrame: [],
+    appFrameRemoved: 0,
+    page: 0,
+    accents: [],
+  };
   let currentUrl: string | undefined = firstUrl;
-  const adapters: ArtworkSurfaceAdapters = {
+  const adapters = {
     applySidebar: vi.fn((coverUrl: string | undefined) => {
       calls.sidebar.push(coverUrl);
     }),
     applyAppFrame: vi.fn((coverUrl: string | undefined) => {
       calls.appFrame.push(coverUrl);
     }),
-    applyLyricsPage: vi.fn(() => {
+    removeAppFrame: vi.fn(() => {
+      calls.appFrameRemoved += 1;
+    }),
+    applyLyricsPage: vi.fn(async () => {
       calls.page += 1;
     }),
     publishAccents: vi.fn((coverUrl: string | undefined) => {
@@ -55,9 +65,10 @@ let surfaces: ArtworkSurfaces | null = null;
 
 beforeEach(() => {
   vi.useFakeTimers();
-  // The mode module moves this page between hosts; the surfaces only react to
-  // the notification, so the fixture needs no page content.
-  document.body.innerHTML = '<div><div id="AmaiLyricsPage"></div></div>';
+  storage.set(StorageKeys.ENABLE_APP_BACKGROUND, 'false');
+  document.documentElement.classList.remove(APP_BG_ON_CLASS);
+  document.body.innerHTML =
+    '<div id="Desktop_LeftSidebar_Id"><div data-encore-id="card"></div></div><div><div id="AmaiLyricsPage"></div></div>';
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
@@ -65,13 +76,76 @@ afterEach(() => {
   surfaces?.destroy();
   surfaces = null;
   document.body.innerHTML = '';
+  document.documentElement.classList.remove(APP_BG_ON_CLASS, APP_BG_LIB_GRID_CLASS);
+  storage.set(StorageKeys.ENABLE_APP_BACKGROUND, null);
   vi.useRealTimers();
   vi.restoreAllMocks();
 });
 
 describe('ArtworkSurfaces seam', () => {
-  it('shares the toggle event name with the settings dispatcher', () => {
-    expect(APP_BG_CHANGED_EVENT).toBe('amai:appbg-changed');
+  it('owns the enable transition without painting hidden nested surfaces', () => {
+    const { calls, adapters } = setupFakes();
+    surfaces = new ArtworkSurfaces(adapters);
+
+    surfaces.setThemeEnabled(true);
+
+    expect(document.documentElement.classList.contains(APP_BG_ON_CLASS)).toBe(true);
+    expect(document.getElementById('Desktop_LeftSidebar_Id')?.classList).toContain(
+      APP_BG_LIB_GRID_CLASS,
+    );
+    expect(calls.appFrame).toEqual(['live-cover']);
+    expect(calls.sidebar).toEqual([]);
+    expect(calls.page).toBe(0);
+  });
+
+  it('owns the disable transition and restores nested surfaces', async () => {
+    storage.set(StorageKeys.ENABLE_APP_BACKGROUND, 'true');
+    const { calls, adapters } = setupFakes();
+    surfaces = new ArtworkSurfaces(adapters);
+    surfaces.setThemeEnabled(true);
+
+    storage.set(StorageKeys.ENABLE_APP_BACKGROUND, 'false');
+    await surfaces.setThemeEnabled(false);
+
+    expect(document.documentElement.classList.contains(APP_BG_ON_CLASS)).toBe(false);
+    expect(calls.appFrameRemoved).toBe(1);
+    expect(calls.sidebar).toEqual(['live-cover']);
+    expect(calls.page).toBe(1);
+  });
+
+  it('gates direct page-open paints through the same mode policy', async () => {
+    storage.set(StorageKeys.ENABLE_APP_BACKGROUND, 'true');
+    const { calls, adapters } = setupFakes();
+    surfaces = new ArtworkSurfaces(adapters);
+
+    await surfaces.refreshLyricsPage();
+    expect(calls.page).toBe(0);
+
+    storage.set(StorageKeys.ENABLE_APP_BACKGROUND, 'false');
+    await surfaces.refreshLyricsPage();
+    expect(calls.page).toBe(1);
+  });
+
+  it('drops a page paint when the theme is enabled before its commit', async () => {
+    const { calls, adapters: baseAdapters } = setupFakes();
+    let finishPaint: (() => void) | undefined;
+    const adapters = {
+      ...baseAdapters,
+      applyLyricsPage: vi.fn(async (shouldPaint?: () => boolean) => {
+        await new Promise<void>((resolve) => {
+          finishPaint = resolve;
+        });
+        if (shouldPaint?.() !== false) calls.page += 1;
+      }),
+    };
+    surfaces = new ArtworkSurfaces(adapters);
+
+    const painting = surfaces.refreshLyricsPage();
+    storage.set(StorageKeys.ENABLE_APP_BACKGROUND, 'true');
+    finishPaint?.();
+    await painting;
+
+    expect(calls.page).toBe(0);
   });
 
   it('re-applies the page backdrop on fullscreen entry after a skipped paint', () => {
@@ -91,6 +165,7 @@ describe('ArtworkSurfaces seam', () => {
   });
 
   it('pulls the app canvas with the page on fullscreen open and back on exit', async () => {
+    storage.set(StorageKeys.ENABLE_APP_BACKGROUND, 'true');
     const { calls, adapters } = setupFakes();
     surfaces = new ArtworkSurfaces(adapters);
     surfaces.mount();
@@ -115,7 +190,7 @@ describe('ArtworkSurfaces seam', () => {
     expect(calls.appFrame.length).toBe(atMount + 2);
   });
 
-  it('fans out once to every surface for the settled track', () => {
+  it('fans out once to visible surfaces for the settled track', () => {
     const { calls, adapters } = setupFakes();
     surfaces = new ArtworkSurfaces(adapters);
     surfaces.applyArtwork('track-a');
@@ -124,9 +199,21 @@ describe('ArtworkSurfaces seam', () => {
     expect(calls.sidebar).toEqual([]);
     vi.advanceTimersByTime(500);
     expect(calls.sidebar).toEqual(['track-c']);
-    expect(calls.appFrame).toEqual(['track-c']);
+    expect(calls.appFrame).toEqual([]);
     expect(calls.page).toBe(1);
     expect(calls.accents).toEqual(['track-c']);
+  });
+
+  it('fans out only to the app frame and accents while its mode is active', () => {
+    storage.set(StorageKeys.ENABLE_APP_BACKGROUND, 'true');
+    const { calls, adapters } = setupFakes();
+    surfaces = new ArtworkSurfaces(adapters);
+    surfaces.applyArtwork('track-a');
+    vi.advanceTimersByTime(500);
+    expect(calls.appFrame).toEqual(['track-a']);
+    expect(calls.sidebar).toEqual([]);
+    expect(calls.page).toBe(0);
+    expect(calls.accents).toEqual(['track-a']);
   });
   it('drops settled work once cancelled', () => {
     const { calls, adapters } = setupFakes();
@@ -140,14 +227,43 @@ describe('ArtworkSurfaces seam', () => {
     expect(calls.accents).toEqual([]);
   });
 
-  it('mount paints the static surfaces and seeds accents at once', () => {
+  it('mount paints only visible static surfaces and seeds accents', () => {
     const { calls, adapters } = setupFakes();
     surfaces = new ArtworkSurfaces(adapters);
     surfaces.mount();
     expect(calls.sidebar).toEqual(['live-cover']);
-    expect(calls.appFrame).toEqual(['live-cover']);
+    expect(calls.appFrame).toEqual([]);
     expect(calls.accents).toEqual(['live-cover']);
     expect(calls.page).toBe(0);
+    expect(document.documentElement.classList.contains(APP_BG_ON_CLASS)).toBe(false);
+  });
+
+  it('mount applies the app frame without painting hidden nested surfaces', () => {
+    storage.set(StorageKeys.ENABLE_APP_BACKGROUND, 'true');
+    const { calls, adapters } = setupFakes();
+    surfaces = new ArtworkSurfaces(adapters);
+    surfaces.mount();
+    expect(calls.appFrame).toEqual(['live-cover']);
+    expect(calls.sidebar).toEqual([]);
+    expect(calls.accents).toEqual(['live-cover']);
+    expect(calls.page).toBe(0);
+    expect(document.documentElement.classList.contains(APP_BG_ON_CLASS)).toBe(true);
+  });
+
+  it('does not paint a sidebar remount while app-frame mode is active', async () => {
+    storage.set(StorageKeys.ENABLE_APP_BACKGROUND, 'true');
+    const { calls, adapters } = setupFakes();
+    surfaces = new ArtworkSurfaces(adapters);
+    surfaces.mount();
+
+    const panel = document.createElement('aside');
+    panel.className = 'NowPlayingView';
+    document.body.appendChild(panel);
+    await Promise.resolve();
+    panel.appendChild(document.createElement('div'));
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(calls.sidebar).toEqual([]);
   });
 
   it('paints once artwork resolves after launch', async () => {
@@ -156,12 +272,12 @@ describe('ArtworkSurfaces seam', () => {
     setCoverUrl(undefined);
     surfaces.mount();
     expect(calls.sidebar).toEqual([undefined]);
-    expect(calls.appFrame).toEqual([undefined]);
+    expect(calls.appFrame).toEqual([]);
     expect(calls.accents).toEqual([undefined]);
     setCoverUrl('late-cover');
     await vi.advanceTimersByTimeAsync(1000);
     expect(calls.sidebar).toEqual([undefined, 'late-cover']);
-    expect(calls.appFrame).toEqual([undefined, 'late-cover']);
+    expect(calls.appFrame).toEqual([]);
     expect(calls.accents).toEqual([undefined, 'late-cover']);
     await vi.advanceTimersByTimeAsync(2000);
     expect(calls.sidebar).toEqual([undefined, 'late-cover']);
@@ -211,15 +327,32 @@ describe('ArtworkSurfaces seam', () => {
     expect(calls.accents[calls.accents.length - 1]).toBe('late-cover');
   });
 
-  it('repaints hidden canvases when the toggle flips off', () => {
-    const { calls, adapters } = setupFakes();
+  it('registers one grid-observer disposer across repeated mode changes', () => {
+    const trackCallback = vi.spyOn(lifecycle, 'trackCallback');
+    const trackObserver = vi.spyOn(lifecycle, 'trackObserver');
+    const { adapters } = setupFakes();
     surfaces = new ArtworkSurfaces(adapters);
-    surfaces.mount();
-    const painted = { sidebar: calls.sidebar.length, page: calls.page };
-    window.dispatchEvent(new Event(APP_BG_CHANGED_EVENT));
-    // Toggle defaults off in tests, so the handler repaints sidebar + page.
-    expect(calls.sidebar.length).toBe(painted.sidebar + 1);
-    expect(calls.sidebar[calls.sidebar.length - 1]).toBe('live-cover');
-    expect(calls.page).toBe(painted.page + 1);
+
+    surfaces.setThemeEnabled(true);
+    surfaces.setThemeEnabled(false);
+    surfaces.setThemeEnabled(true);
+
+    expect(trackObserver).not.toHaveBeenCalled();
+    expect(trackCallback).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not accumulate grid observers across repeated mode changes', async () => {
+    const { adapters } = setupFakes();
+    surfaces = new ArtworkSurfaces(adapters);
+    surfaces.setThemeEnabled(true);
+    await surfaces.setThemeEnabled(false);
+    surfaces.setThemeEnabled(true);
+    await surfaces.setThemeEnabled(false);
+
+    const nav = document.getElementById('Desktop_LeftSidebar_Id')!;
+    nav.appendChild(document.createElement('div'));
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(nav.classList.contains(APP_BG_LIB_GRID_CLASS)).toBe(false);
   });
 });

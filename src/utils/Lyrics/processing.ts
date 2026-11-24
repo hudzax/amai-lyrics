@@ -2,7 +2,6 @@
  * Lyrics processing functions for Amai Lyrics
  */
 
-import { ShowProcessingIndicator, EnsureProcessingIndicatorHidden } from './ui';
 import { cacheLyrics } from './cache';
 import { enhanceLyrics } from './ai';
 import {
@@ -16,6 +15,7 @@ import {
 } from './conversion';
 import { LyricsResult } from '../API/Lyrics';
 import { isCurrentLyricsRequest, publishEnhancedLyrics, type LyricsRequestToken } from './publish';
+import { getEnhancementConfigRevision, isEnhancementComplete } from './enhancementConfig';
 
 // Regular expressions for language detection
 const JAPANESE_REGEX = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
@@ -39,6 +39,7 @@ function buildDocument(id: string, lyricsJson: LyricsResult): LyricsDocument {
     return {
       type: 'Line',
       id,
+      enhancementStatus: 'pending',
       lines: convertLyrics((lyricsJson.Content || []) as SyllableBasedLyricItem[]).map(toLineView),
     };
   }
@@ -47,6 +48,7 @@ function buildDocument(id: string, lyricsJson: LyricsResult): LyricsDocument {
     return {
       type: 'Line',
       id,
+      enhancementStatus: 'pending',
       lines: ((lyricsJson.Content || []) as LineBasedLyricItem[]).map(toLineView),
     };
   }
@@ -54,21 +56,12 @@ function buildDocument(id: string, lyricsJson: LyricsResult): LyricsDocument {
   return {
     type: 'Static',
     id,
+    enhancementStatus: 'pending',
     lines: ((lyricsJson.Lines || []) as LyricsLine[]).map(toLineView),
   };
 }
 
-/**
- * Processes and enhances lyrics with AI features.
- *
- * @param trackId - Spotify track ID
- * @param lyricsJson - Raw lyrics data from API
- * @param token - Pipeline request token: enhancement work and enhancement
- *   publication check it, so a superseded request resolves its data but never
- *   touches storage or the event bus. Initial publication is the apply step's
- *   (`applyLoadedLyrics`), not this module's.
- * @returns The document built from the response, enhanced when enhancement runs
- */
+/** Builds and caches prepared lyrics; LyricsPipeline owns enhancement scheduling. */
 export async function processAndEnhanceLyrics(
   trackId: string,
   lyricsJson: LyricsResult,
@@ -77,59 +70,23 @@ export async function processAndEnhanceLyrics(
   const id = lyricsJson.id || trackId;
   const document = buildDocument(id, lyricsJson);
 
-  const { document: prepared, lyricsOnly } = prepareLyricsForGemini(document);
+  const { document: prepared } = prepareLyricsForGemini(document);
+  prepared.enhancementConfigRevision = getEnhancementConfigRevision();
 
-  const { hasKanji, hasKorean } = detectLanguages(prepared);
-
-  // STEP 1: Cache the lyrics immediately (without translations) so a re-seek
-  // is fast. The document is freshly built and not shared, and enhancement
-  // mutates its line objects in place — which is what the renderer's registry
-  // holds, so the update path sees the enhancement without anything being
-  // handed across. Publication happens once, in the pipeline's apply step.
-  await cacheLyrics(trackId, prepared);
-
-  // STEP 2: Process phonetic and translations asynchronously. Skip the
-  // (potentially slow, network-bound) enhancement when this request is no
-  // longer current, so seeking past a song doesn't waste work. The basic
-  // lyrics are still cached so a re-seek is fast.
-  if (isCurrentLyricsRequest(token)) {
-    // Start async processing without blocking the initial display
-    void processLyricsEnhancementsAsync(token, trackId, prepared, hasKanji, hasKorean, lyricsOnly);
-  }
-
-  // Return immediately with the basic lyrics
+  // Cache the prepared document so a re-seek is fast. The pipeline owns when
+  // enhancement starts; keeping that decision there gives fresh, joined and
+  // durable-hit results one request lifecycle.
+  if (isCurrentLyricsRequest(token)) await cacheLyrics(trackId, prepared);
   return prepared;
 }
 
-/**
- * Runs the STEP 2 enhancement for lyrics a *different* request already prepared.
- *
- * The dedupe join path needs this. Joining a shared in-flight promise stamps a
- * newer token, which makes the originator's token stale — so its STEP 2 gate
- * fails, and `enhanceLyrics` would bail on the same check even if it didn't.
- * Without a re-run under the joiner's token the joined track never receives
- * translations or phonetics, and the unenhanced payload is what gets persisted
- * to the snapshot and cache, so the loss survives restarts.
- *
- * `prepared` must be the document STEP 1 produced: offsets already applied,
- * empty lines already stripped, `raw` holding the plain-text lines. Re-running
- * prepareLyricsForGemini would shift every StartTime a second time, so the text
- * lines are read straight from `raw`.
- *
- * Enhancement mutates that same document in place — it is the one the page is
- * already rendering, so the update path picks the result up through the
- * renderer's registry. Cloning it here would enhance a copy nobody displays.
- *
- * @param token - Request token of the caller that will publish the result
- * @param trackId - Spotify track ID
- * @param prepared - Already-prepared document from STEP 1
- */
+/** Enhances the prepared instance in place; re-preparing would shift timing twice. */
 export async function enhancePreparedLyrics(
   token: LyricsRequestToken,
   trackId: string,
   prepared: LyricsDocument,
 ): Promise<void> {
-  if (!isCurrentLyricsRequest(token)) return;
+  if (isEnhancementComplete(prepared) || !isCurrentLyricsRequest(token)) return;
   const { hasKanji, hasKorean } = detectLanguages(prepared);
   await processLyricsEnhancementsAsync(
     token,
@@ -141,22 +98,7 @@ export async function enhancePreparedLyrics(
   );
 }
 
-/**
- * Processes lyrics enhancements (phonetic and translations) asynchronously
- * and updates the UI when complete.
- *
- * Enhancement itself is owned by the EnhancementPolicy seam (`./ai`): this
- * function only owns the two-phase orchestration around it — the processing
- * indicator, the enhanced cache write, and publication. A null result means
- * the request went stale mid-flight, so cache and publication are skipped
- * (publication would no-op anyway via its own token guard).
- *
- * @param trackId - Spotify track ID
- * @param document - Document to enhance
- * @param hasKanji - Whether lyrics contain Japanese characters
- * @param hasKorean - Whether lyrics contain Korean characters
- * @param lyricsOnly - Plain text lyrics array
- */
+/** Runs the policy, then persists and publishes only while the request is current. */
 async function processLyricsEnhancementsAsync(
   token: LyricsRequestToken,
   trackId: string,
@@ -166,23 +108,24 @@ async function processLyricsEnhancementsAsync(
   lyricsOnly: string[],
 ): Promise<void> {
   try {
-    // Show processing indicator
-    ShowProcessingIndicator();
-
+    const configRevision = getEnhancementConfigRevision();
     const enhanced = await enhanceLyrics(document, lyricsOnly, { hasKanji, hasKorean }, token);
-    if (!enhanced) return;
+    if (
+      !enhanced ||
+      !isCurrentLyricsRequest(token) ||
+      getEnhancementConfigRevision() !== configRevision
+    ) {
+      return;
+    }
 
-    // Update cache with enhanced lyrics
+    enhanced.enhancementStatus = 'complete';
+    enhanced.enhancementConfigRevision = configRevision;
     await cacheLyrics(trackId, enhanced);
-
-    // Publish in place (scroll/animation-safe). No-op when stale.
-    publishEnhancedLyrics(token, trackId, enhanced);
+    if (isCurrentLyricsRequest(token) && getEnhancementConfigRevision() === configRevision) {
+      publishEnhancedLyrics(token, trackId, enhanced);
+    }
   } catch (error) {
     console.error('Amai Lyrics: Error processing enhancements', error);
-    // Don't show error to user - keep original lyrics visible
-  } finally {
-    // Always hide processing indicator, whether success or failure
-    EnsureProcessingIndicatorHidden();
   }
 }
 

@@ -68,7 +68,7 @@ vi.mock('../src/utils/API/Lyrics', () => ({
 import { sync } from '../src/utils/Lyrics/LineHighlight';
 import { clear, getAllRows, getTimedLines, stopLoop } from '../src/utils/Lyrics/registry';
 import { RecalculateScrollSimplebar } from '../src/utils/Scrolling/Simplebar/ScrollSimplebar';
-import { processAndEnhanceLyrics } from '../src/utils/Lyrics/processing';
+import { enhancePreparedLyrics, processAndEnhanceLyrics } from '../src/utils/Lyrics/processing';
 import {
   renderLyrics,
   updateLyricTranslations,
@@ -263,12 +263,10 @@ describe('AI enhancement reaches the painted page', () => {
     // hands enhancement a clone, the repaint below paints nothing.
     expect(getTimedLines()[0]!.view).toBe(lyrics.lines[0]);
 
-    // The enhancement is fire-and-forget; publication repaints on completion.
-    await vi.waitFor(() => {
-      const rows = document.querySelectorAll<HTMLElement>('.main-lyrics-text.line');
-      expect(rows[0]?.querySelector('.translation')?.textContent).toBe('translated first line');
-    });
+    await enhancePreparedLyrics(token, 'track1', lyrics);
+    expect(enhanceLyrics).toHaveBeenCalledTimes(1);
     const rows = document.querySelectorAll<HTMLElement>('.main-lyrics-text.line');
+    expect(rows[0]?.querySelector('.translation')?.textContent).toBe('translated first line');
     expect(rows[1]?.querySelector('.translation')?.textContent).toBe('translated second line');
   });
 });

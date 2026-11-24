@@ -8,6 +8,7 @@ import {
   resetLyricsUI,
   ClearLyricsPageContainer,
   ShowLoaderContainer,
+  ShowProcessingIndicator,
   noLyricsMessage,
   EnsureProcessingIndicatorHidden,
   clearLyricsUiTimeouts,
@@ -16,6 +17,7 @@ import { getLyricsFromCache, removeLyricsFromCache, destroyLyricsCache } from '.
 import { readSnapshot, clearSnapshot } from './snapshot';
 import { fetchLyricsFromAPI } from './api';
 import { enhancePreparedLyrics } from './processing';
+import { bumpEnhancementConfigRevision, isEnhancementComplete } from './enhancementConfig';
 import { hideRefreshButton } from '../../components/Pages/pageButtons';
 import ApplyLyrics from './Global/Applyer';
 import {
@@ -69,6 +71,7 @@ const inFlight = new Map<string, Promise<LyricsFetchResult>>();
 async function applyLoadedLyrics(
   result: LyricsFetchResult,
   token: LyricsRequestToken,
+  trackId: string,
 ): Promise<LyricsFetchResult> {
   if (isNoLyricsResult(result)) {
     // The negative result crosses the same publication seam as the positive
@@ -85,7 +88,14 @@ async function applyLoadedLyrics(
 
   // Single publication seam: currency check, domain state, snapshot,
   // bus notification (the playbar overlay syncs off this), loader teardown.
-  publishInitialLyrics(token, result);
+  if (!publishInitialLyrics(token, result)) return result;
+
+  if (!isEnhancementComplete(result)) {
+    ShowProcessingIndicator();
+    void enhancePreparedLyrics(token, trackId, result).finally(() => {
+      if (isLatestLyricsRequest(token)) EnsureProcessingIndicatorHidden();
+    });
+  }
   return result;
 }
 
@@ -134,10 +144,10 @@ export default async function fetchLyrics(
   }
 
   const localLyrics = readSnapshot(trackId);
-  if (localLyrics) return applyLoadedLyrics(localLyrics, token);
+  if (localLyrics) return applyLoadedLyrics(localLyrics, token, trackId);
 
   const cachedLyrics = await getLyricsFromCache(trackId);
-  if (cachedLyrics) return applyLoadedLyrics(cachedLyrics, token);
+  if (cachedLyrics) return applyLoadedLyrics(cachedLyrics, token, trackId);
 
   // Hide refresh button during fetch
   hideRefreshButton();
@@ -153,13 +163,7 @@ export default async function fetchLyrics(
     // for the same track.
     ShowLoaderContainer();
     const result = await inFlight.get(trackId)!;
-    const applied = await applyLoadedLyrics(result, token);
-    // The same supersession strands the originator's enhancement gate, so this
-    // request owns the enhancement or the track never gets translations.
-    if (!isNoLyricsResult(result)) {
-      void enhancePreparedLyrics(token, result.id ?? trackId, result);
-    }
-    return applied;
+    return applyLoadedLyrics(result, token, trackId);
   }
 
   ShowLoaderContainer();
@@ -173,7 +177,7 @@ export default async function fetchLyrics(
   // The in-flight map holds the raw fetch so joiners can share it; this
   // request still applies its own outcome — the fresh path gets no exemption
   // from the one publication point.
-  return applyLoadedLyrics(await promise, token);
+  return applyLoadedLyrics(await promise, token, trackId);
 }
 
 /**
@@ -218,6 +222,7 @@ export async function loadAndApplyLyrics(
  * cross the cache or snapshot seams directly.
  */
 export async function refreshLyrics(uri: string): Promise<LyricsFetchResult> {
+  bumpEnhancementConfigRevision();
   const trackId = parseTrackId(uri);
   if (trackId) {
     await removeLyricsFromCache(trackId);
@@ -240,6 +245,7 @@ export async function invalidateLyrics(
   target: { all: true } | { trackId: string },
   opts: { reload?: boolean } = {},
 ): Promise<void> {
+  bumpEnhancementConfigRevision();
   if ('all' in target) {
     await destroyLyricsCache();
   } else {

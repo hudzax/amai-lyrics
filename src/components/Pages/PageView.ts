@@ -3,7 +3,6 @@ import '../../css/Loaders/DotLoader.css';
 import '../../css/Loaders/ProcessingIndicator.css';
 import { clear, detachClickToSeek } from '../../utils/Lyrics/registry';
 import { clearApplyInfoTimeout } from '../../utils/Lyrics/Applyer/Info/ApplyInfo';
-import ApplyDynamicBackground from '../DynamicBG/dynamicBackground';
 import { AutoScroll } from '../../utils/Scrolling/AutoScroll';
 import { setPageOpen } from '../../utils/PagePresence';
 import { InvalidateNowBar, Session_NowBar_SetSide, Session_OpenNowBar } from '../NowBar/NowBar';
@@ -51,7 +50,8 @@ async function OpenPage() {
 
   const contentBox = document.querySelector<HTMLElement>(PageViewSelectors.ContentBox);
   if (contentBox) {
-    await ApplyDynamicBackground(contentBox);
+    const { artworkSurfacesSingleton } = await import('../DynamicBG/ArtworkSurfaces');
+    if (contentBox.isConnected) await artworkSurfacesSingleton.refreshLyricsPage();
   }
 
   const mediaImage = document.querySelector<HTMLImageElement>(PageViewSelectors.MediaImage);

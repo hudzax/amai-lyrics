@@ -5,7 +5,6 @@ import {
   APP_BG_CONTAINER_CLASS,
   APP_BG_HOST_HELPER_CLASS,
   APP_BG_LOADED_CLASS,
-  APP_BG_ON_CLASS,
   NESTED_BG_IMG_A_ID,
   NESTED_BG_IMG_B_ID,
 } from './identity';
@@ -51,11 +50,6 @@ export class NowPlayingBarBackground {
    * Uses dual-image crossfade approach for smooth transitions
    */
   public apply(coverUrl: string | undefined) {
-    // Single-canvas mode: the sidebar node is display:none behind the app-frame
-    // canvas — skip the fetch/decode entirely. Deliberately returns WITHOUT
-    // recording lastImgUrl so the toggle-off refresh (see app.tsx
-    // 'amai:appbg-changed' handler) actually repaints instead of dedup-hitting.
-    if (document.documentElement.classList.contains(APP_BG_ON_CLASS)) return;
     const targetUrl = normalizeCoverUrl(coverUrl ?? '');
     if (!targetUrl) return;
 

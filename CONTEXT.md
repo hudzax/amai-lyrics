@@ -94,14 +94,19 @@ resolveIsPlaying.
 
 Every artwork-derived surface painted from the live track's cover art: the
 sidebar canvas, the app-frame canvas, the lyrics-page canvas, and the accent
-publish. Lives in src/components/DynamicBG/ArtworkSurfaces.ts. A one-shot waiter covers the launch gap where the shell is ready before player artwork exists. Callers cross
-it through mount, applyArtwork, refreshStaticSurfaces, cancelPending, and
-destroy - never through the individual canvases, except two intentional
-immediate paints: PageView's page-open lyrics-page paint
-(src/components/Pages/PageView.ts) and the settings theme toggle's
-app-frame apply/remove (src/utils/settings.ts, which re-notifies the seam via
-`amai:appbg-changed`). refreshStaticSurfaces is the internal static repaint
-used by mount and the launch waiter; it currently has no external callers.
+publish. Lives in src/components/DynamicBG/ArtworkSurfaces.ts. A one-shot
+waiter covers the launch gap where the shell is ready before player artwork
+exists. Callers cross it through mount, applyArtwork, setThemeEnabled,
+refreshLyricsPage, cancelPending, and destroy - never through the individual
+canvases or the app-frame singleton.
+
+The module owns theme-mode reconciliation: the stored enable value, root
+marker, library-grid marker and observer, app-frame apply/remove, and whether
+the nested sidebar/page surfaces should paint. Settings records the changed
+value and delegates; PageView's page-open paint crosses refreshLyricsPage.
+The nested painters own only local paint mechanics and no longer infer mode
+from the root marker. Static repaint is private to mount and the launch
+waiter.
 
 ## CrossfadeCanvas
 
@@ -292,7 +297,7 @@ of it — cache, snapshot, publish, render, translate — crosses this shape and
 never the wire payload's `Type`/`Content`/`Lines` form. That form stops at
 ingest: `api.ts` validates it, then `buildDocument` is the only downstream
 reader and normalizer. Callers cross it through `processAndEnhanceLyrics`, the
-joined request's `enhancePreparedLyrics`, the cache's
+pipeline's `enhancePreparedLyrics`, the cache's
 `cacheLyrics`/`getLyricsFromCache`, the snapshot's
 `writeSnapshot`/`readSnapshot`, `publishInitialLyrics`/`publishEnhancedLyrics`,
 `renderLyrics`, and the enhancement's `enhanceLyrics`.
@@ -308,6 +313,12 @@ already carry. Enhancement mutates the document's line objects in place — they
 are the objects the renderer registered, so the update path picks the result up
 without anything being handed across, and nothing may clone the document on the
 way to enhancement.
+
+`enhancementStatus` is `pending` on a freshly prepared document and `complete`
+once EnhancementPolicy settles for the current settings. `enhancementConfigRevision`
+identifies the configuration that completion belongs to. A missing status or
+revision is a legacy or unknown document and is enhanced once; completion from
+an older revision is re-enhanced even if an invalidated write repopulates cache.
 
 `LYRICS_DOCUMENT_VERSION` stamps the stored form (cache and snapshot).
 `toDocument` is the single decode point: a value written by an older version
@@ -334,17 +345,24 @@ buttons and the page's track metadata.
 
 - Every result — snapshot hit, cache hit, joined fetch, fresh fetch — crosses
   `applyLoadedLyrics` once (fetchLyrics.ts): it publishes and runs the
-  page-visible transitions, then returns the outcome. The producers stay pure:
-  api, cache, and snapshot return typed outcomes and never touch the page —
-  api.ts validates the wire response and hands back a document or the typed
-  sentinel, importing neither `ui` nor any DOM path. A negative's transitions
-  run only for the request that still owns the render (isLatestLyricsRequest),
-  the same newer-request-wins rule the composition's render guard applies, so
-  a joined fetch runs them once, not once per waiter.
+  page-visible transitions, then returns the outcome. A positive result that is
+  not enhancement-complete also starts enhancement behind the same request;
+  the processing indicator is shown for that request and hidden only by the
+  latest token. Fresh processing only prepares and caches, so joined requests
+  no longer repeat a special enhancement path. The producers stay pure: api,
+  cache, and snapshot return typed outcomes and never touch the page — api.ts
+  validates the wire response and hands back a document or the typed sentinel,
+  importing neither `ui` nor any DOM path. A negative's transitions run only for
+  the request that still owns the render (isLatestLyricsRequest), the same
+  newer-request-wins rule the composition's render guard applies, so a joined
+  fetch runs them once, not once per waiter.
 - `invalidateLyrics({ all | trackId }, { reload })` is the invalidation entry:
   config changes (translation language, romaji, translations off, API key) and
   first startup say what is stale and whether to reload; eviction and
-  snapshot-clearing stay inside. Handlers must write the new setting to storage
+  snapshot-clearing stay inside. It advances the enhancement configuration
+  revision synchronously, before awaiting cache destruction, so an older
+  in-flight completion cannot be accepted after the new request starts.
+  Handlers must write the new setting to storage
   before calling it with reload, so the re-fetch sees the new value. The reload
   re-fetches with `flush` so an in-flight fetch that
   predates the invalidation is never served. The default `fetchLyrics` export
@@ -393,7 +411,19 @@ LyricsPipeline seam. Callers cross it through `enhanceLyrics` - never through
 the Gemini/Amai providers directly, which nothing outside this module imports.
 The four provider slots it fans out to are overridable per slot, so a test
 substitutes fakes for live backends while still exercising selection and the
-fallback order.
+fallback order. Provider phases resolve into temporary results; the shared
+document is mutated only after both settle and the request is still current,
+so a stale phonetic response cannot alter lines a newer request is rendering.
+
+## EnhancementConfig
+
+The single owner of the persisted revision that identifies which enhancement
+settings a completed document belongs to. Lives in
+src/utils/Lyrics/enhancementConfig.ts. Callers cross it through
+getEnhancementConfigRevision, bumpEnhancementConfigRevision, and
+isEnhancementComplete. Invalidation and refresh advance the revision before
+asynchronous storage work; completion is accepted only for the current
+revision. The revision stores no API key or other setting value.
 
 ## HoverTooltip
 
@@ -458,7 +488,8 @@ never leave this module.
 ## StorageKeys
 
 The single registry of the storage key suffixes the product writes: settings,
-the published lyrics snapshot, and the NowBar's open/side state. Lives in
+the enhancement configuration revision, the published lyrics snapshot, and the
+NowBar's open/side state. Lives in
 src/utils/storageKeys.ts. The storage adapter (src/utils/storage.ts) owns the
 `AmaiLyrics-` prefix and the legacy `SpicyLyrics-` fallback; the registry owns
 the suffix vocabulary. SettingsValues maps each setting to its key,

@@ -46,12 +46,18 @@ import {
   HideLoaderContainer,
   ClearLyricsPageContainer,
   noLyricsMessage,
+  ShowProcessingIndicator,
+  EnsureProcessingIndicatorHidden,
 } from '../src/utils/Lyrics/ui';
 import { updateLyricTranslations } from '../src/utils/Lyrics/LyricsRenderer';
 import { fetchLyricsFromAPI } from '../src/utils/Lyrics/api';
 import { enhancePreparedLyrics } from '../src/utils/Lyrics/processing';
 import ApplyLyrics from '../src/utils/Lyrics/Global/Applyer';
-import fetchLyrics, { loadAndApplyLyrics, invalidateLyrics } from '../src/utils/Lyrics/fetchLyrics';
+import fetchLyrics, {
+  loadAndApplyLyrics,
+  refreshLyrics,
+  invalidateLyrics,
+} from '../src/utils/Lyrics/fetchLyrics';
 import {
   beginLyricsRequest,
   isCurrentLyricsRequest,
@@ -80,6 +86,7 @@ function staticPayload(id: string): LyricsDocument {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockedStorage.get.mockReturnValue(null);
   liveItem().uri = '';
 });
 
@@ -204,6 +211,23 @@ describe('invalidateLyrics', () => {
     expect(mockedApi).not.toHaveBeenCalled();
   });
 
+  it('advances enhancement configuration before asynchronous cache destruction', async () => {
+    const { destroyLyricsCache } = await import('../src/utils/Lyrics/cache');
+    let finishDestroy: (() => void) | undefined;
+    vi.mocked(destroyLyricsCache).mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishDestroy = resolve;
+        }),
+    );
+
+    const invalidating = invalidateLyrics({ all: true });
+    expect(mockedStorage.set).toHaveBeenCalledWith(StorageKeys.ENHANCEMENT_CONFIG_REVISION, '1');
+
+    finishDestroy?.();
+    await invalidating;
+  });
+
   it('evicts a single track instead of destroying the cache', async () => {
     const { destroyLyricsCache, removeLyricsFromCache } = await import('../src/utils/Lyrics/cache');
 
@@ -229,6 +253,29 @@ describe('invalidateLyrics', () => {
     await invalidateLyrics({ all: true }, { reload: true });
 
     expect(mockedApi).not.toHaveBeenCalled();
+  });
+});
+
+describe('refreshLyrics', () => {
+  it('advances enhancement configuration before asynchronous cache removal', async () => {
+    liveItem().uri = URI_A;
+    const { removeLyricsFromCache, getLyricsFromCache } = await import('../src/utils/Lyrics/cache');
+    vi.mocked(getLyricsFromCache).mockResolvedValue(null);
+    let finishRemove: (() => void) | undefined;
+    vi.mocked(removeLyricsFromCache).mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishRemove = resolve;
+        }),
+    );
+    mockedApi.mockResolvedValue(staticPayload('trackA'));
+    mockedApply.mockReturnValue(true);
+
+    const refreshing = refreshLyrics(URI_A);
+    expect(mockedStorage.set).toHaveBeenCalledWith(StorageKeys.ENHANCEMENT_CONFIG_REVISION, '1');
+
+    finishRemove?.();
+    await refreshing;
   });
 });
 
@@ -285,7 +332,7 @@ describe('loadAndApplyLyrics', () => {
     expect(mockedApply).toHaveBeenCalledTimes(2);
   });
 
-  it('applies cache hits through the default fetch entry', async () => {
+  it('applies cache hits and schedules their enhancement', async () => {
     liveItem().uri = URI_A;
     const { getLyricsFromCache } = await import('../src/utils/Lyrics/cache');
     vi.mocked(getLyricsFromCache).mockResolvedValue(staticPayload('trackA'));
@@ -302,6 +349,69 @@ describe('loadAndApplyLyrics', () => {
       SNAPSHOT_UPDATED_EVENT,
       expect.stringContaining('trackA'),
     );
+    expect(mockedEnhance).toHaveBeenCalledWith(expect.any(Number), 'trackA', result);
+    expect(ShowProcessingIndicator).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not enhance a cache hit that already completed enhancement', async () => {
+    liveItem().uri = URI_A;
+    const { getLyricsFromCache } = await import('../src/utils/Lyrics/cache');
+    const complete = {
+      ...staticPayload('trackA'),
+      enhancementStatus: 'complete' as const,
+      enhancementConfigRevision: 0,
+    };
+    vi.mocked(getLyricsFromCache).mockResolvedValue(complete);
+
+    await fetchLyrics(URI_A);
+
+    expect(mockedEnhance).not.toHaveBeenCalled();
+    expect(ShowProcessingIndicator).not.toHaveBeenCalled();
+  });
+
+  it('re-enhances a completed cache hit from an older configuration revision', async () => {
+    liveItem().uri = URI_A;
+    mockedStorage.get.mockImplementation((key) =>
+      key === StorageKeys.ENHANCEMENT_CONFIG_REVISION ? '1' : null,
+    );
+    const { getLyricsFromCache } = await import('../src/utils/Lyrics/cache');
+    vi.mocked(getLyricsFromCache).mockResolvedValue({
+      ...staticPayload('trackA'),
+      enhancementStatus: 'complete',
+      enhancementConfigRevision: 0,
+    });
+
+    await fetchLyrics(URI_A);
+
+    expect(mockedEnhance).toHaveBeenCalledTimes(1);
+    expect(ShowProcessingIndicator).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not let a stale enhancement hide a newer request indicator', async () => {
+    liveItem().uri = URI_A;
+    const { getLyricsFromCache } = await import('../src/utils/Lyrics/cache');
+    vi.mocked(getLyricsFromCache).mockResolvedValue(staticPayload('trackA'));
+    let finishFirst: (() => void) | undefined;
+    mockedEnhance.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishFirst = resolve;
+        }),
+    );
+
+    await fetchLyrics(URI_A);
+    expect(mockedEnhance).toHaveBeenCalledTimes(1);
+
+    liveItem().uri = URI_B;
+    vi.mocked(getLyricsFromCache).mockResolvedValue(staticPayload('trackB'));
+    await fetchLyrics(URI_B);
+    const hideCalls = vi.mocked(EnsureProcessingIndicatorHidden).mock.calls.length;
+
+    finishFirst?.();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(EnsureProcessingIndicatorHidden).toHaveBeenCalledTimes(hideCalls);
   });
 
   it('uses the mocked NO_LYRICS sentinel for invalid uris', async () => {

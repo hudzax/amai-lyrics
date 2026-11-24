@@ -339,17 +339,20 @@ describe('staleness', () => {
     expect(providers.fetchAmaiTranslations).not.toHaveBeenCalled();
   });
 
-  it('returns null when the token goes stale mid-flight', async () => {
+  it('returns null without mutating shared lines when the token goes stale mid-flight', async () => {
     settings({ ...KEY });
     vi.mocked(isCurrentLyricsRequest)
       .mockReturnValueOnce(true) // enhanceLyrics entry
-      .mockReturnValue(false); // every check after
+      .mockReturnValueOnce(true) // translation phase
+      .mockReturnValueOnce(true) // phonetic phase
+      .mockReturnValue(false); // final commit gate
     const providers = fakes();
     providers.fetchGeminiPhonetic.mockResolvedValue(['r1']);
     providers.fetchGeminiTranslations.mockResolvedValue(['t1']);
+    const data = lineData(['l1']);
 
     const result = await enhanceLyrics(
-      lineData(['l1']),
+      data,
       ['l1'],
       { hasKanji: true, hasKorean: false },
       1,
@@ -357,6 +360,8 @@ describe('staleness', () => {
     );
 
     expect(result).toBeNull();
+    expect(data.lines[0]!.text).toBe('l1');
+    expect(data.lines[0]!.translation).toBeUndefined();
   });
 });
 

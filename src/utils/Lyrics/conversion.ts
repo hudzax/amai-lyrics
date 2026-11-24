@@ -195,6 +195,9 @@ export interface LyricsDocument {
   styles?: Record<string, string>;
   classes?: string;
   offline?: boolean;
+  /** Missing means legacy or unfinished; complete means the policy settled for current settings. */
+  enhancementStatus?: 'pending' | 'complete';
+  enhancementConfigRevision?: number;
   lines: LineView[];
 }
 

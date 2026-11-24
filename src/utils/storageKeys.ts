@@ -14,6 +14,7 @@ export const StorageKeys = {
   ACCENT_COLOR_MODE: 'accent_color_mode',
   CUSTOM_ACCENT_COLOR: 'custom_accent_color',
   CURRENT_LYRICS_DATA: 'currentLyricsData',
+  ENHANCEMENT_CONFIG_REVISION: 'enhancementConfigRevision',
   // These keep their original casing so existing user state survives.
   IS_NOW_BAR_OPEN: 'IsNowBarOpen',
   NOW_BAR_SIDE: 'NowBarSide',

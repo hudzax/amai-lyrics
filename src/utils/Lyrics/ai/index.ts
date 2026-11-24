@@ -121,65 +121,55 @@ export async function enhanceLyrics(
 
   const phoneticPrompt = selectPhoneticPrompt(flags, enableRomaji);
 
-  const [translations] = await Promise.all([
+  const [translations, phonetics] = await Promise.all([
     enhanceTranslations(lyricsOnly, targetLang, translationsDisabled, hasKey, providers, live),
-    enhancePhonetics(prepared, lyricsOnly, phoneticPrompt, hasKey, providers, live),
+    enhancePhonetics(lyricsOnly, phoneticPrompt, hasKey, providers, live),
   ]);
 
   if (!live()) return null;
 
+  if (phonetics.lines) updateLyricsWithText(prepared, phonetics.lines);
+  if (phonetics.info) prepared.info = phonetics.info;
   attachTranslations(prepared, translations);
   return prepared;
 }
 
-/**
- * Phonetic phase: mutates `prepared.Text` via the key-first fallback chain.
- * With a key, Gemini setup failure falls back to Amai (replacing the legacy
- * `Info`-sniff); malformed Gemini output applies as a no-op with no fallback.
- * Without a key, Amai is tried first and a missing key message is set only
- * when Amai also yields nothing — same as the legacy behaviour.
- */
+interface PhoneticResult {
+  lines?: string[];
+  info?: string;
+}
+
+/** Resolves phonetics without mutating the shared document; commit waits for currency. */
 async function enhancePhonetics(
-  prepared: LyricsDocument,
   lyricsOnly: string[],
   prompt: string | null,
   hasKey: boolean,
   providers: EnhancementProviders,
   live: () => boolean,
-): Promise<void> {
-  if (!prompt) return;
+): Promise<PhoneticResult> {
+  if (!prompt) return {};
 
   if (hasKey) {
     console.log('[Amai Lyrics] Using Gemini for phonetic lyrics');
-    if (!live()) return;
+    if (!live()) return {};
     try {
       const lines = await providers.fetchGeminiPhonetic(lyricsOnly, prompt);
-      updateLyricsWithText(prepared, lines);
-      return;
+      return { lines };
     } catch {
       console.log('[Amai Lyrics] Gemini failed, falling back to Amai API for phonetic lyrics');
     }
-    if (!live()) return;
+    if (!live()) return {};
     const amaiLines = await providers.fetchAmaiPhonetic(lyricsOnly, prompt);
-    if (hasUsableLines(amaiLines)) {
-      updateLyricsWithText(prepared, amaiLines);
-    } else {
-      prepared.info = FETCH_ERROR_INFO;
-    }
-    return;
+    return hasUsableLines(amaiLines) ? { lines: amaiLines } : { info: FETCH_ERROR_INFO };
   }
 
-  // No key: try Amai first, then Gemini (which reports the missing key).
-  if (!live()) return;
+  if (!live()) return {};
   const amaiLines = await providers.fetchAmaiPhonetic(lyricsOnly, prompt);
-  if (hasUsableLines(amaiLines)) {
-    updateLyricsWithText(prepared, amaiLines);
-    return;
-  }
+  if (hasUsableLines(amaiLines)) return { lines: amaiLines };
 
   console.log('[Amai Lyrics] Falling back to Gemini for phonetic lyrics');
   console.error('Amai Lyrics: Gemini API Key missing');
-  prepared.info = MISSING_KEY_INFO;
+  return { info: MISSING_KEY_INFO };
 }
 
 /**
