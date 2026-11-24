@@ -323,6 +323,9 @@ ruby > rt {
 }
 
 #AmaiLyricsPage .LyricsContainer .LyricsContent ruby > rt {
+  /* rt extends above .line's gradient paint box, so it needs its own fill. */
+  color: var(--amai-text-mid);
+  -webkit-text-fill-color: currentColor;
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
