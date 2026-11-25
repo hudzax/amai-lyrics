@@ -5068,7 +5068,7 @@
   });
 
   // src/utils/EventManager.ts
-  var windowRef, eventRegistry, nextId, listen, unListen, evoke, Event2, EventManager_default;
+  var windowRef, eventRegistry, nextId, listen, unListen, evoke, Event, EventManager_default;
   var init_EventManager = __esm({
     "src/utils/EventManager.ts"() {
       "use strict";
@@ -5105,12 +5105,12 @@
           }
         }
       };
-      Event2 = {
+      Event = {
         listen,
         unListen,
         evoke
       };
-      EventManager_default = Event2;
+      EventManager_default = Event;
     }
   });
 
@@ -6346,6 +6346,7 @@
         ACCENT_COLOR_MODE: "accent_color_mode",
         CUSTOM_ACCENT_COLOR: "custom_accent_color",
         CURRENT_LYRICS_DATA: "currentLyricsData",
+        ENHANCEMENT_CONFIG_REVISION: "enhancementConfigRevision",
         IS_NOW_BAR_OPEN: "IsNowBarOpen",
         NOW_BAR_SIDE: "NowBarSide"
       };
@@ -6506,7 +6507,7 @@
   });
 
   // node_modules/@hudzax/web-modules/Signal.js
-  var Connection, Event3, Signal, IsConnection;
+  var Connection, Event2, Signal, IsConnection;
   var init_Signal = __esm({
     "node_modules/@hudzax/web-modules/Signal.js"() {
       init_FreeArray();
@@ -6533,7 +6534,7 @@
           return this.Disconnected;
         }
       };
-      Event3 = class {
+      Event2 = class {
         Signal;
         constructor(signal) {
           this.Signal = signal;
@@ -6567,7 +6568,7 @@
           }
         }
         GetEvent() {
-          return new Event3(this);
+          return new Event2(this);
         }
         IsDestroyed() {
           return this.DestroyedState;
@@ -9462,15 +9463,15 @@
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c16086d2e/DotLoader.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-5580-FOMLjyZJF5xl/1a2104ecad9e/DotLoader.css
   var init_ = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c16086d2e/DotLoader.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-5580-FOMLjyZJF5xl/1a2104ecad9e/DotLoader.css"() {
     }
   });
 
-  // C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c16086d9f/ProcessingIndicator.css
+  // C:/Users/Hathaway/AppData/Local/Temp/tmp-5580-FOMLjyZJF5xl/1a2104ecadff/ProcessingIndicator.css
   var init_2 = __esm({
-    "C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c16086d9f/ProcessingIndicator.css"() {
+    "C:/Users/Hathaway/AppData/Local/Temp/tmp-5580-FOMLjyZJF5xl/1a2104ecadff/ProcessingIndicator.css"() {
     }
   });
 
@@ -9533,220 +9534,6 @@
     }
   });
 
-  // src/utils/debounce.ts
-  function debounce2(fn, delay2) {
-    let timer = null;
-    const debounced = (...args) => {
-      if (timer !== null)
-        window.clearTimeout(timer);
-      timer = window.setTimeout(() => {
-        timer = null;
-        fn(...args);
-      }, delay2);
-    };
-    debounced.cancel = () => {
-      if (timer !== null) {
-        window.clearTimeout(timer);
-        timer = null;
-      }
-    };
-    return debounced;
-  }
-  var init_debounce2 = __esm({
-    "src/utils/debounce.ts"() {
-      "use strict";
-    }
-  });
-
-  // src/components/DynamicBG/utils.ts
-  function normalizeImageUrl(url) {
-    if (!url)
-      return void 0;
-    if (url.startsWith("spotify:image:")) {
-      const imageId = url.replace("spotify:image:", "");
-      return `https://i.scdn.co/image/${imageId}`;
-    }
-    return url;
-  }
-  function setRandomCSSVariables(target) {
-    const root2 = target ?? document.documentElement;
-    const rotationPrimary = Math.floor(Math.random() * 360);
-    const rotationSecondary = (Math.floor(Math.random() * 360) + 15) % 360;
-    root2.style.setProperty("--bg-rotation-primary", `${rotationPrimary}deg`);
-    root2.style.setProperty("--bg-rotation-secondary", `${rotationSecondary}deg`);
-    const scalePrimary = 1 + Math.random() * 0.2;
-    const scaleSecondary = 1.1 + Math.random() * 0.2;
-    root2.style.setProperty("--bg-scale-primary", `${scalePrimary}`);
-    root2.style.setProperty("--bg-scale-secondary", `${scaleSecondary}`);
-    const hueShift = Math.floor(Math.random() * 30);
-    root2.style.setProperty("--bg-hue-shift", `${hueShift}deg`);
-  }
-  function createBackgroundImage(id, className, src, loading) {
-    const img = document.createElement("img");
-    img.id = id;
-    img.className = className;
-    img.decoding = "async";
-    img.loading = loading;
-    if (src)
-      img.src = src;
-    return img;
-  }
-  var init_utils = __esm({
-    "src/components/DynamicBG/utils.ts"() {
-      "use strict";
-    }
-  });
-
-  // src/components/DynamicBG/identity.ts
-  var identity_exports = {};
-  __export(identity_exports, {
-    APP_BG_CLASS: () => APP_BG_CLASS,
-    APP_BG_CONTAINER_CLASS: () => APP_BG_CONTAINER_CLASS,
-    APP_BG_GPU_CLASS: () => APP_BG_GPU_CLASS,
-    APP_BG_HOST_CLASS: () => APP_BG_HOST_CLASS,
-    APP_BG_HOST_HELPER_CLASS: () => APP_BG_HOST_HELPER_CLASS,
-    APP_BG_IMG_A_ID: () => APP_BG_IMG_A_ID,
-    APP_BG_IMG_B_ID: () => APP_BG_IMG_B_ID,
-    APP_BG_LIB_GRID_CLASS: () => APP_BG_LIB_GRID_CLASS,
-    APP_BG_LOADED_CLASS: () => APP_BG_LOADED_CLASS,
-    APP_BG_ON_CLASS: () => APP_BG_ON_CLASS,
-    BG_MOTION_OFF_CLASS: () => BG_MOTION_OFF_CLASS,
-    NESTED_BG_IMG_A_ID: () => NESTED_BG_IMG_A_ID,
-    NESTED_BG_IMG_B_ID: () => NESTED_BG_IMG_B_ID,
-    createAppBgContainer: () => createAppBgContainer,
-    ensureAppBgHostClasses: () => ensureAppBgHostClasses,
-    syncLibraryGridState: () => syncLibraryGridState
-  });
-  function createAppBgContainer(gpuMode = false) {
-    const div = document.createElement("div");
-    div.className = `${APP_BG_CONTAINER_CLASS} ${APP_BG_CLASS}${gpuMode ? ` ${APP_BG_GPU_CLASS}` : ""}`;
-    return div;
-  }
-  function ensureAppBgHostClasses(host) {
-    host.classList.add(APP_BG_HOST_HELPER_CLASS, APP_BG_HOST_CLASS);
-    syncLibraryGridState(host);
-  }
-  function syncLibraryGridState(scope) {
-    const navBar = (scope ?? document).querySelector?.(anySurface("sidebar"));
-    if (!navBar)
-      return;
-    navBar.classList.toggle(APP_BG_LIB_GRID_CLASS, !!navBar.querySelector("[data-encore-id='card']"));
-  }
-  var APP_BG_ON_CLASS, APP_BG_HOST_CLASS, APP_BG_CLASS, APP_BG_CONTAINER_CLASS, APP_BG_HOST_HELPER_CLASS, APP_BG_LOADED_CLASS, APP_BG_IMG_A_ID, APP_BG_IMG_B_ID, NESTED_BG_IMG_A_ID, NESTED_BG_IMG_B_ID, APP_BG_LIB_GRID_CLASS, APP_BG_GPU_CLASS, BG_MOTION_OFF_CLASS;
-  var init_identity = __esm({
-    "src/components/DynamicBG/identity.ts"() {
-      "use strict";
-      init_SpotifyDom();
-      APP_BG_ON_CLASS = "amai-app-bg-on";
-      APP_BG_HOST_CLASS = "amai-app-bg-host";
-      APP_BG_CLASS = "amai-app-bg";
-      APP_BG_CONTAINER_CLASS = "sweet-dynamic-bg";
-      APP_BG_HOST_HELPER_CLASS = "sweet-dynamic-bg-in-this";
-      APP_BG_LOADED_CLASS = "sweet-dynamic-bg-loaded";
-      APP_BG_IMG_A_ID = "amai-app-bg-img-a";
-      APP_BG_IMG_B_ID = "amai-app-bg-img-b";
-      NESTED_BG_IMG_A_ID = "bg-img-a";
-      NESTED_BG_IMG_B_ID = "bg-img-b";
-      APP_BG_LIB_GRID_CLASS = "amai-lib-grid";
-      APP_BG_GPU_CLASS = "amai-bg-gpu";
-      BG_MOTION_OFF_CLASS = "amai-bg-motion-off";
-    }
-  });
-
-  // src/components/DynamicBG/dynamicBackground.ts
-  var dynamicBackground_exports = {};
-  __export(dynamicBackground_exports, {
-    default: () => ApplyDynamicBackground
-  });
-  function isHiddenByAppCanvas(element) {
-    if (!document.documentElement.classList.contains(APP_BG_ON_CLASS))
-      return false;
-    return !!element.closest?.(PageViewSelectors.AmaiLyricsPage);
-  }
-  async function setupDynamicBackground(element, imageUrl) {
-    let bgContainer = element.querySelector(`.${APP_BG_CONTAINER_CLASS}`);
-    if (!bgContainer) {
-      bgContainer = document.createElement("div");
-      bgContainer.className = APP_BG_CONTAINER_CLASS;
-      bgContainer.setAttribute("current-img", imageUrl);
-      const placeholder = document.createElement("div");
-      placeholder.className = "placeholder";
-      bgContainer.appendChild(placeholder);
-      const imgA = createBackgroundImage(
-        NESTED_BG_IMG_A_ID,
-        "bg-image primary active",
-        imageUrl,
-        "eager"
-      );
-      imgA.addEventListener(
-        "load",
-        () => {
-          if (placeholder.parentNode)
-            placeholder.parentNode.removeChild(placeholder);
-        },
-        { once: true, passive: true }
-      );
-      bgContainer.appendChild(imgA);
-      const imgB = createBackgroundImage(NESTED_BG_IMG_B_ID, "bg-image secondary", "", "lazy");
-      bgContainer.appendChild(imgB);
-      element.appendChild(bgContainer);
-      setRandomCSSVariables(bgContainer);
-    }
-    return bgContainer;
-  }
-  async function ApplyDynamicBackground(element) {
-    if (!element)
-      return;
-    if (isHiddenByAppCanvas(element))
-      return;
-    const rawCover = await SpotifyPlayer.Artwork.Get("d");
-    const currentImgCover = normalizeImageUrl(rawCover) ?? rawCover;
-    const bgContainer = await setupDynamicBackground(element, currentImgCover);
-    const displayedImg = bgContainer.getAttribute("current-img");
-    if (displayedImg !== currentImgCover) {
-      updateDynamicBackground(bgContainer, currentImgCover);
-    }
-  }
-  var updateDynamicBackground;
-  var init_dynamicBackground = __esm({
-    "src/components/DynamicBG/dynamicBackground.ts"() {
-      "use strict";
-      init_SpotifyPlayer();
-      init_debounce2();
-      init_utils();
-      init_identity();
-      init_PageViewSelectors();
-      updateDynamicBackground = debounce2((bgContainer, newImageUrl) => {
-        const imgA = bgContainer.querySelector(`#${NESTED_BG_IMG_A_ID}`);
-        const imgB = bgContainer.querySelector(`#${NESTED_BG_IMG_B_ID}`);
-        if (!imgA || !imgB) {
-          console.error("Dynamic background image elements not found!");
-          return;
-        }
-        const activeImg = imgA.classList.contains("active") ? imgA : imgB;
-        const inactiveImg = activeImg === imgA ? imgB : imgA;
-        if (inactiveImg.src === newImageUrl)
-          return;
-        inactiveImg.onload = null;
-        inactiveImg.onerror = null;
-        inactiveImg.onload = () => {
-          if (inactiveImg.src !== newImageUrl)
-            return;
-          requestAnimationFrame(() => {
-            activeImg.classList.remove("active");
-            inactiveImg.classList.add("active");
-            bgContainer.setAttribute("current-img", newImageUrl);
-            setRandomCSSVariables(bgContainer);
-          });
-        };
-        inactiveImg.onerror = () => {
-          console.error("Error loading new background image:", newImageUrl);
-        };
-        inactiveImg.src = newImageUrl;
-      }, 100);
-    }
-  });
-
   // src/utils/fastdomAsync.ts
   function installFastdomErrorHandler() {
     if (errorHandlerInstalled)
@@ -9792,7 +9579,7 @@
   var version;
   var init_package = __esm({
     "package.json"() {
-      version = "1.6.16";
+      version = "1.6.17";
     }
   });
 
@@ -10731,6 +10518,1959 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     }
   });
 
+  // src/utils/debounce.ts
+  function debounce2(fn, delay2) {
+    let timer = null;
+    const debounced = (...args) => {
+      if (timer !== null)
+        window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        timer = null;
+        fn(...args);
+      }, delay2);
+    };
+    debounced.cancel = () => {
+      if (timer !== null) {
+        window.clearTimeout(timer);
+        timer = null;
+      }
+    };
+    return debounced;
+  }
+  var init_debounce2 = __esm({
+    "src/utils/debounce.ts"() {
+      "use strict";
+    }
+  });
+
+  // src/components/DynamicBG/identity.ts
+  function createAppBgContainer(gpuMode = false) {
+    const div = document.createElement("div");
+    div.className = `${APP_BG_CONTAINER_CLASS} ${APP_BG_CLASS}${gpuMode ? ` ${APP_BG_GPU_CLASS}` : ""}`;
+    return div;
+  }
+  function ensureAppBgHostClasses(host) {
+    host.classList.add(APP_BG_HOST_HELPER_CLASS, APP_BG_HOST_CLASS);
+    syncLibraryGridState(host);
+  }
+  function syncLibraryGridState(scope) {
+    const navBar = (scope ?? document).querySelector?.(anySurface("sidebar"));
+    if (!navBar)
+      return;
+    navBar.classList.toggle(APP_BG_LIB_GRID_CLASS, !!navBar.querySelector("[data-encore-id='card']"));
+  }
+  var APP_BG_ON_CLASS, APP_BG_HOST_CLASS, APP_BG_CLASS, APP_BG_CONTAINER_CLASS, APP_BG_HOST_HELPER_CLASS, APP_BG_LOADED_CLASS, APP_BG_IMG_A_ID, APP_BG_IMG_B_ID, NESTED_BG_IMG_A_ID, NESTED_BG_IMG_B_ID, APP_BG_LIB_GRID_CLASS, APP_BG_GPU_CLASS, BG_MOTION_OFF_CLASS;
+  var init_identity = __esm({
+    "src/components/DynamicBG/identity.ts"() {
+      "use strict";
+      init_SpotifyDom();
+      APP_BG_ON_CLASS = "amai-app-bg-on";
+      APP_BG_HOST_CLASS = "amai-app-bg-host";
+      APP_BG_CLASS = "amai-app-bg";
+      APP_BG_CONTAINER_CLASS = "sweet-dynamic-bg";
+      APP_BG_HOST_HELPER_CLASS = "sweet-dynamic-bg-in-this";
+      APP_BG_LOADED_CLASS = "sweet-dynamic-bg-loaded";
+      APP_BG_IMG_A_ID = "amai-app-bg-img-a";
+      APP_BG_IMG_B_ID = "amai-app-bg-img-b";
+      NESTED_BG_IMG_A_ID = "bg-img-a";
+      NESTED_BG_IMG_B_ID = "bg-img-b";
+      APP_BG_LIB_GRID_CLASS = "amai-lib-grid";
+      APP_BG_GPU_CLASS = "amai-bg-gpu";
+      BG_MOTION_OFF_CLASS = "amai-bg-motion-off";
+    }
+  });
+
+  // src/utils/ThemeSettings.ts
+  function applyThemeSettings() {
+    const intensity = INTENSITY_PRESETS[settingsValues_default.get("backgroundIntensity")];
+    const motion = settingsValues_default.get("backgroundMotion");
+    const root2 = document.documentElement.style;
+    root2.setProperty("--amai-bg-blur-scale", String(intensity.blur));
+    root2.setProperty("--amai-bg-saturation-scale", String(intensity.saturation));
+    root2.setProperty("--amai-bg-brightness-scale", String(intensity.brightness));
+    root2.setProperty(
+      "--amai-bg-motion-scale",
+      String(motion === "off" ? 1 : MOTION_DURATION_SCALES[motion])
+    );
+    document.documentElement.classList.toggle(BG_MOTION_OFF_CLASS, motion === "off");
+  }
+  function getGlIntensity() {
+    return GL_INTENSITY_PRESETS[settingsValues_default.get("backgroundIntensity")];
+  }
+  function getGlMotionSpeed() {
+    return GL_MOTION_SPEEDS[settingsValues_default.get("backgroundMotion")];
+  }
+  var INTENSITY_PRESETS, GL_INTENSITY_PRESETS, MOTION_DURATION_SCALES, GL_MOTION_SPEEDS;
+  var init_ThemeSettings = __esm({
+    "src/utils/ThemeSettings.ts"() {
+      "use strict";
+      init_settingsValues();
+      init_identity();
+      INTENSITY_PRESETS = {
+        subtle: { blur: 1.35, saturation: 0.55, brightness: 0.75 },
+        normal: { blur: 1, saturation: 1, brightness: 1 },
+        intense: { blur: 0.7, saturation: 1.3, brightness: 1.35 }
+      };
+      GL_INTENSITY_PRESETS = {
+        subtle: { vibrance: 0.8, dim: 0.8 },
+        normal: { vibrance: 1, dim: 1 },
+        intense: { vibrance: 1.15, dim: 1.1 }
+      };
+      MOTION_DURATION_SCALES = {
+        slow: 1.75,
+        normal: 1,
+        fast: 0.5
+      };
+      GL_MOTION_SPEEDS = {
+        off: 0,
+        slow: 0.55,
+        normal: 1,
+        fast: 2
+      };
+    }
+  });
+
+  // src/components/DynamicBG/CrossfadeCanvas.ts
+  function loadStateOf(container) {
+    let state2 = loadStateByContainer.get(container);
+    if (!state2) {
+      state2 = {
+        generation: 0,
+        loadedUrl: /* @__PURE__ */ new WeakMap(),
+        failedUrl: /* @__PURE__ */ new WeakMap()
+      };
+      loadStateByContainer.set(container, state2);
+    }
+    return state2;
+  }
+  function normalizeCoverUrl(raw) {
+    if (!raw)
+      return void 0;
+    if (raw.startsWith("spotify:image:")) {
+      return `https://i.scdn.co/image/${raw.replace("spotify:image:", "")}`;
+    }
+    return raw;
+  }
+  function randomizeBackgroundVars(target) {
+    const rotationPrimary = Math.floor(Math.random() * 360);
+    const rotationSecondary = (Math.floor(Math.random() * 360) + 15) % 360;
+    target.style.setProperty("--bg-rotation-primary", `${rotationPrimary}deg`);
+    target.style.setProperty("--bg-rotation-secondary", `${rotationSecondary}deg`);
+    const scalePrimary = 1 + Math.random() * 0.2;
+    const scaleSecondary = 1.1 + Math.random() * 0.2;
+    target.style.setProperty("--bg-scale-primary", `${scalePrimary}`);
+    target.style.setProperty("--bg-scale-secondary", `${scaleSecondary}`);
+    const hueShift = Math.floor(Math.random() * 30);
+    target.style.setProperty("--bg-hue-shift", `${hueShift}deg`);
+  }
+  function createLayer(id, className, loading) {
+    const img = document.createElement("img");
+    img.id = id;
+    img.className = className;
+    img.decoding = "async";
+    img.loading = loading;
+    return img;
+  }
+  function layersOf(container, ids) {
+    const a = container.querySelector(`#${ids.a}`);
+    const b = container.querySelector(`#${ids.b}`);
+    return a && b ? { a, b } : null;
+  }
+  function applyCrossfade(host, rawUrl, surface) {
+    const url = normalizeCoverUrl(rawUrl) ?? rawUrl;
+    let container = surface.findContainer(host);
+    let layers = container ? layersOf(container, surface.layerIds) : null;
+    if (container && !layers) {
+      container.remove();
+      container = null;
+      layers = null;
+    }
+    if (!container || !layers) {
+      const mounted2 = surface.createContainer(host);
+      mounted2.setAttribute(CURRENT_IMG_ATTR, url);
+      randomizeBackgroundVars(mounted2);
+      const state3 = loadStateOf(mounted2);
+      const placeholder = document.createElement("div");
+      placeholder.className = PLACEHOLDER_CLASS;
+      const imgA = createLayer(surface.layerIds.a, LAYER_A_CLASS, "eager");
+      const imgB = createLayer(surface.layerIds.b, LAYER_B_CLASS, "lazy");
+      imgA.onload = () => {
+        state3.loadedUrl.set(imgA, url);
+        state3.failedUrl.delete(imgA);
+        if (placeholder.parentNode)
+          placeholder.parentNode.removeChild(placeholder);
+        surface.onFirstPaint?.(mounted2);
+      };
+      imgA.onerror = () => {
+        state3.failedUrl.set(imgA, url);
+        console.error("Error loading new background image:", url);
+      };
+      mounted2.appendChild(placeholder);
+      mounted2.appendChild(imgA);
+      mounted2.appendChild(imgB);
+      surface.prepareHost(host, mounted2);
+      host.appendChild(mounted2);
+      imgA.src = url;
+      return mounted2;
+    }
+    const state2 = loadStateOf(container);
+    const generation = ++state2.generation;
+    const active = layers.a.classList.contains("active") ? layers.a : layers.b;
+    const inactive = active === layers.a ? layers.b : layers.a;
+    if (active.src === url && state2.failedUrl.get(active) !== url) {
+      container.setAttribute(CURRENT_IMG_ATTR, url);
+      return container;
+    }
+    const commit = () => {
+      if (state2.generation !== generation)
+        return;
+      active.classList.remove("active");
+      inactive.classList.add("active");
+      container.setAttribute(CURRENT_IMG_ATTR, url);
+      state2.loadedUrl.set(inactive, url);
+      state2.failedUrl.delete(inactive);
+      surface.onSwap?.(container);
+    };
+    if (inactive.src === url && state2.loadedUrl.get(inactive) === url) {
+      surface.schedule(commit);
+      return container;
+    }
+    inactive.onload = null;
+    inactive.onerror = null;
+    state2.failedUrl.delete(inactive);
+    if (inactive.src === url) {
+      inactive.removeAttribute("src");
+    }
+    inactive.onload = () => {
+      if (state2.generation !== generation || inactive.src !== url)
+        return;
+      state2.loadedUrl.set(inactive, url);
+      state2.failedUrl.delete(inactive);
+      surface.schedule(commit);
+    };
+    inactive.onerror = () => {
+      state2.failedUrl.set(inactive, url);
+      state2.loadedUrl.delete(inactive);
+      if (state2.generation === generation) {
+        console.error("Error loading new background image:", url);
+      }
+    };
+    inactive.src = url;
+    return container;
+  }
+  var PLACEHOLDER_CLASS, LAYER_A_CLASS, LAYER_B_CLASS, CURRENT_IMG_ATTR, loadStateByContainer;
+  var init_CrossfadeCanvas = __esm({
+    "src/components/DynamicBG/CrossfadeCanvas.ts"() {
+      "use strict";
+      PLACEHOLDER_CLASS = "placeholder";
+      LAYER_A_CLASS = "bg-image primary active";
+      LAYER_B_CLASS = "bg-image secondary";
+      CURRENT_IMG_ATTR = "current-img";
+      loadStateByContainer = /* @__PURE__ */ new WeakMap();
+    }
+  });
+
+  // src/components/DynamicBG/inkShader.ts
+  var VERTEX_SHADER, FIELD_FRAGMENT_SHADER, PRESENT_FRAGMENT_SHADER;
+  var init_inkShader = __esm({
+    "src/components/DynamicBG/inkShader.ts"() {
+      "use strict";
+      VERTEX_SHADER = `#version 300 es
+// Attribute-less fullscreen triangle: positions from gl_VertexID, no buffers.
+// Shared by both programs, so neither needs a vertex buffer or attributes.
+void main() {
+  vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
+  gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
+}
+`;
+      FIELD_FRAGMENT_SHADER = `#version 300 es
+precision highp float;
+
+// Frame-constant flow terms. Each one is identical for every pixel and used to
+// be recomputed per fragment; see GlAppBackground.computeFlow for the values.
+uniform vec4 uFlowA; // wind1.xy, sway1.xy
+uniform vec4 uFlowB; // wind2.xy, sway2.xy
+uniform float uBreath; // global luminance breath, incl. the base dim
+uniform float uMix;
+uniform float uAspect; // LAYOUT aspect, not the field texture's
+uniform vec2 uFieldSize; // field framebuffer, in pixels
+uniform sampler2D uTexOld;
+uniform sampler2D uTexNew;
+
+out vec4 outColor;
+
+float hash(vec2 p) {
+  vec2 q = fract(p * vec2(123.34, 456.21));
+  q += dot(q, q + 45.32);
+  return fract(q.x * q.y);
+}
+
+float vnoise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+  float a = hash(i);
+  float b = hash(i + vec2(1.0, 0.0));
+  float c = hash(i + vec2(0.0, 1.0));
+  float d = hash(i + vec2(1.0, 1.0));
+  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
+float fbm(vec2 p) {
+  float v = 0.0;
+  float a = 0.5;
+  vec2 q = p;
+  for (int i = 0; i < 4; i++) {
+    v += a * vnoise(q);
+    q = q * 2.03 + vec2(1.7, 9.2);
+    a *= 0.5;
+  }
+  return v;
+}
+
+// Two octaves instead of four, renormalised to fbm()'s value range (its weights
+// sum to 0.75 against fbm()'s 0.9375, hence the 1.25) so callers see the same
+// distribution and only lose the sub-detail.
+float fbmLow(vec2 p) {
+  float v = 0.0;
+  vec2 q = p;
+  v += 0.5 * vnoise(q);
+  q = q * 2.03 + vec2(1.7, 9.2);
+  v += 0.25 * vnoise(q);
+  return v * 1.25;
+}
+
+void main() {
+  vec2 uv = vec2(gl_FragCoord.x, uFieldSize.y - gl_FragCoord.y) / uFieldSize;
+  vec2 st = (uv - 0.5) * vec2(uAspect, 1.0);
+
+  // ---- flow: one mass of ink moving as a whole ------------------------
+  // Steady glacial wind + bounded sine-eased meander per layer. Motion
+  // level is deliberately unchanged from the old design; only the FORM is
+  // new \u2014 the abstraction comes from shape, not speed. Both terms are
+  // frame-constant, so the CPU evaluates the sines (see uFlowA/uFlowB).
+  vec2 wind1 = uFlowA.xy;
+  vec2 sway1 = uFlowA.zw;
+  vec2 wind2 = uFlowB.xy;
+  vec2 sway2 = uFlowB.zw;
+
+  // ---- form: isotropic double domain warp (marbling, no ribbons) ------
+  // No anisotropic stretch: the ink curls in all directions instead of
+  // being pulled into horizontal bands.
+  vec2 p = st;
+  vec2 q = vec2(
+    fbm(p + wind1 + sway1),
+    fbm(p + vec2(5.2, 1.3) + wind2 + sway2)
+  );
+  vec2 r = vec2(
+    fbm(p + 1.60 * q + vec2(1.7, 9.2) + wind2.yx + sway1.yx),
+    fbm(p + 1.60 * q + vec2(8.3, 2.8) - wind1.yx + sway2.xy)
+  );
+
+  // ---- palette-only artwork lookup ------------------------------------
+  // Lookup coordinates come from noise (+ the warp field for coherence),
+  // never from screen position: neighbouring pixels land on nearby palette
+  // texels (coherent colour masses), but no screen-to-image correspondence
+  // exists \u2014 the cover's imagery and composition cannot survive the trip.
+  // fbmLow, not fbm: the target is a 32x32 texture that is bilinear-upscaled,
+  // so the two finest octaves only jitter the coordinate inside one texel \u2014
+  // cost that the source resolution throws away.
+  vec2 palCoord = clamp(
+    vec2(
+      fbmLow(p * 0.55 + r + wind1 + 3.7),
+      fbmLow(p * 0.55 - r.yx + wind2 + 7.1)
+    ),
+    vec2(0.003),
+    vec2(0.997)
+  );
+  vec3 oldC = texture(uTexOld, palCoord).rgb;
+  vec3 newC = texture(uTexNew, palCoord).rgb;
+
+  // ---- crossfade: coherent veil dissolve ------------------------------
+  // Exact endpoints (w=0 at uMix=0, w=1 at uMix=1 for EVERY pixel) keep the
+  // ping-pong swap frame-identical. Thresholds ride the warp field + the
+  // outgoing cover's luminance, so the fade travels as coherent veils that
+  // follow the flow; per-cell jitter stays tiny (no salt-and-pepper).
+  // The cell is measured in FIELD texels, so its on-screen size scales with
+  // FIELD_SCALE \u2014 coarser than the old single-pass grain, still far below the
+  // veil width, and the endpoint contract above does not depend on it.
+  float lold = dot(oldC, vec3(0.2126, 0.7152, 0.0722));
+  float cell = hash(floor(gl_FragCoord.xy / 3.0) + 7.7);
+  float soft = 0.32;
+  float nFlow = smoothstep(0.30, 0.70, r.x);
+  float nLum = smoothstep(0.05, 0.55, lold);
+  float thr = clamp(nFlow * 0.55 + nLum * 0.39 + cell * 0.06, 0.0, 1.0) * (1.0 - soft);
+  float w = smoothstep(thr, thr + soft, uMix);
+  vec3 pigment = mix(oldC, newC, w);
+
+  // ---- ink: billows of pigment suspended in a dark medium -------------
+  // Two warped density layers at different scales, thresholded softly \u2014
+  // cloud edges, never the old contour veins (filigree removed on purpose:
+  // linework reads as structure, not abstraction). The pigment boost
+  // offsets the medium blend to keep the old pipeline's mean luminance, so
+  // legibility is unchanged.
+  float dBig = fbm(p * 1.15 + 1.35 * q + wind1 + sway2);
+  float dFine = fbm(p * 2.40 + vec2(4.7, 2.9) - 1.10 * r + wind2);
+  float dens = smoothstep(0.20, 0.66, mix(dBig, dFine, 0.35));
+  vec3 medium = vec3(0.045, 0.045, 0.062);
+  vec3 col = mix(medium, pigment * 1.5, dens);
+
+  // ---- grade: deep blacks, one slow global breath ---------------------
+  float lum = dot(col, vec3(0.2126, 0.7152, 0.0722));
+  col = mix(vec3(lum), col, 1.22);
+  col = clamp(col, 0.0, 1.0);
+  col = mix(col, col * col * (3.0 - 2.0 * col), 0.55);
+  col *= uBreath;
+  col *= 1.0 + 0.10 * (r.x - 0.5);
+
+  // Top/bottom legibility scrims \u2014 same contract as the old CSS ::after.
+  float scrim = mix(0.42, 1.0,
+    smoothstep(0.0, 0.20, uv.y) * (1.0 - smoothstep(0.74, 0.97, uv.y)));
+  col *= scrim;
+  col *= 1.0 - 0.28 * smoothstep(0.35, 1.15, length(st));
+
+  // The breath and the scrims keep this well under 1.0, so an RGBA8 target
+  // costs no range the old single-pass output did not already quantise away.
+  outColor = vec4(max(col, 0.0), 1.0);
+}
+`;
+      PRESENT_FRAGMENT_SHADER = `#version 300 es
+precision highp float;
+
+uniform sampler2D uField;
+uniform vec2 uGrainSeed; // per-frame grain offset
+uniform vec2 uResolution; // canvas backing store, in pixels
+// Amai Theme intensity (ThemeSettings presets): vibrance scales the colour's
+// distance from grey, dim scales brightness. Applied BEFORE the grain so the
+// grain's luminance weighting stays calibrated to the delivered output.
+uniform float uVibrance;
+uniform float uDim;
+
+out vec4 outColor;
+
+float hash(vec2 p) {
+  vec2 q = fract(p * vec2(123.34, 456.21));
+  q += dot(q, q + 45.32);
+  return fract(q.x * q.y);
+}
+
+void main() {
+  vec3 col = texture(uField, gl_FragCoord.xy / uResolution).rgb;
+
+  float baseLum = dot(col, vec3(0.2126, 0.7152, 0.0722));
+  col = mix(vec3(baseLum), col, uVibrance) * uDim;
+
+  // Grain weighted into the shadows where banding lives. It rides the FIELD's
+  // own luminance \u2014 the same value the single-pass shader used \u2014 so the two
+  // passes cannot drift apart in how much noise they lay down.
+  float lum = dot(col, vec3(0.2126, 0.7152, 0.0722));
+  float g = hash(gl_FragCoord.xy + uGrainSeed) - 0.5;
+  col += g * mix(0.020, 0.006, smoothstep(0.0, 0.45, lum));
+
+  outColor = vec4(max(col, 0.0), 1.0);
+}
+`;
+    }
+  });
+
+  // src/components/DynamicBG/GlAppBackground.ts
+  var GlAppBackground_exports = {};
+  __export(GlAppBackground_exports, {
+    GL_REVEAL_MS: () => GL_REVEAL_MS,
+    GlAppBackground: () => GlAppBackground
+  });
+  async function loadArtworkBitmap(url) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok)
+        return null;
+      const blob = await res.blob();
+      return await createImageBitmap(blob, {
+        resizeWidth: ART_SIZE,
+        resizeHeight: ART_SIZE,
+        resizeQuality: "high"
+      });
+    } catch {
+      return null;
+    }
+  }
+  function compile(gl, type, source, label) {
+    const shader = gl.createShader(type);
+    if (!shader)
+      throw new Error(`WebGL2: could not create ${label} shader`);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      const log = gl.getShaderInfoLog(shader) ?? "no log";
+      gl.deleteShader(shader);
+      throw new Error(`WebGL2 ${label} shader failed to compile: ${log}`);
+    }
+    return shader;
+  }
+  function buildProgram(gl, fragmentSource, label) {
+    const vs = compile(gl, gl.VERTEX_SHADER, VERTEX_SHADER, `${label} vertex`);
+    const fs = compile(gl, gl.FRAGMENT_SHADER, fragmentSource, `${label} fragment`);
+    const program = gl.createProgram();
+    if (!program)
+      throw new Error(`WebGL2: could not create the ${label} program`);
+    gl.attachShader(program, vs);
+    gl.attachShader(program, fs);
+    gl.linkProgram(program);
+    gl.deleteShader(vs);
+    gl.deleteShader(fs);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      const log = gl.getProgramInfoLog(program) ?? "no log";
+      gl.deleteProgram(program);
+      throw new Error(`WebGL2 ${label} program failed to link: ${log}`);
+    }
+    return program;
+  }
+  var ART_SIZE, CROSSFADE_SECONDS, BG_FPS, FRAME_INTERVAL_MS, STATIC_TIME, MAX_FRAME_DT_MS, MAX_DPR, BACKING_SCALE, FIELD_SCALE, GL_REVEAL_MS, GlAppBackground;
+  var init_GlAppBackground = __esm({
+    "src/components/DynamicBG/GlAppBackground.ts"() {
+      "use strict";
+      init_identity();
+      init_inkShader();
+      ART_SIZE = 32;
+      CROSSFADE_SECONDS = 1.6;
+      BG_FPS = 60;
+      FRAME_INTERVAL_MS = 1e3 / BG_FPS;
+      STATIC_TIME = 9.5;
+      MAX_FRAME_DT_MS = 1e3 / 15;
+      MAX_DPR = 1;
+      BACKING_SCALE = 0.6;
+      FIELD_SCALE = 0.35;
+      GL_REVEAL_MS = 900;
+      GlAppBackground = class {
+        constructor(opts) {
+          this.rafId = null;
+          this.resizeRafQueued = false;
+          this.lastTickMs = 0;
+          this.elapsed = 0;
+          this.fieldTime = 0;
+          this.mix = 0;
+          this.mixStart = 0;
+          this.crossfading = false;
+          this.loadToken = 0;
+          this.currentUrl = null;
+          this.backingW = 0;
+          this.backingH = 0;
+          this.fieldW = 0;
+          this.fieldH = 0;
+          this.mountedOnce = false;
+          this.disposed = false;
+          this.handleContextLost = (event) => {
+            event.preventDefault();
+            if (this.disposed)
+              return;
+            this.disposed = true;
+            this.stopLoop();
+            document.removeEventListener("visibilitychange", this.handleVisibility);
+            window.removeEventListener("resize", this.handleResize);
+            this.sizeObserver.disconnect();
+            this.motionQuery.removeEventListener("change", this.handleMotionChange);
+            this.container.remove();
+            this.onFail();
+          };
+          this.handleVisibility = () => {
+            if (this.disposed)
+              return;
+            if (document.hidden)
+              this.stopLoop();
+            else
+              this.ensureLoop();
+          };
+          this.handleMotionChange = () => {
+            if (this.disposed)
+              return;
+            this.motionEnabled = !this.motionQuery.matches;
+            this.updateMotionActive();
+          };
+          this.handleResize = () => {
+            if (this.disposed || this.resizeRafQueued)
+              return;
+            this.resizeRafQueued = true;
+            requestAnimationFrame(() => {
+              this.resizeRafQueued = false;
+              if (this.disposed)
+                return;
+              this.resizeBackingStore();
+              this.drawFrame();
+            });
+          };
+          this.tick = (now2) => {
+            if (this.disposed)
+              return;
+            if (this.lastTickMs === 0)
+              this.lastTickMs = now2;
+            const delta = now2 - this.lastTickMs;
+            if (delta < FRAME_INTERVAL_MS - 1) {
+              this.rafId = requestAnimationFrame(this.tick);
+              return;
+            }
+            this.lastTickMs = now2;
+            this.elapsed += Math.min(delta, MAX_FRAME_DT_MS) / 1e3;
+            this.fieldTime += Math.min(delta, MAX_FRAME_DT_MS) / 1e3 * this.motionSpeed;
+            if (this.crossfading) {
+              const p = Math.min(1, (this.elapsed - this.mixStart) / CROSSFADE_SECONDS);
+              this.mix = p * p * (3 - 2 * p);
+              if (p >= 1)
+                this.finishCrossfade();
+            }
+            this.drawFrame();
+            if (!this.motionActive && !this.crossfading) {
+              this.rafId = null;
+              return;
+            }
+            this.rafId = requestAnimationFrame(this.tick);
+          };
+          this.onFail = opts.onFail;
+          this.intensity = opts.intensity ? { ...opts.intensity } : { vibrance: 1, dim: 1 };
+          this.motionSpeed = opts.motionSpeed ?? 1;
+          this.container = createAppBgContainer(true);
+          this.canvas = document.createElement("canvas");
+          this.canvas.className = "amai-bg-canvas";
+          this.container.appendChild(this.canvas);
+          const gl = this.canvas.getContext("webgl2", {
+            alpha: false,
+            antialias: false,
+            depth: false,
+            stencil: false,
+            powerPreference: "high-performance",
+            desynchronized: true
+          });
+          if (!gl)
+            throw new Error("WebGL2: context unavailable in this runtime");
+          this.gl = gl;
+          this.fieldProgram = buildProgram(gl, FIELD_FRAGMENT_SHADER, "field");
+          this.presentProgram = buildProgram(gl, PRESENT_FRAGMENT_SHADER, "present");
+          gl.useProgram(this.fieldProgram);
+          this.fieldUniforms = {
+            uFlowA: gl.getUniformLocation(this.fieldProgram, "uFlowA"),
+            uFlowB: gl.getUniformLocation(this.fieldProgram, "uFlowB"),
+            uBreath: gl.getUniformLocation(this.fieldProgram, "uBreath"),
+            uMix: gl.getUniformLocation(this.fieldProgram, "uMix"),
+            uAspect: gl.getUniformLocation(this.fieldProgram, "uAspect"),
+            uFieldSize: gl.getUniformLocation(this.fieldProgram, "uFieldSize"),
+            uTexOld: gl.getUniformLocation(this.fieldProgram, "uTexOld"),
+            uTexNew: gl.getUniformLocation(this.fieldProgram, "uTexNew")
+          };
+          gl.uniform1i(this.fieldUniforms.uTexOld, 0);
+          gl.uniform1i(this.fieldUniforms.uTexNew, 1);
+          gl.useProgram(this.presentProgram);
+          this.presentUniforms = {
+            uField: gl.getUniformLocation(this.presentProgram, "uField"),
+            uGrainSeed: gl.getUniformLocation(this.presentProgram, "uGrainSeed"),
+            uResolution: gl.getUniformLocation(this.presentProgram, "uResolution"),
+            uVibrance: gl.getUniformLocation(this.presentProgram, "uVibrance"),
+            uDim: gl.getUniformLocation(this.presentProgram, "uDim")
+          };
+          gl.uniform1i(this.presentUniforms.uField, 0);
+          this.vao = gl.createVertexArray() ?? {};
+          gl.bindVertexArray(this.vao);
+          this.fieldTex = this.createFieldTarget();
+          this.fieldFbo = this.createFieldFramebuffer();
+          this.texOld = this.createArtTexture();
+          this.texCurrent = this.createArtTexture();
+          this.motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+          this.motionEnabled = !this.motionQuery.matches;
+          this.motionActive = this.motionEnabled && this.motionSpeed > 0;
+          this.canvas.addEventListener("webglcontextlost", this.handleContextLost);
+          document.addEventListener("visibilitychange", this.handleVisibility);
+          this.sizeObserver = new ResizeObserver(this.handleResize);
+          this.sizeObserver.observe(this.canvas);
+          window.addEventListener("resize", this.handleResize, { passive: true });
+          this.motionQuery.addEventListener("change", this.handleMotionChange);
+        }
+        static async create(host, coverUrl, opts) {
+          const glBg = new GlAppBackground(opts);
+          try {
+            await glBg.seedArtwork(coverUrl);
+            glBg.reattach(host);
+            glBg.ensureLoop();
+            return glBg;
+          } catch (error) {
+            glBg.remove();
+            throw error;
+          }
+        }
+        getElement() {
+          return this.container;
+        }
+        hasArtwork() {
+          return this.currentUrl !== null;
+        }
+        isApplied() {
+          return !this.disposed && this.container.isConnected;
+        }
+        reattach(host) {
+          if (this.disposed || this.container.parentElement === host)
+            return;
+          ensureAppBgHostClasses(host);
+          host.appendChild(this.container);
+          this.resizeBackingStore();
+          this.drawFrame();
+          if (!this.mountedOnce && host.isConnected) {
+            this.mountedOnce = true;
+            if (this.motionEnabled) {
+              this.container.animate?.([{ opacity: 0 }, { opacity: 1 }], {
+                duration: GL_REVEAL_MS,
+                easing: "ease"
+              });
+            }
+          }
+        }
+        apply(coverUrl) {
+          if (this.disposed || coverUrl === this.currentUrl)
+            return;
+          this.currentUrl = coverUrl;
+          const token = ++this.loadToken;
+          void loadArtworkBitmap(coverUrl).then((bitmap) => {
+            if (this.disposed || token !== this.loadToken) {
+              bitmap?.close();
+              return;
+            }
+            if (!bitmap)
+              return;
+            if (this.crossfading) {
+              this.mix = 1;
+              this.finishCrossfade();
+            }
+            this.uploadArtwork(this.texCurrent, bitmap);
+            bitmap.close();
+            this.container.setAttribute("current-img", coverUrl);
+            this.mixStart = this.elapsed;
+            this.crossfading = true;
+            this.ensureLoop();
+          });
+        }
+        remove() {
+          if (this.disposed)
+            return;
+          this.disposed = true;
+          this.stopLoop();
+          this.canvas.removeEventListener("webglcontextlost", this.handleContextLost);
+          document.removeEventListener("visibilitychange", this.handleVisibility);
+          window.removeEventListener("resize", this.handleResize);
+          this.sizeObserver.disconnect();
+          this.motionQuery.removeEventListener("change", this.handleMotionChange);
+          this.gl.getExtension("WEBGL_lose_context")?.loseContext();
+          this.gl.deleteTexture(this.texOld);
+          this.gl.deleteTexture(this.texCurrent);
+          this.gl.deleteFramebuffer(this.fieldFbo);
+          this.gl.deleteTexture(this.fieldTex);
+          this.gl.deleteProgram(this.fieldProgram);
+          this.gl.deleteProgram(this.presentProgram);
+          this.gl.deleteVertexArray(this.vao);
+          this.container.remove();
+        }
+        createArtTexture() {
+          const gl = this.gl;
+          const tex = gl.createTexture();
+          if (!tex)
+            throw new Error("WebGL2: could not create texture");
+          gl.bindTexture(gl.TEXTURE_2D, tex);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+          return tex;
+        }
+        createFieldTarget() {
+          const gl = this.gl;
+          const tex = gl.createTexture();
+          if (!tex)
+            throw new Error("WebGL2: could not create the field texture");
+          gl.bindTexture(gl.TEXTURE_2D, tex);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+          return tex;
+        }
+        createFieldFramebuffer() {
+          const gl = this.gl;
+          const fbo = gl.createFramebuffer();
+          if (!fbo)
+            throw new Error("WebGL2: could not create the field framebuffer");
+          gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+          gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.fieldTex, 0);
+          const complete = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
+          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+          if (!complete)
+            throw new Error("WebGL2: the field framebuffer is incomplete");
+          return fbo;
+        }
+        texImage(source) {
+          const gl = this.gl;
+          if (source instanceof Uint8Array) {
+            gl.texImage2D(
+              gl.TEXTURE_2D,
+              0,
+              gl.RGBA8,
+              ART_SIZE,
+              ART_SIZE,
+              0,
+              gl.RGBA,
+              gl.UNSIGNED_BYTE,
+              source
+            );
+          } else {
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, source);
+          }
+        }
+        seedArtwork(coverUrl) {
+          return loadArtworkBitmap(coverUrl).then((bitmap) => {
+            this.gl.pixelStorei(this.gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+            this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, false);
+            if (!bitmap) {
+              const dark = new Uint8Array(ART_SIZE * ART_SIZE * 4);
+              for (let i = 0; i < ART_SIZE * ART_SIZE; i++) {
+                dark[i * 4] = 28;
+                dark[i * 4 + 1] = 28;
+                dark[i * 4 + 2] = 34;
+                dark[i * 4 + 3] = 255;
+              }
+              this.gl.bindTexture(this.gl.TEXTURE_2D, this.texOld);
+              this.texImage(dark);
+              this.gl.bindTexture(this.gl.TEXTURE_2D, this.texCurrent);
+              this.texImage(dark);
+              return;
+            }
+            this.uploadArtwork(this.texOld, bitmap);
+            this.uploadArtwork(this.texCurrent, bitmap);
+            bitmap.close();
+            this.currentUrl = coverUrl;
+            this.container.setAttribute("current-img", coverUrl);
+          });
+        }
+        uploadArtwork(target, bitmap) {
+          const gl = this.gl;
+          gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+          gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+          gl.bindTexture(gl.TEXTURE_2D, target);
+          this.texImage(bitmap);
+        }
+        updateMotionActive() {
+          this.motionActive = this.motionEnabled && this.motionSpeed > 0;
+          this.ensureLoop();
+        }
+        setIntensity(intensity) {
+          if (this.disposed)
+            return;
+          this.intensity = { ...intensity };
+          if (this.rafId === null)
+            this.drawFrame();
+        }
+        setMotionSpeed(speed) {
+          if (this.disposed)
+            return;
+          this.motionSpeed = speed;
+          this.updateMotionActive();
+          if (this.rafId === null)
+            this.drawFrame();
+        }
+        ensureLoop() {
+          if (this.disposed || this.rafId !== null || document.hidden)
+            return;
+          this.lastTickMs = 0;
+          this.rafId = requestAnimationFrame(this.tick);
+        }
+        stopLoop() {
+          if (this.rafId !== null) {
+            cancelAnimationFrame(this.rafId);
+            this.rafId = null;
+          }
+        }
+        resizeBackingStore() {
+          const w = this.canvas.clientWidth;
+          const h = this.canvas.clientHeight;
+          if (!w || !h)
+            return;
+          const dpr = Math.min(MAX_DPR, window.devicePixelRatio || 1);
+          const bw = Math.max(1, Math.round(w * dpr * BACKING_SCALE));
+          const bh = Math.max(1, Math.round(h * dpr * BACKING_SCALE));
+          const fw = Math.max(1, Math.round(w * dpr * FIELD_SCALE));
+          const fh = Math.max(1, Math.round(h * dpr * FIELD_SCALE));
+          if (bw === this.backingW && bh === this.backingH && fw === this.fieldW && fh === this.fieldH) {
+            return;
+          }
+          this.backingW = bw;
+          this.backingH = bh;
+          this.fieldW = fw;
+          this.fieldH = fh;
+          this.canvas.width = bw;
+          this.canvas.height = bh;
+          const gl = this.gl;
+          gl.bindTexture(gl.TEXTURE_2D, this.fieldTex);
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, fw, fh, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+          gl.useProgram(this.fieldProgram);
+          gl.uniform2f(this.fieldUniforms.uFieldSize, fw, fh);
+          gl.uniform1f(this.fieldUniforms.uAspect, w / h);
+          gl.useProgram(this.presentProgram);
+          gl.uniform2f(this.presentUniforms.uResolution, bw, bh);
+        }
+        drawFrame() {
+          this.renderField();
+          this.presentField();
+        }
+        renderField() {
+          const gl = this.gl;
+          gl.bindFramebuffer(gl.FRAMEBUFFER, this.fieldFbo);
+          gl.viewport(0, 0, this.fieldW, this.fieldH);
+          gl.useProgram(this.fieldProgram);
+          this.computeFlow();
+          gl.uniform1f(this.fieldUniforms.uMix, this.mix);
+          gl.activeTexture(gl.TEXTURE0);
+          gl.bindTexture(gl.TEXTURE_2D, this.texOld);
+          gl.activeTexture(gl.TEXTURE1);
+          gl.bindTexture(gl.TEXTURE_2D, this.texCurrent);
+          gl.drawArrays(gl.TRIANGLES, 0, 3);
+        }
+        presentField() {
+          const gl = this.gl;
+          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+          gl.viewport(0, 0, this.backingW, this.backingH);
+          gl.useProgram(this.presentProgram);
+          const t = this.motionActive ? this.fieldTime : STATIC_TIME;
+          gl.uniform2f(this.presentUniforms.uGrainSeed, t * 0.7 % 1 * 43, t * 0.31 % 1 * 17);
+          gl.uniform1f(this.presentUniforms.uVibrance, this.intensity.vibrance);
+          gl.uniform1f(this.presentUniforms.uDim, this.intensity.dim);
+          gl.activeTexture(gl.TEXTURE0);
+          gl.bindTexture(gl.TEXTURE_2D, this.fieldTex);
+          gl.drawArrays(gl.TRIANGLES, 0, 3);
+        }
+        computeFlow() {
+          const gl = this.gl;
+          const t = this.motionActive ? this.fieldTime : STATIC_TIME;
+          gl.uniform4f(
+            this.fieldUniforms.uFlowA,
+            0.02 * t,
+            -0.011 * t,
+            Math.sin(t * 0.045) * 0.35,
+            Math.cos(t * 0.033) * 0.35
+          );
+          gl.uniform4f(
+            this.fieldUniforms.uFlowB,
+            -0.013 * t,
+            8e-3 * t,
+            Math.sin(t * 0.028 + 1.9) * 0.3,
+            Math.cos(t * 0.051 + 0.6) * 0.3
+          );
+          gl.uniform1f(this.fieldUniforms.uBreath, 0.35 * (1 + 0.05 * Math.sin(t * 0.1)));
+        }
+        finishCrossfade() {
+          this.crossfading = false;
+          this.mix = 0;
+          const incoming = this.texOld;
+          this.texOld = this.texCurrent;
+          this.texCurrent = incoming;
+        }
+      };
+    }
+  });
+
+  // src/components/DynamicBG/AppBackground.ts
+  var AppBackground_exports = {};
+  __export(AppBackground_exports, {
+    APP_BG_HOST_FALLBACK_SELECTOR: () => APP_BG_HOST_FALLBACK_SELECTOR,
+    APP_BG_HOST_SELECTOR: () => APP_BG_HOST_SELECTOR,
+    AppBackground: () => AppBackground,
+    appBackgroundSingleton: () => appBackgroundSingleton,
+    isAppBackgroundEnabled: () => isAppBackgroundEnabled,
+    resolveAppBgHost: () => resolveAppBgHost,
+    syncAppBgMarker: () => syncAppBgMarker,
+    watchLibraryGridState: () => watchLibraryGridState
+  });
+  function detachDomCanvas(el) {
+    if (el instanceof HTMLElement && el.classList.contains(APP_BG_CLASS) && !el.classList.contains(APP_BG_GPU_CLASS)) {
+      el.remove();
+    }
+  }
+  function releaseAppBgHostIfEmpty(host) {
+    if (!host || findAppBg(host))
+      return;
+    host.classList.remove(APP_BG_HOST_HELPER_CLASS, APP_BG_HOST_CLASS);
+  }
+  function isGpuEnvironmentFailure(error) {
+    const err2 = error;
+    const text = `${err2?.name ?? ""} ${err2?.message ?? String(error)}`;
+    return /context unavailable|context lost/i.test(text);
+  }
+  function isAppBackgroundEnabled() {
+    return settingsValues_default.get("enableAppBackground");
+  }
+  function resolveAppBgHost() {
+    const fullscreenPage = document.querySelector(PageViewSelectors.FullscreenPage);
+    if (fullscreenPage)
+      return fullscreenPage;
+    return document.querySelector(APP_BG_HOST_SELECTOR) ?? document.querySelector(APP_BG_HOST_FALLBACK_SELECTOR);
+  }
+  function syncAppBgMarker(force) {
+    document.documentElement.classList.toggle(APP_BG_ON_CLASS, force ?? isAppBackgroundEnabled());
+  }
+  function findAppBg(host) {
+    const kids = host.children;
+    for (let i = 0; i < kids.length; i++) {
+      const child = kids[i];
+      if (child instanceof HTMLElement && child.classList.contains(APP_BG_CONTAINER_CLASS) && child.classList.contains(APP_BG_CLASS)) {
+        return child;
+      }
+    }
+    return null;
+  }
+  function watchLibraryGridState() {
+    const navBar = document.querySelector(anySurface("sidebar"));
+    if (!navBar)
+      return null;
+    syncLibraryGridState();
+    const obs = new MutationObserver(() => syncLibraryGridState());
+    obs.observe(navBar, { childList: true, subtree: true });
+    return obs;
+  }
+  var APP_BG_HOST_SELECTOR, APP_BG_HOST_FALLBACK_SELECTOR, domCrossfadeSurface, AppBackground, appBackgroundSingleton;
+  var init_AppBackground = __esm({
+    "src/components/DynamicBG/AppBackground.ts"() {
+      "use strict";
+      init_settingsValues();
+      init_ThemeSettings();
+      init_CrossfadeCanvas();
+      init_identity();
+      init_SpotifyDom();
+      init_PageViewSelectors();
+      APP_BG_HOST_SELECTOR = primarySurface("appFrameHost");
+      APP_BG_HOST_FALLBACK_SELECTOR = legacySurface("appFrameHost");
+      domCrossfadeSurface = {
+        layerIds: { a: APP_BG_IMG_A_ID, b: APP_BG_IMG_B_ID },
+        findContainer: (host) => {
+          const found = findAppBg(host);
+          return found && !found.classList.contains(APP_BG_GPU_CLASS) ? found : null;
+        },
+        createContainer: () => createAppBgContainer(false),
+        prepareHost: ensureAppBgHostClasses,
+        schedule: (cb) => requestAnimationFrame(cb),
+        onFirstPaint: (container) => {
+          requestAnimationFrame(() => container.classList.add(APP_BG_LOADED_CLASS));
+        }
+      };
+      AppBackground = class {
+        constructor() {
+          this.cached = {
+            host: null,
+            dynamicBg: null,
+            lastImgUrl: null
+          };
+          this.glBg = null;
+          this.glState = "idle";
+          this.bootGeneration = 0;
+          this.lastCoverUrl = null;
+          this.domDetachTimer = null;
+        }
+        apply(coverUrl) {
+          const enabled = isAppBackgroundEnabled();
+          if (!enabled)
+            return;
+          syncAppBgMarker(true);
+          const normalized = normalizeCoverUrl(coverUrl);
+          if (!normalized)
+            return;
+          coverUrl = normalized;
+          try {
+            const host = resolveAppBgHost();
+            if (!host) {
+              this.clearCache();
+              return;
+            }
+            let vacatedHost = null;
+            const releaseVacatedHost = () => {
+              if (vacatedHost && vacatedHost !== host)
+                releaseAppBgHostIfEmpty(vacatedHost);
+            };
+            if (this.cached.host !== host) {
+              vacatedHost = this.cached.host;
+              this.cached.host = host;
+              const carried = this.cached.dynamicBg;
+              this.cached.dynamicBg = findAppBg(host);
+              if (!this.cached.dynamicBg && carried?.isConnected && !carried.classList.contains(APP_BG_GPU_CLASS)) {
+                ensureAppBgHostClasses(host);
+                host.appendChild(carried);
+                this.cached.dynamicBg = carried;
+              }
+            }
+            const cachedBg = this.cached.dynamicBg;
+            if (cachedBg && (!cachedBg.isConnected || cachedBg.parentElement !== host)) {
+              this.cached.dynamicBg = findAppBg(host);
+            }
+            this.lastCoverUrl = coverUrl;
+            if (this.glBg) {
+              if (!this.cached.dynamicBg || this.cached.dynamicBg.parentElement !== host) {
+                this.glBg.reattach(host);
+                this.cached.dynamicBg = this.glBg.getElement();
+              }
+              releaseVacatedHost();
+              this.glBg.apply(coverUrl);
+              this.cached.lastImgUrl = coverUrl;
+              return;
+            }
+            releaseVacatedHost();
+            if (this.glState === "idle")
+              this.bootGl(host, coverUrl);
+            if (coverUrl === this.cached.lastImgUrl && this.cached.dynamicBg)
+              return;
+            this.cached.dynamicBg = applyCrossfade(host, coverUrl, domCrossfadeSurface);
+            this.cached.lastImgUrl = coverUrl;
+          } catch (error) {
+            console.error("Error Applying the Dynamic BG to the App:", error);
+          }
+        }
+        remove() {
+          try {
+            this.bootGeneration++;
+            if (this.domDetachTimer) {
+              clearTimeout(this.domDetachTimer);
+              this.domDetachTimer = null;
+            }
+            if (this.glBg) {
+              const dying = this.glBg;
+              this.glBg = null;
+              dying.remove();
+            }
+            if (this.glState === "ready" || this.glState === "booting")
+              this.glState = "idle";
+            const host = this.cached.host ?? resolveAppBgHost();
+            const bg = host ? findAppBg(host) : null;
+            bg?.remove();
+            if (host) {
+              if (!bg || !findAppBg(host)) {
+                host.classList.remove(APP_BG_HOST_HELPER_CLASS);
+              }
+              host.classList.remove(APP_BG_HOST_CLASS);
+              host.querySelector(anySurface("sidebar"))?.classList.remove(APP_BG_LIB_GRID_CLASS);
+            }
+            const backHost = document.querySelector(anySurface("appFrameHost"));
+            if (backHost && backHost !== host) {
+              findAppBg(backHost)?.remove();
+              releaseAppBgHostIfEmpty(backHost);
+            }
+            document.documentElement.classList.remove(APP_BG_ON_CLASS);
+            this.clearCache();
+          } catch (error) {
+            console.error("Error Removing the Dynamic BG from the App:", error);
+          }
+        }
+        isApplied() {
+          const cachedBg = this.cached.dynamicBg;
+          if (cachedBg?.isConnected && cachedBg.classList.contains(APP_BG_CLASS))
+            return true;
+          const host = this.cached.host?.isConnected ? this.cached.host : resolveAppBgHost();
+          return !!host && !!findAppBg(host);
+        }
+        applyIntensitySetting() {
+          this.glBg?.setIntensity(getGlIntensity());
+        }
+        applyMotionSetting() {
+          this.glBg?.setMotionSpeed(getGlMotionSpeed());
+        }
+        destroy() {
+          this.remove();
+        }
+        clearCache() {
+          this.cached.lastImgUrl = null;
+          this.cached.dynamicBg = null;
+          this.cached.host = null;
+        }
+        bootGl(host, coverUrl) {
+          this.glState = "booting";
+          const generation = ++this.bootGeneration;
+          const abandon = (retryable) => {
+            if (generation !== this.bootGeneration)
+              return;
+            this.glState = retryable ? "idle" : "failed";
+          };
+          void (async () => {
+            if (typeof WebGL2RenderingContext === "undefined") {
+              abandon(false);
+              return;
+            }
+            try {
+              const mod = await Promise.resolve().then(() => (init_GlAppBackground(), GlAppBackground_exports));
+              if (generation !== this.bootGeneration || !isAppBackgroundEnabled()) {
+                abandon(true);
+                return;
+              }
+              const seedUrl = this.lastCoverUrl ?? coverUrl;
+              const gl = await mod.GlAppBackground.create(host, seedUrl, {
+                onFail: () => this.handleGlFail(),
+                intensity: getGlIntensity(),
+                motionSpeed: getGlMotionSpeed()
+              });
+              if (!gl) {
+                abandon(false);
+                return;
+              }
+              if (generation !== this.bootGeneration || !isAppBackgroundEnabled()) {
+                gl.remove();
+                releaseAppBgHostIfEmpty(host);
+                releaseAppBgHostIfEmpty(this.cached.host);
+                releaseAppBgHostIfEmpty(resolveAppBgHost());
+                abandon(true);
+                return;
+              }
+              const domNode = this.cached.dynamicBg;
+              const liveHost = resolveAppBgHost() ?? host;
+              const staleHosts = /* @__PURE__ */ new Set();
+              if (this.cached.host && this.cached.host !== liveHost)
+                staleHosts.add(this.cached.host);
+              if (host !== liveHost)
+                staleHosts.add(host);
+              gl.reattach(liveHost);
+              staleHosts.forEach((staleHost) => detachDomCanvas(findAppBg(staleHost)));
+              this.scheduleDomDetach(domNode, mod.GL_REVEAL_MS);
+              this.glBg = gl;
+              this.glState = "ready";
+              this.cached.host = liveHost;
+              this.cached.dynamicBg = gl.getElement();
+              const pushUrl = this.lastCoverUrl ?? seedUrl;
+              if (pushUrl !== seedUrl || !gl.hasArtwork())
+                gl.apply(pushUrl);
+            } catch (error) {
+              abandon(false);
+              if (isGpuEnvironmentFailure(error)) {
+                console.warn(
+                  "amai-lyrics: WebGL2 is not available in this runtime \u2014 keeping the CSS dynamic background."
+                );
+              } else {
+                console.error("Error booting the WebGL2 app background:", error);
+              }
+            }
+          })();
+        }
+        scheduleDomDetach(el, revealMs) {
+          if (!el || !el.isConnected) {
+            detachDomCanvas(el);
+            return;
+          }
+          if (this.domDetachTimer)
+            clearTimeout(this.domDetachTimer);
+          this.domDetachTimer = setTimeout(() => {
+            this.domDetachTimer = null;
+            detachDomCanvas(el);
+          }, revealMs + 50);
+        }
+        handleGlFail() {
+          if (this.glState === "failed")
+            return;
+          this.bootGeneration++;
+          this.glBg = null;
+          this.glState = "failed";
+          this.cached.dynamicBg = null;
+          this.cached.lastImgUrl = null;
+          if (isAppBackgroundEnabled())
+            this.apply(this.lastCoverUrl ?? void 0);
+        }
+      };
+      appBackgroundSingleton = new AppBackground();
+    }
+  });
+
+  // src/components/DynamicBG/NowPlayingBarBackground.ts
+  var import_fastdom5, sidebarCrossfadeSurface, NowPlayingBarBackground;
+  var init_NowPlayingBarBackground = __esm({
+    "src/components/DynamicBG/NowPlayingBarBackground.ts"() {
+      "use strict";
+      import_fastdom5 = __toESM(require_fastdom());
+      init_fastdomAsync();
+      init_CrossfadeCanvas();
+      init_identity();
+      init_SpotifyDom();
+      sidebarCrossfadeSurface = {
+        layerIds: { a: NESTED_BG_IMG_A_ID, b: NESTED_BG_IMG_B_ID },
+        findContainer: (host) => host.querySelector(`.${APP_BG_CONTAINER_CLASS}`),
+        createContainer: () => {
+          const container = document.createElement("div");
+          container.className = APP_BG_CONTAINER_CLASS;
+          return container;
+        },
+        prepareHost: (host) => host.classList.add(APP_BG_HOST_HELPER_CLASS),
+        schedule: (cb) => import_fastdom5.default.mutate(cb),
+        onFirstPaint: (container) => {
+          if (!container.isConnected)
+            return;
+          container.classList.add(APP_BG_LOADED_CLASS);
+        }
+      };
+      NowPlayingBarBackground = class {
+        constructor() {
+          this.cached = {
+            nowPlayingBar: null,
+            dynamicBg: null,
+            lastImgUrl: null
+          };
+          this.pendingUrl = null;
+        }
+        apply(coverUrl) {
+          const targetUrl = normalizeCoverUrl(coverUrl ?? "");
+          if (!targetUrl)
+            return;
+          if (targetUrl === this.cached.lastImgUrl && this.cached.dynamicBg)
+            return;
+          if (targetUrl === this.pendingUrl)
+            return;
+          this.pendingUrl = targetUrl;
+          void (async () => {
+            try {
+              const nowPlayingBar = await measureAsync(
+                () => document.querySelector(anySurface("nowPlayingPanel"))
+              );
+              if (!nowPlayingBar || !nowPlayingBar.isConnected) {
+                this.clearCache();
+                return;
+              }
+              await mutateAsync(() => {
+                if (!nowPlayingBar.isConnected) {
+                  this.clearCache();
+                  return;
+                }
+                this.cached.nowPlayingBar = nowPlayingBar;
+                this.cached.dynamicBg = applyCrossfade(nowPlayingBar, targetUrl, sidebarCrossfadeSurface);
+                this.cached.lastImgUrl = targetUrl;
+              });
+            } catch (error) {
+              console.error("Error Applying the Dynamic BG to the NowPlayingBar:", error);
+            } finally {
+              if (this.pendingUrl === targetUrl)
+                this.pendingUrl = null;
+            }
+          })();
+        }
+        clearCache() {
+          this.cached.lastImgUrl = null;
+          this.cached.dynamicBg = null;
+          this.cached.nowPlayingBar = null;
+          this.pendingUrl = null;
+        }
+        destroy() {
+          this.clearCache();
+        }
+      };
+    }
+  });
+
+  // src/components/DynamicBG/dynamicBackground.ts
+  var dynamicBackground_exports = {};
+  __export(dynamicBackground_exports, {
+    default: () => ApplyDynamicBackground
+  });
+  function debouncedApply(element, url, shouldPaint) {
+    let apply = pendingByElement.get(element);
+    if (!apply) {
+      apply = debounce2((host, cover, canPaint) => {
+        if (canPaint())
+          applyCrossfade(host, cover, lyricsPageCrossfadeSurface);
+      }, 100);
+      pendingByElement.set(element, apply);
+    }
+    apply(element, url, shouldPaint);
+  }
+  async function ApplyDynamicBackground(element, shouldPaint = () => true) {
+    if (!element)
+      return;
+    const rawCover = await SpotifyPlayer.Artwork.Get("d");
+    if (!rawCover || !shouldPaint())
+      return;
+    if (!lyricsPageCrossfadeSurface.findContainer(element)) {
+      applyCrossfade(element, rawCover, lyricsPageCrossfadeSurface);
+      return;
+    }
+    debouncedApply(element, rawCover, shouldPaint);
+  }
+  var lyricsPageCrossfadeSurface, pendingByElement;
+  var init_dynamicBackground = __esm({
+    "src/components/DynamicBG/dynamicBackground.ts"() {
+      "use strict";
+      init_SpotifyPlayer();
+      init_debounce2();
+      init_CrossfadeCanvas();
+      init_identity();
+      lyricsPageCrossfadeSurface = {
+        layerIds: { a: NESTED_BG_IMG_A_ID, b: NESTED_BG_IMG_B_ID },
+        findContainer: (host) => host.querySelector(`.${APP_BG_CONTAINER_CLASS}`),
+        createContainer: () => {
+          const container = document.createElement("div");
+          container.className = APP_BG_CONTAINER_CLASS;
+          return container;
+        },
+        prepareHost: () => {
+        },
+        schedule: (cb) => requestAnimationFrame(cb),
+        onSwap: (container) => randomizeBackgroundVars(container)
+      };
+      pendingByElement = /* @__PURE__ */ new WeakMap();
+    }
+  });
+
+  // src/utils/ArtworkColors.ts
+  var ArtworkColors_exports = {};
+  __export(ArtworkColors_exports, {
+    applyArtworkAccents: () => applyArtworkAccents,
+    default: () => ArtworkColors_default,
+    deriveAccentPalette: () => deriveAccentPalette,
+    extractArtworkColors: () => extractArtworkColors,
+    hexLuminance: () => hexLuminance,
+    hexToRgb: () => hexToRgb,
+    isHexColor: () => isHexColor,
+    liftToLuminance: () => liftToLuminance,
+    publishArtworkAccents: () => publishArtworkAccents,
+    refreshAccents: () => refreshAccents
+  });
+  function rgbToHex({ r, g, b }) {
+    const toHex = (c) => Math.round(c).toString(16).padStart(2, "0");
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  }
+  function quantize(value, bits) {
+    return value >> 8 - bits << 8 - bits;
+  }
+  function luminance({ r, g, b }) {
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+  function saturation({ r, g, b }) {
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    if (max === 0)
+      return 0;
+    return (max - min) / max * 255;
+  }
+  function bucketKey({ r, g, b }) {
+    return `${r},${g},${b}`;
+  }
+  function quantizePixels(data, width, height, loose) {
+    const bucketMap = /* @__PURE__ */ new Map();
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const idx = (y * width + x) * 4;
+        const r = data[idx];
+        const g = data[idx + 1];
+        const b = data[idx + 2];
+        const a = data[idx + 3];
+        if (a < 128)
+          continue;
+        const rgb = { r, g, b };
+        const lum = luminance(rgb);
+        if (loose) {
+          if (lum < 15 || lum > 245)
+            continue;
+        } else {
+          const sat = saturation(rgb);
+          if (lum < MIN_LIGHTNESS || lum > MAX_LIGHTNESS || sat < MIN_SATURATION) {
+            continue;
+          }
+        }
+        const q = {
+          r: quantize(r, QUANTIZE_BITS),
+          g: quantize(g, QUANTIZE_BITS),
+          b: quantize(b, QUANTIZE_BITS)
+        };
+        const key = bucketKey(q);
+        const entry = bucketMap.get(key);
+        if (entry) {
+          entry.count++;
+        } else {
+          bucketMap.set(key, { rgb: q, count: 1 });
+        }
+      }
+    }
+    return [...bucketMap.entries()].sort((a, b) => b[1].count - a[1].count).slice(0, RESULT_COUNT).map(([, entry]) => rgbToHex(entry.rgb));
+  }
+  function readBitmapPixels(bitmap) {
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx)
+      return null;
+    ctx.drawImage(bitmap, 0, 0);
+    try {
+      const imageData = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
+      return { data: imageData.data, width: bitmap.width, height: bitmap.height };
+    } catch {
+      return null;
+    }
+  }
+  async function extractArtworkColors(imageUrl) {
+    const cached = artworkColorCache.get(imageUrl);
+    if (cached) {
+      artworkColorCache.delete(imageUrl);
+      artworkColorCache.set(imageUrl, cached);
+      return cached;
+    }
+    const pending = artworkColorPromiseCache.get(imageUrl);
+    if (pending)
+      return pending;
+    const promise = (async () => {
+      let blob;
+      try {
+        const response = await fetch(imageUrl, {
+          mode: "cors",
+          credentials: "omit",
+          referrerPolicy: "no-referrer"
+        });
+        if (!response.ok)
+          return [];
+        blob = await response.blob();
+      } catch {
+        return [];
+      }
+      let bitmap;
+      try {
+        bitmap = await createImageBitmap(blob, {
+          resizeWidth: BITMAP_SIZE,
+          resizeHeight: BITMAP_SIZE,
+          resizeQuality: "pixelated"
+        });
+      } catch {
+        return [];
+      }
+      const result = readBitmapPixels(bitmap);
+      bitmap.close();
+      if (!result)
+        return [];
+      const { data, width, height } = result;
+      let colors = quantizePixels(data, width, height, false);
+      if (colors.length < 2) {
+        colors = quantizePixels(data, width, height, true);
+      }
+      artworkColorCache.set(imageUrl, colors);
+      if (artworkColorCache.size > ARTWORK_COLOR_CACHE_MAX) {
+        const oldest = artworkColorCache.keys().next().value;
+        if (oldest !== void 0)
+          artworkColorCache.delete(oldest);
+      }
+      return colors;
+    })();
+    artworkColorPromiseCache.set(imageUrl, promise);
+    promise.then(
+      () => artworkColorPromiseCache.delete(imageUrl),
+      () => artworkColorPromiseCache.delete(imageUrl)
+    );
+    return promise;
+  }
+  function hexToRgb(hex) {
+    const clean2 = hex.replace("#", "");
+    const r = parseInt(clean2.substring(0, 2), 16);
+    const g = parseInt(clean2.substring(2, 4), 16);
+    const b = parseInt(clean2.substring(4, 6), 16);
+    return `${r}, ${g}, ${b}`;
+  }
+  function hexLuminance(hex) {
+    const clean2 = hex.replace("#", "");
+    const r = parseInt(clean2.substring(0, 2), 16);
+    const g = parseInt(clean2.substring(2, 4), 16);
+    const b = parseInt(clean2.substring(4, 6), 16);
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+  function liftToLuminance(hex, minLum) {
+    if (hexLuminance(hex) >= minLum)
+      return hex;
+    const clean2 = hex.replace("#", "");
+    let r = parseInt(clean2.substring(0, 2), 16);
+    let g = parseInt(clean2.substring(2, 4), 16);
+    let b = parseInt(clean2.substring(4, 6), 16);
+    const steps = 8;
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps;
+      const nr = Math.round(r + (255 - r) * t);
+      const ng = Math.round(g + (255 - g) * t);
+      const nb = Math.round(b + (255 - b) * t);
+      if (hexLuminance(
+        `#${nr.toString(16).padStart(2, "0")}${ng.toString(16).padStart(2, "0")}${nb.toString(16).padStart(2, "0")}`
+      ) >= minLum) {
+        r = nr;
+        g = ng;
+        b = nb;
+        break;
+      }
+    }
+    const toHex = (c) => Math.round(c).toString(16).padStart(2, "0");
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  }
+  function isHexColor(hex) {
+    return HEX_COLOR_PATTERN.test(hex.trim().toLowerCase());
+  }
+  function mixHex(hex, target, t) {
+    const clean2 = hex.replace("#", "");
+    const r = parseInt(clean2.substring(0, 2), 16);
+    const g = parseInt(clean2.substring(2, 4), 16);
+    const b = parseInt(clean2.substring(4, 6), 16);
+    const toHex = (c) => Math.round(c).toString(16).padStart(2, "0");
+    return `#${toHex(r + (target.r - r) * t)}${toHex(g + (target.g - g) * t)}${toHex(b + (target.b - b) * t)}`;
+  }
+  function deriveAccentPalette(hex) {
+    const base = hex.trim().toLowerCase();
+    return [
+      base,
+      mixHex(base, WHITE, 0.25),
+      mixHex(base, BLACK, 0.3),
+      mixHex(base, WHITE, 0.5),
+      mixHex(base, BLACK, 0.5)
+    ];
+  }
+  function refreshAccents(url) {
+    lastAccentArtworkUrl = null;
+    const coverUrl = url ?? Spicetify.Player.data?.item?.metadata?.image_url ?? null;
+    void publishArtworkAccents(coverUrl);
+  }
+  async function publishArtworkAccents(imageUrl) {
+    const accentMode = settingsValues_default.get("accentColorMode");
+    if (accentMode === "preset") {
+      lastAccentArtworkUrl = null;
+      applyArtworkAccents([]);
+      return;
+    }
+    if (accentMode === "custom") {
+      const hex = settingsValues_default.get("customAccentColor").trim().toLowerCase();
+      if (isHexColor(hex)) {
+        lastAccentArtworkUrl = null;
+        applyArtworkAccents(deriveAccentPalette(hex));
+        return;
+      }
+    }
+    if (!imageUrl) {
+      lastAccentArtworkUrl = null;
+      applyArtworkAccents([]);
+      return;
+    }
+    let url = imageUrl;
+    if (url.startsWith("spotify:image:")) {
+      url = `https://i.scdn.co/image/${url.replace("spotify:image:", "")}`;
+    }
+    if (url === lastAccentArtworkUrl)
+      return;
+    lastAccentArtworkUrl = url;
+    const colors = await extractArtworkColors(url);
+    applyArtworkAccents(colors);
+  }
+  function applyArtworkAccents(colors) {
+    const rootStyle = document.documentElement.style;
+    if (!colors.length) {
+      for (let i = 1; i <= ACCENT_COUNT; i++) {
+        rootStyle.removeProperty(`--amai-accent-${i}`);
+      }
+      rootStyle.removeProperty("--amai-accent-rgb");
+      return;
+    }
+    const lifted = colors.map((c) => liftToLuminance(c, ACCENT_LIFT_MIN_LUMINANCE));
+    const padded = [...lifted];
+    while (padded.length < ACCENT_COUNT) {
+      padded.push(padded[padded.length % padded.length]);
+    }
+    for (let i = 0; i < ACCENT_COUNT; i++) {
+      rootStyle.setProperty(`--amai-accent-${i + 1}`, padded[i]);
+    }
+    rootStyle.setProperty("--amai-accent-rgb", hexToRgb(padded[0]));
+  }
+  var BITMAP_SIZE, QUANTIZE_BITS, RESULT_COUNT, MIN_SATURATION, MIN_LIGHTNESS, MAX_LIGHTNESS, ARTWORK_COLOR_CACHE_MAX, artworkColorCache, artworkColorPromiseCache, ACCENT_LIFT_MIN_LUMINANCE, ACCENT_COUNT, lastAccentArtworkUrl, HEX_COLOR_PATTERN, WHITE, BLACK, ArtworkColors_default;
+  var init_ArtworkColors = __esm({
+    "src/utils/ArtworkColors.ts"() {
+      "use strict";
+      init_settingsValues();
+      BITMAP_SIZE = 40;
+      QUANTIZE_BITS = 5;
+      RESULT_COUNT = 5;
+      MIN_SATURATION = 30;
+      MIN_LIGHTNESS = 35;
+      MAX_LIGHTNESS = 235;
+      ARTWORK_COLOR_CACHE_MAX = 30;
+      artworkColorCache = /* @__PURE__ */ new Map();
+      artworkColorPromiseCache = /* @__PURE__ */ new Map();
+      ACCENT_LIFT_MIN_LUMINANCE = 140;
+      ACCENT_COUNT = 5;
+      lastAccentArtworkUrl = null;
+      HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/;
+      WHITE = { r: 255, g: 255, b: 255 };
+      BLACK = { r: 0, g: 0, b: 0 };
+      ArtworkColors_default = extractArtworkColors;
+    }
+  });
+
+  // src/components/DynamicBG/ArtworkSurfaces.ts
+  var ArtworkSurfaces_exports = {};
+  __export(ArtworkSurfaces_exports, {
+    ArtworkSurfaces: () => ArtworkSurfaces,
+    artworkSurfacesSingleton: () => artworkSurfacesSingleton,
+    createDefaultAdapters: () => createDefaultAdapters
+  });
+  function sidebarRegion() {
+    const panel = document.querySelector(NOW_PLAYING_PANEL);
+    return panel?.parentElement ?? document.querySelector(anySurface("nowPlayingRegion"));
+  }
+  function readLiveCoverUrl() {
+    try {
+      const url = Spicetify.Player.data?.item?.metadata?.image_url;
+      return typeof url === "string" ? url : void 0;
+    } catch {
+      return void 0;
+    }
+  }
+  function createDefaultAdapters(sidebarBg) {
+    return {
+      applySidebar: (coverUrl) => {
+        if (!document.querySelector(NOW_PLAYING_PANEL))
+          return;
+        sidebarBg.apply(coverUrl);
+      },
+      applyAppFrame: (coverUrl) => {
+        if (!resolveAppBgHost())
+          return;
+        appBackgroundSingleton.apply(coverUrl);
+      },
+      removeAppFrame: () => appBackgroundSingleton.remove(),
+      applyLyricsPage: async (shouldPaint) => {
+        if (!document.querySelector(PageViewSelectors.LyricsContainer) || !shouldPaint())
+          return;
+        const { default: ApplyDynamicBackground2 } = await Promise.resolve().then(() => (init_dynamicBackground(), dynamicBackground_exports));
+        if (!shouldPaint())
+          return;
+        const el = document.querySelector(PageViewSelectors.ContentBox);
+        if (el)
+          await ApplyDynamicBackground2(el, shouldPaint);
+      },
+      publishAccents: (coverUrl) => {
+        void Promise.resolve().then(() => (init_ArtworkColors(), ArtworkColors_exports)).then(({ publishArtworkAccents: publishArtworkAccents2 }) => {
+          void publishArtworkAccents2(coverUrl ?? null);
+        });
+      },
+      readCoverUrl: readLiveCoverUrl,
+      isAppFrameApplied: () => appBackgroundSingleton.isApplied()
+    };
+  }
+  var FAN_OUT_DELAY_MS, NOW_PLAYING_PANEL, ArtworkSurfaces, artworkSurfacesSingleton;
+  var init_ArtworkSurfaces = __esm({
+    "src/components/DynamicBG/ArtworkSurfaces.ts"() {
+      "use strict";
+      init_lifecycle();
+      init_Whentil();
+      init_debounce2();
+      init_AppBackground();
+      init_identity();
+      init_SpotifyDom();
+      init_PageViewSelectors();
+      init_Fullscreen();
+      init_NowPlayingBarBackground();
+      FAN_OUT_DELAY_MS = 500;
+      NOW_PLAYING_PANEL = anySurface("nowPlayingPanel");
+      ArtworkSurfaces = class {
+        constructor(adapters) {
+          this.sidebarObserver = null;
+          this.sidebarLateObserver = null;
+          this.appFrameObserver = null;
+          this.gridObserver = null;
+          this.gridObserverTracked = false;
+          this.appFrameRafQueued = false;
+          this.firstPaintWaiter = null;
+          this.unsubscribeFullscreen = null;
+          this.sidebarBg = new NowPlayingBarBackground();
+          this.adapters = adapters ?? createDefaultAdapters(this.sidebarBg);
+          this.debouncedFanOut = debounce2((coverUrl) => {
+            const effective = coverUrl ?? this.adapters.readCoverUrl();
+            if (effective)
+              this.clearFirstPaintWaiter();
+            if (isAppBackgroundEnabled()) {
+              this.adapters.applyAppFrame(effective);
+            } else {
+              this.adapters.applySidebar(effective);
+              void this.paintLyricsPageIfVisible();
+            }
+            this.adapters.publishAccents(effective);
+          }, FAN_OUT_DELAY_MS);
+        }
+        applyArtwork(coverUrl) {
+          this.debouncedFanOut(coverUrl ?? this.adapters.readCoverUrl());
+        }
+        refreshStaticSurfaces() {
+          const coverUrl = this.adapters.readCoverUrl();
+          if (isAppBackgroundEnabled()) {
+            this.adapters.applyAppFrame(coverUrl);
+          } else {
+            this.adapters.applySidebar(coverUrl);
+          }
+        }
+        applySidebarIfVisible() {
+          if (!isAppBackgroundEnabled())
+            this.adapters.applySidebar(this.adapters.readCoverUrl());
+        }
+        async setThemeEnabled(enabled) {
+          syncAppBgMarker(enabled);
+          const coverUrl = this.adapters.readCoverUrl();
+          if (enabled) {
+            this.adapters.applyAppFrame(coverUrl);
+            syncLibraryGridState();
+            this.ensureGridObserver();
+            return;
+          }
+          this.adapters.removeAppFrame();
+          this.stopGridObserver();
+          this.clearGridMarker();
+          this.adapters.applySidebar(coverUrl);
+          await this.paintLyricsPageIfVisible();
+        }
+        refreshLyricsPage() {
+          return this.paintLyricsPageIfVisible();
+        }
+        async paintLyricsPageIfVisible() {
+          const shouldPaint = () => !isAppBackgroundEnabled();
+          if (!shouldPaint())
+            return;
+          await this.adapters.applyLyricsPage(shouldPaint);
+        }
+        ensureGridObserver() {
+          if (this.gridObserver)
+            return;
+          const observer = watchLibraryGridState();
+          if (!observer)
+            return;
+          this.gridObserver = observer;
+          if (!this.gridObserverTracked) {
+            this.gridObserverTracked = true;
+            lifecycle_default.trackCallback(() => this.stopGridObserver());
+          }
+        }
+        stopGridObserver() {
+          this.gridObserver?.disconnect();
+          this.gridObserver = null;
+        }
+        clearGridMarker() {
+          document.querySelector(anySurface("sidebar"))?.classList.remove(APP_BG_LIB_GRID_CLASS);
+        }
+        cancelPending() {
+          this.debouncedFanOut.cancel();
+        }
+        mount() {
+          const enabled = isAppBackgroundEnabled();
+          syncAppBgMarker(enabled);
+          if (enabled) {
+            syncLibraryGridState();
+            this.ensureGridObserver();
+          } else {
+            this.clearGridMarker();
+          }
+          this.paintInitialSurfaces();
+          this.waitForFirstArtwork();
+          this.watchSidebar();
+          this.watchAppFrameHost();
+          this.unsubscribeFullscreen = Fullscreen_default.subscribe((fullscreen) => {
+            if (isAppBackgroundEnabled()) {
+              this.adapters.applyAppFrame(this.adapters.readCoverUrl());
+            } else if (fullscreen) {
+              void this.paintLyricsPageIfVisible();
+            }
+          });
+          lifecycle_default.trackCallback(() => this.unsubscribeFullscreen?.());
+        }
+        destroy() {
+          this.cancelPending();
+          this.clearFirstPaintWaiter();
+          this.sidebarObserver?.disconnect();
+          this.sidebarLateObserver?.disconnect();
+          this.appFrameObserver?.disconnect();
+          this.stopGridObserver();
+          this.unsubscribeFullscreen?.();
+          this.unsubscribeFullscreen = null;
+          this.sidebarObserver = null;
+          this.sidebarLateObserver = null;
+          this.appFrameObserver = null;
+          this.sidebarBg.destroy();
+          appBackgroundSingleton.destroy();
+        }
+        paintInitialSurfaces() {
+          this.refreshStaticSurfaces();
+          this.adapters.publishAccents(this.adapters.readCoverUrl());
+        }
+        waitForFirstArtwork() {
+          if (this.adapters.readCoverUrl())
+            return;
+          if (this.firstPaintWaiter)
+            return;
+          const waiter = Whentil_default.When(
+            () => this.adapters.readCoverUrl(),
+            () => {
+              this.firstPaintWaiter = null;
+              this.paintInitialSurfaces();
+            }
+          );
+          this.firstPaintWaiter = waiter;
+          lifecycle_default.trackWhentil(waiter);
+        }
+        clearFirstPaintWaiter() {
+          this.firstPaintWaiter?.Cancel();
+          this.firstPaintWaiter = null;
+        }
+        watchSidebar() {
+          const apply = () => {
+            if (document.querySelector(NOW_PLAYING_PANEL))
+              this.applySidebarIfVisible();
+          };
+          const observer = new MutationObserver(apply);
+          const root2 = sidebarRegion() ?? document.body;
+          observer.observe(root2, { childList: true, subtree: true });
+          this.sidebarObserver = observer;
+          lifecycle_default.trackObserver(observer);
+          if (!sidebarRegion()) {
+            const late = new MutationObserver((_muts, obs) => {
+              const sb = sidebarRegion();
+              if (sb) {
+                obs.disconnect();
+                this.sidebarObserver?.disconnect();
+                const remounted = new MutationObserver(apply);
+                remounted.observe(sb, { childList: true, subtree: true });
+                this.sidebarObserver = remounted;
+                lifecycle_default.trackObserver(remounted);
+                apply();
+              }
+            });
+            late.observe(document.body, { childList: true, subtree: false });
+            this.sidebarLateObserver = late;
+            lifecycle_default.trackObserver(late);
+          }
+        }
+        watchAppFrameHost() {
+          const observer = new MutationObserver((mutations) => {
+            if (!isAppBackgroundEnabled())
+              return;
+            let hostAdded = false;
+            for (const mut of mutations) {
+              for (const node of mut.addedNodes) {
+                if (!(node instanceof Element))
+                  continue;
+                if (node.matches?.(anySurface("appFrameHost")) || node.querySelector?.(anySurface("appFrameHost"))) {
+                  hostAdded = true;
+                  break;
+                }
+              }
+              if (hostAdded)
+                break;
+            }
+            if (!hostAdded || this.appFrameRafQueued)
+              return;
+            this.appFrameRafQueued = true;
+            requestAnimationFrame(() => {
+              this.appFrameRafQueued = false;
+              if (!isAppBackgroundEnabled())
+                return;
+              if (!this.adapters.isAppFrameApplied()) {
+                this.adapters.applyAppFrame(this.adapters.readCoverUrl());
+              }
+            });
+          });
+          observer.observe(document.body, { childList: true, subtree: false });
+          this.appFrameObserver = observer;
+          lifecycle_default.trackObserver(observer);
+        }
+      };
+      artworkSurfacesSingleton = new ArtworkSurfaces();
+    }
+  });
+
   // src/components/Pages/PageView.ts
   var PageView_exports = {};
   __export(PageView_exports, {
@@ -10750,7 +12490,9 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
     setPageOpen(true);
     const contentBox = document.querySelector(PageViewSelectors.ContentBox);
     if (contentBox) {
-      await ApplyDynamicBackground(contentBox);
+      const { artworkSurfacesSingleton: artworkSurfacesSingleton2 } = await Promise.resolve().then(() => (init_ArtworkSurfaces(), ArtworkSurfaces_exports));
+      if (contentBox.isConnected)
+        await artworkSurfacesSingleton2.refreshLyricsPage();
     }
     const mediaImage = document.querySelector(PageViewSelectors.MediaImage);
     if (mediaImage) {
@@ -10826,7 +12568,6 @@ The original lyrics with accurate, complete Hepburn Romaji in '{}' appended to e
       init_2();
       init_registry();
       init_ApplyInfo();
-      init_dynamicBackground();
       init_AutoScroll();
       init_PagePresence();
       init_NowBar();
@@ -35013,49 +36754,45 @@ ${JSON.stringify(lyricsOnly)}`
     if (!live())
       return null;
     const phoneticPrompt = selectPhoneticPrompt(flags, enableRomaji);
-    const [translations] = await Promise.all([
+    const [translations, phonetics] = await Promise.all([
       enhanceTranslations(lyricsOnly, targetLang, translationsDisabled, hasKey, providers, live),
-      enhancePhonetics(prepared, lyricsOnly, phoneticPrompt, hasKey, providers, live)
+      enhancePhonetics(lyricsOnly, phoneticPrompt, hasKey, providers, live)
     ]);
     if (!live())
       return null;
+    if (phonetics.lines)
+      updateLyricsWithText(prepared, phonetics.lines);
+    if (phonetics.info)
+      prepared.info = phonetics.info;
     attachTranslations(prepared, translations);
     return prepared;
   }
-  async function enhancePhonetics(prepared, lyricsOnly, prompt, hasKey, providers, live) {
+  async function enhancePhonetics(lyricsOnly, prompt, hasKey, providers, live) {
     if (!prompt)
-      return;
+      return {};
     if (hasKey) {
       console.log("[Amai Lyrics] Using Gemini for phonetic lyrics");
       if (!live())
-        return;
+        return {};
       try {
         const lines = await providers.fetchGeminiPhonetic(lyricsOnly, prompt);
-        updateLyricsWithText(prepared, lines);
-        return;
+        return { lines };
       } catch {
         console.log("[Amai Lyrics] Gemini failed, falling back to Amai API for phonetic lyrics");
       }
       if (!live())
-        return;
+        return {};
       const amaiLines2 = await providers.fetchAmaiPhonetic(lyricsOnly, prompt);
-      if (hasUsableLines(amaiLines2)) {
-        updateLyricsWithText(prepared, amaiLines2);
-      } else {
-        prepared.info = FETCH_ERROR_INFO;
-      }
-      return;
+      return hasUsableLines(amaiLines2) ? { lines: amaiLines2 } : { info: FETCH_ERROR_INFO };
     }
     if (!live())
-      return;
+      return {};
     const amaiLines = await providers.fetchAmaiPhonetic(lyricsOnly, prompt);
-    if (hasUsableLines(amaiLines)) {
-      updateLyricsWithText(prepared, amaiLines);
-      return;
-    }
+    if (hasUsableLines(amaiLines))
+      return { lines: amaiLines };
     console.log("[Amai Lyrics] Falling back to Gemini for phonetic lyrics");
     console.error("Amai Lyrics: Gemini API Key missing");
-    prepared.info = MISSING_KEY_INFO;
+    return { info: MISSING_KEY_INFO };
   }
   async function enhanceTranslations(lyricsOnly, targetLang, disabled, hasKey, providers, live) {
     if (disabled) {
@@ -35098,6 +36835,28 @@ ${JSON.stringify(lyricsOnly)}`
     }
   });
 
+  // src/utils/Lyrics/enhancementConfig.ts
+  function getEnhancementConfigRevision() {
+    const raw = storage_default.get(StorageKeys.ENHANCEMENT_CONFIG_REVISION);
+    const revision = Number(raw);
+    return Number.isSafeInteger(revision) && revision >= 0 ? revision : 0;
+  }
+  function bumpEnhancementConfigRevision() {
+    const revision = getEnhancementConfigRevision() + 1;
+    storage_default.set(StorageKeys.ENHANCEMENT_CONFIG_REVISION, String(revision));
+    return revision;
+  }
+  function isEnhancementComplete(document2) {
+    return document2.enhancementStatus === "complete" && document2.enhancementConfigRevision === getEnhancementConfigRevision();
+  }
+  var init_enhancementConfig = __esm({
+    "src/utils/Lyrics/enhancementConfig.ts"() {
+      "use strict";
+      init_storage();
+      init_storageKeys();
+    }
+  });
+
   // src/utils/Lyrics/processing.ts
   function buildDocument(id, lyricsJson) {
     const type = lyricsJson.Type || "Static";
@@ -35105,6 +36864,7 @@ ${JSON.stringify(lyricsOnly)}`
       return {
         type: "Line",
         id,
+        enhancementStatus: "pending",
         lines: convertLyrics(lyricsJson.Content || []).map(toLineView)
       };
     }
@@ -35112,28 +36872,28 @@ ${JSON.stringify(lyricsOnly)}`
       return {
         type: "Line",
         id,
+        enhancementStatus: "pending",
         lines: (lyricsJson.Content || []).map(toLineView)
       };
     }
     return {
       type: "Static",
       id,
+      enhancementStatus: "pending",
       lines: (lyricsJson.Lines || []).map(toLineView)
     };
   }
   async function processAndEnhanceLyrics(trackId, lyricsJson, token) {
     const id = lyricsJson.id || trackId;
     const document2 = buildDocument(id, lyricsJson);
-    const { document: prepared, lyricsOnly } = prepareLyricsForGemini(document2);
-    const { hasKanji, hasKorean } = detectLanguages(prepared);
-    await cacheLyrics(trackId, prepared);
-    if (isCurrentLyricsRequest(token)) {
-      void processLyricsEnhancementsAsync(token, trackId, prepared, hasKanji, hasKorean, lyricsOnly);
-    }
+    const { document: prepared } = prepareLyricsForGemini(document2);
+    prepared.enhancementConfigRevision = getEnhancementConfigRevision();
+    if (isCurrentLyricsRequest(token))
+      await cacheLyrics(trackId, prepared);
     return prepared;
   }
   async function enhancePreparedLyrics(token, trackId, prepared) {
-    if (!isCurrentLyricsRequest(token))
+    if (isEnhancementComplete(prepared) || !isCurrentLyricsRequest(token))
       return;
     const { hasKanji, hasKorean } = detectLanguages(prepared);
     await processLyricsEnhancementsAsync(
@@ -35147,16 +36907,19 @@ ${JSON.stringify(lyricsOnly)}`
   }
   async function processLyricsEnhancementsAsync(token, trackId, document2, hasKanji, hasKorean, lyricsOnly) {
     try {
-      ShowProcessingIndicator();
+      const configRevision = getEnhancementConfigRevision();
       const enhanced = await enhanceLyrics(document2, lyricsOnly, { hasKanji, hasKorean }, token);
-      if (!enhanced)
+      if (!enhanced || !isCurrentLyricsRequest(token) || getEnhancementConfigRevision() !== configRevision) {
         return;
+      }
+      enhanced.enhancementStatus = "complete";
+      enhanced.enhancementConfigRevision = configRevision;
       await cacheLyrics(trackId, enhanced);
-      publishEnhancedLyrics(token, trackId, enhanced);
+      if (isCurrentLyricsRequest(token) && getEnhancementConfigRevision() === configRevision) {
+        publishEnhancedLyrics(token, trackId, enhanced);
+      }
     } catch (error) {
       console.error("Amai Lyrics: Error processing enhancements", error);
-    } finally {
-      EnsureProcessingIndicatorHidden();
     }
   }
   function detectLanguages(document2) {
@@ -35191,11 +36954,11 @@ ${JSON.stringify(lyricsOnly)}`
   var init_processing = __esm({
     "src/utils/Lyrics/processing.ts"() {
       "use strict";
-      init_ui();
       init_cache();
       init_ai();
       init_conversion();
       init_publish();
+      init_enhancementConfig();
       JAPANESE_REGEX2 = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uf900-\ufaff]/;
       KOREAN_REGEX = /[\uAC00-\uD7AF]/;
       LYRICS_TIMING_OFFSET = 0.55;
@@ -35313,7 +37076,7 @@ ${JSON.stringify(lyricsOnly)}`
   function isNoLyricsResult(v) {
     return typeof v === "object" && v !== null && v.status === "NO_LYRICS";
   }
-  async function applyLoadedLyrics(result, token) {
+  async function applyLoadedLyrics(result, token, trackId) {
     if (isNoLyricsResult(result)) {
       if (result.id)
         publishNoLyrics(token, result.id);
@@ -35321,7 +37084,15 @@ ${JSON.stringify(lyricsOnly)}`
         await noLyricsMessage(result.id);
       return result;
     }
-    publishInitialLyrics(token, result);
+    if (!publishInitialLyrics(token, result))
+      return result;
+    if (!isEnhancementComplete(result)) {
+      ShowProcessingIndicator();
+      void enhancePreparedLyrics(token, trackId, result).finally(() => {
+        if (isLatestLyricsRequest(token))
+          EnsureProcessingIndicatorHidden();
+      });
+    }
     return result;
   }
   async function fetchLyrics(uri, flush = false, requestRef = { token: null }) {
@@ -35342,19 +37113,15 @@ ${JSON.stringify(lyricsOnly)}`
     }
     const localLyrics = readSnapshot(trackId);
     if (localLyrics)
-      return applyLoadedLyrics(localLyrics, token);
+      return applyLoadedLyrics(localLyrics, token, trackId);
     const cachedLyrics = await getLyricsFromCache(trackId);
     if (cachedLyrics)
-      return applyLoadedLyrics(cachedLyrics, token);
+      return applyLoadedLyrics(cachedLyrics, token, trackId);
     hideRefreshButton();
     if (!flush && inFlight.has(trackId)) {
       ShowLoaderContainer();
       const result = await inFlight.get(trackId);
-      const applied = await applyLoadedLyrics(result, token);
-      if (!isNoLyricsResult(result)) {
-        void enhancePreparedLyrics(token, result.id ?? trackId, result);
-      }
-      return applied;
+      return applyLoadedLyrics(result, token, trackId);
     }
     ShowLoaderContainer();
     const promise = fetchLyricsFromAPI(trackId, flush, token).finally(() => {
@@ -35362,7 +37129,7 @@ ${JSON.stringify(lyricsOnly)}`
         inFlight.delete(trackId);
     });
     inFlight.set(trackId, promise);
-    return applyLoadedLyrics(await promise, token);
+    return applyLoadedLyrics(await promise, token, trackId);
   }
   async function loadAndApplyLyrics(uri, opts = {}) {
     let target = uri;
@@ -35386,6 +37153,7 @@ ${JSON.stringify(lyricsOnly)}`
     return last;
   }
   async function refreshLyrics(uri) {
+    bumpEnhancementConfigRevision();
     const trackId = parseTrackId(uri);
     if (trackId) {
       await removeLyricsFromCache(trackId);
@@ -35394,6 +37162,7 @@ ${JSON.stringify(lyricsOnly)}`
     return loadAndApplyLyrics(uri, { flush: true });
   }
   async function invalidateLyrics(target, opts = {}) {
+    bumpEnhancementConfigRevision();
     if ("all" in target) {
       await destroyLyricsCache();
     } else {
@@ -35415,1401 +37184,13 @@ ${JSON.stringify(lyricsOnly)}`
       init_snapshot();
       init_api();
       init_processing();
+      init_enhancementConfig();
       init_pageButtons();
       init_Applyer();
       init_publish();
       init_trackId();
       init_PageViewSelectors();
       inFlight = /* @__PURE__ */ new Map();
-    }
-  });
-
-  // src/utils/ThemeSettings.ts
-  function applyThemeSettings() {
-    const intensity = INTENSITY_PRESETS[settingsValues_default.get("backgroundIntensity")];
-    const motion = settingsValues_default.get("backgroundMotion");
-    const root2 = document.documentElement.style;
-    root2.setProperty("--amai-bg-blur-scale", String(intensity.blur));
-    root2.setProperty("--amai-bg-saturation-scale", String(intensity.saturation));
-    root2.setProperty("--amai-bg-brightness-scale", String(intensity.brightness));
-    root2.setProperty(
-      "--amai-bg-motion-scale",
-      String(motion === "off" ? 1 : MOTION_DURATION_SCALES[motion])
-    );
-    document.documentElement.classList.toggle(BG_MOTION_OFF_CLASS, motion === "off");
-  }
-  function getGlIntensity() {
-    return GL_INTENSITY_PRESETS[settingsValues_default.get("backgroundIntensity")];
-  }
-  function getGlMotionSpeed() {
-    return GL_MOTION_SPEEDS[settingsValues_default.get("backgroundMotion")];
-  }
-  var INTENSITY_PRESETS, GL_INTENSITY_PRESETS, MOTION_DURATION_SCALES, GL_MOTION_SPEEDS;
-  var init_ThemeSettings = __esm({
-    "src/utils/ThemeSettings.ts"() {
-      "use strict";
-      init_settingsValues();
-      init_identity();
-      INTENSITY_PRESETS = {
-        subtle: { blur: 1.35, saturation: 0.55, brightness: 0.75 },
-        normal: { blur: 1, saturation: 1, brightness: 1 },
-        intense: { blur: 0.7, saturation: 1.3, brightness: 1.35 }
-      };
-      GL_INTENSITY_PRESETS = {
-        subtle: { vibrance: 0.8, dim: 0.8 },
-        normal: { vibrance: 1, dim: 1 },
-        intense: { vibrance: 1.15, dim: 1.1 }
-      };
-      MOTION_DURATION_SCALES = {
-        slow: 1.75,
-        normal: 1,
-        fast: 0.5
-      };
-      GL_MOTION_SPEEDS = {
-        off: 0,
-        slow: 0.55,
-        normal: 1,
-        fast: 2
-      };
-    }
-  });
-
-  // src/utils/ArtworkColors.ts
-  var ArtworkColors_exports = {};
-  __export(ArtworkColors_exports, {
-    applyArtworkAccents: () => applyArtworkAccents,
-    default: () => ArtworkColors_default,
-    deriveAccentPalette: () => deriveAccentPalette,
-    extractArtworkColors: () => extractArtworkColors,
-    hexLuminance: () => hexLuminance,
-    hexToRgb: () => hexToRgb,
-    isHexColor: () => isHexColor,
-    liftToLuminance: () => liftToLuminance,
-    publishArtworkAccents: () => publishArtworkAccents,
-    refreshAccents: () => refreshAccents
-  });
-  function rgbToHex({ r, g, b }) {
-    const toHex = (c) => Math.round(c).toString(16).padStart(2, "0");
-    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-  }
-  function quantize(value, bits) {
-    return value >> 8 - bits << 8 - bits;
-  }
-  function luminance({ r, g, b }) {
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-  }
-  function saturation({ r, g, b }) {
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    if (max === 0)
-      return 0;
-    return (max - min) / max * 255;
-  }
-  function bucketKey({ r, g, b }) {
-    return `${r},${g},${b}`;
-  }
-  function quantizePixels(data, width, height, loose) {
-    const bucketMap = /* @__PURE__ */ new Map();
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const idx = (y * width + x) * 4;
-        const r = data[idx];
-        const g = data[idx + 1];
-        const b = data[idx + 2];
-        const a = data[idx + 3];
-        if (a < 128)
-          continue;
-        const rgb = { r, g, b };
-        const lum = luminance(rgb);
-        if (loose) {
-          if (lum < 15 || lum > 245)
-            continue;
-        } else {
-          const sat = saturation(rgb);
-          if (lum < MIN_LIGHTNESS || lum > MAX_LIGHTNESS || sat < MIN_SATURATION) {
-            continue;
-          }
-        }
-        const q = {
-          r: quantize(r, QUANTIZE_BITS),
-          g: quantize(g, QUANTIZE_BITS),
-          b: quantize(b, QUANTIZE_BITS)
-        };
-        const key = bucketKey(q);
-        const entry = bucketMap.get(key);
-        if (entry) {
-          entry.count++;
-        } else {
-          bucketMap.set(key, { rgb: q, count: 1 });
-        }
-      }
-    }
-    return [...bucketMap.entries()].sort((a, b) => b[1].count - a[1].count).slice(0, RESULT_COUNT).map(([, entry]) => rgbToHex(entry.rgb));
-  }
-  function readBitmapPixels(bitmap) {
-    const canvas = document.createElement("canvas");
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    if (!ctx)
-      return null;
-    ctx.drawImage(bitmap, 0, 0);
-    try {
-      const imageData = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
-      return { data: imageData.data, width: bitmap.width, height: bitmap.height };
-    } catch {
-      return null;
-    }
-  }
-  async function extractArtworkColors(imageUrl) {
-    const cached = artworkColorCache.get(imageUrl);
-    if (cached) {
-      artworkColorCache.delete(imageUrl);
-      artworkColorCache.set(imageUrl, cached);
-      return cached;
-    }
-    const pending = artworkColorPromiseCache.get(imageUrl);
-    if (pending)
-      return pending;
-    const promise = (async () => {
-      let blob;
-      try {
-        const response = await fetch(imageUrl, {
-          mode: "cors",
-          credentials: "omit",
-          referrerPolicy: "no-referrer"
-        });
-        if (!response.ok)
-          return [];
-        blob = await response.blob();
-      } catch {
-        return [];
-      }
-      let bitmap;
-      try {
-        bitmap = await createImageBitmap(blob, {
-          resizeWidth: BITMAP_SIZE,
-          resizeHeight: BITMAP_SIZE,
-          resizeQuality: "pixelated"
-        });
-      } catch {
-        return [];
-      }
-      const result = readBitmapPixels(bitmap);
-      bitmap.close();
-      if (!result)
-        return [];
-      const { data, width, height } = result;
-      let colors = quantizePixels(data, width, height, false);
-      if (colors.length < 2) {
-        colors = quantizePixels(data, width, height, true);
-      }
-      artworkColorCache.set(imageUrl, colors);
-      if (artworkColorCache.size > ARTWORK_COLOR_CACHE_MAX) {
-        const oldest = artworkColorCache.keys().next().value;
-        if (oldest !== void 0)
-          artworkColorCache.delete(oldest);
-      }
-      return colors;
-    })();
-    artworkColorPromiseCache.set(imageUrl, promise);
-    promise.then(
-      () => artworkColorPromiseCache.delete(imageUrl),
-      () => artworkColorPromiseCache.delete(imageUrl)
-    );
-    return promise;
-  }
-  function hexToRgb(hex) {
-    const clean2 = hex.replace("#", "");
-    const r = parseInt(clean2.substring(0, 2), 16);
-    const g = parseInt(clean2.substring(2, 4), 16);
-    const b = parseInt(clean2.substring(4, 6), 16);
-    return `${r}, ${g}, ${b}`;
-  }
-  function hexLuminance(hex) {
-    const clean2 = hex.replace("#", "");
-    const r = parseInt(clean2.substring(0, 2), 16);
-    const g = parseInt(clean2.substring(2, 4), 16);
-    const b = parseInt(clean2.substring(4, 6), 16);
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-  }
-  function liftToLuminance(hex, minLum) {
-    if (hexLuminance(hex) >= minLum)
-      return hex;
-    const clean2 = hex.replace("#", "");
-    let r = parseInt(clean2.substring(0, 2), 16);
-    let g = parseInt(clean2.substring(2, 4), 16);
-    let b = parseInt(clean2.substring(4, 6), 16);
-    const steps = 8;
-    for (let i = 1; i <= steps; i++) {
-      const t = i / steps;
-      const nr = Math.round(r + (255 - r) * t);
-      const ng = Math.round(g + (255 - g) * t);
-      const nb = Math.round(b + (255 - b) * t);
-      if (hexLuminance(
-        `#${nr.toString(16).padStart(2, "0")}${ng.toString(16).padStart(2, "0")}${nb.toString(16).padStart(2, "0")}`
-      ) >= minLum) {
-        r = nr;
-        g = ng;
-        b = nb;
-        break;
-      }
-    }
-    const toHex = (c) => Math.round(c).toString(16).padStart(2, "0");
-    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-  }
-  function isHexColor(hex) {
-    return HEX_COLOR_PATTERN.test(hex.trim().toLowerCase());
-  }
-  function mixHex(hex, target, t) {
-    const clean2 = hex.replace("#", "");
-    const r = parseInt(clean2.substring(0, 2), 16);
-    const g = parseInt(clean2.substring(2, 4), 16);
-    const b = parseInt(clean2.substring(4, 6), 16);
-    const toHex = (c) => Math.round(c).toString(16).padStart(2, "0");
-    return `#${toHex(r + (target.r - r) * t)}${toHex(g + (target.g - g) * t)}${toHex(b + (target.b - b) * t)}`;
-  }
-  function deriveAccentPalette(hex) {
-    const base = hex.trim().toLowerCase();
-    return [
-      base,
-      mixHex(base, WHITE, 0.25),
-      mixHex(base, BLACK, 0.3),
-      mixHex(base, WHITE, 0.5),
-      mixHex(base, BLACK, 0.5)
-    ];
-  }
-  function refreshAccents(url) {
-    lastAccentArtworkUrl = null;
-    const coverUrl = url ?? Spicetify.Player.data?.item?.metadata?.image_url ?? null;
-    void publishArtworkAccents(coverUrl);
-  }
-  async function publishArtworkAccents(imageUrl) {
-    const accentMode = settingsValues_default.get("accentColorMode");
-    if (accentMode === "preset") {
-      lastAccentArtworkUrl = null;
-      applyArtworkAccents([]);
-      return;
-    }
-    if (accentMode === "custom") {
-      const hex = settingsValues_default.get("customAccentColor").trim().toLowerCase();
-      if (isHexColor(hex)) {
-        lastAccentArtworkUrl = null;
-        applyArtworkAccents(deriveAccentPalette(hex));
-        return;
-      }
-    }
-    if (!imageUrl) {
-      lastAccentArtworkUrl = null;
-      applyArtworkAccents([]);
-      return;
-    }
-    let url = imageUrl;
-    if (url.startsWith("spotify:image:")) {
-      url = `https://i.scdn.co/image/${url.replace("spotify:image:", "")}`;
-    }
-    if (url === lastAccentArtworkUrl)
-      return;
-    lastAccentArtworkUrl = url;
-    const colors = await extractArtworkColors(url);
-    applyArtworkAccents(colors);
-  }
-  function applyArtworkAccents(colors) {
-    const rootStyle = document.documentElement.style;
-    if (!colors.length) {
-      for (let i = 1; i <= ACCENT_COUNT; i++) {
-        rootStyle.removeProperty(`--amai-accent-${i}`);
-      }
-      rootStyle.removeProperty("--amai-accent-rgb");
-      return;
-    }
-    const lifted = colors.map((c) => liftToLuminance(c, ACCENT_LIFT_MIN_LUMINANCE));
-    const padded = [...lifted];
-    while (padded.length < ACCENT_COUNT) {
-      padded.push(padded[padded.length % padded.length]);
-    }
-    for (let i = 0; i < ACCENT_COUNT; i++) {
-      rootStyle.setProperty(`--amai-accent-${i + 1}`, padded[i]);
-    }
-    rootStyle.setProperty("--amai-accent-rgb", hexToRgb(padded[0]));
-  }
-  var BITMAP_SIZE, QUANTIZE_BITS, RESULT_COUNT, MIN_SATURATION, MIN_LIGHTNESS, MAX_LIGHTNESS, ARTWORK_COLOR_CACHE_MAX, artworkColorCache, artworkColorPromiseCache, ACCENT_LIFT_MIN_LUMINANCE, ACCENT_COUNT, lastAccentArtworkUrl, HEX_COLOR_PATTERN, WHITE, BLACK, ArtworkColors_default;
-  var init_ArtworkColors = __esm({
-    "src/utils/ArtworkColors.ts"() {
-      "use strict";
-      init_settingsValues();
-      BITMAP_SIZE = 40;
-      QUANTIZE_BITS = 5;
-      RESULT_COUNT = 5;
-      MIN_SATURATION = 30;
-      MIN_LIGHTNESS = 35;
-      MAX_LIGHTNESS = 235;
-      ARTWORK_COLOR_CACHE_MAX = 30;
-      artworkColorCache = /* @__PURE__ */ new Map();
-      artworkColorPromiseCache = /* @__PURE__ */ new Map();
-      ACCENT_LIFT_MIN_LUMINANCE = 140;
-      ACCENT_COUNT = 5;
-      lastAccentArtworkUrl = null;
-      HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/;
-      WHITE = { r: 255, g: 255, b: 255 };
-      BLACK = { r: 0, g: 0, b: 0 };
-      ArtworkColors_default = extractArtworkColors;
-    }
-  });
-
-  // src/components/DynamicBG/inkShader.ts
-  var VERTEX_SHADER, FIELD_FRAGMENT_SHADER, PRESENT_FRAGMENT_SHADER;
-  var init_inkShader = __esm({
-    "src/components/DynamicBG/inkShader.ts"() {
-      "use strict";
-      VERTEX_SHADER = `#version 300 es
-// Attribute-less fullscreen triangle: positions from gl_VertexID, no buffers.
-// Shared by both programs, so neither needs a vertex buffer or attributes.
-void main() {
-  vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
-  gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
-}
-`;
-      FIELD_FRAGMENT_SHADER = `#version 300 es
-precision highp float;
-
-// Frame-constant flow terms. Each one is identical for every pixel and used to
-// be recomputed per fragment; see GlAppBackground.computeFlow for the values.
-uniform vec4 uFlowA; // wind1.xy, sway1.xy
-uniform vec4 uFlowB; // wind2.xy, sway2.xy
-uniform float uBreath; // global luminance breath, incl. the base dim
-uniform float uMix;
-uniform float uAspect; // LAYOUT aspect, not the field texture's
-uniform vec2 uFieldSize; // field framebuffer, in pixels
-uniform sampler2D uTexOld;
-uniform sampler2D uTexNew;
-
-out vec4 outColor;
-
-float hash(vec2 p) {
-  vec2 q = fract(p * vec2(123.34, 456.21));
-  q += dot(q, q + 45.32);
-  return fract(q.x * q.y);
-}
-
-float vnoise(vec2 p) {
-  vec2 i = floor(p);
-  vec2 f = fract(p);
-  vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
-  float a = hash(i);
-  float b = hash(i + vec2(1.0, 0.0));
-  float c = hash(i + vec2(0.0, 1.0));
-  float d = hash(i + vec2(1.0, 1.0));
-  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
-}
-
-float fbm(vec2 p) {
-  float v = 0.0;
-  float a = 0.5;
-  vec2 q = p;
-  for (int i = 0; i < 4; i++) {
-    v += a * vnoise(q);
-    q = q * 2.03 + vec2(1.7, 9.2);
-    a *= 0.5;
-  }
-  return v;
-}
-
-// Two octaves instead of four, renormalised to fbm()'s value range (its weights
-// sum to 0.75 against fbm()'s 0.9375, hence the 1.25) so callers see the same
-// distribution and only lose the sub-detail.
-float fbmLow(vec2 p) {
-  float v = 0.0;
-  vec2 q = p;
-  v += 0.5 * vnoise(q);
-  q = q * 2.03 + vec2(1.7, 9.2);
-  v += 0.25 * vnoise(q);
-  return v * 1.25;
-}
-
-void main() {
-  vec2 uv = vec2(gl_FragCoord.x, uFieldSize.y - gl_FragCoord.y) / uFieldSize;
-  vec2 st = (uv - 0.5) * vec2(uAspect, 1.0);
-
-  // ---- flow: one mass of ink moving as a whole ------------------------
-  // Steady glacial wind + bounded sine-eased meander per layer. Motion
-  // level is deliberately unchanged from the old design; only the FORM is
-  // new \u2014 the abstraction comes from shape, not speed. Both terms are
-  // frame-constant, so the CPU evaluates the sines (see uFlowA/uFlowB).
-  vec2 wind1 = uFlowA.xy;
-  vec2 sway1 = uFlowA.zw;
-  vec2 wind2 = uFlowB.xy;
-  vec2 sway2 = uFlowB.zw;
-
-  // ---- form: isotropic double domain warp (marbling, no ribbons) ------
-  // No anisotropic stretch: the ink curls in all directions instead of
-  // being pulled into horizontal bands.
-  vec2 p = st;
-  vec2 q = vec2(
-    fbm(p + wind1 + sway1),
-    fbm(p + vec2(5.2, 1.3) + wind2 + sway2)
-  );
-  vec2 r = vec2(
-    fbm(p + 1.60 * q + vec2(1.7, 9.2) + wind2.yx + sway1.yx),
-    fbm(p + 1.60 * q + vec2(8.3, 2.8) - wind1.yx + sway2.xy)
-  );
-
-  // ---- palette-only artwork lookup ------------------------------------
-  // Lookup coordinates come from noise (+ the warp field for coherence),
-  // never from screen position: neighbouring pixels land on nearby palette
-  // texels (coherent colour masses), but no screen-to-image correspondence
-  // exists \u2014 the cover's imagery and composition cannot survive the trip.
-  // fbmLow, not fbm: the target is a 32x32 texture that is bilinear-upscaled,
-  // so the two finest octaves only jitter the coordinate inside one texel \u2014
-  // cost that the source resolution throws away.
-  vec2 palCoord = clamp(
-    vec2(
-      fbmLow(p * 0.55 + r + wind1 + 3.7),
-      fbmLow(p * 0.55 - r.yx + wind2 + 7.1)
-    ),
-    vec2(0.003),
-    vec2(0.997)
-  );
-  vec3 oldC = texture(uTexOld, palCoord).rgb;
-  vec3 newC = texture(uTexNew, palCoord).rgb;
-
-  // ---- crossfade: coherent veil dissolve ------------------------------
-  // Exact endpoints (w=0 at uMix=0, w=1 at uMix=1 for EVERY pixel) keep the
-  // ping-pong swap frame-identical. Thresholds ride the warp field + the
-  // outgoing cover's luminance, so the fade travels as coherent veils that
-  // follow the flow; per-cell jitter stays tiny (no salt-and-pepper).
-  // The cell is measured in FIELD texels, so its on-screen size scales with
-  // FIELD_SCALE \u2014 coarser than the old single-pass grain, still far below the
-  // veil width, and the endpoint contract above does not depend on it.
-  float lold = dot(oldC, vec3(0.2126, 0.7152, 0.0722));
-  float cell = hash(floor(gl_FragCoord.xy / 3.0) + 7.7);
-  float soft = 0.32;
-  float nFlow = smoothstep(0.30, 0.70, r.x);
-  float nLum = smoothstep(0.05, 0.55, lold);
-  float thr = clamp(nFlow * 0.55 + nLum * 0.39 + cell * 0.06, 0.0, 1.0) * (1.0 - soft);
-  float w = smoothstep(thr, thr + soft, uMix);
-  vec3 pigment = mix(oldC, newC, w);
-
-  // ---- ink: billows of pigment suspended in a dark medium -------------
-  // Two warped density layers at different scales, thresholded softly \u2014
-  // cloud edges, never the old contour veins (filigree removed on purpose:
-  // linework reads as structure, not abstraction). The pigment boost
-  // offsets the medium blend to keep the old pipeline's mean luminance, so
-  // legibility is unchanged.
-  float dBig = fbm(p * 1.15 + 1.35 * q + wind1 + sway2);
-  float dFine = fbm(p * 2.40 + vec2(4.7, 2.9) - 1.10 * r + wind2);
-  float dens = smoothstep(0.20, 0.66, mix(dBig, dFine, 0.35));
-  vec3 medium = vec3(0.045, 0.045, 0.062);
-  vec3 col = mix(medium, pigment * 1.5, dens);
-
-  // ---- grade: deep blacks, one slow global breath ---------------------
-  float lum = dot(col, vec3(0.2126, 0.7152, 0.0722));
-  col = mix(vec3(lum), col, 1.22);
-  col = clamp(col, 0.0, 1.0);
-  col = mix(col, col * col * (3.0 - 2.0 * col), 0.55);
-  col *= uBreath;
-  col *= 1.0 + 0.10 * (r.x - 0.5);
-
-  // Top/bottom legibility scrims \u2014 same contract as the old CSS ::after.
-  float scrim = mix(0.42, 1.0,
-    smoothstep(0.0, 0.20, uv.y) * (1.0 - smoothstep(0.74, 0.97, uv.y)));
-  col *= scrim;
-  col *= 1.0 - 0.28 * smoothstep(0.35, 1.15, length(st));
-
-  // The breath and the scrims keep this well under 1.0, so an RGBA8 target
-  // costs no range the old single-pass output did not already quantise away.
-  outColor = vec4(max(col, 0.0), 1.0);
-}
-`;
-      PRESENT_FRAGMENT_SHADER = `#version 300 es
-precision highp float;
-
-uniform sampler2D uField;
-uniform vec2 uGrainSeed; // per-frame grain offset
-uniform vec2 uResolution; // canvas backing store, in pixels
-// Amai Theme intensity (ThemeSettings presets): vibrance scales the colour's
-// distance from grey, dim scales brightness. Applied BEFORE the grain so the
-// grain's luminance weighting stays calibrated to the delivered output.
-uniform float uVibrance;
-uniform float uDim;
-
-out vec4 outColor;
-
-float hash(vec2 p) {
-  vec2 q = fract(p * vec2(123.34, 456.21));
-  q += dot(q, q + 45.32);
-  return fract(q.x * q.y);
-}
-
-void main() {
-  vec3 col = texture(uField, gl_FragCoord.xy / uResolution).rgb;
-
-  float baseLum = dot(col, vec3(0.2126, 0.7152, 0.0722));
-  col = mix(vec3(baseLum), col, uVibrance) * uDim;
-
-  // Grain weighted into the shadows where banding lives. It rides the FIELD's
-  // own luminance \u2014 the same value the single-pass shader used \u2014 so the two
-  // passes cannot drift apart in how much noise they lay down.
-  float lum = dot(col, vec3(0.2126, 0.7152, 0.0722));
-  float g = hash(gl_FragCoord.xy + uGrainSeed) - 0.5;
-  col += g * mix(0.020, 0.006, smoothstep(0.0, 0.45, lum));
-
-  outColor = vec4(max(col, 0.0), 1.0);
-}
-`;
-    }
-  });
-
-  // src/components/DynamicBG/GlAppBackground.ts
-  var GlAppBackground_exports = {};
-  __export(GlAppBackground_exports, {
-    GL_REVEAL_MS: () => GL_REVEAL_MS,
-    GlAppBackground: () => GlAppBackground
-  });
-  async function loadArtworkBitmap(url) {
-    try {
-      const res = await fetch(url);
-      if (!res.ok)
-        return null;
-      const blob = await res.blob();
-      return await createImageBitmap(blob, {
-        resizeWidth: ART_SIZE,
-        resizeHeight: ART_SIZE,
-        resizeQuality: "high"
-      });
-    } catch {
-      return null;
-    }
-  }
-  function compile(gl, type, source, label) {
-    const shader = gl.createShader(type);
-    if (!shader)
-      throw new Error(`WebGL2: could not create ${label} shader`);
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      const log = gl.getShaderInfoLog(shader) ?? "no log";
-      gl.deleteShader(shader);
-      throw new Error(`WebGL2 ${label} shader failed to compile: ${log}`);
-    }
-    return shader;
-  }
-  function buildProgram(gl, fragmentSource, label) {
-    const vs = compile(gl, gl.VERTEX_SHADER, VERTEX_SHADER, `${label} vertex`);
-    const fs = compile(gl, gl.FRAGMENT_SHADER, fragmentSource, `${label} fragment`);
-    const program = gl.createProgram();
-    if (!program)
-      throw new Error(`WebGL2: could not create the ${label} program`);
-    gl.attachShader(program, vs);
-    gl.attachShader(program, fs);
-    gl.linkProgram(program);
-    gl.deleteShader(vs);
-    gl.deleteShader(fs);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      const log = gl.getProgramInfoLog(program) ?? "no log";
-      gl.deleteProgram(program);
-      throw new Error(`WebGL2 ${label} program failed to link: ${log}`);
-    }
-    return program;
-  }
-  var ART_SIZE, CROSSFADE_SECONDS, BG_FPS, FRAME_INTERVAL_MS, STATIC_TIME, MAX_FRAME_DT_MS, MAX_DPR, BACKING_SCALE, FIELD_SCALE, GL_REVEAL_MS, GlAppBackground;
-  var init_GlAppBackground = __esm({
-    "src/components/DynamicBG/GlAppBackground.ts"() {
-      "use strict";
-      init_identity();
-      init_inkShader();
-      ART_SIZE = 32;
-      CROSSFADE_SECONDS = 1.6;
-      BG_FPS = 60;
-      FRAME_INTERVAL_MS = 1e3 / BG_FPS;
-      STATIC_TIME = 9.5;
-      MAX_FRAME_DT_MS = 1e3 / 15;
-      MAX_DPR = 1;
-      BACKING_SCALE = 0.6;
-      FIELD_SCALE = 0.35;
-      GL_REVEAL_MS = 900;
-      GlAppBackground = class {
-        constructor(opts) {
-          this.rafId = null;
-          this.resizeRafQueued = false;
-          this.lastTickMs = 0;
-          this.elapsed = 0;
-          this.fieldTime = 0;
-          this.mix = 0;
-          this.mixStart = 0;
-          this.crossfading = false;
-          this.loadToken = 0;
-          this.currentUrl = null;
-          this.backingW = 0;
-          this.backingH = 0;
-          this.fieldW = 0;
-          this.fieldH = 0;
-          this.mountedOnce = false;
-          this.disposed = false;
-          this.handleContextLost = (event) => {
-            event.preventDefault();
-            if (this.disposed)
-              return;
-            this.disposed = true;
-            this.stopLoop();
-            document.removeEventListener("visibilitychange", this.handleVisibility);
-            window.removeEventListener("resize", this.handleResize);
-            this.sizeObserver.disconnect();
-            this.motionQuery.removeEventListener("change", this.handleMotionChange);
-            this.container.remove();
-            this.onFail();
-          };
-          this.handleVisibility = () => {
-            if (this.disposed)
-              return;
-            if (document.hidden)
-              this.stopLoop();
-            else
-              this.ensureLoop();
-          };
-          this.handleMotionChange = () => {
-            if (this.disposed)
-              return;
-            this.motionEnabled = !this.motionQuery.matches;
-            this.updateMotionActive();
-          };
-          this.handleResize = () => {
-            if (this.disposed || this.resizeRafQueued)
-              return;
-            this.resizeRafQueued = true;
-            requestAnimationFrame(() => {
-              this.resizeRafQueued = false;
-              if (this.disposed)
-                return;
-              this.resizeBackingStore();
-              this.drawFrame();
-            });
-          };
-          this.tick = (now2) => {
-            if (this.disposed)
-              return;
-            if (this.lastTickMs === 0)
-              this.lastTickMs = now2;
-            const delta = now2 - this.lastTickMs;
-            if (delta < FRAME_INTERVAL_MS - 1) {
-              this.rafId = requestAnimationFrame(this.tick);
-              return;
-            }
-            this.lastTickMs = now2;
-            this.elapsed += Math.min(delta, MAX_FRAME_DT_MS) / 1e3;
-            this.fieldTime += Math.min(delta, MAX_FRAME_DT_MS) / 1e3 * this.motionSpeed;
-            if (this.crossfading) {
-              const p = Math.min(1, (this.elapsed - this.mixStart) / CROSSFADE_SECONDS);
-              this.mix = p * p * (3 - 2 * p);
-              if (p >= 1)
-                this.finishCrossfade();
-            }
-            this.drawFrame();
-            if (!this.motionActive && !this.crossfading) {
-              this.rafId = null;
-              return;
-            }
-            this.rafId = requestAnimationFrame(this.tick);
-          };
-          this.onFail = opts.onFail;
-          this.intensity = opts.intensity ? { ...opts.intensity } : { vibrance: 1, dim: 1 };
-          this.motionSpeed = opts.motionSpeed ?? 1;
-          this.container = createAppBgContainer(true);
-          this.canvas = document.createElement("canvas");
-          this.canvas.className = "amai-bg-canvas";
-          this.container.appendChild(this.canvas);
-          const gl = this.canvas.getContext("webgl2", {
-            alpha: false,
-            antialias: false,
-            depth: false,
-            stencil: false,
-            powerPreference: "high-performance",
-            desynchronized: true
-          });
-          if (!gl)
-            throw new Error("WebGL2: context unavailable in this runtime");
-          this.gl = gl;
-          this.fieldProgram = buildProgram(gl, FIELD_FRAGMENT_SHADER, "field");
-          this.presentProgram = buildProgram(gl, PRESENT_FRAGMENT_SHADER, "present");
-          gl.useProgram(this.fieldProgram);
-          this.fieldUniforms = {
-            uFlowA: gl.getUniformLocation(this.fieldProgram, "uFlowA"),
-            uFlowB: gl.getUniformLocation(this.fieldProgram, "uFlowB"),
-            uBreath: gl.getUniformLocation(this.fieldProgram, "uBreath"),
-            uMix: gl.getUniformLocation(this.fieldProgram, "uMix"),
-            uAspect: gl.getUniformLocation(this.fieldProgram, "uAspect"),
-            uFieldSize: gl.getUniformLocation(this.fieldProgram, "uFieldSize"),
-            uTexOld: gl.getUniformLocation(this.fieldProgram, "uTexOld"),
-            uTexNew: gl.getUniformLocation(this.fieldProgram, "uTexNew")
-          };
-          gl.uniform1i(this.fieldUniforms.uTexOld, 0);
-          gl.uniform1i(this.fieldUniforms.uTexNew, 1);
-          gl.useProgram(this.presentProgram);
-          this.presentUniforms = {
-            uField: gl.getUniformLocation(this.presentProgram, "uField"),
-            uGrainSeed: gl.getUniformLocation(this.presentProgram, "uGrainSeed"),
-            uResolution: gl.getUniformLocation(this.presentProgram, "uResolution"),
-            uVibrance: gl.getUniformLocation(this.presentProgram, "uVibrance"),
-            uDim: gl.getUniformLocation(this.presentProgram, "uDim")
-          };
-          gl.uniform1i(this.presentUniforms.uField, 0);
-          this.vao = gl.createVertexArray() ?? {};
-          gl.bindVertexArray(this.vao);
-          this.fieldTex = this.createFieldTarget();
-          this.fieldFbo = this.createFieldFramebuffer();
-          this.texOld = this.createArtTexture();
-          this.texCurrent = this.createArtTexture();
-          this.motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-          this.motionEnabled = !this.motionQuery.matches;
-          this.motionActive = this.motionEnabled && this.motionSpeed > 0;
-          this.canvas.addEventListener("webglcontextlost", this.handleContextLost);
-          document.addEventListener("visibilitychange", this.handleVisibility);
-          this.sizeObserver = new ResizeObserver(this.handleResize);
-          this.sizeObserver.observe(this.canvas);
-          window.addEventListener("resize", this.handleResize, { passive: true });
-          this.motionQuery.addEventListener("change", this.handleMotionChange);
-        }
-        static async create(host, coverUrl, opts) {
-          const glBg = new GlAppBackground(opts);
-          try {
-            await glBg.seedArtwork(coverUrl);
-            glBg.reattach(host);
-            glBg.ensureLoop();
-            return glBg;
-          } catch (error) {
-            glBg.remove();
-            throw error;
-          }
-        }
-        getElement() {
-          return this.container;
-        }
-        hasArtwork() {
-          return this.currentUrl !== null;
-        }
-        isApplied() {
-          return !this.disposed && this.container.isConnected;
-        }
-        reattach(host) {
-          if (this.disposed || this.container.parentElement === host)
-            return;
-          ensureAppBgHostClasses(host);
-          host.appendChild(this.container);
-          this.resizeBackingStore();
-          this.drawFrame();
-          if (!this.mountedOnce && host.isConnected) {
-            this.mountedOnce = true;
-            if (this.motionEnabled) {
-              this.container.animate?.([{ opacity: 0 }, { opacity: 1 }], {
-                duration: GL_REVEAL_MS,
-                easing: "ease"
-              });
-            }
-          }
-        }
-        apply(coverUrl) {
-          if (this.disposed || coverUrl === this.currentUrl)
-            return;
-          this.currentUrl = coverUrl;
-          const token = ++this.loadToken;
-          void loadArtworkBitmap(coverUrl).then((bitmap) => {
-            if (this.disposed || token !== this.loadToken) {
-              bitmap?.close();
-              return;
-            }
-            if (!bitmap)
-              return;
-            if (this.crossfading) {
-              this.mix = 1;
-              this.finishCrossfade();
-            }
-            this.uploadArtwork(this.texCurrent, bitmap);
-            bitmap.close();
-            this.container.setAttribute("current-img", coverUrl);
-            this.mixStart = this.elapsed;
-            this.crossfading = true;
-            this.ensureLoop();
-          });
-        }
-        remove() {
-          if (this.disposed)
-            return;
-          this.disposed = true;
-          this.stopLoop();
-          this.canvas.removeEventListener("webglcontextlost", this.handleContextLost);
-          document.removeEventListener("visibilitychange", this.handleVisibility);
-          window.removeEventListener("resize", this.handleResize);
-          this.sizeObserver.disconnect();
-          this.motionQuery.removeEventListener("change", this.handleMotionChange);
-          this.gl.getExtension("WEBGL_lose_context")?.loseContext();
-          this.gl.deleteTexture(this.texOld);
-          this.gl.deleteTexture(this.texCurrent);
-          this.gl.deleteFramebuffer(this.fieldFbo);
-          this.gl.deleteTexture(this.fieldTex);
-          this.gl.deleteProgram(this.fieldProgram);
-          this.gl.deleteProgram(this.presentProgram);
-          this.gl.deleteVertexArray(this.vao);
-          this.container.remove();
-        }
-        createArtTexture() {
-          const gl = this.gl;
-          const tex = gl.createTexture();
-          if (!tex)
-            throw new Error("WebGL2: could not create texture");
-          gl.bindTexture(gl.TEXTURE_2D, tex);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-          return tex;
-        }
-        createFieldTarget() {
-          const gl = this.gl;
-          const tex = gl.createTexture();
-          if (!tex)
-            throw new Error("WebGL2: could not create the field texture");
-          gl.bindTexture(gl.TEXTURE_2D, tex);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-          return tex;
-        }
-        createFieldFramebuffer() {
-          const gl = this.gl;
-          const fbo = gl.createFramebuffer();
-          if (!fbo)
-            throw new Error("WebGL2: could not create the field framebuffer");
-          gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
-          gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.fieldTex, 0);
-          const complete = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
-          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-          if (!complete)
-            throw new Error("WebGL2: the field framebuffer is incomplete");
-          return fbo;
-        }
-        texImage(source) {
-          const gl = this.gl;
-          if (source instanceof Uint8Array) {
-            gl.texImage2D(
-              gl.TEXTURE_2D,
-              0,
-              gl.RGBA8,
-              ART_SIZE,
-              ART_SIZE,
-              0,
-              gl.RGBA,
-              gl.UNSIGNED_BYTE,
-              source
-            );
-          } else {
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, source);
-          }
-        }
-        seedArtwork(coverUrl) {
-          return loadArtworkBitmap(coverUrl).then((bitmap) => {
-            this.gl.pixelStorei(this.gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-            this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, false);
-            if (!bitmap) {
-              const dark = new Uint8Array(ART_SIZE * ART_SIZE * 4);
-              for (let i = 0; i < ART_SIZE * ART_SIZE; i++) {
-                dark[i * 4] = 28;
-                dark[i * 4 + 1] = 28;
-                dark[i * 4 + 2] = 34;
-                dark[i * 4 + 3] = 255;
-              }
-              this.gl.bindTexture(this.gl.TEXTURE_2D, this.texOld);
-              this.texImage(dark);
-              this.gl.bindTexture(this.gl.TEXTURE_2D, this.texCurrent);
-              this.texImage(dark);
-              return;
-            }
-            this.uploadArtwork(this.texOld, bitmap);
-            this.uploadArtwork(this.texCurrent, bitmap);
-            bitmap.close();
-            this.currentUrl = coverUrl;
-            this.container.setAttribute("current-img", coverUrl);
-          });
-        }
-        uploadArtwork(target, bitmap) {
-          const gl = this.gl;
-          gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-          gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-          gl.bindTexture(gl.TEXTURE_2D, target);
-          this.texImage(bitmap);
-        }
-        updateMotionActive() {
-          this.motionActive = this.motionEnabled && this.motionSpeed > 0;
-          this.ensureLoop();
-        }
-        setIntensity(intensity) {
-          if (this.disposed)
-            return;
-          this.intensity = { ...intensity };
-          if (this.rafId === null)
-            this.drawFrame();
-        }
-        setMotionSpeed(speed) {
-          if (this.disposed)
-            return;
-          this.motionSpeed = speed;
-          this.updateMotionActive();
-          if (this.rafId === null)
-            this.drawFrame();
-        }
-        ensureLoop() {
-          if (this.disposed || this.rafId !== null || document.hidden)
-            return;
-          this.lastTickMs = 0;
-          this.rafId = requestAnimationFrame(this.tick);
-        }
-        stopLoop() {
-          if (this.rafId !== null) {
-            cancelAnimationFrame(this.rafId);
-            this.rafId = null;
-          }
-        }
-        resizeBackingStore() {
-          const w = this.canvas.clientWidth;
-          const h = this.canvas.clientHeight;
-          if (!w || !h)
-            return;
-          const dpr = Math.min(MAX_DPR, window.devicePixelRatio || 1);
-          const bw = Math.max(1, Math.round(w * dpr * BACKING_SCALE));
-          const bh = Math.max(1, Math.round(h * dpr * BACKING_SCALE));
-          const fw = Math.max(1, Math.round(w * dpr * FIELD_SCALE));
-          const fh = Math.max(1, Math.round(h * dpr * FIELD_SCALE));
-          if (bw === this.backingW && bh === this.backingH && fw === this.fieldW && fh === this.fieldH) {
-            return;
-          }
-          this.backingW = bw;
-          this.backingH = bh;
-          this.fieldW = fw;
-          this.fieldH = fh;
-          this.canvas.width = bw;
-          this.canvas.height = bh;
-          const gl = this.gl;
-          gl.bindTexture(gl.TEXTURE_2D, this.fieldTex);
-          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, fw, fh, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-          gl.useProgram(this.fieldProgram);
-          gl.uniform2f(this.fieldUniforms.uFieldSize, fw, fh);
-          gl.uniform1f(this.fieldUniforms.uAspect, w / h);
-          gl.useProgram(this.presentProgram);
-          gl.uniform2f(this.presentUniforms.uResolution, bw, bh);
-        }
-        drawFrame() {
-          this.renderField();
-          this.presentField();
-        }
-        renderField() {
-          const gl = this.gl;
-          gl.bindFramebuffer(gl.FRAMEBUFFER, this.fieldFbo);
-          gl.viewport(0, 0, this.fieldW, this.fieldH);
-          gl.useProgram(this.fieldProgram);
-          this.computeFlow();
-          gl.uniform1f(this.fieldUniforms.uMix, this.mix);
-          gl.activeTexture(gl.TEXTURE0);
-          gl.bindTexture(gl.TEXTURE_2D, this.texOld);
-          gl.activeTexture(gl.TEXTURE1);
-          gl.bindTexture(gl.TEXTURE_2D, this.texCurrent);
-          gl.drawArrays(gl.TRIANGLES, 0, 3);
-        }
-        presentField() {
-          const gl = this.gl;
-          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-          gl.viewport(0, 0, this.backingW, this.backingH);
-          gl.useProgram(this.presentProgram);
-          const t = this.motionActive ? this.fieldTime : STATIC_TIME;
-          gl.uniform2f(this.presentUniforms.uGrainSeed, t * 0.7 % 1 * 43, t * 0.31 % 1 * 17);
-          gl.uniform1f(this.presentUniforms.uVibrance, this.intensity.vibrance);
-          gl.uniform1f(this.presentUniforms.uDim, this.intensity.dim);
-          gl.activeTexture(gl.TEXTURE0);
-          gl.bindTexture(gl.TEXTURE_2D, this.fieldTex);
-          gl.drawArrays(gl.TRIANGLES, 0, 3);
-        }
-        computeFlow() {
-          const gl = this.gl;
-          const t = this.motionActive ? this.fieldTime : STATIC_TIME;
-          gl.uniform4f(
-            this.fieldUniforms.uFlowA,
-            0.02 * t,
-            -0.011 * t,
-            Math.sin(t * 0.045) * 0.35,
-            Math.cos(t * 0.033) * 0.35
-          );
-          gl.uniform4f(
-            this.fieldUniforms.uFlowB,
-            -0.013 * t,
-            8e-3 * t,
-            Math.sin(t * 0.028 + 1.9) * 0.3,
-            Math.cos(t * 0.051 + 0.6) * 0.3
-          );
-          gl.uniform1f(this.fieldUniforms.uBreath, 0.35 * (1 + 0.05 * Math.sin(t * 0.1)));
-        }
-        finishCrossfade() {
-          this.crossfading = false;
-          this.mix = 0;
-          const incoming = this.texOld;
-          this.texOld = this.texCurrent;
-          this.texCurrent = incoming;
-        }
-      };
-    }
-  });
-
-  // src/components/DynamicBG/AppBackground.ts
-  var AppBackground_exports = {};
-  __export(AppBackground_exports, {
-    APP_BG_HOST_FALLBACK_SELECTOR: () => APP_BG_HOST_FALLBACK_SELECTOR,
-    APP_BG_HOST_SELECTOR: () => APP_BG_HOST_SELECTOR,
-    AppBackground: () => AppBackground,
-    appBackgroundSingleton: () => appBackgroundSingleton,
-    isAppBackgroundEnabled: () => isAppBackgroundEnabled,
-    resolveAppBgHost: () => resolveAppBgHost,
-    syncAppBgMarker: () => syncAppBgMarker,
-    watchLibraryGridState: () => watchLibraryGridState
-  });
-  function detachDomCanvas(el) {
-    if (el instanceof HTMLElement && el.classList.contains(APP_BG_CLASS) && !el.classList.contains(APP_BG_GPU_CLASS)) {
-      el.remove();
-    }
-  }
-  function releaseAppBgHostIfEmpty(host) {
-    if (!host || findAppBg(host))
-      return;
-    host.classList.remove(APP_BG_HOST_HELPER_CLASS, APP_BG_HOST_CLASS);
-  }
-  function isGpuEnvironmentFailure(error) {
-    const err2 = error;
-    const text = `${err2?.name ?? ""} ${err2?.message ?? String(error)}`;
-    return /context unavailable|context lost/i.test(text);
-  }
-  function isAppBackgroundEnabled() {
-    return settingsValues_default.get("enableAppBackground");
-  }
-  function resolveAppBgHost() {
-    const fullscreenPage = document.querySelector(PageViewSelectors.FullscreenPage);
-    if (fullscreenPage)
-      return fullscreenPage;
-    return document.querySelector(APP_BG_HOST_SELECTOR) ?? document.querySelector(APP_BG_HOST_FALLBACK_SELECTOR);
-  }
-  function syncAppBgMarker(force) {
-    document.documentElement.classList.toggle(APP_BG_ON_CLASS, force ?? isAppBackgroundEnabled());
-  }
-  function findAppBg(host) {
-    const kids = host.children;
-    for (let i = 0; i < kids.length; i++) {
-      const child = kids[i];
-      if (child instanceof HTMLElement && child.classList.contains(APP_BG_CONTAINER_CLASS) && child.classList.contains(APP_BG_CLASS)) {
-        return child;
-      }
-    }
-    return null;
-  }
-  function watchLibraryGridState() {
-    const navBar = document.querySelector(anySurface("sidebar"));
-    if (!navBar)
-      return null;
-    syncLibraryGridState();
-    const obs = new MutationObserver(() => syncLibraryGridState());
-    obs.observe(navBar, { childList: true, subtree: true });
-    return obs;
-  }
-  var APP_BG_HOST_SELECTOR, APP_BG_HOST_FALLBACK_SELECTOR, AppBackground, appBackgroundSingleton;
-  var init_AppBackground = __esm({
-    "src/components/DynamicBG/AppBackground.ts"() {
-      "use strict";
-      init_settingsValues();
-      init_ThemeSettings();
-      init_utils();
-      init_identity();
-      init_SpotifyDom();
-      init_PageViewSelectors();
-      APP_BG_HOST_SELECTOR = primarySurface("appFrameHost");
-      APP_BG_HOST_FALLBACK_SELECTOR = legacySurface("appFrameHost");
-      AppBackground = class {
-        constructor() {
-          this.cached = {
-            host: null,
-            dynamicBg: null,
-            lastImgUrl: null
-          };
-          this.glBg = null;
-          this.glState = "idle";
-          this.bootGeneration = 0;
-          this.lastCoverUrl = null;
-          this.domDetachTimer = null;
-        }
-        apply(coverUrl) {
-          const enabled = isAppBackgroundEnabled();
-          if (!enabled)
-            return;
-          syncAppBgMarker(true);
-          const normalized = normalizeImageUrl(coverUrl);
-          if (!normalized)
-            return;
-          coverUrl = normalized;
-          try {
-            const host = resolveAppBgHost();
-            if (!host) {
-              this.clearCache();
-              return;
-            }
-            let vacatedHost = null;
-            const releaseVacatedHost = () => {
-              if (vacatedHost && vacatedHost !== host)
-                releaseAppBgHostIfEmpty(vacatedHost);
-            };
-            if (this.cached.host !== host) {
-              vacatedHost = this.cached.host;
-              this.cached.host = host;
-              const carried = this.cached.dynamicBg;
-              this.cached.dynamicBg = findAppBg(host);
-              if (!this.cached.dynamicBg && carried?.isConnected && !carried.classList.contains(APP_BG_GPU_CLASS)) {
-                ensureAppBgHostClasses(host);
-                host.appendChild(carried);
-                this.cached.dynamicBg = carried;
-              }
-            }
-            const cachedBg = this.cached.dynamicBg;
-            if (cachedBg && (!cachedBg.isConnected || cachedBg.parentElement !== host)) {
-              this.cached.dynamicBg = findAppBg(host);
-            }
-            this.lastCoverUrl = coverUrl;
-            if (this.glBg) {
-              if (!this.cached.dynamicBg || this.cached.dynamicBg.parentElement !== host) {
-                this.glBg.reattach(host);
-                this.cached.dynamicBg = this.glBg.getElement();
-              }
-              releaseVacatedHost();
-              this.glBg.apply(coverUrl);
-              this.cached.lastImgUrl = coverUrl;
-              return;
-            }
-            releaseVacatedHost();
-            if (this.glState === "idle")
-              this.bootGl(host, coverUrl);
-            if (coverUrl === this.cached.lastImgUrl && this.cached.dynamicBg)
-              return;
-            if (!this.cached.dynamicBg) {
-              this.createNewBackground(host, coverUrl);
-            } else {
-              const imgA = this.cached.dynamicBg.querySelector(
-                `#${APP_BG_IMG_A_ID}`
-              );
-              const imgB = this.cached.dynamicBg.querySelector(
-                `#${APP_BG_IMG_B_ID}`
-              );
-              if (!imgA || !imgB) {
-                this.createNewBackground(host, coverUrl);
-              } else {
-                this.updateExistingBackground({ imgA, imgB }, coverUrl);
-              }
-            }
-            this.cached.lastImgUrl = coverUrl;
-          } catch (error) {
-            console.error("Error Applying the Dynamic BG to the App:", error);
-          }
-        }
-        remove() {
-          try {
-            this.bootGeneration++;
-            if (this.domDetachTimer) {
-              clearTimeout(this.domDetachTimer);
-              this.domDetachTimer = null;
-            }
-            if (this.glBg) {
-              const dying = this.glBg;
-              this.glBg = null;
-              dying.remove();
-            }
-            if (this.glState === "ready" || this.glState === "booting")
-              this.glState = "idle";
-            const host = this.cached.host ?? resolveAppBgHost();
-            const bg = host ? findAppBg(host) : null;
-            bg?.remove();
-            if (host) {
-              if (!bg || !findAppBg(host)) {
-                host.classList.remove(APP_BG_HOST_HELPER_CLASS);
-              }
-              host.classList.remove(APP_BG_HOST_CLASS);
-              host.querySelector(anySurface("sidebar"))?.classList.remove(APP_BG_LIB_GRID_CLASS);
-            }
-            const backHost = document.querySelector(anySurface("appFrameHost"));
-            if (backHost && backHost !== host) {
-              findAppBg(backHost)?.remove();
-              releaseAppBgHostIfEmpty(backHost);
-            }
-            document.documentElement.classList.remove(APP_BG_ON_CLASS);
-            this.clearCache();
-          } catch (error) {
-            console.error("Error Removing the Dynamic BG from the App:", error);
-          }
-        }
-        isApplied() {
-          const cachedBg = this.cached.dynamicBg;
-          if (cachedBg?.isConnected && cachedBg.classList.contains(APP_BG_CLASS))
-            return true;
-          const host = this.cached.host?.isConnected ? this.cached.host : resolveAppBgHost();
-          return !!host && !!findAppBg(host);
-        }
-        applyIntensitySetting() {
-          this.glBg?.setIntensity(getGlIntensity());
-        }
-        applyMotionSetting() {
-          this.glBg?.setMotionSpeed(getGlMotionSpeed());
-        }
-        destroy() {
-          this.remove();
-        }
-        clearCache() {
-          this.cached.lastImgUrl = null;
-          this.cached.dynamicBg = null;
-          this.cached.host = null;
-        }
-        bootGl(host, coverUrl) {
-          this.glState = "booting";
-          const generation = ++this.bootGeneration;
-          const abandon = (retryable) => {
-            if (generation !== this.bootGeneration)
-              return;
-            this.glState = retryable ? "idle" : "failed";
-          };
-          void (async () => {
-            if (typeof WebGL2RenderingContext === "undefined") {
-              abandon(false);
-              return;
-            }
-            try {
-              const mod = await Promise.resolve().then(() => (init_GlAppBackground(), GlAppBackground_exports));
-              if (generation !== this.bootGeneration || !isAppBackgroundEnabled()) {
-                abandon(true);
-                return;
-              }
-              const seedUrl = this.lastCoverUrl ?? coverUrl;
-              const gl = await mod.GlAppBackground.create(host, seedUrl, {
-                onFail: () => this.handleGlFail(),
-                intensity: getGlIntensity(),
-                motionSpeed: getGlMotionSpeed()
-              });
-              if (!gl) {
-                abandon(false);
-                return;
-              }
-              if (generation !== this.bootGeneration || !isAppBackgroundEnabled()) {
-                gl.remove();
-                releaseAppBgHostIfEmpty(host);
-                releaseAppBgHostIfEmpty(this.cached.host);
-                releaseAppBgHostIfEmpty(resolveAppBgHost());
-                abandon(true);
-                return;
-              }
-              const domNode = this.cached.dynamicBg;
-              const liveHost = resolveAppBgHost() ?? host;
-              const staleHosts = /* @__PURE__ */ new Set();
-              if (this.cached.host && this.cached.host !== liveHost)
-                staleHosts.add(this.cached.host);
-              if (host !== liveHost)
-                staleHosts.add(host);
-              gl.reattach(liveHost);
-              staleHosts.forEach((staleHost) => detachDomCanvas(findAppBg(staleHost)));
-              this.scheduleDomDetach(domNode, mod.GL_REVEAL_MS);
-              this.glBg = gl;
-              this.glState = "ready";
-              this.cached.host = liveHost;
-              this.cached.dynamicBg = gl.getElement();
-              const pushUrl = this.lastCoverUrl ?? seedUrl;
-              if (pushUrl !== seedUrl || !gl.hasArtwork())
-                gl.apply(pushUrl);
-            } catch (error) {
-              abandon(false);
-              if (isGpuEnvironmentFailure(error)) {
-                console.warn(
-                  "amai-lyrics: WebGL2 is not available in this runtime \u2014 keeping the CSS dynamic background."
-                );
-              } else {
-                console.error("Error booting the WebGL2 app background:", error);
-              }
-            }
-          })();
-        }
-        scheduleDomDetach(el, revealMs) {
-          if (!el || !el.isConnected) {
-            detachDomCanvas(el);
-            return;
-          }
-          if (this.domDetachTimer)
-            clearTimeout(this.domDetachTimer);
-          this.domDetachTimer = setTimeout(() => {
-            this.domDetachTimer = null;
-            detachDomCanvas(el);
-          }, revealMs + 50);
-        }
-        handleGlFail() {
-          if (this.glState === "failed")
-            return;
-          this.bootGeneration++;
-          this.glBg = null;
-          this.glState = "failed";
-          this.cached.dynamicBg = null;
-          this.cached.lastImgUrl = null;
-          if (isAppBackgroundEnabled())
-            this.apply(this.lastCoverUrl ?? void 0);
-        }
-        createNewBackground(host, coverUrl) {
-          const dynamicBackground = createAppBgContainer(false);
-          dynamicBackground.setAttribute("current-img", coverUrl);
-          setRandomCSSVariables(dynamicBackground);
-          findAppBg(host)?.remove();
-          const placeholder = document.createElement("div");
-          placeholder.className = "placeholder";
-          dynamicBackground.appendChild(placeholder);
-          const imgA = createBackgroundImage(
-            APP_BG_IMG_A_ID,
-            "bg-image primary active",
-            coverUrl,
-            "eager"
-          );
-          dynamicBackground.appendChild(imgA);
-          const imgB = createBackgroundImage(APP_BG_IMG_B_ID, "bg-image secondary", "", "lazy");
-          dynamicBackground.appendChild(imgB);
-          ensureAppBgHostClasses(host);
-          host.appendChild(dynamicBackground);
-          imgA.onload = () => {
-            requestAnimationFrame(() => {
-              dynamicBackground.classList.add(APP_BG_LOADED_CLASS);
-            });
-            placeholder.remove();
-          };
-          this.cached.dynamicBg = dynamicBackground;
-        }
-        updateExistingBackground(images, coverUrl) {
-          const { imgA, imgB } = images;
-          if (imgA.src === coverUrl || imgB.src === coverUrl) {
-            this.cached.dynamicBg?.setAttribute("current-img", coverUrl);
-            return;
-          }
-          const activeImg = imgA.classList.contains("active") ? imgA : imgB;
-          const inactiveImg = activeImg === imgA ? imgB : imgA;
-          inactiveImg.onload = null;
-          inactiveImg.onerror = null;
-          inactiveImg.onload = () => {
-            if (inactiveImg.src !== coverUrl)
-              return;
-            requestAnimationFrame(() => {
-              activeImg.classList.remove("active");
-              inactiveImg.classList.add("active");
-              this.cached.dynamicBg?.setAttribute("current-img", coverUrl);
-            });
-          };
-          inactiveImg.onerror = () => {
-            console.error("Error loading new background image:", coverUrl);
-          };
-          inactiveImg.src = coverUrl;
-        }
-      };
-      appBackgroundSingleton = new AppBackground();
     }
   });
 
@@ -36977,23 +37358,9 @@ void main() {
         const enabled = settings.getFieldValue("enableAppBackground");
         settingsValues_default.set("enableAppBackground", enabled);
         settings.setFieldsVisible(themeOptionFieldIds, enabled);
-        if (enabled) {
-          const coverUrl = Spicetify.Player.data?.item?.metadata?.image_url;
-          void Promise.all([
-            Promise.resolve().then(() => (init_AppBackground(), AppBackground_exports)),
-            Promise.resolve().then(() => (init_identity(), identity_exports))
-          ]).then(([{ appBackgroundSingleton: appBackgroundSingleton2, syncAppBgMarker: syncAppBgMarker2 }, { syncLibraryGridState: syncLibraryGridState2 }]) => {
-            syncAppBgMarker2(true);
-            appBackgroundSingleton2.apply(coverUrl);
-            syncLibraryGridState2();
-            window.dispatchEvent(new Event("amai:appbg-changed"));
-          });
-        } else {
-          void Promise.resolve().then(() => (init_AppBackground(), AppBackground_exports)).then(({ appBackgroundSingleton: appBackgroundSingleton2 }) => {
-            appBackgroundSingleton2.remove();
-            window.dispatchEvent(new Event("amai:appbg-changed"));
-          });
-        }
+        void Promise.resolve().then(() => (init_ArtworkSurfaces(), ArtworkSurfaces_exports)).then(
+          ({ artworkSurfacesSingleton: artworkSurfacesSingleton2 }) => artworkSurfacesSingleton2.setThemeEnabled(enabled)
+        );
       }
     );
     const bgIntensityLabels = BACKGROUND_INTENSITY_OPTIONS.map((option) => option.label);
@@ -37720,364 +38087,8 @@ void main() {
     }
   };
 
-  // src/components/DynamicBG/ArtworkSurfaces.ts
-  init_lifecycle();
-  init_Whentil();
-  init_debounce2();
-  init_AppBackground();
-  init_identity();
-  init_SpotifyDom();
-  init_PageViewSelectors();
-  init_Fullscreen();
-
-  // src/components/DynamicBG/NowPlayingBarBackground.ts
-  var import_fastdom5 = __toESM(require_fastdom());
-  init_fastdomAsync();
-  init_utils();
-  init_identity();
-  init_SpotifyDom();
-  var NowPlayingBarBackground = class {
-    constructor() {
-      this.cached = {
-        nowPlayingBar: null,
-        dynamicBg: null,
-        lastImgUrl: null
-      };
-      this.pendingUrl = null;
-    }
-    apply(coverUrl) {
-      if (document.documentElement.classList.contains(APP_BG_ON_CLASS))
-        return;
-      const targetUrl = normalizeImageUrl(coverUrl);
-      if (!targetUrl)
-        return;
-      if (targetUrl === this.cached.lastImgUrl && this.cached.dynamicBg)
-        return;
-      if (targetUrl === this.pendingUrl)
-        return;
-      this.pendingUrl = targetUrl;
-      void (async () => {
-        try {
-          const { nowPlayingBar, hasDynamicBg, images } = await measureAsync(() => {
-            const bar = document.querySelector(anySurface("nowPlayingPanel"));
-            const hasBg = !!this.cached.dynamicBg;
-            const imgs = this.cached.dynamicBg ? {
-              imgA: this.cached.dynamicBg.querySelector(
-                `#${NESTED_BG_IMG_A_ID}`
-              ),
-              imgB: this.cached.dynamicBg.querySelector(
-                `#${NESTED_BG_IMG_B_ID}`
-              )
-            } : null;
-            return { nowPlayingBar: bar, hasDynamicBg: hasBg, images: imgs };
-          });
-          if (!nowPlayingBar || !nowPlayingBar.isConnected) {
-            this.clearCache();
-            return;
-          }
-          await mutateAsync(() => {
-            if (!nowPlayingBar.isConnected) {
-              this.clearCache();
-              return;
-            }
-            if (this.cached.nowPlayingBar !== nowPlayingBar) {
-              this.cached.nowPlayingBar = nowPlayingBar;
-            }
-            if (!hasDynamicBg) {
-              this.createNewBackground(nowPlayingBar, targetUrl);
-            } else if (images) {
-              this.updateExistingBackground(images, targetUrl);
-            }
-            this.cached.lastImgUrl = targetUrl;
-          });
-        } catch (error) {
-          console.error("Error Applying the Dynamic BG to the NowPlayingBar:", error);
-        } finally {
-          if (this.pendingUrl === targetUrl)
-            this.pendingUrl = null;
-        }
-      })();
-    }
-    clearCache() {
-      this.cached.lastImgUrl = null;
-      this.cached.dynamicBg = null;
-      this.cached.nowPlayingBar = null;
-      this.pendingUrl = null;
-    }
-    createNewBackground(nowPlayingBar, coverUrl) {
-      const dynamicBackground = document.createElement("div");
-      dynamicBackground.className = APP_BG_CONTAINER_CLASS;
-      dynamicBackground.setAttribute("current-img", coverUrl);
-      setRandomCSSVariables(dynamicBackground);
-      const placeholder = document.createElement("div");
-      placeholder.className = "placeholder";
-      dynamicBackground.appendChild(placeholder);
-      const imgA = createBackgroundImage(
-        NESTED_BG_IMG_A_ID,
-        "bg-image primary active",
-        coverUrl,
-        "eager"
-      );
-      dynamicBackground.appendChild(imgA);
-      const imgB = createBackgroundImage(NESTED_BG_IMG_B_ID, "bg-image secondary", "", "lazy");
-      dynamicBackground.appendChild(imgB);
-      nowPlayingBar.classList.add(APP_BG_HOST_HELPER_CLASS);
-      nowPlayingBar.appendChild(dynamicBackground);
-      imgA.onload = () => {
-        if (!dynamicBackground.isConnected)
-          return;
-        import_fastdom5.default.mutate(() => {
-          if (!dynamicBackground.isConnected)
-            return;
-          dynamicBackground.classList.add(APP_BG_LOADED_CLASS);
-          placeholder.remove();
-        });
-      };
-      this.cached.dynamicBg = dynamicBackground;
-    }
-    updateExistingBackground(images, coverUrl) {
-      const { imgA, imgB } = images;
-      const activeImg = imgA.classList.contains("active") ? imgA : imgB;
-      const inactiveImg = activeImg === imgA ? imgB : imgA;
-      inactiveImg.onload = null;
-      inactiveImg.onerror = null;
-      inactiveImg.onload = () => {
-        if (inactiveImg.src !== coverUrl)
-          return;
-        import_fastdom5.default.mutate(() => {
-          if (inactiveImg.src !== coverUrl)
-            return;
-          activeImg.classList.remove("active");
-          inactiveImg.classList.add("active");
-          this.cached.dynamicBg?.setAttribute("current-img", coverUrl);
-        });
-      };
-      inactiveImg.onerror = () => {
-        console.error("Error loading new background image:", coverUrl);
-      };
-      inactiveImg.src = coverUrl;
-    }
-    destroy() {
-      this.clearCache();
-    }
-  };
-
-  // src/components/DynamicBG/ArtworkSurfaces.ts
-  var APP_BG_CHANGED_EVENT = "amai:appbg-changed";
-  var FAN_OUT_DELAY_MS = 500;
-  var NOW_PLAYING_PANEL = anySurface("nowPlayingPanel");
-  function sidebarRegion() {
-    const panel = document.querySelector(NOW_PLAYING_PANEL);
-    return panel?.parentElement ?? document.querySelector(anySurface("nowPlayingRegion"));
-  }
-  function readLiveCoverUrl() {
-    try {
-      const url = Spicetify.Player.data?.item?.metadata?.image_url;
-      return typeof url === "string" ? url : void 0;
-    } catch {
-      return void 0;
-    }
-  }
-  function createDefaultAdapters(sidebarBg) {
-    return {
-      applySidebar: (coverUrl) => {
-        if (!document.querySelector(NOW_PLAYING_PANEL))
-          return;
-        sidebarBg.apply(coverUrl);
-      },
-      applyAppFrame: (coverUrl) => {
-        if (!isAppBackgroundEnabled())
-          return;
-        if (!resolveAppBgHost())
-          return;
-        appBackgroundSingleton.apply(coverUrl);
-      },
-      applyLyricsPage: () => {
-        if (!document.querySelector(PageViewSelectors.LyricsContainer))
-          return;
-        void Promise.resolve().then(() => (init_dynamicBackground(), dynamicBackground_exports)).then(({ default: ApplyDynamicBackground2 }) => {
-          const el = document.querySelector(PageViewSelectors.ContentBox);
-          if (el)
-            ApplyDynamicBackground2(el);
-        });
-      },
-      publishAccents: (coverUrl) => {
-        void Promise.resolve().then(() => (init_ArtworkColors(), ArtworkColors_exports)).then(({ publishArtworkAccents: publishArtworkAccents2 }) => {
-          void publishArtworkAccents2(coverUrl ?? null);
-        });
-      },
-      readCoverUrl: readLiveCoverUrl,
-      isAppFrameApplied: () => appBackgroundSingleton.isApplied()
-    };
-  }
-  var ArtworkSurfaces = class {
-    constructor(adapters) {
-      this.sidebarObserver = null;
-      this.sidebarLateObserver = null;
-      this.appFrameObserver = null;
-      this.gridObserver = null;
-      this.appFrameRafQueued = false;
-      this.firstPaintWaiter = null;
-      this.unsubscribeFullscreen = null;
-      this.sidebarBg = new NowPlayingBarBackground();
-      this.adapters = adapters ?? createDefaultAdapters(this.sidebarBg);
-      this.debouncedFanOut = debounce2((coverUrl) => {
-        const effective = coverUrl ?? this.adapters.readCoverUrl();
-        if (effective)
-          this.clearFirstPaintWaiter();
-        this.adapters.applySidebar(effective);
-        this.adapters.applyAppFrame(effective);
-        this.adapters.applyLyricsPage();
-        this.adapters.publishAccents(effective);
-      }, FAN_OUT_DELAY_MS);
-      this.toggleHandler = () => this.refreshAfterToggle();
-    }
-    applyArtwork(coverUrl) {
-      this.debouncedFanOut(coverUrl ?? this.adapters.readCoverUrl());
-    }
-    refreshStaticSurfaces() {
-      const coverUrl = this.adapters.readCoverUrl();
-      this.adapters.applySidebar(coverUrl);
-      this.adapters.applyAppFrame(coverUrl);
-    }
-    cancelPending() {
-      this.debouncedFanOut.cancel();
-    }
-    mount() {
-      syncAppBgMarker();
-      syncLibraryGridState();
-      this.paintInitialSurfaces();
-      this.waitForFirstArtwork();
-      this.watchSidebar();
-      this.watchAppFrameHost();
-      this.gridObserver = watchLibraryGridState();
-      if (this.gridObserver)
-        lifecycle_default.trackObserver(this.gridObserver);
-      window.addEventListener(APP_BG_CHANGED_EVENT, this.toggleHandler);
-      lifecycle_default.trackCallback(
-        () => window.removeEventListener(APP_BG_CHANGED_EVENT, this.toggleHandler)
-      );
-      this.unsubscribeFullscreen = Fullscreen_default.subscribe((fullscreen) => {
-        this.adapters.applyAppFrame(this.adapters.readCoverUrl());
-        if (fullscreen)
-          this.adapters.applyLyricsPage();
-      });
-      lifecycle_default.trackCallback(() => this.unsubscribeFullscreen?.());
-    }
-    destroy() {
-      this.cancelPending();
-      this.clearFirstPaintWaiter();
-      window.removeEventListener(APP_BG_CHANGED_EVENT, this.toggleHandler);
-      this.sidebarObserver?.disconnect();
-      this.sidebarLateObserver?.disconnect();
-      this.appFrameObserver?.disconnect();
-      this.gridObserver?.disconnect();
-      this.unsubscribeFullscreen?.();
-      this.unsubscribeFullscreen = null;
-      this.sidebarObserver = null;
-      this.sidebarLateObserver = null;
-      this.appFrameObserver = null;
-      this.gridObserver = null;
-      this.sidebarBg.destroy();
-      appBackgroundSingleton.destroy();
-    }
-    paintInitialSurfaces() {
-      this.refreshStaticSurfaces();
-      this.adapters.publishAccents(this.adapters.readCoverUrl());
-    }
-    waitForFirstArtwork() {
-      if (this.adapters.readCoverUrl())
-        return;
-      if (this.firstPaintWaiter)
-        return;
-      const waiter = Whentil_default.When(
-        () => this.adapters.readCoverUrl(),
-        () => {
-          this.firstPaintWaiter = null;
-          this.paintInitialSurfaces();
-        }
-      );
-      this.firstPaintWaiter = waiter;
-      lifecycle_default.trackWhentil(waiter);
-    }
-    clearFirstPaintWaiter() {
-      this.firstPaintWaiter?.Cancel();
-      this.firstPaintWaiter = null;
-    }
-    refreshAfterToggle() {
-      if (isAppBackgroundEnabled())
-        return;
-      const lateGrid = watchLibraryGridState();
-      if (lateGrid)
-        lifecycle_default.trackObserver(lateGrid);
-      this.adapters.applySidebar(this.adapters.readCoverUrl());
-      this.adapters.applyLyricsPage();
-    }
-    watchSidebar() {
-      const apply = () => {
-        if (document.querySelector(NOW_PLAYING_PANEL)) {
-          this.adapters.applySidebar(this.adapters.readCoverUrl());
-        }
-      };
-      const observer = new MutationObserver(apply);
-      const root2 = sidebarRegion() ?? document.body;
-      observer.observe(root2, { childList: true, subtree: true });
-      this.sidebarObserver = observer;
-      lifecycle_default.trackObserver(observer);
-      if (!sidebarRegion()) {
-        const late = new MutationObserver((_muts, obs) => {
-          const sb = sidebarRegion();
-          if (sb) {
-            obs.disconnect();
-            this.sidebarObserver?.disconnect();
-            const remounted = new MutationObserver(apply);
-            remounted.observe(sb, { childList: true, subtree: true });
-            this.sidebarObserver = remounted;
-            lifecycle_default.trackObserver(remounted);
-            apply();
-          }
-        });
-        late.observe(document.body, { childList: true, subtree: false });
-        this.sidebarLateObserver = late;
-        lifecycle_default.trackObserver(late);
-      }
-    }
-    watchAppFrameHost() {
-      const observer = new MutationObserver((mutations) => {
-        if (!isAppBackgroundEnabled())
-          return;
-        let hostAdded = false;
-        for (const mut of mutations) {
-          for (const node of mut.addedNodes) {
-            if (!(node instanceof Element))
-              continue;
-            if (node.matches?.(anySurface("appFrameHost")) || node.querySelector?.(anySurface("appFrameHost"))) {
-              hostAdded = true;
-              break;
-            }
-          }
-          if (hostAdded)
-            break;
-        }
-        if (!hostAdded || this.appFrameRafQueued)
-          return;
-        this.appFrameRafQueued = true;
-        requestAnimationFrame(() => {
-          this.appFrameRafQueued = false;
-          if (!isAppBackgroundEnabled())
-            return;
-          if (!this.adapters.isAppFrameApplied()) {
-            this.adapters.applyAppFrame(this.adapters.readCoverUrl());
-          }
-        });
-      });
-      observer.observe(document.body, { childList: true, subtree: false });
-      this.appFrameObserver = observer;
-      lifecycle_default.trackObserver(observer);
-    }
-  };
-
   // src/app.tsx
+  init_ArtworkSurfaces();
   init_PageView();
 
   // src/utils/suppressBlankToasts.ts
@@ -38930,7 +38941,7 @@ void main() {
       }
     );
     lifecycle_default.trackWhentil(playbackWhen);
-    const surfaces = new ArtworkSurfaces();
+    const surfaces = artworkSurfacesSingleton;
     surfaces.mount();
     lifecycle_default.trackCallback(() => surfaces.destroy());
     const songChangeManager = new SongChangeManager(buttonManager, surfaces);
@@ -39027,7 +39038,7 @@ void main() {
       el.textContent = (String.raw`
   @import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c16086d2e/DotLoader.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5580-FOMLjyZJF5xl/1a2104ecad9e/DotLoader.css */
 #DotLoader {
   --dot-color: var(--amai-accent-1);
   --dot-color-dim: color-mix(in srgb, var(--amai-accent-1) 22%, transparent);
@@ -39062,7 +39073,7 @@ void main() {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c16086d9f/ProcessingIndicator.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5580-FOMLjyZJF5xl/1a2104ecadff/ProcessingIndicator.css */
 #AmaiLyricsPage .LyricsContainer .processingIndicator {
   position: absolute;
   bottom: 0;
@@ -39144,7 +39155,7 @@ void main() {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c16085eb0/tokens.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5580-FOMLjyZJF5xl/1a2104eca360/tokens.css */
 :root {
   --amai-accent-1: #1ed760;
   --amai-accent-2: #1db954;
@@ -39223,7 +39234,7 @@ void main() {
   --amai-scrollbar-thumb: rgba(255, 255, 255, 0.6);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c160861d1/default.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5580-FOMLjyZJF5xl/1a2104eca611/default.css */
 :root {
   --bg-rotation-degree: 258deg;
 }
@@ -39479,7 +39490,7 @@ body:has(#AmaiLyricsPage) .main-view-container div[data-overlayscrollbars-viewpo
   height: 100% !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c160862b2/Simplebar.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5580-FOMLjyZJF5xl/1a2104eca6c2/Simplebar.css */
 #AmaiLyricsPage [data-simplebar] {
   position: relative;
   flex-direction: column;
@@ -39687,7 +39698,7 @@ body:has(#AmaiLyricsPage) .main-view-container div[data-overlayscrollbars-viewpo
   opacity: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c16086353/ContentBox.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5580-FOMLjyZJF5xl/1a2104eca733/ContentBox.css */
 .Skeletoned {
   --BorderRadius: .5cqw;
   --ValueStop1: 40%;
@@ -40291,7 +40302,7 @@ body:has(#AmaiLyricsPage) .main-view-container div[data-overlayscrollbars-viewpo
   cursor: default;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c16086494/sweet-dynamic-bg.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5580-FOMLjyZJF5xl/1a2104eca7e4/sweet-dynamic-bg.css */
 .sweet-dynamic-bg {
   --bg-hue-shift: 0deg;
   --bg-saturation: calc(2.2 * var(--amai-bg-saturation-scale, 1));
@@ -40689,7 +40700,7 @@ body:has(#AmaiLyricsPage.Fullscreen) aside:is(.NowPlayingView, .sweet-dynamic-bg
   animation-play-state: paused !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c16086535/main.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5580-FOMLjyZJF5xl/1a2104eca855/main.css */
 #AmaiLyricsPage .LyricsContainer {
   height: 100%;
   display: flex;
@@ -40914,6 +40925,8 @@ ruby > rt {
   max-width: 100%;
 }
 #AmaiLyricsPage .LyricsContainer .LyricsContent ruby > rt {
+  color: var(--amai-text-mid);
+  -webkit-text-fill-color: currentColor;
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
@@ -40944,7 +40957,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c160865b6/Mixed.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5580-FOMLjyZJF5xl/1a2104eca8b6/Mixed.css */
 #AmaiLyricsPage .LyricsContainer .LyricsContent .line {
   --font-size: var(--DefaultLyricsSize);
   display: flex;
@@ -41298,7 +41311,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c16086657/LoaderContainer.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5580-FOMLjyZJF5xl/1a2104eca927/LoaderContainer.css */
 #AmaiLyricsPage .LyricsContainer .loaderContainer {
   position: absolute;
   display: flex;
@@ -41320,7 +41333,7 @@ ruby > rt {
   display: none;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c160866a8/FullscreenTransition.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5580-FOMLjyZJF5xl/1a2104eca958/FullscreenTransition.css */
 #AmaiLyricsPage.fullscreen-transition {
   pointer-events: none;
 }
@@ -41347,7 +41360,7 @@ ruby > rt {
   opacity: 1 !important;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c160866d9/PlaybarLyrics.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5580-FOMLjyZJF5xl/1a2104eca989/PlaybarLyrics.css */
 .amai-playbar-host {
   position: relative;
 }
@@ -41455,7 +41468,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c1608674a/Settings.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5580-FOMLjyZJF5xl/1a2104eca9ba/Settings.css */
 :is(#amai-settings, #amai-theme-settings, #amai-dev-settings, #amai-info) {
   display: grid;
   gap: 8px;
@@ -41682,7 +41695,7 @@ ruby > rt {
   border: 1px solid var(--essential-subdued, #818181);
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c160867bb/SettingsModal.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5580-FOMLjyZJF5xl/1a2104eca9fb/SettingsModal.css */
 .amai-settings-overlay {
   position: fixed;
   inset: 0;
@@ -41760,7 +41773,7 @@ ruby > rt {
   min-width: 0;
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c160867fc/Tooltips.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5580-FOMLjyZJF5xl/1a2104ecaa2c/Tooltips.css */
 .tippy-box[data-theme~=amai-lyrics] {
   position: relative;
   background: var(--amai-glass-veil-strong), var(--amai-glass-base-strong) !important;
@@ -41820,7 +41833,7 @@ ruby > rt {
   }
 }
 
-/* C:/Users/Hathaway/AppData/Local/Temp/tmp-19420-1bh33X6Q6q3v/1a1c1608682d/Glassmorphism.css */
+/* C:/Users/Hathaway/AppData/Local/Temp/tmp-5580-FOMLjyZJF5xl/1a2104ecaa5d/Glassmorphism.css */
 .amai-app-bg-host .Root__nav-bar:not(.amai-lib-grid),
 .amai-app-bg-host #Desktop_LeftSidebar_Id:not(.amai-lib-grid) {
   isolation: isolate;
