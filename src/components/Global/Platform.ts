@@ -1,4 +1,5 @@
-import { Defer, Timeout } from '@hudzax/web-modules/Scheduler';
+import { Cancel, Defer, Timeout, type Scheduled } from '@hudzax/web-modules/Scheduler';
+import lifecycle from '../../utils/lifecycle';
 
 // Spotify Types
 type TokenProviderResponse = {
@@ -13,22 +14,42 @@ const Spotify: typeof Spicetify = (globalThis as unknown as { Spicetify: typeof 
 let SpotifyPlatform: typeof Spicetify.Platform;
 let SpotifyInternalFetch: typeof Spicetify.CosmosAsync;
 
-// Spotify Ready Promise
-const OnSpotifyReady = new Promise<void>((resolve) => {
+// Spotify Ready Promise. The polling task belongs to this injection's lifecycle;
+// cancelling it rejects the wait so an old initializer can finish instead of
+// hanging forever while a newer injection takes over.
+let readinessTask: Scheduled | null = null;
+const OnSpotifyReady = new Promise<void>((resolve, reject) => {
+  let settled = false;
+  const settle = (callback: () => void): void => {
+    if (settled) return;
+    settled = true;
+    if (readinessTask) {
+      Cancel(readinessTask);
+      readinessTask = null;
+    }
+    callback();
+  };
   const CheckForServices = () => {
+    if (settled) return;
     SpotifyPlatform = Spotify.Platform;
     SpotifyInternalFetch = Spotify.CosmosAsync;
 
     if (!SpotifyPlatform || !SpotifyInternalFetch) {
-      Defer(CheckForServices);
+      readinessTask = Defer(CheckForServices);
       return;
     }
 
-    resolve();
+    settle(resolve);
   };
 
   CheckForServices();
+  lifecycle.trackCallback(() =>
+    settle(() => reject(new Error('Spotify readiness cancelled during teardown'))),
+  );
 });
+// A module can be imported by a non-initialization caller that never awaits the
+// promise. Keep cancellation from becoming an unhandled rejection in that case.
+void OnSpotifyReady.catch(() => {});
 
 // Get Spotify Access Token Function
 let tokenProviderResponse: TokenProviderResponse | undefined;

@@ -17,6 +17,9 @@ import { AppendViewControls, Tooltips } from './pageControls';
 import { setupActionButtons } from './pageButtons';
 
 let maid: Maid | null = null;
+let pageGeneration = 0;
+let openPromise: Promise<void> | null = null;
+let destroyPromise: Promise<void> | null = null;
 
 const PageView = {
   Open: OpenPage,
@@ -32,13 +35,35 @@ function initializePageRoot(): void {
   PageRoot = document.querySelector<HTMLElement>(PageViewSelectors.PageRoot);
 }
 
-async function OpenPage() {
-  if (PageView.IsOpened) return;
+function OpenPage(): Promise<void> {
+  if (PageView.IsOpened) return Promise.resolve();
+  if (destroyPromise) {
+    const generation = pageGeneration;
+    return destroyPromise.then(() => {
+      if (generation === pageGeneration) return OpenPage();
+      return undefined;
+    });
+  }
+  if (openPromise) return openPromise;
 
-  maid = new Maid();
+  const generation = ++pageGeneration;
+  const promise = openPage(generation);
+  openPromise = promise;
+  const clearOpenPromise = () => {
+    if (openPromise === promise) openPromise = null;
+  };
+  void promise.then(clearOpenPromise, clearOpenPromise);
+  return promise;
+}
+
+async function openPage(generation: number): Promise<void> {
+  const isCurrent = () => generation === pageGeneration;
+  const pageMaid = new Maid();
+  maid = pageMaid;
 
   initializePageRoot();
-  await createPageElement();
+  await createPageElement(isCurrent);
+  if (!isCurrent()) return;
   // A fresh page must not inherit a pending delayed loader-show from the page
   // generation createPageElement just replaced: ShowLoaderContainer re-queries
   // when it fires, so an orphaned timer would paint the overlay onto the new
@@ -51,12 +76,14 @@ async function OpenPage() {
   const contentBox = document.querySelector<HTMLElement>(PageViewSelectors.ContentBox);
   if (contentBox) {
     const { artworkSurfacesSingleton } = await import('../DynamicBG/ArtworkSurfaces');
+    if (!isCurrent()) return;
     if (contentBox.isConnected) await artworkSurfacesSingleton.refreshLyricsPage();
+    if (!isCurrent()) return;
   }
 
   const mediaImage = document.querySelector<HTMLImageElement>(PageViewSelectors.MediaImage);
   if (mediaImage) {
-    setupImageLoading(mediaImage, maid);
+    setupImageLoading(mediaImage, pageMaid);
   }
 
   const currentUri = Spicetify.Player.data?.item?.uri;
@@ -69,15 +96,17 @@ async function OpenPage() {
   Session_OpenNowBar();
   Session_NowBar_SetSide();
 
-  await PageView.AppendViewControls();
+  await AppendViewControls(pageMaid);
+  if (!isCurrent()) return;
 
-  setupActionButtons(maid);
+  setupActionButtons(pageMaid);
 
   PageView.IsOpened = true;
 }
 
-async function createPageElement() {
+async function createPageElement(isCurrent: () => boolean) {
   await mutateAsync(() => {
+    if (!isCurrent()) return;
     // Remove any pre-existing page node (e.g. one left behind by a hot-reload
     // before the previous instance's teardown ran) to avoid duplicate
     // #AmaiLyricsPage nodes — ~75 selectors throughout the app resolve the
@@ -101,9 +130,34 @@ async function createPageElement() {
   });
 }
 
-async function DestroyPage() {
+function DestroyPage(): Promise<void> {
+  // Every destroy request invalidates opens, including a second request while
+  // an earlier removal is still awaiting its DOM mutation.
+  pageGeneration++;
+  openPromise = null;
   InvalidateNowBar();
-  if (!PageView.IsOpened) return;
+  if (destroyPromise) return destroyPromise;
+
+  const promise = destroyPage();
+  destroyPromise = promise;
+  const clearDestroyPromise = () => {
+    if (destroyPromise === promise) destroyPromise = null;
+  };
+  void promise.then(clearDestroyPromise, clearDestroyPromise);
+  return promise;
+}
+
+async function destroyPage(): Promise<void> {
+  const pageMaid = maid;
+  maid = null;
+  const wasActive =
+    PageView.IsOpened ||
+    pageMaid !== null ||
+    !!document.querySelector(PageViewSelectors.AmaiLyricsPage);
+  PageView.IsOpened = false;
+  clearLyricsUiTimeouts();
+  if (!wasActive) return;
+
   if (Fullscreen.isPageFullscreen()) Fullscreen.leave();
   const amaiLyricsPage = document.querySelector<HTMLElement>(PageViewSelectors.AmaiLyricsPage);
   if (amaiLyricsPage) {
@@ -128,16 +182,14 @@ async function DestroyPage() {
   // a single call (it keeps the stored removeEventListener refs inside).
   AutoScroll.destroy();
   try {
-    maid?.CleanUp();
+    pageMaid?.CleanUp();
     // Maid.Destroy is idempotent; CleanUp alone would leave Maid reusable but
     // we null the ref anyway so next Open gets a fresh instance.
     // SAFETY: the Maid type does not declare optional Destroy, but runtime Maid instances may expose it; the optional call is a safe no-op when absent.
-    (maid as unknown as { Destroy?: () => void })?.Destroy?.();
+    (pageMaid as unknown as { Destroy?: () => void })?.Destroy?.();
   } catch {
     /* ignore maid cleanup error */
   }
-  maid = null;
-  PageView.IsOpened = false;
 
   // Clean up any orphan loader / indicator timeouts that would otherwise hold
   // detached DOM refs until they fire.

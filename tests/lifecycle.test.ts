@@ -115,4 +115,14 @@ describe('lifecycle', () => {
     lifecycle.disposeAll();
     expect((window as unknown as Record<string, unknown>).__amaiLyricsTeardown).toBeUndefined();
   });
+
+  it('invalidates work captured before teardown', () => {
+    const generation = lifecycle.captureGeneration();
+    expect(lifecycle.isCurrentGeneration(generation)).toBe(true);
+
+    lifecycle.disposeAll();
+
+    expect(lifecycle.isCurrentGeneration(generation)).toBe(false);
+    expect(lifecycle.isCurrentGeneration(lifecycle.captureGeneration())).toBe(true);
+  });
 });

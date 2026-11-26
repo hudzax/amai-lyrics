@@ -68,6 +68,7 @@ let timedLinesCache: TimedPaintedLine[] | null = null;
 
 const THROTTLE_TIME = 0.05;
 let lastRenderedPosition = -1;
+let lastRenderedIsPlaying: boolean | null = null;
 let hasRenderedInitial = false;
 let scrollTickCounter = 0;
 
@@ -121,6 +122,7 @@ export function clear(): void {
   lineElementToStartTimeMap.clear();
   invalidateTimedLinesCache();
   lastRenderedPosition = -1;
+  lastRenderedIsPlaying = null;
   hasRenderedInitial = false;
   resetLineHighlight();
   AutoScroll.reset();
@@ -142,10 +144,18 @@ export function startLoop(): void {
     enabled: (ctx) => isPageOpen() && ctx.onLyricsPage,
     wantsTracking: (ctx) => ctx.onLyricsPage,
     onPosition: (progress, ctx) => {
-      // Nothing moved since the last frame -> no re-render needed
-      if (hasRenderedInitial && progress === lastRenderedPosition) return;
+      // Position alone is not the full render input: a pause/resume at the same
+      // position must still reach LineHighlight's play-state repaint pass.
+      if (
+        hasRenderedInitial &&
+        progress === lastRenderedPosition &&
+        ctx.isPlaying === lastRenderedIsPlaying
+      ) {
+        return;
+      }
 
       lastRenderedPosition = progress;
+      lastRenderedIsPlaying = ctx.isPlaying;
       hasRenderedInitial = true;
       syncLineHighlight(progress, { isPlaying: ctx.isPlaying });
       scrollTickCounter++;
@@ -163,6 +173,7 @@ export function stopLoop(): void {
     renderLoopDisposer = null;
   }
   lastRenderedPosition = -1;
+  lastRenderedIsPlaying = null;
   hasRenderedInitial = false;
 }
 

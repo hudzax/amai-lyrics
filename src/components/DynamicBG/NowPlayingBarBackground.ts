@@ -13,7 +13,6 @@ import { anySurface } from '../../constants/SpotifyDom';
 interface BackgroundCache {
   nowPlayingBar: Element | null;
   dynamicBg: HTMLElement | null;
-  lastImgUrl: string | null;
 }
 
 /** The sidebar's slot on the crossfade seam: nested layer ids, a plain
@@ -38,12 +37,11 @@ export class NowPlayingBarBackground {
   private cached: BackgroundCache = {
     nowPlayingBar: null,
     dynamicBg: null,
-    lastImgUrl: null,
   };
   // URL with an in-flight measure→mutate handoff. Recorded synchronously so
-  // rapid repeat calls dedup against it instead of racing the async update
-  // of lastImgUrl below.
+  // rapid repeat calls share the same async paint instead of racing.
   private pendingUrl: string | null = null;
+  private generation = 0;
 
   /**
    * Apply optimized dynamic background to the now playing bar
@@ -53,16 +51,17 @@ export class NowPlayingBarBackground {
     const targetUrl = normalizeCoverUrl(coverUrl ?? '');
     if (!targetUrl) return;
 
-    // Quick check for cached values to avoid unnecessary work
-    if (targetUrl === this.cached.lastImgUrl && this.cached.dynamicBg) return;
+    // CrossfadeCanvas owns loaded-URL dedup and failed-load retry.
     if (targetUrl === this.pendingUrl) return;
     this.pendingUrl = targetUrl;
+    const generation = ++this.generation;
 
     void (async () => {
       try {
         const nowPlayingBar = await measureAsync(() =>
           document.querySelector(anySurface('nowPlayingPanel')),
         );
+        if (generation !== this.generation) return;
 
         if (!nowPlayingBar || !nowPlayingBar.isConnected) {
           this.clearCache();
@@ -70,6 +69,7 @@ export class NowPlayingBarBackground {
         }
 
         await mutateAsync(() => {
+          if (generation !== this.generation) return;
           // Sidebar remounted between measure and mutate: drop the stale
           // ref instead of appending into a detached tree.
           if (!nowPlayingBar.isConnected) {
@@ -79,18 +79,16 @@ export class NowPlayingBarBackground {
 
           this.cached.nowPlayingBar = nowPlayingBar;
           this.cached.dynamicBg = applyCrossfade(nowPlayingBar, targetUrl, sidebarCrossfadeSurface);
-          this.cached.lastImgUrl = targetUrl;
         });
       } catch (error) {
         console.error('Error Applying the Dynamic BG to the NowPlayingBar:', error);
       } finally {
-        if (this.pendingUrl === targetUrl) this.pendingUrl = null;
+        if (generation === this.generation) this.pendingUrl = null;
       }
     })();
   }
 
   private clearCache() {
-    this.cached.lastImgUrl = null;
     this.cached.dynamicBg = null;
     this.cached.nowPlayingBar = null;
     this.pendingUrl = null;
@@ -98,6 +96,7 @@ export class NowPlayingBarBackground {
 
   /** Clear cached state when the NowPlayingView is no longer mounted. */
   public destroy(): void {
+    this.generation++;
     this.clearCache();
   }
 }

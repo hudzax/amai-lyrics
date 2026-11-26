@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+const publishArtworkAccents = vi.hoisted(() => vi.fn());
 // The real mode module drags the page/settings graph (and its React dep) in;
 // these two are all it needs from it here.
 vi.mock('../Pages/PageView', () => ({
@@ -11,6 +12,7 @@ vi.mock('../NowBar/NowBar', () => ({
   DeregisterNowBarBtn: vi.fn(),
 }));
 vi.mock('../../utils/Scrolling/AutoScroll', () => ({ AutoScroll: { reset: vi.fn() } }));
+vi.mock('../../utils/ArtworkColors', () => ({ publishArtworkAccents }));
 
 import Fullscreen from '../Utils/Fullscreen';
 import storage from '../../utils/storage';
@@ -25,6 +27,7 @@ interface SurfaceCalls {
   appFrameRemoved: number;
   page: number;
   accents: (string | undefined)[];
+  destroyed: number;
 }
 
 function setupFakes(firstUrl: string | undefined = 'live-cover') {
@@ -34,6 +37,7 @@ function setupFakes(firstUrl: string | undefined = 'live-cover') {
     appFrameRemoved: 0,
     page: 0,
     accents: [],
+    destroyed: 0,
   };
   let currentUrl: string | undefined = firstUrl;
   const adapters = {
@@ -54,6 +58,9 @@ function setupFakes(firstUrl: string | undefined = 'live-cover') {
     }),
     readCoverUrl: () => currentUrl,
     isAppFrameApplied: () => true,
+    destroy: vi.fn(() => {
+      calls.destroyed += 1;
+    }),
   };
   const setCoverUrl = (url: string | undefined) => {
     currentUrl = url;
@@ -65,6 +72,7 @@ let surfaces: ArtworkSurfaces | null = null;
 
 beforeEach(() => {
   vi.useFakeTimers();
+  publishArtworkAccents.mockClear();
   storage.set(StorageKeys.ENABLE_APP_BACKGROUND, 'false');
   document.documentElement.classList.remove(APP_BG_ON_CLASS);
   document.body.innerHTML =
@@ -146,6 +154,51 @@ describe('ArtworkSurfaces seam', () => {
     await painting;
 
     expect(calls.page).toBe(0);
+  });
+
+  it('drops a page paint that settles after the coordinator is destroyed', async () => {
+    const { calls, adapters: baseAdapters } = setupFakes();
+    let finishPaint: (() => void) | undefined;
+    const adapters = {
+      ...baseAdapters,
+      applyLyricsPage: vi.fn(async (shouldPaint?: () => boolean) => {
+        await new Promise<void>((resolve) => {
+          finishPaint = resolve;
+        });
+        if (shouldPaint?.() !== false) calls.page += 1;
+      }),
+    };
+    surfaces = new ArtworkSurfaces(adapters);
+
+    const painting = surfaces.refreshLyricsPage();
+    await vi.waitFor(() => expect(adapters.applyLyricsPage).toHaveBeenCalledTimes(1));
+    surfaces.destroy();
+    surfaces = null;
+    finishPaint?.();
+    await painting;
+
+    expect(calls.page).toBe(0);
+  });
+
+  it('does not publish accents after destroy while the lazy import settles', async () => {
+    surfaces = new ArtworkSurfaces();
+    surfaces.mount();
+    surfaces.destroy();
+    surfaces = null;
+    await import('../../utils/ArtworkColors');
+    await Promise.resolve();
+
+    expect(publishArtworkAccents).not.toHaveBeenCalled();
+  });
+
+  it('delegates renderer teardown through the adapter seam', () => {
+    const { calls, adapters } = setupFakes();
+    surfaces = new ArtworkSurfaces(adapters);
+
+    surfaces.destroy();
+    surfaces = null;
+
+    expect(calls.destroyed).toBe(1);
   });
 
   it('re-applies the page backdrop on fullscreen entry after a skipped paint', () => {

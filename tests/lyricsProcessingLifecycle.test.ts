@@ -50,7 +50,7 @@ describe('lyrics enhancement lifecycle', () => {
 
     expect(document.enhancementStatus).toBe('complete');
     expect(document.enhancementConfigRevision).toBe(getEnhancementConfigRevision());
-    expect(cacheLyrics).toHaveBeenCalledWith('trackA', document);
+    expect(cacheLyrics).toHaveBeenCalledWith('trackA', document, 1);
     expect(publishEnhancedLyrics).toHaveBeenCalledWith(1, 'trackA', document);
   });
 
@@ -107,7 +107,7 @@ describe('lyrics enhancement lifecycle', () => {
     expect(document.enhancementConfigRevision).toBe(getEnhancementConfigRevision());
     expect(enhanceLyrics).not.toHaveBeenCalled();
     expect(cacheLyrics).toHaveBeenCalledTimes(1);
-    expect(cacheLyrics).toHaveBeenCalledWith('trackA', document);
+    expect(cacheLyrics).toHaveBeenCalledWith('trackA', document, 1);
   });
 
   it('does not persist prepared lyrics for a stale request', async () => {

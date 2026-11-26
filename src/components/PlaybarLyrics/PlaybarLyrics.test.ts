@@ -101,13 +101,16 @@ describe('PlaybarLyrics — artwork palette comes from the ArtworkSurfaces seam'
 
   /** rAF queue the test flushes by hand, so marquee state is observable per frame. */
   function installManualRaf(): () => void {
-    const queue: FrameRequestCallback[] = [];
+    const queue: Array<FrameRequestCallback | null> = [];
     vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
       queue.push(cb);
       return queue.length;
     });
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => {
+      if (id > 0) queue[id - 1] = null;
+    });
     return () => {
-      for (const cb of queue.splice(0)) cb(performance.now());
+      for (const cb of queue.splice(0)) cb?.(performance.now());
     };
   }
 
@@ -226,5 +229,21 @@ describe('PlaybarLyrics — artwork palette comes from the ArtworkSurfaces seam'
 
     flushRaf();
     expect(textLayer.classList.contains('amai-marquee')).toBe(true);
+  });
+
+  it('drops a queued marquee measurement when teardown happens first', () => {
+    const position = mockPlaybackPosition();
+    const flushRaf = installManualRaf();
+    position(0);
+
+    InitializePlaybarLyrics();
+    vi.advanceTimersByTime(10);
+    vi.advanceTimersByTime(300);
+    expect(overlay()?.querySelector('.amai-playbar-lyrics-text')).not.toBeNull();
+
+    lifecycle.disposeAll();
+
+    expect(() => flushRaf()).not.toThrow();
+    expect(overlay()).toBeNull();
   });
 });

@@ -190,6 +190,7 @@ export class GlAppBackground {
   private crossfading = false;
   private loadToken = 0;
   private currentUrl: string | null = null;
+  private pendingUrl: string | null = null;
   private backingW = 0;
   private backingH = 0;
   private fieldW = 0;
@@ -346,15 +347,18 @@ export class GlAppBackground {
 
   /** Upload new artwork into the spare texture and start the shader crossfade. */
   public apply(coverUrl: string): void {
-    if (this.disposed || coverUrl === this.currentUrl) return;
-    this.currentUrl = coverUrl;
+    if (this.disposed || coverUrl === this.currentUrl || coverUrl === this.pendingUrl) return;
     const token = ++this.loadToken;
+    this.pendingUrl = coverUrl;
     void loadArtworkBitmap(coverUrl).then((bitmap) => {
       if (this.disposed || token !== this.loadToken) {
         bitmap?.close();
         return;
       }
-      if (!bitmap) return; // keep the current artwork on fetch failure
+      if (!bitmap) {
+        if (token === this.loadToken) this.pendingUrl = null;
+        return; // keep the current artwork on fetch failure
+      }
       // Rapid skip mid-fade: snap the previous crossfade to its end first —
       // texCurrent is on screen right now and must not be overwritten live.
       if (this.crossfading) {
@@ -363,6 +367,8 @@ export class GlAppBackground {
       }
       this.uploadArtwork(this.texCurrent, bitmap);
       bitmap.close();
+      this.currentUrl = coverUrl;
+      this.pendingUrl = null;
       this.container.setAttribute('current-img', coverUrl);
       this.mixStart = this.elapsed;
       this.crossfading = true;
@@ -374,6 +380,8 @@ export class GlAppBackground {
   public remove(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.loadToken++;
+    this.pendingUrl = null;
     this.stopLoop();
     this.canvas.removeEventListener('webglcontextlost', this.handleContextLost);
     document.removeEventListener('visibilitychange', this.handleVisibility);
@@ -506,6 +514,8 @@ export class GlAppBackground {
     event.preventDefault();
     if (this.disposed) return;
     this.disposed = true;
+    this.loadToken++;
+    this.pendingUrl = null;
     this.stopLoop();
     document.removeEventListener('visibilitychange', this.handleVisibility);
     window.removeEventListener('resize', this.handleResize);

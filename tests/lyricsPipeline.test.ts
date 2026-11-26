@@ -37,6 +37,9 @@ vi.mock('../src/components/Pages/pageButtons', () => ({
   hideRefreshButton: vi.fn(),
   showRefreshButton: vi.fn(),
 }));
+vi.mock('../src/utils/Lyrics/registry', () => ({
+  clear: vi.fn(),
+}));
 
 import storage from '../src/utils/storage';
 import Event from '../src/utils/EventManager';
@@ -53,6 +56,7 @@ import { updateLyricTranslations } from '../src/utils/Lyrics/LyricsRenderer';
 import { fetchLyricsFromAPI } from '../src/utils/Lyrics/api';
 import { enhancePreparedLyrics } from '../src/utils/Lyrics/processing';
 import ApplyLyrics from '../src/utils/Lyrics/Global/Applyer';
+import { clear as clearRegistry } from '../src/utils/Lyrics/registry';
 import fetchLyrics, {
   loadAndApplyLyrics,
   refreshLyrics,
@@ -84,9 +88,11 @@ function staticPayload(id: string): LyricsDocument {
   return { id, type: 'Static', lines: [{ text: 'hi' }] };
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.clearAllMocks();
   mockedStorage.get.mockReturnValue(null);
+  const { getLyricsFromCache } = await import('../src/utils/Lyrics/cache');
+  vi.mocked(getLyricsFromCache).mockResolvedValue(null);
   liveItem().uri = '';
 });
 
@@ -277,6 +283,43 @@ describe('refreshLyrics', () => {
     finishRemove?.();
     await refreshing;
   });
+
+  it('makes an in-flight predecessor stale before cache eviction begins', async () => {
+    liveItem().uri = URI_A;
+    const { removeLyricsFromCache, getLyricsFromCache } = await import('../src/utils/Lyrics/cache');
+    vi.mocked(getLyricsFromCache).mockResolvedValue(null);
+    let finishOld: ((value: LyricsDocument) => void) | undefined;
+    let finishRemove: (() => void) | undefined;
+    mockedApi
+      .mockImplementationOnce(
+        () =>
+          new Promise<LyricsDocument>((resolve) => {
+            finishOld = resolve;
+          }),
+      )
+      .mockResolvedValueOnce(staticPayload('freshTrack'));
+    vi.mocked(removeLyricsFromCache).mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishRemove = resolve;
+        }),
+    );
+
+    const predecessor = fetchLyrics(URI_A);
+    await vi.waitFor(() => expect(mockedApi).toHaveBeenCalledTimes(1));
+    const refreshing = refreshLyrics(URI_A);
+    await vi.waitFor(() => expect(removeLyricsFromCache).toHaveBeenCalledTimes(1));
+
+    finishOld?.(staticPayload('trackA'));
+    await predecessor;
+    finishRemove?.();
+    await refreshing;
+
+    expect(mockedEvent.evoke).not.toHaveBeenCalledWith(
+      SNAPSHOT_UPDATED_EVENT,
+      expect.stringContaining('trackA'),
+    );
+  });
 });
 
 describe('loadAndApplyLyrics', () => {
@@ -288,6 +331,60 @@ describe('loadAndApplyLyrics', () => {
 
     expect(result).toMatchObject({ status: 'NO_LYRICS' });
     expect(mockedApply).not.toHaveBeenCalled();
+  });
+
+  it('flush bypasses both the snapshot and disk cache', async () => {
+    liveItem().uri = URI_A;
+    const stale = staticPayload('trackA');
+    const fresh = { ...staticPayload('trackA'), lines: [{ text: 'fresh' }] };
+    mockedStorage.get.mockImplementation((key) =>
+      key === StorageKeys.CURRENT_LYRICS_DATA ? JSON.stringify({ ...stale, v: 2 }) : null,
+    );
+    const { getLyricsFromCache } = await import('../src/utils/Lyrics/cache');
+    vi.mocked(getLyricsFromCache).mockResolvedValue(stale);
+    mockedApi.mockResolvedValue(fresh);
+
+    const result = await fetchLyrics(URI_A, true);
+
+    expect(result).toBe(fresh);
+    expect(mockedApi).toHaveBeenCalledTimes(1);
+    expect(getLyricsFromCache).not.toHaveBeenCalled();
+  });
+
+  it('resets registered rows as soon as a request starts', async () => {
+    liveItem().uri = URI_A;
+    let finishApi: ((value: LyricsDocument) => void) | undefined;
+    mockedApi.mockImplementationOnce(
+      () =>
+        new Promise<LyricsDocument>((resolve) => {
+          finishApi = resolve;
+        }),
+    );
+
+    const fetching = fetchLyrics(URI_A);
+    await vi.waitFor(() => expect(mockedApi).toHaveBeenCalledTimes(1));
+    finishApi?.(staticPayload('trackA'));
+    await fetching;
+    expect(clearRegistry).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not clear the page for an id-less failure after the player moved on', async () => {
+    liveItem().uri = URI_A;
+    let finishApi: ((value: { status: 'NO_LYRICS' }) => void) | undefined;
+    mockedApi.mockImplementationOnce(
+      () =>
+        new Promise<{ status: 'NO_LYRICS' }>((resolve) => {
+          finishApi = resolve;
+        }),
+    );
+
+    const fetching = fetchLyrics(URI_A);
+    await vi.waitFor(() => expect(mockedApi).toHaveBeenCalledTimes(1));
+    liveItem().uri = URI_B;
+    finishApi?.({ status: 'NO_LYRICS' });
+    await fetching;
+
+    expect(noLyricsMessage).not.toHaveBeenCalled();
   });
 
   it('publishes a fresh API negative — sentinel and bus event fire without a joiner', async () => {

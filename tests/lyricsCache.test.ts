@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('@hudzax/web-modules/SpikyCache', () => import('./helpers/fakeSpikyCache'));
 
@@ -10,7 +10,7 @@ import {
   LYRICS_CACHE_OPTIONS,
 } from '../src/utils/Lyrics/cache';
 import { createBoundedCache } from '../src/utils/BoundedCache';
-import { storeFor, resetFakeSpikyCache } from './helpers/fakeSpikyCache';
+import { FakeSpikyCache, storeFor, resetFakeSpikyCache } from './helpers/fakeSpikyCache';
 import type {
   LyricsDocument,
   NoLyricsResult,
@@ -22,6 +22,20 @@ const WINDOW_KEY = LYRICS_CACHE_OPTIONS.windowKey;
 beforeEach(() => {
   resetFakeSpikyCache();
   Reflect.deleteProperty(window, WINDOW_KEY);
+  const writeState = (
+    window as unknown as {
+      __amaiLyricsCacheWrites?: {
+        latestRequest: Map<string, number>;
+        queues: Map<string, Promise<void>>;
+      };
+    }
+  ).__amaiLyricsCacheWrites;
+  writeState?.latestRequest.clear();
+  writeState?.queues.clear();
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 const document: LyricsDocument = {
@@ -77,6 +91,65 @@ describe('getLyricsFromCache (pure read)', () => {
 });
 
 describe('cache lifecycle', () => {
+  it('serializes writes so an older request cannot overwrite a newer document', async () => {
+    let finishFirstWrite: (() => void) | undefined;
+    vi.spyOn(FakeSpikyCache.prototype, 'set').mockImplementationOnce(function (
+      this: FakeSpikyCache,
+      key: string,
+      value: unknown,
+    ) {
+      return new Promise<void>((resolve) => {
+        finishFirstWrite = () => {
+          storeFor(LYRICS_CACHE_OPTIONS.name).set(key, value);
+          resolve();
+        };
+      });
+    });
+    const older = cacheLyrics('track1', { ...document, lines: [{ text: 'old' }] }, 1);
+    await vi.waitFor(() => expect(finishFirstWrite).toBeDefined());
+    const newer = cacheLyrics('track1', { ...document, lines: [{ text: 'new' }] }, 2);
+
+    finishFirstWrite?.();
+    await Promise.all([older, newer]);
+
+    await expect(getLyricsFromCache('track1')).resolves.toMatchObject({
+      lines: [{ text: 'new' }],
+    });
+  });
+
+  it('ignores a stale request that starts after a newer cache write', async () => {
+    await cacheLyrics('track1', { ...document, lines: [{ text: 'new' }] }, 2);
+    await cacheLyrics('track1', { ...document, lines: [{ text: 'old' }] }, 1);
+
+    await expect(getLyricsFromCache('track1')).resolves.toMatchObject({
+      lines: [{ text: 'new' }],
+    });
+  });
+
+  it('waits for an in-flight write before evicting the track', async () => {
+    let finishWrite: (() => void) | undefined;
+    vi.spyOn(FakeSpikyCache.prototype, 'set').mockImplementationOnce(function (
+      this: FakeSpikyCache,
+      key: string,
+      value: unknown,
+    ) {
+      return new Promise<void>((resolve) => {
+        finishWrite = () => {
+          storeFor(LYRICS_CACHE_OPTIONS.name).set(key, value);
+          resolve();
+        };
+      });
+    });
+    const writing = cacheLyrics('track1', document, 1);
+    await vi.waitFor(() => expect(finishWrite).toBeDefined());
+    const removing = removeLyricsFromCache('track1');
+
+    finishWrite?.();
+    await Promise.all([writing, removing]);
+
+    await expect(getLyricsFromCache('track1')).resolves.toBeNull();
+  });
+
   it('removeLyricsFromCache evicts a single track', async () => {
     await cacheLyrics('track1', document);
     await removeLyricsFromCache('track1');

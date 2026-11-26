@@ -53,9 +53,10 @@ export interface ArtworkSurfaceAdapters {
   applyAppFrame(coverUrl: string | undefined): void;
   removeAppFrame(): void;
   applyLyricsPage(shouldPaint: () => boolean): Promise<void>;
-  publishAccents(coverUrl: string | undefined): void;
+  publishAccents(coverUrl: string | undefined, shouldPublish?: () => boolean): void;
   readCoverUrl(): string | undefined;
   isAppFrameApplied(): boolean;
+  destroy(): void;
 }
 
 /** Production adapters: the three canvases plus the accent publisher. */
@@ -77,13 +78,17 @@ export function createDefaultAdapters(sidebarBg: NowPlayingBarBackground): Artwo
       const el = document.querySelector<HTMLElement>(PageViewSelectors.ContentBox);
       if (el) await ApplyDynamicBackground(el, shouldPaint);
     },
-    publishAccents: (coverUrl) => {
+    publishAccents: (coverUrl, shouldPublish = () => true) => {
       void import('../../utils/ArtworkColors').then(({ publishArtworkAccents }) => {
-        void publishArtworkAccents(coverUrl ?? null);
+        if (shouldPublish()) void publishArtworkAccents(coverUrl ?? null);
       });
     },
     readCoverUrl: readLiveCoverUrl,
     isAppFrameApplied: () => appBackgroundSingleton.isApplied(),
+    destroy: () => {
+      sidebarBg.destroy();
+      appBackgroundSingleton.destroy();
+    },
   };
 }
 
@@ -96,7 +101,6 @@ export function createDefaultAdapters(sidebarBg: NowPlayingBarBackground): Artwo
  */
 export class ArtworkSurfaces {
   private readonly adapters: ArtworkSurfaceAdapters;
-  private readonly sidebarBg: NowPlayingBarBackground;
   private readonly debouncedFanOut: ((coverUrl: string | undefined) => void) & {
     cancel: () => void;
   };
@@ -108,10 +112,13 @@ export class ArtworkSurfaces {
   private appFrameRafQueued = false;
   private firstPaintWaiter: ReturnType<typeof Whentil.When> | null = null;
   private unsubscribeFullscreen: (() => void) | null = null;
+  private lifetimeGeneration = 0;
+  private pagePaintGeneration = 0;
+  private destroyed = false;
 
   constructor(adapters?: ArtworkSurfaceAdapters) {
-    this.sidebarBg = new NowPlayingBarBackground();
-    this.adapters = adapters ?? createDefaultAdapters(this.sidebarBg);
+    const sidebarBg = new NowPlayingBarBackground();
+    this.adapters = adapters ?? createDefaultAdapters(sidebarBg);
     // Coalesce rapid skip events: only the settled track triggers work.
     this.debouncedFanOut = debounce((coverUrl: string | undefined) => {
       // Re-read live at fire time: a payload snapshotted as undefined (no
@@ -125,13 +132,22 @@ export class ArtworkSurfaces {
         this.adapters.applySidebar(effective);
         void this.paintLyricsPageIfVisible();
       }
-      this.adapters.publishAccents(effective);
+      this.publishAccents(effective);
     }, FAN_OUT_DELAY_MS);
   }
 
   /** Debounced fan-out for song changes: rapid skips repaint once. */
   public applyArtwork(coverUrl?: string): void {
+    if (this.destroyed) return;
     this.debouncedFanOut(coverUrl ?? this.adapters.readCoverUrl());
+  }
+
+  private publishAccents(coverUrl: string | undefined): void {
+    const lifetime = this.lifetimeGeneration;
+    this.adapters.publishAccents(
+      coverUrl,
+      () => !this.destroyed && lifetime === this.lifetimeGeneration,
+    );
   }
 
   private refreshStaticSurfaces(): void {
@@ -148,6 +164,7 @@ export class ArtworkSurfaces {
   }
 
   public async setThemeEnabled(enabled: boolean): Promise<void> {
+    if (this.destroyed) return;
     syncAppBgMarker(enabled);
     const coverUrl = this.adapters.readCoverUrl();
     if (enabled) {
@@ -165,11 +182,18 @@ export class ArtworkSurfaces {
   }
 
   public refreshLyricsPage(): Promise<void> {
+    if (this.destroyed) return Promise.resolve();
     return this.paintLyricsPageIfVisible();
   }
 
   private async paintLyricsPageIfVisible(): Promise<void> {
-    const shouldPaint = () => !isAppBackgroundEnabled();
+    const generation = ++this.pagePaintGeneration;
+    const lifetime = this.lifetimeGeneration;
+    const shouldPaint = () =>
+      !this.destroyed &&
+      lifetime === this.lifetimeGeneration &&
+      generation === this.pagePaintGeneration &&
+      !isAppBackgroundEnabled();
     if (!shouldPaint()) return;
     await this.adapters.applyLyricsPage(shouldPaint);
   }
@@ -201,6 +225,8 @@ export class ArtworkSurfaces {
 
   /** Reconcile stored mode, wire observers, then paint the initial surfaces. */
   public mount(): void {
+    this.destroyed = false;
+    this.lifetimeGeneration++;
     const enabled = isAppBackgroundEnabled();
     syncAppBgMarker(enabled);
     if (enabled) {
@@ -230,6 +256,9 @@ export class ArtworkSurfaces {
 
   /** Disconnect, cancel, and clear canvases (hot-reload safe). */
   public destroy(): void {
+    this.destroyed = true;
+    this.lifetimeGeneration++;
+    this.pagePaintGeneration++;
     this.cancelPending();
     this.clearFirstPaintWaiter();
     this.sidebarObserver?.disconnect();
@@ -241,14 +270,13 @@ export class ArtworkSurfaces {
     this.sidebarObserver = null;
     this.sidebarLateObserver = null;
     this.appFrameObserver = null;
-    this.sidebarBg.destroy();
-    appBackgroundSingleton.destroy();
+    this.adapters.destroy();
   }
 
   /** Initial paint shared by mount and the launch waiter below. */
   private paintInitialSurfaces(): void {
     this.refreshStaticSurfaces();
-    this.adapters.publishAccents(this.adapters.readCoverUrl());
+    this.publishAccents(this.adapters.readCoverUrl());
   }
 
   /**
@@ -331,8 +359,10 @@ export class ArtworkSurfaces {
       }
       if (!hostAdded || this.appFrameRafQueued) return;
       this.appFrameRafQueued = true;
+      const lifetime = this.lifetimeGeneration;
       requestAnimationFrame(() => {
         this.appFrameRafQueued = false;
+        if (this.destroyed || lifetime !== this.lifetimeGeneration) return;
         if (!isAppBackgroundEnabled()) return;
         // Own appends echo back here; isAppFrameApplied is cache-first so the
         // echo bails without rebuilding.

@@ -44,6 +44,8 @@ let positionConsumerDisposer: (() => void) | null = null;
 let resizeObserver: ResizeObserver | null = null;
 let lastText = '';
 let lastActiveIdx = -1;
+let lyricsFrameId: number | null = null;
+let lyricsFrameGeneration = 0;
 
 // Handle for the pending "wait for playbar" poll so it can be cancelled on teardown.
 let initWhen: ReturnType<typeof Whentil.When> | null = null;
@@ -124,19 +126,30 @@ function setLyricsText(html: string): void {
   textLayer.textContent = '';
   textLayer.appendChild(createRubyFragment(html));
 
-  requestAnimationFrame(() => {
-    const cw = lyricsElement!.clientWidth;
-    if (textLayer!.scrollWidth > cw) {
-      const dist = cw - textLayer!.scrollWidth - 20;
-      textLayer.style.setProperty('--scroll-dist', `${dist}px`);
-      textLayer.style.setProperty('--scroll-dur', `${Math.max(3, Math.abs(dist) / 75)}s`);
-      textLayer.classList.add('amai-marquee');
+  const element = lyricsElement;
+  const layer = textLayer;
+  const generation = ++lyricsFrameGeneration;
+  if (lyricsFrameId !== null) {
+    cancelAnimationFrame(lyricsFrameId);
+    lyricsFrameId = null;
+  }
+  const frameId = requestAnimationFrame(() => {
+    if (generation !== lyricsFrameGeneration) return;
+    lyricsFrameId = null;
+    if (lyricsElement !== element || !element.isConnected || !layer.isConnected) return;
+    const cw = element.clientWidth;
+    if (layer.scrollWidth > cw) {
+      const dist = cw - layer.scrollWidth - 20;
+      layer.style.setProperty('--scroll-dist', `${dist}px`);
+      layer.style.setProperty('--scroll-dur', `${Math.max(3, Math.abs(dist) / 75)}s`);
+      layer.classList.add('amai-marquee');
     } else {
-      textLayer.classList.remove('amai-marquee');
-      textLayer.style.removeProperty('--scroll-dist');
-      textLayer.style.removeProperty('--scroll-dur');
+      layer.classList.remove('amai-marquee');
+      layer.style.removeProperty('--scroll-dist');
+      layer.style.removeProperty('--scroll-dur');
     }
   });
+  lyricsFrameId = frameId;
 
   if (inner.animate) {
     inner.animate(
@@ -254,6 +267,11 @@ function inject(): void {
 function cleanup(): void {
   positionConsumerDisposer?.();
   positionConsumerDisposer = null;
+  lyricsFrameGeneration++;
+  if (lyricsFrameId !== null) {
+    cancelAnimationFrame(lyricsFrameId);
+    lyricsFrameId = null;
+  }
   clearPlaybarOverlay();
   resizeObserver?.disconnect();
   resizeObserver = null;

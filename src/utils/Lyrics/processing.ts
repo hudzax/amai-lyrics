@@ -76,7 +76,7 @@ export async function processAndEnhanceLyrics(
   // Cache the prepared document so a re-seek is fast. The pipeline owns when
   // enhancement starts; keeping that decision there gives fresh, joined and
   // durable-hit results one request lifecycle.
-  if (isCurrentLyricsRequest(token)) await cacheLyrics(trackId, prepared);
+  if (isCurrentLyricsRequest(token)) await cacheLyrics(trackId, prepared, token);
   return prepared;
 }
 
@@ -120,7 +120,7 @@ async function processLyricsEnhancementsAsync(
 
     enhanced.enhancementStatus = 'complete';
     enhanced.enhancementConfigRevision = configRevision;
-    await cacheLyrics(trackId, enhanced);
+    await cacheLyrics(trackId, enhanced, token);
     if (isCurrentLyricsRequest(token) && getEnhancementConfigRevision() === configRevision) {
       publishEnhancedLyrics(token, trackId, enhanced);
     }

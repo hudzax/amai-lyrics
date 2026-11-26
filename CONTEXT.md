@@ -90,6 +90,17 @@ GetProgress export has no production importer — only its own test crosses it.
 IsPlaying in src/utils/Addons.ts is a legacy alias that delegates to
 resolveIsPlaying.
 
+Every anchor write advances a sync generation. A private position RPC captures
+that generation before awaiting and commits only if no newer public read, seek,
+progress event, or teardown has re-anchored the player in the meantime. The
+memory-only error fallback obeys the same rule, so a slow RPC cannot snap every
+lyrics surface backward after a newer seek.
+
+The `onprogress` and visibility observers use named, window-recorded handlers.
+A new injection replaces the previous handlers, and each teardown removes only
+the handler identity it owns, so hot reload keeps exactly one observer without
+letting an old disposer delete its successor's listener.
+
 ## ArtworkSurfaces
 
 Every artwork-derived surface painted from the live track's cover art: the
@@ -108,6 +119,15 @@ The nested painters own only local paint mechanics and no longer infer mode
 from the root marker. Static repaint is private to mount and the launch
 waiter.
 
+A coordinator lifetime generation invalidates page paints, queued app-frame
+remounts, and lazy accent imports after destroy or remount. Page paints also
+carry a per-paint generation, so a newer paint wins while an older adapter is
+still awaiting artwork. Renderer teardown and accent publication cross the
+adapter seam; injected coordinators never reach the concrete app-frame or
+sidebar singleton. ArtworkColors keeps its own publish generation, so a slow
+extraction cannot overwrite newer artwork or a newer preset/custom/null accent
+decision.
+
 ## CrossfadeCanvas
 
 The single owner of the two-layer artwork canvas behind all three artwork
@@ -117,14 +137,19 @@ class swap, `current-img` and the placeholder's lifetime. Lives in
 src/components/DynamicBG/CrossfadeCanvas.ts. Callers cross it through one
 stateless `applyCrossfade(host, url, surface)` — never through a layer id, a
 class write, a `current-img` attribute or a normalized URL of their own. The
-callers' caches (`lastImgUrl`, `pendingUrl`, `cached.dynamicBg`) and host
-resolution stay outside it; so does the app-frame painter's WebGL2 branch,
-which writes `current-img` on its own GPU container. `normalizeCoverUrl` is
-exported for the app-frame painter's GL branch, which still needs a normalized
-URL before handing it to the renderer. Per-canvas load state (paint
-generation plus each layer's last loaded and failed URL) lives in a WeakMap
-keyed by the container; callers' caches stay outside. There is no instance to
+callers' host/canvas caches and host resolution stay outside it; so does the
+app-frame painter's WebGL2 branch, which writes `current-img` on its own GPU
+container. `normalizeCoverUrl` is exported for the app-frame painter's GL
+branch, which still needs a normalized URL before handing it to the renderer.
+Per-canvas load state (paint generation plus each layer's last loaded and
+failed URL) lives in a WeakMap keyed by the container. There is no instance to
 construct, track or tear down.
+
+The DOM painters therefore do not cache a requested URL as if it had loaded:
+only an in-flight measure→mutate handoff may dedup. An identical apply after a
+failed load reaches CrossfadeCanvas again and retries. The GL painter similarly
+keeps `pendingUrl` separate from `currentUrl`, promoting a URL only after its
+bitmap upload succeeds.
 
 Three surfaces cross the seam as `CrossfadeSurface` adapters: the app frame
 (GL-aware `findAppBg`, `createAppBgContainer`, `ensureAppBgHostClasses`,
@@ -195,6 +220,10 @@ container for font sizes. The no-lyrics path deliberately does not apply them.
 The single place that owns the painted lyric rows and everything derived from them: the row list, the click-to-seek time map, the position-driven render loop, and the full reset. Lives in src/utils/Lyrics/registry.ts. Callers cross it through registerRow, getAllRows, getPaintedLines, getTimedLines, clear, startLoop, stopLoop, attachClickToSeek, and detachClickToSeek — never through the row array, the time map, or a PositionConsumer registration of their own. "Which row is active" is not this module's answer: that belongs to LineHighlight.
 
 The three row writers (LyricsRenderer's line-synced and static builders, createMusicalLineMs) push a PaintedLine through registerRow. The readers (LineHighlight, AutoScroll, LyricsRenderer's translation update) cross the read methods. getTimedLines returns a cached view of the rows that carry timing, invalidated on registerRow and clear. The render loop is owned by startLoop/stopLoop: the registry registers with PositionConsumer (surface 'highlight', 50 ms), gates the tick on PagePresence and the route answer, and the tick hands the settled position and play state to LineHighlight and — at half cadence — the settled play state and route answer to AutoScroll.sync. clear() is a full reset: rows, map, loop state, the highlight's caches, and AutoScroll.reset. The click-to-seek listener is owned by attachClickToSeek(container)/detachClickToSeek(); the caller passes the container it rendered into, and the registry owns the time map that feeds the lookup. The auto-start on import is gone; app.tsx calls startLoop() explicitly.
+
+The tick's dedup key is both position and play state. A pause or resume at an
+unchanged position still reaches LineHighlight so the full blur pass can run;
+only a tick unchanged in both answers is skipped.
 
 ## LineHighlight
 
@@ -268,6 +297,28 @@ stay deliberately outside this seam: PageView.IsOpened (the page lifecycle,
 which PageManager reads to decide a destroy) and the element-scoping check
 (`element.closest('#AmaiLyricsPage')` in the DynamicBG painters) — "is this
 element inside the page" is not "is the page present".
+
+PageView.Open coalesces concurrent calls into one open promise. Destroy advances a
+page generation before its first await, invalidates any pending open, and serializes
+removal so a newer navigation cannot be cleared by an older teardown. PageManager
+keeps its own navigation generation and only the latest route continuation may
+update the active button.
+
+## Lifecycle
+
+The owner of one extension injection's disposable work and lifetime currency.
+`disposeAll` advances the lifecycle generation before running disposers, so async
+work captured under `captureGeneration` can reject post-teardown commits through
+`isCurrentGeneration`. App composition captures a generation after registering the
+global teardown handle and rechecks it after initialization awaits and dynamic
+imports; a stale initializer cannot mount surfaces, start loops, or install
+settings. SongChangeManager applies the same lifetime check after readiness
+sleeps and dynamic imports, so an already-running song-change continuation cannot
+fan out after dispose. Spotify readiness polling is lifecycle-owned; teardown
+cancels the scheduled task and rejects the old wait rather than leaving it
+pending. First-run cache invalidation is awaited before
+`__amaiCoreInitialized` is latched, so a concurrent fetch cannot read the snapshot
+being cleared and a failed invalidation remains retryable.
 
 ## NowBarOverlay
 
@@ -353,21 +404,26 @@ buttons and the page's track metadata.
   cache, and snapshot return typed outcomes and never touch the page — api.ts
   validates the wire response and hands back a document or the typed sentinel,
   importing neither `ui` nor any DOM path. A negative's transitions run only for
-  the request that still owns the render (isLatestLyricsRequest), the same
-  newer-request-wins rule the composition's render guard applies, so a joined
-  fetch runs them once, not once per waiter.
+  the request that still belongs to the current player track
+  (isCurrentLyricsRequest), so an id-less failure for track A cannot clear track
+  B after the player has moved on. A joined fetch still runs them once, not once
+  per waiter.
+- A request clears the rendered container and resets LyricsRegistry in the same
+  turn, before its first read or fetch. The highlight tick therefore never keeps
+  painting rows that the container clear detached. `flush` bypasses both the
+  snapshot and disk-cache reads as well as in-flight dedupe; a freshness request
+  cannot be answered by durable state or a predecessor.
 - `invalidateLyrics({ all | trackId }, { reload })` is the invalidation entry:
   config changes (translation language, romaji, translations off, API key) and
   first startup say what is stale and whether to reload; eviction and
-  snapshot-clearing stay inside. It advances the enhancement configuration
-  revision synchronously, before awaiting cache destruction, so an older
-  in-flight completion cannot be accepted after the new request starts.
-  Handlers must write the new setting to storage
-  before calling it with reload, so the re-fetch sees the new value. The reload
-  re-fetches with `flush` so an in-flight fetch that
-  predates the invalidation is never served. The default `fetchLyrics` export
-  is internal to the composition (only loadAndApplyLyrics calls it) and the
-  `{ trackId }` branch currently has no callers (all use `{ all: true }`).
+  snapshot-clearing stay inside. It opens a new request token synchronously and
+  advances the enhancement configuration revision before awaiting cache
+  destruction, so an older in-flight producer cannot repopulate the cache or
+  publish after invalidation begins. Handlers must write the new setting to
+  storage before calling it with reload, so the re-fetch sees the new value. The
+  reload re-fetches with `flush`. The default `fetchLyrics` export is internal to
+  the composition (only loadAndApplyLyrics calls it) and the `{ trackId }` branch
+  currently has no callers (all use `{ all: true }`).
 - `publishNoLyrics(token, id)` in publish.ts is the negative result's
   publication: it persists the typed sentinel through LyricsSnapshot and
   fires the same snapshot-updated notification (`SNAPSHOT_UPDATED_EVENT`) as
@@ -484,6 +540,13 @@ disk cache (src/utils/Lyrics/cache.ts) keeps the document version stamp and
 the NO_LYRICS sentinel rule; SpicyFetch (src/utils/API/SpicyFetch.ts) keeps
 md5 keys, pako compression, and the inflate size guards. Bounding and expiry
 never leave this module.
+
+The lyrics adapter serializes writes per track and tags them with the opaque
+pipeline request token. An older request cannot overwrite a newer document;
+single-track eviction waits for that track's queued writes, and cache destroy
+waits for every queued write before clearing the store. The request-token map and
+write queues are window-persisted so a hot reload cannot introduce a second,
+unordered writer.
 
 ## StorageKeys
 

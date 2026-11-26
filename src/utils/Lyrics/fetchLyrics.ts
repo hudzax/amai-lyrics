@@ -22,6 +22,7 @@ import { hideRefreshButton } from '../../components/Pages/pageButtons';
 import ApplyLyrics from './Global/Applyer';
 import {
   beginLyricsRequest,
+  isCurrentLyricsRequest,
   isLatestLyricsRequest,
   publishInitialLyrics,
   publishNoLyrics,
@@ -29,6 +30,7 @@ import {
   type LyricsRequestToken,
 } from './publish';
 import { parseTrackId } from './trackId';
+import { clear as clearRegistry } from './registry';
 import { PageViewSelectors } from '../../constants/PageViewSelectors';
 
 import { LyricsDocument, NoLyricsResult } from './conversion';
@@ -82,7 +84,7 @@ async function applyLoadedLyrics(
     // applies at the composition — so a joined fetch runs them once, not once
     // per waiter.
     if (result.id) publishNoLyrics(token, result.id);
-    if (isLatestLyricsRequest(token)) await noLyricsMessage(result.id);
+    if (isCurrentLyricsRequest(token)) await noLyricsMessage(result.id);
     return result;
   }
 
@@ -129,6 +131,10 @@ export default async function fetchLyrics(
   requestRef.token = token;
   resetLyricsUI();
   ClearLyricsPageContainer();
+  // The container clear detaches the old rows; reset their registry owner in
+  // the same turn so the highlight tick cannot keep painting detached nodes
+  // while a slow fetch is in flight.
+  clearRegistry();
   // A stuck processing indicator from a previous track must never survive
   // into the new request — the pipeline owns this guard so song-change
   // callers don't cross the ui seam directly.
@@ -143,11 +149,15 @@ export default async function fetchLyrics(
     return { status: 'NO_LYRICS' };
   }
 
-  const localLyrics = readSnapshot(trackId);
-  if (localLyrics) return applyLoadedLyrics(localLyrics, token, trackId);
+  // A flush is a freshness contract: neither durable read may answer it, and
+  // the in-flight dedupe below is skipped for the same reason.
+  if (!flush) {
+    const localLyrics = readSnapshot(trackId);
+    if (localLyrics) return applyLoadedLyrics(localLyrics, token, trackId);
 
-  const cachedLyrics = await getLyricsFromCache(trackId);
-  if (cachedLyrics) return applyLoadedLyrics(cachedLyrics, token, trackId);
+    const cachedLyrics = await getLyricsFromCache(trackId);
+    if (cachedLyrics) return applyLoadedLyrics(cachedLyrics, token, trackId);
+  }
 
   // Hide refresh button during fetch
   hideRefreshButton();
@@ -222,6 +232,9 @@ export async function loadAndApplyLyrics(
  * cross the cache or snapshot seams directly.
  */
 export async function refreshLyrics(uri: string): Promise<LyricsFetchResult> {
+  // Invalidate predecessors before the first await so an older fetch cannot
+  // repopulate the cache or snapshot while eviction is still in progress.
+  beginLyricsRequest(uri);
   bumpEnhancementConfigRevision();
   const trackId = parseTrackId(uri);
   if (trackId) {
@@ -245,6 +258,9 @@ export async function invalidateLyrics(
   target: { all: true } | { trackId: string },
   opts: { reload?: boolean } = {},
 ): Promise<void> {
+  // Configuration changes invalidate every in-flight producer synchronously;
+  // otherwise a stale response can write into the cache after destroy/remove.
+  beginLyricsRequest(liveLyricsUri() ?? '');
   bumpEnhancementConfigRevision();
   if ('all' in target) {
     await destroyLyricsCache();

@@ -29,7 +29,6 @@ export const APP_BG_HOST_FALLBACK_SELECTOR = legacySurface('appFrameHost');
 interface AppBackgroundCache {
   host: Element | null;
   dynamicBg: HTMLElement | null;
-  lastImgUrl: string | null;
 }
 
 /** Remove a DOM-path background node; GPU-class containers are never touched. */
@@ -158,7 +157,6 @@ export class AppBackground {
   private cached: AppBackgroundCache = {
     host: null,
     dynamicBg: null,
-    lastImgUrl: null,
   };
   /** Live WebGL2 canvas, once boot succeeded (see `bootGl`). */
   private glBg: GlAppBackgroundInstance | null = null;
@@ -227,7 +225,6 @@ export class AppBackground {
         }
         releaseVacatedHost();
         this.glBg.apply(coverUrl);
-        this.cached.lastImgUrl = coverUrl;
         return;
       }
 
@@ -240,10 +237,9 @@ export class AppBackground {
       // on success the swap happens in `bootGl`'s completion.
       if (this.glState === 'idle') this.bootGl(host, coverUrl);
 
-      if (coverUrl === this.cached.lastImgUrl && this.cached.dynamicBg) return;
-
+      // CrossfadeCanvas owns successful-load dedup and failed-load retry. A
+      // caller-side "last requested URL" cache would suppress the retry.
       this.cached.dynamicBg = applyCrossfade(host, coverUrl, domCrossfadeSurface);
-      this.cached.lastImgUrl = coverUrl;
     } catch (error) {
       console.error('Error Applying the Dynamic BG to the App:', error);
     }
@@ -323,7 +319,6 @@ export class AppBackground {
   }
 
   private clearCache(): void {
-    this.cached.lastImgUrl = null;
     this.cached.dynamicBg = null;
     this.cached.host = null;
   }
@@ -445,16 +440,14 @@ export class AppBackground {
     this.glBg = null;
     this.glState = 'failed';
     this.cached.dynamicBg = null;
-    this.cached.lastImgUrl = null;
     if (isAppBackgroundEnabled()) this.apply(this.lastCoverUrl ?? undefined);
   }
 }
 
 /**
- * Shared instance used by `app.tsx` and the settings toggle so the
- * `lastImgUrl` dedup cache survives across call sites. Throwaway instances
- * (`new AppBackground()` per toggle/song) always miss the cache and rebuild.
- * Tests keep constructing their own instances — this is purely a runtime share.
+ * Shared instance used by `app.tsx` and the settings toggle so host/canvas
+ * ownership survives across call sites. Tests keep constructing their own
+ * instances — this is purely a runtime share.
  */
 export const appBackgroundSingleton = new AppBackground();
 

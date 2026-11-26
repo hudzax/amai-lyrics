@@ -23,15 +23,62 @@ export const LYRICS_CACHE_OPTIONS = {
 
 const cache = createBoundedCache<StoredLyricsDocument | NoLyricsResult>(LYRICS_CACHE_OPTIONS);
 
+interface CacheWriteState {
+  latestRequest: Map<string, number>;
+  queues: Map<string, Promise<void>>;
+}
+
+// SAFETY: window augmentation keeps write ordering and request currency shared across hot-reload module instances.
+const writeWindowRef = window as unknown as { __amaiLyricsCacheWrites?: CacheWriteState };
+const writeState = (writeWindowRef.__amaiLyricsCacheWrites ??= {
+  latestRequest: new Map<string, number>(),
+  queues: new Map<string, Promise<void>>(),
+});
+
 /**
- * Caches processed lyrics for future use
+ * Caches processed lyrics for future use.
+ *
+ * `requestToken` is the opaque LyricsPipeline request currency. Writes for one
+ * track are serialized, and an older request can neither jump the queue nor
+ * overwrite a newer request's value.
  *
  * @param trackId - Spotify track ID
  * @param document - Processed lyrics document
+ * @param requestToken - Optional pipeline request currency
  */
-export async function cacheLyrics(trackId: string, document: LyricsDocument): Promise<void> {
+export async function cacheLyrics(
+  trackId: string,
+  document: LyricsDocument,
+  requestToken?: number,
+): Promise<void> {
   try {
-    await cache.set(trackId, stampDocument(document));
+    if (requestToken !== undefined) {
+      const latest = writeState.latestRequest.get(trackId);
+      if (latest !== undefined && requestToken < latest) return;
+      writeState.latestRequest.delete(trackId);
+      writeState.latestRequest.set(trackId, requestToken);
+      while (writeState.latestRequest.size > LYRICS_CACHE_OPTIONS.maxEntries) {
+        const oldest = writeState.latestRequest.keys().next().value as string | undefined;
+        if (oldest === undefined) break;
+        writeState.latestRequest.delete(oldest);
+      }
+    }
+
+    const previous = writeState.queues.get(trackId) ?? Promise.resolve();
+    const write = previous
+      .catch(() => {})
+      .then(async () => {
+        if (requestToken !== undefined && writeState.latestRequest.get(trackId) !== requestToken) {
+          return;
+        }
+        await cache.set(trackId, stampDocument(document));
+      });
+    writeState.queues.set(trackId, write);
+    try {
+      await write;
+    } finally {
+      if (writeState.queues.get(trackId) === write) writeState.queues.delete(trackId);
+    }
   } catch (error) {
     console.error('Error saving lyrics to cache:', error);
   }
@@ -74,7 +121,11 @@ export async function getLyricsFromCache(
 // Remove lyrics from cache
 export async function removeLyricsFromCache(trackId: string): Promise<void> {
   try {
+    // Eviction is ordered after writes already queued for this track; otherwise
+    // a late set can repopulate the entry immediately after remove resolves.
+    await writeState.queues.get(trackId)?.catch(() => {});
     await cache.remove(trackId);
+    writeState.latestRequest.delete(trackId);
   } catch (error) {
     console.error('Error removing lyrics from cache:', error);
   }
@@ -82,5 +133,7 @@ export async function removeLyricsFromCache(trackId: string): Promise<void> {
 
 // Evict the whole lyrics cache (the invalidate-all entry).
 export async function destroyLyricsCache(): Promise<void> {
+  await Promise.allSettled([...writeState.queues.values()]);
   await cache.destroy();
+  writeState.latestRequest.clear();
 }

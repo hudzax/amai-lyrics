@@ -49,6 +49,7 @@ type GetProgressState = {
   loopScheduled: boolean;
   loopTimeoutId: number | null;
   teardownRequested: boolean;
+  syncGeneration: number;
   cachedPosition: number | null;
   cachedPositionTime: number;
   cachedIsPlaying: boolean | null;
@@ -57,9 +58,12 @@ type GetProgressState = {
 // SAFETY: window augmentation for hot-reload persistence; __amaiGetProgressState is our isolated namespace
 const windowRef = window as unknown as {
   __amaiGetProgressState?: GetProgressState;
-  __amaiGetProgressVisHandlerAttached?: boolean;
-  __amaiGetProgressOnProgressAttached?: boolean;
+  __amaiGetProgressVisHandler?: () => void;
+  __amaiGetProgressOnProgressHandler?: (event: unknown) => void;
 };
+
+let onProgressHandler: ((event: unknown) => void) | null = null;
+let visibilityHandler: (() => void) | null = null;
 
 function safeInitialPlaying(): boolean {
   try {
@@ -90,6 +94,7 @@ const state: GetProgressState =
     loopScheduled: false,
     loopTimeoutId: null,
     teardownRequested: false,
+    syncGeneration: 0,
     cachedPosition: null,
     cachedPositionTime: 0,
     cachedIsPlaying: null,
@@ -101,6 +106,9 @@ if (!('loopTimeoutId' in state)) {
 }
 if (!('teardownRequested' in state)) {
   Object.assign(state, { teardownRequested: false });
+}
+if (!('syncGeneration' in state)) {
+  Object.assign(state, { syncGeneration: 0 });
 }
 
 // ---------------------------------------------------------------------------
@@ -236,6 +244,7 @@ function getStateBasedPosition(): number | null {
 
 /** Push a fresh anchor so delta-based math stays consistent with public reads. */
 function setAnchor(position: number, startedAtPerfNow?: number): void {
+  state.syncGeneration++;
   const startedAt =
     typeof startedAtPerfNow === 'number' && Number.isFinite(startedAtPerfNow)
       ? startedAtPerfNow
@@ -250,32 +259,45 @@ function setAnchor(position: number, startedAtPerfNow?: number): void {
 // current position. Feeding it into the anchor keeps lyrics moving even if the
 // periodic RPC sync breaks after a client update (private API rename, etc.).
 function ensureOnProgressAnchor(): void {
-  if (windowRef.__amaiGetProgressOnProgressAttached) return;
-  windowRef.__amaiGetProgressOnProgressAttached = true;
-  try {
-    Spicetify.Player.addEventListener('onprogress', ((event: unknown) => {
-      try {
-        let pos: number | null = null;
-        if (typeof event === 'number') {
-          pos = safeFiniteNumber(event);
-        } else if (event && typeof event === 'object') {
-          const data = (event as { data?: unknown }).data;
-          pos = safeFiniteNumber(
-            typeof data === 'number' ? data : (event as { position?: unknown }).position,
-          );
-        }
-        if (pos !== null && pos >= 0) {
-          setAnchor(pos);
-          state.cachedPosition = pos;
-          state.cachedPositionTime = performance.now();
-          state.cachedIsPlaying = resolveIsPlaying();
-        }
-      } catch {
-        // never let an anchor update break playback
+  const existing = windowRef.__amaiGetProgressOnProgressHandler;
+  if (existing) {
+    try {
+      Spicetify.Player.removeEventListener('onprogress', existing as never);
+    } catch {
+      // A replaced client may already have dropped the old listener.
+    }
+  }
+
+  const handler = (event: unknown): void => {
+    try {
+      let pos: number | null = null;
+      if (typeof event === 'number') {
+        pos = safeFiniteNumber(event);
+      } else if (event && typeof event === 'object') {
+        const data = (event as { data?: unknown }).data;
+        pos = safeFiniteNumber(
+          typeof data === 'number' ? data : (event as { position?: unknown }).position,
+        );
       }
-    }) as never);
+      if (pos !== null && pos >= 0) {
+        setAnchor(pos);
+        state.cachedPosition = pos;
+        state.cachedPositionTime = performance.now();
+        state.cachedIsPlaying = resolveIsPlaying();
+      }
+    } catch {
+      // never let an anchor update break playback
+    }
+  };
+  onProgressHandler = handler;
+  windowRef.__amaiGetProgressOnProgressHandler = handler;
+  try {
+    Spicetify.Player.addEventListener('onprogress', handler as never);
   } catch {
-    windowRef.__amaiGetProgressOnProgressAttached = false;
+    if (windowRef.__amaiGetProgressOnProgressHandler === handler) {
+      delete windowRef.__amaiGetProgressOnProgressHandler;
+    }
+    onProgressHandler = null;
   }
 }
 try {
@@ -295,15 +317,19 @@ function isDocumentHidden(): boolean {
 }
 
 function ensureVisibilityHandler(): void {
-  if (windowRef.__amaiGetProgressVisHandlerAttached) return;
-  windowRef.__amaiGetProgressVisHandlerAttached = true;
-  document.addEventListener('visibilitychange', () => {
+  const existing = windowRef.__amaiGetProgressVisHandler;
+  if (existing) document.removeEventListener('visibilitychange', existing);
+
+  const handler = (): void => {
     if (!document.hidden && state.activePositionClients > 0) {
       // Wake immediately so lyrics/playbar snap back without 1s delay
       state.syncNow = true;
       scheduleLoop(0);
     }
-  });
+  };
+  visibilityHandler = handler;
+  windowRef.__amaiGetProgressVisHandler = handler;
+  document.addEventListener('visibilitychange', handler);
 }
 if (typeof document !== 'undefined') ensureVisibilityHandler();
 
@@ -403,6 +429,20 @@ function scheduleLoop(delay: number): void {
 }
 
 function destroyGetProgressLoop(): void {
+  if (onProgressHandler && windowRef.__amaiGetProgressOnProgressHandler === onProgressHandler) {
+    try {
+      Spicetify.Player.removeEventListener('onprogress', onProgressHandler as never);
+    } catch {
+      // The client may already have removed the player object.
+    }
+    delete windowRef.__amaiGetProgressOnProgressHandler;
+  }
+  onProgressHandler = null;
+  if (visibilityHandler && windowRef.__amaiGetProgressVisHandler === visibilityHandler) {
+    document.removeEventListener('visibilitychange', visibilityHandler);
+    delete windowRef.__amaiGetProgressVisHandler;
+  }
+  visibilityHandler = null;
   if (state.loopTimeoutId !== null) {
     clearTimeout(state.loopTimeoutId);
     state.loopTimeoutId = null;
@@ -411,10 +451,12 @@ function destroyGetProgressLoop(): void {
   state.syncNow = false;
   state.activePositionClients = 0;
   state.teardownRequested = true;
+  state.syncGeneration++;
 }
 
 async function doSync(): Promise<void> {
   const startedAt = performance.now();
+  const generation = state.syncGeneration;
   // Prefer the public API — it is maintained by Spicetify across client
   // updates, unlike the private _contextPlayer RPC below.
   const pub = getPublicProgress();
@@ -436,6 +478,7 @@ async function doSync(): Promise<void> {
   }
 
   // Update the shared object to reduce allocations and keep hot-reload clones in sync.
+  if (generation !== state.syncGeneration) return;
   setAnchor(pos.Position, pos.StartedSyncAt);
 }
 
@@ -454,14 +497,18 @@ async function runLoop(): Promise<void> {
     // needs a fresh position. Otherwise stay idle and do zero RPC work.
     if (isPlaying && (state.activePositionClients > 0 || state.syncNow)) {
       state.syncNow = false;
+      const syncGeneration = state.syncGeneration;
       try {
         await doSync();
       } catch (error) {
         // Private RPC broke (common after Spotify client updates) — fall back
         // to memory-only state so the anchor still advances instead of freezing.
-        const fallback = getStateBasedPosition();
-        if (fallback !== null) setAnchor(fallback);
-        else console.error('Sync Position: Fail, More Details:', error);
+        // A newer public read/seek/teardown invalidates this fallback too.
+        if (syncGeneration === state.syncGeneration) {
+          const fallback = getStateBasedPosition();
+          if (fallback !== null) setAnchor(fallback);
+          else console.error('Sync Position: Fail, More Details:', error);
+        }
       }
     } else {
       state.syncNow = false;

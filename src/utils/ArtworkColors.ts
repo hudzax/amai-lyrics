@@ -307,6 +307,7 @@ const ACCENT_LIFT_MIN_LUMINANCE = 140; // same readability floor as the playbar
 const ACCENT_COUNT = 5;
 
 let lastAccentArtworkUrl: string | null = null;
+let accentGeneration = 0;
 
 // ---------------------------------------------------------------------------
 // Accent color override (settings)
@@ -384,6 +385,7 @@ export async function publishArtworkAccents(imageUrl: string | null | undefined)
   // over any artwork palette and must survive the dedup guard below.
   const accentMode = settingsValues.get('accentColorMode');
   if (accentMode === 'preset') {
+    accentGeneration++;
     lastAccentArtworkUrl = null;
     applyArtworkAccents([]);
     return;
@@ -391,6 +393,7 @@ export async function publishArtworkAccents(imageUrl: string | null | undefined)
   if (accentMode === 'custom') {
     const hex = settingsValues.get('customAccentColor').trim().toLowerCase();
     if (isHexColor(hex)) {
+      accentGeneration++;
       lastAccentArtworkUrl = null;
       applyArtworkAccents(deriveAccentPalette(hex));
       return;
@@ -399,6 +402,7 @@ export async function publishArtworkAccents(imageUrl: string | null | undefined)
   }
 
   if (!imageUrl) {
+    accentGeneration++;
     lastAccentArtworkUrl = null;
     applyArtworkAccents([]);
     return;
@@ -411,11 +415,14 @@ export async function publishArtworkAccents(imageUrl: string | null | undefined)
   }
 
   // Already published for this artwork — extraction is cached anyway, but the
-  // guard keeps repeat songchange events allocation-free.
+  // guard keeps repeat songchange events allocation-free. A duplicate request
+  // does not invalidate the extraction already in flight for this URL.
   if (url === lastAccentArtworkUrl) return;
+  const generation = ++accentGeneration;
   lastAccentArtworkUrl = url;
 
   const colors = await extractArtworkColors(url);
+  if (generation !== accentGeneration) return;
   applyArtworkAccents(colors);
 }
 

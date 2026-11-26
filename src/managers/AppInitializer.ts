@@ -6,16 +6,23 @@ import { applyThemeSettings } from '../utils/ThemeSettings';
 import { APP_BG_CONTAINER_CLASS, APP_BG_LOADED_CLASS } from '../components/DynamicBG/identity';
 
 export class AppInitializer {
-  public static async initializeCore() {
+  public static async initializeCore(): Promise<boolean> {
+    const generation = lifecycle.captureGeneration();
+
     // Clear lyrics cache on first startup only (a re-init must not wipe it).
+    // Await the invalidation before latching startup complete: a concurrent
+    // first fetch must not read the snapshot this pass is about to clear, and a
+    // failed invalidation must remain retryable on the next injection.
     const windowRef = window as unknown as { __amaiCoreInitialized?: boolean };
     if (!windowRef.__amaiCoreInitialized) {
-      void invalidateLyrics({ all: true });
+      await invalidateLyrics({ all: true });
+      if (!lifecycle.isCurrentGeneration(generation)) return false;
       windowRef.__amaiCoreInitialized = true;
     }
 
     await this.injectGoogleFonts();
-    await this.initializePlatformAndSettings();
+    if (!lifecycle.isCurrentGeneration(generation)) return false;
+    return this.initializePlatformAndSettings(generation);
   }
 
   private static async injectGoogleFonts() {
@@ -40,12 +47,14 @@ export class AppInitializer {
     };
   }
 
-  private static async initializePlatformAndSettings() {
+  private static async initializePlatformAndSettings(generation: number): Promise<boolean> {
     await Platform.OnSpotifyReady;
+    if (!lifecycle.isCurrentGeneration(generation)) return false;
     setSettingsMenu();
     // Publish the Amai Theme intensity/motion presets before any canvas can
     // paint (idempotent inline root vars + motion-off class — see ThemeSettings).
     applyThemeSettings();
+    return true;
   }
 
   public static setupPostLoadOptimizations() {

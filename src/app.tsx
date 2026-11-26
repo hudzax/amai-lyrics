@@ -37,8 +37,9 @@ function setupUI(): ButtonManager {
   return new ButtonManager();
 }
 
-async function initializeAmaiLyrics(buttonManager: ButtonManager) {
+async function initializeAmaiLyrics(buttonManager: ButtonManager, generation: number) {
   const [{ requestPositionSync }] = await Promise.all([import('./utils/Gets/GetProgress')]);
+  if (!lifecycle.isCurrentGeneration(generation)) return;
 
   // Initialize position sync
   const playbackWhen = Whentil.When(
@@ -84,11 +85,12 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
   const startupFetchWhen = Whentil.When(
     () => Spicetify.Player.data?.item?.uri,
     (uri) => {
-      void import('./utils/Lyrics/fetchLyrics').then(({ loadAndApplyLyrics }) =>
+      void import('./utils/Lyrics/fetchLyrics').then(({ loadAndApplyLyrics }) => {
+        if (!lifecycle.isCurrentGeneration(generation)) return;
         loadAndApplyLyrics(uri as string).catch((e) =>
           console.error('[Amai Lyrics] Failed to fetch initial lyrics:', e),
-        ),
-      );
+        );
+      });
     },
   );
   lifecycle.trackWhentil(startupFetchWhen);
@@ -98,6 +100,7 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
     const currentUri = Spicetify.Player.data?.item?.uri;
     if (currentUri) {
       const { loadAndApplyLyrics } = await import('./utils/Lyrics/fetchLyrics');
+      if (!lifecycle.isCurrentGeneration(generation)) return;
       loadAndApplyLyrics(currentUri).catch((e) =>
         console.error('[Amai Lyrics] Failed to re-fetch on online:', e),
       );
@@ -107,6 +110,7 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
 
   // Ensure lyric render loop is tracked for teardown (explicit start, no import side-effect)
   const { startLoop, stopLoop } = await import('./utils/Lyrics/registry');
+  if (!lifecycle.isCurrentGeneration(generation)) return;
   startLoop();
   lifecycle.trackCallback(() => stopLoop());
 
@@ -116,6 +120,7 @@ async function initializeAmaiLyrics(buttonManager: ButtonManager) {
 
   // Show the active lyric line in the native bottom playbar
   const { InitializePlaybarLyrics } = await import('./components/PlaybarLyrics/PlaybarLyrics');
+  if (!lifecycle.isCurrentGeneration(generation)) return;
   InitializePlaybarLyrics();
 }
 
@@ -138,6 +143,7 @@ async function main() {
   // forever) leaves no handle for the next reload, which then silently
   // double-initializes (duplicate render loops, overlays, handlers, intervals).
   lifecycle.registerGlobalTeardown();
+  const generation = lifecycle.captureGeneration();
 
   installBlankToastSuppressor();
   // HoverTooltip owns native suppression, label reconstruction, replacement,
@@ -150,14 +156,18 @@ async function main() {
   installFastdomErrorHandler();
 
   try {
-    await AppInitializer.initializeCore();
+    const coreReady = await AppInitializer.initializeCore();
+    if (!coreReady || !lifecycle.isCurrentGeneration(generation)) return;
 
     const buttonManager = setupUI();
     lifecycle.trackCallback(() => buttonManager.dispose());
-    await initializeAmaiLyrics(buttonManager);
+    await initializeAmaiLyrics(buttonManager, generation);
+    if (!lifecycle.isCurrentGeneration(generation)) return;
 
     AppInitializer.setupPostLoadOptimizations();
   } catch (error) {
+    // A stale injection must not tear down or surface errors into its successor.
+    if (!lifecycle.isCurrentGeneration(generation)) return;
     // If init fails partway, tear everything down so the next reload starts clean.
     console.error('[Amai Lyrics] Initialization failed; tearing down:', error);
     lifecycle.disposeAll();

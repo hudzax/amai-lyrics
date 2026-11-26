@@ -3,6 +3,8 @@ import lifecycle from '../src/utils/lifecycle';
 import GetProgress, {
   getPositionFor,
   PlaybackSurfaceOffset,
+  requestPositionTracking,
+  requestPositionSync,
   resolveIsPlaying,
   syncPlaybackPosition,
 } from '../src/utils/Gets/GetProgress';
@@ -10,14 +12,32 @@ import GetProgress, {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const spicetify = globalThis as any;
 
+function clearPositionCache(): void {
+  const state = (
+    window as unknown as {
+      __amaiGetProgressState?: {
+        cachedPosition: number | null;
+        cachedPositionTime: number;
+        cachedIsPlaying: boolean | null;
+      };
+    }
+  ).__amaiGetProgressState;
+  if (!state) return;
+  state.cachedPosition = null;
+  state.cachedPositionTime = 0;
+  state.cachedIsPlaying = null;
+}
+
 describe('playback-time seam', () => {
   const origPlayer = { ...spicetify.Spicetify.Player };
   const origData = { ...spicetify.Spicetify.Player.data };
+  const origPlatform = spicetify.Spicetify.Platform;
 
   afterEach(() => {
     spicetify.Spicetify.Player.getProgress = origPlayer.getProgress;
     spicetify.Spicetify.Player.isPlaying = origPlayer.isPlaying;
     spicetify.Spicetify.Player.data = { ...origData };
+    spicetify.Spicetify.Platform = origPlatform;
     lifecycle.disposeAll();
     vi.restoreAllMocks();
   });
@@ -73,5 +93,90 @@ describe('playback-time seam', () => {
     syncPlaybackPosition();
     await new Promise((r) => setTimeout(r, 25));
     expect(GetProgress()).toBe(9000);
+  });
+
+  it('does not let a delayed RPC overwrite a newer seek anchor', async () => {
+    let resolveRpc: ((value: { position: number }) => void) | undefined;
+    const getPositionState = vi.fn(
+      () =>
+        new Promise<{ position: number }>((resolve) => {
+          resolveRpc = resolve;
+        }),
+    );
+    spicetify.Spicetify.Player.getProgress = undefined;
+    spicetify.Spicetify.Player.isPlaying = () => true;
+    spicetify.Spicetify.Platform = {
+      ...origPlatform,
+      PlaybackAPI: { _isLocal: true },
+      PlayerAPI: { _contextPlayer: { getPositionState } },
+    };
+    spicetify.Spicetify.Player.data = {
+      ...origData,
+      positionAsOfTimestamp: 1000,
+      timestamp: Date.now(),
+      isPaused: false,
+    };
+
+    requestPositionTracking();
+    requestPositionSync();
+    await vi.waitFor(() => expect(getPositionState).toHaveBeenCalledTimes(1));
+    spicetify.Spicetify.Player.data = {
+      ...origData,
+      positionAsOfTimestamp: 9000,
+      timestamp: Date.now(),
+      isPaused: false,
+    };
+    syncPlaybackPosition();
+    const sought = GetProgress();
+    clearPositionCache();
+
+    resolveRpc?.({ position: 1000 });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(GetProgress()).toBeGreaterThanOrEqual(sought);
+  });
+
+  it('does not let an in-flight RPC commit after teardown', async () => {
+    let resolveRpc: ((value: { position: number }) => void) | undefined;
+    const getPositionState = vi.fn(
+      () =>
+        new Promise<{ position: number }>((resolve) => {
+          resolveRpc = resolve;
+        }),
+    );
+    spicetify.Spicetify.Player.getProgress = undefined;
+    spicetify.Spicetify.Player.isPlaying = () => true;
+    spicetify.Spicetify.Platform = {
+      ...origPlatform,
+      PlaybackAPI: { _isLocal: true },
+      PlayerAPI: { _contextPlayer: { getPositionState } },
+    };
+    spicetify.Spicetify.Player.data = {
+      ...origData,
+      positionAsOfTimestamp: 1000,
+      timestamp: Date.now(),
+      isPaused: false,
+    };
+
+    requestPositionTracking();
+    requestPositionSync();
+    await vi.waitFor(() => expect(getPositionState).toHaveBeenCalledTimes(1));
+    spicetify.Spicetify.Player.data = {
+      ...origData,
+      positionAsOfTimestamp: 9000,
+      timestamp: Date.now(),
+      isPaused: false,
+    };
+    syncPlaybackPosition();
+    const sought = GetProgress();
+    clearPositionCache();
+    lifecycle.disposeAll();
+
+    resolveRpc?.({ position: 1000 });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(GetProgress()).toBeGreaterThanOrEqual(sought);
   });
 });

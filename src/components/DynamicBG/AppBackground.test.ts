@@ -79,6 +79,18 @@ describe('AppBackground', () => {
     expect(host.querySelectorAll(':scope > .sweet-dynamic-bg.amai-app-bg').length).toBe(1);
   });
 
+  it('retries the same artwork after a failed image load', () => {
+    const bg = new AppBackground();
+    bg.apply('https://i.scdn.co/image/abc123');
+    const image = document.querySelector<HTMLImageElement>(`#${APP_BG_IMG_A_ID}`)!;
+    const retryLayer = document.querySelector<HTMLImageElement>(`#${APP_BG_IMG_B_ID}`)!;
+
+    image.dispatchEvent(new Event('error'));
+    bg.apply('https://i.scdn.co/image/abc123');
+
+    expect(retryLayer.getAttribute('src')).toBe('https://i.scdn.co/image/abc123');
+  });
+
   it('remove() only removes the app BG, not the nested lyrics page BG', () => {
     const host = setupMainView();
     host.insertAdjacentHTML(

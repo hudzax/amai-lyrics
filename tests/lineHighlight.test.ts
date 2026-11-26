@@ -35,7 +35,7 @@ vi.mock('../src/utils/Gets/GetProgress', () => ({
   syncPlaybackPosition: vi.fn(),
 }));
 
-import { getPositionFor } from '../src/utils/Gets/GetProgress';
+import { getPositionFor, resolveIsPlaying } from '../src/utils/Gets/GetProgress';
 import { clear, registerRow, startLoop, stopLoop } from '../src/utils/Lyrics/registry';
 import type { PaintedDot, PaintedLine } from '../src/utils/Lyrics/registry';
 import { getActiveLine, sync } from '../src/utils/Lyrics/LineHighlight';
@@ -261,6 +261,27 @@ describe('the registry tick', () => {
 
     expect(rows.map(classesOf)).toEqual([[], [], []]);
     expect(getActiveLine()).toBeUndefined();
+
+    stopLoop();
+  });
+
+  it('repaints play-state changes even when the position is unchanged', () => {
+    const rows = seedThreeRows();
+    onLyricsRoute(4000);
+    vi.mocked(resolveIsPlaying).mockReturnValue(true);
+    vi.useFakeTimers();
+
+    startLoop();
+    vi.advanceTimersByTime(50);
+    expect(rows.map(blurOf)).toEqual(['1px', '0px', '1px']);
+
+    vi.mocked(resolveIsPlaying).mockReturnValue(false);
+    vi.advanceTimersByTime(50);
+    expect(rows.map(blurOf)).toEqual(['0px', '0px', '0px']);
+
+    vi.mocked(resolveIsPlaying).mockReturnValue(true);
+    vi.advanceTimersByTime(50);
+    expect(rows.map(blurOf)).toEqual(['1px', '0px', '1px']);
 
     stopLoop();
   });

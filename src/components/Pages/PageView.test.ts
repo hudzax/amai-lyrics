@@ -91,4 +91,37 @@ describe('PageView artwork seam', () => {
     expect(mocks.applyDynamicBackground).not.toHaveBeenCalled();
     expect(mocks.loadAndApplyLyrics).toHaveBeenCalledWith('spotify:track:page-open');
   });
+
+  it('coalesces concurrent opens into one page lifetime', async () => {
+    const first = PageView.Open();
+    const second = PageView.Open();
+    await Promise.all([first, second]);
+
+    expect(document.querySelectorAll('#AmaiLyricsPage')).toHaveLength(1);
+    expect(mocks.setupActionButtons).toHaveBeenCalledTimes(1);
+    expect(mocks.loadAndApplyLyrics).toHaveBeenCalledTimes(1);
+    expect(mocks.sessionOpenNowBar).toHaveBeenCalledTimes(1);
+  });
+
+  it('invalidates an opening when destroy happens before artwork painting settles', async () => {
+    let finishPaint: (() => void) | undefined;
+    mocks.refreshLyricsPage.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishPaint = resolve;
+        }),
+    );
+
+    const opening = PageView.Open();
+    await vi.waitFor(() => expect(mocks.refreshLyricsPage).toHaveBeenCalledTimes(1));
+    const destroying = PageView.Destroy();
+    finishPaint?.();
+    await Promise.all([opening, destroying]);
+
+    expect(PageView.IsOpened).toBe(false);
+    expect(document.querySelector('#AmaiLyricsPage')).toBeNull();
+    expect(mocks.loadAndApplyLyrics).not.toHaveBeenCalled();
+    expect(mocks.sessionOpenNowBar).not.toHaveBeenCalled();
+    expect(mocks.setupActionButtons).not.toHaveBeenCalled();
+  });
 });

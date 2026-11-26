@@ -210,6 +210,24 @@ describe('GlAppBackground rendering budget', () => {
     );
   });
 
+  it('retries the same artwork URL after a failed fetch', async () => {
+    const { background } = await createBackground();
+    const fetchMock = vi.mocked(fetch);
+    const nextUrl = 'https://i.scdn.co/image/retry-cover';
+    fetchMock.mockResolvedValueOnce({ ok: false } as Response);
+
+    background.apply(nextUrl);
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledWith(nextUrl));
+    await Promise.resolve();
+    await Promise.resolve();
+    background.apply(nextUrl);
+
+    await vi.waitFor(() => {
+      const attempts = fetchMock.mock.calls.filter(([url]) => url === nextUrl);
+      expect(attempts).toHaveLength(2);
+    });
+  });
+
   it('watches the canvas for layout changes', async () => {
     const observe = vi.spyOn(ResizeObserver.prototype, 'observe');
     const { background } = await createBackground();

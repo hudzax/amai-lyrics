@@ -19,6 +19,17 @@ type Disposer = () => void;
  */
 class Lifecycle {
   private disposers: Disposer[] = [];
+  private generation = 0;
+
+  /** Capture the current lifetime so async work can reject post-teardown commits. */
+  captureGeneration(): number {
+    return this.generation;
+  }
+
+  /** Whether work captured for `generation` still belongs to the live lifetime. */
+  isCurrentGeneration(generation: number): boolean {
+    return generation === this.generation;
+  }
 
   /** Track a raw disposer. */
   track(disposer: Disposer): void {
@@ -73,6 +84,7 @@ class Lifecycle {
 
   /** Run every disposer in reverse order and clear the registry. */
   disposeAll(): void {
+    this.generation++;
     const disposers = this.disposers.slice().reverse();
     this.disposers = [];
     for (const dispose of disposers) {

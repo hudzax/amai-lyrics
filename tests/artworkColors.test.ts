@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   isHexColor,
   deriveAccentPalette,
@@ -14,6 +14,30 @@ beforeEach(() => {
   spicetify.Spicetify.LocalStorage._store.clear();
   document.documentElement.style.cssText = '';
 });
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
+
+function installArtworkDecoder(): (rgba: [number, number, number, number]) => void {
+  let pixel = new Uint8ClampedArray([255, 0, 0, 255]);
+  vi.stubGlobal(
+    'createImageBitmap',
+    vi.fn(async () => ({ width: 1, height: 1, close: vi.fn() })),
+  );
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+    drawImage: vi.fn(),
+    getImageData: vi.fn(() => ({ data: pixel.slice() })),
+  } as unknown as CanvasRenderingContext2D);
+  return (rgba) => {
+    pixel = new Uint8ClampedArray(rgba);
+  };
+}
+
+function imageResponse(): Response {
+  return { ok: true, blob: async () => ({}) } as unknown as Response;
+}
 
 describe('isHexColor', () => {
   it('accepts six-digit hex colours, trimmed and case-insensitive', () => {
@@ -107,5 +131,63 @@ describe('refreshAccents', () => {
     );
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
+  });
+});
+
+describe('publishArtworkAccents request currency', () => {
+  it('drops an older extraction that settles after newer artwork', async () => {
+    const setPixel = installArtworkDecoder();
+    const pending = new Map<string, (response: Response) => void>();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        (input: RequestInfo | URL) =>
+          new Promise<Response>((resolve) => {
+            pending.set(String(input), resolve);
+          }),
+      ),
+    );
+    const olderUrl = 'https://example.com/older.jpg';
+    const newerUrl = 'https://example.com/newer.jpg';
+
+    const older = publishArtworkAccents(olderUrl);
+    const newer = publishArtworkAccents(newerUrl);
+    await vi.waitFor(() => expect(pending.size).toBe(2));
+
+    setPixel([0, 255, 0, 255]);
+    pending.get(newerUrl)?.(imageResponse());
+    await newer;
+    const newerAccent = document.documentElement.style.getPropertyValue('--amai-accent-1');
+
+    setPixel([255, 0, 0, 255]);
+    pending.get(olderUrl)?.(imageResponse());
+    await older;
+
+    expect(document.documentElement.style.getPropertyValue('--amai-accent-1')).toBe(newerAccent);
+  });
+
+  it('lets a newer accent override invalidate a pending extraction', async () => {
+    installArtworkDecoder();
+    let finishFetch: ((response: Response) => void) | undefined;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        () =>
+          new Promise<Response>((resolve) => {
+            finishFetch = resolve;
+          }),
+      ),
+    );
+    const extraction = publishArtworkAccents('https://example.com/pending.jpg');
+    await vi.waitFor(() => expect(finishFetch).toBeDefined());
+    spicetify.Spicetify.LocalStorage.set('AmaiLyrics-accent_color_mode', 'custom');
+    spicetify.Spicetify.LocalStorage.set('AmaiLyrics-custom_accent_color', '#22cc77');
+    await publishArtworkAccents('https://example.com/newer.jpg');
+    const overrideAccent = document.documentElement.style.getPropertyValue('--amai-accent-1');
+
+    finishFetch?.(imageResponse());
+    await extraction;
+
+    expect(document.documentElement.style.getPropertyValue('--amai-accent-1')).toBe(overrideAccent);
   });
 });
